@@ -69,13 +69,13 @@ export default function Loads() {
       case 'planning':
         return <Badge variant="outline">Planejamento</Badge>;
       case 'loading':
-        return <Badge className="bg-blue-500">Carregando</Badge>;
+        return <Badge className="bg-neutral-500">Carregando</Badge>;
       case 'loaded':
-        return <Badge className="bg-amber-500">Carregado</Badge>;
+        return <Badge className="bg-neutral-600">Carregado</Badge>;
       case 'in-transit':
-        return <Badge className="bg-purple-500">Em Trânsito</Badge>;
+        return <Badge className="bg-neutral-700">Em Trânsito</Badge>;
       case 'delivered':
-        return <Badge className="bg-green-500">Entregue</Badge>;
+        return <Badge className="bg-neutral-800">Entregue</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -86,9 +86,9 @@ export default function Loads() {
       case 'pending':
         return <Badge variant="outline">Pendente</Badge>;
       case 'loaded':
-        return <Badge className="bg-amber-500">Carregado</Badge>;
+        return <Badge className="bg-neutral-600">Carregado</Badge>;
       case 'delivered':
-        return <Badge className="bg-green-500">Entregue</Badge>;
+        return <Badge className="bg-neutral-800">Entregue</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -113,7 +113,7 @@ export default function Loads() {
           <p className="text-gray-500">Gerencie a separação e carregamento de pedidos</p>
         </div>
         <Button 
-          className="bg-sales-800 hover:bg-sales-700"
+          className="bg-neutral-700 hover:bg-neutral-800"
           onClick={() => navigate('/cargas/montar')}
         >
           <Plus size={16} className="mr-2" /> Nova Carga
@@ -127,7 +127,7 @@ export default function Loads() {
             className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
             onClick={() => handleViewLoad(load)}
           >
-            <div className="bg-sales-800 text-white p-3 flex justify-between items-center">
+            <div className="bg-neutral-700 text-white p-3 flex justify-between items-center">
               <h3 className="font-semibold">{load.name}</h3>
               {getStatusBadge(load.status)}
             </div>
@@ -162,12 +162,12 @@ export default function Loads() {
                     <p className="text-sm font-medium">Progresso</p>
                     <p className="text-sm font-medium">{getLoadProgress(load.status)}%</p>
                   </div>
-                  <Progress value={getLoadProgress(load.status)} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500" />
+                  <Progress value={getLoadProgress(load.status)} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-neutral-500 [&>div]:to-neutral-700" />
                 </div>
                 
                 <div className="pt-3 flex justify-between gap-2">
                   <Button 
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    className="flex-1 bg-neutral-600 hover:bg-neutral-700"
                     onClick={(e) => {e.stopPropagation(); handleViewLoad(load);}}
                   >
                     <ListChecks size={16} className="mr-2" /> Detalhes
@@ -192,7 +192,7 @@ export default function Loads() {
             <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma carga encontrada</h3>
             <p className="text-gray-500">Crie uma nova carga para começar a montar seus pedidos</p>
             <Button 
-              className="mt-4 bg-sales-800 hover:bg-sales-700"
+              className="mt-4 bg-neutral-700 hover:bg-neutral-800"
               onClick={() => navigate('/cargas/montar')}
             >
               <Plus size={16} className="mr-2" /> Nova Carga

@@ -1,18 +1,16 @@
 
 import { 
-  LineChart, 
-  Line, 
+  AreaChart, 
+  Area, 
   XAxis, 
   YAxis, 
   Tooltip, 
   ResponsiveContainer,
   CartesianGrid,
   Legend,
-  Area,
-  AreaChart
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 
 interface SalesData {
   name: string;
@@ -36,9 +34,9 @@ interface SalesChartProps {
 
 export default function SalesChart({ title, className }: SalesChartProps) {
   return (
-    <Card className={`${className} overflow-hidden bg-gradient-to-br from-white to-blue-50 border border-blue-100`}>
-      <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-blue-100">
-        <CardTitle className="text-blue-800">{title}</CardTitle>
+    <Card className={`${className} overflow-hidden bg-gradient-to-br from-white to-gray-50 border border-gray-100`}>
+      <CardHeader className="pb-2 bg-gradient-to-r from-gray-50 to-neutral-100 border-b border-gray-100">
+        <CardTitle className="text-neutral-800">{title}</CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
         <ChartContainer 
@@ -46,23 +44,23 @@ export default function SalesChart({ title, className }: SalesChartProps) {
           config={{
             mesAtual: { 
               label: "Mês Atual",
-              theme: { light: "#8B5CF6", dark: "#A78BFA" } 
+              theme: { light: "#4b5563", dark: "#6b7280" } 
             },
             mesPassado: { 
               label: "Mês Passado",
-              theme: { light: "#0EA5E9", dark: "#38BDF8" } 
+              theme: { light: "#9ca3af", dark: "#d1d5db" } 
             }
           }}
         >
           <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
             <defs>
               <linearGradient id="colorMesAtual" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.2} />
+                <stop offset="5%" stopColor="#4b5563" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#4b5563" stopOpacity={0.2} />
               </linearGradient>
               <linearGradient id="colorMesPassado" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0.2} />
+                <stop offset="5%" stopColor="#9ca3af" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#9ca3af" stopOpacity={0.2} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -85,14 +83,14 @@ export default function SalesChart({ title, className }: SalesChartProps) {
                     <div className="rounded-lg border bg-background p-2 shadow-md">
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-[#8B5CF6]" />
+                          <div className="h-2 w-2 rounded-full bg-[#4b5563]" />
                           <span className="text-xs font-medium">Mês Atual:</span>
                         </div>
                         <span className="text-xs font-medium text-right">
                           R$ {payload[0].value.toLocaleString('pt-BR')}
                         </span>
                         <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-[#0EA5E9]" />
+                          <div className="h-2 w-2 rounded-full bg-[#9ca3af]" />
                           <span className="text-xs font-medium">Mês Passado:</span>
                         </div>
                         <span className="text-xs font-medium text-right">
@@ -120,21 +118,21 @@ export default function SalesChart({ title, className }: SalesChartProps) {
               type="monotone" 
               dataKey="mesAtual" 
               name="Mês Atual" 
-              stroke="#8B5CF6" 
+              stroke="#4b5563" 
               fillOpacity={1}
               fill="url(#colorMesAtual)"
               strokeWidth={3}
-              activeDot={{ r: 6, stroke: '#8B5CF6', strokeWidth: 2, fill: '#fff' }}
+              activeDot={{ r: 6, stroke: '#4b5563', strokeWidth: 2, fill: '#fff' }}
             />
             <Area 
               type="monotone" 
               dataKey="mesPassado" 
               name="Mês Passado" 
-              stroke="#0EA5E9"
+              stroke="#9ca3af"
               fillOpacity={1}
               fill="url(#colorMesPassado)"
               strokeWidth={3}
-              activeDot={{ r: 6, stroke: '#0EA5E9', strokeWidth: 2, fill: '#fff' }}
+              activeDot={{ r: 6, stroke: '#9ca3af', strokeWidth: 2, fill: '#fff' }}
             />
           </AreaChart>
         </ChartContainer>

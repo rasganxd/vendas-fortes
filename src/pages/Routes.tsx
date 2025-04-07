@@ -161,11 +161,11 @@ export default function Routes() {
       case 'planning':
         return <Badge variant="outline">Planejamento</Badge>;
       case 'assigned':
-        return <Badge className="bg-blue-500">Atribuída</Badge>;
+        return <Badge className="bg-neutral-500">Atribuída</Badge>;
       case 'in-progress':
-        return <Badge className="bg-amber-500">Em Progresso</Badge>;
+        return <Badge className="bg-neutral-600">Em Progresso</Badge>;
       case 'completed':
-        return <Badge className="bg-green-500">Concluída</Badge>;
+        return <Badge className="bg-neutral-700">Concluída</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -176,7 +176,7 @@ export default function Routes() {
       case 'pending':
         return <Badge variant="outline">Pendente</Badge>;
       case 'completed':
-        return <Badge className="bg-green-500">Concluída</Badge>;
+        return <Badge className="bg-neutral-700">Concluída</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -200,7 +200,7 @@ export default function Routes() {
           <p className="text-gray-500">Gerencie e planeje as rotas para entrega de pedidos</p>
         </div>
         <Button 
-          className="bg-sales-800 hover:bg-sales-700"
+          className="bg-neutral-700 hover:bg-neutral-800"
           onClick={() => setIsNewRouteDialogOpen(true)}
         >
           <Plus size={16} className="mr-2" /> Nova Rota
@@ -214,7 +214,7 @@ export default function Routes() {
             className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
             onClick={() => handleViewRoute(route)}
           >
-            <div className="bg-sales-800 text-white p-3 flex justify-between items-center">
+            <div className="bg-neutral-700 text-white p-3 flex justify-between items-center">
               <h3 className="font-semibold">{route.name}</h3>
               {getStatusBadge(route.status)}
             </div>
@@ -248,7 +248,7 @@ export default function Routes() {
                 
                 <div className="pt-3 flex justify-between gap-2">
                   <Button 
-                    className="flex-1 bg-teal-600 hover:bg-teal-700"
+                    className="flex-1 bg-neutral-600 hover:bg-neutral-700"
                     onClick={(e) => {e.stopPropagation(); handleViewRoute(route);}}
                   >
                     <Route size={16} className="mr-2" /> Ver Rota
@@ -273,7 +273,7 @@ export default function Routes() {
             <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma rota encontrada</h3>
             <p className="text-gray-500">Crie uma nova rota para começar a planejar suas entregas</p>
             <Button 
-              className="mt-4 bg-sales-800 hover:bg-sales-700"
+              className="mt-4 bg-neutral-700 hover:bg-neutral-800"
               onClick={() => setIsNewRouteDialogOpen(true)}
             >
               <Plus size={16} className="mr-2" /> Criar Nova Rota
@@ -309,7 +309,7 @@ export default function Routes() {
                 
                 <Button 
                   onClick={() => handleAddOrderToRoute()}
-                  className="bg-sales-800 hover:bg-sales-700"
+                  className="bg-neutral-700 hover:bg-neutral-800"
                   disabled={selectedRoute?.status === 'completed'}
                 >
                   <Plus size={16} className="mr-2" /> Adicionar Pedido
@@ -494,7 +494,7 @@ export default function Routes() {
               Cancelar
             </Button>
             <Button 
-              className="bg-sales-800 hover:bg-sales-700"
+              className="bg-neutral-700 hover:bg-neutral-800"
               onClick={handleCreateNewRoute}
               disabled={!newRouteName}
             >
