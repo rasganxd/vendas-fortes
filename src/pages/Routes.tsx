@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -35,6 +36,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DeliveryRoute, RouteStop, Order } from '@/types';
+import { RouteProductsList } from '@/components/routes/RouteProductsList';
 
 export default function Routes() {
   const { routes, orders, vehicles, updateRoute, addRoute } = useAppContext();
@@ -269,7 +271,9 @@ export default function Routes() {
             </TabsList>
             
             <TabsContent value="stops">
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-between mb-4">
+                <RouteProductsList route={selectedRoute} />
+                
                 <Button 
                   onClick={handleAddOrderToRoute}
                   className="bg-sales-800 hover:bg-sales-700"
