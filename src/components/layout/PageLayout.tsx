@@ -11,14 +11,14 @@ interface PageLayoutProps {
 export default function PageLayout({ children, title, subtitle }: PageLayoutProps) {
   return (
     <div className="flex-1 bg-gray-50">
-      <div className="container mx-auto px-6 py-10">
+      <div className="container mx-auto px-4 py-6">
         {title && (
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-blue-500 animate-fade-in">{title}</h1>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-blue-500 animate-fade-in">{title}</h1>
             {subtitle && (
-              <p className="mt-3 text-lg text-gray-700 animate-fade-in" style={{ animationDelay: '0.1s' }}>{subtitle}</p>
+              <p className="mt-1 text-sm text-gray-700 animate-fade-in" style={{ animationDelay: '0.1s' }}>{subtitle}</p>
             )}
-            <div className="h-1.5 w-28 bg-gradient-to-r from-blue-700 to-blue-400 mt-4 rounded-full animate-slide-in-right"></div>
+            <div className="h-1 w-24 bg-gradient-to-r from-blue-700 to-blue-400 mt-2 rounded-full animate-slide-in-right"></div>
           </div>
         )}
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
