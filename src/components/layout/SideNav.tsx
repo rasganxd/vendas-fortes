@@ -83,27 +83,50 @@ const navigation: NavItem[] = [
 export default function SideNav() {
   const location = useLocation();
   
+  // Group the navigation items by their group
+  const groupedNavItems = navigation.reduce((groups, item) => {
+    const group = groups[item.group] || [];
+    group.push(item);
+    groups[item.group] = group;
+    return groups;
+  }, {} as Record<string, NavItem[]>);
+
+  // Labels for groups
+  const groupLabels: Record<string, string> = {
+    geral: "Geral",
+    cadastro: "Cadastros",
+    vendas: "Vendas",
+    financeiro: "Financeiro",
+    logistics: "Logística",
+    sistema: "Sistema"
+  };
+  
   return (
     <Sidebar className="border-r bg-white shadow-sm">
-      <SidebarHeader className="px-6 py-5 border-b">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-sales-800 to-teal-600 bg-clip-text text-transparent">SalesTrack</h1>
+      <SidebarHeader className="px-4 py-4 border-b">
+        <h1 className="text-xl font-bold text-sales-800">SalesTrack</h1>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="py-2">
         <SidebarMenu>
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            
-            return (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild isActive={isActive}>
-                  <Link to={item.href} className="scale-hover">
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
+          {Object.entries(groupedNavItems).map(([group, items]) => (
+            <div key={group} className="mb-4">
+              <h3 className="text-xs uppercase font-medium text-gray-500 px-4 mb-2">{groupLabels[group] || group}</h3>
+              {items.map((item) => {
+                const isActive = location.pathname === item.href;
+                
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link to={item.href} className="flex items-center px-4 py-2 text-sm">
+                        <item.icon className="h-4 w-4 mr-3" />
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </div>
+          ))}
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>

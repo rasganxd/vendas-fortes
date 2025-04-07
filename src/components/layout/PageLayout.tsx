@@ -10,18 +10,18 @@ interface PageLayoutProps {
 
 export default function PageLayout({ children, title, subtitle }: PageLayoutProps) {
   return (
-    <div className="flex-1">
-      <div className="container mx-auto px-4 py-6">
+    <div className="flex-1 bg-gray-50">
+      <div className="container mx-auto px-4 py-5">
         {title && (
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-sales-800 animate-fade-in">{title}</h1>
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-sales-800">{title}</h1>
             {subtitle && (
-              <p className="mt-2 text-gray-600 animate-fade-in" style={{ animationDelay: '0.1s' }}>{subtitle}</p>
+              <p className="mt-1 text-sm text-gray-600">{subtitle}</p>
             )}
-            <div className="h-1 w-20 bg-gradient-to-r from-sales-800 to-teal-600 mt-4 rounded-full"></div>
+            <div className="h-1 w-16 bg-sales-800 mt-2 rounded-full"></div>
           </div>
         )}
-        <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div>
           {children}
         </div>
       </div>
