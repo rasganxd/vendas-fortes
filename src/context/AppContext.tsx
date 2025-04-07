@@ -42,18 +42,18 @@ interface AppContextProps {
   backups: Backup[];
   setBackups: (backups: Backup[]) => void;
   
-  // Operações de CRUD
-  addCustomer: (customer: Omit<Customer, 'id'>) => string;
-  updateCustomer: (id: string, customer: Partial<Customer>) => void;
-  deleteCustomer: (id: string) => void;
+  // Updated CRUD operations to return Promises
+  addCustomer: (customer: Omit<Customer, 'id'>) => Promise<string>;
+  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<void>;
+  deleteCustomer: (id: string) => Promise<void>;
   
-  addProduct: (product: Omit<Product, 'id'>) => string;
-  updateProduct: (id: string, product: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
+  updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
   
-  addOrder: (order: Omit<Order, 'id'>) => string;
-  updateOrder: (id: string, order: Partial<Order>) => void;
-  deleteOrder: (id: string) => void;
+  addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
+  updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
   
   addPayment: (payment: Omit<Payment, 'id'>) => string;
   updatePayment: (id: string, payment: Partial<Payment>) => void;
