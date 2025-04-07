@@ -46,7 +46,7 @@ export const RouteDetailDialog = ({
         <Tabs defaultValue="stops">
           <TabsList className="grid grid-cols-2 mb-4">
             <TabsTrigger value="stops">Paradas</TabsTrigger>
-            <TabsTrigger value="map">Mapa da Rota</TabsTrigger>
+            <TabsTrigger value="map">Visualização da Rota</TabsTrigger>
           </TabsList>
           
           <TabsContent value="stops">
