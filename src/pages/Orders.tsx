@@ -1,5 +1,6 @@
 
 import { useState, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import {
@@ -32,6 +33,7 @@ import { Order, Customer } from '@/types';
 import { useReactToPrint } from 'react-to-print';
 
 export default function Orders() {
+  const navigate = useNavigate();
   const { orders, customers } = useAppContext();
   const [search, setSearch] = useState('');
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -94,7 +96,7 @@ export default function Orders() {
               <CardTitle>Gerenciamento de Pedidos</CardTitle>
               <CardDescription>Visualize e gerencie os pedidos</CardDescription>
             </div>
-            <Button className="bg-sales-800 hover:bg-sales-700">
+            <Button className="bg-sales-800 hover:bg-sales-700" onClick={() => navigate('/pedidos/novo')}>
               <Plus size={16} className="mr-2" /> Novo Pedido
             </Button>
           </div>

@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ import { Progress } from '@/components/ui/progress';
 import { Load } from '@/types';
 
 export default function Loads() {
+  const navigate = useNavigate();
   const { loads } = useAppContext();
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -92,8 +94,8 @@ export default function Loads() {
           <h2 className="text-lg font-semibold">Cargas</h2>
           <p className="text-gray-500">Gerencie a separação e carregamento de pedidos</p>
         </div>
-        <Button className="bg-sales-800 hover:bg-sales-700">
-          <Plus size={16} className="mr-2" /> Nova Carga
+        <Button className="bg-sales-800 hover:bg-sales-700" onClick={() => navigate('/cargas/montar')}>
+          <Plus size={16} className="mr-2" /> Montar Carga
         </Button>
       </div>
       
@@ -156,8 +158,8 @@ export default function Loads() {
             <Package size={48} className="mx-auto text-gray-400 mb-2" />
             <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma carga encontrada</h3>
             <p className="text-gray-500">Crie uma nova carga para começar a montar seus pedidos</p>
-            <Button className="mt-4 bg-sales-800 hover:bg-sales-700">
-              <Plus size={16} className="mr-2" /> Criar Nova Carga
+            <Button className="mt-4 bg-sales-800 hover:bg-sales-700" onClick={() => navigate('/cargas/montar')}>
+              <Plus size={16} className="mr-2" /> Montar Nova Carga
             </Button>
           </div>
         )}
@@ -258,7 +260,7 @@ export default function Loads() {
           </div>
           
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline">Fechar</Button>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Fechar</Button>
             <Button className="bg-sales-800 hover:bg-sales-700">
               Atualizar Status
             </Button>

@@ -15,6 +15,10 @@ import Payments from "./pages/Payments";
 import RoutePlanning from "./pages/Routes";
 import Loads from "./pages/Loads";
 import NotFound from "./pages/NotFound";
+import NewOrder from "./pages/NewOrder";
+import SalesReps from "./pages/SalesReps";
+import PaymentMethods from "./pages/PaymentMethods";
+import BuildLoad from "./pages/BuildLoad";
 
 const queryClient = new QueryClient();
 
@@ -30,9 +34,13 @@ const App = () => (
             <Route path="/clientes" element={<Customers />} />
             <Route path="/produtos" element={<Products />} />
             <Route path="/pedidos" element={<Orders />} />
+            <Route path="/pedidos/novo" element={<NewOrder />} />
             <Route path="/pagamentos" element={<Payments />} />
             <Route path="/rotas" element={<RoutePlanning />} />
             <Route path="/cargas" element={<Loads />} />
+            <Route path="/cargas/montar" element={<BuildLoad />} />
+            <Route path="/vendedores" element={<SalesReps />} />
+            <Route path="/formas-pagamento" element={<PaymentMethods />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

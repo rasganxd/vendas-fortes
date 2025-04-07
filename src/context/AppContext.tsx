@@ -46,6 +46,9 @@ interface AppContextType {
   addLoad: (load: Omit<Load, 'id'>) => void;
   updateLoad: (id: string, load: Partial<Load>) => void;
   deleteLoad: (id: string) => void;
+  addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => void;
+  updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => void;
+  deleteSalesRep: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -130,6 +133,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast({
       title: "Produto removido",
       description: "O produto foi removido com sucesso.",
+      variant: "destructive"
+    });
+  };
+
+  // Sales Rep CRUD operations
+  const addSalesRep = (salesRep: Omit<SalesRep, 'id'>) => {
+    const newSalesRep = {
+      ...salesRep,
+      id: generateId()
+    };
+    setSalesReps(prev => [...prev, newSalesRep]);
+    toast({
+      title: "Vendedor adicionado",
+      description: `${newSalesRep.name} foi adicionado com sucesso.`,
+    });
+  };
+
+  const updateSalesRep = (id: string, salesRep: Partial<SalesRep>) => {
+    setSalesReps(prev => prev.map(s => s.id === id ? { ...s, ...salesRep } : s));
+    toast({
+      title: "Vendedor atualizado",
+      description: "As informações do vendedor foram atualizadas com sucesso.",
+    });
+  };
+
+  const deleteSalesRep = (id: string) => {
+    setSalesReps(prev => prev.filter(s => s.id !== id));
+    toast({
+      title: "Vendedor removido",
+      description: "O vendedor foi removido com sucesso.",
       variant: "destructive"
     });
   };
@@ -311,6 +344,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addProduct,
         updateProduct,
         deleteProduct,
+        addSalesRep,
+        updateSalesRep,
+        deleteSalesRep,
         addOrder,
         updateOrder,
         deleteOrder,
