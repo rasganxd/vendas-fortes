@@ -14,18 +14,11 @@ import {
 import { 
   Sidebar, 
   SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton
+  SidebarHeader
 } from "@/components/ui/sidebar";
 
-// Define the navigation item type
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  group: string;
-}
+import { MainNav } from "@/components/layout/main-nav";
+import { NavItem } from "@/types";
 
 const navigation: NavItem[] = [
   {
@@ -92,23 +85,12 @@ const navigation: NavItem[] = [
 
 export default function SideNav() {
   return (
-    <Sidebar className="w-64 border-r flex-col">
-      <div className="px-6 py-4">
-        <h1 className="font-bold text-2xl">SalesTrack</h1>
-      </div>
+    <Sidebar className="border-r">
+      <SidebarHeader className="px-6 py-3 border-b">
+        <h1 className="text-xl font-bold">SalesTrack</h1>
+      </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
-          {navigation.map((item) => (
-            <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton asChild>
-                <a href={item.href}>
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        <MainNav items={navigation} />
       </SidebarContent>
     </Sidebar>
   )

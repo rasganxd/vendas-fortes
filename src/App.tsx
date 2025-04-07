@@ -1,9 +1,11 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { useState } from "react";
 
 // Pages
@@ -29,26 +31,28 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AppProvider>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/clientes" element={<Customers />} />
-              <Route path="/produtos" element={<Products />} />
-              <Route path="/pedidos" element={<Orders />} />
-              <Route path="/pedidos/novo" element={<NewOrder />} />
-              <Route path="/pagamentos" element={<Payments />} />
-              <Route path="/rotas" element={<RoutePlanning />} />
-              <Route path="/cargas" element={<Loads />} />
-              <Route path="/cargas/montar" element={<BuildLoad />} />
-              <Route path="/vendedores" element={<SalesReps />} />
-              <Route path="/formas-pagamento" element={<PaymentMethods />} />
-              <Route path="/manutencao" element={<SystemMaintenance />} />
-              <Route path="/veiculos" element={<Vehicles />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <SidebarProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/clientes" element={<Customers />} />
+                <Route path="/produtos" element={<Products />} />
+                <Route path="/pedidos" element={<Orders />} />
+                <Route path="/pedidos/novo" element={<NewOrder />} />
+                <Route path="/pagamentos" element={<Payments />} />
+                <Route path="/rotas" element={<RoutePlanning />} />
+                <Route path="/cargas" element={<Loads />} />
+                <Route path="/cargas/montar" element={<BuildLoad />} />
+                <Route path="/vendedores" element={<SalesReps />} />
+                <Route path="/formas-pagamento" element={<PaymentMethods />} />
+                <Route path="/manutencao" element={<SystemMaintenance />} />
+                <Route path="/veiculos" element={<Vehicles />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </SidebarProvider>
         </TooltipProvider>
       </AppProvider>
     </QueryClientProvider>
