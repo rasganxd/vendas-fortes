@@ -61,6 +61,16 @@ export interface Payment {
   notes?: string;
 }
 
+// Payment Method Types
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  type: 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | 'other';
+  active: boolean;
+  installments: boolean;
+  maxInstallments?: number;
+}
+
 // Route and Delivery Types
 export interface RouteStop {
   id: string;
@@ -117,4 +127,21 @@ export interface SalesRep {
   role: 'admin' | 'manager' | 'sales' | 'driver';
   region?: string;
   active: boolean;
+}
+
+// Backup Types
+export interface Backup {
+  id: string;
+  name: string;
+  description?: string;
+  date: Date;
+  data: {
+    customers: Customer[];
+    products: Product[];
+    orders: Order[];
+    payments: Payment[];
+    routes: DeliveryRoute[];
+    loads: Load[];
+    salesReps: SalesRep[];
+  }
 }

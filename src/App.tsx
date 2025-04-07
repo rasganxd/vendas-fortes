@@ -20,6 +20,7 @@ import NewOrder from "./pages/NewOrder";
 import SalesReps from "./pages/SalesReps";
 import PaymentMethods from "./pages/PaymentMethods";
 import BuildLoad from "./pages/BuildLoad";
+import SystemMaintenance from "./pages/SystemMaintenance";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -43,6 +44,7 @@ function App() {
               <Route path="/cargas/montar" element={<BuildLoad />} />
               <Route path="/vendedores" element={<SalesReps />} />
               <Route path="/formas-pagamento" element={<PaymentMethods />} />
+              <Route path="/manutencao" element={<SystemMaintenance />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

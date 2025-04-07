@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Customer, 
@@ -7,7 +6,8 @@ import {
   Payment, 
   DeliveryRoute,
   Load,
-  SalesRep 
+  SalesRep,
+  Backup 
 } from '@/types';
 import { 
   mockCustomers, 
@@ -28,6 +28,7 @@ interface AppContextType {
   routes: DeliveryRoute[];
   loads: Load[];
   salesReps: SalesRep[];
+  backups: Backup[];
   addCustomer: (customer: Omit<Customer, 'id' | 'createdAt'>) => void;
   updateCustomer: (id: string, customer: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
@@ -49,6 +50,11 @@ interface AppContextType {
   addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => void;
   updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => void;
   deleteSalesRep: (id: string) => void;
+  createBackup: (name: string, description?: string) => void;
+  restoreBackup: (id: string) => void;
+  deleteBackup: (id: string) => void;
+  startNewDay: () => void;
+  startNewMonth: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -64,17 +70,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
   const [loads, setLoads] = useState<Load[]>([]);
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
+  const [backups, setBackups] = useState<Backup[]>([]);
 
   // Initialize with mock data
   useEffect(() => {
-    setCustomers(mockCustomers);
-    setProducts(mockProducts);
-    setOrders(mockOrders);
-    setPayments(mockPayments);
-    setRoutes(mockRoutes);
-    setLoads(mockLoads);
-    setSalesReps(mockSalesReps);
+    // Try to load from localStorage first
+    const savedData = localStorage.getItem('appData');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setCustomers(parsedData.customers || mockCustomers);
+        setProducts(parsedData.products || mockProducts);
+        setOrders(parsedData.orders || mockOrders);
+        setPayments(parsedData.payments || mockPayments);
+        setRoutes(parsedData.routes || mockRoutes);
+        setLoads(parsedData.loads || mockLoads);
+        setSalesReps(parsedData.salesReps || mockSalesReps);
+        setBackups(parsedData.backups || []);
+      } catch (e) {
+        console.error('Error loading data from localStorage:', e);
+        // Fallback to mock data
+        setCustomers(mockCustomers);
+        setProducts(mockProducts);
+        setOrders(mockOrders);
+        setPayments(mockPayments);
+        setRoutes(mockRoutes);
+        setLoads(mockLoads);
+        setSalesReps(mockSalesReps);
+      }
+    } else {
+      // Use mock data if nothing in localStorage
+      setCustomers(mockCustomers);
+      setProducts(mockProducts);
+      setOrders(mockOrders);
+      setPayments(mockPayments);
+      setRoutes(mockRoutes);
+      setLoads(mockLoads);
+      setSalesReps(mockSalesReps);
+    }
   }, []);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (customers.length || products.length || orders.length) {
+      const dataToSave = {
+        customers,
+        products,
+        orders,
+        payments,
+        routes,
+        loads,
+        salesReps,
+        backups
+      };
+      localStorage.setItem('appData', JSON.stringify(dataToSave));
+    }
+  }, [customers, products, orders, payments, routes, loads, salesReps, backups]);
 
   // Customer CRUD operations
   const addCustomer = (customer: Omit<Customer, 'id' | 'createdAt'>) => {
@@ -328,6 +379,124 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // Backup operations
+  const createBackup = (name: string, description?: string) => {
+    const newBackup: Backup = {
+      id: generateId(),
+      name,
+      description,
+      date: new Date(),
+      data: {
+        customers,
+        products,
+        orders,
+        payments,
+        routes,
+        loads,
+        salesReps
+      }
+    };
+    
+    setBackups(prev => [...prev, newBackup]);
+    
+    toast({
+      title: "Backup criado",
+      description: `Backup "${name}" criado com sucesso.`,
+    });
+    
+    return newBackup;
+  };
+  
+  const restoreBackup = (id: string) => {
+    const backup = backups.find(b => b.id === id);
+    if (!backup) {
+      toast({
+        title: "Erro",
+        description: "Backup não encontrado.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setCustomers(backup.data.customers);
+    setProducts(backup.data.products);
+    setOrders(backup.data.orders);
+    setPayments(backup.data.payments);
+    setRoutes(backup.data.routes);
+    setLoads(backup.data.loads);
+    setSalesReps(backup.data.salesReps);
+    
+    toast({
+      title: "Backup restaurado",
+      description: `Os dados do backup "${backup.name}" foram restaurados com sucesso.`,
+    });
+  };
+  
+  const deleteBackup = (id: string) => {
+    setBackups(prev => prev.filter(b => b.id !== id));
+    
+    toast({
+      title: "Backup excluído",
+      description: "O backup foi excluído com sucesso.",
+      variant: "destructive"
+    });
+  };
+  
+  // Day/Month operations
+  const startNewDay = () => {
+    // Create automatic backup before starting new day
+    const today = new Date();
+    const backupName = `Backup automático - ${today.toLocaleDateString('pt-BR')}`;
+    createBackup(backupName, 'Backup automático antes de iniciar novo dia');
+    
+    // Update pending routes to next day
+    setRoutes(prev => 
+      prev.map(route => {
+        if (route.status === 'planning' || route.status === 'assigned') {
+          const newDate = new Date(route.date);
+          newDate.setDate(newDate.getDate() + 1);
+          return {
+            ...route,
+            date: newDate
+          };
+        }
+        return route;
+      })
+    );
+    
+    toast({
+      title: "Novo dia iniciado",
+      description: "Rotas pendentes foram atualizadas para o próximo dia.",
+    });
+  };
+  
+  const startNewMonth = () => {
+    // Create automatic backup before starting new month
+    const today = new Date();
+    const month = today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    const backupName = `Backup mensal - ${month}`;
+    createBackup(backupName, 'Backup automático antes de iniciar novo mês');
+    
+    // Archive completed orders older than 30 days
+    // For a real implementation, this would store them elsewhere
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const currentOrders = orders.filter(order => {
+      if (order.status === 'delivered' || order.status === 'cancelled') {
+        return new Date(order.createdAt) >= thirtyDaysAgo;
+      }
+      return true;
+    });
+    
+    setOrders(currentOrders);
+    
+    toast({
+      title: "Novo mês iniciado",
+      description: "Pedidos concluídos há mais de 30 dias foram arquivados.",
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -338,6 +507,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         routes,
         loads,
         salesReps,
+        backups,
         addCustomer,
         updateCustomer,
         deleteCustomer,
@@ -358,7 +528,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteRoute,
         addLoad,
         updateLoad,
-        deleteLoad
+        deleteLoad,
+        createBackup,
+        restoreBackup,
+        deleteBackup,
+        startNewDay,
+        startNewMonth
       }}
     >
       {children}
