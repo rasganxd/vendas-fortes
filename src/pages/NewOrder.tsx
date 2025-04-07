@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -65,7 +66,7 @@ export default function NewOrder() {
       status: "draft",
       paymentStatus: "pending",
       notes: orderNotes,
-      createdAt: new Date().toISOString()
+      createdAt: new Date() // Fixed: Using actual Date object instead of string
     });
 
     setSelectedCustomer(null);
