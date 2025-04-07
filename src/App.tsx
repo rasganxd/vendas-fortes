@@ -35,7 +35,7 @@ function App() {
         <TooltipProvider>
           <BrowserRouter>
             <SidebarProvider>
-              <div className="flex min-h-screen w-full bg-gradient-to-br from-blue-50 to-gray-100">
+              <div className="flex min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-teal-50">
                 <SideNav />
                 <div className="flex-1 overflow-hidden">
                   <Toaster />

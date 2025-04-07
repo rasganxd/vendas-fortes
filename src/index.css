@@ -23,7 +23,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 173 80% 29%;
+    --accent: 173 80% 40%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -33,7 +33,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -80,7 +80,7 @@
 
 @layer components {
   .sales-card {
-    @apply bg-white rounded-lg shadow-md p-5 border border-gray-100 transition-all hover:shadow-lg hover:translate-y-[-2px];
+    @apply bg-white rounded-xl shadow-md p-5 border border-gray-100 transition-all duration-300 hover:shadow-xl hover:translate-y-[-4px];
   }
   
   .sales-table {
@@ -88,15 +88,15 @@
   }
   
   .sales-table thead {
-    @apply text-xs text-gray-700 uppercase bg-gray-50;
+    @apply text-xs text-gray-700 uppercase bg-gradient-to-r from-blue-50 to-teal-50;
   }
   
   .sales-table tbody tr {
-    @apply bg-white border-b hover:bg-gray-50 transition-colors;
+    @apply bg-white border-b hover:bg-blue-50 transition-colors duration-200;
   }
   
   .page-title {
-    @apply text-2xl font-bold text-sales-800 mb-6;
+    @apply text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sales-800 to-teal-600 mb-6;
   }
   
   /* Animações */
@@ -114,16 +114,59 @@
       transform: translateY(0);
     }
   }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight 0.5s ease-out forwards;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s infinite;
+  }
   
   .scale-hover {
-    @apply transition-transform hover:scale-105;
+    @apply transition-transform duration-300 hover:scale-105;
   }
   
   .side-nav-item {
-    @apply flex items-center gap-2 py-2 px-3 rounded-md text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all;
+    @apply flex items-center gap-2 py-3 px-4 rounded-md text-gray-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-teal-50 hover:text-blue-700 transition-all;
   }
   
   .side-nav-item.active {
-    @apply bg-blue-100 text-blue-700 font-medium;
+    @apply bg-gradient-to-r from-blue-100 to-teal-100 text-blue-700 font-medium;
   }
+
+  .card-gradient {
+    @apply bg-gradient-to-br from-white to-blue-50 shadow-md hover:shadow-lg transition-all;
+  }
+
+  .button-gradient {
+    @apply bg-gradient-to-r from-sales-700 to-teal-600 hover:from-sales-800 hover:to-teal-700 text-white transition-all;
+  }
+}
+
+#root {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  text-align: left;
 }

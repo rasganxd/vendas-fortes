@@ -10,6 +10,9 @@ import {
   Truck,
   FileText,
   Coins,
+  Activity,
+  Star,
+  Zap
 } from "lucide-react";
 
 import { 
@@ -84,21 +87,34 @@ export default function SideNav() {
   const location = useLocation();
   
   return (
-    <Sidebar className="border-r bg-white shadow-sm">
-      <SidebarHeader className="px-6 py-5 border-b">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-sales-800 to-teal-600 bg-clip-text text-transparent">SalesTrack</h1>
+    <Sidebar className="border-r bg-gradient-to-b from-white to-blue-50 shadow-lg">
+      <SidebarHeader className="px-6 py-6 border-b bg-gradient-to-r from-sales-800 to-teal-600">
+        <div className="flex items-center space-x-2">
+          <Zap className="h-8 w-8 text-white animate-pulse-slow" />
+          <h1 className="text-2xl font-bold text-white">SalesTrack</h1>
+        </div>
       </SidebarHeader>
       <SidebarContent>
+        <div className="mt-2 mb-6 px-6">
+          <div className="bg-gradient-to-r from-blue-100 to-teal-100 p-3 rounded-lg flex items-center space-x-2">
+            <Activity className="h-5 w-5 text-sales-800" />
+            <span className="text-sm font-medium text-sales-800">Status: Online</span>
+          </div>
+        </div>
         <SidebarMenu>
-          {navigation.map((item) => {
+          {navigation.map((item, index) => {
             const isActive = location.pathname === item.href;
             
             return (
               <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild isActive={isActive}>
+                <SidebarMenuButton asChild isActive={isActive}
+                  className={`${isActive ? 'bg-gradient-to-r from-sales-700 to-teal-600 text-white' : ''}`}
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
                   <Link to={item.href} className="scale-hover">
                     <item.icon className="h-5 w-5" />
                     <span>{item.name}</span>
+                    {isActive && <Star className="h-4 w-4 ml-auto text-yellow-300" />}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
