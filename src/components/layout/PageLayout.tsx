@@ -14,11 +14,11 @@ export default function PageLayout({ children, title, subtitle }: PageLayoutProp
       <div className="container mx-auto px-4 py-8">
         {title && (
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sales-800 to-teal-600 animate-fade-in">{title}</h1>
+            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sales-800 to-teal-600 animate-fade-in">{title}</h1>
             {subtitle && (
-              <p className="mt-2 text-gray-600 animate-fade-in" style={{ animationDelay: '0.1s' }}>{subtitle}</p>
+              <p className="mt-2 text-lg text-gray-700 animate-fade-in" style={{ animationDelay: '0.1s' }}>{subtitle}</p>
             )}
-            <div className="h-1.5 w-24 bg-gradient-to-r from-sales-800 to-teal-600 mt-4 rounded-full animate-slide-in-right"></div>
+            <div className="h-1.5 w-32 bg-gradient-to-r from-sales-800 to-teal-600 mt-4 rounded-full animate-slide-in-right"></div>
           </div>
         )}
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
