@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -37,18 +37,18 @@ interface EditLoadDialogProps {
 
 export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDialogProps) => {
   const [name, setName] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState<'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered'>('planning');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   
   // Reset form when dialog opens with new load data
-  useState(() => {
+  useEffect(() => {
     if (load && open) {
       setName(load.name);
       setStatus(load.status);
       setDate(load.date);
     }
-  });
+  }, [load, open]);
   
   const handleSave = async () => {
     if (!load) return;
@@ -91,7 +91,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
           
           <div className="grid gap-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={(value: 'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered') => setStatus(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o status" />
               </SelectTrigger>

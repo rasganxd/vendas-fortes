@@ -5,6 +5,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { useLoads } from '@/hooks/useLoads';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { Load } from '@/types';
 import { LoadCard } from '@/components/loads/LoadCard';
