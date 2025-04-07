@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -53,7 +52,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <SalesChart title="Vendas vs. Entregas" className="lg:col-span-2" />
+        <SalesChart title="Desempenho de Vendas" className="lg:col-span-2" />
         
         <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
           <h2 className="text-lg font-semibold mb-4">Produtos em Baixo Estoque</h2>

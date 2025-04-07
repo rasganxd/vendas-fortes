@@ -1,7 +1,7 @@
 
 import { 
-  BarChart, 
-  Bar, 
+  LineChart, 
+  Line, 
   XAxis, 
   YAxis, 
   Tooltip, 
@@ -13,18 +13,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SalesData {
   name: string;
-  vendas: number;
-  entregas: number;
+  mesAtual: number;
+  mesPassado: number;
 }
 
 const data: SalesData[] = [
-  { name: 'Jan', vendas: 42000, entregas: 38000 },
-  { name: 'Fev', vendas: 46000, entregas: 42000 },
-  { name: 'Mar', vendas: 52000, entregas: 48000 },
-  { name: 'Abr', vendas: 49000, entregas: 46000 },
-  { name: 'Mai', vendas: 58000, entregas: 52000 },
-  { name: 'Jun', vendas: 62000, entregas: 57000 },
-  { name: 'Jul', vendas: 68000, entregas: 64000 },
+  { name: 'Jan', mesAtual: 4200, mesPassado: 2500 },
+  { name: 'Fev', mesAtual: 3000, mesPassado: 1500 },
+  { name: 'Mar', mesAtual: 5100, mesPassado: 3800 },
+  { name: 'Abr', mesAtual: 2800, mesPassado: 1800 },
+  { name: 'Mai', mesAtual: 4000, mesPassado: 2900 },
+  { name: 'Jun', mesAtual: 4800, mesPassado: 3500 },
 ];
 
 interface SalesChartProps {
@@ -40,7 +39,7 @@ export default function SalesChart({ title, className }: SalesChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
@@ -49,9 +48,25 @@ export default function SalesChart({ title, className }: SalesChartProps) {
               labelFormatter={(label) => `Mês: ${label}`}
             />
             <Legend />
-            <Bar dataKey="vendas" name="Vendas" fill="#1a365d" />
-            <Bar dataKey="entregas" name="Entregas" fill="#0d9488" />
-          </BarChart>
+            <Line 
+              type="monotone" 
+              dataKey="mesAtual" 
+              name="Mês Atual" 
+              stroke="#1a365d" 
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="mesPassado" 
+              name="Mês Passado" 
+              stroke="#0d9488" 
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </LineChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>
