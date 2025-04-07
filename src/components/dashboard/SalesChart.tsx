@@ -44,36 +44,36 @@ export default function SalesChart({ title, className }: SalesChartProps) {
           config={{
             mesAtual: { 
               label: "Mês Atual",
-              theme: { light: "#7c655b", dark: "#9a8576" } 
+              theme: { light: "#2563eb", dark: "#3b82f6" } 
             },
             mesPassado: { 
               label: "Mês Passado",
-              theme: { light: "#b8a99a", dark: "#d6ccc2" } 
+              theme: { light: "#10b981", dark: "#34d399" } 
             }
           }}
         >
           <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
             <defs>
               <linearGradient id="colorMesAtual" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#7c655b" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#7c655b" stopOpacity={0.2} />
+                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#2563eb" stopOpacity={0.2} />
               </linearGradient>
               <linearGradient id="colorMesPassado" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#b8a99a" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#b8a99a" stopOpacity={0.2} />
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0.2} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#eaddd7" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="name" 
-              stroke="#9a8576" 
-              tick={{ fill: '#7c655b' }} 
-              axisLine={{ stroke: '#d6ccc2' }} 
+              stroke="#6b7280" 
+              tick={{ fill: '#4b5563' }} 
+              axisLine={{ stroke: '#d1d5db' }} 
             />
             <YAxis 
-              stroke="#9a8576" 
-              tick={{ fill: '#7c655b' }}
-              axisLine={{ stroke: '#d6ccc2' }}
+              stroke="#6b7280" 
+              tick={{ fill: '#4b5563' }}
+              axisLine={{ stroke: '#d1d5db' }}
               tickFormatter={(value) => `R$${value/1000}k`}
             />
             <ChartTooltip 
@@ -83,14 +83,14 @@ export default function SalesChart({ title, className }: SalesChartProps) {
                     <div className="rounded-lg border bg-background p-2 shadow-md">
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-[#7c655b]" />
+                          <div className="h-2 w-2 rounded-full bg-[#2563eb]" />
                           <span className="text-xs font-medium">Mês Atual:</span>
                         </div>
                         <span className="text-xs font-medium text-right">
                           R$ {payload[0].value.toLocaleString('pt-BR')}
                         </span>
                         <div className="flex items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-[#b8a99a]" />
+                          <div className="h-2 w-2 rounded-full bg-[#10b981]" />
                           <span className="text-xs font-medium">Mês Passado:</span>
                         </div>
                         <span className="text-xs font-medium text-right">
@@ -118,21 +118,21 @@ export default function SalesChart({ title, className }: SalesChartProps) {
               type="monotone" 
               dataKey="mesAtual" 
               name="Mês Atual" 
-              stroke="#7c655b" 
+              stroke="#2563eb" 
               fillOpacity={1}
               fill="url(#colorMesAtual)"
               strokeWidth={3}
-              activeDot={{ r: 6, stroke: '#7c655b', strokeWidth: 2, fill: '#fff' }}
+              activeDot={{ r: 6, stroke: '#2563eb', strokeWidth: 2, fill: '#fff' }}
             />
             <Area 
               type="monotone" 
               dataKey="mesPassado" 
               name="Mês Passado" 
-              stroke="#b8a99a"
+              stroke="#10b981"
               fillOpacity={1}
               fill="url(#colorMesPassado)"
               strokeWidth={3}
-              activeDot={{ r: 6, stroke: '#b8a99a', strokeWidth: 2, fill: '#fff' }}
+              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2, fill: '#fff' }}
             />
           </AreaChart>
         </ChartContainer>
