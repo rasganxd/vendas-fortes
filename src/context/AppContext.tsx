@@ -1,10 +1,10 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Customer, Product, Order, Payment, RouteStop, DeliveryRoute, Vehicle, Load, SalesRep, Backup, PaymentMethod } from '@/types';
+import React, { createContext, useState, useEffect } from 'react';
+import { Customer, Product, Order, Payment, DeliveryRoute, Vehicle, Load, SalesRep, Backup } from '@/types';
 import { mockCustomers, mockProducts, mockOrders, mockPayments, mockRoutes, mockLoads, mockSalesReps, mockVehicles } from '@/data/mock-data';
 import { toast } from '@/components/ui/use-toast';
 
-// Import dos hooks
+// Import load functions only (not hooks that would cause circular dependencies)
 import { loadCustomers } from '@/hooks/useCustomers';
 import { loadProducts } from '@/hooks/useProducts';
 import { loadOrders } from '@/hooks/useOrders';
@@ -21,7 +21,7 @@ export interface NavItem {
   group: string;
 }
 
-interface AppContextProps {
+export interface AppContextProps {
   customers: Customer[];
   setCustomers: (customers: Customer[]) => void;
   products: Product[];
@@ -41,18 +41,18 @@ interface AppContextProps {
   backups: Backup[];
   setBackups: (backups: Backup[]) => void;
   
-  // CRUD operations will be provided via hooks directly - removed from the context
-  
+  // System management functions
   startNewDay: () => void;
   startNewMonth: () => void;
-  
   loadData: () => void;
   saveData: () => void;
 }
 
-const AppContext = createContext<AppContextProps | undefined>(undefined);
+// Create and export the context itself
+export const AppContext = createContext<AppContextProps | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // State for all entities
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -64,6 +64,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [backups, setBackups] = useState<Backup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load data on mount
   useEffect(() => {
     loadData();
   }, []);
@@ -131,7 +132,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     console.log("Iniciando novo mês de operações");
   };
 
-  const value = {
+  // Create context value object
+  const value: AppContextProps = {
     customers,
     setCustomers,
     products,
@@ -165,12 +167,4 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       {children}
     </AppContext.Provider>
   );
-};
-
-export const useAppContext = () => {
-  const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useAppContext must be used within an AppProvider');
-  }
-  return context;
 };

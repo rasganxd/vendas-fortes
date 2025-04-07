@@ -1,11 +1,14 @@
+
 import { SalesRep } from '@/types';
 import { useAppContext } from './useAppContext';
 import { toast } from '@/components/ui/use-toast';
-import { salesRepService } from '@/firebase/firestoreService';
 
+// Create a simple load function for consistency with other hooks
 export const loadSalesReps = async (): Promise<SalesRep[]> => {
   try {
-    return await salesRepService.getAll();
+    // No salesRepService yet, so return empty array
+    // In a real implementation, you would call a service here
+    return [];
   } catch (error) {
     console.error("Erro ao carregar representantes:", error);
     return [];
