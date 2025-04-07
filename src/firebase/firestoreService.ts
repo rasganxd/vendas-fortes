@@ -186,3 +186,65 @@ export const paymentService = {
     await deleteDoc(paymentRef);
   }
 };
+
+// Serviço para Rotas
+export const routeService = {
+  async getAll(): Promise<DeliveryRoute[]> {
+    const routesRef = collection(db, "routes");
+    const snapshot = await getDocs(routesRef);
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...convertTimestampToDate(doc.data()) 
+    } as DeliveryRoute));
+  },
+  
+  async add(route: Omit<DeliveryRoute, "id">): Promise<string> {
+    const routeData = {
+      ...route,
+      createdAt: serverTimestamp()
+    };
+    const docRef = await addDoc(collection(db, "routes"), routeData);
+    return docRef.id;
+  },
+  
+  async update(id: string, route: Partial<DeliveryRoute>): Promise<void> {
+    const routeRef = doc(db, "routes", id);
+    await updateDoc(routeRef, route);
+  },
+  
+  async delete(id: string): Promise<void> {
+    const routeRef = doc(db, "routes", id);
+    await deleteDoc(routeRef);
+  }
+};
+
+// Serviço para Carregamentos
+export const loadService = {
+  async getAll(): Promise<Load[]> {
+    const loadsRef = collection(db, "loads");
+    const snapshot = await getDocs(loadsRef);
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...convertTimestampToDate(doc.data()) 
+    } as Load));
+  },
+  
+  async add(load: Omit<Load, "id">): Promise<string> {
+    const loadData = {
+      ...load,
+      createdAt: serverTimestamp()
+    };
+    const docRef = await addDoc(collection(db, "loads"), loadData);
+    return docRef.id;
+  },
+  
+  async update(id: string, load: Partial<Load>): Promise<void> {
+    const loadRef = doc(db, "loads", id);
+    await updateDoc(loadRef, load);
+  },
+  
+  async delete(id: string): Promise<void> {
+    const loadRef = doc(db, "loads", id);
+    await deleteDoc(loadRef);
+  }
+};

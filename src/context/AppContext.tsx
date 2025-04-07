@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Customer, Product, Order, Payment, RouteStop, DeliveryRoute, Vehicle, Load, SalesRep, Backup, PaymentMethod } from '@/types';
 import { mockCustomers, mockProducts, mockOrders, mockPayments, mockRoutes, mockLoads, mockSalesReps, mockVehicles } from '@/data/mock-data';
-import { customerService, productService, orderService, vehicleService, paymentService } from '@/firebase/firestoreService';
+import { customerService, productService, orderService, vehicleService, paymentService, routeService, loadService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
 
 // Customer Types
@@ -59,17 +59,17 @@ interface AppContextProps {
   updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
   
-  addRoute: (route: Omit<DeliveryRoute, 'id'>) => string;
-  updateRoute: (id: string, route: Partial<DeliveryRoute>) => void;
-  deleteRoute: (id: string) => void;
+  addRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
+  updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
+  deleteRoute: (id: string) => Promise<void>;
   
   addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
   updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
   deleteVehicle: (id: string) => Promise<void>;
   
-  addLoad: (load: Omit<Load, 'id'>) => string;
-  updateLoad: (id: string, load: Partial<Load>) => void;
-  deleteLoad: (id: string) => void;
+  addLoad: (load: Omit<Load, 'id'>) => Promise<string>;
+  updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
+  deleteLoad: (id: string) => Promise<void>;
   
   addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => string;
   updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => void;
@@ -114,16 +114,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const ordersData = await orderService.getAll();
       const vehiclesData = await vehicleService.getAll();
       const paymentsData = await paymentService.getAll();
+      const routesData = await routeService.getAll();
+      const loadsData = await loadService.getAll();
       
       setCustomers(customersData.length > 0 ? customersData : mockCustomers);
       setProducts(productsData.length > 0 ? productsData : mockProducts);
       setOrders(ordersData.length > 0 ? ordersData : mockOrders);
       setVehicles(vehiclesData.length > 0 ? vehiclesData : mockVehicles);
       setPayments(paymentsData.length > 0 ? paymentsData : mockPayments);
+      setRoutes(routesData.length > 0 ? routesData : mockRoutes);
+      setLoads(loadsData.length > 0 ? loadsData : mockLoads);
       
       // Para simplificar o exemplo, continuamos usando dados mockados para o restante
-      setRoutes(mockRoutes);
-      setLoads(mockLoads);
       setSalesReps(mockSalesReps);
       
     } catch (error) {
@@ -377,106 +379,124 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Para simplificar o exemplo, mantemos o restante das implementações usando a abordagem antiga
-  // Implementações CRUD para Route
-  const addRoute = (route: Omit<DeliveryRoute, 'id'>) => {
-    const id = generateId();
-    const newRoute = { ...route, id };
-    setRoutes([...routes, newRoute]);
-    saveData();
-    return id;
-  };
-
-  const updateRoute = (id: string, route: Partial<DeliveryRoute>) => {
-    setRoutes(routes.map(r => 
-      r.id === id ? { ...r, ...route } : r
-    ));
-    saveData();
-  };
-
-  const deleteRoute = (id: string) => {
-    setRoutes(routes.filter(r => r.id !== id));
-    saveData();
-  };
-
-  // Implementações CRUD para Vehicle usando Firebase
-  const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
+  // Implementações CRUD para Route usando Firebase
+  const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
     try {
-      const id = await vehicleService.add(vehicle);
-      const newVehicle = { ...vehicle, id };
-      setVehicles([...vehicles, newVehicle]);
+      const id = await routeService.add(route);
+      const newRoute = { ...route, id } as DeliveryRoute;
+      setRoutes([...routes, newRoute]);
       toast({
-        title: "Veículo adicionado",
-        description: "Veículo adicionado com sucesso!"
+        title: "Rota adicionada",
+        description: "Rota adicionada com sucesso!"
       });
       return id;
     } catch (error) {
-      console.error("Erro ao adicionar veículo:", error);
+      console.error("Erro ao adicionar rota:", error);
       toast({
-        title: "Erro ao adicionar veículo",
-        description: "Houve um problema ao adicionar o veículo.",
+        title: "Erro ao adicionar rota",
+        description: "Houve um problema ao adicionar a rota.",
         variant: "destructive"
       });
       return "";
     }
   };
 
-  const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
+  const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
     try {
-      await vehicleService.update(id, vehicle);
-      setVehicles(vehicles.map(v => 
-        v.id === id ? { ...v, ...vehicle } : v
+      await routeService.update(id, route);
+      setRoutes(routes.map(r => 
+        r.id === id ? { ...r, ...route } : r
       ));
       toast({
-        title: "Veículo atualizado",
-        description: "Veículo atualizado com sucesso!"
+        title: "Rota atualizada",
+        description: "Rota atualizada com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao atualizar veículo:", error);
+      console.error("Erro ao atualizar rota:", error);
       toast({
-        title: "Erro ao atualizar veículo",
-        description: "Houve um problema ao atualizar o veículo.",
+        title: "Erro ao atualizar rota",
+        description: "Houve um problema ao atualizar a rota.",
         variant: "destructive"
       });
     }
   };
 
-  const deleteVehicle = async (id: string) => {
+  const deleteRoute = async (id: string) => {
     try {
-      await vehicleService.delete(id);
-      setVehicles(vehicles.filter(v => v.id !== id));
+      await routeService.delete(id);
+      setRoutes(routes.filter(r => r.id !== id));
       toast({
-        title: "Veículo excluído",
-        description: "Veículo excluído com sucesso!"
+        title: "Rota excluída",
+        description: "Rota excluída com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao excluir veículo:", error);
+      console.error("Erro ao excluir rota:", error);
       toast({
-        title: "Erro ao excluir veículo",
-        description: "Houve um problema ao excluir o veículo.",
+        title: "Erro ao excluir rota",
+        description: "Houve um problema ao excluir a rota.",
         variant: "destructive"
       });
     }
   };
 
-  // Implementações CRUD para Load
-  const addLoad = (load: Omit<Load, 'id'>) => {
-    const id = generateId();
-    const newLoad = { ...load, id };
-    setLoads([...loads, newLoad]);
-    saveData();
-    return id;
+  // Implementações CRUD para Load usando Firebase
+  const addLoad = async (load: Omit<Load, 'id'>) => {
+    try {
+      const id = await loadService.add(load);
+      const newLoad = { ...load, id } as Load;
+      setLoads([...loads, newLoad]);
+      toast({
+        title: "Carregamento adicionado",
+        description: "Carregamento adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar carregamento:", error);
+      toast({
+        title: "Erro ao adicionar carregamento",
+        description: "Houve um problema ao adicionar o carregamento.",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
 
-  const updateLoad = (id: string, load: Partial<Load>) => {
-    setLoads(loads.map(l => 
-      l.id === id ? { ...l, ...load } : l
-    ));
-    saveData();
+  const updateLoad = async (id: string, load: Partial<Load>) => {
+    try {
+      await loadService.update(id, load);
+      setLoads(loads.map(l => 
+        l.id === id ? { ...l, ...load } : l
+      ));
+      toast({
+        title: "Carregamento atualizado",
+        description: "Carregamento atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar carregamento:", error);
+      toast({
+        title: "Erro ao atualizar carregamento",
+        description: "Houve um problema ao atualizar o carregamento.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deleteLoad = (id: string) => {
-    setLoads(loads.filter(l => l.id !== id));
-    saveData();
+  const deleteLoad = async (id: string) => {
+    try {
+      await loadService.delete(id);
+      setLoads(loads.filter(l => l.id !== id));
+      toast({
+        title: "Carregamento excluído",
+        description: "Carregamento excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir carregamento:", error);
+      toast({
+        title: "Erro ao excluir carregamento",
+        description: "Houve um problema ao excluir o carregamento.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Implementações CRUD para SalesRep
