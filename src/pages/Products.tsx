@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -59,7 +58,7 @@ export default function Products() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [firestoreStatus, setFirestoreStatus] = useState<{ success: boolean; message: string; id?: string } | null>(null);
+  const [firestoreStatus, setFirestoreStatus] = useState<{ success: boolean; message: string } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -98,36 +97,33 @@ export default function Products() {
     setFirestoreStatus(null);
     
     try {
-      const productId = await addProduct(formData);
+      await addProduct(formData);
       
-      if (productId) {
-        setFirestoreStatus({
-          success: true,
-          message: "Produto criado com sucesso no Firebase Firestore",
-          id: productId
-        });
-        
-        // Resetar o formulário
-        setFormData({
-          name: '',
-          description: '',
-          price: 0,
-          unit: '',
-          stock: 0,
-          category: ''
-        });
-        
-        // Fechamos o diálogo após um breve atraso para mostrar o feedback
-        setTimeout(() => {
-          setIsAddDialogOpen(false);
-          setFirestoreStatus(null);
-        }, 2000);
-      }
+      setFirestoreStatus({
+        success: true,
+        message: "Produto salvo com sucesso"
+      });
+      
+      // Resetar o formulário
+      setFormData({
+        name: '',
+        description: '',
+        price: 0,
+        unit: '',
+        stock: 0,
+        category: ''
+      });
+      
+      // Fechamos o diálogo após um breve atraso para mostrar o feedback
+      setTimeout(() => {
+        setIsAddDialogOpen(false);
+        setFirestoreStatus(null);
+      }, 2000);
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
       setFirestoreStatus({
         success: false,
-        message: `Erro ao salvar no Firebase: ${(error as Error).message}`
+        message: `Erro ao salvar: ${(error as Error).message}`
       });
     } finally {
       setIsSubmitting(false);
@@ -157,8 +153,7 @@ export default function Products() {
         await updateProduct(selectedProduct.id, formData);
         setFirestoreStatus({
           success: true,
-          message: "Produto atualizado com sucesso no Firebase Firestore",
-          id: selectedProduct.id
+          message: "Produto atualizado com sucesso"
         });
         
         // Fechamos o diálogo após um breve atraso para mostrar o feedback
@@ -170,7 +165,7 @@ export default function Products() {
         console.error("Erro ao atualizar produto:", error);
         setFirestoreStatus({
           success: false,
-          message: `Erro ao atualizar no Firebase: ${(error as Error).message}`
+          message: `Erro ao atualizar: ${(error as Error).message}`
         });
       } finally {
         setIsSubmitting(false);
@@ -240,9 +235,6 @@ export default function Products() {
                       </AlertTitle>
                       <AlertDescription>
                         {firestoreStatus.message}
-                        {firestoreStatus.id && (
-                          <div className="mt-1 text-xs">ID no Firebase: {firestoreStatus.id}</div>
-                        )}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -441,9 +433,6 @@ export default function Products() {
                 </AlertTitle>
                 <AlertDescription>
                   {firestoreStatus.message}
-                  {firestoreStatus.id && (
-                    <div className="mt-1 text-xs">ID no Firebase: {firestoreStatus.id}</div>
-                  )}
                 </AlertDescription>
               </Alert>
             )}
