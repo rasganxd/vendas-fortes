@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Backup } from '@/types';
 import { useAppContext } from './useAppContext';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from '@/components/ui/use-toast';
 
 export const useBackups = () => {
   const { 
@@ -36,6 +37,10 @@ export const useBackups = () => {
     };
     
     setBackups([...backups, newBackup]);
+    toast({
+      title: "Backup criado",
+      description: `Backup "${name}" criado com sucesso!`,
+    });
     return id;
   };
 
@@ -59,11 +64,20 @@ export const useBackups = () => {
       setVehicles(backup.data.vehicles);
     }
     
+    toast({
+      title: "Backup restaurado",
+      description: `Backup "${backup.name}" restaurado com sucesso!`,
+    });
+    
     return true;
   };
 
   const deleteBackup = (id: string) => {
     setBackups(backups.filter(b => b.id !== id));
+    toast({
+      title: "Backup excluído",
+      description: "Backup excluído com sucesso!",
+    });
     return true;
   };
 

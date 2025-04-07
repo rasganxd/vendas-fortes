@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
-import { Backup } from '@/types';
+import { Backup, Order } from '@/types';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,16 +13,20 @@ import { format } from 'date-fns';
 import { formatDateTimeToBR } from '@/lib/date-utils';
 import { AlertCircle, Download, Upload, Calendar, CalendarClock, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useBackups } from '@/hooks/useBackups';
+import { toast } from '@/components/ui/use-toast';
 
 const SystemMaintenance = () => {
   const { 
-    backups, 
-    createBackup, 
-    restoreBackup, 
-    deleteBackup, 
-    startNewDay, 
+    orders,
+    setOrders,
+    createBackup: contextCreateBackup,
+    restoreBackup: contextRestoreBackup, 
+    deleteBackup: contextDeleteBackup,
     startNewMonth 
   } = useAppContext();
+  
+  const { backups, createBackup, restoreBackup, deleteBackup } = useBackups();
 
   const [newBackupOpen, setNewBackupOpen] = useState(false);
   const [backupName, setBackupName] = useState('');
@@ -60,7 +63,25 @@ const SystemMaintenance = () => {
   };
 
   const handleStartNewDay = () => {
-    startNewDay();
+    const today = format(new Date(), 'dd/MM/yyyy');
+    const backupId = createBackup(`Backup Diário - ${today}`, 'Backup automático criado ao iniciar novo dia');
+    
+    const archivedOrders = orders.filter(order => order.status === 'delivered' || order.status === 'cancelled');
+    
+    const pendingOrders = orders.filter(order => 
+      order.status !== 'delivered' && order.status !== 'cancelled'
+    ).map(order => ({
+      ...order,
+      archived: true
+    }));
+    
+    setOrders([...archivedOrders, ...pendingOrders]);
+    
+    toast({
+      title: "Novo dia iniciado",
+      description: `Backup criado e pedidos pendentes arquivados. O sistema está pronto para um novo dia.`,
+    });
+    
     setConfirmNewDay(false);
   };
 
@@ -69,7 +90,6 @@ const SystemMaintenance = () => {
     setConfirmNewMonth(false);
   };
 
-  // Function to export backup to file
   const exportBackup = (backup: Backup) => {
     const dataStr = JSON.stringify(backup.data);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -85,7 +105,6 @@ const SystemMaintenance = () => {
   return (
     <PageLayout title="Manutenção do Sistema" subtitle="Gerenciar backups e iniciar novos períodos">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Backup e restauração */}
         <Card>
           <CardHeader>
             <CardTitle>Backups</CardTitle>
@@ -190,7 +209,6 @@ const SystemMaintenance = () => {
           </CardContent>
         </Card>
 
-        {/* Operações de período */}
         <Card>
           <CardHeader>
             <CardTitle>Ciclos de Trabalho</CardTitle>
@@ -200,7 +218,7 @@ const SystemMaintenance = () => {
             <div className="space-y-2">
               <h3 className="text-lg font-medium">Iniciar novo dia</h3>
               <p className="text-sm text-muted-foreground">
-                Cria um backup automático e atualiza rotas pendentes para o próximo dia.
+                Cria um backup automático e arquiva pedidos pendentes, mantendo o histórico completo.
               </p>
               <Button 
                 onClick={() => setConfirmNewDay(true)} 
@@ -230,9 +248,6 @@ const SystemMaintenance = () => {
         </Card>
       </div>
 
-      {/* Diálogos de confirmação */}
-      
-      {/* Restaurar backup */}
       <Dialog open={confirmRestore} onOpenChange={setConfirmRestore}>
         <DialogContent>
           <DialogHeader>
@@ -255,7 +270,6 @@ const SystemMaintenance = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Excluir backup */}
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent>
           <DialogHeader>
@@ -278,15 +292,21 @@ const SystemMaintenance = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Iniciar novo dia */}
       <Dialog open={confirmNewDay} onOpenChange={setConfirmNewDay}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Iniciar novo dia</DialogTitle>
             <DialogDescription>
-              Esta ação criará um backup automático e atualizará as rotas pendentes para o próximo dia.
+              Esta ação criará um backup automático e arquivará os pedidos pendentes, mantendo todo o histórico.
             </DialogDescription>
           </DialogHeader>
+          <Alert className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Nota</AlertTitle>
+            <AlertDescription>
+              Os pedidos arquivados permanecerão no histórico, mas serão marcados como arquivados para facilitar a visualização dos novos pedidos.
+            </AlertDescription>
+          </Alert>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setConfirmNewDay(false)}>Cancelar</Button>
             <Button onClick={handleStartNewDay}>Confirmar</Button>
@@ -294,7 +314,6 @@ const SystemMaintenance = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Iniciar novo mês */}
       <Dialog open={confirmNewMonth} onOpenChange={setConfirmNewMonth}>
         <DialogContent>
           <DialogHeader>

@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { formatDateToBR } from '@/lib/date-utils';
-import { Search, Plus, Eye, Printer, FilePenLine } from 'lucide-react';
+import { Search, Plus, Eye, Printer, FilePenLine, Archive } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
@@ -31,11 +31,13 @@ import {
 } from '@/components/ui/dialog';
 import { Order, Customer } from '@/types';
 import { useReactToPrint } from 'react-to-print';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function Orders() {
   const navigate = useNavigate();
   const { orders, customers } = useAppContext();
   const [search, setSearch] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -47,10 +49,14 @@ export default function Orders() {
     documentTitle: `Pedido-${selectedOrder?.id}`,
   });
 
-  const filteredOrders = orders.filter(order =>
-    order.customerName.toLowerCase().includes(search.toLowerCase()) ||
-    order.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOrders = orders.filter(order => {
+    // Filter by archived status
+    if (!showArchived && order.archived) return false;
+    
+    // Filter by search term
+    return order.customerName.toLowerCase().includes(search.toLowerCase()) ||
+      order.id.toLowerCase().includes(search.toLowerCase());
+  });
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
@@ -102,8 +108,8 @@ export default function Orders() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <div className="relative">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
               <Input
                 placeholder="Buscar pedidos..."
@@ -111,6 +117,16 @@ export default function Orders() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="showArchived" 
+                checked={showArchived}
+                onCheckedChange={(checked) => setShowArchived(checked as boolean)}
+              />
+              <label htmlFor="showArchived" className="text-sm flex items-center cursor-pointer">
+                <Archive size={16} className="mr-1" /> Mostrar arquivados
+              </label>
             </div>
           </div>
           <div className="relative overflow-x-auto rounded-md border">
@@ -127,32 +143,47 @@ export default function Orders() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
-                    <TableCell>{formatDateToBR(order.createdAt)}</TableCell>
-                    <TableCell>
-                      {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewOrder(order)}
-                        >
-                          <Eye size={16} />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <FilePenLine size={16} />
-                        </Button>
-                      </div>
+                {filteredOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                      Nenhum pedido encontrado
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredOrders.map((order) => (
+                    <TableRow key={order.id} className={order.archived ? "bg-gray-50" : ""}>
+                      <TableCell className="font-medium">
+                        {order.id}
+                        {order.archived && (
+                          <Badge variant="outline" className="ml-2">
+                            <Archive size={12} className="mr-1" /> Arquivado
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{order.customerName}</TableCell>
+                      <TableCell>{formatDateToBR(order.createdAt)}</TableCell>
+                      <TableCell>
+                        {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(order.status)}</TableCell>
+                      <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewOrder(order)}
+                          >
+                            <Eye size={16} />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <FilePenLine size={16} />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -164,7 +195,14 @@ export default function Orders() {
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle className="flex justify-between items-center">
-              <span>Detalhes do Pedido</span>
+              <span>
+                Detalhes do Pedido
+                {selectedOrder?.archived && (
+                  <Badge variant="outline" className="ml-2">
+                    <Archive size={12} className="mr-1" /> Arquivado
+                  </Badge>
+                )}
+              </span>
               <Button variant="outline" onClick={handlePrint} className="flex items-center gap-1">
                 <Printer size={16} /> Imprimir
               </Button>

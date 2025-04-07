@@ -1,4 +1,3 @@
-
 // Customer Types
 export interface Customer {
   id: string;
@@ -53,6 +52,7 @@ export interface Order {
   deliveryCity?: string;
   deliveryState?: string;
   deliveryZipCode?: string;
+  archived?: boolean;  // New property to track archived status
 }
 
 // Payment Types
