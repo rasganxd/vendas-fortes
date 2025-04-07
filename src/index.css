@@ -74,12 +74,13 @@
 
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease;
   }
 }
 
 @layer components {
   .sales-card {
-    @apply bg-white rounded-lg shadow-md p-5 border border-gray-100 transition-all hover:shadow-lg;
+    @apply bg-white rounded-lg shadow-md p-5 border border-gray-100 transition-all hover:shadow-lg hover:translate-y-[-2px];
   }
   
   .sales-table {
@@ -91,10 +92,38 @@
   }
   
   .sales-table tbody tr {
-    @apply bg-white border-b hover:bg-gray-50;
+    @apply bg-white border-b hover:bg-gray-50 transition-colors;
   }
   
   .page-title {
     @apply text-2xl font-bold text-sales-800 mb-6;
+  }
+  
+  /* Animações */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .scale-hover {
+    @apply transition-transform hover:scale-105;
+  }
+  
+  .side-nav-item {
+    @apply flex items-center gap-2 py-2 px-3 rounded-md text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-all;
+  }
+  
+  .side-nav-item.active {
+    @apply bg-blue-100 text-blue-700 font-medium;
   }
 }

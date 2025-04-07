@@ -1,4 +1,5 @@
 
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   ListChecks,
@@ -25,7 +26,7 @@ import { NavItem } from "@/types";
 const navigation: NavItem[] = [
   {
     name: "Dashboard",
-    href: "/dashboard",
+    href: "/",
     icon: LayoutDashboard,
     group: "geral"
   },
@@ -40,12 +41,6 @@ const navigation: NavItem[] = [
     href: "/produtos",
     icon: Package,
     group: "cadastro"
-  },
-  {
-    name: "Vendas",
-    href: "/vendas",
-    icon: ShoppingCart,
-    group: "vendas"
   },
   {
     name: "Pedidos",
@@ -86,23 +81,29 @@ const navigation: NavItem[] = [
 ];
 
 export default function SideNav() {
+  const location = useLocation();
+  
   return (
-    <Sidebar className="border-r">
-      <SidebarHeader className="px-6 py-3 border-b">
-        <h1 className="text-xl font-bold">SalesTrack</h1>
+    <Sidebar className="border-r bg-white shadow-sm">
+      <SidebarHeader className="px-6 py-5 border-b">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-sales-800 to-teal-600 bg-clip-text text-transparent">SalesTrack</h1>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {navigation.map((item) => (
-            <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton asChild>
-                <a href={item.href}>
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            
+            return (
+              <SidebarMenuItem key={item.name}>
+                <SidebarMenuButton asChild isActive={isActive}>
+                  <Link to={item.href} className="scale-hover">
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>

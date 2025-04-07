@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import SideNav from './SideNav';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -11,22 +10,21 @@ interface PageLayoutProps {
 
 export default function PageLayout({ children, title, subtitle }: PageLayoutProps) {
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
-      <SideNav />
-      
-      <main className="flex-1 p-6">
-        <div className="container mx-auto">
-          {title && (
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-              {subtitle && (
-                <p className="mt-1 text-gray-600">{subtitle}</p>
-              )}
-            </div>
-          )}
+    <div className="flex-1">
+      <div className="container mx-auto px-4 py-6">
+        {title && (
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-sales-800 animate-fade-in">{title}</h1>
+            {subtitle && (
+              <p className="mt-2 text-gray-600 animate-fade-in" style={{ animationDelay: '0.1s' }}>{subtitle}</p>
+            )}
+            <div className="h-1 w-20 bg-gradient-to-r from-sales-800 to-teal-600 mt-4 rounded-full"></div>
+          </div>
+        )}
+        <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
           {children}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
