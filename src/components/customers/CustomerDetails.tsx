@@ -1,192 +1,118 @@
 import { useState } from 'react';
-import { Customer } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
+import { Customer, Order } from '@/types';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDateToBR } from '@/lib/date-utils';
 import { 
-  ShoppingBag, 
+  MapPin, 
   Phone, 
   Mail, 
-  MapPin, 
+  Edit, 
+  Trash2, 
   Calendar, 
-  ArrowRight, 
-  Package 
+  Package, 
+  DollarSign 
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 interface CustomerDetailsProps {
   customer: Customer;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
-export default function CustomerDetails({ customer }: CustomerDetailsProps) {
+const CustomerDetails: React.FC<CustomerDetailsProps> = ({ customer, onEdit, onDelete }) => {
   const { orders } = useAppContext();
-  const [showAllOrders, setShowAllOrders] = useState(false);
-  
   const customerOrders = orders.filter(order => order.customerId === customer.id);
-  const recentOrders = showAllOrders ? customerOrders : customerOrders.slice(0, 5);
-  
-  // Calculate total purchases amount
-  const totalPurchases = customerOrders.reduce((sum, order) => sum + order.total, 0);
-  
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return <Badge variant="outline">Rascunho</Badge>;
-      case 'confirmed':
-        return <Badge className="bg-blue-500">Confirmado</Badge>;
-      case 'delivered':
-        return <Badge className="bg-green-500">Entregue</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive">Cancelado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="border-yellow-500 text-yellow-500">Pendente</Badge>;
-      case 'partial':
-        return <Badge className="bg-blue-500">Parcial</Badge>;
-      case 'paid':
-        return <Badge className="bg-green-500">Pago</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
+  const totalSpent = customerOrders.reduce((acc, order) => acc + order.total, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Customer Info */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Informações do Cliente</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Phone className="text-gray-500" size={16} />
-                <div>
-                  <p className="text-sm font-medium">Telefone</p>
-                  <p className="text-sm text-gray-700">{customer.phone}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="text-gray-500" size={16} />
-                <div>
-                  <p className="text-sm font-medium">Email</p>
-                  <p className="text-sm text-gray-700">{customer.email}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin className="text-gray-500" size={16} />
-                <div>
-                  <p className="text-sm font-medium">Endereço</p>
-                  <p className="text-sm text-gray-700">{customer.address}</p>
-                  <p className="text-sm text-gray-700">{customer.city} - {customer.state}, {customer.zipCode}</p>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="text-gray-500" size={16} />
-                <div>
-                  <p className="text-sm font-medium">Cliente desde</p>
-                  <p className="text-sm text-gray-700">{formatDateToBR(customer.createdAt)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="text-gray-500" size={16} />
-                <div>
-                  <p className="text-sm font-medium">Total de pedidos</p>
-                  <p className="text-sm text-gray-700">{customerOrders.length} pedidos</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Package className="text-gray-500" size={16} />
-                <div>
-                  <p className="text-sm font-medium">Total de compras</p>
-                  <p className="text-sm font-semibold text-green-700">
-                    {totalPurchases.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </p>
-                </div>
-              </div>
-            </div>
+    <Card className="col-span-2">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-2xl font-bold">{customer.name}</CardTitle>
+          <div>
+            <Button variant="secondary" size="sm" onClick={onEdit}>
+              <Edit size={16} className="mr-2" /> Editar
+            </Button>
+            <Button variant="destructive" size="sm" onClick={onDelete} className="ml-2">
+              <Trash2 size={16} className="mr-2" /> Excluir
+            </Button>
           </div>
-          
-          {customer.notes && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-md">
-              <p className="text-sm font-medium">Observações</p>
-              <p className="text-sm text-gray-700">{customer.notes}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      {/* Purchase History */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Histórico de Compras</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {customerOrders.length > 0 ? (
-            <div className="space-y-4">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left font-medium py-2 px-2">Nº Pedido</th>
-                      <th className="text-left font-medium py-2 px-2">Data</th>
-                      <th className="text-left font-medium py-2 px-2">Valor</th>
-                      <th className="text-left font-medium py-2 px-2">Status</th>
-                      <th className="text-left font-medium py-2 px-2">Pagamento</th>
-                      <th className="text-left font-medium py-2 px-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.map((order: Order) => (
-                      <tr key={order.id} className="border-b">
-                        <td className="py-2 px-2 font-medium">{order.id}</td>
-                        <td className="py-2 px-2">{formatDateToBR(order.createdAt)}</td>
-                        <td className="py-2 px-2">
-                          {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </td>
-                        <td className="py-2 px-2">{getStatusBadge(order.status)}</td>
-                        <td className="py-2 px-2">{getPaymentStatusBadge(order.paymentStatus)}</td>
-                        <td className="py-2 px-2">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <ArrowRight size={16} />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {customerOrders.length > 5 && (
-                <div className="text-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowAllOrders(!showAllOrders)}
-                  >
-                    {showAllOrders ? 'Mostrar menos' : `Ver todos os ${customerOrders.length} pedidos`}
-                  </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Tabs defaultValue="info" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="info">Informações</TabsTrigger>
+            <TabsTrigger value="history">Histórico de Pedidos</TabsTrigger>
+          </TabsList>
+          <TabsContent value="info" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center text-gray-600">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  {customer.address}, {customer.city}, {customer.state} {customer.zipCode}
                 </div>
-              )}
+                <div className="flex items-center text-gray-600">
+                  <Phone className="mr-2 h-4 w-4" />
+                  {customer.phone}
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Mail className="mr-2 h-4 w-4" />
+                  {customer.email}
+                </div>
+              </div>
+              <div>
+                <p className="text-gray-700">
+                  <span className="font-semibold">Data de Cadastro:</span> {formatDateToBR(customer.createdAt)}
+                </p>
+                <p className="text-gray-700">
+                  <span className="font-semibold">Total Gasto:</span> R$ {totalSpent.toFixed(2)}
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <ShoppingBag className="mx-auto text-gray-300 mb-2" size={40} />
-              <p className="text-gray-500 mb-2">Este cliente ainda não realizou compras</p>
-              <Button>Criar Novo Pedido</Button>
+            <div>
+              <h4 className="text-lg font-semibold">Observações</h4>
+              <p className="text-gray-700">{customer.notes || 'Nenhuma observação.'}</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </TabsContent>
+          <TabsContent value="history">
+            {customerOrders.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {customerOrders.map((order) => (
+                  <Card key={order.id}>
+                    <CardHeader>
+                      <CardTitle>
+                        Pedido #{order.id.substring(0, 8)}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span>{formatDateToBR(order.createdAt)}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="h-4 w-4 text-gray-500" />
+                        <span>Total: R$ {order.total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Package className="h-4 w-4 text-gray-500" />
+                        <span>{order.items.length} itens</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p>Nenhum pedido encontrado para este cliente.</p>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default CustomerDetails;
