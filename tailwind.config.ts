@@ -25,6 +25,7 @@ export default {
 				"fade-in": "fade-in 0.3s ease-out",
 				"pulse-slow": "pulse 3s infinite",
 				"float": "float 6s ease-in-out infinite",
+				"slide-in-right": "slide-in-right 0.5s ease-out forwards",
 			},
 			keyframes: {
 				"accordion-down": {
@@ -46,7 +47,17 @@ export default {
 				"pulse": {
 					"0%, 100%": { transform: "scale(1)" },
 					"50%": { transform: "scale(1.05)" }
-				}
+				},
+				"slide-in-right": {
+					from: {
+						opacity: "0",
+						transform: "translateX(20px)",
+					},
+					to: {
+						opacity: "1",
+						transform: "translateX(0)",
+					},
+				},
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -92,30 +103,30 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// App specific colors - with more neutral options
+				// App specific colors - with warmer neutral options
 				sales: {
-					50: '#f8f9fa',
-					100: '#eaedf0',
-					200: '#d5dbe1',
-					300: '#b0bcc7',
-					400: '#8c9dac',
-					500: '#6b7f91',
-					600: '#546478',
-					700: '#40505f',
-					800: '#2e3a47',
-					900: '#1f2730',
+					50: '#fdf8f6',
+					100: '#f2e8e5',
+					200: '#eaddd7',
+					300: '#d6ccc2',
+					400: '#b8a99a',
+					500: '#9a8576',
+					600: '#7c655b',
+					700: '#5d4c41',
+					800: '#3c2f27',
+					900: '#1e1713',
 				},
 				neutral: {
-					50: '#f9fafb',
-					100: '#f3f4f6',
-					200: '#e5e7eb',
-					300: '#d1d5db',
-					400: '#9ca3af',
-					500: '#6b7280',
-					600: '#4b5563',
-					700: '#374151',
-					800: '#1f2937',
-					900: '#111827',
+					50: '#f9f7f5',
+					100: '#f0ece8',
+					200: '#e2dbd6',
+					300: '#d0c8c0',
+					400: '#b1a69c',
+					500: '#948b81',
+					600: '#766e64',
+					700: '#5a534b',
+					800: '#3d3832',
+					900: '#201e1b',
 				}
 			},
 			borderRadius: {
