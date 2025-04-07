@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Accordion,
@@ -67,67 +68,83 @@ export default function Loads() {
 
   return (
     <PageLayout title="Montagem de Cargas">
-      <div className="mb-5 flex justify-between items-center">
-        <p className="text-sm text-gray-500">Gerencie a separação e carregamento de pedidos</p>
-        <Button size="sm" className="bg-sales-800 hover:bg-sales-700" onClick={() => navigate('/cargas/montar')}>
-          <Plus size={16} className="mr-1" /> Montar Carga
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-semibold">Cargas</h2>
+          <p className="text-gray-500">Gerencie a separação e carregamento de pedidos</p>
+        </div>
+        <Button 
+          className="bg-sales-800 hover:bg-sales-700"
+          onClick={() => navigate('/cargas/montar')}
+        >
+          <Plus size={16} className="mr-2" /> Montar Carga
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loads.map((load) => (
-          <Card key={load.id} className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
-            <div className="bg-sales-800 text-white p-2 text-sm flex justify-between items-center">
-              <h3 className="font-medium truncate">{load.name}</h3>
+          <Card key={load.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="bg-sales-800 text-white p-3 flex justify-between items-center">
+              <h3 className="font-semibold">{load.name}</h3>
               {getStatusBadge(load.status)}
             </div>
-            <CardContent className="p-3">
-              <div className="space-y-2 text-sm">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar size={14} className="text-gray-500" />
-                    <span className="text-gray-700">{formatDateToBR(load.date)}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-1.5">
-                    <Package size={14} className="text-gray-500" />
-                    <span className="text-gray-700">{load.items.length}</span>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Calendar size={18} className="text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Data</p>
+                    <p className="text-sm text-gray-600">{formatDateToBR(load.date)}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-1.5">
-                  <Truck size={14} className="text-gray-500" />
-                  <span className="text-gray-700 truncate">{load.vehicleName || 'Não atribuído'}</span>
+                <div className="flex items-start gap-3">
+                  <Truck size={18} className="text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Veículo</p>
+                    <p className="text-sm text-gray-600">{load.vehicleName || 'Não atribuído'}</p>
+                  </div>
                 </div>
                 
-                <div className="pt-1">
+                <div className="flex items-start gap-3">
+                  <Package size={18} className="text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Itens</p>
+                    <p className="text-sm text-gray-600">{load.items.length} itens</p>
+                  </div>
+                </div>
+                
+                <div className="pt-2">
                   <div className="flex items-center justify-between mb-1 text-xs">
                     <span>Progresso</span>
                     <span>{getLoadProgress(load.status)}%</span>
                   </div>
-                  <Progress value={getLoadProgress(load.status)} className="h-1.5" />
+                  <Progress value={getLoadProgress(load.status)} className="h-2" />
                 </div>
                 
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full mt-1 text-teal-600 border-teal-200 hover:bg-teal-50 hover:text-teal-700"
-                  onClick={() => handleViewLoad(load)}
-                >
-                  <ListChecks size={14} className="mr-1.5" /> Detalhes
-                </Button>
+                <div className="pt-3">
+                  <Button 
+                    className="w-full bg-teal-600 hover:bg-teal-700"
+                    onClick={() => handleViewLoad(load)}
+                  >
+                    <ListChecks size={16} className="mr-2" /> Ver Detalhes
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
         
         {loads.length === 0 && (
-          <div className="col-span-full flex flex-col items-center justify-center py-10 bg-white rounded-lg shadow-sm border">
-            <Package size={36} className="text-gray-300 mb-2" />
-            <h3 className="text-base font-medium text-gray-800 mb-1">Nenhuma carga encontrada</h3>
-            <p className="text-sm text-gray-500 mb-3">Crie uma nova carga para começar</p>
-            <Button size="sm" className="bg-sales-800 hover:bg-sales-700" onClick={() => navigate('/cargas/montar')}>
-              <Plus size={14} className="mr-1" /> Nova Carga
+          <div className="col-span-3 text-center py-12 bg-white rounded-lg shadow">
+            <Package size={48} className="mx-auto text-gray-400 mb-2" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma carga encontrada</h3>
+            <p className="text-gray-500">Crie uma nova carga para começar</p>
+            <Button 
+              className="mt-4 bg-sales-800 hover:bg-sales-700"
+              onClick={() => navigate('/cargas/montar')}
+            >
+              <Plus size={16} className="mr-2" /> Montar Carga
             </Button>
           </div>
         )}
@@ -135,7 +152,7 @@ export default function Loads() {
       
       {/* View Load Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selectedLoad?.name}</DialogTitle>
           </DialogHeader>
@@ -218,12 +235,12 @@ export default function Loads() {
             </div>
           </div>
           
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsViewDialogOpen(false)}>Fechar</Button>
-            <Button size="sm" className="bg-sales-800 hover:bg-sales-700">
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Fechar</Button>
+            <Button className="bg-sales-800 hover:bg-sales-700">
               Atualizar Status
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </PageLayout>
