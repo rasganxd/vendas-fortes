@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { MapPin, RefreshCw } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
+// Token Mapbox pré-configurado
+const DEFAULT_MAPBOX_TOKEN = 'pk.eyJ1IjoicmFzZ2FueGQiLCJhIjoiY205N3FhOXNsMDgwMjJqcTJsNGRhaG9xeSJ9.RBtJ-Oioi66fwQCj7YAqRQ';
+
 interface RouteMapProps {
   route: DeliveryRoute;
   className?: string;
@@ -17,12 +20,13 @@ export const RouteMap = ({ route, className }: RouteMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>(
-    localStorage.getItem('mapbox-token') || ''
+    localStorage.getItem('mapbox-token') || DEFAULT_MAPBOX_TOKEN
   );
   const [tokenInput, setTokenInput] = useState<string>(mapboxToken);
   const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Salva o token no localStorage
   const saveToken = () => {
     setMapboxToken(tokenInput);
     localStorage.setItem('mapbox-token', tokenInput);
@@ -143,8 +147,10 @@ export const RouteMap = ({ route, className }: RouteMapProps) => {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v11',
+        projection: 'globe',
+        zoom: 10,
         center: [-46.633308, -23.550520], // São Paulo, Brasil
-        zoom: 10
+        pitch: 45,
       });
       
       // Add navigation control

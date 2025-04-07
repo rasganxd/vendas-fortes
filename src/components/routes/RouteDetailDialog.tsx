@@ -38,15 +38,15 @@ export const RouteDetailDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{route.name}</DialogTitle>
+          <DialogTitle className="text-xl">{route.name}</DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="stops">
           <TabsList className="grid grid-cols-2 mb-4">
             <TabsTrigger value="stops">Paradas</TabsTrigger>
-            <TabsTrigger value="map">Mapa</TabsTrigger>
+            <TabsTrigger value="map">Mapa da Rota</TabsTrigger>
           </TabsList>
           
           <TabsContent value="stops">
