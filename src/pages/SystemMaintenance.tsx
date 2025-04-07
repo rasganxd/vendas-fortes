@@ -248,6 +248,28 @@ const SystemMaintenance = () => {
         </Card>
       </div>
 
+      <Dialog open={confirmNewDay} onOpenChange={setConfirmNewDay}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Iniciar novo dia</DialogTitle>
+            <DialogDescription>
+              Esta ação criará um backup automático e arquivará os pedidos pendentes, mantendo todo o histórico.
+            </DialogDescription>
+          </DialogHeader>
+          <Alert className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Nota</AlertTitle>
+            <AlertDescription>
+              Os pedidos arquivados permanecerão no histórico, mas serão marcados como arquivados para facilitar a visualização dos novos pedidos.
+            </AlertDescription>
+          </Alert>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setConfirmNewDay(false)}>Cancelar</Button>
+            <Button onClick={handleStartNewDay}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <Dialog open={confirmRestore} onOpenChange={setConfirmRestore}>
         <DialogContent>
           <DialogHeader>
@@ -292,34 +314,12 @@ const SystemMaintenance = () => {
         </DialogContent>
       </Dialog>
       
-      <Dialog open={confirmNewDay} onOpenChange={setConfirmNewDay}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Iniciar novo dia</DialogTitle>
-            <DialogDescription>
-              Esta ação criará um backup automático e arquivará os pedidos pendentes, mantendo todo o histórico.
-            </DialogDescription>
-          </DialogHeader>
-          <Alert className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Nota</AlertTitle>
-            <AlertDescription>
-              Os pedidos arquivados permanecerão no histórico, mas serão marcados como arquivados para facilitar a visualização dos novos pedidos.
-            </AlertDescription>
-          </Alert>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setConfirmNewDay(false)}>Cancelar</Button>
-            <Button onClick={handleStartNewDay}>Confirmar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
       <Dialog open={confirmNewMonth} onOpenChange={setConfirmNewMonth}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Iniciar novo mês</DialogTitle>
             <DialogDescription>
-              Esta ação criará um backup mensal e arquivará pedidos concluídos há mais de 30 dias.
+              Esta ação criará um backup mensal e arquiva pedidos concluídos há mais de 30 dias.
             </DialogDescription>
           </DialogHeader>
           <Alert className="mt-4">
