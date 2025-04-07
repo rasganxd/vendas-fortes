@@ -48,6 +48,10 @@ export interface Order {
   createdAt: Date;
   deliveryDate?: Date;
   notes?: string;
+  deliveryAddress?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryZipCode?: string;
 }
 
 // Payment Types
@@ -95,6 +99,16 @@ export interface DeliveryRoute {
   vehicleName?: string;
   status: 'planning' | 'assigned' | 'in-progress' | 'completed';
   stops: RouteStop[];
+}
+
+// Vehicle Types
+export interface Vehicle {
+  id: string;
+  name: string;
+  licensePlate: string;
+  type: 'car' | 'van' | 'truck' | 'motorcycle';
+  capacity: number;
+  active: boolean;
 }
 
 // Load Types

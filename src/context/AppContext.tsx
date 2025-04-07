@@ -7,7 +7,9 @@ import {
   DeliveryRoute,
   Load,
   SalesRep,
-  Backup 
+  Backup,
+  Vehicle,
+  PaymentMethod
 } from '@/types';
 import { 
   mockCustomers, 
@@ -16,7 +18,8 @@ import {
   mockPayments, 
   mockRoutes,
   mockLoads,
-  mockSalesReps
+  mockSalesReps,
+  mockVehicles
 } from '@/services/mockData';
 import { toast } from '@/components/ui/use-toast';
 
@@ -29,6 +32,7 @@ interface AppContextType {
   loads: Load[];
   salesReps: SalesRep[];
   backups: Backup[];
+  vehicles: Vehicle[];
   addCustomer: (customer: Omit<Customer, 'id' | 'createdAt'>) => void;
   updateCustomer: (id: string, customer: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
@@ -50,6 +54,9 @@ interface AppContextType {
   addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => void;
   updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => void;
   deleteSalesRep: (id: string) => void;
+  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => void;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => void;
+  deleteVehicle: (id: string) => void;
   createBackup: (name: string, description?: string) => void;
   restoreBackup: (id: string) => void;
   deleteBackup: (id: string) => void;
@@ -71,6 +78,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loads, setLoads] = useState<Load[]>([]);
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
   const [backups, setBackups] = useState<Backup[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
   // Initialize with mock data
   useEffect(() => {
@@ -87,6 +95,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setLoads(parsedData.loads || mockLoads);
         setSalesReps(parsedData.salesReps || mockSalesReps);
         setBackups(parsedData.backups || []);
+        setVehicles(parsedData.vehicles || mockVehicles || []);
       } catch (e) {
         console.error('Error loading data from localStorage:', e);
         // Fallback to mock data
@@ -97,6 +106,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setRoutes(mockRoutes);
         setLoads(mockLoads);
         setSalesReps(mockSalesReps);
+        setVehicles(mockVehicles || []);
       }
     } else {
       // Use mock data if nothing in localStorage
@@ -107,6 +117,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setRoutes(mockRoutes);
       setLoads(mockLoads);
       setSalesReps(mockSalesReps);
+      setVehicles(mockVehicles || []);
     }
   }, []);
 
@@ -121,11 +132,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         routes,
         loads,
         salesReps,
-        backups
+        backups,
+        vehicles
       };
       localStorage.setItem('appData', JSON.stringify(dataToSave));
     }
-  }, [customers, products, orders, payments, routes, loads, salesReps, backups]);
+  }, [customers, products, orders, payments, routes, loads, salesReps, backups, vehicles]);
 
   // Customer CRUD operations
   const addCustomer = (customer: Omit<Customer, 'id' | 'createdAt'>) => {
@@ -379,6 +391,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // Vehicle CRUD operations
+  const addVehicle = (vehicle: Omit<Vehicle, 'id'>) => {
+    const newVehicle = {
+      ...vehicle,
+      id: generateId()
+    };
+    setVehicles(prev => [...prev, newVehicle]);
+    toast({
+      title: "Veículo adicionado",
+      description: `${newVehicle.name} foi adicionado com sucesso.`,
+    });
+  };
+
+  const updateVehicle = (id: string, vehicle: Partial<Vehicle>) => {
+    setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...vehicle } : v));
+    toast({
+      title: "Veículo atualizado",
+      description: "As informações do veículo foram atualizadas com sucesso.",
+    });
+  };
+
+  const deleteVehicle = (id: string) => {
+    // Check if vehicle is in use in any route
+    const vehicleInUse = routes.some(route => route.vehicleId === id);
+    
+    if (vehicleInUse) {
+      toast({
+        title: "Erro ao remover veículo",
+        description: "Este veículo está sendo utilizado em uma ou mais rotas e não pode ser removido.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setVehicles(prev => prev.filter(v => v.id !== id));
+    toast({
+      title: "Veículo removido",
+      description: "O veículo foi removido com sucesso.",
+      variant: "destructive"
+    });
+  };
+
   // Backup operations
   const createBackup = (name: string, description?: string) => {
     const newBackup: Backup = {
@@ -508,6 +562,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loads,
         salesReps,
         backups,
+        vehicles,
         addCustomer,
         updateCustomer,
         deleteCustomer,
@@ -529,6 +584,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addLoad,
         updateLoad,
         deleteLoad,
+        addVehicle,
+        updateVehicle,
+        deleteVehicle,
         createBackup,
         restoreBackup,
         deleteBackup,

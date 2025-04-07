@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,7 @@ import SalesReps from "./pages/SalesReps";
 import PaymentMethods from "./pages/PaymentMethods";
 import BuildLoad from "./pages/BuildLoad";
 import SystemMaintenance from "./pages/SystemMaintenance";
+import Vehicles from "./pages/Vehicles";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -45,6 +45,7 @@ function App() {
               <Route path="/vendedores" element={<SalesReps />} />
               <Route path="/formas-pagamento" element={<PaymentMethods />} />
               <Route path="/manutencao" element={<SystemMaintenance />} />
+              <Route path="/veiculos" element={<Vehicles />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

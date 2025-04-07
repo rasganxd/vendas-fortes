@@ -1,4 +1,3 @@
-
 import { 
   Customer, 
   Product, 
@@ -191,6 +190,34 @@ export const mockSalesReps: SalesRep[] = [
     email: 'ana.costa@empresa.com',
     phone: '(11) 98765-4324',
     role: 'driver',
+    active: true
+  }
+];
+
+// Mock Vehicles
+export const mockVehicles = [
+  {
+    id: "veh1",
+    name: "Fiorino 1",
+    licensePlate: "ABC-1234",
+    type: "van",
+    capacity: 500,
+    active: true
+  },
+  {
+    id: "veh2",
+    name: "Caminhão 3/4",
+    licensePlate: "DEF-5678",
+    type: "truck",
+    capacity: 4000,
+    active: true
+  },
+  {
+    id: "veh3",
+    name: "Moto Entrega",
+    licensePlate: "GHI-9012",
+    type: "motorcycle",
+    capacity: 20,
     active: true
   }
 ];
