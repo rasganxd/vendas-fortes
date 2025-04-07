@@ -210,7 +210,6 @@ export default function BuildLoad() {
                         <TableRow 
                           key={order.id} 
                           className={isOrderSelected(order.id) ? "bg-blue-50" : ""}
-                          onClick={() => toggleOrderSelection(order.id)}
                         >
                           <TableCell>
                             <Checkbox
