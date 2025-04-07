@@ -25,6 +25,7 @@ import PaymentMethods from "./pages/PaymentMethods";
 import BuildLoad from "./pages/BuildLoad";
 import SystemMaintenance from "./pages/SystemMaintenance";
 import Vehicles from "./pages/Vehicles";
+import Settings from "./pages/Settings";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -54,6 +55,7 @@ function App() {
                     <Route path="/formas-pagamento" element={<PaymentMethods />} />
                     <Route path="/manutencao" element={<SystemMaintenance />} />
                     <Route path="/veiculos" element={<Vehicles />} />
+                    <Route path="/configuracoes" element={<Settings />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>

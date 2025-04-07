@@ -158,6 +158,7 @@ export interface Backup {
     routes: DeliveryRoute[];
     loads: Load[];
     salesReps: SalesRep[];
+    vehicles?: Vehicle[];
   }
 }
 

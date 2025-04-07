@@ -10,6 +10,7 @@ import {
   Truck,
   FileText,
   Coins,
+  Database
 } from "lucide-react";
 
 import { 
@@ -76,6 +77,12 @@ const navigation: NavItem[] = [
     name: "Configurações",
     href: "/configuracoes",
     icon: Settings,
+    group: "sistema"
+  },
+  {
+    name: "Manutenção",
+    href: "/manutencao",
+    icon: Database,
     group: "sistema"
   },
 ];
