@@ -12,6 +12,15 @@ import { loadVehicles } from '@/hooks/useVehicles';
 import { loadPayments } from '@/hooks/usePayments';
 import { loadRoutes } from '@/hooks/useRoutes';
 import { loadLoads } from '@/hooks/useLoads';
+import { useCustomers } from '@/hooks/useCustomers';
+import { useProducts } from '@/hooks/useProducts';
+import { useOrders } from '@/hooks/useOrders';
+import { usePayments } from '@/hooks/usePayments';
+import { useRoutes } from '@/hooks/useRoutes';
+import { useVehicles } from '@/hooks/useVehicles';
+import { useLoads } from '@/hooks/useLoads';
+import { useSalesReps } from '@/hooks/useSalesReps';
+import { useBackups } from '@/hooks/useBackups';
 
 // Exportando interface NavItem para SideNav
 export interface NavItem {
@@ -160,50 +169,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     console.log("Firebase salva automaticamente os dados");
   };
 
-  // Importar funções CRUD de Customer
-  const { 
-    addCustomer, updateCustomer, deleteCustomer 
-  } = require('@/hooks/useCustomers').useCustomers();
-
-  // Importar funções CRUD de Product
-  const { 
-    addProduct, updateProduct, deleteProduct 
-  } = require('@/hooks/useProducts').useProducts();
-
-  // Importar funções CRUD de Order
-  const { 
-    addOrder, updateOrder, deleteOrder 
-  } = require('@/hooks/useOrders').useOrders();
-
-  // Importar funções CRUD de Payment
-  const { 
-    addPayment, updatePayment, deletePayment 
-  } = require('@/hooks/usePayments').usePayments();
-
-  // Importar funções CRUD de Route
-  const { 
-    addRoute, updateRoute, deleteRoute 
-  } = require('@/hooks/useRoutes').useRoutes();
-
-  // Importar funções CRUD de Vehicle
-  const { 
-    addVehicle, updateVehicle, deleteVehicle 
-  } = require('@/hooks/useVehicles').useVehicles();
-
-  // Importar funções CRUD de Load
-  const { 
-    addLoad, updateLoad, deleteLoad 
-  } = require('@/hooks/useLoads').useLoads();
-
-  // Importar funções CRUD de SalesRep
-  const { 
-    addSalesRep, updateSalesRep, deleteSalesRep 
-  } = require('@/hooks/useSalesReps').useSalesReps();
-
-  // Importar funções para Backup
-  const { 
-    createBackup, restoreBackup, deleteBackup 
-  } = require('@/hooks/useBackups').useBackups();
+  // Inicializando os hooks
+  const customersHook = useCustomers();
+  const productsHook = useProducts();
+  const ordersHook = useOrders();
+  const paymentsHook = usePayments();
+  const routesHook = useRoutes();
+  const vehiclesHook = useVehicles();
+  const loadsHook = useLoads();
+  const salesRepsHook = useSalesReps();
+  const backupsHook = useBackups();
 
   // Funções de utilidade para gerenciamento do sistema
   const startNewDay = () => {
@@ -238,34 +213,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadData,
     saveData,
     
-    // Adicionar as funções CRUD
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    addOrder,
-    updateOrder,
-    deleteOrder,
-    addPayment,
-    updatePayment,
-    deletePayment,
-    addRoute,
-    updateRoute,
-    deleteRoute,
-    addVehicle,
-    updateVehicle,
-    deleteVehicle,
-    addLoad,
-    updateLoad,
-    deleteLoad,
-    addSalesRep,
-    updateSalesRep,
-    deleteSalesRep,
-    createBackup,
-    restoreBackup,
-    deleteBackup,
+    // Adicionar as funções CRUD dos hooks
+    addCustomer: customersHook.addCustomer,
+    updateCustomer: customersHook.updateCustomer,
+    deleteCustomer: customersHook.deleteCustomer,
+    
+    addProduct: productsHook.addProduct,
+    updateProduct: productsHook.updateProduct,
+    deleteProduct: productsHook.deleteProduct,
+    
+    addOrder: ordersHook.addOrder,
+    updateOrder: ordersHook.updateOrder,
+    deleteOrder: ordersHook.deleteOrder,
+    
+    addPayment: paymentsHook.addPayment,
+    updatePayment: paymentsHook.updatePayment,
+    deletePayment: paymentsHook.deletePayment,
+    
+    addRoute: routesHook.addRoute,
+    updateRoute: routesHook.updateRoute,
+    deleteRoute: routesHook.deleteRoute,
+    
+    addVehicle: vehiclesHook.addVehicle,
+    updateVehicle: vehiclesHook.updateVehicle,
+    deleteVehicle: vehiclesHook.deleteVehicle,
+    
+    addLoad: loadsHook.addLoad,
+    updateLoad: loadsHook.updateLoad,
+    deleteLoad: loadsHook.deleteLoad,
+    
+    addSalesRep: salesRepsHook.addSalesRep,
+    updateSalesRep: salesRepsHook.updateSalesRep,
+    deleteSalesRep: salesRepsHook.deleteSalesRep,
+    
+    createBackup: backupsHook.createBackup,
+    restoreBackup: backupsHook.restoreBackup,
+    deleteBackup: backupsHook.deleteBackup,
+    
     startNewDay,
     startNewMonth,
   };

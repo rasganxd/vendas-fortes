@@ -40,14 +40,11 @@ export const useBackups = () => {
     const backup = backups.find(b => b.id === id);
     if (!backup) return;
     
-    // Importamos os hooks dinamicamente para evitar dependências cíclicas
-    const { setCustomers } = useAppContext();
-    const { setProducts } = useAppContext();
-    const { setOrders } = useAppContext();
-    const { setPayments } = useAppContext();
-    const { setRoutes } = useAppContext();
-    const { setLoads } = useAppContext();
-    const { setSalesReps } = useAppContext();
+    // Usamos o contexto diretamente para evitar dependências cíclicas
+    const { 
+      setCustomers, setProducts, setOrders, setPayments, 
+      setRoutes, setLoads, setSalesReps 
+    } = useAppContext();
     
     setCustomers(backup.data.customers || []);
     setProducts(backup.data.products || []);
