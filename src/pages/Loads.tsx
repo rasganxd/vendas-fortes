@@ -2,15 +2,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useLoads } from '@/hooks/useLoads';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
-import { formatDateToBR } from '@/lib/date-utils';
-import { Package, Truck, Calendar, ListChecks, Plus, FileCheck, Weight } from 'lucide-react';
-import { 
-  Card, 
-  CardContent
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Plus } from 'lucide-react';
+import { Load } from '@/types';
+import { LoadCard } from '@/components/loads/LoadCard';
+import { EmptyLoads } from '@/components/loads/EmptyLoads';
+import { EditLoadDialog } from '@/components/loads/EditLoadDialog';
 import {
   Dialog,
   DialogContent,
@@ -25,17 +24,33 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Progress } from '@/components/ui/progress';
-import { Load } from '@/types';
+import { formatDateToBR } from '@/lib/date-utils';
+import { FileCheck, Weight, Calendar, Truck, Package } from 'lucide-react';
 
 export default function Loads() {
   const navigate = useNavigate();
   const { loads } = useAppContext();
+  const { deleteLoad, updateLoad } = useLoads();
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleViewLoad = (load: Load) => {
     setSelectedLoad(load);
     setIsViewDialogOpen(true);
+  };
+
+  const handleEditLoad = (load: Load) => {
+    setSelectedLoad(load);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteLoad = async (id: string) => {
+    await deleteLoad(id);
+  };
+
+  const handleUpdateLoad = async (id: string, updatedLoad: Partial<Load>) => {
+    await updateLoad(id, updatedLoad);
   };
 
   const getStatusBadge = (status: string) => {
@@ -52,17 +67,6 @@ export default function Loads() {
         return <Badge className="bg-green-500">Entregue</Badge>;
       default:
         return <Badge>{status}</Badge>;
-    }
-  };
-
-  const getLoadProgress = (status: string) => {
-    switch (status) {
-      case 'planning': return 20;
-      case 'loading': return 40;
-      case 'loaded': return 60;
-      case 'in-transit': return 80;
-      case 'delivered': return 100;
-      default: return 0;
     }
   };
 
@@ -83,71 +87,16 @@ export default function Loads() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loads.map((load) => (
-          <Card key={load.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="bg-sales-800 text-white p-3 flex justify-between items-center">
-              <h3 className="font-semibold">{load.name}</h3>
-              {getStatusBadge(load.status)}
-            </div>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Calendar size={18} className="text-gray-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Data</p>
-                    <p className="text-sm text-gray-600">{formatDateToBR(load.date)}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <Truck size={18} className="text-gray-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Veículo</p>
-                    <p className="text-sm text-gray-600">{load.vehicleName || 'Não atribuído'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <Package size={18} className="text-gray-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Itens</p>
-                    <p className="text-sm text-gray-600">{load.items.length} itens</p>
-                  </div>
-                </div>
-                
-                <div className="pt-2">
-                  <div className="flex items-center justify-between mb-1 text-xs">
-                    <span>Progresso</span>
-                    <span>{getLoadProgress(load.status)}%</span>
-                  </div>
-                  <Progress value={getLoadProgress(load.status)} className="h-2" />
-                </div>
-                
-                <div className="pt-3">
-                  <Button 
-                    className="w-full bg-teal-600 hover:bg-teal-700"
-                    onClick={() => handleViewLoad(load)}
-                  >
-                    <ListChecks size={16} className="mr-2" /> Ver Detalhes
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <LoadCard
+            key={load.id}
+            load={load}
+            onView={handleViewLoad}
+            onEdit={handleEditLoad}
+            onDelete={handleDeleteLoad}
+          />
         ))}
         
-        {loads.length === 0 && (
-          <div className="col-span-3 text-center py-12 bg-white rounded-lg shadow">
-            <Package size={48} className="mx-auto text-gray-400 mb-2" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma carga encontrada</h3>
-            <p className="text-gray-500">Crie uma nova carga para começar</p>
-            <Button 
-              className="mt-4 bg-sales-800 hover:bg-sales-700"
-              onClick={() => navigate('/cargas/montar')}
-            >
-              <Plus size={16} className="mr-2" /> Montar Carga
-            </Button>
-          </div>
-        )}
+        {loads.length === 0 && <EmptyLoads />}
       </div>
       
       {/* View Load Dialog */}
@@ -237,12 +186,26 @@ export default function Loads() {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Fechar</Button>
-            <Button className="bg-sales-800 hover:bg-sales-700">
-              Atualizar Status
+            <Button 
+              className="bg-sales-800 hover:bg-sales-700"
+              onClick={() => {
+                setIsViewDialogOpen(false);
+                if (selectedLoad) handleEditLoad(selectedLoad);
+              }}
+            >
+              Editar Carga
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Edit Load Dialog */}
+      <EditLoadDialog 
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        load={selectedLoad}
+        onSave={handleUpdateLoad}
+      />
     </PageLayout>
   );
 }
