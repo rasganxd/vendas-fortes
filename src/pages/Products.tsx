@@ -46,8 +46,10 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash } from 'lucide-react';
+import { Plus, Search, Edit, Trash, CloudUpload } from 'lucide-react';
 import { Product } from '@/types';
+import { toast } from '@/components/ui/use-toast';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function Products() {
   const { products, addProduct, updateProduct, deleteProduct } = useAppContext();
@@ -56,6 +58,8 @@ export default function Products() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [firestoreStatus, setFirestoreStatus] = useState<{ success: boolean; message: string; id?: string } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -88,18 +92,46 @@ export default function Products() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    addProduct(formData);
-    setFormData({
-      name: '',
-      description: '',
-      price: 0,
-      unit: '',
-      stock: 0,
-      category: ''
-    });
-    setIsAddDialogOpen(false);
+    setIsSubmitting(true);
+    setFirestoreStatus(null);
+    
+    try {
+      const productId = await addProduct(formData);
+      
+      if (productId) {
+        setFirestoreStatus({
+          success: true,
+          message: "Produto criado com sucesso no Firebase Firestore",
+          id: productId
+        });
+        
+        // Resetar o formulário
+        setFormData({
+          name: '',
+          description: '',
+          price: 0,
+          unit: '',
+          stock: 0,
+          category: ''
+        });
+        
+        // Fechamos o diálogo após um breve atraso para mostrar o feedback
+        setTimeout(() => {
+          setIsAddDialogOpen(false);
+          setFirestoreStatus(null);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Erro ao salvar produto:", error);
+      setFirestoreStatus({
+        success: false,
+        message: `Erro ao salvar no Firebase: ${(error as Error).message}`
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEditClick = (product: Product) => {
@@ -115,11 +147,34 @@ export default function Products() {
     setIsEditDialogOpen(true);
   };
 
-  const handleEditProduct = (e: React.FormEvent) => {
+  const handleEditProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedProduct) {
-      updateProduct(selectedProduct.id, formData);
-      setIsEditDialogOpen(false);
+      setIsSubmitting(true);
+      setFirestoreStatus(null);
+      
+      try {
+        await updateProduct(selectedProduct.id, formData);
+        setFirestoreStatus({
+          success: true,
+          message: "Produto atualizado com sucesso no Firebase Firestore",
+          id: selectedProduct.id
+        });
+        
+        // Fechamos o diálogo após um breve atraso para mostrar o feedback
+        setTimeout(() => {
+          setIsEditDialogOpen(false);
+          setFirestoreStatus(null);
+        }, 2000);
+      } catch (error) {
+        console.error("Erro ao atualizar produto:", error);
+        setFirestoreStatus({
+          success: false,
+          message: `Erro ao atualizar no Firebase: ${(error as Error).message}`
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -128,10 +183,26 @@ export default function Products() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteProduct = () => {
+  const handleDeleteProduct = async () => {
     if (selectedProduct) {
-      deleteProduct(selectedProduct.id);
-      setIsDeleteDialogOpen(false);
+      setIsSubmitting(true);
+      
+      try {
+        await deleteProduct(selectedProduct.id);
+        toast({
+          title: "Produto excluído",
+          description: `Produto ${selectedProduct.name} foi excluído do Firebase com sucesso.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Erro ao excluir",
+          description: `Erro ao excluir do Firebase: ${(error as Error).message}`,
+          variant: "destructive"
+        });
+      } finally {
+        setIsSubmitting(false);
+        setIsDeleteDialogOpen(false);
+      }
     }
   };
 
@@ -142,7 +213,9 @@ export default function Products() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Catálogo de Produtos</CardTitle>
-              <CardDescription>Gerencie seu estoque e preços</CardDescription>
+              <CardDescription>
+                Gerencie seu estoque e preços - Integração com Firebase Firestore ativa
+              </CardDescription>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
@@ -155,6 +228,25 @@ export default function Products() {
                   <DialogTitle>Adicionar Produto</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleAddProduct}>
+                  {firestoreStatus && (
+                    <Alert className={firestoreStatus.success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}>
+                      {firestoreStatus.success ? (
+                        <CloudUpload className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <CloudUpload className="h-4 w-4 text-red-600" />
+                      )}
+                      <AlertTitle>
+                        {firestoreStatus.success ? "Sucesso!" : "Erro!"}
+                      </AlertTitle>
+                      <AlertDescription>
+                        {firestoreStatus.message}
+                        {firestoreStatus.id && (
+                          <div className="mt-1 text-xs">ID no Firebase: {firestoreStatus.id}</div>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Nome do Produto</Label>
@@ -243,8 +335,12 @@ export default function Products() {
                     <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                       Cancelar
                     </Button>
-                    <Button type="submit" className="bg-sales-800 hover:bg-sales-700">
-                      Salvar
+                    <Button 
+                      type="submit" 
+                      className="bg-sales-800 hover:bg-sales-700"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Salvando..." : "Salvar"}
                     </Button>
                   </div>
                 </form>
@@ -333,6 +429,25 @@ export default function Products() {
             <DialogTitle>Editar Produto</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditProduct}>
+            {firestoreStatus && (
+              <Alert className={firestoreStatus.success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}>
+                {firestoreStatus.success ? (
+                  <CloudUpload className="h-4 w-4 text-green-600" />
+                ) : (
+                  <CloudUpload className="h-4 w-4 text-red-600" />
+                )}
+                <AlertTitle>
+                  {firestoreStatus.success ? "Sucesso!" : "Erro!"}
+                </AlertTitle>
+                <AlertDescription>
+                  {firestoreStatus.message}
+                  {firestoreStatus.id && (
+                    <div className="mt-1 text-xs">ID no Firebase: {firestoreStatus.id}</div>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-name">Nome do Produto</Label>
@@ -421,8 +536,12 @@ export default function Products() {
               <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-sales-800 hover:bg-sales-700">
-                Atualizar
+              <Button 
+                type="submit" 
+                className="bg-sales-800 hover:bg-sales-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Atualizando..." : "Atualizar"}
               </Button>
             </div>
           </form>
@@ -440,8 +559,12 @@ export default function Products() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteProduct} className="bg-red-600 hover:bg-red-700">
-              Excluir
+            <AlertDialogAction 
+              onClick={handleDeleteProduct} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
