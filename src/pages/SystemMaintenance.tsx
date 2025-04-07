@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 import { Backup } from '@/types';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

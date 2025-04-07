@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import SalesChart from '@/components/dashboard/SalesChart';

@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
-import { useAppContext } from '@/context/AppContext';
-import { Customer, Order } from '@/types';
+import { Customer } from '@/types';
+import { useAppContext } from '@/hooks/useAppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDateToBR } from '@/lib/date-utils';

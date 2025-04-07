@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import PageLayout from '@/components/layout/PageLayout';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

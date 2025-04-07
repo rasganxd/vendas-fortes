@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { formatDateToBR } from '@/lib/date-utils';
@@ -38,6 +38,7 @@ import { DeliveryRoute, RouteStop, Order } from '@/types';
 
 export default function Routes() {
   const { routes, orders, vehicles, updateRoute, addRoute } = useAppContext();
+  const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false);
