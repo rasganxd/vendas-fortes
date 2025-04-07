@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   ListChecks,
@@ -10,12 +11,20 @@ import {
   Coins,
 } from "lucide-react";
 
-import { NavItem } from "@/types";
-import { MainNav } from "./main-nav";
-import { Sidebar } from "./sidebar";
+import { 
+  Sidebar, 
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton
+} from "@/components/ui/sidebar";
 
-interface DashboardShellProps {
-  children: React.ReactNode;
+// Define the navigation item type
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  group: string;
 }
 
 const navigation: NavItem[] = [
@@ -85,16 +94,22 @@ export default function SideNav() {
   return (
     <Sidebar className="w-64 border-r flex-col">
       <div className="px-6 py-4">
-        {/* <Link href="#" className="flex items-center gap-2 font-semibold">
-          <Icons.logo className="h-6 w-6" />
-          <span>Acme</span>
-        </Link> */}
         <h1 className="font-bold text-2xl">SalesTrack</h1>
       </div>
-      <MainNav items={navigation} />
-      {/* <div className="mt-auto border-t py-2">
-        <ThemeToggle />
-      </div> */}
+      <SidebarContent>
+        <SidebarMenu>
+          {navigation.map((item) => (
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton asChild>
+                <a href={item.href}>
+                  <item.icon className="h-5 w-5" />
+                  <span>{item.name}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarContent>
     </Sidebar>
   )
 }

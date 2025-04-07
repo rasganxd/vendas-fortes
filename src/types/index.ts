@@ -1,4 +1,3 @@
-
 // Customer Types
 export interface Customer {
   id: string;
@@ -158,4 +157,12 @@ export interface Backup {
     loads: Load[];
     salesReps: SalesRep[];
   }
+}
+
+// Add NavItem export for SideNav
+export interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  group: string;
 }
