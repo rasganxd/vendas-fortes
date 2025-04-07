@@ -17,6 +17,7 @@ import { MapPin, Plus } from 'lucide-react';
 import { formatDateToBR } from '@/lib/date-utils';
 import { RouteStopsTable } from './RouteStopsTable';
 import { RouteProductsList } from './RouteProductsList';
+import { RouteMap } from './RouteMap';
 
 interface RouteDetailDialogProps {
   open: boolean;
@@ -78,11 +79,8 @@ export const RouteDetailDialog = ({
             </div>
           </TabsContent>
           
-          <TabsContent value="map" className="h-[400px] bg-gray-100 rounded-md flex items-center justify-center">
-            <div className="text-center">
-              <MapPin size={48} className="mx-auto text-gray-400 mb-2" />
-              <p className="text-gray-500">Visualização de mapa não disponível na versão atual.</p>
-            </div>
+          <TabsContent value="map">
+            <RouteMap route={route} />
           </TabsContent>
         </Tabs>
       </DialogContent>
