@@ -14,10 +14,12 @@ import {
 import { 
   Sidebar, 
   SidebarContent,
-  SidebarHeader
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton
 } from "@/components/ui/sidebar";
 
-import { MainNav } from "@/components/layout/main-nav";
 import { NavItem } from "@/types";
 
 const navigation: NavItem[] = [
@@ -81,7 +83,7 @@ const navigation: NavItem[] = [
     icon: Settings,
     group: "sistema"
   },
-]
+];
 
 export default function SideNav() {
   return (
@@ -90,8 +92,19 @@ export default function SideNav() {
         <h1 className="text-xl font-bold">SalesTrack</h1>
       </SidebarHeader>
       <SidebarContent>
-        <MainNav items={navigation} />
+        <SidebarMenu>
+          {navigation.map((item) => (
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton asChild>
+                <a href={item.href}>
+                  <item.icon className="h-5 w-5" />
+                  <span>{item.name}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
