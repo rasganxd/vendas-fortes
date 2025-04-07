@@ -1,53 +1,22 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
-import { formatDateToBR } from '@/lib/date-utils';
-import { MapPin, Plus, Route, Calendar, Truck, Package, X } from 'lucide-react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { DeliveryRoute, RouteStop, Order } from '@/types';
-import { RouteProductsList } from '@/components/routes/RouteProductsList';
+import { Plus } from 'lucide-react';
+import { DeliveryRoute, RouteStop } from '@/types';
+import { RouteCard } from '@/components/routes/RouteCard';
+import { EmptyRoutes } from '@/components/routes/EmptyRoutes';
+import { RouteDetailDialog } from '@/components/routes/RouteDetailDialog';
+import { AddOrderDialog } from '@/components/routes/AddOrderDialog';
+import { NewRouteDialog } from '@/components/routes/NewRouteDialog';
 
 export default function Routes() {
   const { routes, orders, vehicles, updateRoute, addRoute } = useAppContext();
-  const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false);
   const [isNewRouteDialogOpen, setIsNewRouteDialogOpen] = useState(false);
-  const [newRouteName, setNewRouteName] = useState('');
-  const [selectedVehicleId, setSelectedVehicleId] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const handleViewRoute = (route: DeliveryRoute) => {
     setSelectedRoute(route);
@@ -122,15 +91,13 @@ export default function Routes() {
     });
   };
 
-  const handleCreateNewRoute = () => {
-    if (!newRouteName) return;
-
-    const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
+  const handleCreateNewRoute = (name: string, date: Date, vehicleId: string) => {
+    const selectedVehicle = vehicles.find(v => v.id === vehicleId);
 
     const newRoute: Omit<DeliveryRoute, 'id'> = {
-      name: newRouteName,
-      date: selectedDate,
-      vehicleId: selectedVehicleId,
+      name: name,
+      date: date,
+      vehicleId: vehicleId,
       vehicleName: selectedVehicle ? selectedVehicle.name : undefined,
       status: 'planning',
       stops: []
@@ -138,34 +105,6 @@ export default function Routes() {
 
     addRoute(newRoute);
     setIsNewRouteDialogOpen(false);
-    setNewRouteName('');
-    setSelectedVehicleId('');
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'planning':
-        return <Badge variant="outline">Planejamento</Badge>;
-      case 'assigned':
-        return <Badge className="bg-blue-500">Atribuída</Badge>;
-      case 'in-progress':
-        return <Badge className="bg-amber-500">Em Progresso</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500">Concluída</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
-  const getStopStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline">Pendente</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500">Concluída</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
   };
 
   // Get orders not already assigned to the selected route
@@ -196,282 +135,42 @@ export default function Routes() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {routes.map((route) => (
-          <Card key={route.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="bg-sales-800 text-white p-3 flex justify-between items-center">
-              <h3 className="font-semibold">{route.name}</h3>
-              {getStatusBadge(route.status)}
-            </div>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Calendar size={18} className="text-gray-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Data de Entrega</p>
-                    <p className="text-sm text-gray-600">{formatDateToBR(route.date)}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <Truck size={18} className="text-gray-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Motorista / Veículo</p>
-                    <p className="text-sm text-gray-600">
-                      {route.driverName || 'Não atribuído'} / {route.vehicleName || 'Não atribuído'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <MapPin size={18} className="text-gray-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Paradas</p>
-                    <p className="text-sm text-gray-600">{route.stops.length} paradas</p>
-                  </div>
-                </div>
-                
-                <div className="pt-3">
-                  <Button 
-                    className="w-full bg-teal-600 hover:bg-teal-700"
-                    onClick={() => handleViewRoute(route)}
-                  >
-                    <Route size={16} className="mr-2" /> Ver Rota
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <RouteCard 
+            key={route.id} 
+            route={route} 
+            onViewRoute={handleViewRoute} 
+          />
         ))}
         
         {routes.length === 0 && (
-          <div className="col-span-3 text-center py-12 bg-white rounded-lg shadow">
-            <MapPin size={48} className="mx-auto text-gray-400 mb-2" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma rota encontrada</h3>
-            <p className="text-gray-500">Crie uma nova rota para começar a planejar suas entregas</p>
-            <Button 
-              className="mt-4 bg-sales-800 hover:bg-sales-700"
-              onClick={() => setIsNewRouteDialogOpen(true)}
-            >
-              <Plus size={16} className="mr-2" /> Criar Nova Rota
-            </Button>
-          </div>
+          <EmptyRoutes onCreateRoute={() => setIsNewRouteDialogOpen(true)} />
         )}
       </div>
       
-      {/* View Route Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{selectedRoute?.name}</DialogTitle>
-          </DialogHeader>
-          
-          <Tabs defaultValue="stops">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="stops">Paradas</TabsTrigger>
-              <TabsTrigger value="map">Mapa</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="stops">
-              <div className="flex justify-between mb-4">
-                <RouteProductsList route={selectedRoute} />
-                
-                <Button 
-                  onClick={handleAddOrderToRoute}
-                  className="bg-sales-800 hover:bg-sales-700"
-                  disabled={selectedRoute?.status === 'completed'}
-                >
-                  <Plus size={16} className="mr-2" /> Adicionar Pedido
-                </Button>
-              </div>
-              
-              <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-700">
-                    <tr>
-                      <th className="py-2 px-4 text-left">Seq.</th>
-                      <th className="py-2 px-4 text-left">Cliente</th>
-                      <th className="py-2 px-4 text-left">Endereço</th>
-                      <th className="py-2 px-4 text-left">Hora Prevista</th>
-                      <th className="py-2 px-4 text-left">Status</th>
-                      <th className="py-2 px-4 text-left">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedRoute?.stops.sort((a, b) => a.sequence - b.sequence).map((stop) => (
-                      <tr key={stop.id} className="border-b">
-                        <td className="py-2 px-4">{stop.sequence}</td>
-                        <td className="py-2 px-4 font-medium">{stop.customerName}</td>
-                        <td className="py-2 px-4">
-                          {stop.address}, {stop.city}/{stop.state}
-                        </td>
-                        <td className="py-2 px-4">
-                          {stop.estimatedArrival ? new Date(stop.estimatedArrival).toLocaleTimeString('pt-BR', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }) : '-'}
-                        </td>
-                        <td className="py-2 px-4">{getStopStatusBadge(stop.status)}</td>
-                        <td className="py-2 px-4">
-                          {selectedRoute?.status !== 'completed' && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="text-red-500"
-                              onClick={() => removeOrderFromRoute(stop.id)}
-                            >
-                              <X size={16} />
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    
-                    {selectedRoute?.stops.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="py-4 text-center text-gray-500">
-                          Nenhuma parada adicionada a esta rota
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              
-              <div className="mt-4 flex justify-between items-center">
-                <div className="text-sm">
-                  <p><span className="font-medium">Status da Rota:</span> {selectedRoute?.status}</p>
-                  <p><span className="font-medium">Data:</span> {selectedRoute ? formatDateToBR(selectedRoute.date) : ''}</p>
-                </div>
-                <Button className="bg-teal-600 hover:bg-teal-700">
-                  Otimizar Rota
-                </Button>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="map" className="h-[400px] bg-gray-100 rounded-md flex items-center justify-center">
-              <div className="text-center">
-                <MapPin size={48} className="mx-auto text-gray-400 mb-2" />
-                <p className="text-gray-500">Visualização de mapa não disponível na versão atual.</p>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
+      {/* Route Detail Dialog */}
+      <RouteDetailDialog
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        route={selectedRoute}
+        onAddOrder={handleAddOrderToRoute}
+        onRemoveStop={removeOrderFromRoute}
+      />
       
-      {/* Add Order to Route Dialog */}
-      <Dialog open={isAddOrderDialogOpen} onOpenChange={setIsAddOrderDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Adicionar Pedido à Rota</DialogTitle>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <h3 className="font-medium mb-3">Selecione um pedido para adicionar à rota:</h3>
-            {getUnassignedOrders().length > 0 ? (
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                {getUnassignedOrders().map(order => (
-                  <Card key={order.id} className="cursor-pointer hover:bg-gray-50" onClick={() => addOrderToRoute(order.id)}>
-                    <CardContent className="p-3">
-                      <div className="flex justify-between">
-                        <div>
-                          <div className="font-medium">{order.customerName}</div>
-                          <div className="text-sm text-gray-500">Pedido #{order.id.substring(0, 6)}</div>
-                        </div>
-                        <div>
-                          <Package size={18} />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-gray-500">Não há pedidos disponíveis para adicionar à rota.</p>
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddOrderDialogOpen(false)}>
-              Cancelar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Add Order Dialog */}
+      <AddOrderDialog
+        open={isAddOrderDialogOpen}
+        onOpenChange={setIsAddOrderDialogOpen}
+        orders={getUnassignedOrders()}
+        onAddOrder={addOrderToRoute}
+      />
       
-      {/* Create New Route Dialog */}
-      <Dialog open={isNewRouteDialogOpen} onOpenChange={setIsNewRouteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nova Rota de Entrega</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div>
-              <label htmlFor="routeName" className="block text-sm font-medium text-gray-700 mb-1">
-                Nome da Rota
-              </label>
-              <input
-                id="routeName"
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Digite o nome da rota"
-                value={newRouteName}
-                onChange={(e) => setNewRouteName(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="routeDate" className="block text-sm font-medium text-gray-700 mb-1">
-                Data
-              </label>
-              <input
-                id="routeDate"
-                type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={selectedDate.toISOString().split('T')[0]}
-                onChange={(e) => setSelectedDate(new Date(e.target.value))}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="routeVehicle" className="block text-sm font-medium text-gray-700 mb-1">
-                Veículo
-              </label>
-              <Select
-                value={selectedVehicleId}
-                onValueChange={setSelectedVehicleId}
-              >
-                <SelectTrigger id="routeVehicle">
-                  <SelectValue placeholder="Selecionar veículo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vehicles && vehicles.length > 0 ? (
-                    vehicles.map(vehicle => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>{vehicle.name}</SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>Nenhum veículo cadastrado</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNewRouteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              className="bg-sales-800 hover:bg-sales-700"
-              onClick={handleCreateNewRoute}
-              disabled={!newRouteName}
-            >
-              Criar Rota
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* New Route Dialog */}
+      <NewRouteDialog
+        open={isNewRouteDialogOpen}
+        onOpenChange={setIsNewRouteDialogOpen}
+        vehicles={vehicles}
+        onCreateRoute={handleCreateNewRoute}
+      />
     </PageLayout>
   );
 }
