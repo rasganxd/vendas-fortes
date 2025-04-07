@@ -40,7 +40,6 @@ export const useBackups = () => {
     const backup = backups.find(b => b.id === id);
     if (!backup) return;
     
-    // Usamos o contexto diretamente para evitar dependências cíclicas
     const { 
       setCustomers, setProducts, setOrders, setPayments, 
       setRoutes, setLoads, setSalesReps 

@@ -1,7 +1,16 @@
-
 import { SalesRep } from '@/types';
 import { useAppContext } from './useAppContext';
 import { toast } from '@/components/ui/use-toast';
+import { salesRepService } from '@/firebase/firestoreService';
+
+export const loadSalesReps = async (): Promise<SalesRep[]> => {
+  try {
+    return await salesRepService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar representantes:", error);
+    return [];
+  }
+};
 
 export const useSalesReps = () => {
   const { salesReps, setSalesReps } = useAppContext();

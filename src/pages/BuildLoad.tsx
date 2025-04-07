@@ -1,7 +1,7 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '@/context/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
+import { useLoads } from '@/hooks/useLoads';
 import PageLayout from '@/components/layout/PageLayout';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -47,7 +47,8 @@ const loadFormSchema = z.object({
 
 export default function BuildLoad() {
   const navigate = useNavigate();
-  const { orders, addLoad } = useAppContext();
+  const { orders } = useAppContext();
+  const { addLoad } = useLoads();
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   
   // Get all confirmed orders that are not delivered or cancelled

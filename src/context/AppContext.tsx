@@ -12,15 +12,6 @@ import { loadVehicles } from '@/hooks/useVehicles';
 import { loadPayments } from '@/hooks/usePayments';
 import { loadRoutes } from '@/hooks/useRoutes';
 import { loadLoads } from '@/hooks/useLoads';
-import { useCustomers } from '@/hooks/useCustomers';
-import { useProducts } from '@/hooks/useProducts';
-import { useOrders } from '@/hooks/useOrders';
-import { usePayments } from '@/hooks/usePayments';
-import { useRoutes } from '@/hooks/useRoutes';
-import { useVehicles } from '@/hooks/useVehicles';
-import { useLoads } from '@/hooks/useLoads';
-import { useSalesReps } from '@/hooks/useSalesReps';
-import { useBackups } from '@/hooks/useBackups';
 
 // Exportando interface NavItem para SideNav
 export interface NavItem {
@@ -50,42 +41,7 @@ interface AppContextProps {
   backups: Backup[];
   setBackups: (backups: Backup[]) => void;
   
-  // CRUD operations
-  addCustomer: (customer: Omit<Customer, 'id'>) => Promise<string>;
-  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<void>;
-  deleteCustomer: (id: string) => Promise<void>;
-  
-  addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
-  updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
-  deleteProduct: (id: string) => Promise<void>;
-  
-  addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
-  updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
-  deleteOrder: (id: string) => Promise<void>;
-  
-  addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
-  updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
-  deletePayment: (id: string) => Promise<void>;
-  
-  addRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
-  updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
-  deleteRoute: (id: string) => Promise<void>;
-  
-  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
-  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
-  deleteVehicle: (id: string) => Promise<void>;
-  
-  addLoad: (load: Omit<Load, 'id'>) => Promise<string>;
-  updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
-  deleteLoad: (id: string) => Promise<void>;
-  
-  addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => string;
-  updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => void;
-  deleteSalesRep: (id: string) => void;
-  
-  createBackup: (name: string, description?: string) => string;
-  restoreBackup: (id: string) => void;
-  deleteBackup: (id: string) => void;
+  // CRUD operations will be provided via hooks directly - removed from the context
   
   startNewDay: () => void;
   startNewMonth: () => void;
@@ -111,11 +67,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     loadData();
   }, []);
-
-  // Função para gerar IDs únicos
-  const generateId = () => {
-    return Math.random().toString(36).substring(2, 10);
-  };
 
   // Função para carregar dados
   const loadData = async () => {
@@ -169,17 +120,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     console.log("Firebase salva automaticamente os dados");
   };
 
-  // Inicializando os hooks
-  const customersHook = useCustomers();
-  const productsHook = useProducts();
-  const ordersHook = useOrders();
-  const paymentsHook = usePayments();
-  const routesHook = useRoutes();
-  const vehiclesHook = useVehicles();
-  const loadsHook = useLoads();
-  const salesRepsHook = useSalesReps();
-  const backupsHook = useBackups();
-
   // Funções de utilidade para gerenciamento do sistema
   const startNewDay = () => {
     // Implementação para iniciar um novo dia de operações
@@ -212,44 +152,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBackups,
     loadData,
     saveData,
-    
-    // Adicionar as funções CRUD dos hooks
-    addCustomer: customersHook.addCustomer,
-    updateCustomer: customersHook.updateCustomer,
-    deleteCustomer: customersHook.deleteCustomer,
-    
-    addProduct: productsHook.addProduct,
-    updateProduct: productsHook.updateProduct,
-    deleteProduct: productsHook.deleteProduct,
-    
-    addOrder: ordersHook.addOrder,
-    updateOrder: ordersHook.updateOrder,
-    deleteOrder: ordersHook.deleteOrder,
-    
-    addPayment: paymentsHook.addPayment,
-    updatePayment: paymentsHook.updatePayment,
-    deletePayment: paymentsHook.deletePayment,
-    
-    addRoute: routesHook.addRoute,
-    updateRoute: routesHook.updateRoute,
-    deleteRoute: routesHook.deleteRoute,
-    
-    addVehicle: vehiclesHook.addVehicle,
-    updateVehicle: vehiclesHook.updateVehicle,
-    deleteVehicle: vehiclesHook.deleteVehicle,
-    
-    addLoad: loadsHook.addLoad,
-    updateLoad: loadsHook.updateLoad,
-    deleteLoad: loadsHook.deleteLoad,
-    
-    addSalesRep: salesRepsHook.addSalesRep,
-    updateSalesRep: salesRepsHook.updateSalesRep,
-    deleteSalesRep: salesRepsHook.deleteSalesRep,
-    
-    createBackup: backupsHook.createBackup,
-    restoreBackup: backupsHook.restoreBackup,
-    deleteBackup: backupsHook.deleteBackup,
-    
     startNewDay,
     startNewMonth,
   };
