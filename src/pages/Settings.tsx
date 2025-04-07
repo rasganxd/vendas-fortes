@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -98,7 +97,7 @@ export default function Settings() {
   return (
     <PageLayout 
       title="Configurações do Sistema"
-      description="Gerencie as configurações do sistema"
+      subtitle="Gerencie as configurações do sistema"
     >
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Backup automático */}
