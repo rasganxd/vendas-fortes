@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Customer, Product, Order, Payment, RouteStop, DeliveryRoute, Vehicle, Load, SalesRep, Backup, PaymentMethod } from '@/types';
 import { mockCustomers, mockProducts, mockOrders, mockPayments, mockRoutes, mockLoads, mockSalesReps, mockVehicles } from '@/data/mock-data';
-import { customerService, productService, orderService } from '@/firebase/firestoreService';
+import { customerService, productService, orderService, vehicleService, paymentService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
 
 // Customer Types
@@ -55,17 +55,17 @@ interface AppContextProps {
   updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   
-  addPayment: (payment: Omit<Payment, 'id'>) => string;
-  updatePayment: (id: string, payment: Partial<Payment>) => void;
-  deletePayment: (id: string) => void;
+  addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
+  updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
+  deletePayment: (id: string) => Promise<void>;
   
   addRoute: (route: Omit<DeliveryRoute, 'id'>) => string;
   updateRoute: (id: string, route: Partial<DeliveryRoute>) => void;
   deleteRoute: (id: string) => void;
   
-  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => string;
-  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => void;
-  deleteVehicle: (id: string) => void;
+  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
   
   addLoad: (load: Omit<Load, 'id'>) => string;
   updateLoad: (id: string, load: Partial<Load>) => void;
@@ -112,17 +112,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const customersData = await customerService.getAll();
       const productsData = await productService.getAll();
       const ordersData = await orderService.getAll();
+      const vehiclesData = await vehicleService.getAll();
+      const paymentsData = await paymentService.getAll();
       
       setCustomers(customersData.length > 0 ? customersData : mockCustomers);
       setProducts(productsData.length > 0 ? productsData : mockProducts);
       setOrders(ordersData.length > 0 ? ordersData : mockOrders);
+      setVehicles(vehiclesData.length > 0 ? vehiclesData : mockVehicles);
+      setPayments(paymentsData.length > 0 ? paymentsData : mockPayments);
       
       // Para simplificar o exemplo, continuamos usando dados mockados para o restante
-      setPayments(mockPayments);
       setRoutes(mockRoutes);
       setLoads(mockLoads);
       setSalesReps(mockSalesReps);
-      setVehicles(mockVehicles);
       
     } catch (error) {
       console.error("Erro ao carregar dados do Firebase:", error);
@@ -314,28 +316,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Implementações CRUD para Payment usando Firebase
+  const addPayment = async (payment: Omit<Payment, 'id'>) => {
+    try {
+      const id = await paymentService.add(payment);
+      const newPayment = { ...payment, id };
+      setPayments([...payments, newPayment]);
+      toast({
+        title: "Pagamento adicionado",
+        description: "Pagamento adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar pagamento:", error);
+      toast({
+        title: "Erro ao adicionar pagamento",
+        description: "Houve um problema ao adicionar o pagamento.",
+        variant: "destructive"
+      });
+      return "";
+    }
+  };
+
+  const updatePayment = async (id: string, payment: Partial<Payment>) => {
+    try {
+      await paymentService.update(id, payment);
+      setPayments(payments.map(p => 
+        p.id === id ? { ...p, ...payment } : p
+      ));
+      toast({
+        title: "Pagamento atualizado",
+        description: "Pagamento atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar pagamento:", error);
+      toast({
+        title: "Erro ao atualizar pagamento",
+        description: "Houve um problema ao atualizar o pagamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deletePayment = async (id: string) => {
+    try {
+      await paymentService.delete(id);
+      setPayments(payments.filter(p => p.id !== id));
+      toast({
+        title: "Pagamento excluído",
+        description: "Pagamento excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir pagamento:", error);
+      toast({
+        title: "Erro ao excluir pagamento",
+        description: "Houve um problema ao excluir o pagamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Para simplificar o exemplo, mantemos o restante das implementações usando a abordagem antiga
-  // Implementações CRUD para Payment
-  const addPayment = (payment: Omit<Payment, 'id'>) => {
-    const id = generateId();
-    const newPayment = { ...payment, id };
-    setPayments([...payments, newPayment]);
-    saveData();
-    return id;
-  };
-
-  const updatePayment = (id: string, payment: Partial<Payment>) => {
-    setPayments(payments.map(p => 
-      p.id === id ? { ...p, ...payment } : p
-    ));
-    saveData();
-  };
-
-  const deletePayment = (id: string) => {
-    setPayments(payments.filter(p => p.id !== id));
-    saveData();
-  };
-
   // Implementações CRUD para Route
   const addRoute = (route: Omit<DeliveryRoute, 'id'>) => {
     const id = generateId();
@@ -357,25 +398,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     saveData();
   };
 
-  // Implementações CRUD para Vehicle
-  const addVehicle = (vehicle: Omit<Vehicle, 'id'>) => {
-    const id = generateId();
-    const newVehicle = { ...vehicle, id };
-    setVehicles([...vehicles, newVehicle]);
-    saveData();
-    return id;
+  // Implementações CRUD para Vehicle usando Firebase
+  const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
+    try {
+      const id = await vehicleService.add(vehicle);
+      const newVehicle = { ...vehicle, id };
+      setVehicles([...vehicles, newVehicle]);
+      toast({
+        title: "Veículo adicionado",
+        description: "Veículo adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar veículo:", error);
+      toast({
+        title: "Erro ao adicionar veículo",
+        description: "Houve um problema ao adicionar o veículo.",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
 
-  const updateVehicle = (id: string, vehicle: Partial<Vehicle>) => {
-    setVehicles(vehicles.map(v => 
-      v.id === id ? { ...v, ...vehicle } : v
-    ));
-    saveData();
+  const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
+    try {
+      await vehicleService.update(id, vehicle);
+      setVehicles(vehicles.map(v => 
+        v.id === id ? { ...v, ...vehicle } : v
+      ));
+      toast({
+        title: "Veículo atualizado",
+        description: "Veículo atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar veículo:", error);
+      toast({
+        title: "Erro ao atualizar veículo",
+        description: "Houve um problema ao atualizar o veículo.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deleteVehicle = (id: string) => {
-    setVehicles(vehicles.filter(v => v.id !== id));
-    saveData();
+  const deleteVehicle = async (id: string) => {
+    try {
+      await vehicleService.delete(id);
+      setVehicles(vehicles.filter(v => v.id !== id));
+      toast({
+        title: "Veículo excluído",
+        description: "Veículo excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir veículo:", error);
+      toast({
+        title: "Erro ao excluir veículo",
+        description: "Houve um problema ao excluir o veículo.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Implementações CRUD para Load

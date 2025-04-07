@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   doc, 
@@ -126,5 +125,64 @@ export const orderService = {
   }
 };
 
-// Você pode adicionar serviços semelhantes para os outros tipos (Payment, DeliveryRoute, etc.)
-// seguindo o mesmo padrão
+// Serviço para Veículos
+export const vehicleService = {
+  async getAll(): Promise<Vehicle[]> {
+    const vehiclesRef = collection(db, "vehicles");
+    const snapshot = await getDocs(vehiclesRef);
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...convertTimestampToDate(doc.data()) 
+    } as Vehicle));
+  },
+  
+  async add(vehicle: Omit<Vehicle, "id">): Promise<string> {
+    const vehicleData = {
+      ...vehicle,
+      createdAt: serverTimestamp()
+    };
+    const docRef = await addDoc(collection(db, "vehicles"), vehicleData);
+    return docRef.id;
+  },
+  
+  async update(id: string, vehicle: Partial<Vehicle>): Promise<void> {
+    const vehicleRef = doc(db, "vehicles", id);
+    await updateDoc(vehicleRef, vehicle);
+  },
+  
+  async delete(id: string): Promise<void> {
+    const vehicleRef = doc(db, "vehicles", id);
+    await deleteDoc(vehicleRef);
+  }
+};
+
+// Serviço para Pagamentos
+export const paymentService = {
+  async getAll(): Promise<Payment[]> {
+    const paymentsRef = collection(db, "payments");
+    const snapshot = await getDocs(paymentsRef);
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...convertTimestampToDate(doc.data()) 
+    } as Payment));
+  },
+  
+  async add(payment: Omit<Payment, "id">): Promise<string> {
+    const paymentData = {
+      ...payment,
+      createdAt: serverTimestamp()
+    };
+    const docRef = await addDoc(collection(db, "payments"), paymentData);
+    return docRef.id;
+  },
+  
+  async update(id: string, payment: Partial<Payment>): Promise<void> {
+    const paymentRef = doc(db, "payments", id);
+    await updateDoc(paymentRef, payment);
+  },
+  
+  async delete(id: string): Promise<void> {
+    const paymentRef = doc(db, "payments", id);
+    await deleteDoc(paymentRef);
+  }
+};
