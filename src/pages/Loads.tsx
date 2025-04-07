@@ -91,10 +91,10 @@ export default function Loads() {
     <PageLayout title="Montagem de Cargas">
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-semibold text-sales-800">Cargas</h2>
+          <h2 className="text-2xl font-semibold text-gray-800">Cargas</h2>
           <p className="text-gray-600 text-xl">Gerencie a separação e carregamento de pedidos</p>
         </div>
-        <Button className="bg-gradient-to-r from-sales-800 to-teal-600 hover:from-sales-700 hover:to-teal-500 text-xl px-8 py-6 h-auto" onClick={() => navigate('/cargas/montar')}>
+        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-xl px-8 py-6 h-auto" onClick={() => navigate('/cargas/montar')}>
           <Plus size={24} className="mr-2" /> Montar Carga
         </Button>
       </div>
@@ -102,14 +102,14 @@ export default function Loads() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {loads.map((load) => (
           <Card key={load.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-gray-100">
-            <div className="bg-gradient-to-r from-sales-800 to-teal-600 text-white p-5 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-5 flex justify-between items-center">
               <h3 className="font-bold text-2xl">{load.name}</h3>
               {getStatusBadge(load.status)}
             </div>
             <CardContent className="p-6">
               <div className="space-y-5">
                 <div className="flex items-start gap-4">
-                  <Calendar size={26} className="text-sales-700 mt-1" />
+                  <Calendar size={26} className="text-blue-600 mt-1" />
                   <div>
                     <p className="text-lg font-medium text-gray-700">Data</p>
                     <p className="text-xl text-gray-800">{formatDateToBR(load.date)}</p>
@@ -117,7 +117,7 @@ export default function Loads() {
                 </div>
                 
                 <div className="flex items-start gap-4">
-                  <Truck size={26} className="text-sales-700 mt-1" />
+                  <Truck size={26} className="text-blue-600 mt-1" />
                   <div>
                     <p className="text-lg font-medium text-gray-700">Veículo</p>
                     <p className="text-xl text-gray-800">{load.vehicleName || 'Não atribuído'}</p>
@@ -125,7 +125,7 @@ export default function Loads() {
                 </div>
                 
                 <div className="flex items-start gap-4">
-                  <Package size={26} className="text-sales-700 mt-1" />
+                  <Package size={26} className="text-blue-600 mt-1" />
                   <div>
                     <p className="text-lg font-medium text-gray-700">Pedidos</p>
                     <p className="text-xl text-gray-800">{load.items.length} pedidos</p>
@@ -139,13 +139,13 @@ export default function Loads() {
                   </div>
                   <Progress 
                     value={getLoadProgress(load.status)} 
-                    className="h-3 bg-gray-200 [&>div]:bg-gradient-to-r [&>div]:from-sales-700 [&>div]:to-teal-500" 
+                    className="h-3 bg-gray-200 [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500" 
                   />
                 </div>
                 
                 <div className="pt-5">
                   <Button 
-                    className="w-full bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 text-lg py-6 h-auto font-medium"
+                    className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-lg py-6 h-auto font-medium"
                     onClick={() => handleViewLoad(load)}
                   >
                     <ListChecks size={22} className="mr-2" /> Ver Detalhes
@@ -161,7 +161,7 @@ export default function Loads() {
             <Package size={72} className="mx-auto text-gray-400 mb-5" />
             <h3 className="text-2xl font-medium text-gray-900 mb-2">Nenhuma carga encontrada</h3>
             <p className="text-gray-600 text-xl">Crie uma nova carga para começar a montar seus pedidos</p>
-            <Button className="mt-8 bg-gradient-to-r from-sales-800 to-teal-600 hover:from-sales-700 hover:to-teal-500 text-xl px-8 py-6 h-auto" onClick={() => navigate('/cargas/montar')}>
+            <Button className="mt-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-xl px-8 py-6 h-auto" onClick={() => navigate('/cargas/montar')}>
               <Plus size={24} className="mr-2" /> Montar Nova Carga
             </Button>
           </div>
@@ -172,13 +172,13 @@ export default function Loads() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-sales-800">{selectedLoad?.name}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-blue-700">{selectedLoad?.name}</DialogTitle>
           </DialogHeader>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
             <div className="bg-gray-50 p-5 rounded-md shadow-sm">
               <div className="flex items-center gap-2 mb-2">
-                <Calendar size={20} className="text-sales-700" />
+                <Calendar size={20} className="text-blue-600" />
                 <p className="text-lg font-medium text-gray-700">Data</p>
               </div>
               <p className="text-xl">{selectedLoad ? formatDateToBR(selectedLoad.date) : ''}</p>
@@ -186,7 +186,7 @@ export default function Loads() {
             
             <div className="bg-gray-50 p-5 rounded-md shadow-sm">
               <div className="flex items-center gap-2 mb-2">
-                <Truck size={20} className="text-sales-700" />
+                <Truck size={20} className="text-blue-600" />
                 <p className="text-lg font-medium text-gray-700">Veículo</p>
               </div>
               <p className="text-xl">{selectedLoad?.vehicleName || 'Não atribuído'}</p>
@@ -194,7 +194,7 @@ export default function Loads() {
             
             <div className="bg-gray-50 p-5 rounded-md shadow-sm">
               <div className="flex items-center gap-2 mb-2">
-                <Package size={20} className="text-sales-700" />
+                <Package size={20} className="text-blue-600" />
                 <p className="text-lg font-medium text-gray-700">Status</p>
               </div>
               <p className="text-xl">{selectedLoad && getStatusBadge(selectedLoad.status)}</p>
@@ -203,7 +203,7 @@ export default function Loads() {
           
           <div className="border rounded-md shadow-sm">
             <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-5 border-b">
-              <h3 className="font-medium text-xl text-sales-800">Itens da Carga</h3>
+              <h3 className="font-medium text-xl text-blue-700">Itens da Carga</h3>
             </div>
             <div className="p-5">
               <Accordion type="multiple" className="w-full">
@@ -212,7 +212,7 @@ export default function Loads() {
                     <AccordionTrigger className="hover:bg-gray-50 px-5 py-3">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
-                          <FileCheck size={22} className="text-sales-700" />
+                          <FileCheck size={22} className="text-blue-600" />
                           <span className="font-medium text-lg">Pedido: {item.orderId}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -224,11 +224,11 @@ export default function Loads() {
                       <div className="py-4">
                         <div className="flex items-center justify-between text-lg mb-3">
                           <div className="flex items-center gap-2">
-                            <Weight size={18} className="text-sales-700" />
+                            <Weight size={18} className="text-blue-600" />
                             <span>Peso Total: <span className="font-medium">{item.totalWeight || 0} kg</span></span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Package size={18} className="text-sales-700" />
+                            <Package size={18} className="text-blue-600" />
                             <span>Volume: <span className="font-medium">{item.totalVolume || 0} m³</span></span>
                           </div>
                         </div>
@@ -266,7 +266,7 @@ export default function Loads() {
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="text-lg px-6 py-6 h-auto">
               Fechar
             </Button>
-            <Button className="bg-gradient-to-r from-sales-800 to-teal-600 hover:from-sales-700 hover:to-teal-500 text-lg px-8 py-6 h-auto">
+            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-6 h-auto">
               Atualizar Status
             </Button>
           </div>
