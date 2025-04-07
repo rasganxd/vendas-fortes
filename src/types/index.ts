@@ -1,3 +1,4 @@
+
 // Customer Types
 export interface Customer {
   id: string;
@@ -9,6 +10,7 @@ export interface Customer {
   state: string;
   zipCode: string;
   notes?: string;
+  visitDays?: string[];
   createdAt: Date;
 }
 

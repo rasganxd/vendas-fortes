@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -87,7 +86,6 @@ const Customers = () => {
     if (editingCustomer) {
       updateCustomer(editingCustomer.id, {
         ...data,
-        // Ensure we preserve the createdAt date
         createdAt: editingCustomer.createdAt
       });
       toast({
