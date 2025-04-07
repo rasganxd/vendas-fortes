@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { useForm } from "react-hook-form";
@@ -126,9 +127,14 @@ export default function PaymentMethods() {
         prev.map(method => method.id === editingMethod.id ? { ...method, ...data } : method)
       );
     } else {
+      // Ensure all required properties are present
       const newMethod: PaymentMethod = {
-        ...data,
-        id: Math.random().toString(36).substring(2, 10)
+        id: Math.random().toString(36).substring(2, 10),
+        name: data.name,
+        type: data.type,
+        installments: data.installments,
+        maxInstallments: data.maxInstallments,
+        active: data.active
       };
       setPaymentMethods(prev => [...prev, newMethod]);
     }

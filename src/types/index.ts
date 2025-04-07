@@ -71,7 +71,7 @@ export interface PaymentMethod {
   type: 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | 'other';
   active: boolean;
   installments: boolean;
-  maxInstallments?: number;
+  maxInstallments: number;
 }
 
 // Route and Delivery Types

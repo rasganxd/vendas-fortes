@@ -95,10 +95,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setLoads(parsedData.loads || mockLoads);
         setSalesReps(parsedData.salesReps || mockSalesReps);
         setBackups(parsedData.backups || []);
-        setVehicles(parsedData.vehicles || mockVehicles || []);
+        
+        // We need to ensure vehicle types are properly cast to the union type
+        const validVehicles = (parsedData.vehicles || mockVehicles || []).map((vehicle: any) => ({
+          ...vehicle,
+          // Ensure the type is one of the allowed values
+          type: (vehicle.type === 'car' || vehicle.type === 'van' || 
+                 vehicle.type === 'truck' || vehicle.type === 'motorcycle') 
+                ? vehicle.type 
+                : 'truck' // Default to truck if invalid type
+        })) as Vehicle[];
+        
+        setVehicles(validVehicles);
       } catch (e) {
         console.error('Error loading data from localStorage:', e);
-        // Fallback to mock data
+        // Fallback to mock data with proper type validation
+        const validVehicles = (mockVehicles || []).map((vehicle: any) => ({
+          ...vehicle,
+          // Ensure the type is one of the allowed values
+          type: (vehicle.type === 'car' || vehicle.type === 'van' || 
+                 vehicle.type === 'truck' || vehicle.type === 'motorcycle') 
+                ? vehicle.type 
+                : 'truck' // Default to truck if invalid type
+        })) as Vehicle[];
+        
         setCustomers(mockCustomers);
         setProducts(mockProducts);
         setOrders(mockOrders);
@@ -106,7 +126,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setRoutes(mockRoutes);
         setLoads(mockLoads);
         setSalesReps(mockSalesReps);
-        setVehicles(mockVehicles || []);
+        setVehicles(validVehicles);
       }
     } else {
       // Use mock data if nothing in localStorage
