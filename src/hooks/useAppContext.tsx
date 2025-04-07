@@ -1,19 +1,10 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Customer, Product, Order, Payment, RouteStop, DeliveryRoute, Vehicle, Load, SalesRep, Backup, PaymentMethod } from '@/types';
+import { Customer, Product, Order, Payment, RouteStop, DeliveryRoute, Vehicle, Load, SalesRep, Backup } from '@/types';
 import { mockCustomers, mockProducts, mockOrders, mockPayments, mockRoutes, mockLoads, mockSalesReps, mockVehicles } from '@/data/mock-data';
 import { toast } from '@/components/ui/use-toast';
 
-// Import dos hooks
-import { loadCustomers } from '@/hooks/useCustomers';
-import { loadProducts } from '@/hooks/useProducts';
-import { loadOrders } from '@/hooks/useOrders';
-import { loadVehicles } from '@/hooks/useVehicles';
-import { loadPayments } from '@/hooks/usePayments';
-import { loadRoutes } from '@/hooks/useRoutes';
-import { loadLoads } from '@/hooks/useLoads';
-
-// Exportando interface NavItem para SideNav
+// Exportando a interface NavItem para SideNav
 export interface NavItem {
   name: string;
   href: string;
@@ -21,6 +12,7 @@ export interface NavItem {
   group: string;
 }
 
+// Interface para o contexto principal
 interface AppContextProps {
   customers: Customer[];
   setCustomers: (customers: Customer[]) => void;
@@ -41,48 +33,10 @@ interface AppContextProps {
   backups: Backup[];
   setBackups: (backups: Backup[]) => void;
   
-  // CRUD operations
-  addCustomer: (customer: Omit<Customer, 'id'>) => Promise<string>;
-  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<void>;
-  deleteCustomer: (id: string) => Promise<void>;
-  
-  addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
-  updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
-  deleteProduct: (id: string) => Promise<void>;
-  
-  addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
-  updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
-  deleteOrder: (id: string) => Promise<void>;
-  
-  addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
-  updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
-  deletePayment: (id: string) => Promise<void>;
-  
-  addRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
-  updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
-  deleteRoute: (id: string) => Promise<void>;
-  
-  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
-  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
-  deleteVehicle: (id: string) => Promise<void>;
-  
-  addLoad: (load: Omit<Load, 'id'>) => Promise<string>;
-  updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
-  deleteLoad: (id: string) => Promise<void>;
-  
-  addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => string;
-  updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => void;
-  deleteSalesRep: (id: string) => void;
-  
-  createBackup: (name: string, description?: string) => string;
-  restoreBackup: (id: string) => void;
-  deleteBackup: (id: string) => void;
-  
-  startNewDay: () => void;
-  startNewMonth: () => void;
-  
   loadData: () => void;
   saveData: () => void;
+  startNewDay: () => void;
+  startNewMonth: () => void;
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -103,16 +57,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadData();
   }, []);
 
-  // Função para gerar IDs únicos
-  const generateId = () => {
-    return Math.random().toString(36).substring(2, 10);
-  };
-
   // Função para carregar dados
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Tenta carregar do Firebase
+      // Carregando dados através dos hooks individuais
+      const { loadCustomers } = await import('./useCustomers');
+      const { loadProducts } = await import('./useProducts');
+      const { loadOrders } = await import('./useOrders');
+      const { loadVehicles } = await import('./useVehicles');
+      const { loadPayments } = await import('./usePayments');
+      const { loadRoutes } = await import('./useRoutes');
+      const { loadLoads } = await import('./useLoads');
+      
       const customersData = await loadCustomers();
       const productsData = await loadProducts();
       const ordersData = await loadOrders();
@@ -129,7 +86,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setRoutes(routesData.length > 0 ? routesData : mockRoutes);
       setLoads(loadsData.length > 0 ? loadsData : mockLoads);
       
-      // Para simplificar o exemplo, continuamos usando dados mockados para o restante
+      // Para simplificar, continuamos usando dados mockados para salesReps
       setSalesReps(mockSalesReps);
       
     } catch (error) {
@@ -154,65 +111,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Esta função não é mais necessária
+  // Função para salvar dados - apenas para compatibilidade
   const saveData = () => {
-    // Não fazemos mais nada aqui, pois o Firebase salva automaticamente
     console.log("Firebase salva automaticamente os dados");
   };
 
-  // Importar funções CRUD de Customer
-  const { 
-    addCustomer, updateCustomer, deleteCustomer 
-  } = require('@/hooks/useCustomers').useCustomers();
-
-  // Importar funções CRUD de Product
-  const { 
-    addProduct, updateProduct, deleteProduct 
-  } = require('@/hooks/useProducts').useProducts();
-
-  // Importar funções CRUD de Order
-  const { 
-    addOrder, updateOrder, deleteOrder 
-  } = require('@/hooks/useOrders').useOrders();
-
-  // Importar funções CRUD de Payment
-  const { 
-    addPayment, updatePayment, deletePayment 
-  } = require('@/hooks/usePayments').usePayments();
-
-  // Importar funções CRUD de Route
-  const { 
-    addRoute, updateRoute, deleteRoute 
-  } = require('@/hooks/useRoutes').useRoutes();
-
-  // Importar funções CRUD de Vehicle
-  const { 
-    addVehicle, updateVehicle, deleteVehicle 
-  } = require('@/hooks/useVehicles').useVehicles();
-
-  // Importar funções CRUD de Load
-  const { 
-    addLoad, updateLoad, deleteLoad 
-  } = require('@/hooks/useLoads').useLoads();
-
-  // Importar funções CRUD de SalesRep
-  const { 
-    addSalesRep, updateSalesRep, deleteSalesRep 
-  } = require('@/hooks/useSalesReps').useSalesReps();
-
-  // Importar funções para Backup
-  const { 
-    createBackup, restoreBackup, deleteBackup 
-  } = require('@/hooks/useBackups').useBackups();
-
   // Funções de utilidade para gerenciamento do sistema
   const startNewDay = () => {
-    // Implementação para iniciar um novo dia de operações
     console.log("Iniciando novo dia de operações");
   };
 
   const startNewMonth = () => {
-    // Implementação para iniciar um novo mês (pode incluir geração de relatórios, etc.)
     console.log("Iniciando novo mês de operações");
   };
 
@@ -237,35 +146,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBackups,
     loadData,
     saveData,
-    
-    // Adicionar as funções CRUD
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    addOrder,
-    updateOrder,
-    deleteOrder,
-    addPayment,
-    updatePayment,
-    deletePayment,
-    addRoute,
-    updateRoute,
-    deleteRoute,
-    addVehicle,
-    updateVehicle,
-    deleteVehicle,
-    addLoad,
-    updateLoad,
-    deleteLoad,
-    addSalesRep,
-    updateSalesRep,
-    deleteSalesRep,
-    createBackup,
-    restoreBackup,
-    deleteBackup,
     startNewDay,
     startNewMonth,
   };
