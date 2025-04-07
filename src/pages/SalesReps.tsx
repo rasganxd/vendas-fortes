@@ -121,9 +121,24 @@ export default function SalesReps() {
 
   const onSubmit = (data: z.infer<typeof salesRepFormSchema>) => {
     if (editingSalesRep) {
-      updateSalesRep(editingSalesRep.id, data);
+      updateSalesRep(editingSalesRep.id, {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+        region: data.region,
+        active: data.active
+      });
     } else {
-      addSalesRep(data);
+      // Fixed: Pass all required properties to addSalesRep
+      addSalesRep({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+        region: data.region,
+        active: data.active
+      });
     }
     setIsDialogOpen(false);
   };

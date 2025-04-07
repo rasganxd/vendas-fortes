@@ -7,9 +7,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface PageLayoutProps {
   children: React.ReactNode;
   title?: string;
+  subtitle?: string; // Added subtitle prop
 }
 
-export default function PageLayout({ children, title }: PageLayoutProps) {
+export default function PageLayout({ children, title, subtitle }: PageLayoutProps) {
   const isMobile = useIsMobile();
   
   return (
@@ -22,7 +23,12 @@ export default function PageLayout({ children, title }: PageLayoutProps) {
       )}>
         <div className="container mx-auto py-6 px-4 md:px-6">
           {title && (
-            <h1 className="text-2xl font-bold text-sales-800 mb-6">{title}</h1>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-sales-800">{title}</h1>
+              {subtitle && (
+                <p className="mt-1 text-gray-600">{subtitle}</p>
+              )}
+            </div>
           )}
           {children}
         </div>

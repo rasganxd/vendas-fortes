@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { useForm } from "react-hook-form";
@@ -49,15 +48,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-
-interface PaymentMethod {
-  id: string;
-  name: string;
-  type: 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | 'other';
-  installments: boolean;
-  maxInstallments: number;
-  active: boolean;
-}
+import { PaymentMethod } from '@/types';
 
 const paymentMethodFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
@@ -135,7 +126,7 @@ export default function PaymentMethods() {
         prev.map(method => method.id === editingMethod.id ? { ...method, ...data } : method)
       );
     } else {
-      const newMethod = {
+      const newMethod: PaymentMethod = {
         ...data,
         id: Math.random().toString(36).substring(2, 10)
       };
