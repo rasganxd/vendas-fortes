@@ -5,49 +5,49 @@
 
 @layer base {
   :root {
-    --background: 210 50% 98%;
-    --foreground: 222 47% 20%;
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 20%;
+    --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 20%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 210 75% 40%;
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 20% 94%;
-    --secondary-foreground: 222 47% 20%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 25% 40%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 15% 90%;
-    --accent-foreground: 222 47% 20%;
+    --accent: 261 80% 60%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 210 75% 40%;
+    --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222 47% 10%;
+    --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 10%;
+    --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 10%;
+    --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 75% 60%;
-    --primary-foreground: 222 47% 10%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -89,15 +89,15 @@
   }
   
   .sales-table thead {
-    @apply text-xs text-gray-700 uppercase bg-gradient-to-r from-sales-50 to-sales-100;
+    @apply text-xs text-gray-700 uppercase bg-gradient-to-r from-blue-50 to-purple-50;
   }
   
   .sales-table tbody tr {
-    @apply bg-white border-b hover:bg-sales-50 transition-colors duration-200;
+    @apply bg-white border-b hover:bg-blue-50 transition-colors duration-200;
   }
   
   .page-title {
-    @apply text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sales-700 to-sales-500 mb-6;
+    @apply text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-6;
   }
   
   /* Animações */
@@ -149,19 +149,19 @@
   }
   
   .side-nav-item {
-    @apply flex items-center gap-2 py-3 px-4 rounded-md text-gray-600 hover:bg-gradient-to-r hover:from-sales-50 hover:to-sales-100 hover:text-gray-700 transition-all;
+    @apply flex items-center gap-2 py-3 px-4 rounded-md text-gray-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-700 transition-all;
   }
   
   .side-nav-item.active {
-    @apply bg-gradient-to-r from-sales-100 to-sales-200 text-sales-800 font-medium;
+    @apply bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 font-medium;
   }
 
   .card-gradient {
-    @apply bg-gradient-to-br from-white to-sales-50 shadow-md hover:shadow-lg transition-all;
+    @apply bg-gradient-to-br from-white to-blue-50 shadow-md hover:shadow-lg transition-all;
   }
 
   .button-gradient {
-    @apply bg-gradient-to-r from-sales-600 to-sales-700 hover:from-sales-700 hover:to-sales-800 text-white transition-all;
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-all;
   }
 }
 

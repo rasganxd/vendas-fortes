@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
-import { useRoutes } from '@/hooks/useRoutes';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { formatDateToBR } from '@/lib/date-utils';
-import { MapPin, Plus, Route, Calendar, Truck, Package, X, Trash2 } from 'lucide-react';
+import { MapPin, Plus, Route, Calendar, Truck, Package, X } from 'lucide-react';
 import { 
   Card, 
-  CardContent
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -19,16 +21,6 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import {
   Tabs,
   TabsContent,
@@ -46,13 +38,11 @@ import { DeliveryRoute, RouteStop, Order } from '@/types';
 
 export default function Routes() {
   const { routes, orders, vehicles, updateRoute, addRoute } = useAppContext();
-  const { deleteRoute } = useRoutes();
   const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false);
   const [isNewRouteDialogOpen, setIsNewRouteDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newRouteName, setNewRouteName] = useState('');
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -60,20 +50,6 @@ export default function Routes() {
   const handleViewRoute = (route: DeliveryRoute) => {
     setSelectedRoute(route);
     setIsViewDialogOpen(true);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent, route: DeliveryRoute) => {
-    e.stopPropagation();
-    setSelectedRoute(route);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (selectedRoute) {
-      await deleteRoute(selectedRoute.id);
-      setIsDeleteDialogOpen(false);
-      if (isViewDialogOpen) setIsViewDialogOpen(false);
-    }
   };
 
   const handleAddOrderToRoute = () => {
@@ -87,6 +63,7 @@ export default function Routes() {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
+    // Find customer info from order
     const customer = {
       name: order.customerName,
       address: order.deliveryAddress || '',
@@ -95,6 +72,7 @@ export default function Routes() {
       zipCode: order.deliveryZipCode || '',
     };
 
+    // Create new stop
     const newStop: RouteStop = {
       id: Math.random().toString(36).substring(2, 10),
       orderId: order.id,
@@ -107,9 +85,11 @@ export default function Routes() {
       status: 'pending'
     };
 
+    // Update route with new stop
     const updatedStops = [...selectedRoute.stops, newStop];
     updateRoute(selectedRoute.id, { stops: updatedStops });
     
+    // Update selected route in state
     setSelectedRoute({
       ...selectedRoute,
       stops: updatedStops
@@ -121,15 +101,19 @@ export default function Routes() {
   const removeOrderFromRoute = (stopId: string) => {
     if (!selectedRoute) return;
     
+    // Filter out the stop to remove
     const updatedStops = selectedRoute.stops.filter(s => s.id !== stopId);
     
+    // Resequence remaining stops
     const resequencedStops = updatedStops.map((stop, index) => ({
       ...stop,
       sequence: index + 1
     }));
     
+    // Update route with new stops
     updateRoute(selectedRoute.id, { stops: resequencedStops });
     
+    // Update selected route in state
     setSelectedRoute({
       ...selectedRoute,
       stops: resequencedStops
@@ -161,11 +145,11 @@ export default function Routes() {
       case 'planning':
         return <Badge variant="outline">Planejamento</Badge>;
       case 'assigned':
-        return <Badge className="bg-neutral-500">Atribuída</Badge>;
+        return <Badge className="bg-blue-500">Atribuída</Badge>;
       case 'in-progress':
-        return <Badge className="bg-neutral-600">Em Progresso</Badge>;
+        return <Badge className="bg-amber-500">Em Progresso</Badge>;
       case 'completed':
-        return <Badge className="bg-neutral-700">Concluída</Badge>;
+        return <Badge className="bg-green-500">Concluída</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -176,12 +160,13 @@ export default function Routes() {
       case 'pending':
         return <Badge variant="outline">Pendente</Badge>;
       case 'completed':
-        return <Badge className="bg-neutral-700">Concluída</Badge>;
+        return <Badge className="bg-green-500">Concluída</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
+  // Get orders not already assigned to the selected route
   const getUnassignedOrders = () => {
     if (!selectedRoute) return [];
     
@@ -200,7 +185,7 @@ export default function Routes() {
           <p className="text-gray-500">Gerencie e planeje as rotas para entrega de pedidos</p>
         </div>
         <Button 
-          className="bg-neutral-700 hover:bg-neutral-800"
+          className="bg-sales-800 hover:bg-sales-700"
           onClick={() => setIsNewRouteDialogOpen(true)}
         >
           <Plus size={16} className="mr-2" /> Nova Rota
@@ -209,12 +194,8 @@ export default function Routes() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {routes.map((route) => (
-          <Card 
-            key={route.id} 
-            className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => handleViewRoute(route)}
-          >
-            <div className="bg-neutral-700 text-white p-3 flex justify-between items-center">
+          <Card key={route.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="bg-sales-800 text-white p-3 flex justify-between items-center">
               <h3 className="font-semibold">{route.name}</h3>
               {getStatusBadge(route.status)}
             </div>
@@ -246,20 +227,12 @@ export default function Routes() {
                   </div>
                 </div>
                 
-                <div className="pt-3 flex justify-between gap-2">
+                <div className="pt-3">
                   <Button 
-                    className="flex-1 bg-neutral-600 hover:bg-neutral-700"
-                    onClick={(e) => {e.stopPropagation(); handleViewRoute(route);}}
+                    className="w-full bg-teal-600 hover:bg-teal-700"
+                    onClick={() => handleViewRoute(route)}
                   >
                     <Route size={16} className="mr-2" /> Ver Rota
-                  </Button>
-                  <Button 
-                    variant="destructive"
-                    size="icon"
-                    className="flex-shrink-0"
-                    onClick={(e) => handleDeleteClick(e, route)}
-                  >
-                    <Trash2 size={16} />
                   </Button>
                 </div>
               </div>
@@ -273,7 +246,7 @@ export default function Routes() {
             <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhuma rota encontrada</h3>
             <p className="text-gray-500">Crie uma nova rota para começar a planejar suas entregas</p>
             <Button 
-              className="mt-4 bg-neutral-700 hover:bg-neutral-800"
+              className="mt-4 bg-sales-800 hover:bg-sales-700"
               onClick={() => setIsNewRouteDialogOpen(true)}
             >
               <Plus size={16} className="mr-2" /> Criar Nova Rota
@@ -282,6 +255,7 @@ export default function Routes() {
         )}
       </div>
       
+      {/* View Route Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
@@ -295,21 +269,10 @@ export default function Routes() {
             </TabsList>
             
             <TabsContent value="stops">
-              <div className="flex justify-between mb-4">
+              <div className="flex justify-end mb-4">
                 <Button 
-                  variant="destructive"
-                  onClick={() => {
-                    setIsViewDialogOpen(false);
-                    setIsDeleteDialogOpen(true);
-                  }}
-                  disabled={selectedRoute?.status === 'completed'}
-                >
-                  <Trash2 size={16} className="mr-2" /> Excluir Rota
-                </Button>
-                
-                <Button 
-                  onClick={() => handleAddOrderToRoute()}
-                  className="bg-neutral-700 hover:bg-neutral-800"
+                  onClick={handleAddOrderToRoute}
+                  className="bg-sales-800 hover:bg-sales-700"
                   disabled={selectedRoute?.status === 'completed'}
                 >
                   <Plus size={16} className="mr-2" /> Adicionar Pedido
@@ -390,6 +353,7 @@ export default function Routes() {
         </DialogContent>
       </Dialog>
       
+      {/* Add Order to Route Dialog */}
       <Dialog open={isAddOrderDialogOpen} onOpenChange={setIsAddOrderDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -431,6 +395,7 @@ export default function Routes() {
         </DialogContent>
       </Dialog>
       
+      {/* Create New Route Dialog */}
       <Dialog open={isNewRouteDialogOpen} onOpenChange={setIsNewRouteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -494,7 +459,7 @@ export default function Routes() {
               Cancelar
             </Button>
             <Button 
-              className="bg-neutral-700 hover:bg-neutral-800"
+              className="bg-sales-800 hover:bg-sales-700"
               onClick={handleCreateNewRoute}
               disabled={!newRouteName}
             >
@@ -503,23 +468,6 @@ export default function Routes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir a rota "{selectedRoute?.name}"? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </PageLayout>
   );
 }
