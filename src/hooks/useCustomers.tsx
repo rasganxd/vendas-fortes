@@ -16,11 +16,29 @@ export const loadCustomers = async (): Promise<Customer[]> => {
 export const useCustomers = () => {
   const { customers, setCustomers } = useAppContext();
   
-  const addCustomer = async (customer: Omit<Customer, 'id'>) => {
+  // Function to generate next available code
+  const generateNextCode = (): number => {
+    if (customers.length === 0) return 1;
+    
+    // Find the highest existing code
+    const highestCode = customers.reduce(
+      (max, customer) => (customer.code && customer.code > max ? customer.code : max), 
+      0
+    );
+    
+    // Return the next code in sequence
+    return highestCode + 1;
+  };
+  
+  const addCustomer = async (customer: Omit<Customer, 'id' | 'code'>) => {
     try {
-      // Add to Firebase
-      const id = await customerService.add(customer);
-      const newCustomer = { ...customer, id } as Customer;
+      // Generate next available code
+      const code = generateNextCode();
+      
+      // Add to Firebase with code
+      const customerWithCode = { ...customer, code };
+      const id = await customerService.add(customerWithCode);
+      const newCustomer = { ...customerWithCode, id } as Customer;
       
       // Update local state
       setCustomers([...customers, newCustomer]);

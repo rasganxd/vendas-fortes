@@ -2,6 +2,7 @@
 // Customer Types
 export interface Customer {
   id: string;
+  code: number; // Added code field
   name: string;
   document: string; // Changed from email to document (CPF/CNPJ)
   phone: string;
@@ -142,6 +143,7 @@ export interface Load {
 export interface SalesRep {
   id: string;
   name: string;
+  code: number; // Added code field
   email: string;
   phone: string;
   role: 'admin' | 'manager' | 'sales' | 'driver';

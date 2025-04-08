@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -6,7 +5,6 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,12 +34,10 @@ export default function NewOrder() {
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Search dialogs state
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [isSalesRepSearchOpen, setIsSalesRepSearchOpen] = useState(false);
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   
-  // Search terms
   const [customerSearch, setCustomerSearch] = useState('');
   const [salesRepSearch, setSalesRepSearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
@@ -148,7 +144,6 @@ export default function NewOrder() {
     try {
       setIsSubmitting(true);
       
-      // Prepare order data
       const orderData = {
         customerId: selectedCustomer.id,
         customerName: selectedCustomer.name,
@@ -160,14 +155,12 @@ export default function NewOrder() {
         paymentStatus: "pending" as Order["paymentStatus"],
         notes: orderNotes,
         createdAt: new Date(),
-        // Add delivery address info from customer
         deliveryAddress: selectedCustomer.address,
         deliveryCity: selectedCustomer.city,
         deliveryState: selectedCustomer.state,
         deliveryZipCode: selectedCustomer.zipCode
       };
       
-      // Create the order
       const orderId = await addOrder(orderData);
       
       if (orderId) {
@@ -176,10 +169,8 @@ export default function NewOrder() {
           description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
         });
         
-        // Reset the form after successful order creation
         resetForm();
         
-        // Optional: Navigate to the orders list after a short delay
         setTimeout(() => {
           navigate('/pedidos');
         }, 1500);
@@ -196,29 +187,25 @@ export default function NewOrder() {
     }
   };
 
-  // Filtrar clientes baseado na busca
   const filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    (customer.code && customer.code.toString().includes(customerSearch))
+    customer.code.toString().includes(customerSearch)
   );
 
-  // Filtrar vendedores baseado na busca
   const filteredSalesReps = salesReps.filter(rep => 
     rep.name.toLowerCase().includes(salesRepSearch.toLowerCase()) ||
-    (rep.code && rep.code.toString().includes(salesRepSearch))
+    rep.code.toString().includes(salesRepSearch)
   );
 
-  // Filtrar produtos baseado na busca
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    (product.code && product.code.toString().includes(productSearch)) ||
+    product.code.toString().includes(productSearch) ||
     product.price.toString().includes(productSearch)
   );
 
   return (
     <PageLayout title="Novo Pedido">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Customer and Sales Rep Selection */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -233,7 +220,7 @@ export default function NewOrder() {
                   type="text"
                   id="customer"
                   placeholder="Código ou nome do cliente"
-                  value={selectedCustomer ? `${selectedCustomer.code || ''} - ${selectedCustomer.name}` : ''}
+                  value={selectedCustomer ? `${selectedCustomer.code} - ${selectedCustomer.name}` : ''}
                   readOnly
                   className="w-full"
                 />
@@ -267,7 +254,7 @@ export default function NewOrder() {
                   type="text"
                   id="salesRep"
                   placeholder="Código ou nome do vendedor"
-                  value={selectedSalesRep ? `${selectedSalesRep.code || ''} - ${selectedSalesRep.name}` : ''}
+                  value={selectedSalesRep ? `${selectedSalesRep.code} - ${selectedSalesRep.name}` : ''}
                   readOnly
                   className="w-full"
                 />
@@ -307,7 +294,6 @@ export default function NewOrder() {
           </CardContent>
         </Card>
 
-        {/* Middle Column - Product Selection */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Adicionar Produtos</CardTitle>
@@ -320,7 +306,7 @@ export default function NewOrder() {
                   type="text"
                   id="product"
                   placeholder="Código ou nome do produto"
-                  value={selectedProduct ? `${selectedProduct.code || ''} - ${selectedProduct.name}` : ''}
+                  value={selectedProduct ? `${selectedProduct.code} - ${selectedProduct.name}` : ''}
                   readOnly
                   className="w-full"
                 />
@@ -376,7 +362,6 @@ export default function NewOrder() {
           </CardContent>
         </Card>
 
-        {/* Right Column - Order Summary */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Resumo do Pedido</CardTitle>
@@ -405,7 +390,6 @@ export default function NewOrder() {
         </Card>
       </div>
 
-      {/* Order Items List */}
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Itens do Pedido</CardTitle>
@@ -461,7 +445,6 @@ export default function NewOrder() {
         </CardContent>
       </Card>
 
-      {/* Customer Search Dialog */}
       <Dialog open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
         <DialogContent className="sm:max-w-md">
           <Command className="rounded-lg border shadow-md">
@@ -485,7 +468,7 @@ export default function NewOrder() {
                     }}
                     className="cursor-pointer"
                   >
-                    <span className="font-medium mr-2">{customer.code || '—'}</span>
+                    <span className="font-medium mr-2">{customer.code}</span>
                     <span>{customer.name}</span>
                   </CommandItem>
                 ))}
@@ -495,7 +478,6 @@ export default function NewOrder() {
         </DialogContent>
       </Dialog>
 
-      {/* SalesRep Search Dialog */}
       <Dialog open={isSalesRepSearchOpen} onOpenChange={setIsSalesRepSearchOpen}>
         <DialogContent className="sm:max-w-md">
           <Command className="rounded-lg border shadow-md">
@@ -519,7 +501,7 @@ export default function NewOrder() {
                     }}
                     className="cursor-pointer"
                   >
-                    <span className="font-medium mr-2">{salesRep.code || '—'}</span>
+                    <span className="font-medium mr-2">{salesRep.code}</span>
                     <span>{salesRep.name}</span>
                   </CommandItem>
                 ))}
@@ -529,7 +511,6 @@ export default function NewOrder() {
         </DialogContent>
       </Dialog>
 
-      {/* Product Search Dialog */}
       <Dialog open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
         <DialogContent className="sm:max-w-md">
           <Command className="rounded-lg border shadow-md">

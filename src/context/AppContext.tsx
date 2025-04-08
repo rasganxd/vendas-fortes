@@ -1,19 +1,8 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { Customer, Product, Order, Payment, DeliveryRoute, Vehicle, Load, SalesRep, Backup } from '@/types';
 import { mockSalesReps } from '@/data/mock-data';
 import { toast } from '@/components/ui/use-toast';
 
-// Import load functions only (not hooks that would cause circular dependencies)
-import { loadCustomers } from '@/hooks/useCustomers';
-import { loadProducts } from '@/hooks/useProducts';
-import { loadOrders } from '@/hooks/useOrders';
-import { loadVehicles } from '@/hooks/useVehicles';
-import { loadPayments } from '@/hooks/usePayments';
-import { loadRoutes } from '@/hooks/useRoutes';
-import { loadLoads } from '@/hooks/useLoads';
-
-// Import our service functions
 import { 
   customerService,
   productService,
@@ -24,7 +13,6 @@ import {
   loadService
 } from '@/firebase/firestoreService';
 
-// Exportando interface NavItem para SideNav
 export interface NavItem {
   name: string;
   href: string;
@@ -52,59 +40,47 @@ export interface AppContextProps {
   backups: Backup[];
   setBackups: (backups: Backup[]) => void;
   
-  // Operações CRUD para todos os tipos de entidades
-  // Customers
   addCustomer: (customer: Omit<Customer, 'id'>) => Promise<string>;
   updateCustomer: (id: string, customer: Partial<Customer>) => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
   
-  // Products
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   
-  // Orders
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
   updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   
-  // Payments
   addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
   updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
   
-  // Routes
   addRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
   updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
   deleteRoute: (id: string) => Promise<void>;
   
-  // Vehicles
   addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
   updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
   deleteVehicle: (id: string) => Promise<void>;
   
-  // SalesReps
   addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
   updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => Promise<void>;
   deleteSalesRep: (id: string) => Promise<void>;
   
-  // Backups
   createBackup: (name: string, description?: string) => Promise<void>;
   restoreBackup: (id: string) => Promise<void>;
   deleteBackup: (id: string) => Promise<void>;
   
-  // System management functions
   startNewDay: () => void;
   startNewMonth: () => void;
   loadData: () => void;
   saveData: () => void;
 }
 
-// Create and export the context itself
 export const AppContext = createContext<AppContextProps | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  // State for all entities
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -116,16 +92,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load data on mount
   useEffect(() => {
     loadData();
   }, []);
 
-  // Função para carregar dados
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Carrega dados do Firebase
       const customersData = await loadCustomers();
       const productsData = await loadProducts();
       const ordersData = await loadOrders();
@@ -134,7 +107,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       const routesData = await loadRoutes();
       const loadsData = await loadLoads();
       
-      // Atualiza o estado com os dados do Firebase
       setCustomers(customersData);
       setProducts(productsData);
       setOrders(ordersData);
@@ -143,7 +115,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setRoutes(routesData);
       setLoads(loadsData);
       
-      // Para simplificar o exemplo, continuamos usando dados mockados para o restante
       setSalesReps(mockSalesReps);
       
       console.log('Dados carregados do Firebase:', {
@@ -167,15 +138,27 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Esta função não é mais necessária
   const saveData = () => {
-    // Não fazemos mais nada aqui, pois o Firebase salva automaticamente
     console.log("Firebase salva automaticamente os dados");
   };
 
-  // Implementações para clientes
+  const generateNextCustomerCode = (): number => {
+    if (customers.length === 0) return 1;
+    
+    const highestCode = customers.reduce(
+      (max, customer) => (customer.code && customer.code > max ? customer.code : max), 
+      0
+    );
+    
+    return highestCode + 1;
+  };
+
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
+      if (!customer.code) {
+        customer.code = generateNextCustomerCode();
+      }
+      
       const id = await customerService.add(customer);
       const newCustomer = { ...customer, id } as Customer;
       setCustomers([...customers, newCustomer]);
@@ -194,7 +177,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return "";
     }
   };
-  
+
   const updateCustomer = async (id: string, customer: Partial<Customer>) => {
     try {
       await customerService.update(id, customer);
@@ -215,7 +198,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
+
   const deleteCustomer = async (id: string) => {
     try {
       await customerService.delete(id);
@@ -233,8 +216,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
-  // Products
+
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
       const id = await productService.add(product);
@@ -255,7 +237,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return "";
     }
   };
-  
+
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
       await productService.update(id, product);
@@ -275,7 +257,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
+
   const deleteProduct = async (id: string) => {
     try {
       await productService.delete(id);
@@ -293,8 +275,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
-  // Orders
+
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
       const id = await orderService.add(order);
@@ -315,7 +296,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return "";
     }
   };
-  
+
   const updateOrder = async (id: string, order: Partial<Order>) => {
     try {
       await orderService.update(id, order);
@@ -335,7 +316,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
+
   const deleteOrder = async (id: string) => {
     try {
       await orderService.delete(id);
@@ -353,8 +334,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
-  // Payments
+
   const addPayment = async (payment: Omit<Payment, 'id'>) => {
     try {
       const id = await paymentService.add(payment);
@@ -375,7 +355,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return "";
     }
   };
-  
+
   const updatePayment = async (id: string, payment: Partial<Payment>) => {
     try {
       await paymentService.update(id, payment);
@@ -395,7 +375,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
+
   const deletePayment = async (id: string) => {
     try {
       await paymentService.delete(id);
@@ -413,8 +393,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
-  // Routes
+
   const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
     try {
       const id = await routeService.add(route);
@@ -435,7 +414,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return "";
     }
   };
-  
+
   const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
     try {
       await routeService.update(id, route);
@@ -455,7 +434,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
+
   const deleteRoute = async (id: string) => {
     try {
       await routeService.delete(id);
@@ -473,8 +452,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
-  // Vehicles
+
   const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
     try {
       const id = await vehicleService.add(vehicle);
@@ -495,7 +473,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return "";
     }
   };
-  
+
   const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
     try {
       await vehicleService.update(id, vehicle);
@@ -515,7 +493,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
+
   const deleteVehicle = async (id: string) => {
     try {
       await vehicleService.delete(id);
@@ -533,52 +511,40 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-  
-  // SalesReps implementations remain temporary
+
   const addSalesRep = async (salesRep: Omit<SalesRep, 'id'>) => {
-    // Implementação temporária
     console.log("Adding salesRep:", salesRep);
     return "temp-id";
   };
-  
+
   const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>) => {
-    // Implementação temporária
     console.log("Updating salesRep:", id, salesRep);
   };
-  
+
   const deleteSalesRep = async (id: string) => {
-    // Implementação temporária
     console.log("Deleting salesRep:", id);
   };
-  
-  // Backups
+
   const createBackup = async (name: string, description?: string) => {
-    // Implementação temporária
     console.log("Creating backup:", name, description);
   };
-  
+
   const restoreBackup = async (id: string) => {
-    // Implementação temporária
     console.log("Restoring backup:", id);
   };
-  
+
   const deleteBackup = async (id: string) => {
-    // Implementação temporária
     console.log("Deleting backup:", id);
   };
 
-  // Funções de utilidade para gerenciamento do sistema
   const startNewDay = () => {
-    // Implementação para iniciar um novo dia de operações
     console.log("Iniciando novo dia de operações");
   };
 
   const startNewMonth = () => {
-    // Implementação para iniciar um novo mês (pode incluir geração de relatórios, etc.)
     console.log("Iniciando novo mês de operações");
   };
 
-  // Create context value object
   const value: AppContextProps = {
     customers,
     setCustomers,
@@ -599,7 +565,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     backups,
     setBackups,
     
-    // CRUD operations
     addCustomer,
     updateCustomer,
     deleteCustomer,
@@ -625,7 +590,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     restoreBackup,
     deleteBackup,
     
-    // System functions
     loadData,
     saveData,
     startNewDay,
