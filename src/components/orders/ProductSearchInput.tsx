@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, KeyboardEvent } from 'react';
+import React, { useState, useEffect, KeyboardEvent, useRef } from 'react';
 import { Product } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +34,9 @@ export default function ProductSearchInput({
   const [productInput, setProductInput] = useState('');
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [productSearch, setProductSearch] = useState('');
+  
+  const quantityInputRef = useRef<HTMLInputElement>(null);
+  const priceInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (selectedProduct) {
@@ -63,7 +65,6 @@ export default function ProductSearchInput({
     const value = e.target.value;
     setProductInput(value);
     
-    // Check if input is just a code number
     const codeMatch = value.match(/^(\d+)$/);
     if (codeMatch) {
       findProductByCode(codeMatch[1]);
@@ -73,18 +74,36 @@ export default function ProductSearchInput({
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && selectedProduct) {
+  const handleProductKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      if (selectedProduct && quantityInputRef.current) {
+        quantityInputRef.current.focus();
+      }
+    }
+  };
+  
+  const handleQuantityKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      if (priceInputRef.current) {
+        priceInputRef.current.focus();
+      }
+    }
+  };
+  
+  const handlePriceKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleAddItem();
     }
   };
 
-  // Helper function to parse price from Brazilian format to number
   const parsePrice = (priceStr: string) => {
     if (!priceStr) return 0;
     
-    // Remove R$ symbol and any dots, replace comma with dot for decimal
     const cleanPriceStr = priceStr.replace(/[^\d,]/g, '').replace(',', '.');
     return parseFloat(cleanPriceStr) || 0;
   };
@@ -108,18 +127,15 @@ export default function ProductSearchInput({
       return;
     }
 
-    // Use custom price instead of product price
     const priceToUse = customPrice !== null ? customPrice : selectedProduct.price;
 
     addItemToOrder(selectedProduct, quantity, priceToUse);
     
-    // Reset product selection after adding to order
     setSelectedProduct(null);
     setProductInput('');
     setQuantity(1);
     setCustomPrice(0);
     
-    // Re-focus the product input field after adding item
     if (inputRef?.current) {
       inputRef.current.focus();
     }
@@ -138,7 +154,7 @@ export default function ProductSearchInput({
                 placeholder="Código ou nome do produto"
                 value={productInput}
                 onChange={handleProductInputChange}
-                onKeyDown={handleKeyDown}
+                onKeyDown={handleProductKeyDown}
                 ref={inputRef}
                 className="h-8 text-sm"
               />
@@ -176,6 +192,8 @@ export default function ProductSearchInput({
               id="quantity"
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+              onKeyDown={handleQuantityKeyDown}
+              ref={quantityInputRef}
               min="1"
               className="h-8 text-sm"
             />
@@ -189,6 +207,8 @@ export default function ProductSearchInput({
               mask="price"
               value={customPrice ? customPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
               onChange={(e) => setCustomPrice(parsePrice(e.target.value))}
+              onKeyDown={handlePriceKeyDown}
+              ref={priceInputRef}
               className="h-8 text-sm"
             />
           </div>
@@ -203,7 +223,6 @@ export default function ProductSearchInput({
           </div>
         </div>
 
-        {/* Product Search Dialog */}
         <Dialog open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
           <DialogContent className="sm:max-w-md">
             <Command className="rounded-lg border shadow-md">
@@ -223,7 +242,6 @@ export default function ProductSearchInput({
                       onSelect={() => {
                         setSelectedProduct(product);
                         setProductInput(`${product.code} - ${product.name}`);
-                        // Update custom price when selecting a product
                         setCustomPrice(product.price);
                         setIsProductSearchOpen(false);
                         setProductSearch('');
@@ -246,7 +264,6 @@ export default function ProductSearchInput({
     );
   }
 
-  // Original layout
   return (
     <>
       <div className="space-y-4">
@@ -259,6 +276,7 @@ export default function ProductSearchInput({
               placeholder="Digite o código do produto"
               value={productInput}
               onChange={handleProductInputChange}
+              onKeyDown={handleProductKeyDown}
               className="w-full"
             />
             <Button 
@@ -295,6 +313,8 @@ export default function ProductSearchInput({
             id="quantity"
             value={quantity}
             onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+            onKeyDown={handleQuantityKeyDown}
+            ref={quantityInputRef}
             min="1"
             className="w-full"
           />
@@ -308,6 +328,8 @@ export default function ProductSearchInput({
             mask="price"
             value={customPrice ? customPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
             onChange={(e) => setCustomPrice(parsePrice(e.target.value))}
+            onKeyDown={handlePriceKeyDown}
+            ref={priceInputRef}
             className="w-full"
           />
         </div>
@@ -338,7 +360,6 @@ export default function ProductSearchInput({
         )}
       </div>
 
-      {/* Product Search Dialog */}
       <Dialog open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
         <DialogContent className="sm:max-w-md">
           <Command className="rounded-lg border shadow-md">
@@ -358,7 +379,6 @@ export default function ProductSearchInput({
                     onSelect={() => {
                       setSelectedProduct(product);
                       setProductInput(`${product.code} - ${product.name}`);
-                      // Update custom price when selecting a product
                       setCustomPrice(product.price);
                       setIsProductSearchOpen(false);
                       setProductSearch('');
