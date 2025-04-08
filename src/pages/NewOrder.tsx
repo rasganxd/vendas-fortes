@@ -43,16 +43,87 @@ export default function NewOrder() {
   const [salesRepSearch, setSalesRepSearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
   
-  // New state for custom price
+  // Manual input fields for codes
+  const [customerInput, setCustomerInput] = useState('');
+  const [salesRepInput, setSalesRepInput] = useState('');
+  const [productInput, setProductInput] = useState('');
+  
+  // Custom price state
   const [customPrice, setCustomPrice] = useState(null);
 
-  useEffect(() => {
-    if (products.length > 0 && !selectedProduct) {
-      setSelectedProduct(products[0]);
+  // Find entities by code
+  const findCustomerByCode = (code) => {
+    const foundCustomer = customers.find(c => c.code && c.code.toString() === code);
+    if (foundCustomer) {
+      setSelectedCustomer(foundCustomer);
+      setCustomerInput(`${foundCustomer.code} - ${foundCustomer.name}`);
+      return true;
     }
-  }, [products, selectedProduct]);
-  
-  // Set custom price when product changes
+    return false;
+  };
+
+  const findSalesRepByCode = (code) => {
+    const foundSalesRep = salesReps.find(r => r.code && r.code.toString() === code);
+    if (foundSalesRep) {
+      setSelectedSalesRep(foundSalesRep);
+      setSalesRepInput(`${foundSalesRep.code} - ${foundSalesRep.name}`);
+      return true;
+    }
+    return false;
+  };
+
+  const findProductByCode = (code) => {
+    const foundProduct = products.find(p => p.code && p.code.toString() === code);
+    if (foundProduct) {
+      setSelectedProduct(foundProduct);
+      setCustomPrice(foundProduct.price);
+      setProductInput(`${foundProduct.code} - ${foundProduct.name}`);
+      return true;
+    }
+    return false;
+  };
+
+  // Handle manual code input
+  const handleCustomerInputChange = (e) => {
+    const value = e.target.value;
+    setCustomerInput(value);
+    
+    // Check if input is just a code number
+    const codeMatch = value.match(/^(\d+)$/);
+    if (codeMatch) {
+      findCustomerByCode(codeMatch[1]);
+    } else if (!value) {
+      setSelectedCustomer(null);
+    }
+  };
+
+  const handleSalesRepInputChange = (e) => {
+    const value = e.target.value;
+    setSalesRepInput(value);
+    
+    // Check if input is just a code number
+    const codeMatch = value.match(/^(\d+)$/);
+    if (codeMatch) {
+      findSalesRepByCode(codeMatch[1]);
+    } else if (!value) {
+      setSelectedSalesRep(null);
+    }
+  };
+
+  const handleProductInputChange = (e) => {
+    const value = e.target.value;
+    setProductInput(value);
+    
+    // Check if input is just a code number
+    const codeMatch = value.match(/^(\d+)$/);
+    if (codeMatch) {
+      findProductByCode(codeMatch[1]);
+    } else if (!value) {
+      setSelectedProduct(null);
+      setCustomPrice(0);
+    }
+  };
+
   useEffect(() => {
     if (selectedProduct) {
       setCustomPrice(selectedProduct.price);
@@ -99,7 +170,12 @@ export default function NewOrder() {
       }]);
     }
     
+    // Reset product selection after adding to order
+    setSelectedProduct(null);
+    setProductInput('');
     setQuantity(1);
+    setCustomPrice(0);
+    
     toast({
       title: "Item adicionado",
       description: `${quantity}x ${selectedProduct.name} adicionado ao pedido`
@@ -125,7 +201,10 @@ export default function NewOrder() {
     setOrderItems([]);
     setOrderNotes('');
     setQuantity(1);
-    setCustomPrice(null);
+    setCustomPrice(0);
+    setCustomerInput('');
+    setSalesRepInput('');
+    setProductInput('');
   };
 
   const handleCreateOrder = async () => {
@@ -204,19 +283,28 @@ export default function NewOrder() {
 
   const filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    customer.code.toString().includes(customerSearch)
+    customer.code?.toString().includes(customerSearch)
   );
 
   const filteredSalesReps = salesReps.filter(rep => 
     rep.name.toLowerCase().includes(salesRepSearch.toLowerCase()) ||
-    rep.code.toString().includes(salesRepSearch)
+    rep.code?.toString().includes(salesRepSearch)
   );
 
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    product.code.toString().includes(productSearch) ||
-    product.price.toString().includes(productSearch)
+    product.code?.toString().includes(productSearch) ||
+    product.price?.toString().includes(productSearch)
   );
+
+  // Helper function to parse price from Brazilian format to number
+  const parsePrice = (priceStr) => {
+    if (!priceStr) return 0;
+    
+    // Remove R$ symbol and any dots, replace comma with dot for decimal
+    const cleanPriceStr = priceStr.replace(/[^\d,]/g, '').replace(',', '.');
+    return parseFloat(cleanPriceStr) || 0;
+  };
 
   return (
     <PageLayout title="Novo Pedido">
@@ -234,9 +322,9 @@ export default function NewOrder() {
                 <Input
                   type="text"
                   id="customer"
-                  placeholder="Código ou nome do cliente"
-                  value={selectedCustomer ? `${selectedCustomer.code} - ${selectedCustomer.name}` : ''}
-                  readOnly
+                  placeholder="Digite o código do cliente"
+                  value={customerInput}
+                  onChange={handleCustomerInputChange}
                   className="w-full"
                 />
                 <Button 
@@ -253,7 +341,10 @@ export default function NewOrder() {
                     type="button" 
                     variant="ghost" 
                     size="icon" 
-                    onClick={() => setSelectedCustomer(null)}
+                    onClick={() => {
+                      setSelectedCustomer(null);
+                      setCustomerInput('');
+                    }}
                     className="shrink-0"
                   >
                     <X size={18} />
@@ -268,9 +359,9 @@ export default function NewOrder() {
                 <Input
                   type="text"
                   id="salesRep"
-                  placeholder="Código ou nome do vendedor"
-                  value={selectedSalesRep ? `${selectedSalesRep.code} - ${selectedSalesRep.name}` : ''}
-                  readOnly
+                  placeholder="Digite o código do vendedor"
+                  value={salesRepInput}
+                  onChange={handleSalesRepInputChange}
                   className="w-full"
                 />
                 <Button 
@@ -287,7 +378,10 @@ export default function NewOrder() {
                     type="button" 
                     variant="ghost" 
                     size="icon" 
-                    onClick={() => setSelectedSalesRep(null)}
+                    onClick={() => {
+                      setSelectedSalesRep(null);
+                      setSalesRepInput('');
+                    }}
                     className="shrink-0"
                   >
                     <X size={18} />
@@ -320,9 +414,9 @@ export default function NewOrder() {
                 <Input
                   type="text"
                   id="product"
-                  placeholder="Código ou nome do produto"
-                  value={selectedProduct ? `${selectedProduct.code} - ${selectedProduct.name}` : ''}
-                  readOnly
+                  placeholder="Digite o código do produto"
+                  value={productInput}
+                  onChange={handleProductInputChange}
                   className="w-full"
                 />
                 <Button 
@@ -339,7 +433,11 @@ export default function NewOrder() {
                     type="button" 
                     variant="ghost" 
                     size="icon" 
-                    onClick={() => setSelectedProduct(null)}
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setProductInput('');
+                      setCustomPrice(0);
+                    }}
                     className="shrink-0"
                   >
                     <X size={18} />
@@ -360,16 +458,14 @@ export default function NewOrder() {
               />
             </div>
             
-            {/* New field for custom price */}
             <div className="space-y-2">
               <Label htmlFor="price">Preço (R$)</Label>
               <Input
-                type="number"
+                type="text"
                 id="price"
-                value={customPrice}
-                onChange={(e) => setCustomPrice(parseFloat(e.target.value) || 0)}
-                min="0"
-                step="0.01"
+                mask="price"
+                value={customPrice ? customPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
+                onChange={(e) => setCustomPrice(parsePrice(e.target.value))}
                 className="w-full"
               />
             </div>
@@ -502,6 +598,7 @@ export default function NewOrder() {
                     value={customer.id}
                     onSelect={() => {
                       setSelectedCustomer(customer);
+                      setCustomerInput(`${customer.code} - ${customer.name}`);
                       setIsCustomerSearchOpen(false);
                       setCustomerSearch('');
                     }}
@@ -535,6 +632,7 @@ export default function NewOrder() {
                     value={salesRep.id}
                     onSelect={() => {
                       setSelectedSalesRep(salesRep);
+                      setSalesRepInput(`${salesRep.code} - ${salesRep.name}`);
                       setIsSalesRepSearchOpen(false);
                       setSalesRepSearch('');
                     }}
@@ -568,6 +666,7 @@ export default function NewOrder() {
                     value={product.id}
                     onSelect={() => {
                       setSelectedProduct(product);
+                      setProductInput(`${product.code} - ${product.name}`);
                       // Update custom price when selecting a product
                       setCustomPrice(product.price);
                       setIsProductSearchOpen(false);

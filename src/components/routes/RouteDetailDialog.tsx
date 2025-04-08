@@ -13,13 +13,13 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { MapPin, Plus } from 'lucide-react';
+import { MapPin, Plus, Save } from 'lucide-react';
 import { formatDateToBR } from '@/lib/date-utils';
 import { RouteStopsTable } from './RouteStopsTable';
 import { RouteProductsList } from './RouteProductsList';
-import { RouteMap } from './RouteMap';
 import RouteFinancialReport from './RouteFinancialReport';
 import { useAppContext } from '@/hooks/useAppContext';
+import { toast } from '@/components/ui/use-toast';
 
 interface RouteDetailDialogProps {
   open: boolean;
@@ -45,6 +45,15 @@ export const RouteDetailDialog = ({
     route.stops.some(stop => stop.orderId === order.id)
   );
   
+  const handleSaveRoute = () => {
+    // Here we'd handle saving the route data
+    toast({
+      title: "Rota salva",
+      description: "A rota foi salva com sucesso!"
+    });
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -53,9 +62,8 @@ export const RouteDetailDialog = ({
         </DialogHeader>
         
         <Tabs defaultValue="stops">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-2 mb-4">
             <TabsTrigger value="stops">Paradas</TabsTrigger>
-            <TabsTrigger value="map">Visualização da Rota</TabsTrigger>
             <TabsTrigger value="financial">Relatório Financeiro</TabsTrigger>
           </TabsList>
           
@@ -83,14 +91,10 @@ export const RouteDetailDialog = ({
                 <p><span className="font-medium">Status da Rota:</span> {route.status}</p>
                 <p><span className="font-medium">Data:</span> {formatDateToBR(route.date)}</p>
               </div>
-              <Button className="bg-teal-600 hover:bg-teal-700">
-                Otimizar Rota
+              <Button className="bg-teal-600 hover:bg-teal-700" onClick={handleSaveRoute}>
+                <Save size={16} className="mr-2" /> Salvar Rota
               </Button>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="map" className="min-h-[500px]">
-            <RouteMap route={route} className="h-full" />
           </TabsContent>
           
           <TabsContent value="financial">

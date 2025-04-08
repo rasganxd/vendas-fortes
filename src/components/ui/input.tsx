@@ -3,7 +3,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  mask?: 'cpf' | 'cnpj' | 'cpfCnpj';
+  mask?: 'cpf' | 'cnpj' | 'cpfCnpj' | 'price';
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -11,6 +11,31 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     // Handle input masking for CPF/CNPJ
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (mask) {
+        if (mask === 'price') {
+          // Price mask formatting
+          let inputValue = e.target.value.replace(/\D/g, '');
+          
+          // Convert to number and divide by 100 to get decimal value
+          const numValue = parseInt(inputValue) / 100;
+          
+          // Format as Brazilian currency
+          inputValue = numValue.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+          
+          const newEvent = {
+            ...e,
+            target: {
+              ...e.target,
+              value: inputValue
+            }
+          };
+          
+          onChange && onChange(newEvent as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+        
         let inputValue = e.target.value.replace(/\D/g, '');
         
         if (mask === 'cpf' || (mask === 'cpfCnpj' && inputValue.length <= 11)) {
