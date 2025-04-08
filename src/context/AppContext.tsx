@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect } from 'react';
 import { Customer, Product, Order, Payment, DeliveryRoute, Vehicle, Load, SalesRep, Backup } from '@/types';
 import { mockSalesReps } from '@/data/mock-data';
@@ -11,6 +12,9 @@ import { loadVehicles } from '@/hooks/useVehicles';
 import { loadPayments } from '@/hooks/usePayments';
 import { loadRoutes } from '@/hooks/useRoutes';
 import { loadLoads } from '@/hooks/useLoads';
+
+// Importing customer service for direct operations
+import { customerService } from '@/firebase/firestoreService';
 
 // Exportando interface NavItem para SideNav
 export interface NavItem {
@@ -161,27 +165,68 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("Firebase salva automaticamente os dados");
   };
 
-  // Implementação das operações CRUD
-  // Estas são implementações temporárias para corrigir os erros
-  // Em uma refatoração completa, essas funções seriam movidas para seus respectivos hooks
-  
-  // Customers
+  // Implementações reais para customers
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
-    // Implementação temporária
-    console.log("Adding customer:", customer);
-    return "temp-id";
+    try {
+      const id = await customerService.add(customer);
+      const newCustomer = { ...customer, id } as Customer;
+      setCustomers([...customers, newCustomer]);
+      toast({
+        title: "Cliente adicionado",
+        description: "Cliente adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar cliente:", error);
+      toast({
+        title: "Erro ao adicionar cliente",
+        description: "Houve um problema ao adicionar o cliente.",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
   
   const updateCustomer = async (id: string, customer: Partial<Customer>) => {
-    // Implementação temporária
-    console.log("Updating customer:", id, customer);
+    try {
+      await customerService.update(id, customer);
+      const updatedCustomers = customers.map(c => 
+        c.id === id ? { ...c, ...customer } : c
+      );
+      setCustomers(updatedCustomers);
+      toast({
+        title: "Cliente atualizado",
+        description: "Cliente atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar cliente:", error);
+      toast({
+        title: "Erro ao atualizar cliente",
+        description: "Houve um problema ao atualizar o cliente.",
+        variant: "destructive"
+      });
+    }
   };
   
   const deleteCustomer = async (id: string) => {
-    // Implementação temporária
-    console.log("Deleting customer:", id);
+    try {
+      await customerService.delete(id);
+      setCustomers(customers.filter(c => c.id !== id));
+      toast({
+        title: "Cliente excluído",
+        description: "Cliente excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir cliente:", error);
+      toast({
+        title: "Erro ao excluir cliente",
+        description: "Houve um problema ao excluir o cliente.",
+        variant: "destructive"
+      });
+    }
   };
   
+  // Implementações temporárias para os demais serviços
   // Products
   const addProduct = async (product: Omit<Product, 'id'>) => {
     // Implementação temporária
