@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -132,7 +131,7 @@ export default function Loads() {
             onView={handleViewLoad}
             onEdit={handleEditLoad}
             onDelete={handleDeleteLoad}
-            onPrint={() => handlePrintLoad(load)}  // Adicionamos a opção de impressão
+            onPrint={() => handlePrintLoad(load)}
           />
         ))}
         
@@ -273,7 +272,6 @@ export default function Loads() {
       <Dialog 
         open={isPrintDialogOpen} 
         onOpenChange={setIsPrintDialogOpen}
-        className="max-w-4xl"
       >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>

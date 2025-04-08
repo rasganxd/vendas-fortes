@@ -95,18 +95,23 @@ export const useLoads = () => {
   const getOrdersFromLoad = (load: Load): Order[] => {
     return load.items.map(item => ({
       id: item.orderId,
-      customerName: item.customerName,
-      createdAt: item.orderDate,
-      total: item.orderTotal,
+      customerName: item.customerName || "Cliente não especificado",
+      customerId: "",  // Campo obrigatório para Order
+      createdAt: item.orderDate || new Date(),
+      total: item.orderTotal || 0,
       items: item.orderItems.map(orderItem => ({
+        id: orderItem.id,
         productId: orderItem.id,
         productName: orderItem.productName,
         quantity: orderItem.quantity,
-        price: orderItem.price,
-        // Valores adicionais necessários para satisfazer o tipo Order
-        subtotal: orderItem.quantity * orderItem.price,
-        id: orderItem.id
-      }))
+        price: orderItem.price || 0,
+        subtotal: orderItem.quantity * (orderItem.price || 0)
+      })),
+      // Campos adicionais obrigatórios para Order
+      salesRepId: "",
+      salesRepName: "",
+      status: "delivered",
+      paymentStatus: "paid"
     }));
   };
 

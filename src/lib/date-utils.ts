@@ -1,5 +1,7 @@
 
-export function formatDateToBR(date: Date | string): string {
+export function formatDateToBR(date: Date | string | null | undefined): string {
+  if (!date) return '-';
+  
   const d = typeof date === 'string' ? new Date(date) : date;
   
   return d.toLocaleDateString('pt-BR', {
@@ -9,7 +11,9 @@ export function formatDateToBR(date: Date | string): string {
   });
 }
 
-export function formatDateTimeToBR(date: Date | string): string {
+export function formatDateTimeToBR(date: Date | string | null | undefined): string {
+  if (!date) return '-';
+  
   const d = typeof date === 'string' ? new Date(date) : date;
   
   return d.toLocaleDateString('pt-BR', {
