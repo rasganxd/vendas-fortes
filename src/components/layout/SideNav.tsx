@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   ListChecks,
   Package,
-  ShoppingCart,
   Users,
   Settings,
   Truck,
@@ -56,13 +55,13 @@ const navigation: NavItem[] = [
     group: "financeiro"
   },
   {
-    name: "Roteirização",
+    name: "Rotas",
     href: "/rotas",
     icon: ListChecks,
     group: "logistics"
   },
   {
-    name: "Montagem",
+    name: "Cargas",
     href: "/cargas",
     icon: Package,
     group: "logistics"
@@ -74,13 +73,13 @@ const navigation: NavItem[] = [
     group: "logistics"
   },
   {
-    name: "Config.",
+    name: "Config",
     href: "/configuracoes",
     icon: Settings,
     group: "sistema"
   },
   {
-    name: "Manutenção",
+    name: "Dados",
     href: "/manutencao",
     icon: Database,
     group: "sistema"
@@ -101,32 +100,32 @@ export default function SideNav() {
   // Labels for groups
   const groupLabels: Record<string, string> = {
     geral: "GERAL",
-    cadastro: "CADASTROS",
+    cadastro: "CADASTRO",
     vendas: "VENDAS",
-    financeiro: "FINANCEIRO",
+    financeiro: "FIN.",
     logistics: "LOGÍSTICA",
     sistema: "SISTEMA"
   };
   
   return (
     <Sidebar className="border-r bg-white shadow-sm" variant="sidebar" collapsible="icon">
-      <SidebarHeader className="px-3 py-3 border-b">
-        <h1 className="text-lg font-bold text-sales-800">SalesTrack</h1>
+      <SidebarHeader className="px-2 py-3 border-b">
+        <h1 className="text-base font-bold text-sales-800">SalesTrack</h1>
       </SidebarHeader>
-      <SidebarContent className="py-2">
+      <SidebarContent className="py-1">
         <SidebarMenu>
           {Object.entries(groupedNavItems).map(([group, items]) => (
-            <div key={group} className="mb-3">
-              <h3 className="text-xs uppercase font-medium text-gray-500 px-3 mb-1">{groupLabels[group] || group}</h3>
+            <div key={group} className="mb-2">
+              <h3 className="text-xs uppercase font-medium text-gray-500 px-2 mb-1">{groupLabels[group] || group}</h3>
               {items.map((item) => {
                 const isActive = location.pathname === item.href;
                 
                 return (
                   <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
-                      <Link to={item.href} className="flex items-center px-3 py-1.5 text-sm">
-                        <item.icon className="h-4 w-4 mr-2" />
-                        <span>{item.name}</span>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.name} size="sm">
+                      <Link to={item.href} className="flex items-center px-2 py-1 text-sm">
+                        <item.icon className="h-3.5 w-3.5 mr-1" />
+                        <span className="truncate">{item.name}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

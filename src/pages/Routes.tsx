@@ -83,10 +83,10 @@ export default function Routes() {
     <PageLayout title="Roteirização de Entregas">
       <RoutesHeader onNewRoute={() => setIsNewRouteDialogOpen(true)} />
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         {/* Routes Card */}
-        <Card className="md:col-span-2">
-          <CardHeader>
+        <Card className="md:col-span-9">
+          <CardHeader className="py-4">
             <CardTitle className="text-lg">Rotas de Entrega</CardTitle>
             <CardDescription>
               Lista de rotas cadastradas para entregas
@@ -117,7 +117,7 @@ export default function Routes() {
                         <TableCell>
                           {route.vehicleName ? (
                             <div className="flex items-center">
-                              <Truck size={16} className="mr-2 text-gray-500" />
+                              <Truck size={16} className="mr-1 text-gray-500" />
                               {route.vehicleName}
                             </div>
                           ) : (
@@ -131,7 +131,7 @@ export default function Routes() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1">
                             <Button 
                               variant="outline" 
                               size="sm"
@@ -182,16 +182,16 @@ export default function Routes() {
         </Card>
         
         {/* Route Information Card */}
-        <Card>
-          <CardHeader>
+        <Card className="md:col-span-3">
+          <CardHeader className="py-4">
             <CardTitle className="text-lg">Informações</CardTitle>
             <CardDescription>Detalhes sobre as rotas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-md">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md">
                 <div className="flex items-center">
-                  <MapPin className="h-5 w-5 text-sales-800 mr-2" />
+                  <MapPin className="h-4 w-4 text-sales-800 mr-2" />
                   <span className="text-sm font-medium">Total de Rotas</span>
                 </div>
                 <Badge variant="outline" className="font-medium text-md">
@@ -199,32 +199,33 @@ export default function Routes() {
                 </Badge>
               </div>
               
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-md">
+              <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md">
                 <div className="flex items-center">
-                  <Truck className="h-5 w-5 text-sales-800 mr-2" />
-                  <span className="text-sm font-medium">Veículos Disponíveis</span>
+                  <Truck className="h-4 w-4 text-sales-800 mr-2" />
+                  <span className="text-sm font-medium">Veículos</span>
                 </div>
                 <Badge variant="outline" className="font-medium text-md">
                   {vehicles.filter(v => v.active).length}
                 </Badge>
               </div>
 
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-md">
+              <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md">
                 <div className="flex items-center">
-                  <Navigation className="h-5 w-5 text-green-600 mr-2" />
-                  <span className="text-sm font-medium">Rotas Concluídas</span>
+                  <Navigation className="h-4 w-4 text-green-600 mr-2" />
+                  <span className="text-sm font-medium">Concluídas</span>
                 </div>
                 <Badge variant="outline" className="font-medium text-md">
                   {routes.filter(r => r.status === 'completed').length}
                 </Badge>
               </div>
               
-              <div className="mt-6">
+              <div className="mt-4">
                 <Button 
-                  className="w-full bg-sales-800 hover:bg-sales-700"
+                  className="w-full bg-sales-800 hover:bg-sales-700 text-sm py-1"
                   onClick={() => setIsNewRouteDialogOpen(true)}
+                  size="sm"
                 >
-                  Nova Rota de Entrega
+                  Nova Rota
                 </Button>
               </div>
             </div>
