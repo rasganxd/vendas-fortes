@@ -9,7 +9,8 @@ import {
   Truck,
   FileText,
   Coins,
-  Database
+  Database,
+  CreditCard
 } from "lucide-react";
 
 import { 
@@ -53,6 +54,12 @@ const navigation: NavItem[] = [
     name: "Pagamentos",
     href: "/pagamentos",
     icon: Coins,
+    group: "financeiro"
+  },
+  {
+    name: "Tabelas Pagto",
+    href: "/pagamentos/tabelas", 
+    icon: CreditCard,
     group: "financeiro"
   },
   {

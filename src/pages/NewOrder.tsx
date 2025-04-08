@@ -70,7 +70,7 @@ export default function NewOrder() {
           { 
             ...item, 
             quantity: (item.quantity || 0) + quantity,
-            total: (item.price || price) * ((item.quantity || 0) + quantity)
+            total: (item.unitPrice || price) * ((item.quantity || 0) + quantity)
           } : item
       );
       setOrderItems(updatedItems);
@@ -79,7 +79,6 @@ export default function NewOrder() {
         productId: product.id,
         productName: product.name,
         quantity: quantity,
-        price: price,
         unitPrice: price,
         total: price * quantity
       }]);
@@ -101,7 +100,7 @@ export default function NewOrder() {
   };
 
   const calculateTotal = () => {
-    return orderItems.reduce((total, item) => total + ((item.price || 0) * (item.quantity || 0)), 0);
+    return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
   };
 
   const resetForm = () => {

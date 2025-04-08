@@ -39,10 +39,10 @@ export default function OrderItemsTable({
                   <td className="px-4 py-3">{item.productName}</td>
                   <td className="px-4 py-3 text-center">{item.quantity}</td>
                   <td className="px-4 py-3 text-right">
-                    {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
                   <td className="px-4 py-3 text-right font-medium">
-                    {(item.price * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {(item.unitPrice * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Button variant="ghost" size="sm" onClick={() => onRemoveItem(item.productId)}>
