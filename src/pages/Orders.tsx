@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -299,7 +298,7 @@ export default function Orders() {
           
           <div ref={printRef} className="p-4">
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold">PEDIDO Nº {selectedOrder?.id}</h2>
+              {/* Removed order number from here */}
               <p className="text-gray-600">
                 Data: {selectedOrder ? formatDateToBR(selectedOrder.createdAt) : ''}
               </p>
@@ -466,7 +465,7 @@ export default function Orders() {
                 return (
                   <div key={order.id} className={orderIndex > 0 ? "mt-8 pt-8 border-t" : ""}>
                     <div className="text-center mb-6">
-                      <h2 className="text-xl font-bold">PEDIDO Nº {order.id}</h2>
+                      {/* Removed order number from here */}
                       <p className="text-gray-600">
                         Data: {formatDateToBR(order.createdAt)}
                       </p>
