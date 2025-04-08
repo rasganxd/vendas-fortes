@@ -1,37 +1,6 @@
-
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { SalesRep } from '@/types';
-import { PlusCircle, UserCog, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -41,6 +10,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -49,388 +25,442 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/alert-dialog";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Plus, Search, Edit, Trash } from 'lucide-react';
+import { SalesRep } from '@/types';
+import { toast } from '@/components/ui/use-toast';
 
-const salesRepFormSchema = z.object({
-  name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
-  email: z.string().email({ message: "Email inválido" }),
-  phone: z.string().min(10, { message: "Telefone deve ter pelo menos 10 dígitos" }),
-  role: z.enum(["admin", "manager", "sales", "driver"]),
-  region: z.string().optional(),
-  active: z.boolean().default(true),
-});
+interface FormErrors {
+  code?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+}
 
 export default function SalesReps() {
   const { salesReps, addSalesRep, updateSalesRep, deleteSalesRep } = useAppContext();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [editingSalesRep, setEditingSalesRep] = useState<SalesRep | null>(null);
-  const [deletingSalesRepId, setDeletingSalesRepId] = useState<string | null>(null);
-  
-  const form = useForm<z.infer<typeof salesRepFormSchema>>({
-    resolver: zodResolver(salesRepFormSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      role: "sales",
-      region: "",
-      active: true
-    },
+  const [editingSalesRep, setEditingSalesRep] = useState<SalesRep>({
+    id: '',
+    code: 0,
+    name: '',
+    email: '',
+    phone: '',
+    role: 'sales',
+    active: true
   });
+  const [newSalesRep, setNewSalesRep] = useState<Omit<SalesRep, 'id'>>({
+    code: 0,
+    name: '',
+    email: '',
+    phone: '',
+    role: 'sales',
+    active: true
+  });
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  const openAddDialog = () => {
-    form.reset({
-      name: "",
-      email: "",
-      phone: "",
-      role: "sales",
-      region: "",
+  const roles = ['admin', 'manager', 'sales', 'driver'];
+
+  const filteredSalesReps = salesReps.filter(rep =>
+    rep.name.toLowerCase().includes(search.toLowerCase()) ||
+    rep.email.toLowerCase().includes(search.toLowerCase()) ||
+    rep.phone.includes(search) ||
+    (rep.code?.toString() || '').includes(search)
+  );
+
+  const validateForm = (rep: Omit<SalesRep, 'id'>): boolean => {
+    let errors: FormErrors = {};
+    if (!rep.code) {
+      errors.code = 'Código é obrigatório';
+    }
+    if (!rep.name) {
+      errors.name = 'Nome é obrigatório';
+    }
+    if (!rep.email) {
+      errors.email = 'Email é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rep.email)) {
+      errors.email = 'Email inválido';
+    }
+    if (!rep.phone) {
+      errors.phone = 'Telefone é obrigatório';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNewSalesRep = () => {
+    // Generate next available code like we do for customers
+    const nextCode = salesReps.length > 0 
+      ? Math.max(...salesReps.map(rep => rep.code || 0)) + 1 
+      : 1;
+
+    setNewSalesRep({
+      code: nextCode,
+      name: '',
+      email: '',
+      phone: '',
+      role: 'sales',
+      region: '',
       active: true
     });
-    setEditingSalesRep(null);
-    setIsDialogOpen(true);
+    setIsNewDialogOpen(true);
   };
 
-  const openEditDialog = (salesRep: SalesRep) => {
-    form.reset({
-      name: salesRep.name,
-      email: salesRep.email,
-      phone: salesRep.phone,
-      role: salesRep.role,
-      region: salesRep.region || "",
-      active: salesRep.active
-    });
-    setEditingSalesRep(salesRep);
-    setIsDialogOpen(true);
+  const handleEditSalesRep = (rep: SalesRep) => {
+    setEditingSalesRep(rep);
+    setFormErrors({});
+    setIsEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (id: string) => {
-    setDeletingSalesRepId(id);
+  const handleDeleteSalesRep = (rep: SalesRep) => {
+    setEditingSalesRep(rep);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (deletingSalesRepId) {
-      deleteSalesRep(deletingSalesRepId);
+  const handleCloseDialog = () => {
+    setIsNewDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setIsDeleteDialogOpen(false);
+    setFormErrors({});
+  };
+
+  const handleAddSalesRep = async () => {
+    if (validateForm(newSalesRep)) {
+      try {
+        await addSalesRep({
+          code: newSalesRep.code,
+          name: newSalesRep.name,
+          email: newSalesRep.email,
+          phone: newSalesRep.phone,
+          role: newSalesRep.role as 'admin' | 'manager' | 'sales' | 'driver',
+          region: newSalesRep.region,
+          active: newSalesRep.active
+        });
+        setIsNewDialogOpen(false);
+        setFormErrors({});
+      } catch (error) {
+        console.error("Error adding sales rep:", error);
+      }
+    }
+  };
+
+  const handleUpdateSalesRep = async () => {
+    if (validateForm(editingSalesRep)) {
+      try {
+        await updateSalesRep(editingSalesRep.id, {
+          code: editingSalesRep.code,
+          name: editingSalesRep.name,
+          email: editingSalesRep.email,
+          phone: editingSalesRep.phone,
+          role: editingSalesRep.role as 'admin' | 'manager' | 'sales' | 'driver',
+          region: editingSalesRep.region,
+          active: editingSalesRep.active
+        });
+        setIsEditDialogOpen(false);
+        setFormErrors({});
+      } catch (error) {
+        console.error("Error updating sales rep:", error);
+      }
+    }
+  };
+
+  const handleDeleteConfirmation = async () => {
+    try {
+      await deleteSalesRep(editingSalesRep.id);
       setIsDeleteDialogOpen(false);
-      setDeletingSalesRepId(null);
-    }
-  };
-
-  const onSubmit = (data: z.infer<typeof salesRepFormSchema>) => {
-    if (editingSalesRep) {
-      updateSalesRep(editingSalesRep.id, {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        role: data.role,
-        region: data.region,
-        active: data.active
-      });
-    } else {
-      // Fixed: Pass all required properties to addSalesRep
-      addSalesRep({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        role: data.role,
-        region: data.region,
-        active: data.active
-      });
-    }
-    setIsDialogOpen(false);
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch(role) {
-      case "admin":
-        return <Badge className="bg-purple-600">Administrador</Badge>;
-      case "manager":
-        return <Badge className="bg-blue-600">Gerente</Badge>;
-      case "sales":
-        return <Badge className="bg-green-600">Vendedor</Badge>;
-      case "driver":
-        return <Badge className="bg-amber-600">Motorista</Badge>;
-      default:
-        return <Badge>{role}</Badge>;
+    } catch (error) {
+      console.error("Error deleting sales rep:", error);
     }
   };
 
   return (
-    <PageLayout title="Vendedores">
+    <PageLayout title="Representantes">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Gerencimento de Vendedores</CardTitle>
-              <CardDescription>Cadastre e gerencie os vendedores da equipe</CardDescription>
+              <CardTitle>Lista de Representantes</CardTitle>
+              <CardDescription>
+                Gerencie seus representantes de vendas
+              </CardDescription>
             </div>
-            <Button onClick={openAddDialog} className="bg-sales-800 hover:bg-sales-700">
-              <PlusCircle size={16} className="mr-2" /> Novo Vendedor
-            </Button>
+            <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleNewSalesRep}>
+                  <Plus size={16} className="mr-2" /> Novo Representante
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Adicionar Representante</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-code">Código</Label>
+                      <Input
+                        id="new-code"
+                        type="number"
+                        value={newSalesRep.code || ''}
+                        onChange={(e) => setNewSalesRep({ ...newSalesRep, code: Number(e.target.value) })}
+                      />
+                      {formErrors.code && <p className="text-red-500 text-sm">{formErrors.code}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-name">Nome</Label>
+                      <Input
+                        id="new-name"
+                        value={newSalesRep.name || ''}
+                        onChange={(e) => setNewSalesRep({ ...newSalesRep, name: e.target.value })}
+                      />
+                      {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-email">Email</Label>
+                    <Input
+                      id="new-email"
+                      type="email"
+                      value={newSalesRep.email || ''}
+                      onChange={(e) => setNewSalesRep({ ...newSalesRep, email: e.target.value })}
+                    />
+                    {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-phone">Telefone</Label>
+                    <Input
+                      id="new-phone"
+                      value={newSalesRep.phone || ''}
+                      onChange={(e) => setNewSalesRep({ ...newSalesRep, phone: e.target.value })}
+                    />
+                    {formErrors.phone && <p className="text-red-500 text-sm">{formErrors.phone}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-role">Função</Label>
+                    <Select onValueChange={(value) => setNewSalesRep({ ...newSalesRep, role: value as 'sales' | 'admin' | 'manager' | 'driver' })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles.map(role => (
+                          <SelectItem key={role} value={role}>{role}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-region">Região</Label>
+                    <Input
+                      id="new-region"
+                      value={newSalesRep.region || ''}
+                      onChange={(e) => setNewSalesRep({ ...newSalesRep, region: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="checkbox"
+                      id="new-active"
+                      checked={newSalesRep.active}
+                      onChange={(e) => setNewSalesRep({ ...newSalesRep, active: e.target.checked })}
+                    />
+                    <Label htmlFor="new-active">Ativo</Label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleAddSalesRep}>
+                    Adicionar
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
+              <Input
+                placeholder="Buscar representantes..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
           <div className="relative overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Código</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Função</TableHead>
                   <TableHead>Região</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Ativo</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {salesReps.map((salesRep) => (
-                  <TableRow key={salesRep.id}>
-                    <TableCell className="font-medium">{salesRep.name}</TableCell>
-                    <TableCell>{salesRep.email}</TableCell>
-                    <TableCell>{salesRep.phone}</TableCell>
-                    <TableCell>{getRoleBadge(salesRep.role)}</TableCell>
-                    <TableCell>{salesRep.region || '—'}</TableCell>
-                    <TableCell>
-                      {salesRep.active ? (
-                        <div className="flex items-center text-green-600">
-                          <CheckCircle size={16} className="mr-1" /> Ativo
-                        </div>
-                      ) : (
-                        <div className="flex items-center text-gray-500">
-                          <XCircle size={16} className="mr-1" /> Inativo
-                        </div>
-                      )}
-                    </TableCell>
+                {filteredSalesReps.map((rep) => (
+                  <TableRow key={rep.id}>
+                    <TableCell className="font-medium">{rep.code}</TableCell>
+                    <TableCell>{rep.name}</TableCell>
+                    <TableCell>{rep.email}</TableCell>
+                    <TableCell>{rep.phone}</TableCell>
+                    <TableCell>{rep.role}</TableCell>
+                    <TableCell>{rep.region}</TableCell>
+                    <TableCell>{rep.active ? 'Sim' : 'Não'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(salesRep)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditSalesRep(rep)}
+                        >
                           <Edit size={16} />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => openDeleteDialog(salesRep.id)}
-                          className="text-red-500 hover:text-red-700"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteSalesRep(rep)}
                         >
-                          <Trash2 size={16} />
+                          <Trash size={16} />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
-                {salesReps.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      <UserCog size={40} className="mx-auto text-gray-300 mb-2" />
-                      <p className="text-gray-500">Nenhum vendedor cadastrado</p>
-                      <Button 
-                        onClick={openAddDialog} 
-                        variant="outline" 
-                        className="mt-2"
-                      >
-                        Cadastrar Vendedor
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Edit Sales Rep Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {editingSalesRep ? 'Editar Vendedor' : 'Novo Vendedor'}
-            </DialogTitle>
+            <DialogTitle>Editar Representante</DialogTitle>
           </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome completo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="email@exemplo.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(XX) XXXXX-XXXX" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Função</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="admin" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Administrador
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="manager" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Gerente
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="sales" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Vendedor
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="driver" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Motorista
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="region"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Região</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Região de atuação (opcional)" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Área geográfica onde o vendedor atua
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Status Ativo</FormLabel>
-                      <FormDescription>
-                        Determina se o vendedor está ativo no sistema
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={(value) => field.onChange(value === "true")}
-                        defaultValue={field.value ? "true" : "false"}
-                        className="flex space-x-4"
-                      >
-                        <FormItem className="flex items-center space-x-1 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="true" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Sim</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-1 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="false" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Não</FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end pt-4 space-x-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" className="bg-sales-800 hover:bg-sales-700">
-                  {editingSalesRep ? 'Atualizar' : 'Cadastrar'}
-                </Button>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-code">Código</Label>
+                <Input
+                  id="edit-code"
+                  type="number"
+                  value={editingSalesRep.code || ''}
+                  onChange={(e) => setEditingSalesRep({ ...editingSalesRep, code: Number(e.target.value) })}
+                />
+                {formErrors.code && <p className="text-red-500 text-sm">{formErrors.code}</p>}
               </div>
-            </form>
-          </Form>
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome</Label>
+                <Input
+                  id="edit-name"
+                  value={editingSalesRep.name || ''}
+                  onChange={(e) => setEditingSalesRep({ ...editingSalesRep, name: e.target.value })}
+                />
+                {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editingSalesRep.email || ''}
+                onChange={(e) => setEditingSalesRep({ ...editingSalesRep, email: e.target.value })}
+              />
+              {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-phone">Telefone</Label>
+              <Input
+                id="edit-phone"
+                value={editingSalesRep.phone || ''}
+                onChange={(e) => setEditingSalesRep({ ...editingSalesRep, phone: e.target.value })}
+              />
+              {formErrors.phone && <p className="text-red-500 text-sm">{formErrors.phone}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-role">Função</Label>
+              <Select value={editingSalesRep.role} onValueChange={(value) => setEditingSalesRep({ ...editingSalesRep, role: value as 'sales' | 'admin' | 'manager' | 'driver' })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map(role => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-region">Região</Label>
+              <Input
+                id="edit-region"
+                value={editingSalesRep.region || ''}
+                onChange={(e) => setEditingSalesRep({ ...editingSalesRep, region: e.target.value })}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="checkbox"
+                id="edit-active"
+                checked={editingSalesRep.active}
+                onChange={(e) => setEditingSalesRep({ ...editingSalesRep, active: e.target.checked })}
+              />
+              <Label htmlFor="edit-active">Ativo</Label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={handleCloseDialog}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleUpdateSalesRep}>
+              Atualizar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
+
+      {/* Delete Sales Rep Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Confirmação de exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O vendedor será removido permanentemente do sistema.
+              Tem certeza que deseja excluir o representante {editingSalesRep.name}? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogCancel onClick={handleCloseDialog}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirmation} className="bg-red-600 hover:bg-red-700">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

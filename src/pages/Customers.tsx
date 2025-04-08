@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -37,7 +38,7 @@ const visitDaysOptions = [
 ];
 
 const Customers = () => {
-  const { customers, addCustomer, updateCustomer, deleteCustomer } = useCustomers();
+  const { customers, addCustomer, updateCustomer, deleteCustomer, generateNextCode } = useCustomers();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCustomer, setEditingCustomer] = useState<null | any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -45,6 +46,7 @@ const Customers = () => {
   
   const form = useForm({
     defaultValues: {
+      code: 0,
       name: '',
       document: '',
       phone: '',
@@ -59,6 +61,7 @@ const Customers = () => {
 
   const newCustomerForm = useForm({
     defaultValues: {
+      code: 0,
       name: '',
       document: '',
       phone: '',
@@ -74,6 +77,7 @@ const Customers = () => {
   const handleEditCustomer = (customer: any) => {
     setEditingCustomer(customer);
     form.reset({
+      code: customer.code || 0,
       name: customer.name,
       document: customer.document || '',
       phone: customer.phone,
@@ -113,14 +117,27 @@ const Customers = () => {
   };
 
   const handleNewCustomer = () => {
-    newCustomerForm.reset();
+    const nextCode = generateNextCode();
+    newCustomerForm.reset({
+      code: nextCode,
+      name: '',
+      document: '',
+      phone: '',
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      notes: '',
+      visitDays: []
+    });
     setIsNewCustomerDialogOpen(true);
   };
 
   const filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (customer.document || '').includes(searchTerm) ||
-    customer.phone.includes(searchTerm)
+    customer.phone.includes(searchTerm) ||
+    (customer.code?.toString() || '').includes(searchTerm)
   );
 
   return (
@@ -150,7 +167,12 @@ const Customers = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCustomers.map((customer) => (
           <Card key={customer.id} className="p-6 shadow-md hover:shadow-lg transition-shadow">
-            <h3 className="text-xl font-medium text-gray-800">{customer.name}</h3>
+            <div className="flex justify-between">
+              <h3 className="text-xl font-medium text-gray-800">{customer.name}</h3>
+              <span className="text-sm font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                Código: {customer.code || 'N/A'}
+              </span>
+            </div>
             <p className="text-gray-600 mt-2">{customer.document || 'CPF/CNPJ não informado'}</p>
             <p className="text-gray-600">{customer.phone}</p>
             
@@ -203,6 +225,20 @@ const Customers = () => {
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <FormField
                 control={form.control}
                 name="name"
@@ -386,6 +422,20 @@ const Customers = () => {
           
           <Form {...newCustomerForm}>
             <form onSubmit={newCustomerForm.handleSubmit(onAddCustomer)} className="space-y-4">
+              <FormField
+                control={newCustomerForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <FormField
                 control={newCustomerForm.control}
                 name="name"

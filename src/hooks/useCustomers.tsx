@@ -30,15 +30,16 @@ export const useCustomers = () => {
     return highestCode + 1;
   };
   
-  const addCustomer = async (customer: Omit<Customer, 'id' | 'code'>) => {
+  const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
-      // Generate next available code
-      const code = generateNextCode();
+      // If no code is provided, generate one
+      if (!customer.code) {
+        customer.code = generateNextCode();
+      }
       
       // Add to Firebase with code
-      const customerWithCode = { ...customer, code };
-      const id = await customerService.add(customerWithCode);
-      const newCustomer = { ...customerWithCode, id } as Customer;
+      const id = await customerService.add(customer);
+      const newCustomer = { ...customer, id } as Customer;
       
       // Update local state
       setCustomers([...customers, newCustomer]);
@@ -107,6 +108,7 @@ export const useCustomers = () => {
     customers,
     addCustomer,
     updateCustomer,
-    deleteCustomer
+    deleteCustomer,
+    generateNextCode
   };
 };
