@@ -1,3 +1,4 @@
+
 // Customer Types
 export interface Customer {
   id: string;
@@ -89,6 +90,7 @@ export interface RouteStop {
   status: 'pending' | 'completed';
   lat?: number; // Coordenada de latitude
   lng?: number; // Coordenada de longitude
+  estimatedArrival?: Date; // Adicionando horário estimado de chegada
 }
 
 export interface DeliveryRoute {

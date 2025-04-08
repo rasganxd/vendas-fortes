@@ -4,6 +4,7 @@ import { DeliveryRoute } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Map, Navigation } from 'lucide-react';
 import { SimpleRouteMap } from './SimpleRouteMap';
+import { GoogleRouteMap } from './GoogleRouteMap';
 
 interface RouteMapProps {
   route: DeliveryRoute;
@@ -29,7 +30,7 @@ export const RouteMap = ({ route, className }: RouteMapProps) => {
           {useOfflineMap ? (
             <>
               <Map size={14} className="mr-2" />
-              Usar Mapbox (Online)
+              Usar Google Maps
             </>
           ) : (
             <>
@@ -44,14 +45,7 @@ export const RouteMap = ({ route, className }: RouteMapProps) => {
         {useOfflineMap ? (
           <SimpleRouteMap stops={route.stops} />
         ) : (
-          <div className="h-[400px] flex items-center justify-center bg-gray-100 text-center">
-            <div>
-              <Map size={48} className="mx-auto text-gray-400 mb-2" />
-              <p className="text-gray-500">
-                Funcionalidade de mapa online removida. Use o mapa offline.
-              </p>
-            </div>
-          </div>
+          <GoogleRouteMap stops={route.stops} />
         )}
       </div>
     </div>
