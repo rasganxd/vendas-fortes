@@ -5,7 +5,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-import { Save, FileText, FilePenLine } from "lucide-react";
+import { Save } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Order, OrderItem, PaymentTable, Product, Customer, SalesRep } from '@/types';
 
@@ -185,7 +185,6 @@ export default function NewOrder() {
     }
   };
 
-  // Get recent orders for a customer
   const getRecentCustomerOrders = () => {
     if (!selectedCustomer) return [];
     
@@ -289,22 +288,12 @@ export default function NewOrder() {
             </div>
           </div>
           
-          {/* Right column - Action buttons */}
-          <div className="col-span-4 grid grid-cols-2 gap-2">
-            <Button variant="outline" className="justify-start">
-              <FilePenLine size={16} /> Alterar <span className="ml-auto text-xs text-gray-400">F4</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="justify-start"
-              onClick={handleViewRecentPurchases}
-            >
-              <FileText size={16} /> Últimas Compras
-            </Button>
+          {/* Right column - Action buttons - All buttons except "Finalizar Pedido" removed */}
+          <div className="col-span-4">
             <Button 
               onClick={handleCreateOrder} 
               disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
-              className="col-span-2 bg-sales-800 hover:bg-sales-700 text-white"
+              className="w-full bg-sales-800 hover:bg-sales-700 text-white"
             >
               <Save size={16} className="mr-2" />
               {isSubmitting ? 'Salvando...' : 'Finalizar Pedido'}
