@@ -1,5 +1,5 @@
 
-import { Load, Order } from '@/types';
+import { Load, Order, OrderItem } from '@/types';
 import { loadService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
 import { useAppContext } from './useAppContext';
@@ -93,26 +93,31 @@ export const useLoads = () => {
 
   // Função auxiliar para extrair ordens de uma carga
   const getOrdersFromLoad = (load: Load): Order[] => {
-    return load.items.map(item => ({
-      id: item.orderId,
-      customerName: item.customerName || "Cliente não especificado",
-      customerId: "",  // Campo obrigatório para Order
-      createdAt: item.orderDate || new Date(),
-      total: item.orderTotal || 0,
-      items: item.orderItems.map(orderItem => ({
+    return load.items.map(item => {
+      // Cria um array de OrderItems com os tipos corretos
+      const orderItems: OrderItem[] = item.orderItems.map(orderItem => ({
         id: orderItem.id,
-        productId: orderItem.id,
+        productId: orderItem.productId,
         productName: orderItem.productName,
         quantity: orderItem.quantity,
-        price: orderItem.price || 0,
-        subtotal: orderItem.quantity * (orderItem.price || 0)
-      })),
-      // Campos adicionais obrigatórios para Order
-      salesRepId: "",
-      salesRepName: "",
-      status: "delivered",
-      paymentStatus: "paid"
-    }));
+        unitPrice: orderItem.price || 0, // Convertendo 'price' para 'unitPrice'
+        total: orderItem.quantity * (orderItem.price || 0)
+      }));
+      
+      // Retorna um objeto Order completo
+      return {
+        id: item.orderId,
+        customerName: "Cliente" || "Cliente não especificado", // LoadItem não tem customerName
+        customerId: "",  // Campo obrigatório para Order
+        createdAt: new Date(), // LoadItem não tem orderDate
+        total: 0, // LoadItem não tem orderTotal
+        items: orderItems,
+        salesRepId: "",
+        salesRepName: "",
+        status: "delivered" as const,
+        paymentStatus: "paid" as const
+      };
+    });
   };
 
   return {
