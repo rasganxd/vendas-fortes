@@ -100,14 +100,14 @@ export const useLoads = () => {
         productId: orderItem.productId,
         productName: orderItem.productName,
         quantity: orderItem.quantity,
-        unitPrice: orderItem.price || 0, // Convertendo 'price' para 'unitPrice'
-        total: orderItem.quantity * (orderItem.price || 0)
+        unitPrice: orderItem.unitPrice || 0,
+        total: orderItem.quantity * (orderItem.unitPrice || 0)
       }));
       
       // Retorna um objeto Order completo
       return {
         id: item.orderId,
-        customerName: "Cliente" || "Cliente não especificado", // LoadItem não tem customerName
+        customerName: "Cliente não especificado", // LoadItem não tem customerName
         customerId: "",  // Campo obrigatório para Order
         createdAt: new Date(), // LoadItem não tem orderDate
         total: 0, // LoadItem não tem orderTotal

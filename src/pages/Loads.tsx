@@ -138,7 +138,6 @@ export default function Loads() {
         {loads.length === 0 && <EmptyLoads />}
       </div>
       
-      {/* View Load Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
@@ -252,7 +251,6 @@ export default function Loads() {
         </DialogContent>
       </Dialog>
       
-      {/* Edit Load Dialog */}
       <EditLoadDialog 
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
@@ -260,7 +258,6 @@ export default function Loads() {
         onSave={handleUpdateLoad}
       />
       
-      {/* Delete Load Dialog */}
       <DeleteLoadDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -268,7 +265,6 @@ export default function Loads() {
         loadName={selectedLoad?.name}
       />
       
-      {/* Print Dialog */}
       <Dialog 
         open={isPrintDialogOpen} 
         onOpenChange={setIsPrintDialogOpen}
@@ -282,6 +278,7 @@ export default function Loads() {
             <LoadPickingList 
               orders={getOrdersFromLoad(selectedLoad)} 
               onClose={() => setIsPrintDialogOpen(false)} 
+              loadName={selectedLoad.name}
             />
           )}
         </DialogContent>
