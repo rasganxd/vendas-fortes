@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -60,6 +61,7 @@ export default function Products() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [firestoreStatus, setFirestoreStatus] = useState<{ success: boolean; message: string } | null>(null);
   const [formData, setFormData] = useState({
+    code: 0,
     name: '',
     description: '',
     price: 0,
@@ -81,7 +83,7 @@ export default function Products() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    if (name === 'price' || name === 'stock') {
+    if (name === 'price' || name === 'stock' || name === 'code') {
       setFormData(prev => ({ ...prev, [name]: Number(value) }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -90,6 +92,25 @@ export default function Products() {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddClick = () => {
+    // Reset form and set next available code
+    const nextCode = products.length > 0 
+      ? Math.max(...products.map(p => p.code || 0)) + 1 
+      : 1;
+    
+    setFormData({
+      code: nextCode,
+      name: '',
+      description: '',
+      price: 0,
+      unit: '',
+      stock: 0,
+      category: ''
+    });
+    
+    setIsAddDialogOpen(true);
   };
 
   const handleAddProduct = async (e: React.FormEvent) => {
@@ -103,15 +124,6 @@ export default function Products() {
       setFirestoreStatus({
         success: true,
         message: "Produto salvo com sucesso"
-      });
-      
-      setFormData({
-        name: '',
-        description: '',
-        price: 0,
-        unit: '',
-        stock: 0,
-        category: ''
       });
       
       setTimeout(() => {
@@ -132,6 +144,7 @@ export default function Products() {
   const handleEditClick = (product: Product) => {
     setSelectedProduct(product);
     setFormData({
+      code: product.code,
       name: product.name,
       description: product.description,
       price: product.price,
@@ -212,7 +225,7 @@ export default function Products() {
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-sales-800 hover:bg-sales-700">
+                <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleAddClick}>
                   <Plus size={16} className="mr-2" /> Novo Produto
                 </Button>
               </DialogTrigger>
@@ -238,6 +251,18 @@ export default function Products() {
                   )}
                   
                   <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="code">Código do Produto</Label>
+                      <Input
+                        id="code"
+                        name="code"
+                        type="number"
+                        min="1"
+                        value={formData.code}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="name">Nome do Produto</Label>
                       <Input
@@ -440,6 +465,18 @@ export default function Products() {
             )}
             
             <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-code">Código do Produto</Label>
+                <Input
+                  id="edit-code"
+                  name="code"
+                  type="number"
+                  min="1"
+                  value={formData.code}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-name">Nome do Produto</Label>
                 <Input
