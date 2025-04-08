@@ -31,6 +31,7 @@ const randomFutureDate = () => {
 export const mockCustomers: Customer[] = [
   {
     id: 'cust1',
+    code: 1,
     name: 'Supermercado Central',
     document: '11.222.333/0001-44', // Changed from email to document
     phone: '(11) 3456-7890',
@@ -43,6 +44,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 'cust2',
+    code: 2,
     name: 'Mercearia do Bairro',
     document: '222.333.444-55', // Changed from email to document
     phone: '(11) 2345-6789',
@@ -54,6 +56,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 'cust3',
+    code: 3,
     name: 'Padaria Nova',
     document: '333.444.555-66', // Changed from email to document
     phone: '(11) 4567-8901',
@@ -66,6 +69,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 'cust4',
+    code: 4,
     name: 'Restaurante Sabor & Arte',
     document: '44.555.666/0001-77', // Changed from email to document
     phone: '(11) 5678-9012',
@@ -77,6 +81,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 'cust5',
+    code: 5,
     name: 'Hotel Continental',
     document: '55.666.777/0001-88', // Changed from email to document
     phone: '(11) 6789-0123',
@@ -167,6 +172,7 @@ export const mockProducts: Product[] = [
 export const mockSalesReps: SalesRep[] = [
   {
     id: 'sr1',
+    code: 1,
     name: 'João Silva',
     email: 'joao.silva@empresa.com',
     phone: '(11) 98765-4321',
@@ -176,6 +182,7 @@ export const mockSalesReps: SalesRep[] = [
   },
   {
     id: 'sr2',
+    code: 2,
     name: 'Maria Oliveira',
     email: 'maria.oliveira@empresa.com',
     phone: '(11) 98765-4322',
@@ -185,6 +192,7 @@ export const mockSalesReps: SalesRep[] = [
   },
   {
     id: 'sr3',
+    code: 3,
     name: 'Pedro Santos',
     email: 'pedro.santos@empresa.com',
     phone: '(11) 98765-4323',
@@ -194,6 +202,7 @@ export const mockSalesReps: SalesRep[] = [
   },
   {
     id: 'sr4',
+    code: 4,
     name: 'Ana Costa',
     email: 'ana.costa@empresa.com',
     phone: '(11) 98765-4324',

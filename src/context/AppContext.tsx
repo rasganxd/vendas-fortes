@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { Customer, Product, Order, Payment, DeliveryRoute, Vehicle, Load, SalesRep, Backup } from '@/types';
-import { mockSalesReps } from '@/data/mock-data';
+import { mockCustomers, mockProducts, mockOrders, mockVehicles, mockPayments, mockRoutes, mockLoads, mockSalesReps } from '@/data/mock-data';
 import { toast } from '@/components/ui/use-toast';
 
 import { 
@@ -12,6 +12,69 @@ import {
   routeService,
   loadService
 } from '@/firebase/firestoreService';
+
+const loadCustomersData = async (): Promise<Customer[]> => {
+  try {
+    return await customerService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar clientes:", error);
+    return mockCustomers; // Fallback to mock data
+  }
+};
+
+const loadProductsData = async (): Promise<Product[]> => {
+  try {
+    return await productService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar produtos:", error);
+    return mockProducts;
+  }
+};
+
+const loadOrdersData = async (): Promise<Order[]> => {
+  try {
+    return await orderService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar pedidos:", error);
+    return mockOrders;
+  }
+};
+
+const loadVehiclesData = async (): Promise<Vehicle[]> => {
+  try {
+    return await vehicleService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar veículos:", error);
+    return mockVehicles;
+  }
+};
+
+const loadPaymentsData = async (): Promise<Payment[]> => {
+  try {
+    return await paymentService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar pagamentos:", error);
+    return mockPayments;
+  }
+};
+
+const loadRoutesData = async (): Promise<DeliveryRoute[]> => {
+  try {
+    return await routeService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar rotas:", error);
+    return mockRoutes;
+  }
+};
+
+const loadLoadsData = async (): Promise<Load[]> => {
+  try {
+    return await loadService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar cargas:", error);
+    return mockLoads;
+  }
+};
 
 export interface NavItem {
   name: string;
@@ -99,15 +162,31 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const customersData = await loadCustomers();
-      const productsData = await loadProducts();
-      const ordersData = await loadOrders();
-      const vehiclesData = await loadVehicles();
-      const paymentsData = await loadPayments();
-      const routesData = await loadRoutes();
-      const loadsData = await loadLoads();
+      const customersData = await loadCustomersData();
+      const productsData = await loadProductsData();
+      const ordersData = await loadOrdersData();
+      const vehiclesData = await loadVehiclesData();
+      const paymentsData = await loadPaymentsData();
+      const routesData = await loadRoutesData();
+      const loadsData = await loadLoadsData();
       
-      setCustomers(customersData);
+      // Ensure all customers have a code
+      const customersWithCode = customersData.map((customer, index) => {
+        if (customer.code === undefined) {
+          return { ...customer, code: index + 1 };
+        }
+        return customer;
+      });
+
+      // Ensure all salesReps have a code
+      const salesRepsWithCode = mockSalesReps.map((rep, index) => {
+        if (rep.code === undefined) {
+          return { ...rep, code: index + 1 };
+        }
+        return rep;
+      });
+      
+      setCustomers(customersWithCode);
       setProducts(productsData);
       setOrders(ordersData);
       setVehicles(vehiclesData);
@@ -115,10 +194,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setRoutes(routesData);
       setLoads(loadsData);
       
-      setSalesReps(mockSalesReps);
+      setSalesReps(salesRepsWithCode);
       
       console.log('Dados carregados do Firebase:', {
-        customers: customersData.length,
+        customers: customersWithCode.length,
         products: productsData.length, 
         orders: ordersData.length,
         vehicles: vehiclesData.length,

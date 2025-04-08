@@ -17,16 +17,33 @@ export const loadSalesReps = async (): Promise<SalesRep[]> => {
 
 export const useSalesReps = () => {
   const { salesReps, setSalesReps } = useAppContext();
+  
+  // Function to generate next available code
+  const generateNextCode = (): number => {
+    if (salesReps.length === 0) return 1;
+    
+    // Find the highest existing code
+    const highestCode = salesReps.reduce(
+      (max, rep) => (rep.code && rep.code > max ? rep.code : max), 
+      0
+    );
+    
+    // Return the next code in sequence
+    return highestCode + 1;
+  };
 
-  // Função para gerar ID único
+  // Generate ID
   const generateId = () => {
     return Math.random().toString(36).substring(2, 10);
   };
 
-  const addSalesRep = (salesRep: Omit<SalesRep, 'id'>) => {
+  const addSalesRep = (salesRep: Omit<SalesRep, 'id' | 'code'>) => {
     try {
       const id = generateId();
-      const newSalesRep = { ...salesRep, id };
+      // Generate next available code
+      const code = generateNextCode();
+      
+      const newSalesRep = { ...salesRep, id, code };
       setSalesReps([...salesReps, newSalesRep]);
       toast({
         title: "Representante adicionado",

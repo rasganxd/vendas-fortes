@@ -4,6 +4,7 @@ import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehic
 export const mockCustomers: Customer[] = [
   {
     id: "c1",
+    code: 1,
     name: "Supermercado Central",
     document: "123.456.789-00",
     phone: "(11) 3456-7890",
@@ -16,6 +17,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: "c2",
+    code: 2,
     name: "Mercado Bom Preço",
     document: "98.765.432/0001-01",
     phone: "(11) 3333-4444",
@@ -27,6 +29,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: "c3",
+    code: 3,
     name: "Mini Mercado Esperança",
     document: "456.789.123-00",
     phone: "(11) 2222-3333",
@@ -276,6 +279,7 @@ export const mockLoads: Load[] = [
 export const mockSalesReps: SalesRep[] = [
   {
     id: "s1",
+    code: 1,
     name: "Carlos Silva",
     email: "carlos@salestrack.com",
     phone: "(11) 99876-5432",
@@ -285,6 +289,7 @@ export const mockSalesReps: SalesRep[] = [
   },
   {
     id: "s2",
+    code: 2,
     name: "Ana Oliveira",
     email: "ana@salestrack.com",
     phone: "(11) 99765-4321",
@@ -294,6 +299,7 @@ export const mockSalesReps: SalesRep[] = [
   },
   {
     id: "s3",
+    code: 3,
     name: "João Pereira",
     email: "joao@salestrack.com",
     phone: "(11) 99654-3210",
@@ -303,6 +309,7 @@ export const mockSalesReps: SalesRep[] = [
   },
   {
     id: "s4",
+    code: 4,
     name: "Marta Santos",
     email: "marta@salestrack.com",
     phone: "(11) 99543-2109",
