@@ -47,7 +47,7 @@ const Customers = () => {
   const form = useForm({
     defaultValues: {
       name: '',
-      email: '',
+      document: '',
       phone: '',
       address: '',
       city: '',
@@ -61,7 +61,7 @@ const Customers = () => {
   const newCustomerForm = useForm({
     defaultValues: {
       name: '',
-      email: '',
+      document: '',
       phone: '',
       address: '',
       city: '',
@@ -76,7 +76,7 @@ const Customers = () => {
     setEditingCustomer(customer);
     form.reset({
       name: customer.name,
-      email: customer.email,
+      document: customer.document || customer.email || '',
       phone: customer.phone,
       address: customer.address || '',
       city: customer.city || '',
@@ -120,7 +120,7 @@ const Customers = () => {
 
   const filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (customer.document || '').includes(searchTerm) ||
     customer.phone.includes(searchTerm)
   );
 
@@ -152,7 +152,7 @@ const Customers = () => {
         {filteredCustomers.map((customer) => (
           <Card key={customer.id} className="p-6 shadow-md hover:shadow-lg transition-shadow">
             <h3 className="text-xl font-medium text-gray-800">{customer.name}</h3>
-            <p className="text-gray-600 mt-2">{customer.email}</p>
+            <p className="text-gray-600 mt-2">{customer.document || customer.email}</p>
             <p className="text-gray-600">{customer.phone}</p>
             
             {customer.visitDays && customer.visitDays.length > 0 && (
@@ -222,12 +222,12 @@ const Customers = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="document"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>CPF/CNPJ</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} mask="cpfCnpj" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -406,12 +406,12 @@ const Customers = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={newCustomerForm.control}
-                  name="email"
+                  name="document"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>CPF/CNPJ</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} mask="cpfCnpj" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

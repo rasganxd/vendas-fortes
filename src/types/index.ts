@@ -1,8 +1,9 @@
+
 // Customer Types
 export interface Customer {
   id: string;
   name: string;
-  email: string;
+  document: string; // Changed from email to document (CPF/CNPJ)
   phone: string;
   address: string;
   city: string;

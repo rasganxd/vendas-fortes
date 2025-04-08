@@ -14,7 +14,8 @@ import {
   Trash2, 
   Calendar, 
   Package, 
-  DollarSign 
+  DollarSign,
+  User 
 } from 'lucide-react';
 
 interface CustomerDetailsProps {
@@ -61,8 +62,8 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({ customer, onEdit, onD
                   {customer.phone}
                 </div>
                 <div className="flex items-center text-gray-600">
-                  <Mail className="mr-2 h-4 w-4" />
-                  {customer.email}
+                  <User className="mr-2 h-4 w-4" />
+                  {customer.document || 'Não informado'}
                 </div>
               </div>
               <div>
