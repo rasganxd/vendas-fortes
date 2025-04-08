@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -217,18 +216,9 @@ export default function NewOrder() {
       <div className="bg-white border rounded-md p-6 mb-4">
         <div className="grid grid-cols-12 gap-x-4 gap-y-6">
           {/* Left column - Header information */}
-          <div className="col-span-8 grid grid-cols-12 gap-x-4 gap-y-4">
+          <div className="col-span-8 grid grid-cols-1 gap-y-4">
             {/* Sales Rep */}
-            <div className="col-span-1 flex items-center justify-center">
-              <div className="bg-gray-100 p-2 rounded-full">
-                <img 
-                  src="/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png" 
-                  alt="Vendedor" 
-                  className="w-6 h-6 opacity-70" 
-                />
-              </div>
-            </div>
-            <div className="col-span-11">
+            <div>
               <SalesRepSearchInput
                 salesReps={salesReps}
                 selectedSalesRep={selectedSalesRep}
@@ -240,16 +230,7 @@ export default function NewOrder() {
             </div>
             
             {/* Customer */}
-            <div className="col-span-1 flex items-center justify-center">
-              <div className="bg-gray-100 p-2 rounded-full">
-                <img 
-                  src="/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png" 
-                  alt="Cliente" 
-                  className="w-6 h-6 opacity-70" 
-                />
-              </div>
-            </div>
-            <div className="col-span-11">
+            <div>
               <CustomerSearchInput 
                 customers={customers}
                 selectedCustomer={selectedCustomer}
@@ -262,16 +243,7 @@ export default function NewOrder() {
             </div>
             
             {/* Payment Table */}
-            <div className="col-span-1 flex items-center justify-center">
-              <div className="bg-gray-100 p-2 rounded-full">
-                <img 
-                  src="/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png" 
-                  alt="Tabela" 
-                  className="w-6 h-6 opacity-70" 
-                />
-              </div>
-            </div>
-            <div className="col-span-11">
+            <div>
               <PaymentOptionsInput
                 paymentTables={paymentTables}
                 selectedPaymentTable={selectedPaymentTable}
@@ -285,16 +257,7 @@ export default function NewOrder() {
             </div>
             
             {/* Product entry section */}
-            <div className="col-span-1 flex items-center justify-center">
-              <div className="bg-gray-100 p-2 rounded-full">
-                <img 
-                  src="/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png" 
-                  alt="Produto" 
-                  className="w-6 h-6 opacity-70" 
-                />
-              </div>
-            </div>
-            <div className="col-span-11">
+            <div>
               <ProductSearchInput
                 products={products}
                 addItemToOrder={handleAddItem}
