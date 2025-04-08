@@ -10,17 +10,55 @@ import { EmptyRoutes } from '@/components/routes/EmptyRoutes';
 import { RouteDetailDialog } from '@/components/routes/RouteDetailDialog';
 import { AddOrderDialog } from '@/components/routes/AddOrderDialog';
 import { NewRouteDialog } from '@/components/routes/NewRouteDialog';
+import { EditRouteDialog } from '@/components/routes/EditRouteDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { toast } from '@/components/ui/use-toast';
 
 export default function Routes() {
-  const { routes, orders, vehicles, updateRoute, addRoute } = useAppContext();
+  const { routes, orders, vehicles, updateRoute, addRoute, deleteRoute } = useAppContext();
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false);
   const [isNewRouteDialogOpen, setIsNewRouteDialogOpen] = useState(false);
+  const [isEditRouteDialogOpen, setIsEditRouteDialogOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [routeToDelete, setRouteToDelete] = useState<string | null>(null);
 
   const handleViewRoute = (route: DeliveryRoute) => {
     setSelectedRoute(route);
     setIsViewDialogOpen(true);
+  };
+
+  const handleEditRoute = (route: DeliveryRoute) => {
+    setSelectedRoute(route);
+    setIsEditRouteDialogOpen(true);
+  };
+
+  const handleDeleteRoute = (id: string) => {
+    setRouteToDelete(id);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteRoute = async () => {
+    if (!routeToDelete) return;
+    
+    try {
+      await deleteRoute(routeToDelete);
+      toast({
+        title: "Rota excluída",
+        description: "A rota foi excluída com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao excluir rota:", error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir a rota.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleteConfirmOpen(false);
+      setRouteToDelete(null);
+    }
   };
 
   const handleAddOrderToRoute = () => {
@@ -107,6 +145,14 @@ export default function Routes() {
     setIsNewRouteDialogOpen(false);
   };
 
+  const handleSaveRouteChanges = async (id: string, updatedRoute: Partial<DeliveryRoute>) => {
+    await updateRoute(id, updatedRoute);
+    toast({
+      title: "Rota atualizada",
+      description: "As alterações foram salvas com sucesso.",
+    });
+  };
+
   // Get orders not already assigned to the selected route
   const getUnassignedOrders = () => {
     if (!selectedRoute) return [];
@@ -138,7 +184,9 @@ export default function Routes() {
           <RouteCard 
             key={route.id} 
             route={route} 
-            onViewRoute={handleViewRoute} 
+            onViewRoute={handleViewRoute}
+            onEditRoute={handleEditRoute}
+            onDeleteRoute={handleDeleteRoute}
           />
         ))}
         
@@ -171,6 +219,33 @@ export default function Routes() {
         vehicles={vehicles}
         onCreateRoute={handleCreateNewRoute}
       />
+
+      {/* Edit Route Dialog */}
+      <EditRouteDialog
+        open={isEditRouteDialogOpen}
+        onOpenChange={setIsEditRouteDialogOpen}
+        route={selectedRoute}
+        vehicles={vehicles}
+        onSave={handleSaveRouteChanges}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta rota? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteRoute} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

@@ -3,15 +3,17 @@ import { DeliveryRoute } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Route, Truck } from 'lucide-react';
+import { Calendar, MapPin, Route, Truck, Edit, Trash2 } from 'lucide-react';
 import { formatDateToBR } from '@/lib/date-utils';
 
 interface RouteCardProps {
   route: DeliveryRoute;
   onViewRoute: (route: DeliveryRoute) => void;
+  onEditRoute?: (route: DeliveryRoute) => void;
+  onDeleteRoute?: (id: string) => void;
 }
 
-export const RouteCard = ({ route, onViewRoute }: RouteCardProps) => {
+export const RouteCard = ({ route, onViewRoute, onEditRoute, onDeleteRoute }: RouteCardProps) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'planning':
@@ -61,13 +63,34 @@ export const RouteCard = ({ route, onViewRoute }: RouteCardProps) => {
             </div>
           </div>
           
-          <div className="pt-3">
+          <div className="pt-3 space-y-2">
             <Button 
               className="w-full bg-teal-600 hover:bg-teal-700"
               onClick={() => onViewRoute(route)}
             >
               <Route size={16} className="mr-2" /> Ver Rota
             </Button>
+
+            <div className="flex gap-2">
+              {onEditRoute && (
+                <Button 
+                  variant="outline" 
+                  className="w-1/2" 
+                  onClick={() => onEditRoute(route)}
+                >
+                  <Edit size={16} className="mr-2" /> Editar
+                </Button>
+              )}
+              {onDeleteRoute && (
+                <Button 
+                  variant="destructive" 
+                  className="w-1/2" 
+                  onClick={() => onDeleteRoute(route.id)}
+                >
+                  <Trash2 size={16} className="mr-2" /> Excluir
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

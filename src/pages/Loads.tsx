@@ -11,6 +11,7 @@ import { Load } from '@/types';
 import { LoadCard } from '@/components/loads/LoadCard';
 import { EmptyLoads } from '@/components/loads/EmptyLoads';
 import { EditLoadDialog } from '@/components/loads/EditLoadDialog';
+import { DeleteLoadDialog } from '@/components/loads/DeleteLoadDialog';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { formatDateToBR } from '@/lib/date-utils';
 import { FileCheck, Weight, Calendar, Truck, Package } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 export default function Loads() {
   const navigate = useNavigate();
@@ -35,6 +37,7 @@ export default function Loads() {
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleViewLoad = (load: Load) => {
     setSelectedLoad(load);
@@ -46,12 +49,40 @@ export default function Loads() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteLoad = async (id: string) => {
-    await deleteLoad(id);
+  const handleDeleteLoad = (id: string) => {
+    const loadToDelete = loads.find(l => l.id === id);
+    if (loadToDelete) {
+      setSelectedLoad(loadToDelete);
+      setIsDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDeleteLoad = async () => {
+    if (!selectedLoad) return;
+    
+    try {
+      await deleteLoad(selectedLoad.id);
+      setIsDeleteDialogOpen(false);
+      toast({
+        title: "Carga excluída",
+        description: "A carga foi excluída com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao excluir carga:", error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir a carga.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleUpdateLoad = async (id: string, updatedLoad: Partial<Load>) => {
     await updateLoad(id, updatedLoad);
+    toast({
+      title: "Carga atualizada",
+      description: "As alterações foram salvas com sucesso.",
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -206,6 +237,14 @@ export default function Loads() {
         onOpenChange={setIsEditDialogOpen}
         load={selectedLoad}
         onSave={handleUpdateLoad}
+      />
+      
+      {/* Delete Load Dialog */}
+      <DeleteLoadDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDeleteLoad}
+        loadName={selectedLoad?.name}
       />
     </PageLayout>
   );

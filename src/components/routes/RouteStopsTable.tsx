@@ -1,74 +1,73 @@
 
-import { RouteStop } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { RouteStop } from '@/types';
+import { Trash2, Check, Clock } from 'lucide-react';
 
 interface RouteStopsTableProps {
   stops: RouteStop[];
   isCompleted: boolean;
-  onRemoveStop: (stopId: string) => void;
+  onRemoveStop: (id: string) => void;
 }
 
-export const RouteStopsTable = ({ stops, isCompleted, onRemoveStop }: RouteStopsTableProps) => {
-  const getStopStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline">Pendente</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500">Concluída</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
+export function RouteStopsTable({ 
+  stops, 
+  isCompleted, 
+  onRemoveStop 
+}: RouteStopsTableProps) {
+  const sortedStops = [...stops].sort((a, b) => a.sequence - b.sequence);
+  
   return (
-    <div className="border rounded-md overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-gray-700">
+    <div className="border rounded-lg overflow-auto">
+      <table className="w-full">
+        <thead className="bg-gray-50 text-xs font-medium text-gray-500">
           <tr>
-            <th className="py-2 px-4 text-left">Seq.</th>
-            <th className="py-2 px-4 text-left">Cliente</th>
-            <th className="py-2 px-4 text-left">Endereço</th>
-            <th className="py-2 px-4 text-left">Hora Prevista</th>
-            <th className="py-2 px-4 text-left">Status</th>
-            <th className="py-2 px-4 text-left">Ações</th>
+            <th className="py-3 px-4 text-left">#</th>
+            <th className="py-3 px-4 text-left">Cliente</th>
+            <th className="py-3 px-4 text-left">Endereço</th>
+            <th className="py-3 px-4 text-center">Status</th>
+            <th className="py-3 px-4 text-right">Ações</th>
           </tr>
         </thead>
-        <tbody>
-          {stops.sort((a, b) => a.sequence - b.sequence).map((stop) => (
-            <tr key={stop.id} className="border-b">
-              <td className="py-2 px-4">{stop.sequence}</td>
-              <td className="py-2 px-4 font-medium">{stop.customerName}</td>
-              <td className="py-2 px-4">
-                {stop.address}, {stop.city}/{stop.state}
+        <tbody className="divide-y divide-gray-200">
+          {sortedStops.map((stop) => (
+            <tr key={stop.id} className={stop.status === 'completed' ? 'bg-green-50' : undefined}>
+              <td className="py-3 px-4">{stop.sequence}</td>
+              <td className="py-3 px-4">{stop.customerName}</td>
+              <td className="py-3 px-4 text-gray-600 text-sm">
+                {stop.address}, {stop.city} - {stop.state}
               </td>
-              <td className="py-2 px-4">
-                {stop.estimatedArrival ? new Date(stop.estimatedArrival).toLocaleTimeString('pt-BR', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }) : '-'}
+              <td className="py-3 px-4 text-center">
+                {stop.status === 'completed' ? (
+                  <span className="inline-flex items-center gap-1 text-green-600 text-xs">
+                    <Check size={14} />
+                    <span>Concluído</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-amber-600 text-xs">
+                    <Clock size={14} />
+                    <span>Pendente</span>
+                  </span>
+                )}
               </td>
-              <td className="py-2 px-4">{getStopStatusBadge(stop.status)}</td>
-              <td className="py-2 px-4">
+              <td className="py-3 px-4 text-right">
                 {!isCompleted && (
                   <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-red-500"
+                    size="sm" 
+                    variant="destructive"
                     onClick={() => onRemoveStop(stop.id)}
+                    className="h-7 px-2"
                   >
-                    <X size={16} />
+                    <Trash2 size={14} />
+                    <span className="sr-only">Remover</span>
                   </Button>
                 )}
               </td>
             </tr>
           ))}
-          
           {stops.length === 0 && (
             <tr>
-              <td colSpan={6} className="py-4 text-center text-gray-500">
-                Nenhuma parada adicionada a esta rota
+              <td colSpan={5} className="py-8 text-center text-gray-500">
+                Nenhuma parada adicionada à rota ainda.
               </td>
             </tr>
           )}
@@ -76,4 +75,4 @@ export const RouteStopsTable = ({ stops, isCompleted, onRemoveStop }: RouteStops
       </table>
     </div>
   );
-};
+}
