@@ -29,7 +29,7 @@ const LoadPickingList = ({ orders, onClose }: LoadPickingListProps) => {
             productId: item.productId,
             productName: item.productName,
             quantity: item.quantity,
-            unit: 'un', // Assumimos unidade padrão (pode ser melhorado se o OrderItem incluir a unidade)
+            unit: item.unit || 'un', // Use provided unit or default to 'un'
           });
         }
       });

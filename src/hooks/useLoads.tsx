@@ -18,8 +18,16 @@ export const useLoads = () => {
 
   const addLoad = async (load: Omit<Load, 'id'>) => {
     try {
-      const id = await loadService.add(load);
-      const newLoad = { ...load, id } as Load;
+      // Clean the load object to remove undefined values before sending to Firestore
+      const cleanedLoad = {
+        ...load,
+        // Convert empty strings or undefined to null since Firestore accepts null values
+        vehicleName: load.vehicleName || null,
+        notes: load.notes || null,
+      };
+      
+      const id = await loadService.add(cleanedLoad);
+      const newLoad = { ...cleanedLoad, id } as Load;
       setLoads([...loads, newLoad]);
       toast({
         title: "Carregamento adicionado",
@@ -39,9 +47,17 @@ export const useLoads = () => {
 
   const updateLoad = async (id: string, load: Partial<Load>) => {
     try {
-      await loadService.update(id, load);
+      // Clean the load object to remove undefined values before sending to Firestore
+      const cleanedLoad = {
+        ...load,
+        // Convert empty strings or undefined to null since Firestore accepts null values
+        vehicleName: load.vehicleName === undefined ? undefined : (load.vehicleName || null),
+        notes: load.notes === undefined ? undefined : (load.notes || null),
+      };
+      
+      await loadService.update(id, cleanedLoad);
       setLoads(loads.map(l => 
-        l.id === id ? { ...l, ...load } : l
+        l.id === id ? { ...l, ...cleanedLoad } : l
       ));
       toast({
         title: "Carregamento atualizado",

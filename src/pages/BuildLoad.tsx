@@ -111,13 +111,14 @@ export default function BuildLoad() {
       };
     });
     
+    // Ensure that undefined values are not being passed to Firestore
     const newLoad = {
       name: values.name,
-      vehicleName: values.vehicleName || undefined,
+      vehicleName: values.vehicleName && values.vehicleName.trim() !== '' ? values.vehicleName : null,
       date: new Date(),
       items: loadItems,
       status: 'planning' as const,
-      notes: values.notes || undefined,
+      notes: values.notes && values.notes.trim() !== '' ? values.notes : null,
     };
     
     addLoad(newLoad);
