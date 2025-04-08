@@ -1,4 +1,3 @@
-
 // Customer Types
 export interface Customer {
   id: string;
@@ -115,6 +114,7 @@ export interface Vehicle {
   licensePlate: string;
   type: 'car' | 'van' | 'truck' | 'motorcycle';
   capacity: number;
+  driverName?: string;
   active: boolean;
 }
 

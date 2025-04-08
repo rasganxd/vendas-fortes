@@ -6,7 +6,6 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, Plus, Save, ShoppingCart, Search, X } from "lucide-react";
@@ -32,7 +31,6 @@ export default function NewOrder() {
   const [orderItems, setOrderItems] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [orderNotes, setOrderNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
@@ -199,7 +197,6 @@ export default function NewOrder() {
     setSelectedCustomer(null);
     setSelectedSalesRep(null);
     setOrderItems([]);
-    setOrderNotes('');
     setQuantity(1);
     setCustomPrice(0);
     setCustomerInput('');
@@ -247,7 +244,6 @@ export default function NewOrder() {
         total: calculateTotal(),
         status: "draft" as Order["status"],
         paymentStatus: "pending" as Order["paymentStatus"],
-        notes: orderNotes,
         createdAt: new Date(),
         deliveryAddress: selectedCustomer.address,
         deliveryCity: selectedCustomer.city,
@@ -388,17 +384,6 @@ export default function NewOrder() {
                   </Button>
                 )}
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Observações</Label>
-              <Textarea
-                id="notes"
-                value={orderNotes}
-                onChange={(e) => setOrderNotes(e.target.value)}
-                placeholder="Adicione observações sobre o pedido"
-                className="min-h-[100px]"
-              />
             </div>
           </CardContent>
         </Card>

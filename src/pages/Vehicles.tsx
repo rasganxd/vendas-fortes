@@ -63,6 +63,7 @@ const vehicleFormSchema = z.object({
   licensePlate: z.string().min(7, { message: "Placa deve ter pelo menos 7 caracteres" }),
   type: z.enum(["car", "van", "truck", "motorcycle"]),
   capacity: z.number().min(0, { message: "Capacidade deve ser um número positivo" }),
+  driverName: z.string().optional(),
   active: z.boolean().default(true)
 });
 
@@ -81,6 +82,7 @@ export default function Vehicles() {
       licensePlate: "",
       type: "car",
       capacity: 0,
+      driverName: "",
       active: true
     }
   });
@@ -92,6 +94,7 @@ export default function Vehicles() {
       licensePlate: vehicle.licensePlate,
       type: vehicle.type,
       capacity: vehicle.capacity,
+      driverName: vehicle.driverName || "",
       active: vehicle.active
     });
     setIsDialogOpen(true);
@@ -104,6 +107,7 @@ export default function Vehicles() {
       licensePlate: "",
       type: "car",
       capacity: 0,
+      driverName: "",
       active: true
     });
     setIsDialogOpen(true);
@@ -137,6 +141,7 @@ export default function Vehicles() {
         licensePlate: data.licensePlate,
         type: data.type,
         capacity: data.capacity,
+        driverName: data.driverName,
         active: data.active
       });
     } else {
@@ -145,6 +150,7 @@ export default function Vehicles() {
         licensePlate: data.licensePlate,
         type: data.type,
         capacity: data.capacity,
+        driverName: data.driverName,
         active: data.active
       });
     }
@@ -189,6 +195,7 @@ export default function Vehicles() {
                   <TableHead>Placa</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Capacidade</TableHead>
+                  <TableHead>Motorista</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -200,6 +207,7 @@ export default function Vehicles() {
                     <TableCell>{vehicle.licensePlate}</TableCell>
                     <TableCell>{getVehicleTypeLabel(vehicle.type)}</TableCell>
                     <TableCell>{vehicle.capacity} kg</TableCell>
+                    <TableCell>{vehicle.driverName || "—"}</TableCell>
                     <TableCell>
                       <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${vehicle.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                         {vehicle.active ? 'Ativo' : 'Inativo'}
@@ -311,6 +319,19 @@ export default function Vehicles() {
                         {...field}
                         onChange={e => field.onChange(Number(e.target.value))}
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="driverName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Motorista</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome do motorista" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

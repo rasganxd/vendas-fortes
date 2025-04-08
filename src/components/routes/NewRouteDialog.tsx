@@ -87,7 +87,10 @@ export const NewRouteDialog = ({ open, onOpenChange, vehicles, onCreateRoute }: 
               <SelectContent>
                 {vehicles && vehicles.length > 0 ? (
                   vehicles.map(vehicle => (
-                    <SelectItem key={vehicle.id} value={vehicle.id}>{vehicle.name}</SelectItem>
+                    <SelectItem key={vehicle.id} value={vehicle.id}>
+                      {vehicle.name}
+                      {vehicle.driverName ? ` (${vehicle.driverName})` : ''}
+                    </SelectItem>
                   ))
                 ) : (
                   <SelectItem value="none" disabled>Nenhum veículo cadastrado</SelectItem>
