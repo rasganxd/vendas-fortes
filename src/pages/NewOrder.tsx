@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, Plus, Save, ShoppingCart } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import { Order } from '@/types';
 
 export default function NewOrder() {
   const { customers, salesReps, products } = useAppContext();
@@ -136,8 +137,8 @@ export default function NewOrder() {
         salesRepName: selectedSalesRep.name,
         items: orderItems,
         total: calculateTotal(),
-        status: "draft",
-        paymentStatus: "pending",
+        status: "draft" as Order["status"],
+        paymentStatus: "pending" as Order["paymentStatus"],
         notes: orderNotes,
         createdAt: new Date(),
         // Add delivery address info from customer

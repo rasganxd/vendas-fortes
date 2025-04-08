@@ -19,7 +19,7 @@ export const useOrders = () => {
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
       const id = await orderService.add(order);
-      const newOrder = { ...order, id };
+      const newOrder = { ...order, id } as Order;
       setOrders([...orders, newOrder]);
       toast({
         title: "Pedido adicionado",
