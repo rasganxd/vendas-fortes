@@ -110,23 +110,23 @@ export default function SideNav() {
   
   return (
     <Sidebar className="border-r bg-white shadow-sm" variant="sidebar" collapsible="icon">
-      <SidebarHeader className="px-2 py-3 border-b">
+      <SidebarHeader className="px-4 py-3 border-b">
         <h1 className="text-xl font-bold text-sales-800">SalesTrack</h1>
       </SidebarHeader>
       <ScrollArea className="h-full" scrollHideDelay={0}>
-        <SidebarContent className="py-1">
+        <SidebarContent className="py-2 px-2">
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (
-              <div key={group} className="mb-2">
-                <h3 className="text-sm uppercase font-medium text-gray-500 px-2 mb-1">{groupLabels[group] || group}</h3>
+              <div key={group} className="mb-3">
+                <h3 className="text-sm uppercase font-medium text-gray-500 px-4 mb-1">{groupLabels[group] || group}</h3>
                 {items.map((item) => {
                   const isActive = location.pathname === item.href;
                   
                   return (
                     <SidebarMenuItem key={item.name}>
                       <SidebarMenuButton asChild isActive={isActive} tooltip={item.name} size="sm">
-                        <Link to={item.href} className="flex items-center px-2 py-1.5 text-sm font-medium">
-                          <item.icon className="h-4 w-4 mr-2" />
+                        <Link to={item.href} className="flex items-center px-4 py-1.5 text-sm font-medium">
+                          <item.icon className="h-4 w-4 mr-3" />
                           <span className="truncate">{item.name}</span>
                         </Link>
                       </SidebarMenuButton>
