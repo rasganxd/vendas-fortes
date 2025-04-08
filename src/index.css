@@ -1,4 +1,5 @@
 
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -75,6 +76,16 @@
   body {
     @apply bg-background text-foreground;
     transition: background-color 0.3s ease;
+  }
+  
+  /* Hide scrollbar by default */
+  .sidebar-scroll-area::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .sidebar-scroll-area {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
 }
 
