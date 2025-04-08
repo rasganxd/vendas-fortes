@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -136,6 +137,12 @@ export default function Orders() {
     }
   };
 
+  // Format currency safely
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || value === null) return 'R$ 0,00';
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
   return (
     <PageLayout title="Pedidos">
       <Card>
@@ -228,7 +235,7 @@ export default function Orders() {
                       <TableCell>{order.customerName}</TableCell>
                       <TableCell>{formatDateToBR(order.createdAt)}</TableCell>
                       <TableCell>
-                        {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        {formatCurrency(order.total)}
                       </TableCell>
                       <TableCell>{getStatusBadge(order.status)}</TableCell>
                       <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
@@ -314,10 +321,10 @@ export default function Orders() {
                         <td className="py-2 px-4">{item.productName}</td>
                         <td className="py-2 px-4 text-center">{item.quantity}</td>
                         <td className="py-2 px-4 text-right">
-                          {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          {formatCurrency(item.unitPrice)}
                         </td>
                         <td className="py-2 px-4 text-right font-medium">
-                          {item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          {formatCurrency(item.total)}
                         </td>
                       </tr>
                     ))}
@@ -333,10 +340,10 @@ export default function Orders() {
               </div>
               <div className="text-right">
                 <p className="text-gray-600">Subtotal: 
-                  {selectedOrder?.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {formatCurrency(selectedOrder?.total)}
                 </p>
                 <p className="font-bold text-lg">Total: 
-                  {selectedOrder?.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {formatCurrency(selectedOrder?.total)}
                 </p>
               </div>
             </div>
@@ -463,10 +470,10 @@ export default function Orders() {
                                 <td className="py-2 px-4">{item.productName}</td>
                                 <td className="py-2 px-4 text-center">{item.quantity}</td>
                                 <td className="py-2 px-4 text-right">
-                                  {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                  {formatCurrency(item.unitPrice)}
                                 </td>
                                 <td className="py-2 px-4 text-right font-medium">
-                                  {item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                  {formatCurrency(item.total)}
                                 </td>
                               </tr>
                             ))}
@@ -482,10 +489,10 @@ export default function Orders() {
                       </div>
                       <div className="text-right">
                         <p className="text-gray-600">Subtotal: 
-                          {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          {formatCurrency(order.total)}
                         </p>
                         <p className="font-bold text-lg">Total: 
-                          {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          {formatCurrency(order.total)}
                         </p>
                       </div>
                     </div>
