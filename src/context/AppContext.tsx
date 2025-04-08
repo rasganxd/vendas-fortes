@@ -13,8 +13,16 @@ import { loadPayments } from '@/hooks/usePayments';
 import { loadRoutes } from '@/hooks/useRoutes';
 import { loadLoads } from '@/hooks/useLoads';
 
-// Importing customer service for direct operations
-import { customerService } from '@/firebase/firestoreService';
+// Import our service functions
+import { 
+  customerService,
+  productService,
+  orderService,
+  vehicleService,
+  paymentService,
+  routeService,
+  loadService
+} from '@/firebase/firestoreService';
 
 // Exportando interface NavItem para SideNav
 export interface NavItem {
@@ -165,7 +173,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("Firebase salva automaticamente os dados");
   };
 
-  // Implementações reais para customers
+  // Implementações para clientes
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
       const id = await customerService.add(customer);
@@ -226,93 +234,307 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
   
-  // Implementações temporárias para os demais serviços
   // Products
   const addProduct = async (product: Omit<Product, 'id'>) => {
-    // Implementação temporária
-    console.log("Adding product:", product);
-    return "temp-id";
+    try {
+      const id = await productService.add(product);
+      const newProduct = { ...product, id };
+      setProducts([...products, newProduct]);
+      toast({
+        title: "Produto adicionado",
+        description: "Produto adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar produto:", error);
+      toast({
+        title: "Erro ao adicionar produto",
+        description: "Houve um problema ao adicionar o produto.",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
   
   const updateProduct = async (id: string, product: Partial<Product>) => {
-    // Implementação temporária
-    console.log("Updating product:", id, product);
+    try {
+      await productService.update(id, product);
+      setProducts(products.map(p => 
+        p.id === id ? { ...p, ...product } : p
+      ));
+      toast({
+        title: "Produto atualizado",
+        description: "Produto atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar produto:", error);
+      toast({
+        title: "Erro ao atualizar produto",
+        description: "Houve um problema ao atualizar o produto.",
+        variant: "destructive"
+      });
+    }
   };
   
   const deleteProduct = async (id: string) => {
-    // Implementação temporária
-    console.log("Deleting product:", id);
+    try {
+      await productService.delete(id);
+      setProducts(products.filter(p => p.id !== id));
+      toast({
+        title: "Produto excluído",
+        description: "Produto excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir produto:", error);
+      toast({
+        title: "Erro ao excluir produto",
+        description: "Houve um problema ao excluir o produto.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Orders
   const addOrder = async (order: Omit<Order, 'id'>) => {
-    // Implementação temporária
-    console.log("Adding order:", order);
-    return "temp-id";
+    try {
+      const id = await orderService.add(order);
+      const newOrder = { ...order, id };
+      setOrders([...orders, newOrder]);
+      toast({
+        title: "Pedido adicionado",
+        description: "Pedido adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar pedido:", error);
+      toast({
+        title: "Erro ao adicionar pedido",
+        description: "Houve um problema ao adicionar o pedido.",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
   
   const updateOrder = async (id: string, order: Partial<Order>) => {
-    // Implementação temporária
-    console.log("Updating order:", id, order);
+    try {
+      await orderService.update(id, order);
+      setOrders(orders.map(o => 
+        o.id === id ? { ...o, ...order } : o
+      ));
+      toast({
+        title: "Pedido atualizado",
+        description: "Pedido atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar pedido:", error);
+      toast({
+        title: "Erro ao atualizar pedido",
+        description: "Houve um problema ao atualizar o pedido.",
+        variant: "destructive"
+      });
+    }
   };
   
   const deleteOrder = async (id: string) => {
-    // Implementação temporária
-    console.log("Deleting order:", id);
+    try {
+      await orderService.delete(id);
+      setOrders(orders.filter(o => o.id !== id));
+      toast({
+        title: "Pedido excluído",
+        description: "Pedido excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir pedido:", error);
+      toast({
+        title: "Erro ao excluir pedido",
+        description: "Houve um problema ao excluir o pedido.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Payments
   const addPayment = async (payment: Omit<Payment, 'id'>) => {
-    // Implementação temporária
-    console.log("Adding payment:", payment);
-    return "temp-id";
+    try {
+      const id = await paymentService.add(payment);
+      const newPayment = { ...payment, id };
+      setPayments([...payments, newPayment]);
+      toast({
+        title: "Pagamento adicionado",
+        description: "Pagamento adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar pagamento:", error);
+      toast({
+        title: "Erro ao adicionar pagamento",
+        description: "Houve um problema ao adicionar o pagamento.",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
   
   const updatePayment = async (id: string, payment: Partial<Payment>) => {
-    // Implementação temporária
-    console.log("Updating payment:", id, payment);
+    try {
+      await paymentService.update(id, payment);
+      setPayments(payments.map(p => 
+        p.id === id ? { ...p, ...payment } : p
+      ));
+      toast({
+        title: "Pagamento atualizado",
+        description: "Pagamento atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar pagamento:", error);
+      toast({
+        title: "Erro ao atualizar pagamento",
+        description: "Houve um problema ao atualizar o pagamento.",
+        variant: "destructive"
+      });
+    }
   };
   
   const deletePayment = async (id: string) => {
-    // Implementação temporária
-    console.log("Deleting payment:", id);
+    try {
+      await paymentService.delete(id);
+      setPayments(payments.filter(p => p.id !== id));
+      toast({
+        title: "Pagamento excluído",
+        description: "Pagamento excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir pagamento:", error);
+      toast({
+        title: "Erro ao excluir pagamento",
+        description: "Houve um problema ao excluir o pagamento.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Routes
   const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
-    // Implementação temporária
-    console.log("Adding route:", route);
-    return "temp-id";
+    try {
+      const id = await routeService.add(route);
+      const newRoute = { ...route, id } as DeliveryRoute;
+      setRoutes([...routes, newRoute]);
+      toast({
+        title: "Rota adicionada",
+        description: "Rota adicionada com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar rota:", error);
+      toast({
+        title: "Erro ao adicionar rota",
+        description: "Houve um problema ao adicionar a rota.",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
   
   const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
-    // Implementação temporária
-    console.log("Updating route:", id, route);
+    try {
+      await routeService.update(id, route);
+      setRoutes(routes.map(r => 
+        r.id === id ? { ...r, ...route } : r
+      ));
+      toast({
+        title: "Rota atualizada",
+        description: "Rota atualizada com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar rota:", error);
+      toast({
+        title: "Erro ao atualizar rota",
+        description: "Houve um problema ao atualizar a rota.",
+        variant: "destructive"
+      });
+    }
   };
   
   const deleteRoute = async (id: string) => {
-    // Implementação temporária
-    console.log("Deleting route:", id);
+    try {
+      await routeService.delete(id);
+      setRoutes(routes.filter(r => r.id !== id));
+      toast({
+        title: "Rota excluída",
+        description: "Rota excluída com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir rota:", error);
+      toast({
+        title: "Erro ao excluir rota",
+        description: "Houve um problema ao excluir a rota.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Vehicles
   const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
-    // Implementação temporária
-    console.log("Adding vehicle:", vehicle);
-    return "temp-id";
+    try {
+      const id = await vehicleService.add(vehicle);
+      const newVehicle = { ...vehicle, id };
+      setVehicles([...vehicles, newVehicle]);
+      toast({
+        title: "Veículo adicionado",
+        description: "Veículo adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar veículo:", error);
+      toast({
+        title: "Erro ao adicionar veículo",
+        description: "Houve um problema ao adicionar o veículo.",
+        variant: "destructive"
+      });
+      return "";
+    }
   };
   
   const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
-    // Implementação temporária
-    console.log("Updating vehicle:", id, vehicle);
+    try {
+      await vehicleService.update(id, vehicle);
+      setVehicles(vehicles.map(v => 
+        v.id === id ? { ...v, ...vehicle } : v
+      ));
+      toast({
+        title: "Veículo atualizado",
+        description: "Veículo atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar veículo:", error);
+      toast({
+        title: "Erro ao atualizar veículo",
+        description: "Houve um problema ao atualizar o veículo.",
+        variant: "destructive"
+      });
+    }
   };
   
   const deleteVehicle = async (id: string) => {
-    // Implementação temporária
-    console.log("Deleting vehicle:", id);
+    try {
+      await vehicleService.delete(id);
+      setVehicles(vehicles.filter(v => v.id !== id));
+      toast({
+        title: "Veículo excluído",
+        description: "Veículo excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir veículo:", error);
+      toast({
+        title: "Erro ao excluir veículo",
+        description: "Houve um problema ao excluir o veículo.",
+        variant: "destructive"
+      });
+    }
   };
   
-  // SalesReps
+  // SalesReps implementations remain temporary
   const addSalesRep = async (salesRep: Omit<SalesRep, 'id'>) => {
     // Implementação temporária
     console.log("Adding salesRep:", salesRep);
