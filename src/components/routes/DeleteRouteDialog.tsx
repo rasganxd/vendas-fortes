@@ -24,6 +24,12 @@ export const DeleteRouteDialog = ({
   onConfirm, 
   isDeleting 
 }: DeleteRouteDialogProps) => {
+  const handleConfirm = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default dialog close behavior
+    await onConfirm();
+    // The dialog will be closed by the parent component after deletion is complete
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -36,7 +42,7 @@ export const DeleteRouteDialog = ({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm} 
+            onClick={handleConfirm} 
             className="bg-destructive text-destructive-foreground"
             disabled={isDeleting}
           >

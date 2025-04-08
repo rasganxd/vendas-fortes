@@ -151,8 +151,13 @@ export const vehicleService = {
   },
   
   async delete(id: string): Promise<void> {
+    if (!id) {
+      throw new Error("ID do veículo é obrigatório para exclusão");
+    }
+    console.log("Tentando excluir veículo com ID:", id);
     const vehicleRef = doc(db, "vehicles", id);
     await deleteDoc(vehicleRef);
+    console.log("Veículo excluído do Firestore com ID:", id);
   }
 };
 
@@ -213,10 +218,10 @@ export const routeService = {
   },
   
   async delete(id: string): Promise<void> {
-    console.log("Tentando excluir rota com ID:", id);
     if (!id) {
       throw new Error("ID da rota é obrigatório para exclusão");
     }
+    console.log("Tentando excluir rota com ID:", id);
     const routeRef = doc(db, "routes", id);
     await deleteDoc(routeRef);
     console.log("Documento excluído do Firestore com ID:", id);

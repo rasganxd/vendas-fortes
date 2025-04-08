@@ -17,7 +17,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -42,6 +41,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,6 +70,9 @@ export default function Vehicles() {
   const { vehicles = [], addVehicle, updateVehicle, deleteVehicle } = useAppContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [vehicleToDelete, setVehicleToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm<z.infer<typeof vehicleFormSchema>>({
     resolver: zodResolver(vehicleFormSchema),
@@ -95,6 +107,27 @@ export default function Vehicles() {
       active: true
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDeleteVehicle = (id: string) => {
+    setVehicleToDelete(id);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteVehicle = async () => {
+    if (!vehicleToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      console.log("Confirmando exclusão do veículo:", vehicleToDelete);
+      await deleteVehicle(vehicleToDelete);
+    } catch (error) {
+      console.error("Erro ao excluir veículo em Vehicles.tsx:", error);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteConfirmOpen(false);
+      setVehicleToDelete(null);
+    }
   };
 
   const onSubmit = (data: z.infer<typeof vehicleFormSchema>) => {
@@ -185,7 +218,7 @@ export default function Vehicles() {
                           variant="ghost" 
                           size="icon" 
                           className="text-red-500" 
-                          onClick={() => deleteVehicle(vehicle.id)}
+                          onClick={() => handleDeleteVehicle(vehicle.id)}
                         >
                           <Trash2 size={16} />
                         </Button>
@@ -312,6 +345,31 @@ export default function Vehicles() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault(); // Prevent default dialog close behavior
+                confirmDeleteVehicle();
+              }} 
+              className="bg-destructive text-destructive-foreground"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

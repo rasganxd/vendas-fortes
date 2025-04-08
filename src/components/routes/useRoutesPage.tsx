@@ -44,6 +44,9 @@ export const useRoutesPage = () => {
         setIsViewDialogOpen(false);
         setIsEditRouteDialogOpen(false);
       }
+      
+      // Fechar o diálogo de confirmação após a exclusão bem-sucedida
+      setIsDeleteConfirmOpen(false);
     } catch (error) {
       console.error("Erro ao excluir rota em Routes.tsx:", error);
       toast({
@@ -53,7 +56,6 @@ export const useRoutesPage = () => {
       });
     } finally {
       setIsDeleting(false);
-      setIsDeleteConfirmOpen(false);
       setRouteToDelete(null);
     }
   };

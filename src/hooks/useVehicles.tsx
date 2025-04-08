@@ -59,12 +59,21 @@ export const useVehicles = () => {
 
   const deleteVehicle = async (id: string) => {
     try {
+      console.log("Iniciando exclusão do veículo com ID:", id);
+      
+      // Excluir do Firestore primeiro
       await vehicleService.delete(id);
-      setVehicles(vehicles.filter(v => v.id !== id));
+      console.log("Veículo excluído do Firestore com sucesso:", id);
+      
+      // Atualizar o estado local após confirmação da exclusão
+      setVehicles((currentVehicles) => currentVehicles.filter(v => v.id !== id));
+      console.log("Estado local atualizado, veículo removido do estado:", id);
+      
       toast({
         title: "Veículo excluído",
         description: "Veículo excluído com sucesso!"
       });
+      return true;
     } catch (error) {
       console.error("Erro ao excluir veículo:", error);
       toast({
@@ -72,6 +81,7 @@ export const useVehicles = () => {
         description: "Houve um problema ao excluir o veículo.",
         variant: "destructive"
       });
+      throw error;
     }
   };
 
