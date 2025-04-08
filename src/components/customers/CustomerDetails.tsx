@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Customer, Order } from '@/types';
@@ -25,16 +24,23 @@ interface CustomerDetailsProps {
   onDelete: () => void;
 }
 
+interface FrequentProduct {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalQuantity: number;
+  occurrences: number;
+}
+
 const CustomerDetails: React.FC<CustomerDetailsProps> = ({ customer, onEdit, onDelete }) => {
   const { orders } = useAppContext();
   const customerOrders = orders.filter(order => order.customerId === customer.id);
   const totalSpent = customerOrders.reduce((acc, order) => acc + order.total, 0);
 
-  // Get frequent products
-  const getFrequentProducts = () => {
+  const getFrequentProducts = (): FrequentProduct[] => {
     if (customerOrders.length === 0) return [];
     
-    // Collect all products from all orders
     const allProducts = customerOrders.flatMap(order => 
       order.items.map(item => ({
         id: item.productId,
@@ -44,23 +50,24 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({ customer, onEdit, onD
       }))
     );
     
-    // Group by product ID and sum quantities
-    const productMap = allProducts.reduce((acc, product) => {
+    const productMap: Record<string, FrequentProduct> = allProducts.reduce((acc, product) => {
       if (!acc[product.id]) {
-        acc[product.id] = { ...product, totalQuantity: 0, occurrences: 0 };
+        acc[product.id] = { 
+          ...product, 
+          totalQuantity: 0, 
+          occurrences: 0 
+        };
       }
       acc[product.id].totalQuantity += product.quantity;
       acc[product.id].occurrences += 1;
       return acc;
-    }, {});
+    }, {} as Record<string, FrequentProduct>);
     
-    // Convert to array and sort by frequency
     return Object.values(productMap)
       .sort((a, b) => b.totalQuantity - a.totalQuantity)
-      .slice(0, 5); // Top 5 products
+      .slice(0, 5);
   };
 
-  // Sort orders by date, most recent first
   const sortedOrders = [...customerOrders].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
