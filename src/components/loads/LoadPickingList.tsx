@@ -154,37 +154,6 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
           </table>
         </div>
         
-        <Separator className="my-6" />
-        
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Pedidos Incluídos ({deliveryCount})</h2>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2 text-left">Nº Pedido</th>
-                <th className="border p-2 text-left">Cliente</th>
-                <th className="border p-2 text-left">Data</th>
-                <th className="border p-2 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td className="border p-2">{order.id}</td>
-                  <td className="border p-2">{order.customerName}</td>
-                  <td className="border p-2">{formatDateToBR(order.createdAt)}</td>
-                  <td className="border p-2 text-right">
-                    {order.total.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    })}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
         <div className="mt-8 text-center">
           <p>Assinatura do responsável: ___________________________________</p>
         </div>
