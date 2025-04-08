@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -43,20 +42,17 @@ export default function Routes() {
     if (!routeToDelete) return;
     
     try {
-      // Chamando a função de deleteRoute da useAppContext diretamente
+      console.log("Confirmando exclusão da rota:", routeToDelete);
       await deleteRoute(routeToDelete);
-      toast({
-        title: "Rota excluída",
-        description: "A rota foi excluída com sucesso.",
-      });
+      setIsDeleteConfirmOpen(false);
+      setRouteToDelete(null);
     } catch (error) {
-      console.error("Erro ao excluir rota:", error);
+      console.error("Erro ao excluir rota em Routes.tsx:", error);
       toast({
         title: "Erro ao excluir",
         description: "Não foi possível excluir a rota.",
         variant: "destructive",
       });
-    } finally {
       setIsDeleteConfirmOpen(false);
       setRouteToDelete(null);
     }
@@ -73,7 +69,6 @@ export default function Routes() {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    // Find customer info from order
     const customer = {
       name: order.customerName,
       address: order.deliveryAddress || '',
@@ -82,7 +77,6 @@ export default function Routes() {
       zipCode: order.deliveryZipCode || '',
     };
 
-    // Create new stop
     const newStop: RouteStop = {
       id: Math.random().toString(36).substring(2, 10),
       orderId: order.id,
@@ -95,11 +89,9 @@ export default function Routes() {
       status: 'pending'
     };
 
-    // Update route with new stop
     const updatedStops = [...selectedRoute.stops, newStop];
     updateRoute(selectedRoute.id, { stops: updatedStops });
     
-    // Update selected route in state
     setSelectedRoute({
       ...selectedRoute,
       stops: updatedStops
@@ -111,19 +103,15 @@ export default function Routes() {
   const removeOrderFromRoute = (stopId: string) => {
     if (!selectedRoute) return;
     
-    // Filter out the stop to remove
     const updatedStops = selectedRoute.stops.filter(s => s.id !== stopId);
     
-    // Resequence remaining stops
     const resequencedStops = updatedStops.map((stop, index) => ({
       ...stop,
       sequence: index + 1
     }));
     
-    // Update route with new stops
     updateRoute(selectedRoute.id, { stops: resequencedStops });
     
-    // Update selected route in state
     setSelectedRoute({
       ...selectedRoute,
       stops: resequencedStops
@@ -154,7 +142,6 @@ export default function Routes() {
     });
   };
 
-  // Get orders not already assigned to the selected route
   const getUnassignedOrders = () => {
     if (!selectedRoute) return [];
     
@@ -196,7 +183,6 @@ export default function Routes() {
         )}
       </div>
       
-      {/* Route Detail Dialog */}
       <RouteDetailDialog
         open={isViewDialogOpen}
         onOpenChange={setIsViewDialogOpen}
@@ -205,7 +191,6 @@ export default function Routes() {
         onRemoveStop={removeOrderFromRoute}
       />
       
-      {/* Add Order Dialog */}
       <AddOrderDialog
         open={isAddOrderDialogOpen}
         onOpenChange={setIsAddOrderDialogOpen}
@@ -213,7 +198,6 @@ export default function Routes() {
         onAddOrder={addOrderToRoute}
       />
       
-      {/* New Route Dialog */}
       <NewRouteDialog
         open={isNewRouteDialogOpen}
         onOpenChange={setIsNewRouteDialogOpen}
@@ -221,7 +205,6 @@ export default function Routes() {
         onCreateRoute={handleCreateNewRoute}
       />
 
-      {/* Edit Route Dialog */}
       <EditRouteDialog
         open={isEditRouteDialogOpen}
         onOpenChange={setIsEditRouteDialogOpen}
@@ -230,7 +213,6 @@ export default function Routes() {
         onSave={handleSaveRouteChanges}
       />
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

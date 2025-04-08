@@ -59,19 +59,20 @@ export const useRoutes = () => {
 
   const deleteRoute = async (id: string) => {
     try {
+      console.log("Iniciando exclusão da rota com ID:", id);
+      
       // Garantindo que o serviço de rota seja chamado corretamente
       await routeService.delete(id);
+      console.log("Serviço de exclusão completado para ID:", id);
       
       // Atualizando o estado local após exclusão bem-sucedida
       setRoutes(routes.filter(r => r.id !== id));
+      console.log("Estado local atualizado, rota removida:", id);
       
       toast({
         title: "Rota excluída",
         description: "Rota excluída com sucesso!"
       });
-      
-      // Adicionando console.log para rastreamento
-      console.log("Rota excluída com sucesso:", id);
     } catch (error) {
       console.error("Erro ao excluir rota:", error);
       toast({
@@ -79,7 +80,7 @@ export const useRoutes = () => {
         description: "Houve um problema ao excluir a rota.",
         variant: "destructive"
       });
-      // Re-lanço o erro para que seja tratado pelo chamador
+      // Relançando o erro para ser tratado pelo componente que chamou
       throw error;
     }
   };
