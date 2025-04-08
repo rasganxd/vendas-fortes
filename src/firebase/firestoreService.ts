@@ -213,8 +213,10 @@ export const routeService = {
   },
   
   async delete(id: string): Promise<void> {
+    console.log("Tentando excluir rota com ID:", id);
     const routeRef = doc(db, "routes", id);
     await deleteDoc(routeRef);
+    console.log("Documento excluído do Firestore com ID:", id);
   }
 };
 

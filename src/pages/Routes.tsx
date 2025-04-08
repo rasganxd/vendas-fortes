@@ -43,6 +43,7 @@ export default function Routes() {
     if (!routeToDelete) return;
     
     try {
+      // Chamando a função de deleteRoute da useAppContext diretamente
       await deleteRoute(routeToDelete);
       toast({
         title: "Rota excluída",
