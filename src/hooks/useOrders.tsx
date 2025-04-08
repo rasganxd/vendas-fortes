@@ -57,6 +57,26 @@ export const useOrders = () => {
     }
   };
 
+  const updateOrderPaymentMethod = async (id: string, paymentMethod: string, paymentStatus: 'pending' | 'partial' | 'paid' = 'paid') => {
+    try {
+      await orderService.update(id, { paymentMethod, paymentStatus });
+      setOrders(orders.map(o => 
+        o.id === id ? { ...o, paymentMethod, paymentStatus } : o
+      ));
+      toast({
+        title: "Forma de pagamento atualizada",
+        description: "Forma de pagamento atualizada com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar forma de pagamento:", error);
+      toast({
+        title: "Erro ao atualizar forma de pagamento",
+        description: "Houve um problema ao atualizar a forma de pagamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const deleteOrder = async (id: string) => {
     try {
       await orderService.delete(id);
@@ -79,6 +99,7 @@ export const useOrders = () => {
     orders,
     addOrder,
     updateOrder,
+    updateOrderPaymentMethod,
     deleteOrder
   };
 };

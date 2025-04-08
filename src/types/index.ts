@@ -46,6 +46,7 @@ export interface Order {
   total: number;
   status: 'draft' | 'confirmed' | 'delivered' | 'cancelled';
   paymentStatus: 'pending' | 'partial' | 'paid';
+  paymentMethod?: 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | string;
   createdAt: Date;
   deliveryDate?: Date;
   notes?: string;

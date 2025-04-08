@@ -1,5 +1,5 @@
 
-import { DeliveryRoute } from '@/types';
+import { DeliveryRoute, Order } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,8 @@ import { formatDateToBR } from '@/lib/date-utils';
 import { RouteStopsTable } from './RouteStopsTable';
 import { RouteProductsList } from './RouteProductsList';
 import { RouteMap } from './RouteMap';
+import RouteFinancialReport from './RouteFinancialReport';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface RouteDetailDialogProps {
   open: boolean;
@@ -34,8 +36,15 @@ export const RouteDetailDialog = ({
   onAddOrder, 
   onRemoveStop 
 }: RouteDetailDialogProps) => {
+  const { orders } = useAppContext();
+  
   if (!route) return null;
 
+  // Get all orders that are included in this route
+  const routeOrders = orders.filter(order => 
+    route.stops.some(stop => stop.orderId === order.id)
+  );
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -44,9 +53,10 @@ export const RouteDetailDialog = ({
         </DialogHeader>
         
         <Tabs defaultValue="stops">
-          <TabsList className="grid grid-cols-2 mb-4">
+          <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="stops">Paradas</TabsTrigger>
             <TabsTrigger value="map">Visualização da Rota</TabsTrigger>
+            <TabsTrigger value="financial">Relatório Financeiro</TabsTrigger>
           </TabsList>
           
           <TabsContent value="stops">
@@ -81,6 +91,14 @@ export const RouteDetailDialog = ({
           
           <TabsContent value="map" className="min-h-[500px]">
             <RouteMap route={route} className="h-full" />
+          </TabsContent>
+          
+          <TabsContent value="financial">
+            <RouteFinancialReport 
+              route={route}
+              orders={routeOrders}
+              onClose={() => {}}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>
