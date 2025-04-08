@@ -1,4 +1,5 @@
 
+
 import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle } from '@/types';
 
 // Mock Customers
@@ -44,6 +45,7 @@ export const mockCustomers: Customer[] = [
 export const mockProducts: Product[] = [
   {
     id: "p1",
+    code: 1,
     name: "Refrigerante Cola 2L",
     description: "Refrigerante sabor cola em garrafa PET de 2 litros",
     price: 8.99,
@@ -53,6 +55,7 @@ export const mockProducts: Product[] = [
   },
   {
     id: "p2",
+    code: 2,
     name: "Arroz Branco 5kg",
     description: "Arroz branco tipo 1 em pacote de 5kg",
     price: 21.90,
@@ -62,6 +65,7 @@ export const mockProducts: Product[] = [
   },
   {
     id: "p3",
+    code: 3,
     name: "Sabão em Pó 1kg",
     description: "Sabão em pó para roupas embalagem de 1kg",
     price: 15.50,

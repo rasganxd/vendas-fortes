@@ -1,3 +1,4 @@
+
 import { 
   Customer, 
   Product, 
@@ -92,6 +93,7 @@ export const mockCustomers: Customer[] = [
 export const mockProducts: Product[] = [
   {
     id: 'prod1',
+    code: 1,
     name: 'Arroz Branco Premium',
     description: 'Pacote de arroz branco tipo 1, alta qualidade',
     price: 22.90,
@@ -101,6 +103,7 @@ export const mockProducts: Product[] = [
   },
   {
     id: 'prod2',
+    code: 2,
     name: 'Feijão Carioca',
     description: 'Pacote de feijão carioca tipo 1',
     price: 9.75,
@@ -110,6 +113,7 @@ export const mockProducts: Product[] = [
   },
   {
     id: 'prod3',
+    code: 3,
     name: 'Açúcar Refinado',
     description: 'Açúcar refinado especial',
     price: 5.49,
@@ -119,6 +123,7 @@ export const mockProducts: Product[] = [
   },
   {
     id: 'prod4',
+    code: 4,
     name: 'Café Torrado Moído',
     description: 'Café torrado e moído premium',
     price: 14.90,
@@ -128,6 +133,7 @@ export const mockProducts: Product[] = [
   },
   {
     id: 'prod5',
+    code: 5,
     name: 'Óleo de Soja',
     description: 'Óleo de soja refinado',
     price: 7.95,
@@ -137,6 +143,7 @@ export const mockProducts: Product[] = [
   },
   {
     id: 'prod6',
+    code: 6,
     name: 'Macarrão Espaguete',
     description: 'Macarrão espaguete tradicional',
     price: 4.29,
@@ -146,6 +153,7 @@ export const mockProducts: Product[] = [
   },
   {
     id: 'prod7',
+    code: 7,
     name: 'Sal Refinado',
     description: 'Sal refinado iodado',
     price: 2.99,
