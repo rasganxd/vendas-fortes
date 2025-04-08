@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -6,7 +5,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-import { Save, List, FilePenLine, Trash2, FileText, AlertTriangle } from "lucide-react";
+import { Save, FileText, FilePenLine } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Order, OrderItem, PaymentTable, Product, Customer, SalesRep } from '@/types';
 
@@ -293,19 +292,7 @@ export default function NewOrder() {
           {/* Right column - Action buttons */}
           <div className="col-span-4 grid grid-cols-2 gap-2">
             <Button variant="outline" className="justify-start">
-              <List size={16} /> Listar <span className="ml-auto text-xs text-gray-400">F3</span>
-            </Button>
-            <Button variant="outline" className="justify-start">
               <FilePenLine size={16} /> Alterar <span className="ml-auto text-xs text-gray-400">F4</span>
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <Trash2 size={16} /> Eliminar <span className="ml-auto text-xs text-gray-400">F5</span>
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <FileText size={16} /> Emissão NF <span className="ml-auto text-xs text-gray-400">F6</span>
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <AlertTriangle size={16} /> Negativa <span className="ml-auto text-xs text-gray-400">F7</span>
             </Button>
             <Button 
               variant="outline" 
