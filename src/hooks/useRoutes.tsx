@@ -61,18 +61,19 @@ export const useRoutes = () => {
     try {
       console.log("Iniciando exclusão da rota com ID:", id);
       
-      // Garantindo que o serviço de rota seja chamado corretamente
+      // Excluir do Firestore primeiro
       await routeService.delete(id);
-      console.log("Serviço de exclusão completado para ID:", id);
+      console.log("Rota excluída do Firestore com sucesso:", id);
       
-      // Atualizando o estado local após exclusão bem-sucedida
+      // Só então atualizar o estado local após confirmação da exclusão
       setRoutes(routes.filter(r => r.id !== id));
-      console.log("Estado local atualizado, rota removida:", id);
+      console.log("Estado local atualizado, rota removida do estado:", id);
       
       toast({
         title: "Rota excluída",
         description: "Rota excluída com sucesso!"
       });
+      return true; // Retornar true para indicar sucesso
     } catch (error) {
       console.error("Erro ao excluir rota:", error);
       toast({
@@ -80,8 +81,7 @@ export const useRoutes = () => {
         description: "Houve um problema ao excluir a rota.",
         variant: "destructive"
       });
-      // Relançando o erro para ser tratado pelo componente que chamou
-      throw error;
+      throw error; // Relançar o erro para ser tratado pelo chamador
     }
   };
 

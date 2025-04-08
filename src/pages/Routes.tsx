@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -22,6 +23,7 @@ export default function Routes() {
   const [isEditRouteDialogOpen, setIsEditRouteDialogOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [routeToDelete, setRouteToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleViewRoute = (route: DeliveryRoute) => {
     setSelectedRoute(route);
@@ -42,10 +44,18 @@ export default function Routes() {
     if (!routeToDelete) return;
     
     try {
+      setIsDeleting(true);
       console.log("Confirmando exclusão da rota:", routeToDelete);
       await deleteRoute(routeToDelete);
       setIsDeleteConfirmOpen(false);
       setRouteToDelete(null);
+      
+      // Se a rota que foi excluída era a selecionada, limpar a seleção
+      if (selectedRoute && selectedRoute.id === routeToDelete) {
+        setSelectedRoute(null);
+        setIsViewDialogOpen(false);
+        setIsEditRouteDialogOpen(false);
+      }
     } catch (error) {
       console.error("Erro ao excluir rota em Routes.tsx:", error);
       toast({
@@ -53,6 +63,8 @@ export default function Routes() {
         description: "Não foi possível excluir a rota.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
       setIsDeleteConfirmOpen(false);
       setRouteToDelete(null);
     }
@@ -222,9 +234,13 @@ export default function Routes() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteRoute} className="bg-destructive text-destructive-foreground">
-              Excluir
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteRoute} 
+              className="bg-destructive text-destructive-foreground"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
