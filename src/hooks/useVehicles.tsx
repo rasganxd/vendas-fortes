@@ -18,8 +18,11 @@ export const useVehicles = () => {
 
   const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
     try {
+      // Add to Firebase
       const id = await vehicleService.add(vehicle);
       const newVehicle = { ...vehicle, id };
+      
+      // Update local state
       setVehicles([...vehicles, newVehicle]);
       toast({
         title: "Veículo adicionado",
@@ -39,7 +42,10 @@ export const useVehicles = () => {
 
   const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
     try {
+      // Update in Firebase
       await vehicleService.update(id, vehicle);
+      
+      // Update local state
       setVehicles(vehicles.map(v => 
         v.id === id ? { ...v, ...vehicle } : v
       ));
@@ -59,16 +65,11 @@ export const useVehicles = () => {
 
   const deleteVehicle = async (id: string) => {
     try {
-      console.log("Iniciando exclusão do veículo com ID:", id);
-      
-      // Excluir do Firestore primeiro
+      // Delete from Firebase
       await vehicleService.delete(id);
-      console.log("Veículo excluído do Firestore com sucesso:", id);
       
-      // Atualizar o estado local após confirmação da exclusão - Fixed TypeScript error here
+      // Update local state
       setVehicles(vehicles.filter(v => v.id !== id));
-      console.log("Estado local atualizado, veículo removido do estado:", id);
-      
       toast({
         title: "Veículo excluído",
         description: "Veículo excluído com sucesso!"

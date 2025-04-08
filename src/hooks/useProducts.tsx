@@ -31,9 +31,11 @@ export const useProducts = () => {
       const nextCode = product.code || getNextProductCode();
       const productWithCode = { ...product, code: nextCode };
       
+      // Add to Firebase
       const id = await productService.add(productWithCode);
       const newProduct = { ...productWithCode, id };
       
+      // Update local state
       setProducts([...products, newProduct]);
       toast({
         title: "Produto adicionado",
@@ -53,7 +55,9 @@ export const useProducts = () => {
 
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
+      // Update in Firebase
       await productService.update(id, product);
+      // Update local state
       setProducts(products.map(p => 
         p.id === id ? { ...p, ...product } : p
       ));
@@ -73,7 +77,9 @@ export const useProducts = () => {
 
   const deleteProduct = async (id: string) => {
     try {
+      // Delete from Firebase
       await productService.delete(id);
+      // Update local state
       setProducts(products.filter(p => p.id !== id));
       toast({
         title: "Produto excluído",

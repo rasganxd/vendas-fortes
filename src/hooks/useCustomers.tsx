@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
@@ -19,8 +18,11 @@ export const useCustomers = () => {
   
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
+      // Add to Firebase
       const id = await customerService.add(customer);
       const newCustomer = { ...customer, id } as Customer;
+      
+      // Update local state
       setCustomers([...customers, newCustomer]);
       toast({
         title: "Cliente adicionado",
@@ -40,7 +42,10 @@ export const useCustomers = () => {
 
   const updateCustomer = async (id: string, customer: Partial<Customer>) => {
     try {
+      // Update in Firebase
       await customerService.update(id, customer);
+      
+      // Update local state
       const updatedCustomers = customers.map(c => 
         c.id === id ? { ...c, ...customer } : c
       );
@@ -61,7 +66,10 @@ export const useCustomers = () => {
 
   const deleteCustomer = async (id: string) => {
     try {
+      // Delete from Firebase
       await customerService.delete(id);
+      
+      // Update local state
       setCustomers(customers.filter(c => c.id !== id));
       toast({
         title: "Cliente excluído",

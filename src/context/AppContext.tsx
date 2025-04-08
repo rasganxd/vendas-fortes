@@ -1,7 +1,6 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { Customer, Product, Order, Payment, DeliveryRoute, Vehicle, Load, SalesRep, Backup } from '@/types';
-import { mockCustomers, mockProducts, mockOrders, mockPayments, mockRoutes, mockLoads, mockSalesReps, mockVehicles } from '@/data/mock-data';
+import { mockSalesReps } from '@/data/mock-data';
 import { toast } from '@/components/ui/use-toast';
 
 // Import load functions only (not hooks that would cause circular dependencies)
@@ -114,7 +113,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Tenta carregar do Firebase
+      // Carrega dados do Firebase
       const customersData = await loadCustomers();
       const productsData = await loadProducts();
       const ordersData = await loadOrders();
@@ -123,34 +122,34 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       const routesData = await loadRoutes();
       const loadsData = await loadLoads();
       
-      setCustomers(customersData.length > 0 ? customersData : mockCustomers);
-      setProducts(productsData.length > 0 ? productsData : mockProducts);
-      setOrders(ordersData.length > 0 ? ordersData : mockOrders);
-      setVehicles(vehiclesData.length > 0 ? vehiclesData : mockVehicles);
-      setPayments(paymentsData.length > 0 ? paymentsData : mockPayments);
-      setRoutes(routesData.length > 0 ? routesData : mockRoutes);
-      setLoads(loadsData.length > 0 ? loadsData : mockLoads);
+      // Atualiza o estado com os dados do Firebase
+      setCustomers(customersData);
+      setProducts(productsData);
+      setOrders(ordersData);
+      setVehicles(vehiclesData);
+      setPayments(paymentsData);
+      setRoutes(routesData);
+      setLoads(loadsData);
       
       // Para simplificar o exemplo, continuamos usando dados mockados para o restante
       setSalesReps(mockSalesReps);
       
+      console.log('Dados carregados do Firebase:', {
+        customers: customersData.length,
+        products: productsData.length, 
+        orders: ordersData.length,
+        vehicles: vehiclesData.length,
+        payments: paymentsData.length,
+        routes: routesData.length,
+        loads: loadsData.length
+      });
     } catch (error) {
       console.error("Erro ao carregar dados do Firebase:", error);
       toast({
         title: "Erro ao carregar dados",
-        description: "Houve um problema ao carregar os dados do Firebase. Usando dados mockados.",
+        description: "Houve um problema ao carregar os dados do Firebase.",
         variant: "destructive"
       });
-      
-      // Fallback para dados mockados
-      setCustomers(mockCustomers);
-      setProducts(mockProducts);
-      setOrders(mockOrders);
-      setPayments(mockPayments);
-      setRoutes(mockRoutes);
-      setLoads(mockLoads);
-      setSalesReps(mockSalesReps);
-      setVehicles(mockVehicles);
     } finally {
       setIsLoading(false);
     }

@@ -26,8 +26,11 @@ export const useLoads = () => {
         notes: load.notes || null,
       };
       
+      // Add to Firebase
       const id = await loadService.add(cleanedLoad);
       const newLoad = { ...cleanedLoad, id } as Load;
+      
+      // Update local state
       setLoads([...loads, newLoad]);
       toast({
         title: "Carregamento adicionado",
@@ -55,7 +58,10 @@ export const useLoads = () => {
         notes: load.notes === undefined ? undefined : (load.notes || null),
       };
       
+      // Update in Firebase
       await loadService.update(id, cleanedLoad);
+      
+      // Update local state
       setLoads(loads.map(l => 
         l.id === id ? { ...l, ...cleanedLoad } : l
       ));
@@ -75,7 +81,10 @@ export const useLoads = () => {
 
   const deleteLoad = async (id: string) => {
     try {
+      // Delete from Firebase
       await loadService.delete(id);
+      
+      // Update local state
       setLoads(loads.filter(l => l.id !== id));
       toast({
         title: "Carregamento excluído",

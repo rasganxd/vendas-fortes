@@ -18,8 +18,11 @@ export const useRoutes = () => {
 
   const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
     try {
+      // Add to Firebase
       const id = await routeService.add(route);
       const newRoute = { ...route, id } as DeliveryRoute;
+      
+      // Update local state
       setRoutes([...routes, newRoute]);
       toast({
         title: "Rota adicionada",
@@ -39,7 +42,10 @@ export const useRoutes = () => {
 
   const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
     try {
+      // Update in Firebase
       await routeService.update(id, route);
+      
+      // Update local state
       setRoutes(routes.map(r => 
         r.id === id ? { ...r, ...route } : r
       ));
@@ -59,16 +65,11 @@ export const useRoutes = () => {
 
   const deleteRoute = async (id: string) => {
     try {
-      console.log("Iniciando exclusão da rota com ID:", id);
-      
-      // Excluir do Firestore
+      // Delete from Firebase
       await routeService.delete(id);
-      console.log("Rota excluída do Firestore com sucesso:", id);
       
-      // Atualizar o estado local após confirmação da exclusão - Fixed TypeScript error here
+      // Update local state
       setRoutes(routes.filter(r => r.id !== id));
-      console.log("Estado local atualizado, rota removida do estado:", id);
-      
       toast({
         title: "Rota excluída",
         description: "Rota excluída com sucesso!"
