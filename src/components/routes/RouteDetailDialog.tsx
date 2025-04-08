@@ -79,8 +79,8 @@ export const RouteDetailDialog = ({
             </div>
           </TabsContent>
           
-          <TabsContent value="map">
-            <RouteMap route={route} />
+          <TabsContent value="map" className="min-h-[500px]">
+            <RouteMap route={route} className="h-full" />
           </TabsContent>
         </Tabs>
       </DialogContent>

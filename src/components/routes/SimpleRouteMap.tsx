@@ -31,6 +31,18 @@ export const SimpleRouteMap = ({ stops }: SimpleRouteMapProps) => {
     };
   };
 
+  // Verificar se não há paradas para exibir uma mensagem
+  if (stops.length === 0) {
+    return (
+      <div className="border rounded-lg overflow-hidden bg-gray-50 h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500">Nenhuma parada definida para esta rota.</p>
+          <p className="text-sm text-gray-400 mt-1">Adicione pedidos para visualizar a rota.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Calculando as posições para todos os stops
   const stopPositions = stops.map((stop, index) => ({
     stop,
@@ -44,7 +56,13 @@ export const SimpleRouteMap = ({ stops }: SimpleRouteMapProps) => {
         <p className="text-muted-foreground">Representação simplificada da rota</p>
       </div>
 
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="w-full">
+      <svg 
+        width={width} 
+        height={height} 
+        viewBox={`0 0 ${width} ${height}`} 
+        className="w-full h-[400px]" 
+        preserveAspectRatio="xMidYMid meet"
+      >
         {/* Linhas conectando os pontos de parada */}
         {stopPositions.length > 1 && stopPositions.map((point, index) => {
           if (index === stopPositions.length - 1) return null;

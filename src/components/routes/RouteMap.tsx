@@ -18,7 +18,7 @@ export const RouteMap = ({ route, className }: RouteMapProps) => {
   };
 
   return (
-    <div className={`flex flex-col ${className}`}>
+    <div className={`flex flex-col ${className || ''}`}>
       <div className="flex justify-end mb-2">
         <Button 
           variant="outline" 
@@ -40,7 +40,7 @@ export const RouteMap = ({ route, className }: RouteMapProps) => {
         </Button>
       </div>
       
-      <div className="relative rounded-lg overflow-hidden">
+      <div className="relative rounded-lg overflow-hidden border h-[400px]">
         {useOfflineMap ? (
           <SimpleRouteMap stops={route.stops} />
         ) : (
