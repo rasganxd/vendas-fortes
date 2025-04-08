@@ -103,7 +103,7 @@ export default function SideNav() {
     geral: "GERAL",
     cadastro: "CADASTRO",
     vendas: "VENDAS",
-    financeiro: "FIN.",
+    financeiro: "FINANCEIRO",
     logistics: "LOGÍSTICA",
     sistema: "SISTEMA"
   };
