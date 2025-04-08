@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Backup, Order } from '@/types';
@@ -15,6 +16,7 @@ import { AlertCircle, Download, Upload, Calendar, CalendarClock, Trash2 } from '
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useBackups } from '@/hooks/useBackups';
 import { toast } from '@/components/ui/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const SystemMaintenance = () => {
   const { 
@@ -31,6 +33,7 @@ const SystemMaintenance = () => {
   const [newBackupOpen, setNewBackupOpen] = useState(false);
   const [backupName, setBackupName] = useState('');
   const [backupDescription, setBackupDescription] = useState('');
+  const [backupType, setBackupType] = useState('manual');
   const [selectedBackup, setSelectedBackup] = useState<Backup | null>(null);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -40,9 +43,13 @@ const SystemMaintenance = () => {
   const handleCreateBackup = () => {
     if (!backupName.trim()) return;
     
-    createBackup(backupName, backupDescription || undefined);
+    const typePrefix = backupType === 'daily' ? '[Diário] ' : backupType === 'monthly' ? '[Mensal] ' : '';
+    const fullBackupName = `${typePrefix}${backupName}`;
+    
+    createBackup(fullBackupName, backupDescription || undefined);
     setBackupName('');
     setBackupDescription('');
+    setBackupType('manual');
     setNewBackupOpen(false);
   };
 
@@ -121,6 +128,27 @@ const SystemMaintenance = () => {
                   <DialogDescription>Insira os detalhes para o novo backup do sistema.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="backupType">Tipo de backup</Label>
+                    <RadioGroup 
+                      value={backupType} 
+                      onValueChange={setBackupType}
+                      className="flex flex-col space-y-1"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="manual" id="manual" />
+                        <Label htmlFor="manual">Backup Manual</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="daily" id="daily" />
+                        <Label htmlFor="daily">Backup Diário</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="monthly" id="monthly" />
+                        <Label htmlFor="monthly">Backup Mensal</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome do backup</Label>
                     <Input
