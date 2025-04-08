@@ -17,6 +17,7 @@ interface PaymentOptionsInputProps {
   setSelectedPaymentTable: (id: string) => void;
   paymentMethod: string;
   setPaymentMethod: (method: string) => void;
+  simplifiedView?: boolean;
 }
 
 export default function PaymentOptionsInput({
@@ -24,7 +25,8 @@ export default function PaymentOptionsInput({
   selectedPaymentTable,
   setSelectedPaymentTable,
   paymentMethod,
-  setPaymentMethod
+  setPaymentMethod,
+  simplifiedView = false
 }: PaymentOptionsInputProps) {
   // Payment methods
   const paymentMethods = [
@@ -35,6 +37,31 @@ export default function PaymentOptionsInput({
     { value: 'check', label: 'Cheque' },
     { value: 'custom', label: 'Personalizado' }
   ];
+
+  if (simplifiedView) {
+    return (
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12">
+          <Label htmlFor="paymentTable" className="text-xs text-gray-500">Tabela de Pagamento</Label>
+          <Select
+            value={selectedPaymentTable}
+            onValueChange={setSelectedPaymentTable}
+          >
+            <SelectTrigger id="paymentTable" className="h-9">
+              <SelectValue placeholder="Selecione a tabela de pagamento" />
+            </SelectTrigger>
+            <SelectContent>
+              {paymentTables.filter(table => table.active).map(table => (
+                <SelectItem key={table.id} value={table.id}>
+                  {table.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-4 border-t">

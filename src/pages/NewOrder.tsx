@@ -5,12 +5,12 @@ import { useOrders } from '@/hooks/useOrders';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, ShoppingCart } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Save, List, FilePenLine, Trash2, FileText, AlertTriangle } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Order, OrderItem, PaymentTable, Product, Customer, SalesRep } from '@/types';
 
-// Import our new components
+// Import our components
 import CustomerSearchInput from '@/components/orders/CustomerSearchInput';
 import SalesRepSearchInput from '@/components/orders/SalesRepSearchInput';
 import ProductSearchInput from '@/components/orders/ProductSearchInput';
@@ -208,83 +208,127 @@ export default function NewOrder() {
   };
 
   return (
-    <PageLayout title="Novo Pedido">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart size={20} /> Informações do Pedido
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <CustomerSearchInput 
-              customers={customers}
-              selectedCustomer={selectedCustomer}
-              setSelectedCustomer={setSelectedCustomer}
-              onViewRecentPurchases={handleViewRecentPurchases}
-            />
-            
-            <SalesRepSearchInput
-              salesReps={salesReps}
-              selectedSalesRep={selectedSalesRep}
-              setSelectedSalesRep={setSelectedSalesRep}
-            />
-            
-            <PaymentOptionsInput
-              paymentTables={paymentTables}
-              selectedPaymentTable={selectedPaymentTable}
-              setSelectedPaymentTable={setSelectedPaymentTable}
-              paymentMethod={paymentMethod}
-              setPaymentMethod={setPaymentMethod}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Adicionar Produtos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProductSearchInput
-              products={products}
-              addItemToOrder={handleAddItem}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Resumo do Pedido</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4">
-              <div className="flex justify-between items-center text-xl font-bold">
-                <span>Total:</span>
-                <span>{calculateTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm text-gray-500 mt-1">
-                <span>Itens:</span>
-                <span>{orderItems.length}</span>
+    <PageLayout title="Digitação de Pedidos">
+      <div className="bg-white border rounded-md p-6 mb-4">
+        <div className="grid grid-cols-12 gap-x-4 gap-y-6">
+          {/* Left column - Header information */}
+          <div className="col-span-8 grid grid-cols-12 gap-x-4 gap-y-4">
+            {/* Sales Rep */}
+            <div className="col-span-1 flex items-center justify-center">
+              <div className="bg-gray-100 p-2 rounded-full">
+                <img 
+                  src="/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png" 
+                  alt="Vendedor" 
+                  className="w-6 h-6 opacity-70" 
+                />
               </div>
             </div>
+            <div className="col-span-11">
+              <SalesRepSearchInput
+                salesReps={salesReps}
+                selectedSalesRep={selectedSalesRep}
+                setSelectedSalesRep={setSelectedSalesRep}
+              />
+            </div>
             
+            {/* Customer */}
+            <div className="col-span-1 flex items-center justify-center">
+              <div className="bg-gray-100 p-2 rounded-full">
+                <img 
+                  src="/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png" 
+                  alt="Cliente" 
+                  className="w-6 h-6 opacity-70" 
+                />
+              </div>
+            </div>
+            <div className="col-span-11">
+              <CustomerSearchInput 
+                customers={customers}
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                onViewRecentPurchases={handleViewRecentPurchases}
+              />
+            </div>
+            
+            {/* Payment Table */}
+            <div className="col-span-1 flex items-center justify-center">
+              <div className="bg-gray-100 p-2 rounded-full">
+                <img 
+                  src="/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png" 
+                  alt="Tabela" 
+                  className="w-6 h-6 opacity-70" 
+                />
+              </div>
+            </div>
+            <div className="col-span-11">
+              <PaymentOptionsInput
+                paymentTables={paymentTables}
+                selectedPaymentTable={selectedPaymentTable}
+                setSelectedPaymentTable={setSelectedPaymentTable}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                simplifiedView={true}
+              />
+            </div>
+            
+            {/* Product entry section */}
+            <div className="col-span-1 flex items-center justify-center">
+              <div className="bg-gray-100 p-2 rounded-full">
+                <img 
+                  src="/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png" 
+                  alt="Produto" 
+                  className="w-6 h-6 opacity-70" 
+                />
+              </div>
+            </div>
+            <div className="col-span-11">
+              <ProductSearchInput
+                products={products}
+                addItemToOrder={handleAddItem}
+                inlineLayout={true}
+              />
+            </div>
+          </div>
+          
+          {/* Right column - Action buttons */}
+          <div className="col-span-4 grid grid-cols-2 gap-2">
+            <Button variant="outline" className="justify-start">
+              <List size={16} /> Listar <span className="ml-auto text-xs text-gray-400">F3</span>
+            </Button>
+            <Button variant="outline" className="justify-start">
+              <FilePenLine size={16} /> Alterar <span className="ml-auto text-xs text-gray-400">F4</span>
+            </Button>
+            <Button variant="outline" className="justify-start">
+              <Trash2 size={16} /> Eliminar <span className="ml-auto text-xs text-gray-400">F5</span>
+            </Button>
+            <Button variant="outline" className="justify-start">
+              <FileText size={16} /> Emissão NF <span className="ml-auto text-xs text-gray-400">F6</span>
+            </Button>
+            <Button variant="outline" className="justify-start">
+              <AlertTriangle size={16} /> Negativa <span className="ml-auto text-xs text-gray-400">F7</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="justify-start"
+              onClick={handleViewRecentPurchases}
+            >
+              <FileText size={16} /> Últimas Compras
+            </Button>
             <Button 
               onClick={handleCreateOrder} 
               disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
-              className="w-full bg-sales-800 hover:bg-sales-700 mb-4"
+              className="col-span-2 bg-sales-800 hover:bg-sales-700 text-white"
             >
               <Save size={16} className="mr-2" />
               {isSubmitting ? 'Salvando...' : 'Finalizar Pedido'}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
-
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Itens do Pedido</CardTitle>
-        </CardHeader>
-        <CardContent>
+      
+      {/* Items Table Card */}
+      <Card>
+        <CardContent className="p-0">
           <OrderItemsTable 
             orderItems={orderItems as OrderItem[]}
             onRemoveItem={handleRemoveItem}

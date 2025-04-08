@@ -26,18 +26,22 @@ export default function OrderItemsTable({
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left">Produto</th>
-                <th className="px-4 py-2 text-center">Quantidade</th>
-                <th className="px-4 py-2 text-right">Preço Unit.</th>
-                <th className="px-4 py-2 text-right">Total</th>
+                <th className="px-4 py-2 text-left">Código</th>
+                <th className="px-4 py-2 text-left">Descrição</th>
+                <th className="px-4 py-2 text-center">Qtde</th>
+                <th className="px-4 py-2 text-center">Un</th>
+                <th className="px-4 py-2 text-right">Valor Unit.</th>
+                <th className="px-4 py-2 text-right">Valor Total</th>
                 <th className="px-4 py-2 text-center">Ações</th>
               </tr>
             </thead>
             <tbody>
               {orderItems.map((item) => (
                 <tr key={item.productId} className="border-t">
+                  <td className="px-4 py-3">{item.productCode || '—'}</td>
                   <td className="px-4 py-3">{item.productName}</td>
                   <td className="px-4 py-3 text-center">{item.quantity}</td>
+                  <td className="px-4 py-3 text-center">{item.unit || 'un'}</td>
                   <td className="px-4 py-3 text-right">
                     {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
@@ -53,8 +57,13 @@ export default function OrderItemsTable({
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t">
-                <td colSpan={3} className="px-4 py-3 text-right font-semibold">Total:</td>
+              <tr className="border-t bg-gray-50">
+                <td colSpan={4} className="px-4 py-3 text-left">
+                  <span className="font-medium">Itens: {orderItems.length}</span>
+                  <span className="mx-4 text-gray-500">|</span>
+                  <span className="font-medium">Qtde: {orderItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                </td>
+                <td colSpan={1} className="px-4 py-3 text-right font-semibold">Total:</td>
                 <td className="px-4 py-3 text-right font-bold">
                   {calculateTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </td>

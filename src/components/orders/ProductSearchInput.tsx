@@ -19,11 +19,13 @@ import {
 interface ProductSearchInputProps {
   products: Product[];
   addItemToOrder: (product: Product, quantity: number, price: number) => void;
+  inlineLayout?: boolean;
 }
 
 export default function ProductSearchInput({
   products,
-  addItemToOrder
+  addItemToOrder,
+  inlineLayout = false
 }: ProductSearchInputProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -109,6 +111,126 @@ export default function ProductSearchInput({
     setCustomPrice(0);
   };
 
+  if (inlineLayout) {
+    return (
+      <>
+        <div className="grid grid-cols-12 gap-4 items-end">
+          <div className="col-span-5">
+            <Label htmlFor="product" className="text-xs text-gray-500">Produto</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                id="product"
+                placeholder="Código ou nome do produto"
+                value={productInput}
+                onChange={handleProductInputChange}
+                className="h-9"
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setIsProductSearchOpen(true)}
+                className="h-9 w-9 shrink-0"
+              >
+                <Search size={16} />
+              </Button>
+              {selectedProduct && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    setProductInput('');
+                    setCustomPrice(0);
+                  }}
+                  className="h-9 w-9 shrink-0"
+                >
+                  <X size={16} />
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          <div className="col-span-2">
+            <Label htmlFor="quantity" className="text-xs text-gray-500">Quantidade</Label>
+            <Input
+              type="number"
+              id="quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+              min="1"
+              className="h-9"
+            />
+          </div>
+          
+          <div className="col-span-3">
+            <Label htmlFor="price" className="text-xs text-gray-500">Valor Unitário</Label>
+            <Input
+              type="text"
+              id="price"
+              mask="price"
+              value={customPrice ? customPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
+              onChange={(e) => setCustomPrice(parsePrice(e.target.value))}
+              className="h-9"
+            />
+          </div>
+          
+          <div className="col-span-2">
+            <Button 
+              onClick={handleAddItem} 
+              className="w-full h-9 bg-sales-800 hover:bg-sales-700 text-white"
+            >
+              <Plus size={16} /> Adicionar
+            </Button>
+          </div>
+        </div>
+
+        {/* Product Search Dialog */}
+        <Dialog open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
+          <DialogContent className="sm:max-w-md">
+            <Command className="rounded-lg border shadow-md">
+              <CommandInput 
+                placeholder="Buscar produto por código, nome ou preço..." 
+                value={productSearch}
+                onValueChange={setProductSearch}
+                className="h-9"
+              />
+              <CommandList>
+                <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                <CommandGroup heading="Produtos">
+                  {filteredProducts.map((product) => (
+                    <CommandItem
+                      key={product.id}
+                      value={product.id}
+                      onSelect={() => {
+                        setSelectedProduct(product);
+                        setProductInput(`${product.code} - ${product.name}`);
+                        // Update custom price when selecting a product
+                        setCustomPrice(product.price);
+                        setIsProductSearchOpen(false);
+                        setProductSearch('');
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <span className="font-medium mr-2">{product.code || '—'}</span>
+                      <span className="flex-1">{product.name}</span>
+                      <span className="text-right text-muted-foreground">
+                        {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  // Original layout
   return (
     <>
       <div className="space-y-4">
