@@ -37,9 +37,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Order, LoadItem } from '@/types';
-import { Package, Truck, Save, Check, Calendar } from 'lucide-react';
+import { Package, Truck, Save, Check, Calendar, Printer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatDateToBR } from '@/lib/date-utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import LoadPickingList from '@/components/loads/LoadPickingList';
 
 const loadFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
@@ -52,6 +54,7 @@ export default function BuildLoad() {
   const { orders } = useAppContext(); // Obtemos os pedidos do contexto geral
   const { loads, addLoad } = useLoads(); // Obtemos as funções específicas de cargas
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [showPickingList, setShowPickingList] = useState(false);
   
   // Get all confirmed orders that are not delivered or cancelled
   const availableOrders = orders.filter(order => 
@@ -67,6 +70,17 @@ export default function BuildLoad() {
       notes: '',
     },
   });
+  
+  // Função para selecionar todos os pedidos
+  const selectAllOrders = () => {
+    if (selectedOrderIds.length === availableOrders.length) {
+      // Se todos já estão selecionados, desmarca todos
+      setSelectedOrderIds([]);
+    } else {
+      // Senão, seleciona todos
+      setSelectedOrderIds(availableOrders.map(order => order.id));
+    }
+  };
   
   const toggleOrderSelection = (orderId: string) => {
     setSelectedOrderIds(prev => 
@@ -108,6 +122,11 @@ export default function BuildLoad() {
     
     addLoad(newLoad);
     navigate('/cargas');
+  };
+
+  // Prepara dados para romaneio de separação
+  const getSelectedOrders = () => {
+    return availableOrders.filter(order => selectedOrderIds.includes(order.id));
   };
 
   return (
@@ -174,13 +193,26 @@ export default function BuildLoad() {
                     <Badge className="ml-2 bg-sales-800">{selectedOrderIds.length}</Badge>
                   </div>
                   
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-sales-800 hover:bg-sales-700"
-                    disabled={selectedOrderIds.length === 0}
-                  >
-                    <Save size={16} className="mr-2" /> Salvar Carga
-                  </Button>
+                  <div className="space-y-2">
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-sales-800 hover:bg-sales-700"
+                      disabled={selectedOrderIds.length === 0}
+                    >
+                      <Save size={16} className="mr-2" /> Salvar Carga
+                    </Button>
+                    
+                    {selectedOrderIds.length > 0 && (
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowPickingList(true)}
+                      >
+                        <Printer size={16} className="mr-2" /> Imprimir Romaneio
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -198,7 +230,13 @@ export default function BuildLoad() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="w-[50px]">
+                          <Checkbox
+                            checked={selectedOrderIds.length === availableOrders.length && availableOrders.length > 0}
+                            onCheckedChange={() => selectAllOrders()}
+                            aria-label="Selecionar todos os pedidos"
+                          />
+                        </TableHead>
                         <TableHead>Nº Pedido</TableHead>
                         <TableHead>Cliente</TableHead>
                         <TableHead>Data</TableHead>
@@ -260,6 +298,16 @@ export default function BuildLoad() {
           </div>
         </form>
       </Form>
+
+      {/* Dialog para o Romaneio de Separação */}
+      <Dialog open={showPickingList} onOpenChange={setShowPickingList}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Romaneio de Separação</DialogTitle>
+          </DialogHeader>
+          <LoadPickingList orders={getSelectedOrders()} onClose={() => setShowPickingList(false)} />
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 }
