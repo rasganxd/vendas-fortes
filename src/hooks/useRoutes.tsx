@@ -65,8 +65,8 @@ export const useRoutes = () => {
       await routeService.delete(id);
       console.log("Rota excluída do Firestore com sucesso:", id);
       
-      // Atualizar o estado local após confirmação da exclusão
-      setRoutes((currentRoutes) => currentRoutes.filter(r => r.id !== id));
+      // Atualizar o estado local após confirmação da exclusão - Fixed TypeScript error here
+      setRoutes(routes.filter(r => r.id !== id));
       console.log("Estado local atualizado, rota removida do estado:", id);
       
       toast({

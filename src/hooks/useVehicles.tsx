@@ -65,8 +65,8 @@ export const useVehicles = () => {
       await vehicleService.delete(id);
       console.log("Veículo excluído do Firestore com sucesso:", id);
       
-      // Atualizar o estado local após confirmação da exclusão
-      setVehicles((currentVehicles) => currentVehicles.filter(v => v.id !== id));
+      // Atualizar o estado local após confirmação da exclusão - Fixed TypeScript error here
+      setVehicles(vehicles.filter(v => v.id !== id));
       console.log("Estado local atualizado, veículo removido do estado:", id);
       
       toast({
