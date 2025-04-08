@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, Save, ShoppingCart, Search, X } from "lucide-react";
+import { Trash2, Plus, Save, ShoppingCart, Search, X, CreditCard } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
-import { Order } from '@/types';
+import { Order, PaymentTable } from '@/types';
 import { 
   Command,
   CommandEmpty,
@@ -20,6 +20,13 @@ import {
   CommandList
 } from "@/components/ui/command";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function NewOrder() {
   const { customers, salesReps, products } = useAppContext();
@@ -48,6 +55,39 @@ export default function NewOrder() {
   
   // Custom price state
   const [customPrice, setCustomPrice] = useState(null);
+  
+  // Payment related states
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [selectedPaymentTable, setSelectedPaymentTable] = useState('');
+  
+  // Mock payment tables for now (later to be replaced by context data)
+  const [paymentTables] = useState<PaymentTable[]>([
+    {
+      id: '1',
+      name: 'Pagamento à Vista',
+      description: 'Pagamento integral no momento da compra',
+      active: true,
+      createdAt: new Date(),
+      terms: [
+        { id: '1-1', days: 0, percentage: 100, description: 'À vista' }
+      ]
+    },
+    {
+      id: '2',
+      name: 'Pagamento 30/60/90',
+      description: 'Pagamento parcelado em 3 vezes',
+      active: true,
+      createdAt: new Date(),
+      terms: [
+        { id: '2-1', days: 30, percentage: 33.33, description: '1ª parcela' },
+        { id: '2-2', days: 60, percentage: 33.33, description: '2ª parcela' },
+        { id: '2-3', days: 90, percentage: 33.34, description: '3ª parcela' }
+      ]
+    }
+  ]);
+  
+  // Show recent purchases dialog
+  const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
 
   // Find entities by code
   const findCustomerByCode = (code) => {
@@ -202,6 +242,8 @@ export default function NewOrder() {
     setCustomerInput('');
     setSalesRepInput('');
     setProductInput('');
+    setPaymentMethod('');
+    setSelectedPaymentTable('');
   };
 
   const handleCreateOrder = async () => {
@@ -244,6 +286,8 @@ export default function NewOrder() {
         total: calculateTotal(),
         status: "draft" as Order["status"],
         paymentStatus: "pending" as Order["paymentStatus"],
+        paymentMethod: paymentMethod || undefined,
+        paymentTableId: selectedPaymentTable || undefined,
         createdAt: new Date(),
         deliveryAddress: selectedCustomer.address,
         deliveryCity: selectedCustomer.city,
@@ -302,6 +346,37 @@ export default function NewOrder() {
     return parseFloat(cleanPriceStr) || 0;
   };
 
+  // Get recent orders for a customer
+  const getRecentCustomerOrders = () => {
+    if (!selectedCustomer) return [];
+    
+    return useAppContext().orders
+      .filter(order => order.customerId === selectedCustomer.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 10); // Get the 10 most recent orders
+  };
+
+  const handleViewRecentPurchases = () => {
+    if (selectedCustomer) {
+      setIsRecentPurchasesDialogOpen(true);
+    } else {
+      toast({
+        title: "Atenção",
+        description: "Selecione um cliente primeiro para ver compras recentes.",
+      });
+    }
+  };
+
+  // Payment methods from the context
+  const paymentMethods = [
+    { value: 'cash', label: 'Dinheiro' },
+    { value: 'credit', label: 'Cartão de Crédito' },
+    { value: 'debit', label: 'Cartão de Débito' },
+    { value: 'transfer', label: 'Transferência' },
+    { value: 'check', label: 'Cheque' },
+    { value: 'custom', label: 'Personalizado' }
+  ];
+
   return (
     <PageLayout title="Novo Pedido">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -313,7 +388,20 @@ export default function NewOrder() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="customer">Cliente</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="customer">Cliente</Label>
+                {selectedCustomer && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 text-xs"
+                    onClick={handleViewRecentPurchases}
+                  >
+                    Ver compras recentes
+                  </Button>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <Input
                   type="text"
@@ -383,6 +471,52 @@ export default function NewOrder() {
                     <X size={18} />
                   </Button>
                 )}
+              </div>
+            </div>
+            
+            {/* Payment section */}
+            <div className="pt-4 border-t">
+              <h3 className="font-medium flex items-center mb-3">
+                <CreditCard size={18} className="mr-2" /> Informações de Pagamento
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                  >
+                    <SelectTrigger id="paymentMethod">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map(method => (
+                        <SelectItem key={method.value} value={method.value}>
+                          {method.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="paymentTable">Tabela de Pagamento</Label>
+                  <Select
+                    value={selectedPaymentTable}
+                    onValueChange={setSelectedPaymentTable}
+                  >
+                    <SelectTrigger id="paymentTable">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentTables.filter(table => table.active).map(table => (
+                        <SelectItem key={table.id} value={table.id}>
+                          {table.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -565,6 +699,7 @@ export default function NewOrder() {
         </CardContent>
       </Card>
 
+      {/* Customer Search Dialog */}
       <Dialog open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
         <DialogContent className="sm:max-w-md">
           <Command className="rounded-lg border shadow-md">
@@ -599,6 +734,7 @@ export default function NewOrder() {
         </DialogContent>
       </Dialog>
 
+      {/* SalesRep Search Dialog */}
       <Dialog open={isSalesRepSearchOpen} onOpenChange={setIsSalesRepSearchOpen}>
         <DialogContent className="sm:max-w-md">
           <Command className="rounded-lg border shadow-md">
@@ -633,6 +769,7 @@ export default function NewOrder() {
         </DialogContent>
       </Dialog>
 
+      {/* Product Search Dialog */}
       <Dialog open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
         <DialogContent className="sm:max-w-md">
           <Command className="rounded-lg border shadow-md">
@@ -669,6 +806,66 @@ export default function NewOrder() {
               </CommandGroup>
             </CommandList>
           </Command>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recent Purchases Dialog */}
+      <Dialog open={isRecentPurchasesDialogOpen} onOpenChange={setIsRecentPurchasesDialogOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>
+              Compras Recentes - {selectedCustomer?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 max-h-[60vh] overflow-auto">
+            {selectedCustomer && (
+              <>
+                {getRecentCustomerOrders().length > 0 ? (
+                  <div className="space-y-4">
+                    {getRecentCustomerOrders().map((order) => (
+                      <div key={order.id} className="border rounded-md p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <div>
+                            <span className="font-medium text-lg">Pedido #{order.id.substring(0, 8)}</span>
+                            <span className="text-sm text-gray-500 ml-2">
+                              {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                          <span className="font-semibold">
+                            {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </div>
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-2 py-1 text-left">Produto</th>
+                              <th className="px-2 py-1 text-center">Qtd</th>
+                              <th className="px-2 py-1 text-right">Valor</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {order.items.map((item) => (
+                              <tr key={item.id} className="border-t">
+                                <td className="px-2 py-1">{item.productName}</td>
+                                <td className="px-2 py-1 text-center">{item.quantity}</td>
+                                <td className="px-2 py-1 text-right">
+                                  {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    Este cliente não tem compras registradas.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </PageLayout>

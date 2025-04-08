@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import NewOrder from "./pages/NewOrder";
 import SalesReps from "./pages/SalesReps";
 import PaymentMethods from "./pages/PaymentMethods";
+import PaymentTables from "./pages/PaymentTables";
 import BuildLoad from "./pages/BuildLoad";
 import SystemMaintenance from "./pages/SystemMaintenance";
 import Vehicles from "./pages/Vehicles";
@@ -49,6 +50,7 @@ function App() {
                     <Route path="/pedidos/novo" element={<NewOrder />} />
                     <Route path="/pagamentos" element={<Payments />} />
                     <Route path="/pagamentos/lista" element={<PaymentsList />} />
+                    <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
                     <Route path="/rotas" element={<RoutePlanning />} />
                     <Route path="/cargas" element={<Loads />} />
                     <Route path="/cargas/montar" element={<BuildLoad />} />

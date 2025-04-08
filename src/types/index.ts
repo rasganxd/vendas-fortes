@@ -1,3 +1,4 @@
+
 // Customer Types
 export interface Customer {
   id: string;
@@ -48,6 +49,7 @@ export interface Order {
   status: 'draft' | 'confirmed' | 'delivered' | 'cancelled';
   paymentStatus: 'pending' | 'partial' | 'paid';
   paymentMethod?: 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | string;
+  paymentTableId?: string; // Added for payment table reference
   createdAt: Date;
   deliveryDate?: Date;
   notes?: string;
@@ -77,6 +79,24 @@ export interface PaymentMethod {
   active: boolean;
   installments: boolean;
   maxInstallments: number;
+}
+
+// Payment Table Types
+export interface PaymentTable {
+  id: string;
+  name: string;
+  description?: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt?: Date;
+  terms: PaymentTerm[];
+}
+
+export interface PaymentTerm {
+  id: string;
+  days: number;
+  percentage: number;
+  description?: string;
 }
 
 // Route and Delivery Types
