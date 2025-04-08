@@ -12,12 +12,19 @@ interface LoadPickingListProps {
   onClose: () => void;
 }
 
+interface AggregatedProduct {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unit: string;
+}
+
 const LoadPickingList = ({ orders, onClose }: LoadPickingListProps) => {
   const componentRef = useRef<HTMLDivElement>(null);
   
   // Função que agrupa os produtos de todos os pedidos para separação
   const getAggregatedProducts = () => {
-    const productsMap = new Map();
+    const productsMap = new Map<string, AggregatedProduct>();
     
     orders.forEach(order => {
       order.items.forEach(item => {
@@ -29,7 +36,7 @@ const LoadPickingList = ({ orders, onClose }: LoadPickingListProps) => {
             productId: item.productId,
             productName: item.productName,
             quantity: item.quantity,
-            unit: item.unit || 'un', // Use provided unit or default to 'un'
+            unit: 'un', // Unidade padrão
           });
         }
       });
