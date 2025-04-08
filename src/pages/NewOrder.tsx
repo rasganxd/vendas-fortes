@@ -10,9 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, Save, ShoppingCart } from "lucide-react";
+import { Trash2, Plus, Save, ShoppingCart, Search, X } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Order } from '@/types';
+import { 
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function NewOrder() {
   const { customers, salesReps, products } = useAppContext();
@@ -26,6 +35,16 @@ export default function NewOrder() {
   const [quantity, setQuantity] = useState(1);
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Search dialogs state
+  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [isSalesRepSearchOpen, setIsSalesRepSearchOpen] = useState(false);
+  const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
+  
+  // Search terms
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [salesRepSearch, setSalesRepSearch] = useState('');
+  const [productSearch, setProductSearch] = useState('');
 
   useEffect(() => {
     if (products.length > 0 && !selectedProduct) {
@@ -177,6 +196,25 @@ export default function NewOrder() {
     }
   };
 
+  // Filtrar clientes baseado na busca
+  const filteredCustomers = customers.filter(customer => 
+    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    (customer.code && customer.code.toString().includes(customerSearch))
+  );
+
+  // Filtrar vendedores baseado na busca
+  const filteredSalesReps = salesReps.filter(rep => 
+    rep.name.toLowerCase().includes(salesRepSearch.toLowerCase()) ||
+    (rep.code && rep.code.toString().includes(salesRepSearch))
+  );
+
+  // Filtrar produtos baseado na busca
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+    (product.code && product.code.toString().includes(productSearch)) ||
+    product.price.toString().includes(productSearch)
+  );
+
   return (
     <PageLayout title="Novo Pedido">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -190,40 +228,70 @@ export default function NewOrder() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="customer">Cliente</Label>
-              <Select 
-                onValueChange={(value) => setSelectedCustomer(customers.find(c => c.id === value) || null)}
-                value={selectedCustomer?.id || ''}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  id="customer"
+                  placeholder="Código ou nome do cliente"
+                  value={selectedCustomer ? `${selectedCustomer.code || ''} - ${selectedCustomer.name}` : ''}
+                  readOnly
+                  className="w-full"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => setIsCustomerSearchOpen(true)}
+                  className="shrink-0"
+                >
+                  <Search size={18} />
+                </Button>
+                {selectedCustomer && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setSelectedCustomer(null)}
+                    className="shrink-0"
+                  >
+                    <X size={18} />
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="salesRep">Vendedor</Label>
-              <Select 
-                onValueChange={(value) => setSelectedSalesRep(salesReps.find(s => s.id === value) || null)}
-                value={selectedSalesRep?.id || ''}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um vendedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {salesReps.map((salesRep) => (
-                    <SelectItem key={salesRep.id} value={salesRep.id}>
-                      {salesRep.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  id="salesRep"
+                  placeholder="Código ou nome do vendedor"
+                  value={selectedSalesRep ? `${selectedSalesRep.code || ''} - ${selectedSalesRep.name}` : ''}
+                  readOnly
+                  className="w-full"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => setIsSalesRepSearchOpen(true)}
+                  className="shrink-0"
+                >
+                  <Search size={18} />
+                </Button>
+                {selectedSalesRep && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setSelectedSalesRep(null)}
+                    className="shrink-0"
+                  >
+                    <X size={18} />
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -247,21 +315,36 @@ export default function NewOrder() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="product">Produto</Label>
-              <Select 
-                onValueChange={(value) => setSelectedProduct(products.find(p => p.id === value) || null)}
-                value={selectedProduct?.id || ''}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um produto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} - {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  id="product"
+                  placeholder="Código ou nome do produto"
+                  value={selectedProduct ? `${selectedProduct.code || ''} - ${selectedProduct.name}` : ''}
+                  readOnly
+                  className="w-full"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => setIsProductSearchOpen(true)}
+                  className="shrink-0"
+                >
+                  <Search size={18} />
+                </Button>
+                {selectedProduct && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setSelectedProduct(null)}
+                    className="shrink-0"
+                  >
+                    <X size={18} />
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -377,6 +460,111 @@ export default function NewOrder() {
           )}
         </CardContent>
       </Card>
+
+      {/* Customer Search Dialog */}
+      <Dialog open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
+        <DialogContent className="sm:max-w-md">
+          <Command className="rounded-lg border shadow-md">
+            <CommandInput 
+              placeholder="Buscar cliente por código ou nome..." 
+              value={customerSearch}
+              onValueChange={setCustomerSearch}
+              className="h-9"
+            />
+            <CommandList>
+              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+              <CommandGroup heading="Clientes">
+                {filteredCustomers.map((customer) => (
+                  <CommandItem
+                    key={customer.id}
+                    value={customer.id}
+                    onSelect={() => {
+                      setSelectedCustomer(customer);
+                      setIsCustomerSearchOpen(false);
+                      setCustomerSearch('');
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <span className="font-medium mr-2">{customer.code || '—'}</span>
+                    <span>{customer.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </DialogContent>
+      </Dialog>
+
+      {/* SalesRep Search Dialog */}
+      <Dialog open={isSalesRepSearchOpen} onOpenChange={setIsSalesRepSearchOpen}>
+        <DialogContent className="sm:max-w-md">
+          <Command className="rounded-lg border shadow-md">
+            <CommandInput 
+              placeholder="Buscar vendedor por código ou nome..." 
+              value={salesRepSearch}
+              onValueChange={setSalesRepSearch}
+              className="h-9"
+            />
+            <CommandList>
+              <CommandEmpty>Nenhum vendedor encontrado.</CommandEmpty>
+              <CommandGroup heading="Vendedores">
+                {filteredSalesReps.map((salesRep) => (
+                  <CommandItem
+                    key={salesRep.id}
+                    value={salesRep.id}
+                    onSelect={() => {
+                      setSelectedSalesRep(salesRep);
+                      setIsSalesRepSearchOpen(false);
+                      setSalesRepSearch('');
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <span className="font-medium mr-2">{salesRep.code || '—'}</span>
+                    <span>{salesRep.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product Search Dialog */}
+      <Dialog open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
+        <DialogContent className="sm:max-w-md">
+          <Command className="rounded-lg border shadow-md">
+            <CommandInput 
+              placeholder="Buscar produto por código, nome ou preço..." 
+              value={productSearch}
+              onValueChange={setProductSearch}
+              className="h-9"
+            />
+            <CommandList>
+              <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+              <CommandGroup heading="Produtos">
+                {filteredProducts.map((product) => (
+                  <CommandItem
+                    key={product.id}
+                    value={product.id}
+                    onSelect={() => {
+                      setSelectedProduct(product);
+                      setIsProductSearchOpen(false);
+                      setProductSearch('');
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <span className="font-medium mr-2">{product.code || '—'}</span>
+                    <span className="flex-1">{product.name}</span>
+                    <span className="text-right text-muted-foreground">
+                      {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 }
