@@ -118,7 +118,7 @@ export const EditRouteDialog = ({ open, onOpenChange, route, vehicles, onSave }:
                 <SelectValue placeholder="Selecione o veículo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {vehicles.filter(v => v.active).map((vehicle) => (
                   <SelectItem key={vehicle.id} value={vehicle.id}>
                     {vehicle.name} ({vehicle.type})
