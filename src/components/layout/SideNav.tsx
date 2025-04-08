@@ -62,7 +62,7 @@ const navigation: NavItem[] = [
     group: "logistics"
   },
   {
-    name: "Montagem Cargas",
+    name: "Montagem",
     href: "/cargas",
     icon: Package,
     group: "logistics"
@@ -74,7 +74,7 @@ const navigation: NavItem[] = [
     group: "logistics"
   },
   {
-    name: "Configurações",
+    name: "Config.",
     href: "/configuracoes",
     icon: Settings,
     group: "sistema"
@@ -100,32 +100,32 @@ export default function SideNav() {
 
   // Labels for groups
   const groupLabels: Record<string, string> = {
-    geral: "Geral",
-    cadastro: "Cadastros",
-    vendas: "Vendas",
-    financeiro: "Financeiro",
-    logistics: "Logística",
-    sistema: "Sistema"
+    geral: "GERAL",
+    cadastro: "CADASTROS",
+    vendas: "VENDAS",
+    financeiro: "FINANCEIRO",
+    logistics: "LOGÍSTICA",
+    sistema: "SISTEMA"
   };
   
   return (
-    <Sidebar className="border-r bg-white shadow-sm">
-      <SidebarHeader className="px-4 py-4 border-b">
-        <h1 className="text-xl font-bold text-sales-800">SalesTrack</h1>
+    <Sidebar className="border-r bg-white shadow-sm" variant="sidebar" collapsible="icon">
+      <SidebarHeader className="px-3 py-3 border-b">
+        <h1 className="text-lg font-bold text-sales-800">SalesTrack</h1>
       </SidebarHeader>
       <SidebarContent className="py-2">
         <SidebarMenu>
           {Object.entries(groupedNavItems).map(([group, items]) => (
-            <div key={group} className="mb-4">
-              <h3 className="text-xs uppercase font-medium text-gray-500 px-4 mb-2">{groupLabels[group] || group}</h3>
+            <div key={group} className="mb-3">
+              <h3 className="text-xs uppercase font-medium text-gray-500 px-3 mb-1">{groupLabels[group] || group}</h3>
               {items.map((item) => {
                 const isActive = location.pathname === item.href;
                 
                 return (
                   <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link to={item.href} className="flex items-center px-4 py-2 text-sm">
-                        <item.icon className="h-4 w-4 mr-3" />
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                      <Link to={item.href} className="flex items-center px-3 py-1.5 text-sm">
+                        <item.icon className="h-4 w-4 mr-2" />
                         <span>{item.name}</span>
                       </Link>
                     </SidebarMenuButton>
