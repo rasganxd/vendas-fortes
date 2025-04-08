@@ -25,10 +25,10 @@ export const useProducts = () => {
     return highestCode + 1;
   };
 
-  const addProduct = async (product: Omit<Product, 'id' | 'code'>) => {
+  const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
-      // Assign the next available code to the product
-      const nextCode = getNextProductCode();
+      // Assign the next available code if not provided
+      const nextCode = product.code || getNextProductCode();
       const productWithCode = { ...product, code: nextCode };
       
       const id = await productService.add(productWithCode);

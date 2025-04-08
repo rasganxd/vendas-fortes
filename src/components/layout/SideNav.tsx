@@ -110,7 +110,7 @@ export default function SideNav() {
   return (
     <Sidebar className="border-r bg-white shadow-sm" variant="sidebar" collapsible="icon">
       <SidebarHeader className="px-2 py-3 border-b">
-        <h1 className="text-base font-bold text-sales-800">SalesTrack</h1>
+        <h1 className="text-lg font-bold text-sales-800">SalesTrack</h1>
       </SidebarHeader>
       <SidebarContent className="py-1">
         <SidebarMenu>
@@ -123,8 +123,8 @@ export default function SideNav() {
                 return (
                   <SidebarMenuItem key={item.name}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={item.name} size="sm">
-                      <Link to={item.href} className="flex items-center px-2 py-1 text-sm">
-                        <item.icon className="h-3.5 w-3.5 mr-1" />
+                      <Link to={item.href} className="flex items-center px-2 py-1.5 text-sm font-medium">
+                        <item.icon className="h-4 w-4 mr-2" />
                         <span className="truncate">{item.name}</span>
                       </Link>
                     </SidebarMenuButton>
