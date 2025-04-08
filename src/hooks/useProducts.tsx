@@ -16,10 +16,24 @@ export const loadProducts = async (): Promise<Product[]> => {
 export const useProducts = () => {
   const { products, setProducts } = useAppContext();
 
-  const addProduct = async (product: Omit<Product, 'id'>) => {
+  // Function to find the next available code
+  const getNextProductCode = (): number => {
+    if (products.length === 0) return 1;
+    
+    // Get the highest existing code and add 1
+    const highestCode = Math.max(...products.map(product => product.code || 0));
+    return highestCode + 1;
+  };
+
+  const addProduct = async (product: Omit<Product, 'id' | 'code'>) => {
     try {
-      const id = await productService.add(product);
-      const newProduct = { ...product, id };
+      // Assign the next available code to the product
+      const nextCode = getNextProductCode();
+      const productWithCode = { ...product, code: nextCode };
+      
+      const id = await productService.add(productWithCode);
+      const newProduct = { ...productWithCode, id };
+      
       setProducts([...products, newProduct]);
       toast({
         title: "Produto adicionado",

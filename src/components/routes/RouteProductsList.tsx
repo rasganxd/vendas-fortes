@@ -15,6 +15,7 @@ interface RouteProductsListProps {
 
 interface AggregatedProduct {
   id: string;
+  code?: number;  // Added code field
   name: string;
   quantity: number;
   unit: string;
@@ -44,6 +45,7 @@ export const RouteProductsList = ({ route }: RouteProductsListProps) => {
         order.items.forEach(item => {
           const productInfo = products.find(p => p.id === item.productId);
           const unit = productInfo?.unit || '';
+          const code = productInfo?.code;
           
           if (productsMap.has(item.productId)) {
             const existingProduct = productsMap.get(item.productId)!;
@@ -52,6 +54,7 @@ export const RouteProductsList = ({ route }: RouteProductsListProps) => {
           } else {
             productsMap.set(item.productId, {
               id: item.productId,
+              code: code,  // Added code
               name: item.productName,
               quantity: item.quantity,
               unit,
@@ -114,6 +117,7 @@ export const RouteProductsList = ({ route }: RouteProductsListProps) => {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-gray-700">
                     <tr>
+                      <th className="py-2 px-4 text-left">Cód</th>
                       <th className="py-2 px-4 text-left">Produto</th>
                       <th className="py-2 px-4 text-right">Quantidade</th>
                       <th className="py-2 px-4 text-right">Unid.</th>
@@ -124,6 +128,7 @@ export const RouteProductsList = ({ route }: RouteProductsListProps) => {
                   <tbody>
                     {aggregatedProducts.map(product => (
                       <tr key={product.id} className="border-b">
+                        <td className="py-2 px-4">{product.code || '-'}</td>
                         <td className="py-2 px-4 font-medium">{product.name}</td>
                         <td className="py-2 px-4 text-right">{product.quantity}</td>
                         <td className="py-2 px-4 text-right">{product.unit}</td>
@@ -132,7 +137,7 @@ export const RouteProductsList = ({ route }: RouteProductsListProps) => {
                       </tr>
                     ))}
                     <tr className="bg-gray-50">
-                      <td colSpan={4} className="py-3 px-4 font-bold text-right">Valor Total:</td>
+                      <td colSpan={5} className="py-3 px-4 font-bold text-right">Valor Total:</td>
                       <td className="py-3 px-4 text-right font-bold">{formatCurrency(totalValue)}</td>
                     </tr>
                   </tbody>

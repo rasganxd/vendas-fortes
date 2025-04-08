@@ -74,7 +74,8 @@ export default function Products() {
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(search.toLowerCase()) ||
     product.description.toLowerCase().includes(search.toLowerCase()) ||
-    product.category.toLowerCase().includes(search.toLowerCase())
+    product.category.toLowerCase().includes(search.toLowerCase()) ||
+    (product.code?.toString() || '').includes(search)
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -104,7 +105,6 @@ export default function Products() {
         message: "Produto salvo com sucesso"
       });
       
-      // Resetar o formulário
       setFormData({
         name: '',
         description: '',
@@ -114,7 +114,6 @@ export default function Products() {
         category: ''
       });
       
-      // Fechamos o diálogo após um breve atraso para mostrar o feedback
       setTimeout(() => {
         setIsAddDialogOpen(false);
         setFirestoreStatus(null);
@@ -156,7 +155,6 @@ export default function Products() {
           message: "Produto atualizado com sucesso"
         });
         
-        // Fechamos o diálogo após um breve atraso para mostrar o feedback
         setTimeout(() => {
           setIsEditDialogOpen(false);
           setFirestoreStatus(null);
@@ -356,6 +354,7 @@ export default function Products() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Código</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Preço</TableHead>
@@ -367,6 +366,9 @@ export default function Products() {
               <TableBody>
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id}>
+                    <TableCell className="font-medium">
+                      {product.code || '-'}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{product.name}</div>

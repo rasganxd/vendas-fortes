@@ -1,4 +1,3 @@
-
 // Customer Types
 export interface Customer {
   id: string;
@@ -17,6 +16,7 @@ export interface Customer {
 // Product Types
 export interface Product {
   id: string;
+  code: number;  // Added the code field
   name: string;
   description: string;
   price: number;
