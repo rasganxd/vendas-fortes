@@ -32,7 +32,7 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust1',
     name: 'Supermercado Central',
-    email: 'contato@supermercadocentral.com',
+    document: '11.222.333/0001-44', // Changed from email to document
     phone: '(11) 3456-7890',
     address: 'Av. Paulista, 1000',
     city: 'São Paulo',
@@ -44,7 +44,7 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust2',
     name: 'Mercearia do Bairro',
-    email: 'contato@mercearia.com',
+    document: '222.333.444-55', // Changed from email to document
     phone: '(11) 2345-6789',
     address: 'Rua Augusta, 500',
     city: 'São Paulo',
@@ -55,7 +55,7 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust3',
     name: 'Padaria Nova',
-    email: 'contato@padarianova.com',
+    document: '333.444.555-66', // Changed from email to document
     phone: '(11) 4567-8901',
     address: 'Rua Oscar Freire, 200',
     city: 'São Paulo',
@@ -67,7 +67,7 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust4',
     name: 'Restaurante Sabor & Arte',
-    email: 'contato@saborearte.com',
+    document: '44.555.666/0001-77', // Changed from email to document
     phone: '(11) 5678-9012',
     address: 'Alameda Santos, 700',
     city: 'São Paulo',
@@ -78,7 +78,7 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust5',
     name: 'Hotel Continental',
-    email: 'compras@continental.com',
+    document: '55.666.777/0001-88', // Changed from email to document
     phone: '(11) 6789-0123',
     address: 'Av. Ipiranga, 800',
     city: 'São Paulo',

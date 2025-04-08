@@ -222,7 +222,7 @@ export default function Orders() {
                 <h3 className="font-semibold mb-2">Dados do Cliente</h3>
                 <p><span className="font-semibold">Nome:</span> {selectedCustomer?.name}</p>
                 <p><span className="font-semibold">Telefone:</span> {selectedCustomer?.phone}</p>
-                <p><span className="font-semibold">E-mail:</span> {selectedCustomer?.email}</p>
+                <p><span className="font-semibold">CPF/CNPJ:</span> {selectedCustomer?.document}</p>
               </div>
               <div className="border rounded-md p-4">
                 <h3 className="font-semibold mb-2">Endereço de Entrega</h3>

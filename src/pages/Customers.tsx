@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -76,7 +75,7 @@ const Customers = () => {
     setEditingCustomer(customer);
     form.reset({
       name: customer.name,
-      document: customer.document || customer.email || '',
+      document: customer.document || '',
       phone: customer.phone,
       address: customer.address || '',
       city: customer.city || '',
@@ -152,7 +151,7 @@ const Customers = () => {
         {filteredCustomers.map((customer) => (
           <Card key={customer.id} className="p-6 shadow-md hover:shadow-lg transition-shadow">
             <h3 className="text-xl font-medium text-gray-800">{customer.name}</h3>
-            <p className="text-gray-600 mt-2">{customer.document || customer.email}</p>
+            <p className="text-gray-600 mt-2">{customer.document || 'CPF/CNPJ não informado'}</p>
             <p className="text-gray-600">{customer.phone}</p>
             
             {customer.visitDays && customer.visitDays.length > 0 && (
@@ -193,7 +192,6 @@ const Customers = () => {
         </div>
       )}
 
-      {/* Edit Customer Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -377,7 +375,6 @@ const Customers = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add New Customer Dialog */}
       <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

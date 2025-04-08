@@ -1,5 +1,3 @@
-
-
 import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle } from '@/types';
 
 // Mock Customers
@@ -7,7 +5,7 @@ export const mockCustomers: Customer[] = [
   {
     id: "c1",
     name: "Supermercado Central",
-    email: "contato@supermercadocentral.com",
+    document: "123.456.789-00",
     phone: "(11) 3456-7890",
     address: "Av. Paulista, 1000",
     city: "São Paulo",
@@ -19,7 +17,7 @@ export const mockCustomers: Customer[] = [
   {
     id: "c2",
     name: "Mercado Bom Preço",
-    email: "contato@bompreco.com",
+    document: "98.765.432/0001-01",
     phone: "(11) 3333-4444",
     address: "Rua Augusta, 500",
     city: "São Paulo",
@@ -30,7 +28,7 @@ export const mockCustomers: Customer[] = [
   {
     id: "c3",
     name: "Mini Mercado Esperança",
-    email: "contato@minimercado.com",
+    document: "456.789.123-00",
     phone: "(11) 2222-3333",
     address: "Rua Consolação, 250",
     city: "São Paulo",
