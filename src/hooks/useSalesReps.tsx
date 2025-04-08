@@ -1,14 +1,12 @@
 
 import { SalesRep } from '@/types';
-import { useAppContext } from './useAppContext';
+import { salesRepService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
+import { useAppContext } from './useAppContext';
 
-// Create a simple load function for consistency with other hooks
 export const loadSalesReps = async (): Promise<SalesRep[]> => {
   try {
-    // No salesRepService yet, so return empty array
-    // In a real implementation, you would call a service here
-    return [];
+    return await salesRepService.getAll();
   } catch (error) {
     console.error("Erro ao carregar representantes:", error);
     return [];
@@ -32,18 +30,18 @@ export const useSalesReps = () => {
     return highestCode + 1;
   };
 
-  // Generate ID
-  const generateId = () => {
-    return Math.random().toString(36).substring(2, 10);
-  };
-
-  const addSalesRep = (salesRep: Omit<SalesRep, 'id' | 'code'>) => {
+  const addSalesRep = async (salesRep: Omit<SalesRep, 'id'>) => {
     try {
-      const id = generateId();
-      // Generate next available code
-      const code = generateNextCode();
+      // If no code is provided, generate one
+      if (!salesRep.code) {
+        salesRep.code = generateNextCode();
+      }
       
-      const newSalesRep = { ...salesRep, id, code };
+      // Add to Firebase
+      const id = await salesRepService.add(salesRep);
+      const newSalesRep = { ...salesRep, id } as SalesRep;
+      
+      // Update local state
       setSalesReps([...salesReps, newSalesRep]);
       toast({
         title: "Representante adicionado",
@@ -61,8 +59,12 @@ export const useSalesReps = () => {
     }
   };
 
-  const updateSalesRep = (id: string, salesRep: Partial<SalesRep>) => {
+  const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>) => {
     try {
+      // Update in Firebase
+      await salesRepService.update(id, salesRep);
+      
+      // Update local state
       setSalesReps(salesReps.map(s => 
         s.id === id ? { ...s, ...salesRep } : s
       ));
@@ -80,8 +82,12 @@ export const useSalesReps = () => {
     }
   };
 
-  const deleteSalesRep = (id: string) => {
+  const deleteSalesRep = async (id: string) => {
     try {
+      // Delete from Firebase
+      await salesRepService.delete(id);
+      
+      // Update local state
       setSalesReps(salesReps.filter(s => s.id !== id));
       toast({
         title: "Representante excluído",
@@ -101,6 +107,7 @@ export const useSalesReps = () => {
     salesReps,
     addSalesRep,
     updateSalesRep,
-    deleteSalesRep
+    deleteSalesRep,
+    generateNextCode
   };
 };

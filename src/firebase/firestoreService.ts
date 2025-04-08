@@ -192,6 +192,33 @@ export const paymentService = {
   }
 };
 
+// Serviço para Representantes de Vendas
+export const salesRepService = {
+  async getAll(): Promise<SalesRep[]> {
+    const salesRepsRef = collection(db, "salesReps");
+    const snapshot = await getDocs(salesRepsRef);
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data() 
+    } as SalesRep));
+  },
+  
+  async add(salesRep: Omit<SalesRep, "id">): Promise<string> {
+    const docRef = await addDoc(collection(db, "salesReps"), salesRep);
+    return docRef.id;
+  },
+  
+  async update(id: string, salesRep: Partial<SalesRep>): Promise<void> {
+    const salesRepRef = doc(db, "salesReps", id);
+    await updateDoc(salesRepRef, salesRep);
+  },
+  
+  async delete(id: string): Promise<void> {
+    const salesRepRef = doc(db, "salesReps", id);
+    await deleteDoc(salesRepRef);
+  }
+};
+
 // Serviço para Rotas
 export const routeService = {
   async getAll(): Promise<DeliveryRoute[]> {

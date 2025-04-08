@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useOrders } from '@/hooks/useOrders';
 import PageLayout from '@/components/layout/PageLayout';
 import {
   Table,
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { formatDateToBR } from '@/lib/date-utils';
-import { Search, Plus, Eye, Printer, FilePenLine, Archive, Check } from 'lucide-react';
+import { Search, Plus, Eye, Printer, FilePenLine, Archive, Check, Trash } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
@@ -29,6 +30,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Select,
   SelectContent,
@@ -43,9 +54,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 export default function Orders() {
   const navigate = useNavigate();
   const { orders, customers } = useAppContext();
+  const { deleteOrder } = useOrders();
   const [search, setSearch] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
@@ -80,19 +93,16 @@ export default function Orders() {
     setSelectedCustomer(customer || null);
     setIsViewDialogOpen(true);
   };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return <Badge variant="outline">Rascunho</Badge>;
-      case 'confirmed':
-        return <Badge className="bg-blue-500">Confirmado</Badge>;
-      case 'delivered':
-        return <Badge className="bg-green-500">Entregue</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive">Cancelado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+  
+  const handleDeleteOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const confirmDeleteOrder = async () => {
+    if (selectedOrder) {
+      await deleteOrder(selectedOrder.id);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -203,7 +213,6 @@ export default function Orders() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Pagamento</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -211,7 +220,7 @@ export default function Orders() {
               <TableBody>
                 {filteredOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
                       Nenhum pedido encontrado
                     </TableCell>
                   </TableRow>
@@ -237,7 +246,6 @@ export default function Orders() {
                       <TableCell>
                         {formatCurrency(order.total)}
                       </TableCell>
-                      <TableCell>{getStatusBadge(order.status)}</TableCell>
                       <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -250,6 +258,14 @@ export default function Orders() {
                           </Button>
                           <Button variant="ghost" size="sm">
                             <FilePenLine size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteOrder(order)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash size={16} />
                           </Button>
                         </div>
                       </TableCell>
@@ -335,7 +351,6 @@ export default function Orders() {
             
             <div className="flex justify-between items-center mb-6">
               <div>
-                <p className="font-semibold">Status: {selectedOrder?.status}</p>
                 <p className="font-semibold">Pagamento: {selectedOrder?.paymentStatus}</p>
               </div>
               <div className="text-right">
@@ -362,6 +377,25 @@ export default function Orders() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Delete Order Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o pedido {selectedOrder?.id} do cliente {selectedOrder?.customerName}?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteOrder} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       {/* Print Orders Dialog */}
       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>

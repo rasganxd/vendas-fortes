@@ -8,7 +8,6 @@ import { AppProvider } from "./context/AppContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useState } from "react";
 import SideNav from "./components/layout/SideNav";
-import PageLayout from "./components/layout/PageLayout";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -16,6 +15,7 @@ import Customers from "./pages/Customers";
 import Products from "./pages/Products";
 import Orders from "./pages/Orders";
 import Payments from "./pages/Payments";
+import PaymentsList from "./pages/PaymentsList";
 import RoutePlanning from "./pages/Routes";
 import Loads from "./pages/Loads";
 import NotFound from "./pages/NotFound";
@@ -48,6 +48,7 @@ function App() {
                     <Route path="/pedidos" element={<Orders />} />
                     <Route path="/pedidos/novo" element={<NewOrder />} />
                     <Route path="/pagamentos" element={<Payments />} />
+                    <Route path="/pagamentos/lista" element={<PaymentsList />} />
                     <Route path="/rotas" element={<RoutePlanning />} />
                     <Route path="/cargas" element={<Loads />} />
                     <Route path="/cargas/montar" element={<BuildLoad />} />
