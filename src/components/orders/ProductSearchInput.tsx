@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, KeyboardEvent } from 'react';
 import { Product } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,12 +20,14 @@ interface ProductSearchInputProps {
   products: Product[];
   addItemToOrder: (product: Product, quantity: number, price: number) => void;
   inlineLayout?: boolean;
+  inputRef?: React.RefObject<HTMLInputElement>;
 }
 
 export default function ProductSearchInput({
   products,
   addItemToOrder,
-  inlineLayout = false
+  inlineLayout = false,
+  inputRef
 }: ProductSearchInputProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -71,6 +73,13 @@ export default function ProductSearchInput({
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && selectedProduct) {
+      e.preventDefault();
+      handleAddItem();
+    }
+  };
+
   // Helper function to parse price from Brazilian format to number
   const parsePrice = (priceStr: string) => {
     if (!priceStr) return 0;
@@ -109,6 +118,11 @@ export default function ProductSearchInput({
     setProductInput('');
     setQuantity(1);
     setCustomPrice(0);
+    
+    // Re-focus the product input field after adding item
+    if (inputRef?.current) {
+      inputRef.current.focus();
+    }
   };
 
   if (inlineLayout) {
@@ -124,16 +138,18 @@ export default function ProductSearchInput({
                 placeholder="Código ou nome do produto"
                 value={productInput}
                 onChange={handleProductInputChange}
-                className="h-9"
+                onKeyDown={handleKeyDown}
+                ref={inputRef}
+                className="h-8 text-sm"
               />
               <Button 
                 type="button" 
                 variant="outline" 
                 size="icon" 
                 onClick={() => setIsProductSearchOpen(true)}
-                className="h-9 w-9 shrink-0"
+                className="h-8 w-8 shrink-0"
               >
-                <Search size={16} />
+                <Search size={14} />
               </Button>
               {selectedProduct && (
                 <Button 
@@ -145,9 +161,9 @@ export default function ProductSearchInput({
                     setProductInput('');
                     setCustomPrice(0);
                   }}
-                  className="h-9 w-9 shrink-0"
+                  className="h-8 w-8 shrink-0"
                 >
-                  <X size={16} />
+                  <X size={14} />
                 </Button>
               )}
             </div>
@@ -161,7 +177,7 @@ export default function ProductSearchInput({
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
               min="1"
-              className="h-9"
+              className="h-8 text-sm"
             />
           </div>
           
@@ -173,16 +189,16 @@ export default function ProductSearchInput({
               mask="price"
               value={customPrice ? customPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
               onChange={(e) => setCustomPrice(parsePrice(e.target.value))}
-              className="h-9"
+              className="h-8 text-sm"
             />
           </div>
           
           <div className="col-span-2">
             <Button 
               onClick={handleAddItem} 
-              className="w-full h-9 bg-sales-800 hover:bg-sales-700 text-white"
+              className="w-full h-8 bg-sales-800 hover:bg-sales-700 text-white text-sm"
             >
-              <Plus size={16} /> Adicionar
+              <Plus size={14} className="mr-1" /> Adicionar
             </Button>
           </div>
         </div>

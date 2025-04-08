@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, KeyboardEvent } from 'react';
 import { SalesRep } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,12 +19,18 @@ interface SalesRepSearchInputProps {
   salesReps: SalesRep[];
   selectedSalesRep: SalesRep | null;
   setSelectedSalesRep: (salesRep: SalesRep | null) => void;
+  inputRef?: React.RefObject<HTMLInputElement>;
+  onEnterPress?: () => void;
+  compact?: boolean;
 }
 
 export default function SalesRepSearchInput({
   salesReps,
   selectedSalesRep,
-  setSelectedSalesRep
+  setSelectedSalesRep,
+  inputRef,
+  onEnterPress,
+  compact = false
 }: SalesRepSearchInputProps) {
   const [salesRepInput, setSalesRepInput] = useState('');
   const [isSalesRepSearchOpen, setIsSalesRepSearchOpen] = useState(false);
@@ -58,10 +64,37 @@ export default function SalesRepSearchInput({
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && onEnterPress) {
+      e.preventDefault();
+      
+      // If we have a valid number but haven't selected a sales rep yet, try to find one
+      const codeMatch = salesRepInput.match(/^(\d+)$/);
+      if (codeMatch && !selectedSalesRep) {
+        const found = findSalesRepByCode(codeMatch[1]);
+        if (found) {
+          // Give it a moment to set the state before moving to the next field
+          setTimeout(() => {
+            onEnterPress();
+          }, 50);
+          return;
+        }
+      }
+      
+      if (selectedSalesRep) {
+        onEnterPress();
+      } else {
+        setIsSalesRepSearchOpen(true);
+      }
+    }
+  };
+
   return (
     <>
-      <div className="space-y-2">
-        <Label htmlFor="salesRep">Vendedor</Label>
+      <div className="space-y-1">
+        <Label htmlFor="salesRep" className={compact ? "text-xs text-gray-500" : ""}>
+          Vendedor
+        </Label>
         <div className="flex items-center gap-2">
           <Input
             type="text"
@@ -69,16 +102,18 @@ export default function SalesRepSearchInput({
             placeholder="Digite o código do vendedor"
             value={salesRepInput}
             onChange={handleSalesRepInputChange}
-            className="w-full"
+            onKeyDown={handleKeyDown}
+            ref={inputRef}
+            className={`w-full ${compact ? "h-8 text-sm" : ""}`}
           />
           <Button 
             type="button" 
             variant="outline" 
             size="icon" 
             onClick={() => setIsSalesRepSearchOpen(true)}
-            className="shrink-0"
+            className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
           >
-            <Search size={18} />
+            <Search size={compact ? 14 : 18} />
           </Button>
           {selectedSalesRep && (
             <Button 
@@ -89,9 +124,9 @@ export default function SalesRepSearchInput({
                 setSelectedSalesRep(null);
                 setSalesRepInput('');
               }}
-              className="shrink-0"
+              className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
             >
-              <X size={18} />
+              <X size={compact ? 14 : 18} />
             </Button>
           )}
         </div>
@@ -119,6 +154,10 @@ export default function SalesRepSearchInput({
                       setSalesRepInput(`${salesRep.code} - ${salesRep.name}`);
                       setIsSalesRepSearchOpen(false);
                       setSalesRepSearch('');
+                      // Navigate to next field on selection
+                      if (onEnterPress) {
+                        setTimeout(onEnterPress, 50);
+                      }
                     }}
                     className="cursor-pointer"
                   >

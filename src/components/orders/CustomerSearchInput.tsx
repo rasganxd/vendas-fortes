@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, KeyboardEvent } from 'react';
 import { Customer } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,13 +20,19 @@ interface CustomerSearchInputProps {
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer | null) => void;
   onViewRecentPurchases: () => void;
+  inputRef?: React.RefObject<HTMLInputElement>;
+  onEnterPress?: () => void;
+  compact?: boolean;
 }
 
 export default function CustomerSearchInput({
   customers,
   selectedCustomer,
   setSelectedCustomer,
-  onViewRecentPurchases
+  onViewRecentPurchases,
+  inputRef,
+  onEnterPress,
+  compact = false
 }: CustomerSearchInputProps) {
   const [customerInput, setCustomerInput] = useState('');
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
@@ -60,17 +66,44 @@ export default function CustomerSearchInput({
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && onEnterPress) {
+      e.preventDefault();
+      
+      // If we have a valid number but haven't selected a customer yet, try to find one
+      const codeMatch = customerInput.match(/^(\d+)$/);
+      if (codeMatch && !selectedCustomer) {
+        const found = findCustomerByCode(codeMatch[1]);
+        if (found) {
+          // Give it a moment to set the state before moving to the next field
+          setTimeout(() => {
+            onEnterPress();
+          }, 50);
+          return;
+        }
+      }
+      
+      if (selectedCustomer) {
+        onEnterPress();
+      } else {
+        setIsCustomerSearchOpen(true);
+      }
+    }
+  };
+
   return (
     <>
-      <div className="space-y-2">
+      <div className="space-y-1">
         <div className="flex justify-between items-center">
-          <Label htmlFor="customer">Cliente</Label>
+          <Label htmlFor="customer" className={compact ? "text-xs text-gray-500" : ""}>
+            Cliente
+          </Label>
           {selectedCustomer && (
             <Button 
               type="button" 
               variant="ghost" 
               size="sm" 
-              className="h-8 text-xs"
+              className="h-6 text-xs"
               onClick={onViewRecentPurchases}
             >
               Ver compras recentes
@@ -84,16 +117,18 @@ export default function CustomerSearchInput({
             placeholder="Digite o código do cliente"
             value={customerInput}
             onChange={handleCustomerInputChange}
-            className="w-full"
+            onKeyDown={handleKeyDown}
+            ref={inputRef}
+            className={`w-full ${compact ? "h-8 text-sm" : ""}`}
           />
           <Button 
             type="button" 
             variant="outline" 
             size="icon" 
             onClick={() => setIsCustomerSearchOpen(true)}
-            className="shrink-0"
+            className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
           >
-            <Search size={18} />
+            <Search size={compact ? 14 : 18} />
           </Button>
           {selectedCustomer && (
             <Button 
@@ -104,9 +139,9 @@ export default function CustomerSearchInput({
                 setSelectedCustomer(null);
                 setCustomerInput('');
               }}
-              className="shrink-0"
+              className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
             >
-              <X size={18} />
+              <X size={compact ? 14 : 18} />
             </Button>
           )}
         </div>
@@ -134,6 +169,10 @@ export default function CustomerSearchInput({
                       setCustomerInput(`${customer.code} - ${customer.name}`);
                       setIsCustomerSearchOpen(false);
                       setCustomerSearch('');
+                      // Navigate to next field on selection
+                      if (onEnterPress) {
+                        setTimeout(onEnterPress, 50);
+                      }
                     }}
                     className="cursor-pointer"
                   >

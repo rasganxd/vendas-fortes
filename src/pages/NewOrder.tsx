@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-import { Save } from "lucide-react";
+import { Save, FileText } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Order, OrderItem, PaymentTable, Product, Customer, SalesRep } from '@/types';
 
@@ -21,6 +22,12 @@ export default function NewOrder() {
   const { customers, salesReps, products, orders } = useAppContext();
   const { addOrder } = useOrders();
   const navigate = useNavigate();
+  
+  // Refs for input fields to enable Enter key navigation
+  const salesRepInputRef = useRef<HTMLInputElement>(null);
+  const customerInputRef = useRef<HTMLInputElement>(null);
+  const paymentTableRef = useRef<HTMLButtonElement>(null);
+  const productInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedSalesRep, setSelectedSalesRep] = useState<SalesRep | null>(null);
@@ -226,6 +233,9 @@ export default function NewOrder() {
                 salesReps={salesReps}
                 selectedSalesRep={selectedSalesRep}
                 setSelectedSalesRep={setSelectedSalesRep}
+                inputRef={salesRepInputRef}
+                onEnterPress={() => customerInputRef.current?.focus()}
+                compact={true}
               />
             </div>
             
@@ -245,6 +255,9 @@ export default function NewOrder() {
                 selectedCustomer={selectedCustomer}
                 setSelectedCustomer={setSelectedCustomer}
                 onViewRecentPurchases={handleViewRecentPurchases}
+                inputRef={customerInputRef}
+                onEnterPress={() => paymentTableRef.current?.focus()}
+                compact={true}
               />
             </div>
             
@@ -266,6 +279,8 @@ export default function NewOrder() {
                 paymentMethod={paymentMethod}
                 setPaymentMethod={setPaymentMethod}
                 simplifiedView={true}
+                buttonRef={paymentTableRef}
+                onSelectComplete={() => productInputRef.current?.focus()}
               />
             </div>
             
@@ -284,12 +299,20 @@ export default function NewOrder() {
                 products={products}
                 addItemToOrder={handleAddItem}
                 inlineLayout={true}
+                inputRef={productInputRef}
               />
             </div>
           </div>
           
-          {/* Right column - Action buttons - All buttons except "Finalizar Pedido" removed */}
-          <div className="col-span-4">
+          {/* Right column - Action buttons */}
+          <div className="col-span-4 grid grid-cols-1 gap-2">
+            <Button 
+              variant="outline" 
+              className="justify-start mb-2"
+              onClick={handleViewRecentPurchases}
+            >
+              <FileText size={16} className="mr-2" /> Últimas Compras
+            </Button>
             <Button 
               onClick={handleCreateOrder} 
               disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
