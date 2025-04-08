@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -41,12 +42,22 @@ export default function NewOrder() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [salesRepSearch, setSalesRepSearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
+  
+  // New state for custom price
+  const [customPrice, setCustomPrice] = useState(null);
 
   useEffect(() => {
     if (products.length > 0 && !selectedProduct) {
       setSelectedProduct(products[0]);
     }
   }, [products, selectedProduct]);
+  
+  // Set custom price when product changes
+  useEffect(() => {
+    if (selectedProduct) {
+      setCustomPrice(selectedProduct.price);
+    }
+  }, [selectedProduct]);
 
   const handleAddItem = () => {
     if (!selectedProduct) {
@@ -67,6 +78,9 @@ export default function NewOrder() {
       return;
     }
 
+    // Use custom price instead of product price
+    const priceToUse = customPrice !== null ? customPrice : selectedProduct.price;
+
     const existingItem = orderItems.find(item => item.productId === selectedProduct.id);
     
     if (existingItem) {
@@ -79,9 +93,9 @@ export default function NewOrder() {
         productId: selectedProduct.id,
         productName: selectedProduct.name,
         quantity: quantity,
-        price: selectedProduct.price,
-        unitPrice: selectedProduct.price,
-        total: selectedProduct.price * quantity
+        price: priceToUse,
+        unitPrice: priceToUse,
+        total: priceToUse * quantity
       }]);
     }
     
@@ -111,6 +125,7 @@ export default function NewOrder() {
     setOrderItems([]);
     setOrderNotes('');
     setQuantity(1);
+    setCustomPrice(null);
   };
 
   const handleCreateOrder = async () => {
@@ -335,28 +350,52 @@ export default function NewOrder() {
             
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantidade</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  id="quantity"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                  min="1"
-                  className="w-full"
-                />
-                <Button onClick={handleAddItem} className="shrink-0">
-                  <Plus size={16} className="mr-2" /> Adicionar
-                </Button>
-              </div>
+              <Input
+                type="number"
+                id="quantity"
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                min="1"
+                className="w-full"
+              />
             </div>
+            
+            {/* New field for custom price */}
+            <div className="space-y-2">
+              <Label htmlFor="price">Preço (R$)</Label>
+              <Input
+                type="number"
+                id="price"
+                value={customPrice}
+                onChange={(e) => setCustomPrice(parseFloat(e.target.value) || 0)}
+                min="0"
+                step="0.01"
+                className="w-full"
+              />
+            </div>
+            
+            <Button onClick={handleAddItem} className="w-full">
+              <Plus size={16} className="mr-2" /> Adicionar ao Pedido
+            </Button>
             
             {selectedProduct && (
               <div className="p-3 bg-gray-50 rounded-md mt-4">
                 <p className="font-medium">{selectedProduct.name}</p>
                 <p className="text-sm text-gray-500">{selectedProduct.description}</p>
-                <p className="font-semibold mt-1">
-                  {selectedProduct.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
+                <div className="flex justify-between mt-1">
+                  <p>Preço original:</p>
+                  <p className="font-semibold">
+                    {selectedProduct.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                </div>
+                {customPrice !== selectedProduct.price && customPrice !== null && (
+                  <div className="flex justify-between mt-1">
+                    <p>Preço personalizado:</p>
+                    <p className="font-semibold text-sales-700">
+                      {customPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -529,6 +568,8 @@ export default function NewOrder() {
                     value={product.id}
                     onSelect={() => {
                       setSelectedProduct(product);
+                      // Update custom price when selecting a product
+                      setCustomPrice(product.price);
                       setIsProductSearchOpen(false);
                       setProductSearch('');
                     }}
