@@ -6,12 +6,13 @@ import { useLoads } from '@/hooks/useLoads';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus } from 'lucide-react';
+import { Plus, Printer } from 'lucide-react';
 import { Load } from '@/types';
 import { LoadCard } from '@/components/loads/LoadCard';
 import { EmptyLoads } from '@/components/loads/EmptyLoads';
 import { EditLoadDialog } from '@/components/loads/EditLoadDialog';
 import { DeleteLoadDialog } from '@/components/loads/DeleteLoadDialog';
+import LoadPickingList from '@/components/loads/LoadPickingList';
 import {
   Dialog,
   DialogContent,
@@ -33,11 +34,12 @@ import { toast } from '@/components/ui/use-toast';
 export default function Loads() {
   const navigate = useNavigate();
   const { loads } = useAppContext();
-  const { deleteLoad, updateLoad } = useLoads();
+  const { deleteLoad, updateLoad, getOrdersFromLoad } = useLoads();
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
 
   const handleViewLoad = (load: Load) => {
     setSelectedLoad(load);
@@ -55,6 +57,11 @@ export default function Loads() {
       setSelectedLoad(loadToDelete);
       setIsDeleteDialogOpen(true);
     }
+  };
+
+  const handlePrintLoad = (load: Load) => {
+    setSelectedLoad(load);
+    setIsPrintDialogOpen(true);
   };
 
   const confirmDeleteLoad = async () => {
@@ -125,6 +132,7 @@ export default function Loads() {
             onView={handleViewLoad}
             onEdit={handleEditLoad}
             onDelete={handleDeleteLoad}
+            onPrint={() => handlePrintLoad(load)}  // Adicionamos a opção de impressão
           />
         ))}
         
@@ -165,8 +173,22 @@ export default function Loads() {
           </div>
           
           <div className="border rounded-md mb-3">
-            <div className="bg-gray-50 p-2 border-b">
+            <div className="bg-gray-50 p-2 border-b flex justify-between items-center">
               <h3 className="font-medium text-sm">Itens da Carga</h3>
+              {selectedLoad && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-1"
+                  onClick={() => {
+                    setIsViewDialogOpen(false);
+                    handlePrintLoad(selectedLoad);
+                  }}
+                >
+                  <Printer size={14} />
+                  <span>Imprimir Romaneio</span>
+                </Button>
+              )}
             </div>
             <div className="p-3">
               <Accordion type="multiple" className="w-full text-sm">
@@ -246,6 +268,26 @@ export default function Loads() {
         onConfirm={confirmDeleteLoad}
         loadName={selectedLoad?.name}
       />
+      
+      {/* Print Dialog */}
+      <Dialog 
+        open={isPrintDialogOpen} 
+        onOpenChange={setIsPrintDialogOpen}
+        className="max-w-4xl"
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Romaneio de Separação: {selectedLoad?.name}</DialogTitle>
+          </DialogHeader>
+          
+          {selectedLoad && (
+            <LoadPickingList 
+              orders={getOrdersFromLoad(selectedLoad)} 
+              onClose={() => setIsPrintDialogOpen(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 }

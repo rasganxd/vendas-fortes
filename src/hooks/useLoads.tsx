@@ -1,5 +1,5 @@
 
-import { Load } from '@/types';
+import { Load, Order } from '@/types';
 import { loadService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
 import { useAppContext } from './useAppContext';
@@ -91,10 +91,30 @@ export const useLoads = () => {
     }
   };
 
+  // Função auxiliar para extrair ordens de uma carga
+  const getOrdersFromLoad = (load: Load): Order[] => {
+    return load.items.map(item => ({
+      id: item.orderId,
+      customerName: item.customerName,
+      createdAt: item.orderDate,
+      total: item.orderTotal,
+      items: item.orderItems.map(orderItem => ({
+        productId: orderItem.id,
+        productName: orderItem.productName,
+        quantity: orderItem.quantity,
+        price: orderItem.price,
+        // Valores adicionais necessários para satisfazer o tipo Order
+        subtotal: orderItem.quantity * orderItem.price,
+        id: orderItem.id
+      }))
+    }));
+  };
+
   return {
     loads,
     addLoad,
     updateLoad,
-    deleteLoad
+    deleteLoad,
+    getOrdersFromLoad
   };
 };

@@ -1,26 +1,23 @@
 
-import { Load } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Eye, Edit, Trash2, Printer } from 'lucide-react';
+import { Load } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
-import { 
-  Calendar, 
-  PackageOpen, 
-  Truck, 
-  FileBarChart,
-  Edit,
-  Trash2
-} from 'lucide-react';
 
 interface LoadCardProps {
   load: Load;
   onView: (load: Load) => void;
   onEdit: (load: Load) => void;
   onDelete: (id: string) => void;
+  onPrint?: (load: Load) => void;
 }
 
-export const LoadCard = ({ load, onView, onEdit, onDelete }: LoadCardProps) => {
+export const LoadCard = ({ load, onView, onEdit, onDelete, onPrint }: LoadCardProps) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'planning':
@@ -38,68 +35,61 @@ export const LoadCard = ({ load, onView, onEdit, onDelete }: LoadCardProps) => {
     }
   };
   
+  const handleDeleteClick = () => {
+    setIsDeleting(true);
+    setTimeout(() => setIsDeleting(false), 2000);
+    onDelete(load.id);
+  };
+  
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="bg-sales-800 text-white p-3 flex justify-between items-center">
-        <h3 className="font-semibold">{load.name}</h3>
-        {getStatusBadge(load.status)}
-      </div>
-      
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-gray-50 pb-3">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-base">{load.name}</CardTitle>
+          {getStatusBadge(load.status)}
+        </div>
+        <div className="text-xs text-gray-500">{formatDateToBR(load.date)}</div>
+      </CardHeader>
       <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <Calendar size={18} className="text-gray-500 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium">Data</p>
-              <p className="text-sm text-gray-600">{formatDateToBR(load.date)}</p>
-            </div>
+        <div className="text-sm mb-3">
+          <div className="flex justify-between mb-1">
+            <span className="text-gray-500">Pedidos:</span>
+            <span className="font-medium">{load.items.length}</span>
           </div>
-          
-          <div className="flex items-start gap-3">
-            <Truck size={18} className="text-gray-500 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium">Veículo</p>
-              <p className="text-sm text-gray-600">
-                {load.vehicleName || 'Não atribuído'}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-3">
-            <PackageOpen size={18} className="text-gray-500 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium">Itens</p>
-              <p className="text-sm text-gray-600">{load.items.length} itens</p>
-            </div>
-          </div>
-          
-          <div className="pt-3 space-y-2">
-            <Button 
-              className="w-full bg-teal-600 hover:bg-teal-700"
-              onClick={() => onView(load)}
-            >
-              <FileBarChart size={16} className="mr-2" /> Detalhes
-            </Button>
-            
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="w-1/2" 
-                onClick={() => onEdit(load)}
-              >
-                <Edit size={16} className="mr-2" /> Editar
-              </Button>
-              <Button 
-                variant="destructive" 
-                className="w-1/2" 
-                onClick={() => onDelete(load.id)}
-              >
-                <Trash2 size={16} className="mr-2" /> Excluir
-              </Button>
-            </div>
+          <div className="flex justify-between mb-1">
+            <span className="text-gray-500">Veículo:</span>
+            <span className="font-medium">{load.vehicleName || 'Não atribuído'}</span>
           </div>
         </div>
       </CardContent>
+      <CardFooter className="border-t p-2 grid grid-cols-4 gap-1.5">
+        <Button variant="ghost" size="sm" onClick={() => onView(load)} className="flex-1">
+          <Eye size={16} />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onEdit(load)} className="flex-1">
+          <Edit size={16} />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="text-destructive flex-1"
+          disabled={isDeleting}
+          onClick={handleDeleteClick}
+        >
+          <Trash2 size={16} />
+        </Button>
+        {onPrint && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onPrint(load)} 
+            className="flex-1"
+            title="Imprimir romaneio de separação"
+          >
+            <Printer size={16} />
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 };
