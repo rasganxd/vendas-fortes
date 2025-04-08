@@ -87,7 +87,8 @@ export interface RouteStop {
   zipCode: string;
   sequence: number;
   status: 'pending' | 'completed';
-  estimatedArrival?: Date;
+  lat?: number; // Coordenada de latitude
+  lng?: number; // Coordenada de longitude
 }
 
 export interface DeliveryRoute {
