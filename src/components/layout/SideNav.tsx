@@ -118,7 +118,7 @@ export default function SideNav() {
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (
               <div key={group} className="mb-3">
-                <h3 className="text-sm uppercase font-medium text-gray-500 px-4 mb-1">{groupLabels[group] || group}</h3>
+                <h3 className="text-xs uppercase font-medium text-gray-500 px-4 mb-1">{groupLabels[group] || group}</h3>
                 {items.map((item) => {
                   const isActive = location.pathname === item.href;
                   
