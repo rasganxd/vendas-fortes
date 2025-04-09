@@ -48,6 +48,7 @@ export const usePaymentTables = () => {
         title: "Tabela de pagamento atualizada",
         description: "Tabela de pagamento atualizada com sucesso!"
       });
+      return true;
     } catch (error) {
       console.error("Erro ao atualizar tabela de pagamento:", error);
       toast({
@@ -55,6 +56,7 @@ export const usePaymentTables = () => {
         description: "Houve um problema ao atualizar a tabela de pagamento.",
         variant: "destructive"
       });
+      return false;
     }
   };
 
@@ -66,6 +68,7 @@ export const usePaymentTables = () => {
         title: "Tabela de pagamento excluída",
         description: "Tabela de pagamento excluída com sucesso!"
       });
+      return true;
     } catch (error) {
       console.error("Erro ao excluir tabela de pagamento:", error);
       toast({
@@ -73,6 +76,7 @@ export const usePaymentTables = () => {
         description: "Houve um problema ao excluir a tabela de pagamento.",
         variant: "destructive"
       });
+      return false;
     }
   };
 

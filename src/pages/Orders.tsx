@@ -29,6 +29,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -70,7 +71,7 @@ export default function Orders() {
   
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
-    documentTitle: `Pedido-${selectedOrder?.id}`,
+    documentTitle: `Pedido-${selectedOrder?.customerName}`,
   });
   
   const handleBulkPrint = useReactToPrint({
@@ -213,7 +214,6 @@ export default function Orders() {
                       onCheckedChange={handleSelectAllOrders}
                     />
                   </TableHead>
-                  <TableHead>Nº Pedido</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Total</TableHead>
@@ -224,7 +224,7 @@ export default function Orders() {
               <TableBody>
                 {filteredOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
                       Nenhum pedido encontrado
                     </TableCell>
                   </TableRow>
@@ -237,15 +237,14 @@ export default function Orders() {
                           onCheckedChange={() => handleToggleOrderSelection(order.id)}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {order.id}
+                      <TableCell>
+                        {order.customerName}
                         {order.archived && (
                           <Badge variant="outline" className="ml-2">
                             <Archive size={12} className="mr-1" /> Arquivado
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>{order.customerName}</TableCell>
                       <TableCell>{formatDateToBR(order.createdAt)}</TableCell>
                       <TableCell>
                         {formatCurrency(order.total)}
@@ -290,24 +289,27 @@ export default function Orders() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="flex justify-between items-center">
-              <span>
-                Detalhes do Pedido
+            <div className="flex justify-between items-center">
+              <DialogTitle className="flex items-center">
+                <span>Detalhes do Pedido</span>
                 {selectedOrder?.archived && (
                   <Badge variant="outline" className="ml-2">
                     <Archive size={12} className="mr-1" /> Arquivado
                   </Badge>
                 )}
-              </span>
-              <Button variant="outline" onClick={handlePrint} className="flex items-center gap-1">
+              </DialogTitle>
+              <Button variant="outline" onClick={handlePrint} className="flex items-center gap-2">
                 <Printer size={16} /> Imprimir
               </Button>
-            </DialogTitle>
+            </div>
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
           </DialogHeader>
           
           <div ref={printRef} className="p-4">
             <div className="text-center mb-6">
-              {/* Removed order number from here */}
               <p className="text-gray-600">
                 Data: {selectedOrder ? formatDateToBR(selectedOrder.createdAt) : ''}
               </p>
@@ -392,7 +394,7 @@ export default function Orders() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o pedido {selectedOrder?.id} do cliente {selectedOrder?.customerName}?
+              Tem certeza que deseja excluir o pedido do cliente {selectedOrder?.customerName}?
               Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -474,7 +476,6 @@ export default function Orders() {
                 return (
                   <div key={order.id} className={orderIndex > 0 ? "mt-8 pt-8 border-t" : ""}>
                     <div className="text-center mb-6">
-                      {/* Removed order number from here */}
                       <p className="text-gray-600">
                         Data: {formatDateToBR(order.createdAt)}
                       </p>
