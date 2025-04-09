@@ -1,52 +1,25 @@
 
 import React, { useState } from 'react';
-import { Search, Plus, Edit, Trash2, Eye, MapPin, Phone, User, CalendarClock } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { Search, Plus } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { useCustomers } from '@/hooks/useCustomers';
 import { Customer } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
 import { 
   Dialog, 
-  DialogTrigger, 
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogDescription,
-  DialogFooter
+  DialogDescription
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatDateToBR } from '@/lib/date-utils';
-import CustomerDetails from '@/components/customers/CustomerDetails';
 
-const visitDaysOptions = [
-  { id: "monday", label: "Segunda" },
-  { id: "tuesday", label: "Terça" },
-  { id: "wednesday", label: "Quarta" },
-  { id: "thursday", label: "Quinta" },
-  { id: "friday", label: "Sexta" },
-  { id: "saturday", label: "Sábado" },
-  { id: "sunday", label: "Domingo" },
-];
+// Componentes importados
+import CustomersTable from '@/components/customers/CustomersTable';
+import EditCustomerForm from '@/components/customers/EditCustomerForm';
+import NewCustomerForm from '@/components/customers/NewCustomerForm';
+import CustomerDetails from '@/components/customers/CustomerDetails';
 
 const Customers = () => {
   const { customers, addCustomer, updateCustomer, deleteCustomer, generateNextCode } = useCustomers();
@@ -56,51 +29,9 @@ const Customers = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  
-  const form = useForm({
-    defaultValues: {
-      code: 0,
-      name: '',
-      document: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      notes: '',
-      visitDays: [] as string[]
-    }
-  });
-
-  const newCustomerForm = useForm({
-    defaultValues: {
-      code: 0,
-      name: '',
-      document: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      notes: '',
-      visitDays: [] as string[]
-    }
-  });
 
   const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
-    form.reset({
-      code: customer.code || 0,
-      name: customer.name,
-      document: customer.document || '',
-      phone: customer.phone,
-      address: customer.address || '',
-      city: customer.city || '',
-      state: customer.state || '',
-      zipCode: customer.zipCode || '',
-      notes: customer.notes || '',
-      visitDays: customer.visitDays || []
-    });
     setIsDialogOpen(true);
   };
 
@@ -130,24 +61,11 @@ const Customers = () => {
       ...data,
       createdAt: new Date(),
     });
-    newCustomerForm.reset();
     setIsNewCustomerDialogOpen(false);
   };
 
   const handleNewCustomer = () => {
     const nextCode = generateNextCode();
-    newCustomerForm.reset({
-      code: nextCode,
-      name: '',
-      document: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      notes: '',
-      visitDays: []
-    });
     setIsNewCustomerDialogOpen(true);
   };
 
@@ -184,77 +102,12 @@ const Customers = () => {
       </div>
 
       <Card className="overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-16">Código</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead className="hidden md:table-cell">Documento</TableHead>
-              <TableHead className="hidden md:table-cell">Telefone</TableHead>
-              <TableHead className="hidden lg:table-cell">Endereço</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredCustomers.length > 0 ? (
-              filteredCustomers.map((customer) => (
-                <TableRow key={customer.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{customer.code || 'N/A'}</TableCell>
-                  <TableCell>{customer.name}</TableCell>
-                  <TableCell className="hidden md:table-cell">{customer.document || 'Não informado'}</TableCell>
-                  <TableCell className="hidden md:table-cell">{customer.phone}</TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {customer.address ? (
-                      <div className="flex items-center">
-                        <MapPin className="h-3 w-3 mr-1 text-gray-500" />
-                        <span className="truncate max-w-[200px]">
-                          {customer.address}, {customer.city}/{customer.state}
-                        </span>
-                      </div>
-                    ) : (
-                      'Não informado'
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleViewCustomerDetails(customer)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">Detalhes</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleEditCustomer(customer)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Editar</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDeleteCustomer(customer.id)}
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Excluir</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  Nenhum cliente encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <CustomersTable 
+          customers={filteredCustomers}
+          onView={handleViewCustomerDetails}
+          onEdit={handleEditCustomer}
+          onDelete={handleDeleteCustomer}
+        />
       </Card>
 
       {/* Dialog para editar cliente */}
@@ -267,191 +120,13 @@ const Customers = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Código</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="document"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CPF/CNPJ</FormLabel>
-                      <FormControl>
-                        <Input {...field} mask="cpfCnpj" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="zipCode"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-1 col-span-2">
-                      <FormLabel>CEP</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="visitDays"
-                render={() => (
-                  <FormItem>
-                    <div className="mb-2">
-                      <FormLabel>Dias de Visita</FormLabel>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {visitDaysOptions.map((day) => (
-                        <FormField
-                          key={day.id}
-                          control={form.control}
-                          name="visitDays"
-                          render={({ field }) => {
-                            return (
-                              <FormItem
-                                key={day.id}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                              >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(day.id)}
-                                    onCheckedChange={(checked) => {
-                                      return checked
-                                        ? field.onChange([...field.value, day.id])
-                                        : field.onChange(
-                                            field.value?.filter(
-                                              (value) => value !== day.id
-                                            )
-                                          )
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">
-                                  {day.label}
-                                </FormLabel>
-                              </FormItem>
-                            )
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit">Salvar Alterações</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          {editingCustomer && (
+            <EditCustomerForm 
+              customer={editingCustomer}
+              onSubmit={onSubmit}
+              onCancel={() => setIsDialogOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
@@ -465,191 +140,11 @@ const Customers = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <Form {...newCustomerForm}>
-            <form onSubmit={newCustomerForm.handleSubmit(onAddCustomer)} className="space-y-4">
-              <FormField
-                control={newCustomerForm.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Código</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={newCustomerForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={newCustomerForm.control}
-                  name="document"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CPF/CNPJ</FormLabel>
-                      <FormControl>
-                        <Input {...field} mask="cpfCnpj" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={newCustomerForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={newCustomerForm.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <FormField
-                  control={newCustomerForm.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={newCustomerForm.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={newCustomerForm.control}
-                  name="zipCode"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-1 col-span-2">
-                      <FormLabel>CEP</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={newCustomerForm.control}
-                name="visitDays"
-                render={() => (
-                  <FormItem>
-                    <div className="mb-2">
-                      <FormLabel>Dias de Visita</FormLabel>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {visitDaysOptions.map((day) => (
-                        <FormField
-                          key={day.id}
-                          control={newCustomerForm.control}
-                          name="visitDays"
-                          render={({ field }) => {
-                            return (
-                              <FormItem
-                                key={day.id}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                              >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(day.id)}
-                                    onCheckedChange={(checked) => {
-                                      return checked
-                                        ? field.onChange([...field.value, day.id])
-                                        : field.onChange(
-                                            field.value?.filter(
-                                              (value) => value !== day.id
-                                            )
-                                          )
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">
-                                  {day.label}
-                                </FormLabel>
-                              </FormItem>
-                            )
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={newCustomerForm.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => setIsNewCustomerDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit">Adicionar Cliente</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <NewCustomerForm 
+            initialCode={generateNextCode()}
+            onSubmit={onAddCustomer}
+            onCancel={() => setIsNewCustomerDialogOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Customer, Order } from '@/types';
@@ -5,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDateToBR } from '@/lib/date-utils';
+import { getDayLabel } from '@/components/customers/constants';
 import { 
   MapPin, 
   Phone, 
@@ -15,7 +17,8 @@ import {
   Package, 
   DollarSign,
   User,
-  ShoppingBag
+  ShoppingBag,
+  CalendarDays
 } from 'lucide-react';
 
 interface CustomerDetailsProps {
@@ -97,18 +100,26 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({ customer, onEdit, onD
           <TabsContent value="info" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-gray-600 mb-2">
                   <MapPin className="mr-2 h-4 w-4" />
-                  {customer.address}, {customer.city}, {customer.state} {customer.zipCode}
+                  {customer.address ? `${customer.address}, ${customer.city || ''}, ${customer.state || ''} ${customer.zipCode || ''}` : 'Endereço não informado'}
                 </div>
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-gray-600 mb-2">
                   <Phone className="mr-2 h-4 w-4" />
                   {customer.phone}
                 </div>
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-gray-600 mb-2">
                   <User className="mr-2 h-4 w-4" />
-                  {customer.document || 'Não informado'}
+                  {customer.document || 'Documento não informado'}
                 </div>
+                {customer.visitDays && customer.visitDays.length > 0 && (
+                  <div className="flex items-center text-gray-600 mb-2">
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    <span>
+                      Dias de visita: {customer.visitDays.map(day => getDayLabel(day)).join(', ')}
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <p className="text-gray-700">
