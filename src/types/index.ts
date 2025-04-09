@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -9,6 +8,9 @@ export interface Customer {
   state?: string;
   zipCode?: string;
   createdAt?: Date;
+  code?: number;
+  visitDays?: string[];
+  notes?: string;
 }
 
 export interface Product {
@@ -18,6 +20,10 @@ export interface Product {
   price: number;
   imageUrl?: string;
   createdAt?: Date;
+  code?: number;
+  unit?: string;
+  stock?: number;
+  category?: string;
 }
 
 export interface OrderItem {
@@ -77,6 +83,10 @@ export interface SalesRep {
   name: string;
   phone: string;
   email: string;
+  code?: number;
+  role?: string;
+  region?: string;
+  active?: boolean;
 }
 
 export interface Vehicle {
@@ -84,6 +94,9 @@ export interface Vehicle {
   name: string;
   capacity: number;
   type: 'truck' | 'van' | 'car';
+  licensePlate?: string;
+  driverName?: string;
+  active?: boolean;
 }
 
 export interface PaymentMethod {
@@ -111,4 +124,55 @@ export interface PaymentTable {
   active?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface NavItem {
+  title: string;
+  href: string;
+  icon?: React.ReactNode;
+  submenu?: NavItem[];
+}
+
+export interface DeliveryRoute {
+  id: string;
+  name: string;
+  date: Date;
+  salesRepId: string;
+  salesRepName?: string;
+  vehicleId: string; 
+  vehicleName?: string;
+  stops: RouteStop[];
+  totalDistance?: number;
+  status?: 'planned' | 'in_progress' | 'completed' | 'cancelled';
+  notes?: string;
+}
+
+export interface RouteStop {
+  id: string;
+  orderId: string;
+  customerName: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  position: number;
+  completed?: boolean;
+  arrivalTime?: Date;
+  departureTime?: Date;
+}
+
+export interface Backup {
+  id: string;
+  filename: string;
+  size: number;
+  createdAt: Date;
+  dataType: 'all' | 'customers' | 'products' | 'orders' | 'payments';
+  recordCount: number;
+  downloadUrl?: string;
+}
+
+export interface LoadItem {
+  productId: string;
+  productName: string;
+  quantity: number;
 }

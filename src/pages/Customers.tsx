@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, MapPin, Phone, User, CalendarClock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import PageLayout from '@/components/layout/PageLayout';
 import { useCustomers } from '@/hooks/useCustomers';
+import { Customer } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatDateToBR } from '@/lib/date-utils';
+import CustomerDetails from '@/components/customers/CustomerDetails';
 
 const visitDaysOptions = [
   { id: "monday", label: "Segunda" },
@@ -40,9 +51,11 @@ const visitDaysOptions = [
 const Customers = () => {
   const { customers, addCustomer, updateCustomer, deleteCustomer, generateNextCode } = useCustomers();
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingCustomer, setEditingCustomer] = useState<null | any>(null);
+  const [editingCustomer, setEditingCustomer] = useState<null | Customer>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<null | Customer>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   
   const form = useForm({
     defaultValues: {
@@ -74,7 +87,7 @@ const Customers = () => {
     }
   });
 
-  const handleEditCustomer = (customer: any) => {
+  const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
     form.reset({
       code: customer.code || 0,
@@ -89,6 +102,11 @@ const Customers = () => {
       visitDays: customer.visitDays || []
     });
     setIsDialogOpen(true);
+  };
+
+  const handleViewCustomerDetails = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDetailsDialogOpen(true);
   };
 
   const handleDeleteCustomer = (id: string) => {
@@ -160,60 +178,86 @@ const Customers = () => {
           className="bg-sales-800 hover:bg-sales-700 w-full sm:w-auto"
           onClick={handleNewCustomer}
         >
+          <Plus size={16} className="mr-2" />
           Adicionar Novo Cliente
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCustomers.map((customer) => (
-          <Card key={customer.id} className="p-6 shadow-md hover:shadow-lg transition-shadow">
-            <div className="flex justify-between">
-              <h3 className="text-xl font-medium text-gray-800">{customer.name}</h3>
-              <span className="text-sm font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                Código: {customer.code || 'N/A'}
-              </span>
-            </div>
-            <p className="text-gray-600 mt-2">{customer.document || 'CPF/CNPJ não informado'}</p>
-            <p className="text-gray-600">{customer.phone}</p>
-            
-            {customer.visitDays && customer.visitDays.length > 0 && (
-              <div className="mt-2">
-                <p className="text-sm font-medium text-gray-700">Dias de visita:</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {customer.visitDays.map((day: string) => (
-                    <span key={day} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                      {visitDaysOptions.find(option => option.id === day)?.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
+      <Card className="overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-16">Código</TableHead>
+              <TableHead>Nome</TableHead>
+              <TableHead className="hidden md:table-cell">Documento</TableHead>
+              <TableHead className="hidden md:table-cell">Telefone</TableHead>
+              <TableHead className="hidden lg:table-cell">Endereço</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredCustomers.length > 0 ? (
+              filteredCustomers.map((customer) => (
+                <TableRow key={customer.id} className="hover:bg-muted/50">
+                  <TableCell className="font-medium">{customer.code || 'N/A'}</TableCell>
+                  <TableCell>{customer.name}</TableCell>
+                  <TableCell className="hidden md:table-cell">{customer.document || 'Não informado'}</TableCell>
+                  <TableCell className="hidden md:table-cell">{customer.phone}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {customer.address ? (
+                      <div className="flex items-center">
+                        <MapPin className="h-3 w-3 mr-1 text-gray-500" />
+                        <span className="truncate max-w-[200px]">
+                          {customer.address}, {customer.city}/{customer.state}
+                        </span>
+                      </div>
+                    ) : (
+                      'Não informado'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleViewCustomerDetails(customer)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">Detalhes</span>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleEditCustomer(customer)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Editar</span>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleDeleteCustomer(customer.id)}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Excluir</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  Nenhum cliente encontrado.
+                </TableCell>
+              </TableRow>
             )}
-            
-            <div className="flex justify-end mt-4">
-              <Button 
-                variant="outline" 
-                className="mr-2"
-                onClick={() => handleEditCustomer(customer)}
-              >
-                Editar
-              </Button>
-              <Button 
-                variant="destructive"
-                onClick={() => handleDeleteCustomer(customer.id)}
-              >
-                Excluir
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
 
-      {filteredCustomers.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">Nenhum cliente encontrado.</p>
-        </div>
-      )}
-
+      {/* Dialog para editar cliente */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -411,6 +455,7 @@ const Customers = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog para adicionar novo cliente */}
       <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -605,6 +650,29 @@ const Customers = () => {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para visualizar detalhes do cliente */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Cliente</DialogTitle>
+          </DialogHeader>
+          
+          {selectedCustomer && (
+            <CustomerDetails 
+              customer={selectedCustomer}
+              onEdit={() => {
+                setIsDetailsDialogOpen(false);
+                handleEditCustomer(selectedCustomer);
+              }}
+              onDelete={() => {
+                setIsDetailsDialogOpen(false);
+                handleDeleteCustomer(selectedCustomer.id);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </PageLayout>
