@@ -23,7 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Check } from 'lucide-react';
+import { Plus, Search, Check, CheckSquare } from 'lucide-react';
 import { Order, OrderItem, LoadItem } from '@/types';
 import {
   Dialog,
@@ -88,6 +88,7 @@ export default function BuildLoad() {
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [buildLoadItems, setBuildLoadItems] = useState<BuildLoadItem[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   const filteredOrders = orders.filter(order =>
     (order.customerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -104,6 +105,27 @@ export default function BuildLoad() {
       setSelectedOrderIds(prev => prev.filter(id => id !== order.id));
     }
   };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAll(checked);
+    if (checked) {
+      // Adicionar todos os IDs dos pedidos filtrados que ainda não foram selecionados
+      const newSelectedIds = [
+        ...selectedOrderIds,
+        ...filteredOrders.map(order => order.id).filter(id => !selectedOrderIds.includes(id))
+      ];
+      setSelectedOrderIds(newSelectedIds);
+    } else {
+      // Remover apenas os IDs dos pedidos que estão atualmente filtrados
+      const filteredIds = filteredOrders.map(order => order.id);
+      setSelectedOrderIds(prev => prev.filter(id => !filteredIds.includes(id)));
+    }
+  };
+
+  // Reset selectAll quando a pesquisa muda
+  useEffect(() => {
+    setSelectAll(false);
+  }, [search]);
 
   const handleAddSelectedOrders = () => {
     if (selectedOrderIds.length === 0) {
@@ -134,6 +156,7 @@ export default function BuildLoad() {
     setBuildLoadItems(prevItems => [...prevItems, ...newLoadItems]);
     setSelectedOrders(prevOrders => [...prevOrders, ...ordersToAdd]);
     setSelectedOrderIds([]);
+    setSelectAll(false);
   };
 
   const handleRemoveFromLoad = (orderId: string) => {
@@ -248,7 +271,16 @@ export default function BuildLoad() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10">Selecionar</TableHead>
+                  <TableHead className="w-10">
+                    <div className="flex items-center">
+                      <Checkbox 
+                        checked={selectAll && filteredOrders.length > 0} 
+                        onCheckedChange={handleSelectAll}
+                        disabled={filteredOrders.length === 0}
+                      />
+                      <span className="ml-2">Todos</span>
+                    </div>
+                  </TableHead>
                   <TableHead>Pedido</TableHead>
                   <TableHead>Cliente</TableHead>
                 </TableRow>
