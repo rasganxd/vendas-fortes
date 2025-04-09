@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Customer, Order, PaymentTable } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useAppContext } from '@/hooks/useAppContext';
 import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
 
 interface PromissoryNotesTabProps {
@@ -15,6 +16,7 @@ interface PromissoryNotesTabProps {
     total: number;
     paymentTableId: string | undefined;
     paid: number;
+    paymentMethod?: string;
   }>;
   paymentTables: PaymentTable[];
   customers: Customer[];
@@ -27,6 +29,7 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
   customers,
   orders
 }) => {
+  const { paymentTables: allPaymentTables } = useAppContext();
   const [showPromissoryNote, setShowPromissoryNote] = useState(false);
   const [selectedPaymentTable, setSelectedPaymentTable] = useState<PaymentTable | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
@@ -35,7 +38,7 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
   const handleViewPromissoryNote = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (order && order.paymentTableId) {
-      const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
+      const paymentTable = allPaymentTables.find(pt => pt.id === order.paymentTableId);
       if (paymentTable && paymentTable.type === 'promissory_note') {
         setSelectedPaymentTable(paymentTable);
         setSelectedOrderId(orderId);
@@ -48,17 +51,29 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
     return customers.find(c => c.id === customerId);
   };
 
-  const filteredOrders = pendingPaymentOrders.filter(order => {
-    // Filter by search term and payment table type
+  // Filter orders that use promissory notes
+  const filteredOrders = orders.filter(order => {
+    // Filter by search term, payment method, and payment table type
     const matchesSearch = search === '' || 
-      order.customerName.toLowerCase().includes(search.toLowerCase()) ||
+      order.customerName?.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
     
-    const paymentTable = order.paymentTableId ? 
-      paymentTables.find(pt => pt.id === order.paymentTableId) : null;
+    // Check if this is a promissory note order
+    const isPromissoryNote = order.paymentMethod === 'promissoria';
     
-    return matchesSearch && paymentTable && paymentTable.type === 'promissory_note';
+    // Check if payment table is a promissory note type
+    const paymentTable = order.paymentTableId ? 
+      allPaymentTables.find(pt => pt.id === order.paymentTableId) : null;
+    
+    const isPromissoryNoteTable = paymentTable?.type === 'promissory_note';
+    
+    return matchesSearch && isPromissoryNote && isPromissoryNoteTable;
   });
+
+  useEffect(() => {
+    console.log("All orders:", orders);
+    console.log("Promissory note orders:", filteredOrders);
+  }, [orders, filteredOrders]);
 
   return (
     <>
@@ -109,7 +124,7 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
             {filteredOrders.length > 0 ? (
               filteredOrders.map(order => {
                 const paymentTable = order.paymentTableId ? 
-                  paymentTables.find(pt => pt.id === order.paymentTableId) : null;
+                  allPaymentTables.find(pt => pt.id === order.paymentTableId) : null;
                 
                 if (!paymentTable) return null;
                 

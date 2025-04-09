@@ -1,19 +1,9 @@
-import React, { useState, useEffect, KeyboardEvent, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Search, X, Plus } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { toast } from "@/components/ui/use-toast";
-import { 
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from "@/components/ui/command";
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, Plus, Minus } from 'lucide-react';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -28,375 +18,259 @@ export default function ProductSearchInput({
   inlineLayout = false,
   inputRef
 }: ProductSearchInputProps) {
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [customPrice, setCustomPrice] = useState<number | null>(null);
-  const [productInput, setProductInput] = useState('');
-  const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
-  const [productSearch, setProductSearch] = useState('');
+  const [quantity, setQuantity] = useState<number>(1);
+  const [price, setPrice] = useState<number>(0);
+  const [showResults, setShowResults] = useState(false);
   
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
+  const resultsRef = useRef<HTMLDivElement>(null);
+  
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setShowResults(e.target.value.length > 0);
+  };
+  
+  const handleProductSelect = (product: Product) => {
+    setSelectedProduct(product);
+    setSearchTerm(product.name);
+    setPrice(product.price);
+    setShowResults(false);
+    setTimeout(() => quantityInputRef.current?.focus(), 50);
+  };
+  
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow numbers and prevent negative values
+    const value = e.target.value.replace(/[^\d]/g, '');
+    const numericValue = value ? parseInt(value, 10) : 0;
+    
+    // Ensure quantity is always at least 1
+    setQuantity(numericValue > 0 ? numericValue : 1);
+  };
+  
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
+    setPrice(parseFloat(value) || 0);
+  };
+  
+  const handleAddToOrder = () => {
     if (selectedProduct) {
-      setCustomPrice(selectedProduct.price);
-    }
-  }, [selectedProduct]);
-
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    product.code?.toString().includes(productSearch) ||
-    product.price?.toString().includes(productSearch)
-  );
-
-  const findProductByCode = (code: string) => {
-    const foundProduct = products.find(p => p.code && p.code.toString() === code);
-    if (foundProduct) {
-      setSelectedProduct(foundProduct);
-      setCustomPrice(foundProduct.price);
-      setProductInput(`${foundProduct.code} - ${foundProduct.name}`);
-      return true;
-    }
-    return false;
-  };
-
-  const handleProductInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setProductInput(value);
-    
-    const codeMatch = value.match(/^(\d+)$/);
-    if (codeMatch) {
-      findProductByCode(codeMatch[1]);
-    } else if (!value) {
+      addItemToOrder(selectedProduct, quantity, price);
+      setSearchTerm('');
       setSelectedProduct(null);
-      setCustomPrice(0);
-    }
-  };
-
-  const handleProductKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      if (selectedProduct && quantityInputRef.current) {
-        quantityInputRef.current.focus();
-      }
+      setQuantity(1);
+      setPrice(0);
+      setTimeout(() => inputRef?.current?.focus(), 50);
     }
   };
   
-  const handleQuantityKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      if (priceInputRef.current) {
-        priceInputRef.current.focus();
-      }
-    }
+  const incrementQuantity = () => {
+    setQuantity(prev => prev + 1);
   };
   
-  const handlePriceKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddItem();
-    }
+  const decrementQuantity = () => {
+    setQuantity(prev => (prev > 1 ? prev - 1 : 1));
   };
-
-  const parsePrice = (priceStr: string) => {
-    if (!priceStr) return 0;
-    
-    const cleanPriceStr = priceStr.replace(/[^\d,]/g, '').replace(',', '.');
-    return parseFloat(cleanPriceStr) || 0;
-  };
-
-  const handleAddItem = () => {
-    if (!selectedProduct) {
-      toast({
-        title: "Erro",
-        description: "Selecione um produto antes de adicionar ao pedido.",
-        variant: "destructive"
-      });
-      return;
+  
+  // Close results when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (resultsRef.current && !resultsRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
     }
-
-    if (quantity <= 0) {
-      toast({
-        title: "Erro",
-        description: "A quantidade deve ser maior que zero.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const priceToUse = customPrice !== null ? customPrice : selectedProduct.price;
-
-    addItemToOrder(selectedProduct, quantity, priceToUse);
     
-    setSelectedProduct(null);
-    setProductInput('');
-    setQuantity(1);
-    setCustomPrice(0);
-    
-    if (inputRef?.current) {
-      inputRef.current.focus();
-    }
-  };
-
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  const filteredProducts = searchTerm
+    ? products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.code.toString().includes(searchTerm)
+      )
+    : [];
+  
   if (inlineLayout) {
     return (
-      <>
-        <div className="grid grid-cols-12 gap-4 items-end">
-          <div className="col-span-5">
-            <Label htmlFor="product" className="text-xs text-gray-500">Produto</Label>
-            <div className="flex items-center gap-2">
+      <div className="relative w-full">
+        <div className="flex gap-2">
+          <div className="w-full">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
               <Input
-                type="text"
-                id="product"
-                placeholder="Código ou nome do produto"
-                value={productInput}
-                onChange={handleProductInputChange}
-                onKeyDown={handleProductKeyDown}
                 ref={inputRef}
-                className="h-8 text-sm"
+                type="text"
+                className="pl-10 w-full h-8 text-sm"
+                placeholder="Buscar produto pelo nome ou código"
+                value={searchTerm}
+                onChange={handleSearch}
+                autoComplete="off"
               />
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="icon" 
-                onClick={() => setIsProductSearchOpen(true)}
-                className="h-8 w-8 shrink-0"
-              >
-                <Search size={14} />
-              </Button>
-              {selectedProduct && (
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => {
-                    setSelectedProduct(null);
-                    setProductInput('');
-                    setCustomPrice(0);
-                  }}
-                  className="h-8 w-8 shrink-0"
+              {showResults && filteredProducts.length > 0 && (
+                <div 
+                  ref={resultsRef}
+                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
                 >
-                  <X size={14} />
-                </Button>
+                  {filteredProducts.map(product => (
+                    <div
+                      key={product.id}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+                      onClick={() => handleProductSelect(product)}
+                    >
+                      <span>{product.name}</span>
+                      <span className="text-gray-600">
+                        {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
           
-          <div className="col-span-2">
-            <Label htmlFor="quantity" className="text-xs text-gray-500">Quantidade</Label>
-            <Input
-              type="number"
-              id="quantity"
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-              onKeyDown={handleQuantityKeyDown}
-              ref={quantityInputRef}
-              min="1"
-              className="h-8 text-sm"
-            />
-          </div>
-          
-          <div className="col-span-3">
-            <Label htmlFor="price" className="text-xs text-gray-500">Valor Unitário</Label>
-            <Input
-              type="text"
-              id="price"
-              mask="price"
-              value={customPrice ? customPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
-              onChange={(e) => setCustomPrice(parsePrice(e.target.value))}
-              onKeyDown={handlePriceKeyDown}
-              ref={priceInputRef}
-              className="h-8 text-sm"
-            />
-          </div>
-          
-          <div className="col-span-2">
+          <div className="flex gap-1">
             <Button 
-              onClick={handleAddItem} 
-              className="w-full h-8 bg-sales-800 hover:bg-sales-700 text-white text-sm"
+              type="button" 
+              variant="outline" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={decrementQuantity}
             >
-              <Plus size={14} className="mr-1" /> Adicionar
+              <Minus size={16} />
             </Button>
-          </div>
-        </div>
-
-        <Dialog open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
-          <DialogContent className="sm:max-w-md">
-            <Command className="rounded-lg border shadow-md">
-              <CommandInput 
-                placeholder="Buscar produto por código, nome ou preço..." 
-                value={productSearch}
-                onValueChange={setProductSearch}
-                className="h-9"
-              />
-              <CommandList>
-                <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-                <CommandGroup heading="Produtos">
-                  {filteredProducts.map((product) => (
-                    <CommandItem
-                      key={product.id}
-                      value={product.id}
-                      onSelect={() => {
-                        setSelectedProduct(product);
-                        setProductInput(`${product.code} - ${product.name}`);
-                        setCustomPrice(product.price);
-                        setIsProductSearchOpen(false);
-                        setProductSearch('');
-                      }}
-                      className="cursor-pointer"
-                    >
-                      <span className="font-medium mr-2">{product.code || '—'}</span>
-                      <span className="flex-1">{product.name}</span>
-                      <span className="text-right text-muted-foreground">
-                        {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </DialogContent>
-        </Dialog>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="product">Produto</Label>
-          <div className="flex items-center gap-2">
             <Input
+              ref={quantityInputRef}
               type="text"
-              id="product"
-              placeholder="Digite o código do produto"
-              value={productInput}
-              onChange={handleProductInputChange}
-              onKeyDown={handleProductKeyDown}
-              className="w-full"
+              className="w-16 h-8 text-center text-sm"
+              value={quantity}
+              onChange={handleQuantityChange}
+              onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
             />
             <Button 
               type="button" 
               variant="outline" 
               size="icon" 
-              onClick={() => setIsProductSearchOpen(true)}
-              className="shrink-0"
+              className="h-8 w-8"
+              onClick={incrementQuantity}
             >
-              <Search size={18} />
+              <Plus size={16} />
             </Button>
-            {selectedProduct && (
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => {
-                  setSelectedProduct(null);
-                  setProductInput('');
-                  setCustomPrice(0);
-                }}
-                className="shrink-0"
-              >
-                <X size={18} />
-              </Button>
-            )}
           </div>
+          
+          <div>
+            <Input
+              ref={priceInputRef}
+              type="text"
+              className="w-24 h-8 text-sm"
+              value={price.toString()}
+              onChange={handlePriceChange}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
+            />
+          </div>
+          
+          <Button 
+            type="button"
+            className="h-8 bg-sales-800 hover:bg-sales-700"
+            disabled={!selectedProduct}
+            onClick={handleAddToOrder}
+          >
+            Adicionar
+          </Button>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="quantity">Quantidade</Label>
-          <Input
-            type="number"
-            id="quantity"
-            value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-            onKeyDown={handleQuantityKeyDown}
-            ref={quantityInputRef}
-            min="1"
-            className="w-full"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="price">Preço (R$)</Label>
-          <Input
-            type="text"
-            id="price"
-            mask="price"
-            value={customPrice ? customPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
-            onChange={(e) => setCustomPrice(parsePrice(e.target.value))}
-            onKeyDown={handlePriceKeyDown}
-            ref={priceInputRef}
-            className="w-full"
-          />
-        </div>
-        
-        <Button onClick={handleAddItem} className="w-full">
-          <Plus size={16} className="mr-2" /> Adicionar ao Pedido
-        </Button>
-        
-        {selectedProduct && (
-          <div className="p-3 bg-gray-50 rounded-md mt-4">
-            <p className="font-medium">{selectedProduct.name}</p>
-            <p className="text-sm text-gray-500">{selectedProduct.description}</p>
-            <div className="flex justify-between mt-1">
-              <p>Preço original:</p>
-              <p className="font-semibold">
-                {selectedProduct.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </p>
-            </div>
-            {customPrice !== selectedProduct.price && customPrice !== null && (
-              <div className="flex justify-between mt-1">
-                <p>Preço personalizado:</p>
-                <p className="font-semibold text-sales-700">
-                  {customPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
+      </div>
+    );
+  }
+  
+  // Default layout (not inline)
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
+        <Input
+          type="text"
+          className="pl-10"
+          placeholder="Buscar produto pelo nome ou código"
+          value={searchTerm}
+          onChange={handleSearch}
+          autoComplete="off"
+        />
+        {showResults && filteredProducts.length > 0 && (
+          <div 
+            ref={resultsRef}
+            className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
+          >
+            {filteredProducts.map(product => (
+              <div
+                key={product.id}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+                onClick={() => handleProductSelect(product)}
+              >
+                <span>{product.name}</span>
+                <span className="text-gray-600">
+                  {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
               </div>
-            )}
+            ))}
           </div>
         )}
       </div>
-
-      <Dialog open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
-        <DialogContent className="sm:max-w-md">
-          <Command className="rounded-lg border shadow-md">
-            <CommandInput 
-              placeholder="Buscar produto por código, nome ou preço..." 
-              value={productSearch}
-              onValueChange={setProductSearch}
-              className="h-9"
+      
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">Quantidade</label>
+          <div className="flex items-center">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="icon" 
+              className="h-10 w-10"
+              onClick={decrementQuantity}
+            >
+              <Minus size={18} />
+            </Button>
+            <Input
+              type="text"
+              className="mx-2 text-center"
+              value={quantity}
+              onChange={handleQuantityChange}
             />
-            <CommandList>
-              <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-              <CommandGroup heading="Produtos">
-                {filteredProducts.map((product) => (
-                  <CommandItem
-                    key={product.id}
-                    value={product.id}
-                    onSelect={() => {
-                      setSelectedProduct(product);
-                      setProductInput(`${product.code} - ${product.name}`);
-                      setCustomPrice(product.price);
-                      setIsProductSearchOpen(false);
-                      setProductSearch('');
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <span className="font-medium mr-2">{product.code || '—'}</span>
-                    <span className="flex-1">{product.name}</span>
-                    <span className="text-right text-muted-foreground">
-                      {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </DialogContent>
-      </Dialog>
-    </>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="icon" 
+              className="h-10 w-10"
+              onClick={incrementQuantity}
+            >
+              <Plus size={18} />
+            </Button>
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">Preço Unitário</label>
+          <Input
+            type="text"
+            value={price.toString()}
+            onChange={handlePriceChange}
+          />
+        </div>
+        
+        <div className="flex items-end">
+          <Button 
+            type="button" 
+            className="w-full bg-sales-800 hover:bg-sales-700"
+            disabled={!selectedProduct}
+            onClick={handleAddToOrder}
+          >
+            Adicionar ao Pedido
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

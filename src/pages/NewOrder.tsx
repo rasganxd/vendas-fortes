@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -194,6 +195,9 @@ export default function NewOrder() {
     try {
       setIsSubmitting(true);
       
+      // Get the selected payment table
+      const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
+      
       const orderData = {
         customerId: selectedCustomer.id,
         customerName: selectedCustomer.name,
@@ -207,6 +211,8 @@ export default function NewOrder() {
         createdAt: new Date(),
         status: "draft" as Order["status"],
       };
+      
+      console.log("Saving order with data:", orderData);
       
       let orderId;
       
@@ -304,6 +310,9 @@ export default function NewOrder() {
                 simplifiedView={true}
                 buttonRef={paymentTableRef}
                 onSelectComplete={() => productInputRef.current?.focus()}
+                customerId={selectedCustomer?.id}
+                customerName={selectedCustomer?.name}
+                orderTotal={calculateTotal()}
               />
             </div>
             
