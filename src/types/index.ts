@@ -97,6 +97,7 @@ export interface Load {
   items?: any[];
   status?: string;
   notes?: string;
+  locked?: boolean;
 }
 
 export interface SalesRep {

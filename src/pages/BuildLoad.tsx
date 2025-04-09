@@ -23,7 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Check, CheckSquare } from 'lucide-react';
+import { Plus, Search, Check, CheckSquare, Lock } from 'lucide-react';
 import { Order, OrderItem, LoadItem } from '@/types';
 import {
   Dialog,
@@ -81,7 +81,7 @@ const loadFormSchema = z.object({
 
 export default function BuildLoad() {
   const { orders } = useAppContext();
-  const { addLoad } = useLoads();
+  const { addLoad, getLockedOrderIds } = useLoads();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
@@ -89,11 +89,27 @@ export default function BuildLoad() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [buildLoadItems, setBuildLoadItems] = useState<BuildLoadItem[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [lockedOrderIds, setLockedOrderIds] = useState<string[]>([]);
 
+  // Obter IDs de pedidos bloqueados ao carregar o componente
+  useEffect(() => {
+    setLockedOrderIds(getLockedOrderIds());
+  }, [getLockedOrderIds]);
+
+  // Filtra os pedidos que não estão selecionados e não estão em cargas bloqueadas
   const filteredOrders = orders.filter(order =>
     (order.customerName.toLowerCase().includes(search.toLowerCase()) ||
     order.id.toLowerCase().includes(search.toLowerCase())) &&
-    !selectedOrderIds.includes(order.id)
+    !selectedOrderIds.includes(order.id) &&
+    !lockedOrderIds.includes(order.id)
+  );
+
+  // Pedidos que aparecem na lista mas estão bloqueados (para mostrar visualmente)
+  const blockedOrders = orders.filter(order =>
+    (order.customerName.toLowerCase().includes(search.toLowerCase()) ||
+    order.id.toLowerCase().includes(search.toLowerCase())) &&
+    !selectedOrderIds.includes(order.id) &&
+    lockedOrderIds.includes(order.id)
   );
 
   const handleOrderSelect = (order: Order, isChecked: boolean) => {
@@ -209,6 +225,7 @@ export default function BuildLoad() {
         notes: values.notes && values.notes.trim() !== '' ? values.notes : null,
         salesRepId: 'default-sales-rep-id',
         orderIds: uniqueOrderIds,
+        locked: false, // Nova carga começa desbloqueada
       };
       
       // Salvando a carga
@@ -283,6 +300,7 @@ export default function BuildLoad() {
                   </TableHead>
                   <TableHead>Pedido</TableHead>
                   <TableHead>Cliente</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -296,11 +314,28 @@ export default function BuildLoad() {
                     </TableCell>
                     <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
                     <TableCell>{order.customerName}</TableCell>
+                    <TableCell>Disponível</TableCell>
                   </TableRow>
                 ))}
-                {filteredOrders.length === 0 && (
+                {blockedOrders.map((order) => (
+                  <TableRow key={order.id} className="bg-gray-50">
+                    <TableCell>
+                      <div className="text-amber-600">
+                        <Lock size={16} />
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium text-gray-500">{order.id.substring(0, 8)}</TableCell>
+                    <TableCell className="text-gray-500">{order.customerName}</TableCell>
+                    <TableCell>
+                      <span className="text-amber-600 flex items-center gap-1">
+                        <Lock size={14} /> Bloqueado
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredOrders.length === 0 && blockedOrders.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-4">
+                    <TableCell colSpan={4} className="text-center py-4">
                       Não há pedidos disponíveis para seleção
                     </TableCell>
                   </TableRow>

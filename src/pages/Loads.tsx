@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -5,7 +6,7 @@ import { useLoads } from '@/hooks/useLoads';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Printer } from 'lucide-react';
+import { Plus, Printer, Lock } from 'lucide-react';
 import { Load } from '@/types';
 import { LoadCard } from '@/components/loads/LoadCard';
 import { EmptyLoads } from '@/components/loads/EmptyLoads';
@@ -166,7 +167,14 @@ export default function Loads() {
                 <Package size={14} />
                 <span>Status</span>
               </div>
-              <p>{selectedLoad ? getStatusBadge(selectedLoad.status) : ''}</p>
+              <div className="flex items-center gap-2">
+                <span>{selectedLoad ? getStatusBadge(selectedLoad.status) : ''}</span>
+                {selectedLoad?.locked && (
+                  <Badge variant="outline" className="border-yellow-500 text-yellow-700">
+                    <Lock className="h-3 w-3 mr-1" /> Bloqueada
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           
@@ -190,8 +198,8 @@ export default function Loads() {
             </div>
             <div className="p-3">
               <Accordion type="multiple" className="w-full text-sm">
-                {selectedLoad?.items.map((item) => (
-                  <AccordionItem key={item.id} value={item.id} className="border-b last:border-0">
+                {selectedLoad?.items?.map((item) => (
+                  <AccordionItem key={item.id} value={item.id || item.orderId} className="border-b last:border-0">
                     <AccordionTrigger className="py-2 px-2 hover:no-underline hover:bg-gray-50">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2">
@@ -220,7 +228,7 @@ export default function Loads() {
                             </tr>
                           </thead>
                           <tbody>
-                            {item.orderItems.map((orderItem) => (
+                            {item.orderItems?.map((orderItem) => (
                               <tr key={orderItem.id} className="border-t">
                                 <td className="py-1.5 px-2">{orderItem.productName}</td>
                                 <td className="py-1.5 px-2 text-right">{orderItem.quantity}</td>

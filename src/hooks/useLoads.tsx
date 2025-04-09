@@ -1,4 +1,3 @@
-
 import { Load, Order, OrderItem } from '@/types';
 import { loadService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
@@ -27,7 +26,8 @@ export const useLoads = () => {
         // Garantir que o orderIds seja um array único
         orderIds: load.orderIds ? Array.from(new Set(load.orderIds)) : [],
         status: load.status || 'planning',
-        date: load.date || new Date()
+        date: load.date || new Date(),
+        locked: load.locked || false // Default to unlocked
       };
       
       // Add to Firebase
@@ -78,6 +78,32 @@ export const useLoads = () => {
       toast({
         title: "Erro ao atualizar carregamento",
         description: "Houve um problema ao atualizar o carregamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleLoadLock = async (id: string, locked: boolean) => {
+    try {
+      // Update in Firebase
+      await loadService.update(id, { locked });
+      
+      // Update local state
+      setLoads(loads.map(l => 
+        l.id === id ? { ...l, locked } : l
+      ));
+      
+      toast({
+        title: locked ? "Carga bloqueada" : "Carga desbloqueada",
+        description: locked 
+          ? "Os pedidos desta carga não podem ser adicionados a outras cargas." 
+          : "Os pedidos desta carga agora podem ser adicionados a outras cargas."
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status de bloqueio da carga:", error);
+      toast({
+        title: "Erro ao atualizar carga",
+        description: "Houve um problema ao atualizar o status de bloqueio da carga.",
         variant: "destructive"
       });
     }
@@ -148,11 +174,27 @@ export const useLoads = () => {
     }));
   };
 
+  // Nova função para obter todos os IDs de pedidos em cargas bloqueadas
+  const getLockedOrderIds = (): string[] => {
+    const lockedLoads = loads.filter(load => load.locked);
+    const lockedOrderIds = new Set<string>();
+    
+    lockedLoads.forEach(load => {
+      if (load.orderIds) {
+        load.orderIds.forEach(orderId => lockedOrderIds.add(orderId));
+      }
+    });
+    
+    return Array.from(lockedOrderIds);
+  };
+
   return {
     loads,
     addLoad,
     updateLoad,
     deleteLoad,
-    getOrdersFromLoad
+    toggleLoadLock,
+    getOrdersFromLoad,
+    getLockedOrderIds
   };
 };
