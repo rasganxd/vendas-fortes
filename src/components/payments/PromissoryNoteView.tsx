@@ -24,6 +24,7 @@ export default function PromissoryNoteView({
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     documentTitle: `NotaPromissoria-${customerName}`,
+    removeAfterPrint: true,
   });
   
   // Define styles for printing
@@ -93,7 +94,7 @@ export default function PromissoryNoteView({
       <style>{printStyles}</style>
       
       <div className="mb-4 flex justify-end no-print">
-        <Button onClick={handlePrint} className="flex items-center gap-2">
+        <Button onClick={() => handlePrint()} className="flex items-center gap-2">
           <Printer size={16} /> Imprimir Nota Promissória
         </Button>
       </div>

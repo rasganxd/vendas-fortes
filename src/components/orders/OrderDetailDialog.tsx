@@ -34,6 +34,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     documentTitle: `Pedido-${selectedOrder?.customerName}`,
+    removeAfterPrint: true,
   });
 
   if (!selectedOrder) return null;
@@ -51,7 +52,11 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                 </Badge>
               )}
             </DialogTitle>
-            <Button variant="outline" onClick={handlePrint} className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => handlePrint()} 
+              className="flex items-center gap-2"
+            >
               <Printer size={16} /> Imprimir
             </Button>
           </div>

@@ -36,7 +36,7 @@ const DeleteOrderDialog: React.FC<DeleteOrderDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => onOpenChange(false)}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirmDelete} className="bg-red-600 hover:bg-red-700">
             Excluir
           </AlertDialogAction>
