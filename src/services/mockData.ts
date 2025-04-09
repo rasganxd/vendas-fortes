@@ -286,6 +286,7 @@ export const mockOrders: Order[] = mockCustomers.flatMap((customer) => {
       total: total,
       status: statuses[Math.floor(Math.random() * 3)],
       paymentStatus: paymentStatuses[Math.floor(Math.random() * 3)],
+      paymentMethod: "", // Adding default empty paymentMethod
       createdAt: randomRecentDate(),
       deliveryDate: randomFutureDate(),
       notes: Math.random() > 0.7 ? 'Observações especiais para este pedido' : undefined
@@ -324,10 +325,11 @@ const mockStops = mockOrders
       id: `stop-${order.id}`,
       orderId: order.id,
       customerName: customer.name,
-      address: customer.address,
-      city: customer.city,
-      state: customer.state,
-      zipCode: customer.zipCode,
+      address: customer.address || "",
+      city: customer.city || "",
+      state: customer.state || "",
+      zipCode: customer.zipCode || "",
+      position: index + 1, // Adding position since it's required
       sequence: index + 1,
       status: 'pending' as const,
       estimatedArrival: new Date(order.deliveryDate || randomFutureDate())
@@ -340,7 +342,7 @@ export const mockRoutes: DeliveryRoute[] = [
     id: 'route1',
     name: 'Rota Zona Sul - Segunda-feira',
     date: randomFutureDate(),
-    driverId: 'sr4',
+    salesRepId: 'sr4',
     driverName: 'Ana Costa',
     vehicleId: 'v1',
     vehicleName: 'Van 01',

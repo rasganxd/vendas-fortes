@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -131,7 +130,7 @@ export default function SideNav() {
       <SidebarHeader className="px-4 py-3 border-b">
         <h1 className="text-xl font-bold text-sales-800">SalesTrack</h1>
       </SidebarHeader>
-      <ScrollArea className="h-full" scrollHideDelay={0}>
+      <ScrollArea className="h-full">
         <SidebarContent className="py-2 px-2">
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (
@@ -145,7 +144,7 @@ export default function SideNav() {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild isActive={isActive} tooltip={item.title} size="sm">
                         <Link to={item.href} className="flex items-center px-4 py-1.5 text-sm font-medium">
-                          <Icon className="h-4 w-4 mr-3" />
+                          {Icon && <Icon className="h-4 w-4 mr-3" />}
                           <span className="truncate">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>

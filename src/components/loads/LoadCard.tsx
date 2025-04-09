@@ -54,7 +54,7 @@ export const LoadCard = ({ load, onView, onEdit, onDelete, onPrint }: LoadCardPr
         <div className="text-sm mb-3">
           <div className="flex justify-between mb-1">
             <span className="text-gray-500">Pedidos:</span>
-            <span className="font-medium">{load.items ? load.items.length : 0}</span>
+            <span className="font-medium">{load.items?.length || 0}</span>
           </div>
           <div className="flex justify-between mb-1">
             <span className="text-gray-500">Veículo:</span>

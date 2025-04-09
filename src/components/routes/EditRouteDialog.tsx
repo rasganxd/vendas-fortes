@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from '@/lib/utils';
 
+type RouteStatus = 'planning' | 'assigned' | 'in-progress' | 'completed';
+
 interface EditRouteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -38,7 +40,7 @@ interface EditRouteDialogProps {
 
 export const EditRouteDialog = ({ open, onOpenChange, route, vehicles, onSave }: EditRouteDialogProps) => {
   const [name, setName] = useState('');
-  const [status, setStatus] = useState<'planning' | 'assigned' | 'in-progress' | 'completed'>('planning');
+  const [status, setStatus] = useState<RouteStatus>('planning');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [vehicleId, setVehicleId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,11 +49,30 @@ export const EditRouteDialog = ({ open, onOpenChange, route, vehicles, onSave }:
   useEffect(() => {
     if (route && open) {
       setName(route.name);
-      setStatus(route.status);
+      // Map any route status to one of our acceptable values
+      const mappedStatus = mapRouteStatus(route.status);
+      setStatus(mappedStatus);
       setDate(route.date);
       setVehicleId(route.vehicleId || '');
     }
   }, [route, open]);
+  
+  // Helper function to map route statuses
+  const mapRouteStatus = (routeStatus: string): RouteStatus => {
+    switch (routeStatus) {
+      case 'planning':
+        return 'planning';
+      case 'assigned':
+        return 'assigned';
+      case 'in-progress':
+      case 'in_progress':
+        return 'in-progress';
+      case 'completed':
+        return 'completed';
+      default:
+        return 'planning';
+    }
+  };
   
   const handleSave = async () => {
     if (!route) return;
@@ -98,7 +119,10 @@ export const EditRouteDialog = ({ open, onOpenChange, route, vehicles, onSave }:
           
           <div className="grid gap-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(value: 'planning' | 'assigned' | 'in-progress' | 'completed') => setStatus(value)}>
+            <Select 
+              value={status} 
+              onValueChange={(value: RouteStatus) => setStatus(value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o status" />
               </SelectTrigger>

@@ -1,3 +1,4 @@
+
 import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle } from '@/types';
 
 // Mock Customers
@@ -105,6 +106,7 @@ export const mockOrders: Order[] = [
     total: 887.50,
     status: "confirmed",
     paymentStatus: "pending",
+    paymentMethod: "",
     createdAt: new Date("2023-04-10"),
     deliveryDate: new Date("2023-04-15"),
     deliveryAddress: "Av. Paulista, 1000",
@@ -131,6 +133,7 @@ export const mockOrders: Order[] = [
     total: 465.00,
     status: "confirmed",
     paymentStatus: "pending",
+    paymentMethod: "",
     createdAt: new Date("2023-04-12"),
     deliveryDate: new Date("2023-04-17"),
     deliveryAddress: "Rua Augusta, 500",
@@ -179,6 +182,7 @@ export const mockRoutes: DeliveryRoute[] = [
         city: "São Paulo",
         state: "SP",
         zipCode: "01310-100",
+        position: 1,
         sequence: 1,
         status: "pending",
         estimatedArrival: new Date("2023-04-15T09:00:00")
@@ -201,6 +205,7 @@ export const mockRoutes: DeliveryRoute[] = [
         city: "São Paulo",
         state: "SP",
         zipCode: "01305-000",
+        position: 1,
         sequence: 1,
         status: "pending",
         estimatedArrival: new Date("2023-04-17T14:00:00")

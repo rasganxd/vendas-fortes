@@ -88,6 +88,7 @@ export const useRoutesPage = () => {
       state: customer.state,
       zipCode: customer.zipCode,
       position: selectedRoute.stops.length + 1,
+      sequence: selectedRoute.stops.length + 1,
       status: 'pending'
     };
 
@@ -128,7 +129,7 @@ export const useRoutesPage = () => {
       date: date,
       vehicleId: vehicleId,
       vehicleName: selectedVehicle ? selectedVehicle.name : undefined,
-      status: 'planned',
+      status: 'planning', // Use 'planning' status
       stops: []
     };
 
@@ -149,7 +150,7 @@ export const useRoutesPage = () => {
     
     const assignedOrderIds = selectedRoute.stops.map(stop => stop.orderId);
     return orders.filter(order => {
-      if (!order.status) return false;
+      if (order.status === undefined) return false;
       return !assignedOrderIds.includes(order.id) && 
         (order.status === 'confirmed' || order.status === 'draft');
     });

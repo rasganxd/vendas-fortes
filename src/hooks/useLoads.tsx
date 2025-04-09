@@ -102,6 +102,8 @@ export const useLoads = () => {
 
   // Função auxiliar para extrair ordens de uma carga
   const getOrdersFromLoad = (load: Load): Order[] => {
+    if (!load.items) return [];
+    
     return load.items.map(item => {
       // Cria um array de OrderItems com os tipos corretos
       const orderItems: OrderItem[] = item.orderItems.map(orderItem => ({
@@ -124,7 +126,8 @@ export const useLoads = () => {
         salesRepId: "",
         salesRepName: "",
         status: "delivered" as const,
-        paymentStatus: "paid" as const
+        paymentStatus: "paid" as const,
+        paymentMethod: "" // Add default empty paymentMethod
       };
     });
   };

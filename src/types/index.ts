@@ -42,7 +42,7 @@ export interface Order {
   customerName: string;
   items: OrderItem[];
   total: number;
-  paymentMethod: string;
+  paymentMethod?: string; // Making this optional to fix the errors
   paymentStatus: 'pending' | 'partial' | 'paid';
   createdAt: Date;
   status: 'draft' | 'confirmed' | 'delivered' | 'cancelled';
@@ -66,7 +66,7 @@ export interface Payment {
   amount: number;
   paymentMethod?: string;
   method?: 'cash' | 'credit' | 'debit' | 'transfer' | 'check';
-  status?: 'pending' | 'completed';
+  status?: 'pending' | 'completed' | 'failed';
   date?: Date;
   paymentDate?: Date;
   notes?: string;
@@ -77,6 +77,14 @@ export interface Route {
   name: string;
   salesRepId: string;
   customerIds: string[];
+}
+
+export interface LoadItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  orderId?: string;
+  orderItems?: OrderItem[]; // Adding this for compatibility
 }
 
 export interface Load {
@@ -207,10 +215,4 @@ export interface Backup {
     salesReps?: SalesRep[];
     vehicles?: Vehicle[];
   };
-}
-
-export interface LoadItem {
-  productId: string;
-  productName: string;
-  quantity: number;
 }

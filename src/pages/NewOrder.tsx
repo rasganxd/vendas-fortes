@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -11,7 +10,6 @@ import { Save, FileText } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Order, OrderItem, Product, Customer, SalesRep } from '@/types';
 
-// Import our components
 import CustomerSearchInput from '@/components/orders/CustomerSearchInput';
 import SalesRepSearchInput from '@/components/orders/SalesRepSearchInput';
 import ProductSearchInput from '@/components/orders/ProductSearchInput';
@@ -26,7 +24,6 @@ export default function NewOrder() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Refs for input fields to enable Enter key navigation
   const salesRepInputRef = useRef<HTMLInputElement>(null);
   const customerInputRef = useRef<HTMLInputElement>(null);
   const paymentTableRef = useRef<HTMLButtonElement>(null);
@@ -39,18 +36,15 @@ export default function NewOrder() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   
-  // Payment related states
   const [paymentMethod, setPaymentMethod] = useState('');
   const [selectedPaymentTable, setSelectedPaymentTable] = useState('');
 
-  // Recent purchases dialog state
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
 
   useEffect(() => {
     console.log("Available payment tables:", paymentTables);
   }, [paymentTables]);
 
-  // Effect to check for order ID in URL and load order data
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const orderId = params.get('id');
@@ -63,19 +57,16 @@ export default function NewOrder() {
         setIsEditMode(true);
         setCurrentOrderId(orderId);
         
-        // Set customer
         const customer = customers.find(c => c.id === orderToEdit.customerId);
         if (customer) {
           setSelectedCustomer(customer);
         }
         
-        // Set sales rep
         const salesRep = salesReps.find(s => s.id === orderToEdit.salesRepId);
         if (salesRep) {
           setSelectedSalesRep(salesRep);
         }
         
-        // Set order items
         setOrderItems(orderToEdit.items.map(item => ({
           ...item,
           productId: item.productId,
@@ -85,7 +76,6 @@ export default function NewOrder() {
           total: item.total
         })));
         
-        // Set payment info
         if (orderToEdit.paymentMethod) {
           setPaymentMethod(orderToEdit.paymentMethod);
         }
@@ -189,18 +179,19 @@ export default function NewOrder() {
         customerId: selectedCustomer.id,
         customerName: selectedCustomer.name,
         salesRepId: selectedSalesRep.id,
+        salesRepName: selectedSalesRep.name,
         items: orderItems as OrderItem[],
         total: calculateTotal(),
         paymentStatus: "pending" as Order["paymentStatus"],
-        paymentMethod: paymentMethod || undefined,
+        paymentMethod: paymentMethod || "",
         paymentTableId: selectedPaymentTable || undefined,
         createdAt: new Date(),
+        status: "draft" as Order["status"],
       };
       
       let orderId;
       
       if (isEditMode && currentOrderId) {
-        // Update existing order
         await updateOrder(currentOrderId, orderData);
         orderId = currentOrderId;
         
@@ -209,7 +200,6 @@ export default function NewOrder() {
           description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
         });
       } else {
-        // Create new order
         orderId = await addOrder(orderData);
         
         if (orderId) {
@@ -243,7 +233,7 @@ export default function NewOrder() {
     return orders
       .filter(order => order.customerId === selectedCustomer.id)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 10); // Get the 10 most recent orders
+      .slice(0, 10);
   };
 
   const handleViewRecentPurchases = () => {
@@ -261,9 +251,7 @@ export default function NewOrder() {
     <PageLayout title={isEditMode ? "Edição de Pedido" : "Digitação de Pedidos"}>
       <div className="bg-white border rounded-md p-6 mb-4">
         <div className="grid grid-cols-12 gap-x-4 gap-y-6">
-          {/* Left column - Header information */}
           <div className="col-span-8 grid grid-cols-1 gap-y-4">
-            {/* Sales Rep */}
             <div>
               <SalesRepSearchInput
                 salesReps={salesReps}
@@ -275,7 +263,6 @@ export default function NewOrder() {
               />
             </div>
             
-            {/* Customer */}
             <div>
               <CustomerSearchInput 
                 customers={customers}
@@ -288,7 +275,6 @@ export default function NewOrder() {
               />
             </div>
             
-            {/* Payment Table */}
             <div>
               <PaymentOptionsInput
                 paymentTables={paymentTables}
@@ -302,7 +288,6 @@ export default function NewOrder() {
               />
             </div>
             
-            {/* Product entry section */}
             <div>
               <ProductSearchInput
                 products={products}
@@ -313,7 +298,6 @@ export default function NewOrder() {
             </div>
           </div>
           
-          {/* Right column - Action buttons */}
           <div className="col-span-4 grid grid-cols-1 gap-2">
             <Button 
               variant="outline" 
@@ -334,7 +318,6 @@ export default function NewOrder() {
         </div>
       </div>
       
-      {/* Items Table Card */}
       <Card>
         <CardContent className="p-0">
           <OrderItemsTable 
