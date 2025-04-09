@@ -5,14 +5,11 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { useLoads } from '@/hooks/useLoads';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plus, Search } from 'lucide-react';
+import { Order, OrderItem, LoadItem } from '@/types';
+import { toast } from "@/components/ui/use-toast";
 import {
   Card,
   CardContent,
@@ -20,36 +17,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Plus, Search, Check, CheckSquare, Lock } from 'lucide-react';
-import { Order, OrderItem, LoadItem } from '@/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Switch } from "@/components/ui/switch"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "@/components/ui/use-toast"
 
-interface BuildLoadItem {
+// Import the extracted components
+import BuildLoadOrdersTable from '@/components/loads/BuildLoadOrdersTable';
+import LoadItemsTable from '@/components/loads/LoadItemsTable';
+import CreateLoadDialog from '@/components/loads/CreateLoadDialog';
+
+// Define the BuildLoadItem type here since it's specific to this page
+export interface BuildLoadItem {
   id: string;
   orderId: string;
   productId: string;
@@ -57,14 +32,6 @@ interface BuildLoadItem {
   quantity: number;
   status: 'pending' | 'loaded' | 'delivered';
 }
-
-const loadFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Nome deve ter pelo menos 2 caracteres.",
-  }),
-  notes: z.string().optional(),
-  includePending: z.boolean().default(false).optional(),
-})
 
 export default function BuildLoad() {
   const { orders } = useAppContext();
@@ -159,16 +126,7 @@ export default function BuildLoad() {
     setSelectedOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
   };
 
-  const form = useForm<z.infer<typeof loadFormSchema>>({
-    resolver: zodResolver(loadFormSchema),
-    defaultValues: {
-      name: "",
-      notes: "",
-      includePending: false,
-    },
-  })
-
-  const handleCreateLoad = async (values: z.infer<typeof loadFormSchema>) => {
+  const handleCreateLoad = async (values: any) => {
     try {
       const uniqueOrderIds = Array.from(new Set(selectedOrders.map(order => order.id)));
       
@@ -256,63 +214,14 @@ export default function BuildLoad() {
             </div>
           </div>
           <div className="relative overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
-                    <div className="flex items-center">
-                      <Checkbox 
-                        checked={selectAll && filteredOrders.length > 0} 
-                        onCheckedChange={handleSelectAll}
-                        disabled={filteredOrders.length === 0}
-                      />
-                      <span className="ml-2">Todos</span>
-                    </div>
-                  </TableHead>
-                  <TableHead>Pedido</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <Checkbox 
-                        checked={selectedOrderIds.includes(order.id)}
-                        onCheckedChange={(checked) => handleOrderSelect(order, !!checked)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
-                    <TableCell>Disponível</TableCell>
-                  </TableRow>
-                ))}
-                {blockedOrders.map((order) => (
-                  <TableRow key={order.id} className="bg-gray-50">
-                    <TableCell>
-                      <div className="text-amber-600">
-                        <Lock size={16} />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium text-gray-500">{order.id.substring(0, 8)}</TableCell>
-                    <TableCell className="text-gray-500">{order.customerName}</TableCell>
-                    <TableCell>
-                      <span className="text-amber-600 flex items-center gap-1">
-                        <Lock size={14} /> Bloqueado
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredOrders.length === 0 && blockedOrders.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">
-                      Não há pedidos disponíveis para seleção
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            <BuildLoadOrdersTable 
+              filteredOrders={filteredOrders}
+              selectedOrderIds={selectedOrderIds}
+              handleOrderSelect={handleOrderSelect}
+              selectAll={selectAll}
+              handleSelectAll={handleSelectAll}
+              blockedOrders={blockedOrders}
+            />
           </div>
         </CardContent>
       </Card>
@@ -326,96 +235,19 @@ export default function BuildLoad() {
                 Lista de itens adicionados à carga
               </CardDescription>
             </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-sales-800 hover:bg-sales-700" disabled={buildLoadItems.length === 0}>
-                  <Plus size={16} className="mr-2" /> Criar Carga
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Criar Carga</DialogTitle>
-                  <DialogDescription>
-                    Preencha os detalhes da carga.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleCreateLoad)} className="space-y-8">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome da Carga</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome da Carga" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Observações</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Observações sobre a carga"
-                              className="resize-none"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="bg-sales-800 hover:bg-sales-700">Criar Carga</Button>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+            <CreateLoadDialog
+              isOpen={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
+              onCreateLoad={handleCreateLoad}
+              isDisabled={buildLoadItems.length === 0}
+            />
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pedido</TableHead>
-                <TableHead>Produto</TableHead>
-                <TableHead>Quantidade</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {buildLoadItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.orderId.substring(0, 8)}</TableCell>
-                  <TableCell>{item.productName}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveFromLoad(item.orderId)}
-                      >
-                        Remover
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {buildLoadItems.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4">
-                    Nenhum item adicionado à carga
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <LoadItemsTable 
+            items={buildLoadItems}
+            handleRemoveFromLoad={handleRemoveFromLoad}
+          />
         </CardContent>
       </Card>
     </PageLayout>
