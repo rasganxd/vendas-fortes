@@ -153,7 +153,11 @@ export default function SideNav() {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild isActive={isActive} tooltip={item.title} size="sm">
                         <Link to={item.href} className="flex items-center px-4 py-1.5 text-sm font-medium">
-                          {IconComponent && <IconComponent className="h-4 w-4 mr-3" />}
+                          {IconComponent && (
+                            <div className="mr-3">
+                              <IconComponent size={16} />
+                            </div>
+                          )}
                           <span className="truncate">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
