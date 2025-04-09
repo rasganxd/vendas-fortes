@@ -24,6 +24,10 @@ export const useLoads = () => {
         // Convert empty strings or undefined to null since Firestore accepts null values
         vehicleName: load.vehicleName || null,
         notes: load.notes || null,
+        // Garantir que o orderIds seja um array único
+        orderIds: load.orderIds ? Array.from(new Set(load.orderIds)) : [],
+        status: load.status || 'planning',
+        date: load.date || new Date()
       };
       
       // Add to Firebase
@@ -104,32 +108,44 @@ export const useLoads = () => {
   const getOrdersFromLoad = (load: Load): Order[] => {
     if (!load.items) return [];
     
-    return load.items.map(item => {
-      // Cria um array de OrderItems com os tipos corretos
-      const orderItems: OrderItem[] = item.orderItems.map(orderItem => ({
-        id: orderItem.id,
-        productId: orderItem.productId,
-        productName: orderItem.productName,
-        quantity: orderItem.quantity,
-        unitPrice: orderItem.unitPrice || 0,
-        total: orderItem.quantity * (orderItem.unitPrice || 0)
-      }));
-      
-      // Retorna um objeto Order completo
-      return {
-        id: item.orderId,
-        customerName: "Cliente não especificado", // LoadItem não tem customerName
-        customerId: "",  // Campo obrigatório para Order
-        createdAt: new Date(), // LoadItem não tem orderDate
-        total: 0, // LoadItem não tem orderTotal
-        items: orderItems,
-        salesRepId: "",
-        salesRepName: "",
-        status: "delivered" as const,
-        paymentStatus: "paid" as const,
-        paymentMethod: "" // Add default empty paymentMethod
-      };
+    // Agrupar itens por orderId para evitar duplicações
+    const orderItemsMap = new Map<string, OrderItem[]>();
+    
+    load.items.forEach(item => {
+      if (item.orderId) {
+        if (!orderItemsMap.has(item.orderId)) {
+          orderItemsMap.set(item.orderId, []);
+        }
+        
+        const orderItem: OrderItem = {
+          id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: (item.orderItems && item.orderItems[0]?.unitPrice) || 0,
+          total: (item.orderItems && item.orderItems[0]?.unitPrice) 
+            ? item.quantity * item.orderItems[0].unitPrice
+            : 0
+        };
+        
+        orderItemsMap.get(item.orderId)?.push(orderItem);
+      }
     });
+    
+    // Converter o mapa em array de pedidos
+    return Array.from(orderItemsMap.entries()).map(([orderId, items]) => ({
+      id: orderId,
+      customerName: "Cliente não especificado",
+      customerId: "",
+      createdAt: new Date(),
+      total: items.reduce((sum, item) => sum + item.total, 0),
+      items: items,
+      salesRepId: "",
+      salesRepName: "",
+      status: "delivered" as const,
+      paymentStatus: "paid" as const,
+      paymentMethod: ""
+    }));
   };
 
   return {

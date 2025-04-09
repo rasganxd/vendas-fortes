@@ -1,6 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useLoads } from '@/hooks/useLoads';
+import { useNavigate } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import {
   Table,
@@ -20,7 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Check } from 'lucide-react';
 import { Order, OrderItem, LoadItem } from '@/types';
 import {
   Dialog,
@@ -52,6 +55,8 @@ import {
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "@/components/ui/use-toast"
 
 interface BuildLoadItem {
   id: string;
@@ -76,47 +81,59 @@ const loadFormSchema = z.object({
 
 export default function BuildLoad() {
   const { orders } = useAppContext();
+  const { addLoad } = useLoads();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [buildLoadItems, setBuildLoadItems] = useState<BuildLoadItem[]>([]);
 
   const filteredOrders = orders.filter(order =>
-    order.customerName.toLowerCase().includes(search.toLowerCase()) ||
-    order.id.toLowerCase().includes(search.toLowerCase())
+    (order.customerName.toLowerCase().includes(search.toLowerCase()) ||
+    order.id.toLowerCase().includes(search.toLowerCase())) &&
+    !selectedOrderIds.includes(order.id)
   );
 
-  // Função para transformar OrderItems em LoadItems
-  const mapOrderItemsToLoadItems = (orderItems: OrderItem[], orderId: string): BuildLoadItem[] => {
-    return orderItems.map((item) => ({
-      id: uuid(),
-      orderId: orderId,
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      status: 'pending'
-    }));
+  const handleOrderSelect = (order: Order, isChecked: boolean) => {
+    if (isChecked) {
+      if (!selectedOrderIds.includes(order.id)) {
+        setSelectedOrderIds(prev => [...prev, order.id]);
+      }
+    } else {
+      setSelectedOrderIds(prev => prev.filter(id => id !== order.id));
+    }
   };
 
-  const handleOrderSelect = (order: Order) => {
-    setSelectedOrder(order);
-  };
+  const handleAddSelectedOrders = () => {
+    if (selectedOrderIds.length === 0) {
+      toast({
+        title: "Nenhum pedido selecionado",
+        description: "Selecione pelo menos um pedido para adicionar à carga.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  const handleAddToLoad = () => {
-    if (!selectedOrder) return;
-
-    const newLoadItems: BuildLoadItem[] = selectedOrder.items.flatMap(item => ({
-      id: uuid(),
-      orderId: selectedOrder.id,
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      status: 'pending'
-    }));
+    const ordersToAdd = orders.filter(order => selectedOrderIds.includes(order.id));
+    
+    const newLoadItems: BuildLoadItem[] = [];
+    ordersToAdd.forEach(order => {
+      order.items.forEach(item => {
+        newLoadItems.push({
+          id: uuid(),
+          orderId: order.id,
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          status: 'pending'
+        });
+      });
+    });
 
     setBuildLoadItems(prevItems => [...prevItems, ...newLoadItems]);
-    setSelectedOrders(prevOrders => [...prevOrders, selectedOrder]);
+    setSelectedOrders(prevOrders => [...prevOrders, ...ordersToAdd]);
+    setSelectedOrderIds([]);
   };
 
   const handleRemoveFromLoad = (orderId: string) => {
@@ -136,38 +153,64 @@ export default function BuildLoad() {
   })
 
   const handleCreateLoad = async (values: z.infer<typeof loadFormSchema>) => {
-    // Aqui você pode processar os dados do formulário e os itens de carga
-    console.log("Dados do formulário:", values);
-    console.log("Itens de carga:", buildLoadItems);
+    try {
+      // Agrupamos os itens pela ordem para evitar duplicações
+      const uniqueOrderIds = Array.from(new Set(selectedOrders.map(order => order.id)));
+      
+      const loadItems: LoadItem[] = [];
+      
+      // Para cada ID de pedido único, adicionamos os itens do pedido
+      uniqueOrderIds.forEach(orderId => {
+        const order = selectedOrders.find(o => o.id === orderId);
+        if (order) {
+          order.items.forEach(item => {
+            loadItems.push({
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.quantity,
+              orderId: order.id,
+              // Adicionamos orderItems para compatibilidade
+              orderItems: [item]
+            });
+          });
+        }
+      });
 
-    const loadItems: LoadItem[] = selectedOrders.flatMap(order => 
-      order.items.map(item => ({
-        productId: item.productId,
-        productName: item.productName,
-        quantity: item.quantity,
-        orderId: order.id
-      }))
-    );
-
-    const newLoad = {
-      name: values.name,
-      vehicleName: values.vehicleName,
-      vehicleId: values.vehicleName || 'default-vehicle-id', // Usando vehicleName como ID temporário se disponível
-      date: values.date,
-      items: loadItems,
-      status: 'planning' as const,
-      notes: values.notes && values.notes.trim() !== '' ? values.notes : null,
-      salesRepId: 'default-sales-rep-id',
-      orderIds: selectedOrderIds,
-    };
+      const newLoad = {
+        name: values.name,
+        vehicleName: values.vehicleName,
+        vehicleId: values.vehicleName, // Usando vehicleName como ID temporário
+        date: values.date,
+        items: loadItems,
+        status: 'planning' as const,
+        notes: values.notes && values.notes.trim() !== '' ? values.notes : null,
+        salesRepId: 'default-sales-rep-id',
+        orderIds: uniqueOrderIds,
+      };
+      
+      // Salvando a carga
+      const loadId = await addLoad(newLoad);
+      
+      if (loadId) {
+        toast({
+          title: "Carga criada com sucesso",
+          description: "A carga foi salva no sistema."
+        });
+        
+        // Redirecionando para a página de cargas
+        navigate('/cargas');
+      }
+    } catch (error) {
+      console.error("Erro ao criar carga:", error);
+      toast({
+        title: "Erro ao criar carga",
+        description: "Houve um problema ao salvar a carga.",
+        variant: "destructive"
+      });
+    }
     
-    console.log("New Load", newLoad)
-
-    // Aqui você pode adicionar a lógica para salvar a carga no banco de dados ou realizar outras ações necessárias
     setIsCreateDialogOpen(false);
   };
-
-  const selectedOrderIds = selectedOrders.map(order => order.id);
 
   return (
     <PageLayout title="Montar Carga">
@@ -180,6 +223,13 @@ export default function BuildLoad() {
                 Adicione pedidos à carga
               </CardDescription>
             </div>
+            <Button 
+              className="bg-sales-800 hover:bg-sales-700" 
+              onClick={handleAddSelectedOrders}
+              disabled={selectedOrderIds.length === 0}
+            >
+              <Plus size={16} className="mr-2" /> Adicionar Selecionados
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -198,55 +248,34 @@ export default function BuildLoad() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">Selecionar</TableHead>
                   <TableHead>Pedido</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOrderSelect(order)}
-                        >
-                          Selecionar
-                        </Button>
-                      </div>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedOrderIds.includes(order.id)}
+                        onCheckedChange={(checked) => handleOrderSelect(order, !!checked)}
+                      />
                     </TableCell>
+                    <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
                   </TableRow>
                 ))}
+                {filteredOrders.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-4">
+                      Não há pedidos disponíveis para seleção
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
-          {selectedOrder && (
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold">Pedido Selecionado: {selectedOrder.id}</h3>
-              <p>Cliente: {selectedOrder.customerName}</p>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Quantidade</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedOrder.items.map((item) => (
-                    <TableRow key={item.productId}>
-                      <TableCell>{item.productName}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Button className="mt-2 bg-sales-800 hover:bg-sales-700" onClick={handleAddToLoad}>Adicionar à Carga</Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -330,9 +359,6 @@ export default function BuildLoad() {
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
-                                disabled={(date) =>
-                                  date > new Date()
-                                }
                                 initialFocus
                               />
                             </PopoverContent>
@@ -378,7 +404,7 @@ export default function BuildLoad() {
             <TableBody>
               {buildLoadItems.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.orderId}</TableCell>
+                  <TableCell className="font-medium">{item.orderId.substring(0, 8)}</TableCell>
                   <TableCell>{item.productName}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
                   <TableCell className="text-right">
@@ -394,6 +420,13 @@ export default function BuildLoad() {
                   </TableCell>
                 </TableRow>
               ))}
+              {buildLoadItems.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4">
+                    Nenhum item adicionado à carga
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
