@@ -147,13 +147,13 @@ export default function SideNav() {
                 <h3 className="text-xs uppercase font-medium text-gray-500 px-4 mb-1">{groupLabels[group] || group}</h3>
                 {items.map((item) => {
                   const isActive = location.pathname === item.href;
-                  const Icon = item.icon;
+                  const IconComponent = item.icon;
                   
                   return (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild isActive={isActive} tooltip={item.title} size="sm">
                         <Link to={item.href} className="flex items-center px-4 py-1.5 text-sm font-medium">
-                          {Icon && <Icon className="h-4 w-4 mr-3" />}
+                          {IconComponent && <IconComponent className="h-4 w-4 mr-3" />}
                           <span className="truncate">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
