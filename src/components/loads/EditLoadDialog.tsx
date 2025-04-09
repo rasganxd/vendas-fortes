@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -6,10 +5,7 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogFooter,
-  DialogTabs,
-  DialogTabsList,
-  DialogTabsTrigger,
-  DialogTabsContent
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -135,7 +131,6 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
     ordersToAdd.forEach(order => {
       order.items.forEach(item => {
         newLoadItems.push({
-          id: uuid(),
           orderId: order.id,
           productId: item.productId,
           productName: item.productName,

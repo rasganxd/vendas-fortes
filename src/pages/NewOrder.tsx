@@ -50,6 +50,7 @@ export default function NewOrder() {
     const orderId = params.get('id');
     
     if (orderId) {
+      console.log("Getting order with ID:", orderId);
       const orderToEdit = getOrderById(orderId);
       
       if (orderToEdit) {
@@ -57,16 +58,25 @@ export default function NewOrder() {
         setIsEditMode(true);
         setCurrentOrderId(orderId);
         
+        // Find and set customer
         const customer = customers.find(c => c.id === orderToEdit.customerId);
         if (customer) {
+          console.log("Setting customer:", customer);
           setSelectedCustomer(customer);
+        } else {
+          console.warn("Customer not found for ID:", orderToEdit.customerId);
         }
         
+        // Find and set sales rep
         const salesRep = salesReps.find(s => s.id === orderToEdit.salesRepId);
         if (salesRep) {
+          console.log("Setting sales rep:", salesRep);
           setSelectedSalesRep(salesRep);
+        } else {
+          console.warn("Sales rep not found for ID:", orderToEdit.salesRepId);
         }
         
+        // Set order items
         setOrderItems(orderToEdit.items.map(item => ({
           ...item,
           productId: item.productId,
@@ -76,10 +86,12 @@ export default function NewOrder() {
           total: item.total
         })));
         
+        // Set payment method
         if (orderToEdit.paymentMethod) {
           setPaymentMethod(orderToEdit.paymentMethod);
         }
         
+        // Set payment table
         if (orderToEdit.paymentTableId) {
           setSelectedPaymentTable(orderToEdit.paymentTableId);
         }
@@ -88,9 +100,16 @@ export default function NewOrder() {
           title: "Pedido carregado",
           description: `Editando pedido ${orderId.substring(0, 6)}`
         });
+      } else {
+        console.error("Order not found for ID:", orderId);
+        toast({
+          title: "Pedido não encontrado",
+          description: "O pedido solicitado não foi encontrado.",
+          variant: "destructive"
+        });
       }
     }
-  }, [location, getOrderById, customers, salesReps]);
+  }, [location.search, getOrderById, customers, salesReps]);
 
   const handleAddItem = (product: Product, quantity: number, price: number) => {
     const existingItem = orderItems.find(item => item.productId === product.id);

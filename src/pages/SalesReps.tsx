@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppContext } from '@/hooks/useAppContext';
+import { useSalesReps } from '@/hooks/useSalesReps';
 import PageLayout from '@/components/layout/PageLayout';
 import {
   Table,
@@ -55,7 +55,7 @@ interface FormErrors {
 }
 
 export default function SalesReps() {
-  const { salesReps, addSalesRep, updateSalesRep, deleteSalesRep } = useAppContext();
+  const { salesReps, addSalesRep, updateSalesRep, deleteSalesRep, generateNextCode } = useSalesReps();
   const [search, setSearch] = useState('');
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -109,10 +109,8 @@ export default function SalesReps() {
   };
 
   const handleNewSalesRep = () => {
-    // Generate next available code like we do for customers
-    const nextCode = salesReps.length > 0 
-      ? Math.max(...salesReps.map(rep => rep.code || 0)) + 1 
-      : 1;
+    // Generate next available code
+    const nextCode = generateNextCode();
 
     setNewSalesRep({
       code: nextCode,
