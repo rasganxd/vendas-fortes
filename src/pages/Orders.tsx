@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -52,16 +51,15 @@ import { Order, Customer } from '@/types';
 import { useReactToPrint } from 'react-to-print';
 import { Checkbox } from '@/components/ui/checkbox';
 
-// CSS for two-column printing
 const printStyles = `
 @media print {
   .print-order {
-    width: 50%;
-    float: left;
+    width: 100%;
     padding: 10px;
     page-break-inside: avoid;
     box-sizing: border-box;
     font-size: 0.9rem;
+    margin-bottom: 20px;
   }
   
   .print-order table {
@@ -79,14 +77,21 @@ const printStyles = `
   }
   
   .print-footer {
-    clear: both;
     padding-top: 20px;
     text-align: center;
   }
   
   .print-page-break {
-    clear: both;
     page-break-after: always;
+    margin-bottom: 20px;
+  }
+  
+  .no-print {
+    display: none;
+  }
+  
+  button, .no-print {
+    display: none;
   }
 }`;
 
@@ -118,10 +123,7 @@ export default function Orders() {
   });
 
   const filteredOrders = orders.filter(order => {
-    // Filter by archived status
     if (!showArchived && order.archived) return false;
-    
-    // Filter by search term
     return order.customerName.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
   });
@@ -172,10 +174,8 @@ export default function Orders() {
   
   const handleSelectAllOrders = () => {
     if (selectedOrderIds.length === filteredOrders.length) {
-      // If all are selected, deselect all
       setSelectedOrderIds([]);
     } else {
-      // Otherwise, select all
       setSelectedOrderIds(filteredOrders.map(order => order.id));
     }
   };
@@ -190,7 +190,6 @@ export default function Orders() {
     }
   };
 
-  // Format currency safely
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined || value === null) return 'R$ 0,00';
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -198,7 +197,6 @@ export default function Orders() {
 
   return (
     <PageLayout title="Pedidos">
-      {/* Add print styles to the DOM */}
       <style>{printStyles}</style>
       
       <Card>
@@ -326,7 +324,6 @@ export default function Orders() {
         </CardContent>
       </Card>
 
-      {/* View Order Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
@@ -429,7 +426,6 @@ export default function Orders() {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Order Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -448,7 +444,6 @@ export default function Orders() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Print Orders Dialog */}
       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
@@ -509,91 +504,91 @@ export default function Orders() {
             </Button>
           </div>
           
-          {/* Hidden div for bulk printing - Updated for 2 orders per page */}
           <div className="hidden">
             <div ref={bulkPrintRef} className="p-4">
               {getOrdersBySelection().map((order, orderIndex) => {
                 const orderCustomer = customers.find(c => c.id === order.customerId);
                 
-                // Create page breaks after every 2 orders
                 const needsPageBreak = (orderIndex + 1) % 2 === 0 && orderIndex < getOrdersBySelection().length - 1;
                 
                 return (
-                  <div key={order.id} className="print-order">
-                    <div className="text-center mb-4">
-                      <p className="text-gray-600">
-                        Data: {formatDateToBR(order.createdAt)}
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                      <div className="border rounded-md p-2">
-                        <h3 className="font-semibold mb-1">Dados do Cliente</h3>
-                        <p><span className="font-semibold">Nome:</span> {orderCustomer?.name}</p>
-                        <p><span className="font-semibold">Telefone:</span> {orderCustomer?.phone}</p>
-                        <p><span className="font-semibold">CPF/CNPJ:</span> {orderCustomer?.document}</p>
-                      </div>
-                      <div className="border rounded-md p-2">
-                        <h3 className="font-semibold mb-1">Endereço de Entrega</h3>
-                        <p>{orderCustomer?.address}</p>
-                        <p>{orderCustomer?.city} - {orderCustomer?.state}, {orderCustomer?.zipCode}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <h3 className="font-semibold mb-1">Itens do Pedido</h3>
-                      <div className="border rounded-md overflow-hidden">
-                        <table className="w-full text-sm">
-                          <thead className="bg-gray-50 text-gray-700">
-                            <tr>
-                              <th className="py-1 px-2 text-left">Produto</th>
-                              <th className="py-1 px-2 text-center">Qtd.</th>
-                              <th className="py-1 px-2 text-right">Preço</th>
-                              <th className="py-1 px-2 text-right">Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {order.items.map((item, index) => (
-                              <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                <td className="py-1 px-2">{item.productName}</td>
-                                <td className="py-1 px-2 text-center">{item.quantity}</td>
-                                <td className="py-1 px-2 text-right">
-                                  {formatCurrency(item.unitPrice)}
-                                </td>
-                                <td className="py-1 px-2 text-right font-medium">
-                                  {formatCurrency(item.total)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mb-2">
-                      <div>
-                        <p className="font-semibold">Pagamento: {order.paymentStatus}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">Total: 
-                          {formatCurrency(order.total)}
+                  <div key={order.id}>
+                    <div className="print-order">
+                      <div className="text-center mb-4">
+                        <h2 className="font-bold text-lg">PEDIDO #{order.id.substring(0, 8).toUpperCase()}</h2>
+                        <p className="text-gray-600">
+                          Data: {formatDateToBR(order.createdAt)}
                         </p>
                       </div>
-                    </div>
-                    
-                    {order.notes && (
-                      <div className="mt-2">
-                        <h3 className="font-semibold text-sm">Observações:</h3>
-                        <p className="text-gray-700 text-sm">{order.notes}</p>
+                      
+                      <div className="grid grid-cols-1 gap-4 mb-4">
+                        <div className="border rounded-md p-3">
+                          <h3 className="font-semibold mb-1">Dados do Cliente</h3>
+                          <p><span className="font-semibold">Nome:</span> {orderCustomer?.name}</p>
+                          <p><span className="font-semibold">Telefone:</span> {orderCustomer?.phone}</p>
+                          <p><span className="font-semibold">CPF/CNPJ:</span> {orderCustomer?.document}</p>
+                          <p><span className="font-semibold">Endereço:</span> {orderCustomer?.address}</p>
+                          <p>{orderCustomer?.city} - {orderCustomer?.state}, {orderCustomer?.zipCode}</p>
+                        </div>
                       </div>
-                    )}
+                      
+                      <div className="mb-4">
+                        <h3 className="font-semibold mb-1">Itens do Pedido</h3>
+                        <div className="border rounded-md overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50 text-gray-700">
+                              <tr>
+                                <th className="py-1 px-2 text-left">Produto</th>
+                                <th className="py-1 px-2 text-center">Qtd.</th>
+                                <th className="py-1 px-2 text-right">Preço</th>
+                                <th className="py-1 px-2 text-right">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {order.items.map((item, index) => (
+                                <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                  <td className="py-1 px-2">{item.productName}</td>
+                                  <td className="py-1 px-2 text-center">{item.quantity}</td>
+                                  <td className="py-1 px-2 text-right">
+                                    {formatCurrency(item.unitPrice)}
+                                  </td>
+                                  <td className="py-1 px-2 text-right font-medium">
+                                    {formatCurrency(item.total)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mb-2">
+                        <div>
+                          <p className="font-semibold">Pagamento: {order.paymentStatus}</p>
+                          {order.paymentMethod && (
+                            <p className="text-sm">Forma: {order.paymentMethod}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">Total: 
+                            {formatCurrency(order.total)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {order.notes && (
+                        <div className="mt-2">
+                          <h3 className="font-semibold text-sm">Observações:</h3>
+                          <p className="text-gray-700 text-sm">{order.notes}</p>
+                        </div>
+                      )}
+                    </div>
                     
                     {needsPageBreak && <div className="print-page-break"></div>}
                   </div>
                 );
               })}
               
-              {/* Footer that appears only once at the end */}
               <div className="print-footer">
                 <p>ForcaVendas - Sistema de Gestão de Vendas</p>
                 <p>Para qualquer suporte: (11) 9999-8888</p>
@@ -606,7 +601,6 @@ export default function Orders() {
   );
 }
 
-// Function to format currency
 const formatCurrency = (value: number | undefined) => {
   if (value === undefined || value === null) return 'R$ 0,00';
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

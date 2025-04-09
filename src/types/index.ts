@@ -1,34 +1,24 @@
-
-// Customer Types
 export interface Customer {
   id: string;
-  code: number; // Added code field
   name: string;
-  document: string; // Changed from email to document (CPF/CNPJ)
   phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  notes?: string;
-  visitDays?: string[];
-  createdAt: Date;
+  document: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  createdAt?: Date;
 }
 
-// Product Types
 export interface Product {
   id: string;
-  code: number;  // Added the code field
   name: string;
-  description: string;
+  description?: string;
   price: number;
-  unit: string;
-  stock: number;
-  category: string;
-  image?: string;
+  imageUrl?: string;
+  createdAt?: Date;
 }
 
-// Order Types
 export interface OrderItem {
   id: string;
   productId: string;
@@ -42,157 +32,77 @@ export interface Order {
   id: string;
   customerId: string;
   customerName: string;
-  salesRepId: string;
-  salesRepName: string;
   items: OrderItem[];
   total: number;
-  status: 'draft' | 'confirmed' | 'delivered' | 'cancelled';
+  paymentMethod: string;
   paymentStatus: 'pending' | 'partial' | 'paid';
-  paymentMethod?: 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | string;
-  paymentTableId?: string; // Added for payment table reference
   createdAt: Date;
-  deliveryDate?: Date;
   notes?: string;
-  deliveryAddress?: string;
-  deliveryCity?: string;
-  deliveryState?: string;
-  deliveryZipCode?: string;
-  archived?: boolean;  // New property to track archived status
+  archived?: boolean;
+  salesRepId?: string;
 }
 
-// Payment Types
 export interface Payment {
   id: string;
+  customerId: string;
+  customerName: string;
   orderId: string;
   amount: number;
-  method: 'cash' | 'credit' | 'debit' | 'transfer' | 'check';
-  status: 'pending' | 'completed' | 'failed';
-  date: Date;
+  paymentMethod: string;
+  paymentDate: Date;
   notes?: string;
 }
 
-// Payment Method Types
-export interface PaymentMethod {
+export interface Route {
   id: string;
   name: string;
-  type: 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | 'other';
-  active: boolean;
-  installments: boolean;
-  maxInstallments: number;
-}
-
-// Payment Table Types
-export interface PaymentTable {
-  id: string;
-  name: string;
-  description?: string;
-  active: boolean;
-  createdAt: Date;
-  updatedAt?: Date;
-  terms: PaymentTerm[];
-}
-
-export interface PaymentTerm {
-  id: string;
-  days: number;
-  percentage: number;
-  description?: string;
-}
-
-// Route and Delivery Types
-export interface RouteStop {
-  id: string;
-  orderId: string;
-  customerName: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  sequence: number;
-  status: 'pending' | 'completed';
-  lat?: number; // Coordenada de latitude
-  lng?: number; // Coordenada de longitude
-  estimatedArrival?: Date; // Adicionando horário estimado de chegada
-}
-
-export interface DeliveryRoute {
-  id: string;
-  name: string;
-  date: Date;
-  driverId?: string;
-  driverName?: string;
-  vehicleId?: string;
-  vehicleName?: string;
-  status: 'planning' | 'assigned' | 'in-progress' | 'completed';
-  stops: RouteStop[];
-}
-
-// Vehicle Types
-export interface Vehicle {
-  id: string;
-  name: string;
-  licensePlate: string;
-  type: 'car' | 'van' | 'truck' | 'motorcycle';
-  capacity: number;
-  driverName?: string;
-  active: boolean;
-}
-
-// Load Types
-export interface LoadItem {
-  id: string;
-  orderId: string;
-  orderItems: OrderItem[];
-  totalWeight?: number;
-  totalVolume?: number;
-  status: 'pending' | 'loaded' | 'delivered';
+  salesRepId: string;
+  customerIds: string[];
 }
 
 export interface Load {
   id: string;
   name: string;
   date: Date;
-  vehicleId?: string;
-  vehicleName?: string;
-  items: LoadItem[];
-  status: 'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered';
+  vehicleId: string;
+  salesRepId: string;
+  orderIds: string[];
   notes?: string;
 }
 
-// User/Sales Rep Types
 export interface SalesRep {
   id: string;
   name: string;
-  code: number; // Added code field
-  email: string;
   phone: string;
-  role: 'admin' | 'manager' | 'sales' | 'driver';
-  region?: string;
-  active: boolean;
+  email: string;
 }
 
-// Backup Types
-export interface Backup {
+export interface Vehicle {
+  id: string;
+  name: string;
+  capacity: number;
+  type: 'truck' | 'van' | 'car';
+}
+
+export interface PaymentMethod {
   id: string;
   name: string;
   description?: string;
-  date: Date;
-  data: {
-    customers: Customer[];
-    products: Product[];
-    orders: Order[];
-    payments: Payment[];
-    routes: DeliveryRoute[];
-    loads: Load[];
-    salesReps: SalesRep[];
-    vehicles?: Vehicle[];
-  }
+  type: 'cash' | 'card' | 'check' | 'bank_transfer' | 'other';
 }
 
-// Add NavItem export for SideNav
-export interface NavItem {
+export interface PaymentTableTerm {
+  id: string;
+  days: number;
+  percentage: number;
+  description?: string;
+}
+
+export interface PaymentTable {
+  id: string;
   name: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  group: string;
+  terms: PaymentTableTerm[];
+  type?: 'standard' | 'promissory_note' | 'financing';
+  payableTo?: string;
+  paymentLocation?: string;
 }
