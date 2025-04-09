@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
 import PageLayout from '@/components/layout/PageLayout';
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Save, FileText } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Order, OrderItem, PaymentTable, Product, Customer, SalesRep } from '@/types';
 
 // Import our components
@@ -19,8 +20,9 @@ import RecentPurchasesDialog from '@/components/orders/RecentPurchasesDialog';
 
 export default function NewOrder() {
   const { customers, salesReps, products, orders } = useAppContext();
-  const { addOrder } = useOrders();
+  const { addOrder, getOrderById, updateOrder } = useOrders();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Refs for input fields to enable Enter key navigation
   const salesRepInputRef = useRef<HTMLInputElement>(null);
@@ -32,6 +34,8 @@ export default function NewOrder() {
   const [selectedSalesRep, setSelectedSalesRep] = useState<SalesRep | null>(null);
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   
   // Payment related states
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -65,6 +69,57 @@ export default function NewOrder() {
   
   // Recent purchases dialog state
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
+
+  // Effect to check for order ID in URL and load order data
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get('id');
+    
+    if (orderId) {
+      const orderToEdit = getOrderById(orderId);
+      
+      if (orderToEdit) {
+        setIsEditMode(true);
+        setCurrentOrderId(orderId);
+        
+        // Set customer
+        const customer = customers.find(c => c.id === orderToEdit.customerId);
+        if (customer) {
+          setSelectedCustomer(customer);
+        }
+        
+        // Set sales rep
+        const salesRep = salesReps.find(s => s.id === orderToEdit.salesRepId);
+        if (salesRep) {
+          setSelectedSalesRep(salesRep);
+        }
+        
+        // Set order items
+        setOrderItems(orderToEdit.items.map(item => ({
+          ...item,
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total
+        })));
+        
+        // Set payment info
+        if (orderToEdit.paymentMethod) {
+          setPaymentMethod(orderToEdit.paymentMethod);
+        }
+        
+        if (orderToEdit.paymentTableId) {
+          setSelectedPaymentTable(orderToEdit.paymentTableId);
+        }
+        
+        toast({
+          title: "Pedido carregado",
+          description: `Editando pedido ${orderId.substring(0, 6)}`
+        });
+      }
+    }
+  }, [location, getOrderById, customers, salesReps]);
 
   const handleAddItem = (product: Product, quantity: number, price: number) => {
     const existingItem = orderItems.find(item => item.productId === product.id);
@@ -114,6 +169,8 @@ export default function NewOrder() {
     setOrderItems([]);
     setPaymentMethod('');
     setSelectedPaymentTable('');
+    setIsEditMode(false);
+    setCurrentOrderId(null);
   };
 
   const handleCreateOrder = async () => {
@@ -165,25 +222,39 @@ export default function NewOrder() {
         deliveryZipCode: selectedCustomer.zipCode
       };
       
-      const orderId = await addOrder(orderData);
+      let orderId;
       
-      if (orderId) {
+      if (isEditMode && currentOrderId) {
+        // Update existing order
+        await updateOrder(currentOrderId, orderData);
+        orderId = currentOrderId;
+        
         toast({
-          title: "Pedido Criado",
-          description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
+          title: "Pedido Atualizado",
+          description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
         });
+      } else {
+        // Create new order
+        orderId = await addOrder(orderData);
         
-        resetForm();
-        
-        setTimeout(() => {
-          navigate('/pedidos');
-        }, 1500);
+        if (orderId) {
+          toast({
+            title: "Pedido Criado",
+            description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
+          });
+        }
       }
+      
+      resetForm();
+      
+      setTimeout(() => {
+        navigate('/pedidos');
+      }, 1500);
     } catch (error) {
-      console.error("Erro ao criar pedido:", error);
+      console.error("Erro ao processar pedido:", error);
       toast({
-        title: "Erro ao criar pedido",
-        description: "Ocorreu um erro ao criar o pedido. Tente novamente.",
+        title: isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido",
+        description: "Ocorreu um erro ao processar o pedido. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -212,7 +283,7 @@ export default function NewOrder() {
   };
 
   return (
-    <PageLayout title="Digitação de Pedidos">
+    <PageLayout title={isEditMode ? "Edição de Pedido" : "Digitação de Pedidos"}>
       <div className="bg-white border rounded-md p-6 mb-4">
         <div className="grid grid-cols-12 gap-x-4 gap-y-6">
           {/* Left column - Header information */}
@@ -282,7 +353,7 @@ export default function NewOrder() {
               className="w-full bg-sales-800 hover:bg-sales-700 text-white"
             >
               <Save size={16} className="mr-2" />
-              {isSubmitting ? 'Salvando...' : 'Finalizar Pedido'}
+              {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}
             </Button>
           </div>
         </div>
@@ -308,3 +379,4 @@ export default function NewOrder() {
     </PageLayout>
   );
 }
+

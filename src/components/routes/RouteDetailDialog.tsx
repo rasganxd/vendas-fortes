@@ -95,7 +95,8 @@ export const RouteDetailDialog = ({
             <RouteStopsTable 
               stops={route.stops} 
               isCompleted={route.status === 'completed'} 
-              onRemoveStop={onRemoveStop} 
+              onRemoveStop={onRemoveStop}
+              onEditOrder={handleEditOrder}
             />
             
             <div className="mt-4 flex justify-between items-center">
