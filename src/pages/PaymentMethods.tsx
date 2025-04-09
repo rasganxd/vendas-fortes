@@ -1,33 +1,6 @@
-
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, CreditCard } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -37,6 +10,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -45,119 +25,139 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+} from "@/components/ui/alert-dialog";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Plus, Search, Edit, Trash } from 'lucide-react';
 import { PaymentMethod } from '@/types';
+import { toast } from '@/components/ui/use-toast';
 
-const paymentMethodFormSchema = z.object({
-  name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
-  type: z.enum(['cash', 'credit', 'debit', 'transfer', 'check', 'other']),
-  installments: z.boolean().default(false),
-  maxInstallments: z.number().min(1).default(1),
-  active: z.boolean().default(true),
-});
+interface FormErrors {
+  name?: string;
+}
+
+// Atualizar o tipo para método de pagamento para incluir o tipo "card"
+type PaymentMethodType = 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | 'card' | 'other';
 
 export default function PaymentMethods() {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    { id: '1', name: 'Dinheiro', type: 'cash', installments: false, maxInstallments: 1, active: true },
-    { id: '2', name: 'Cartão de Crédito', type: 'credit', installments: true, maxInstallments: 12, active: true },
-    { id: '3', name: 'Cartão de Débito', type: 'debit', installments: false, maxInstallments: 1, active: true },
-    { id: '4', name: 'Transferência Bancária', type: 'transfer', installments: false, maxInstallments: 1, active: true },
-    { id: '5', name: 'Boleto Bancário', type: 'other', installments: false, maxInstallments: 1, active: true },
-  ]);
-  
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { paymentMethods, addPaymentMethod, updatePaymentMethod, deletePaymentMethod } = useAppContext();
+  const [search, setSearch] = useState('');
+  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(null);
-  const [deletingMethodId, setDeletingMethodId] = useState<string | null>(null);
-  
-  const form = useForm<z.infer<typeof paymentMethodFormSchema>>({
-    resolver: zodResolver(paymentMethodFormSchema),
-    defaultValues: {
-      name: "",
-      type: "cash",
-      installments: false,
-      maxInstallments: 1,
-      active: true
-    },
+  const [editingMethod, setEditingMethod] = useState<PaymentMethod>({
+    id: '',
+    name: '',
+    type: 'cash',
+    active: true
   });
+  const [newMethod, setNewMethod] = useState<Omit<PaymentMethod, 'id'>>({
+    name: '',
+    type: 'cash',
+    active: true
+  });
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  const openAddDialog = () => {
-    form.reset({
-      name: "",
-      type: "cash",
-      installments: false,
-      maxInstallments: 1,
+  const filteredMethods = paymentMethods.filter(method =>
+    method.name.toLowerCase().includes(search.toLowerCase()) ||
+    method.type.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const validateForm = (method: Omit<PaymentMethod, 'id'>): boolean => {
+    let errors: FormErrors = {};
+    if (!method.name) {
+      errors.name = 'Nome é obrigatório';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNewMethod = () => {
+    setNewMethod({
+      name: '',
+      type: 'cash',
       active: true
     });
-    setEditingMethod(null);
-    setIsDialogOpen(true);
+    setIsNewDialogOpen(true);
   };
 
-  const openEditDialog = (method: PaymentMethod) => {
-    form.reset({
-      name: method.name,
-      type: method.type,
-      installments: method.installments,
-      maxInstallments: method.maxInstallments,
-      active: method.active
-    });
+  const handleEditMethod = (method: PaymentMethod) => {
     setEditingMethod(method);
-    setIsDialogOpen(true);
+    setFormErrors({});
+    setIsEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (id: string) => {
-    setDeletingMethodId(id);
+  const handleDeleteMethod = (method: PaymentMethod) => {
+    setEditingMethod(method);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (deletingMethodId) {
-      setPaymentMethods(prev => prev.filter(method => method.id !== deletingMethodId));
+  const handleCloseDialog = () => {
+    setIsNewDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setIsDeleteDialogOpen(false);
+    setFormErrors({});
+  };
+
+  const handleAddMethod = async () => {
+    if (validateForm(newMethod)) {
+      try {
+        await addPaymentMethod({
+          name: newMethod.name,
+          type: newMethod.type,
+          active: newMethod.active
+        });
+        setIsNewDialogOpen(false);
+        setFormErrors({});
+      } catch (error) {
+        console.error("Error adding payment method:", error);
+      }
+    }
+  };
+
+  const handleUpdateMethod = async () => {
+    if (validateForm(editingMethod)) {
+      try {
+        await updatePaymentMethod(editingMethod.id, {
+          name: editingMethod.name,
+          type: editingMethod.type,
+          active: editingMethod.active
+        });
+        setIsEditDialogOpen(false);
+        setFormErrors({});
+      } catch (error) {
+        console.error("Error updating payment method:", error);
+      }
+    }
+  };
+
+  const handleDeleteConfirmation = async () => {
+    try {
+      await deletePaymentMethod(editingMethod.id);
       setIsDeleteDialogOpen(false);
-      setDeletingMethodId(null);
+    } catch (error) {
+      console.error("Error deleting payment method:", error);
     }
   };
 
-  const onSubmit = (data: z.infer<typeof paymentMethodFormSchema>) => {
-    if (editingMethod) {
-      setPaymentMethods(prev => 
-        prev.map(method => method.id === editingMethod.id ? { ...method, ...data } : method)
-      );
-    } else {
-      // Ensure all required properties are present
-      const newMethod: PaymentMethod = {
-        id: Math.random().toString(36).substring(2, 10),
-        name: data.name,
-        type: data.type,
-        installments: data.installments,
-        maxInstallments: data.maxInstallments,
-        active: data.active
-      };
-      setPaymentMethods(prev => [...prev, newMethod]);
-    }
-    setIsDialogOpen(false);
-  };
-
-  const getTypeBadge = (type: string) => {
-    switch(type) {
-      case "cash":
-        return <Badge className="bg-green-600">Dinheiro</Badge>;
-      case "credit":
-        return <Badge className="bg-blue-600">Crédito</Badge>;
-      case "debit":
-        return <Badge className="bg-purple-600">Débito</Badge>;
-      case "transfer":
-        return <Badge className="bg-indigo-600">Transferência</Badge>;
-      case "check":
-        return <Badge className="bg-amber-600">Cheque</Badge>;
-      case "other":
-        return <Badge className="bg-gray-500">Outro</Badge>;
-      default:
-        return <Badge>{type}</Badge>;
-    }
+  // Atualizar a função handleTypeChange para usar o tipo atualizado
+  const handleTypeChange = (value: PaymentMethodType) => {
+    setEditingMethod({...editingMethod, type: value});
   };
 
   return (
@@ -166,263 +166,192 @@ export default function PaymentMethods() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Formas de Pagamento</CardTitle>
-              <CardDescription>Cadastre e gerencie as formas de pagamento disponíveis</CardDescription>
+              <CardTitle>Lista de Formas de Pagamento</CardTitle>
+              <CardDescription>
+                Gerencie suas formas de pagamento
+              </CardDescription>
             </div>
-            <Button onClick={openAddDialog} className="bg-sales-800 hover:bg-sales-700">
-              <PlusCircle size={16} className="mr-2" /> Nova Forma de Pagamento
-            </Button>
+            <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleNewMethod}>
+                  <Plus size={16} className="mr-2" /> Nova Forma de Pagamento
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Adicionar Forma de Pagamento</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-name">Nome</Label>
+                    <Input
+                      id="new-name"
+                      value={newMethod.name || ''}
+                      onChange={(e) => setNewMethod({ ...newMethod, name: e.target.value })}
+                    />
+                    {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-type">Tipo</Label>
+                    {/* Corrigir o select de tipo */}
+                    <Select value={newMethod.type || 'cash'} onValueChange={(value: PaymentMethodType) => setNewMethod({...newMethod, type: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">Dinheiro</SelectItem>
+                        <SelectItem value="card">Cartão</SelectItem>
+                        <SelectItem value="credit">Crédito</SelectItem>
+                        <SelectItem value="debit">Débito</SelectItem>
+                        <SelectItem value="transfer">Transferência</SelectItem>
+                        <SelectItem value="check">Cheque</SelectItem>
+                        <SelectItem value="other">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="checkbox"
+                      id="new-active"
+                      checked={newMethod.active}
+                      onChange={(e) => setNewMethod({ ...newMethod, active: e.target.checked })}
+                    />
+                    <Label htmlFor="new-active">Ativo</Label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleAddMethod}>
+                    Adicionar
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
+              <Input
+                placeholder="Buscar formas de pagamento..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
           <div className="relative overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Parcelamento</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Ativo</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paymentMethods.map((method) => (
+                {filteredMethods.map((method) => (
                   <TableRow key={method.id}>
                     <TableCell className="font-medium">{method.name}</TableCell>
-                    <TableCell>{getTypeBadge(method.type)}</TableCell>
-                    <TableCell>
-                      {method.installments 
-                        ? `Até ${method.maxInstallments}x` 
-                        : "Não disponível"}
-                    </TableCell>
-                    <TableCell>
-                      {method.active ? (
-                        <Badge className="bg-green-600">Ativo</Badge>
-                      ) : (
-                        <Badge variant="outline">Inativo</Badge>
-                      )}
-                    </TableCell>
+                    <TableCell>{method.type}</TableCell>
+                    <TableCell>{method.active ? 'Sim' : 'Não'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(method)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditMethod(method)}
+                        >
                           <Edit size={16} />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => openDeleteDialog(method.id)}
-                          className="text-red-500 hover:text-red-700"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteMethod(method)}
                         >
-                          <Trash2 size={16} />
+                          <Trash size={16} />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
-                {paymentMethods.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
-                      <CreditCard size={40} className="mx-auto text-gray-300 mb-2" />
-                      <p className="text-gray-500">Nenhuma forma de pagamento cadastrada</p>
-                      <Button 
-                        onClick={openAddDialog} 
-                        variant="outline" 
-                        className="mt-2"
-                      >
-                        Cadastrar Forma de Pagamento
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Edit Method Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {editingMethod ? 'Editar Forma de Pagamento' : 'Nova Forma de Pagamento'}
-            </DialogTitle>
+            <DialogTitle>Editar Forma de Pagamento</DialogTitle>
           </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome da forma de pagamento" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome</Label>
+              <Input
+                id="edit-name"
+                value={editingMethod.name || ''}
+                onChange={(e) => setEditingMethod({ ...editingMethod, name: e.target.value })}
               />
-              
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Tipo</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-wrap gap-4"
-                      >
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="cash" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Dinheiro
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="credit" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Crédito
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="debit" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Débito
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="transfer" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Transferência
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="check" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Cheque
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="other" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Outro
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-type">Tipo</Label>
+              {/* Corrigir o select de tipo */}
+              <Select value={editingMethod.type || 'cash'} onValueChange={handleTypeChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Dinheiro</SelectItem>
+                  <SelectItem value="card">Cartão</SelectItem>
+                  <SelectItem value="credit">Crédito</SelectItem>
+                  <SelectItem value="debit">Débito</SelectItem>
+                  <SelectItem value="transfer">Transferência</SelectItem>
+                  <SelectItem value="check">Cheque</SelectItem>
+                  <SelectItem value="other">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="checkbox"
+                id="edit-active"
+                checked={editingMethod.active}
+                onChange={(e) => setEditingMethod({ ...editingMethod, active: e.target.checked })}
               />
-              
-              <FormField
-                control={form.control}
-                name="installments"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Permite Parcelamento</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              {form.watch('installments') && (
-                <FormField
-                  control={form.control}
-                  name="maxInstallments"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Máximo de Parcelas</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          max="24"
-                          {...field}
-                          onChange={e => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              
-              <FormField
-                control={form.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Status Ativo</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end pt-4 space-x-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" className="bg-sales-800 hover:bg-sales-700">
-                  {editingMethod ? 'Atualizar' : 'Cadastrar'}
-                </Button>
-              </div>
-            </form>
-          </Form>
+              <Label htmlFor="edit-active">Ativo</Label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={handleCloseDialog}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleUpdateMethod}>
+              Atualizar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
+
+      {/* Delete Method Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Confirmação de exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Esta forma de pagamento será removida permanentemente do sistema.
+              Tem certeza que deseja excluir a forma de pagamento {editingMethod.name}? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogCancel onClick={handleCloseDialog}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirmation} className="bg-red-600 hover:bg-red-700">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

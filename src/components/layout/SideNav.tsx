@@ -10,7 +10,8 @@ import {
   FileText,
   Coins,
   Database,
-  CreditCard
+  CreditCard,
+  UserRound
 } from "lucide-react";
 
 import { 
@@ -45,6 +46,13 @@ const navigation: NavItem[] = [
     name: "Produtos", // For compatibility
     href: "/produtos",
     icon: Package,
+    group: "cadastro"
+  },
+  {
+    title: "Vendedores",
+    name: "Vendedores", // For compatibility
+    href: "/vendedores",
+    icon: UserRound,
     group: "cadastro"
   },
   {
