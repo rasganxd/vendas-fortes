@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   name: string;
@@ -40,6 +41,7 @@ export interface Order {
   notes?: string;
   archived?: boolean;
   salesRepId?: string;
+  paymentTableId?: string;
 }
 
 export interface Payment {
@@ -105,4 +107,8 @@ export interface PaymentTable {
   type?: 'standard' | 'promissory_note' | 'financing';
   payableTo?: string;
   paymentLocation?: string;
+  description?: string;
+  active?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

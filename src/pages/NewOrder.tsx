@@ -9,7 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Save, FileText } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Order, OrderItem, PaymentTable, Product, Customer, SalesRep } from '@/types';
+import { Order, OrderItem, Product, Customer, SalesRep } from '@/types';
 
 // Import our components
 import CustomerSearchInput from '@/components/orders/CustomerSearchInput';
@@ -45,6 +45,10 @@ export default function NewOrder() {
 
   // Recent purchases dialog state
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
+
+  useEffect(() => {
+    console.log("Available payment tables:", paymentTables);
+  }, [paymentTables]);
 
   // Effect to check for order ID in URL and load order data
   useEffect(() => {
@@ -185,18 +189,12 @@ export default function NewOrder() {
         customerId: selectedCustomer.id,
         customerName: selectedCustomer.name,
         salesRepId: selectedSalesRep.id,
-        salesRepName: selectedSalesRep.name,
         items: orderItems as OrderItem[],
         total: calculateTotal(),
-        status: "draft" as Order["status"],
         paymentStatus: "pending" as Order["paymentStatus"],
         paymentMethod: paymentMethod || undefined,
         paymentTableId: selectedPaymentTable || undefined,
         createdAt: new Date(),
-        deliveryAddress: selectedCustomer.address,
-        deliveryCity: selectedCustomer.city,
-        deliveryState: selectedCustomer.state,
-        deliveryZipCode: selectedCustomer.zipCode
       };
       
       let orderId;

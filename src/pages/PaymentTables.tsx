@@ -32,38 +32,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Trash, Edit, Plus, Info, Calendar } from 'lucide-react';
 import { formatDateToBR } from '@/lib/date-utils';
 import { toast } from "@/components/ui/use-toast";
-import { useForm } from 'react-hook-form';
-import { PaymentTable, PaymentTerm } from '@/types';
+import { PaymentTable, PaymentTableTerm } from '@/types';
+import { usePaymentTables } from '@/hooks/usePaymentTables';
 
 export default function PaymentTables() {
-  const [paymentTables, setPaymentTables] = useState<PaymentTable[]>([
-    {
-      id: '1',
-      name: 'Pagamento à Vista',
-      description: 'Pagamento integral no momento da compra',
-      active: true,
-      createdAt: new Date(),
-      terms: [
-        { id: '1-1', days: 0, percentage: 100, description: 'À vista' }
-      ]
-    },
-    {
-      id: '2',
-      name: 'Pagamento 30/60/90',
-      description: 'Pagamento parcelado em 3 vezes',
-      active: true,
-      createdAt: new Date(),
-      terms: [
-        { id: '2-1', days: 30, percentage: 33.33, description: '1ª parcela' },
-        { id: '2-2', days: 60, percentage: 33.33, description: '2ª parcela' },
-        { id: '2-3', days: 90, percentage: 33.34, description: '3ª parcela' }
-      ]
-    }
-  ]);
+  const { paymentTables, addPaymentTable, updatePaymentTable, deletePaymentTable } = usePaymentTables();
 
   const [isTableDialogOpen, setIsTableDialogOpen] = useState(false);
   const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
@@ -71,7 +47,7 @@ export default function PaymentTables() {
   const [isDeleteTermDialogOpen, setIsDeleteTermDialogOpen] = useState(false);
   
   const [editingTable, setEditingTable] = useState<PaymentTable | null>(null);
-  const [editingTerm, setEditingTerm] = useState<PaymentTerm | null>(null);
+  const [editingTerm, setEditingTerm] = useState<PaymentTableTerm | null>(null);
   const [selectedTable, setSelectedTable] = useState<PaymentTable | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   
@@ -95,7 +71,7 @@ export default function PaymentTables() {
       setTableForm({
         name: table.name,
         description: table.description || '',
-        active: table.active
+        active: table.active !== false // default to true if undefined
       });
     } else {
       setEditingTable(null);
@@ -108,7 +84,7 @@ export default function PaymentTables() {
     setIsTableDialogOpen(true);
   };
 
-  const handleOpenTermDialog = (term?: PaymentTerm) => {
+  const handleOpenTermDialog = (term?: PaymentTableTerm) => {
     if (!selectedTable) return;
     
     if (term) {
@@ -139,7 +115,7 @@ export default function PaymentTables() {
     setIsDeleteTermDialogOpen(true);
   };
 
-  const handleTableFormChange = (e) => {
+  const handleTableFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setTableForm(prev => ({
       ...prev,
@@ -147,7 +123,7 @@ export default function PaymentTables() {
     }));
   };
 
-  const handleTermFormChange = (e) => {
+  const handleTermFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setTermForm(prev => ({
       ...prev,
@@ -155,7 +131,7 @@ export default function PaymentTables() {
     }));
   };
 
-  const handleSubmitTable = () => {
+  const handleSubmitTable = async () => {
     if (!tableForm.name) {
       toast({
         title: "Erro",
@@ -165,39 +141,43 @@ export default function PaymentTables() {
       return;
     }
 
-    if (editingTable) {
-      // Update existing table
-      const updatedTables = paymentTables.map(table => 
-        table.id === editingTable.id 
-          ? {
-              ...table,
-              name: tableForm.name,
-              description: tableForm.description,
-              active: tableForm.active,
-              updatedAt: new Date()
-            }
-          : table
-      );
-      setPaymentTables(updatedTables);
-      toast({ title: "Tabela atualizada com sucesso" });
-    } else {
-      // Create new table
-      const newTable: PaymentTable = {
-        id: Date.now().toString(),
-        name: tableForm.name,
-        description: tableForm.description,
-        active: tableForm.active,
-        createdAt: new Date(),
-        terms: []
-      };
-      setPaymentTables([...paymentTables, newTable]);
-      setSelectedTable(newTable);
-      toast({ title: "Tabela criada com sucesso" });
+    try {
+      if (editingTable) {
+        // Update existing table
+        await updatePaymentTable(editingTable.id, {
+          name: tableForm.name,
+          description: tableForm.description,
+          active: tableForm.active
+        });
+        toast({ title: "Tabela atualizada com sucesso" });
+      } else {
+        // Create new table
+        const tableId = await addPaymentTable({
+          name: tableForm.name,
+          description: tableForm.description,
+          active: tableForm.active,
+          terms: []
+        });
+        
+        // Find the new table in paymentTables and set it as selected
+        const newTable = paymentTables.find(t => t.id === tableId);
+        if (newTable) {
+          setSelectedTable(newTable);
+        }
+        toast({ title: "Tabela criada com sucesso" });
+      }
+      setIsTableDialogOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar tabela:", error);
+      toast({ 
+        title: "Erro ao salvar tabela", 
+        description: "Ocorreu um erro ao salvar a tabela de pagamento.", 
+        variant: "destructive" 
+      });
     }
-    setIsTableDialogOpen(false);
   };
 
-  const handleSubmitTerm = () => {
+  const handleSubmitTerm = async () => {
     if (!selectedTable) return;
 
     if (termForm.percentage <= 0) {
@@ -209,13 +189,12 @@ export default function PaymentTables() {
       return;
     }
 
-    const updatedTables = paymentTables.map(table => {
-      if (table.id !== selectedTable.id) return table;
-
-      let updatedTerms;
+    try {
+      let updatedTerms: PaymentTableTerm[];
+      
       if (editingTerm) {
         // Update existing term
-        updatedTerms = table.terms.map(term => 
+        updatedTerms = selectedTable.terms.map(term => 
           term.id === editingTerm.id 
             ? {
                 ...term,
@@ -227,69 +206,86 @@ export default function PaymentTables() {
         );
       } else {
         // Create new term
-        const newTerm: PaymentTerm = {
-          id: `${table.id}-${Date.now()}`,
+        const newTerm: PaymentTableTerm = {
+          id: `${selectedTable.id}-${Date.now()}`,
           days: termForm.days,
           percentage: termForm.percentage,
           description: termForm.description
         };
-        updatedTerms = [...table.terms, newTerm];
+        updatedTerms = [...selectedTable.terms, newTerm];
       }
 
       // Sort terms by days
       updatedTerms.sort((a, b) => a.days - b.days);
 
-      return {
-        ...table,
-        terms: updatedTerms,
-        updatedAt: new Date()
-      };
-    });
+      // Update the payment table with new terms
+      await updatePaymentTable(selectedTable.id, {
+        terms: updatedTerms
+      });
 
-    setPaymentTables(updatedTables);
-    setSelectedTable(updatedTables.find(t => t.id === selectedTable.id) || null);
-    setIsTermDialogOpen(false);
-    toast({ 
-      title: editingTerm ? "Prazo atualizado com sucesso" : "Prazo adicionado com sucesso" 
-    });
+      setIsTermDialogOpen(false);
+      toast({ 
+        title: editingTerm ? "Prazo atualizado com sucesso" : "Prazo adicionado com sucesso" 
+      });
+    } catch (error) {
+      console.error("Erro ao salvar prazo:", error);
+      toast({ 
+        title: "Erro ao salvar prazo", 
+        description: "Ocorreu um erro ao salvar o prazo de pagamento.", 
+        variant: "destructive" 
+      });
+    }
   };
 
-  const handleDeleteTable = () => {
+  const handleDeleteTable = async () => {
     if (!deletingItemId) return;
     
-    const updatedTables = paymentTables.filter(table => table.id !== deletingItemId);
-    setPaymentTables(updatedTables);
-    
-    if (selectedTable && selectedTable.id === deletingItemId) {
-      setSelectedTable(updatedTables[0] || null);
+    try {
+      await deletePaymentTable(deletingItemId);
+      
+      if (selectedTable && selectedTable.id === deletingItemId) {
+        setSelectedTable(paymentTables.filter(t => t.id !== deletingItemId)[0] || null);
+      }
+      
+      toast({ title: "Tabela excluída com sucesso" });
+    } catch (error) {
+      console.error("Erro ao excluir tabela:", error);
+      toast({ 
+        title: "Erro ao excluir tabela", 
+        description: "Ocorreu um erro ao excluir a tabela de pagamento.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsDeleteTableDialogOpen(false);
+      setDeletingItemId(null);
     }
-    
-    setIsDeleteTableDialogOpen(false);
-    setDeletingItemId(null);
-    toast({ title: "Tabela excluída com sucesso" });
   };
 
-  const handleDeleteTerm = () => {
+  const handleDeleteTerm = async () => {
     if (!deletingItemId || !selectedTable) return;
     
-    const updatedTables = paymentTables.map(table => {
-      if (table.id !== selectedTable.id) return table;
+    try {
+      const updatedTerms = selectedTable.terms.filter(term => term.id !== deletingItemId);
       
-      return {
-        ...table,
-        terms: table.terms.filter(term => term.id !== deletingItemId),
-        updatedAt: new Date()
-      };
-    });
-    
-    setPaymentTables(updatedTables);
-    setSelectedTable(updatedTables.find(t => t.id === selectedTable.id) || null);
-    setIsDeleteTermDialogOpen(false);
-    setDeletingItemId(null);
-    toast({ title: "Prazo excluído com sucesso" });
+      await updatePaymentTable(selectedTable.id, {
+        terms: updatedTerms
+      });
+      
+      toast({ title: "Prazo excluído com sucesso" });
+    } catch (error) {
+      console.error("Erro ao excluir prazo:", error);
+      toast({ 
+        title: "Erro ao excluir prazo", 
+        description: "Ocorreu um erro ao excluir o prazo de pagamento.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsDeleteTermDialogOpen(false);
+      setDeletingItemId(null);
+    }
   };
 
-  const calculateTotal = (terms: PaymentTerm[]) => {
+  const calculateTotal = (terms: PaymentTableTerm[]) => {
     return terms.reduce((sum, term) => sum + term.percentage, 0);
   };
 
@@ -338,7 +334,7 @@ export default function PaymentTables() {
                         <p className="text-sm text-gray-500">{table.terms.length} prazos</p>
                       </div>
                       <div>
-                        {table.active ? (
+                        {table.active !== false ? (
                           <Badge className="bg-green-600">Ativo</Badge>
                         ) : (
                           <Badge variant="outline">Inativo</Badge>

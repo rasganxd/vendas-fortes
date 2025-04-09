@@ -7,7 +7,10 @@ import { useAppContext } from './useAppContext';
 
 export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
   try {
-    return await paymentTableService.getAll();
+    console.log("Loading payment tables from Firebase");
+    const tables = await paymentTableService.getAll();
+    console.log("Loaded payment tables:", tables);
+    return tables;
   } catch (error) {
     console.error("Erro ao carregar tabelas de pagamento:", error);
     return [];
@@ -16,6 +19,19 @@ export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
 
 export const usePaymentTables = () => {
   const { paymentTables, setPaymentTables } = useAppContext();
+  
+  // Load payment tables when the hook is first used
+  useEffect(() => {
+    if (paymentTables.length === 0) {
+      console.log("Initial load of payment tables");
+      loadPaymentTables().then(tables => {
+        if (tables.length > 0) {
+          console.log("Setting payment tables:", tables);
+          setPaymentTables(tables);
+        }
+      });
+    }
+  }, []);
 
   const addPaymentTable = async (paymentTable: Omit<PaymentTable, 'id'>) => {
     try {
