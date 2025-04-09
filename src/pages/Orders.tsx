@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { formatDateToBR } from '@/lib/date-utils';
-import { Search, Plus, Eye, Printer, FilePenLine, Archive, Check, Trash } from 'lucide-react';
+import { Search, Plus, Eye, Printer, FilePenLine, Archive, Check, Trash, X } from 'lucide-react';
 import { 
   Card, 
   CardContent, 

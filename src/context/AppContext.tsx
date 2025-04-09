@@ -1,6 +1,6 @@
 
 import React, { createContext, useEffect, useState } from 'react';
-import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle, PaymentTable } from '@/types';
+import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle, PaymentTable, Backup } from '@/types';
 import { loadCustomers } from '@/hooks/useCustomers';
 import { loadProducts } from '@/hooks/useProducts';
 import { loadOrders } from '@/hooks/useOrders';
@@ -31,7 +31,38 @@ interface AppContextType {
   setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
   paymentTables: PaymentTable[];
   setPaymentTables: React.Dispatch<React.SetStateAction<PaymentTable[]>>;
+  backups: Backup[];
+  setBackups: React.Dispatch<React.SetStateAction<Backup[]>>;
   isLoading: boolean;
+  
+  // Route operations
+  updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
+  addRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
+  deleteRoute: (id: string) => Promise<boolean>;
+  
+  // Vehicle operations
+  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<boolean>;
+  deleteVehicle: (id: string) => Promise<boolean>;
+  
+  // SalesRep operations
+  addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
+  updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => Promise<boolean>;
+  deleteSalesRep: (id: string) => Promise<boolean>;
+  
+  // Product operations
+  addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
+  updateProduct: (id: string, product: Partial<Product>) => Promise<boolean>;
+  deleteProduct: (id: string) => Promise<boolean>;
+  
+  // Payment operations
+  addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
+  
+  // Backup operations
+  createBackup: (name: string, description?: string) => string;
+  restoreBackup: (id: string) => boolean;
+  deleteBackup: (id: string) => boolean;
+  startNewMonth: () => void;
 }
 
 // Create the context
@@ -48,7 +79,139 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [paymentTables, setPaymentTables] = useState<PaymentTable[]>([]);
+  const [backups, setBackups] = useState<Backup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Route operations
+  const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
+    // Implementation would normally be here
+    // For now, just update local state
+    setRoutes(routes.map(r => r.id === id ? { ...r, ...route } : r));
+  };
+
+  const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
+    // Implementation would normally be here
+    // For now, just add to local state with a random ID
+    const id = Math.random().toString(36).substring(2, 15);
+    setRoutes([...routes, { ...route, id }]);
+    return id;
+  };
+
+  const deleteRoute = async (id: string) => {
+    // Implementation would normally be here
+    // For now, just remove from local state
+    setRoutes(routes.filter(r => r.id !== id));
+    return true;
+  };
+
+  // Vehicle operations
+  const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
+    const id = Math.random().toString(36).substring(2, 15);
+    setVehicles([...vehicles, { ...vehicle, id }]);
+    return id;
+  };
+
+  const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
+    setVehicles(vehicles.map(v => v.id === id ? { ...v, ...vehicle } : v));
+    return true;
+  };
+
+  const deleteVehicle = async (id: string) => {
+    setVehicles(vehicles.filter(v => v.id !== id));
+    return true;
+  };
+
+  // SalesRep operations
+  const addSalesRep = async (salesRep: Omit<SalesRep, 'id'>) => {
+    const id = Math.random().toString(36).substring(2, 15);
+    setSalesReps([...salesReps, { ...salesRep, id }]);
+    return id;
+  };
+
+  const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>) => {
+    setSalesReps(salesReps.map(s => s.id === id ? { ...s, ...salesRep } : s));
+    return true;
+  };
+
+  const deleteSalesRep = async (id: string) => {
+    setSalesReps(salesReps.filter(s => s.id !== id));
+    return true;
+  };
+
+  // Product operations
+  const addProduct = async (product: Omit<Product, 'id'>) => {
+    const id = Math.random().toString(36).substring(2, 15);
+    setProducts([...products, { ...product, id }]);
+    return id;
+  };
+
+  const updateProduct = async (id: string, product: Partial<Product>) => {
+    setProducts(products.map(p => p.id === id ? { ...p, ...product } : p));
+    return true;
+  };
+
+  const deleteProduct = async (id: string) => {
+    setProducts(products.filter(p => p.id !== id));
+    return true;
+  };
+
+  // Payment operations
+  const addPayment = async (payment: Omit<Payment, 'id'>) => {
+    const id = Math.random().toString(36).substring(2, 15);
+    setPayments([...payments, { ...payment, id }]);
+    return id;
+  };
+
+  // Backup operations
+  const createBackup = (name: string, description?: string) => {
+    const id = Math.random().toString(36).substring(2, 15);
+    const newBackup: Backup = {
+      id,
+      name,
+      description,
+      date: new Date(),
+      data: {
+        customers,
+        products,
+        orders,
+        payments,
+        routes,
+        loads,
+        salesReps,
+        vehicles
+      }
+    };
+    setBackups([...backups, newBackup]);
+    return id;
+  };
+
+  const restoreBackup = (id: string) => {
+    const backup = backups.find(b => b.id === id);
+    if (!backup) return false;
+    
+    setCustomers(backup.data.customers || []);
+    setProducts(backup.data.products || []);
+    setOrders(backup.data.orders || []);
+    setPayments(backup.data.payments || []);
+    setRoutes(backup.data.routes || []);
+    setLoads(backup.data.loads || []);
+    setSalesReps(backup.data.salesReps || []);
+    if (backup.data.vehicles) {
+      setVehicles(backup.data.vehicles);
+    }
+    
+    return true;
+  };
+
+  const deleteBackup = (id: string) => {
+    setBackups(backups.filter(b => b.id !== id));
+    return true;
+  };
+
+  const startNewMonth = () => {
+    // Implementation for starting a new month
+    console.log("Starting new month");
+  };
 
   // Load all data
   useEffect(() => {
@@ -112,7 +275,25 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       salesReps, setSalesReps,
       vehicles, setVehicles,
       paymentTables, setPaymentTables,
-      isLoading 
+      backups, setBackups,
+      isLoading,
+      updateRoute,
+      addRoute,
+      deleteRoute,
+      addVehicle,
+      updateVehicle,
+      deleteVehicle,
+      addSalesRep,
+      updateSalesRep,
+      deleteSalesRep,
+      addProduct,
+      updateProduct,
+      deleteProduct,
+      addPayment,
+      createBackup,
+      restoreBackup,
+      deleteBackup,
+      startNewMonth
     }}>
       {children}
     </AppContext.Provider>
