@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Backup, Order } from '@/types';
@@ -11,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
-import { formatDateTimeToBR } from '@/lib/date-utils';
+import { formatDateToBR } from '@/lib/date-utils';
 import { AlertCircle, Download, Upload, Calendar, CalendarClock, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useBackups } from '@/hooks/useBackups';
@@ -189,7 +188,7 @@ const SystemMaintenance = () => {
                         <div>
                           <div className="font-medium">{backup.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            Criado em: {formatDateTimeToBR(backup.date)}
+                            Criado em: {formatDateToBR(backup.date)}
                           </div>
                           {backup.description && (
                             <div className="text-sm mt-1">{backup.description}</div>

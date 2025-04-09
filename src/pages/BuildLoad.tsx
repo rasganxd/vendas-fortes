@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -46,15 +45,6 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "@/components/ui/use-toast"
 
@@ -71,10 +61,6 @@ const loadFormSchema = z.object({
   name: z.string().min(2, {
     message: "Nome deve ter pelo menos 2 caracteres.",
   }),
-  vehicleName: z.string().min(2, {
-    message: "Nome do veículo deve ter pelo menos 2 caracteres.",
-  }),
-  date: z.date(),
   notes: z.string().optional(),
   includePending: z.boolean().default(false).optional(),
 })
@@ -91,25 +77,15 @@ export default function BuildLoad() {
   const [selectAll, setSelectAll] = useState(false);
   const [lockedOrderIds, setLockedOrderIds] = useState<string[]>([]);
 
-  // Obter IDs de pedidos bloqueados ao carregar o componente
   useEffect(() => {
     setLockedOrderIds(getLockedOrderIds());
   }, [getLockedOrderIds]);
 
-  // Filtra os pedidos que não estão selecionados e não estão em cargas bloqueadas
   const filteredOrders = orders.filter(order =>
     (order.customerName.toLowerCase().includes(search.toLowerCase()) ||
     order.id.toLowerCase().includes(search.toLowerCase())) &&
     !selectedOrderIds.includes(order.id) &&
     !lockedOrderIds.includes(order.id)
-  );
-
-  // Pedidos que aparecem na lista mas estão bloqueados (para mostrar visualmente)
-  const blockedOrders = orders.filter(order =>
-    (order.customerName.toLowerCase().includes(search.toLowerCase()) ||
-    order.id.toLowerCase().includes(search.toLowerCase())) &&
-    !selectedOrderIds.includes(order.id) &&
-    lockedOrderIds.includes(order.id)
   );
 
   const handleOrderSelect = (order: Order, isChecked: boolean) => {
@@ -125,20 +101,17 @@ export default function BuildLoad() {
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
     if (checked) {
-      // Adicionar todos os IDs dos pedidos filtrados que ainda não foram selecionados
       const newSelectedIds = [
         ...selectedOrderIds,
         ...filteredOrders.map(order => order.id).filter(id => !selectedOrderIds.includes(id))
       ];
       setSelectedOrderIds(newSelectedIds);
     } else {
-      // Remover apenas os IDs dos pedidos que estão atualmente filtrados
       const filteredIds = filteredOrders.map(order => order.id);
       setSelectedOrderIds(prev => prev.filter(id => !filteredIds.includes(id)));
     }
   };
 
-  // Reset selectAll quando a pesquisa muda
   useEffect(() => {
     setSelectAll(false);
   }, [search]);
@@ -184,8 +157,6 @@ export default function BuildLoad() {
     resolver: zodResolver(loadFormSchema),
     defaultValues: {
       name: "",
-      vehicleName: "",
-      date: new Date(),
       notes: "",
       includePending: false,
     },
@@ -193,12 +164,10 @@ export default function BuildLoad() {
 
   const handleCreateLoad = async (values: z.infer<typeof loadFormSchema>) => {
     try {
-      // Agrupamos os itens pela ordem para evitar duplicações
       const uniqueOrderIds = Array.from(new Set(selectedOrders.map(order => order.id)));
       
       const loadItems: LoadItem[] = [];
       
-      // Para cada ID de pedido único, adicionamos os itens do pedido
       uniqueOrderIds.forEach(orderId => {
         const order = selectedOrders.find(o => o.id === orderId);
         if (order) {
@@ -208,7 +177,6 @@ export default function BuildLoad() {
               productName: item.productName,
               quantity: item.quantity,
               orderId: order.id,
-              // Adicionamos orderItems para compatibilidade
               orderItems: [item]
             });
           });
@@ -217,18 +185,16 @@ export default function BuildLoad() {
 
       const newLoad = {
         name: values.name,
-        vehicleName: values.vehicleName,
-        vehicleId: values.vehicleName, // Usando vehicleName como ID temporário
-        date: values.date,
+        vehicleId: '',
+        date: new Date(),
         items: loadItems,
         status: 'planning' as const,
         notes: values.notes && values.notes.trim() !== '' ? values.notes : null,
         salesRepId: 'default-sales-rep-id',
         orderIds: uniqueOrderIds,
-        locked: false, // Nova carga começa desbloqueada
+        locked: false,
       };
       
-      // Salvando a carga
       const loadId = await addLoad(newLoad);
       
       if (loadId) {
@@ -237,7 +203,6 @@ export default function BuildLoad() {
           description: "A carga foi salva no sistema."
         });
         
-        // Redirecionando para a página de cargas
         navigate('/cargas');
       }
     } catch (error) {
@@ -379,57 +344,6 @@ export default function BuildLoad() {
                           <FormControl>
                             <Input placeholder="Nome da Carga" {...field} />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="vehicleName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do Veículo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome do Veículo" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="date"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Data</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
                           <FormMessage />
                         </FormItem>
                       )}

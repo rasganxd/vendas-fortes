@@ -30,6 +30,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Load } from '@/types';
 import { useLoads } from '@/hooks/useLoads';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LoadCardProps {
   load: Load;
@@ -74,47 +75,56 @@ export const LoadCard: React.FC<LoadCardProps> = ({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{load.name}</CardTitle>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onView(load)}>
-                <Eye className="mr-2 h-4 w-4" />
-                <span>Visualizar</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(load)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                <span>Editar</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLockToggle}>
-                {load.locked ? (
-                  <>
-                    <Unlock className="mr-2 h-4 w-4" />
-                    <span>Desbloquear Carga</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="mr-2 h-4 w-4" />
-                    <span>Bloquear Carga</span>
-                  </>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onPrint}>
-                <Printer className="mr-2 h-4 w-4" />
-                <span>Romaneio</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => onDelete(load.id)}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                <span>Excluir</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-full"
+                  onClick={handleLockToggle}
+                >
+                  {load.locked ? (
+                    <Lock className="h-4 w-4 text-amber-500" />
+                  ) : (
+                    <Unlock className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {load.locked ? 'Desbloquear carga' : 'Bloquear carga'}
+              </TooltipContent>
+            </Tooltip>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onView(load)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  <span>Visualizar</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(load)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  <span>Editar</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onPrint}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  <span>Romaneio</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => onDelete(load.id)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Excluir</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         <div className="flex items-center gap-2 mt-1">
           {getStatusBadge(load.status || 'planning')}

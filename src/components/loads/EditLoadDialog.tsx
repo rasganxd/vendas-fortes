@@ -17,16 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { format } from 'date-fns';
 import { Load } from '@/types';
-import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from '@/lib/utils';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 
 interface EditLoadDialogProps {
   open: boolean;
@@ -38,7 +38,7 @@ interface EditLoadDialogProps {
 export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDialogProps) => {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<string>('planning');
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [notes, setNotes] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   
   // Reset form when dialog opens with new load data
@@ -46,7 +46,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
     if (load && open) {
       setName(load.name);
       setStatus(load.status || 'planning');
-      setDate(load.date);
+      setNotes(load.notes || '');
     }
   }, [load, open]);
   
@@ -58,7 +58,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
     const updatedLoad: Partial<Load> = {
       name,
       status,
-      date,
+      notes,
     };
     
     try {
@@ -106,30 +106,41 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
           </div>
           
           <div className="grid gap-2">
-            <Label>Data</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "dd/MM/yyyy") : "Selecione uma data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="notes">Observações</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Observações sobre a carga"
+              rows={3}
+            />
           </div>
+          
+          {load && load.items && load.items.length > 0 && (
+            <div className="grid gap-2">
+              <Label>Itens da carga</Label>
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pedido</TableHead>
+                      <TableHead>Produto</TableHead>
+                      <TableHead className="text-right">Quantidade</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {load.items.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.orderId?.substring(0, 8)}</TableCell>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
         </div>
         
         <DialogFooter>
@@ -142,7 +153,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={isLoading || !name || !status || !date}
+            disabled={isLoading || !name || !status}
             className="bg-sales-800 hover:bg-sales-700"
           >
             Salvar Alterações
