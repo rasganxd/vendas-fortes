@@ -1,4 +1,3 @@
-
 export function formatDateToBR(date: Date | string | null | undefined): string {
   if (!date) return '-';
   
@@ -24,3 +23,9 @@ export function formatDateTimeToBR(date: Date | string | null | undefined): stri
     minute: '2-digit'
   });
 }
+
+export const addDays = (date: Date, days: number): Date => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};

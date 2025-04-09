@@ -74,11 +74,36 @@ export const usePayments = () => {
       });
     }
   };
+  
+  const generatePromissoryNote = (paymentId: string, customerId: string, amount: number) => {
+    const payment = payments.find(p => p.id === paymentId);
+    if (!payment) {
+      toast({
+        title: "Erro",
+        description: "Pagamento não encontrado",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    // Here we would generate the actual promissory note document
+    // In a real implementation, this might involve creating a PDF
+    // or another document format
+    
+    return {
+      paymentId,
+      customerId,
+      amount,
+      date: new Date(),
+      status: 'generated'
+    };
+  };
 
   return {
     payments,
     addPayment,
     updatePayment,
-    deletePayment
+    deletePayment,
+    generatePromissoryNote
   };
 };

@@ -10,6 +10,15 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { PaymentTable } from '@/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FilePenLine, Printer } from "lucide-react";
+import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
 
 interface PaymentOptionsInputProps {
   paymentTables: PaymentTable[];
@@ -20,6 +29,9 @@ interface PaymentOptionsInputProps {
   simplifiedView?: boolean;
   buttonRef?: React.RefObject<HTMLButtonElement>;
   onSelectComplete?: () => void;
+  customerId?: string;
+  customerName?: string;
+  orderTotal?: number;
 }
 
 export default function PaymentOptionsInput({
@@ -30,9 +42,16 @@ export default function PaymentOptionsInput({
   setPaymentMethod,
   simplifiedView = false,
   buttonRef,
-  onSelectComplete
+  onSelectComplete,
+  customerId,
+  customerName,
+  orderTotal
 }: PaymentOptionsInputProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showPromissoryNote, setShowPromissoryNote] = useState(false);
+  
+  const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
+  const isPromissoryNoteType = selectedTable?.type === 'promissory_note';
   
   const handleSelectPaymentTable = (value: string) => {
     setSelectedPaymentTable(value);
@@ -125,6 +144,9 @@ export default function PaymentOptionsInput({
             <SelectItem value="cheque">Cheque</SelectItem>
             <SelectItem value="boleto">Boleto</SelectItem>
             <SelectItem value="pix">PIX</SelectItem>
+            {isPromissoryNoteType && (
+              <SelectItem value="promissoria">Nota Promissória</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -133,15 +155,42 @@ export default function PaymentOptionsInput({
         <div className="p-3 bg-gray-50 rounded-md">
           <p className="font-medium">Detalhes do Parcelamento</p>
           <div className="mt-2 space-y-1">
-            {paymentTables
-              .find(table => table.id === selectedPaymentTable)
-              ?.terms.map((term, index) => (
-                <div key={term.id} className="flex justify-between text-sm">
-                  <span>{term.description || `Parcela ${index + 1}`}</span>
-                  <span className="font-medium">{term.days} dias ({term.percentage}%)</span>
-                </div>
-              ))}
+            {selectedTable?.terms.map((term, index) => (
+              <div key={term.id} className="flex justify-between text-sm">
+                <span>{term.description || `Parcela ${index + 1}`}</span>
+                <span className="font-medium">{term.days} dias ({term.percentage}%)</span>
+              </div>
+            ))}
           </div>
+          
+          {isPromissoryNoteType && paymentMethod === "promissoria" && customerId && (
+            <div className="mt-3">
+              <Dialog open={showPromissoryNote} onOpenChange={setShowPromissoryNote}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-2 flex items-center justify-center gap-2"
+                  >
+                    <FilePenLine size={16} />
+                    Gerar Nota Promissória
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Nota Promissória</DialogTitle>
+                  </DialogHeader>
+                  
+                  <PromissoryNoteView 
+                    customerName={customerName || ""}
+                    customerId={customerId}
+                    paymentTable={selectedTable}
+                    total={orderTotal || 0}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
         </div>
       )}
     </div>
