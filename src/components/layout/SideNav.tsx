@@ -11,7 +11,8 @@ import {
   Coins,
   Database,
   CreditCard,
-  UserRound
+  UserRound,
+  LucideIcon
 } from "lucide-react";
 
 import { 
@@ -147,7 +148,7 @@ export default function SideNav() {
                 <h3 className="text-xs uppercase font-medium text-gray-500 px-4 mb-1">{groupLabels[group] || group}</h3>
                 {items.map((item) => {
                   const isActive = location.pathname === item.href;
-                  const IconComponent = item.icon;
+                  const IconComponent = item.icon as LucideIcon;
                   
                   return (
                     <SidebarMenuItem key={item.title}>

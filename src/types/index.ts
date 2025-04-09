@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -42,7 +41,7 @@ export interface Order {
   customerName: string;
   items: OrderItem[];
   total: number;
-  paymentMethod?: string; // Making this optional to fix the errors
+  paymentMethod?: string;
   paymentStatus: 'pending' | 'partial' | 'paid';
   createdAt: Date;
   status: 'draft' | 'confirmed' | 'delivered' | 'cancelled';
@@ -84,7 +83,7 @@ export interface LoadItem {
   productName: string;
   quantity: number;
   orderId?: string;
-  orderItems?: OrderItem[]; // Adding this for compatibility
+  orderItems?: OrderItem[];
 }
 
 export interface Load {
@@ -151,12 +150,14 @@ export interface PaymentTable {
   updatedAt?: Date;
 }
 
+import { LucideIcon } from "lucide-react";
+
 export interface NavItem {
   title: string;
   href: string;
-  icon: React.ComponentType;
+  icon: LucideIcon;
   group: string;
-  name?: string; // Added for compatibility
+  name?: string;
   submenu?: NavItem[];
 }
 
