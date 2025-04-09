@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
+import { usePaymentTables } from '@/hooks/usePaymentTables';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -21,6 +22,7 @@ import RecentPurchasesDialog from '@/components/orders/RecentPurchasesDialog';
 export default function NewOrder() {
   const { customers, salesReps, products, orders } = useAppContext();
   const { addOrder, getOrderById, updateOrder } = useOrders();
+  const { paymentTables } = usePaymentTables();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -40,33 +42,7 @@ export default function NewOrder() {
   // Payment related states
   const [paymentMethod, setPaymentMethod] = useState('');
   const [selectedPaymentTable, setSelectedPaymentTable] = useState('');
-  
-  // Mock payment tables for now (later to be replaced by context data)
-  const [paymentTables] = useState<PaymentTable[]>([
-    {
-      id: '1',
-      name: 'Pagamento à Vista',
-      description: 'Pagamento integral no momento da compra',
-      active: true,
-      createdAt: new Date(),
-      terms: [
-        { id: '1-1', days: 0, percentage: 100, description: 'À vista' }
-      ]
-    },
-    {
-      id: '2',
-      name: 'Pagamento 30/60/90',
-      description: 'Pagamento parcelado em 3 vezes',
-      active: true,
-      createdAt: new Date(),
-      terms: [
-        { id: '2-1', days: 30, percentage: 33.33, description: '1ª parcela' },
-        { id: '2-2', days: 60, percentage: 33.33, description: '2ª parcela' },
-        { id: '2-3', days: 90, percentage: 33.34, description: '3ª parcela' }
-      ]
-    }
-  ]);
-  
+
   // Recent purchases dialog state
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
 
@@ -79,6 +55,7 @@ export default function NewOrder() {
       const orderToEdit = getOrderById(orderId);
       
       if (orderToEdit) {
+        console.log("Loading order for editing:", orderToEdit);
         setIsEditMode(true);
         setCurrentOrderId(orderId);
         
@@ -379,4 +356,3 @@ export default function NewOrder() {
     </PageLayout>
   );
 }
-

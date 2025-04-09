@@ -19,7 +19,8 @@ import {
   DeliveryRoute, 
   Load, 
   SalesRep, 
-  Vehicle 
+  Vehicle,
+  PaymentTable
 } from "@/types";
 
 // Converte timestamp do Firestore para Date
@@ -283,5 +284,41 @@ export const loadService = {
   async delete(id: string): Promise<void> {
     const loadRef = doc(db, "loads", id);
     await deleteDoc(loadRef);
+  }
+};
+
+// Serviço para Tabelas de Pagamento
+export const paymentTableService = {
+  async getAll(): Promise<PaymentTable[]> {
+    const paymentTablesRef = collection(db, "paymentTables");
+    const snapshot = await getDocs(paymentTablesRef);
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...convertTimestampToDate(doc.data()) 
+    } as PaymentTable));
+  },
+  
+  async add(paymentTable: Omit<PaymentTable, "id">): Promise<string> {
+    const paymentTableData = {
+      ...paymentTable,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    const docRef = await addDoc(collection(db, "paymentTables"), paymentTableData);
+    return docRef.id;
+  },
+  
+  async update(id: string, paymentTable: Partial<PaymentTable>): Promise<void> {
+    const updateData = {
+      ...paymentTable,
+      updatedAt: serverTimestamp()
+    };
+    const paymentTableRef = doc(db, "paymentTables", id);
+    await updateDoc(paymentTableRef, updateData);
+  },
+  
+  async delete(id: string): Promise<void> {
+    const paymentTableRef = doc(db, "paymentTables", id);
+    await deleteDoc(paymentTableRef);
   }
 };

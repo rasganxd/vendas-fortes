@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -77,6 +78,11 @@ export default function PaymentOptionsInput({
                 {table.name}
               </SelectItem>
             ))}
+            {paymentTables.length === 0 && (
+              <div className="p-2 text-sm text-gray-500">
+                Nenhuma tabela de pagamento cadastrada
+              </div>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -86,8 +92,6 @@ export default function PaymentOptionsInput({
   // Original layout
   return (
     <div className="space-y-4">
-      {/* This is the full non-simplified view with payment tables and methods,
-          not relevant for our current changes */}
       <div>
         <Label htmlFor="paymentTable">Tabela de Pagamento</Label>
         <Select value={selectedPaymentTable} onValueChange={setSelectedPaymentTable}>
@@ -100,6 +104,11 @@ export default function PaymentOptionsInput({
                 {table.name}
               </SelectItem>
             ))}
+            {paymentTables.length === 0 && (
+              <div className="p-2 text-sm text-gray-500">
+                Nenhuma tabela de pagamento cadastrada
+              </div>
+            )}
           </SelectContent>
         </Select>
       </div>
