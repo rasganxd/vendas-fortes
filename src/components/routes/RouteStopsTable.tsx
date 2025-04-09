@@ -1,18 +1,20 @@
 
 import { Button } from '@/components/ui/button';
 import { RouteStop } from '@/types';
-import { Trash2, Check, Clock } from 'lucide-react';
+import { Trash2, Check, Clock, Edit } from 'lucide-react';
 
 interface RouteStopsTableProps {
   stops: RouteStop[];
   isCompleted: boolean;
   onRemoveStop: (id: string) => void;
+  onEditOrder?: (orderId: string) => void;
 }
 
 export function RouteStopsTable({ 
   stops, 
   isCompleted, 
-  onRemoveStop 
+  onRemoveStop,
+  onEditOrder
 }: RouteStopsTableProps) {
   const sortedStops = [...stops].sort((a, b) => a.sequence - b.sequence);
   
@@ -50,17 +52,30 @@ export function RouteStopsTable({
                 )}
               </td>
               <td className="py-3 px-4 text-right">
-                {!isCompleted && (
-                  <Button 
-                    size="sm" 
-                    variant="destructive"
-                    onClick={() => onRemoveStop(stop.id)}
-                    className="h-7 px-2"
-                  >
-                    <Trash2 size={14} />
-                    <span className="sr-only">Remover</span>
-                  </Button>
-                )}
+                <div className="flex justify-end gap-2">
+                  {onEditOrder && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => onEditOrder(stop.orderId)}
+                      className="h-7 px-2"
+                    >
+                      <Edit size={14} />
+                      <span className="sr-only">Editar</span>
+                    </Button>
+                  )}
+                  {!isCompleted && (
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={() => onRemoveStop(stop.id)}
+                      className="h-7 px-2"
+                    >
+                      <Trash2 size={14} />
+                      <span className="sr-only">Remover</span>
+                    </Button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

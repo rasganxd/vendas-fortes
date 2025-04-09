@@ -3,9 +3,8 @@ import React, { useState, KeyboardEvent } from 'react';
 import { Customer } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, X } from "lucide-react";
+import { Search, X, FileText } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { 
   Command,
   CommandEmpty,
@@ -14,6 +13,11 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CustomerSearchInputProps {
   customers: Customer[];
@@ -106,6 +110,7 @@ export default function CustomerSearchInput({
               className="h-6 text-xs"
               onClick={onViewRecentPurchases}
             >
+              <FileText size={14} className="mr-1" />
               Ver compras recentes
             </Button>
           )}
@@ -121,15 +126,61 @@ export default function CustomerSearchInput({
             ref={inputRef}
             className={`w-full ${compact ? "h-8 text-sm" : ""}`}
           />
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="icon" 
-            onClick={() => setIsCustomerSearchOpen(true)}
-            className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
-          >
-            <Search size={compact ? 14 : 18} />
-          </Button>
+          <Popover open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon" 
+                className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
+              >
+                <Search size={compact ? 14 : 18} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0" align="end">
+              <Command>
+                <CommandInput 
+                  placeholder="Buscar cliente por código ou nome..." 
+                  value={customerSearch}
+                  onValueChange={setCustomerSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    {filteredCustomers.map((customer) => (
+                      <CommandItem
+                        key={customer.id}
+                        value={customer.id}
+                        onSelect={() => {
+                          setSelectedCustomer(customer);
+                          setCustomerInput(`${customer.code} - ${customer.name}`);
+                          setIsCustomerSearchOpen(false);
+                          setCustomerSearch('');
+                          // Navigate to next field on selection
+                          if (onEnterPress) {
+                            setTimeout(onEnterPress, 50);
+                          }
+                        }}
+                        className="cursor-pointer py-2 px-2"
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center">
+                            <span className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-medium mr-2">
+                              {customer.code || "---"}
+                            </span>
+                            <span className="font-medium">{customer.name}</span>
+                          </div>
+                          <span className="text-xs text-gray-500 ml-7">
+                            {customer.city}{customer.state ? `, ${customer.state}` : ''}
+                          </span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           {selectedCustomer && (
             <Button 
               type="button" 
@@ -146,45 +197,6 @@ export default function CustomerSearchInput({
           )}
         </div>
       </div>
-
-      {/* Customer Search Dialog */}
-      <Dialog open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
-        <DialogContent className="sm:max-w-md">
-          <Command className="rounded-lg border shadow-md">
-            <CommandInput 
-              placeholder="Buscar cliente por código ou nome..." 
-              value={customerSearch}
-              onValueChange={setCustomerSearch}
-              className="h-9"
-            />
-            <CommandList>
-              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-              <CommandGroup heading="Clientes">
-                {filteredCustomers.map((customer) => (
-                  <CommandItem
-                    key={customer.id}
-                    value={customer.id}
-                    onSelect={() => {
-                      setSelectedCustomer(customer);
-                      setCustomerInput(`${customer.code} - ${customer.name}`);
-                      setIsCustomerSearchOpen(false);
-                      setCustomerSearch('');
-                      // Navigate to next field on selection
-                      if (onEnterPress) {
-                        setTimeout(onEnterPress, 50);
-                      }
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <span className="font-medium mr-2">{customer.code}</span>
-                    <span>{customer.name}</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
