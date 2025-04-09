@@ -119,6 +119,9 @@ export default function BuildLoad() {
       items: loadItems,
       status: 'planning' as const,
       notes: values.notes && values.notes.trim() !== '' ? values.notes : null,
+      vehicleId: 'default-vehicle-id', // Adding required field
+      salesRepId: 'default-sales-rep-id', // Adding optional field for compatibility
+      orderIds: selectedOrderIds, // Adding required field
     };
     
     addLoad(newLoad);

@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -126,7 +127,7 @@ export default function SideNav() {
   };
   
   return (
-    <Sidebar className="border-r bg-white shadow-sm" variant="sidebar" collapsible="icon">
+    <Sidebar variant="sidebar" collapsible="icon" className="border-r bg-white shadow-sm">
       <SidebarHeader className="px-4 py-3 border-b">
         <h1 className="text-xl font-bold text-sales-800">SalesTrack</h1>
       </SidebarHeader>
