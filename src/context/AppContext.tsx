@@ -1,6 +1,5 @@
-
 import React, { createContext, useEffect, useState } from 'react';
-import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle, PaymentTable, Backup } from '@/types';
+import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle, PaymentTable, Backup, PaymentMethod } from '@/types';
 import { loadCustomers } from '@/hooks/useCustomers';
 import { loadProducts } from '@/hooks/useProducts';
 import { loadOrders } from '@/hooks/useOrders';
@@ -31,6 +30,8 @@ interface AppContextType {
   setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
   paymentTables: PaymentTable[];
   setPaymentTables: React.Dispatch<React.SetStateAction<PaymentTable[]>>;
+  paymentMethods: PaymentMethod[];
+  setPaymentMethods: React.Dispatch<React.SetStateAction<PaymentMethod[]>>;
   backups: Backup[];
   setBackups: React.Dispatch<React.SetStateAction<Backup[]>>;
   isLoading: boolean;
@@ -58,6 +59,11 @@ interface AppContextType {
   // Payment operations
   addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
   
+  // PaymentMethod operations
+  addPaymentMethod: (paymentMethod: Omit<PaymentMethod, 'id'>) => Promise<string>;
+  updatePaymentMethod: (id: string, paymentMethod: Partial<PaymentMethod>) => Promise<boolean>;
+  deletePaymentMethod: (id: string) => Promise<boolean>;
+  
   // Backup operations
   createBackup: (name: string, description?: string) => string;
   restoreBackup: (id: string) => boolean;
@@ -79,27 +85,22 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [paymentTables, setPaymentTables] = useState<PaymentTable[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [backups, setBackups] = useState<Backup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Route operations
   const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
-    // Implementation would normally be here
-    // For now, just update local state
     setRoutes(routes.map(r => r.id === id ? { ...r, ...route } : r));
   };
 
   const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
-    // Implementation would normally be here
-    // For now, just add to local state with a random ID
     const id = Math.random().toString(36).substring(2, 15);
     setRoutes([...routes, { ...route, id }]);
     return id;
   };
 
   const deleteRoute = async (id: string) => {
-    // Implementation would normally be here
-    // For now, just remove from local state
     setRoutes(routes.filter(r => r.id !== id));
     return true;
   };
@@ -162,6 +163,23 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     return id;
   };
 
+  // PaymentMethod operations
+  const addPaymentMethod = async (paymentMethod: Omit<PaymentMethod, 'id'>) => {
+    const id = Math.random().toString(36).substring(2, 15);
+    setPaymentMethods([...paymentMethods, { ...paymentMethod, id }]);
+    return id;
+  };
+
+  const updatePaymentMethod = async (id: string, paymentMethod: Partial<PaymentMethod>) => {
+    setPaymentMethods(methods => methods.map(m => m.id === id ? { ...m, ...paymentMethod } : m));
+    return true;
+  };
+
+  const deletePaymentMethod = async (id: string) => {
+    setPaymentMethods(methods => methods.filter(m => m.id !== id));
+    return true;
+  };
+
   // Backup operations
   const createBackup = (name: string, description?: string) => {
     const id = Math.random().toString(36).substring(2, 15);
@@ -209,7 +227,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const startNewMonth = () => {
-    // Implementation for starting a new month
     console.log("Starting new month");
   };
 
@@ -219,7 +236,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       
       try {
-        // Carrega todos os dados do Firestore
         const [
           customersData, 
           productsData, 
@@ -242,7 +258,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           loadPaymentTables()
         ]);
         
-        // Atualiza os estados com os dados carregados
         setCustomers(customersData);
         setProducts(productsData);
         setOrders(ordersData);
@@ -252,6 +267,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setSalesReps(salesRepsData);
         setVehicles(vehiclesData);
         setPaymentTables(paymentTablesData);
+        
+        setPaymentMethods([
+          { id: '1', name: 'Dinheiro', type: 'cash', active: true },
+          { id: '2', name: 'Cartão de Crédito', type: 'credit', active: true },
+          { id: '3', name: 'Cartão de Débito', type: 'debit', active: true },
+          { id: '4', name: 'Transferência', type: 'transfer', active: true },
+          { id: '5', name: 'Cheque', type: 'check', active: true },
+        ]);
         
         console.log('Todos os dados foram carregados com sucesso!');
       } catch (error) {
@@ -275,6 +298,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       salesReps, setSalesReps,
       vehicles, setVehicles,
       paymentTables, setPaymentTables,
+      paymentMethods, setPaymentMethods,
       backups, setBackups,
       isLoading,
       updateRoute,
@@ -290,6 +314,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       updateProduct,
       deleteProduct,
       addPayment,
+      addPaymentMethod,
+      updatePaymentMethod,
+      deletePaymentMethod,
       createBackup,
       restoreBackup,
       deleteBackup,

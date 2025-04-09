@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Plus, Search } from 'lucide-react';
-import { Order, OrderItem } from '@/types';
+import { Order, OrderItem, LoadItem } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -53,7 +53,7 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 
-interface LoadItem {
+interface BuildLoadItem {
   id: string;
   orderId: string;
   productId: string;
@@ -80,7 +80,7 @@ export default function BuildLoad() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [loadItems, setLoadItems] = useState<LoadItem[]>([]);
+  const [buildLoadItems, setBuildLoadItems] = useState<BuildLoadItem[]>([]);
 
   const filteredOrders = orders.filter(order =>
     order.customerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -88,7 +88,7 @@ export default function BuildLoad() {
   );
 
   // Função para transformar OrderItems em LoadItems
-  const mapOrderItemsToLoadItems = (orderItems: OrderItem[], orderId: string): LoadItem[] => {
+  const mapOrderItemsToLoadItems = (orderItems: OrderItem[], orderId: string): BuildLoadItem[] => {
     return orderItems.map((item) => ({
       id: uuid(),
       orderId: orderId,
@@ -106,7 +106,7 @@ export default function BuildLoad() {
   const handleAddToLoad = () => {
     if (!selectedOrder) return;
 
-    const loadItems: LoadItem[] = selectedOrder.items.flatMap(item => ({
+    const newLoadItems: BuildLoadItem[] = selectedOrder.items.flatMap(item => ({
       id: uuid(),
       orderId: selectedOrder.id,
       productId: item.productId,
@@ -115,12 +115,12 @@ export default function BuildLoad() {
       status: 'pending'
     }));
 
-    setLoadItems(prevItems => [...prevItems, ...loadItems]);
+    setBuildLoadItems(prevItems => [...prevItems, ...newLoadItems]);
     setSelectedOrders(prevOrders => [...prevOrders, selectedOrder]);
   };
 
   const handleRemoveFromLoad = (orderId: string) => {
-    setLoadItems(prevItems => prevItems.filter(item => item.orderId !== orderId));
+    setBuildLoadItems(prevItems => prevItems.filter(item => item.orderId !== orderId));
     setSelectedOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
   };
 
@@ -138,27 +138,25 @@ export default function BuildLoad() {
   const handleCreateLoad = async (values: z.infer<typeof loadFormSchema>) => {
     // Aqui você pode processar os dados do formulário e os itens de carga
     console.log("Dados do formulário:", values);
-    console.log("Itens de carga:", loadItems);
+    console.log("Itens de carga:", buildLoadItems);
 
-    const loadItems = selectedOrders.flatMap(order => 
+    const loadItems: LoadItem[] = selectedOrders.flatMap(order => 
       order.items.map(item => ({
-        id: uuid(),
-        orderId: order.id,
         productId: item.productId,
         productName: item.productName,
         quantity: item.quantity,
-        status: 'pending'
+        orderId: order.id
       }))
     );
 
     const newLoad = {
       name: values.name,
       vehicleName: values.vehicleName,
+      vehicleId: values.vehicleName || 'default-vehicle-id', // Usando vehicleName como ID temporário se disponível
       date: values.date,
       items: loadItems,
       status: 'planning' as const,
       notes: values.notes && values.notes.trim() !== '' ? values.notes : null,
-      vehicleId: values.vehicleName || 'default-vehicle-id', // Usando vehicleName como ID temporário se disponível
       salesRepId: 'default-sales-rep-id',
       orderIds: selectedOrderIds,
     };
@@ -263,7 +261,7 @@ export default function BuildLoad() {
             </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-sales-800 hover:bg-sales-700" disabled={loadItems.length === 0}>
+                <Button className="bg-sales-800 hover:bg-sales-700" disabled={buildLoadItems.length === 0}>
                   <Plus size={16} className="mr-2" /> Criar Carga
                 </Button>
               </DialogTrigger>
@@ -378,7 +376,7 @@ export default function BuildLoad() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loadItems.map((item) => (
+              {buildLoadItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.orderId}</TableCell>
                   <TableCell>{item.productName}</TableCell>

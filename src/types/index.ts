@@ -125,7 +125,7 @@ export interface PaymentMethod {
   id: string;
   name: string;
   description?: string;
-  type: 'cash' | 'card' | 'check' | 'bank_transfer' | 'other' | 'credit' | 'debit' | 'transfer';
+  type: 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | 'card' | 'bank_transfer' | 'other';
   active?: boolean;
   installments?: boolean;
   maxInstallments?: number;

@@ -135,7 +135,7 @@ export default function SideNav() {
   };
   
   return (
-    <Sidebar variant="sidebar" collapsible="icon" className="border-r bg-white shadow-sm">
+    <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader className="px-4 py-3 border-b">
         <h1 className="text-xl font-bold text-sales-800">SalesTrack</h1>
       </SidebarHeader>
