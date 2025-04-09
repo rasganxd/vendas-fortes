@@ -83,55 +83,59 @@ export const SimpleRouteMap = ({ stops }: SimpleRouteMapProps) => {
         })}
 
         {/* Marcadores para cada parada */}
-        {stopPositions.map(({ stop, position }, index) => (
-          <g 
-            key={stop.id} 
-            transform={`translate(${position.x}, ${position.y})`}
-            onMouseEnter={() => setHoveredStop(stop.id)}
-            onMouseLeave={() => setHoveredStop(null)}
-            className="cursor-pointer"
-          >
-            {/* Círculo externo */}
-            <circle 
-              r="18" 
-              fill={stop.status === 'completed' ? "#16a34a" : "#2563eb"} 
-              opacity="0.2"
-            />
-            
-            {/* Círculo principal */}
-            <circle 
-              r="14" 
-              fill={stop.status === 'completed' ? "#16a34a" : "#2563eb"} 
-            />
-            
-            {/* Número da sequência */}
-            <text 
-              textAnchor="middle" 
-              dominantBaseline="middle" 
-              fill="white" 
-              fontSize="12"
-              fontWeight="bold"
+        {stopPositions.map(({ stop, position }, index) => {
+          const isCompleted = stop.status === 'completed' || stop.completed;
+          
+          return (
+            <g 
+              key={stop.id} 
+              transform={`translate(${position.x}, ${position.y})`}
+              onMouseEnter={() => setHoveredStop(stop.id)}
+              onMouseLeave={() => setHoveredStop(null)}
+              className="cursor-pointer"
             >
-              {stop.sequence}
-            </text>
-
-            {/* Tooltip com informações da parada */}
-            {hoveredStop === stop.id && (
-              <foreignObject 
-                x="20" 
-                y="-40" 
-                width="200" 
-                height="80"
+              {/* Círculo externo */}
+              <circle 
+                r="18" 
+                fill={isCompleted ? "#16a34a" : "#2563eb"} 
+                opacity="0.2"
+              />
+              
+              {/* Círculo principal */}
+              <circle 
+                r="14" 
+                fill={isCompleted ? "#16a34a" : "#2563eb"} 
+              />
+              
+              {/* Número da sequência */}
+              <text 
+                textAnchor="middle" 
+                dominantBaseline="middle" 
+                fill="white" 
+                fontSize="12"
+                fontWeight="bold"
               >
-                <div className="bg-white p-2 rounded-md shadow-md text-xs border">
-                  <p className="font-semibold">{stop.customerName}</p>
-                  <p>{stop.address}</p>
-                  <p>{`${stop.city}, ${stop.state}`}</p>
-                </div>
-              </foreignObject>
-            )}
-          </g>
-        ))}
+                {stop.sequence !== undefined ? stop.sequence : stop.position}
+              </text>
+
+              {/* Tooltip com informações da parada */}
+              {hoveredStop === stop.id && (
+                <foreignObject 
+                  x="20" 
+                  y="-40" 
+                  width="200" 
+                  height="80"
+                >
+                  <div className="bg-white p-2 rounded-md shadow-md text-xs border">
+                    <p className="font-semibold">{stop.customerName}</p>
+                    <p>{stop.address}</p>
+                    <p>{`${stop.city}, ${stop.state}`}</p>
+                  </div>
+                </foreignObject>
+              )}
+            </g>
+          );
+        })}
 
         {/* Marcador de início (primeiro ponto) */}
         {stopPositions.length > 0 && (

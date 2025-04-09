@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   name: string;
@@ -44,20 +45,30 @@ export interface Order {
   paymentMethod: string;
   paymentStatus: 'pending' | 'partial' | 'paid';
   createdAt: Date;
+  status: 'draft' | 'confirmed' | 'delivered' | 'cancelled';
   notes?: string;
   archived?: boolean;
   salesRepId?: string;
+  salesRepName?: string;
   paymentTableId?: string;
+  deliveryDate?: Date;
+  deliveryAddress?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryZipCode?: string;
 }
 
 export interface Payment {
   id: string;
-  customerId: string;
-  customerName: string;
   orderId: string;
+  customerId?: string;
+  customerName?: string;
   amount: number;
-  paymentMethod: string;
-  paymentDate: Date;
+  paymentMethod?: string;
+  method?: 'cash' | 'credit' | 'debit' | 'transfer' | 'check';
+  status?: 'pending' | 'completed';
+  date?: Date;
+  paymentDate?: Date;
   notes?: string;
 }
 
@@ -73,8 +84,11 @@ export interface Load {
   name: string;
   date: Date;
   vehicleId: string;
-  salesRepId: string;
-  orderIds: string[];
+  vehicleName?: string;
+  salesRepId?: string;
+  orderIds?: string[];
+  items?: any[];
+  status?: string;
   notes?: string;
 }
 
@@ -93,7 +107,7 @@ export interface Vehicle {
   id: string;
   name: string;
   capacity: number;
-  type: 'truck' | 'van' | 'car';
+  type: 'truck' | 'van' | 'car' | 'motorcycle';
   licensePlate?: string;
   driverName?: string;
   active?: boolean;
@@ -103,7 +117,10 @@ export interface PaymentMethod {
   id: string;
   name: string;
   description?: string;
-  type: 'cash' | 'card' | 'check' | 'bank_transfer' | 'other';
+  type: 'cash' | 'card' | 'check' | 'bank_transfer' | 'other' | 'credit' | 'debit' | 'transfer';
+  active?: boolean;
+  installments?: boolean;
+  maxInstallments?: number;
 }
 
 export interface PaymentTableTerm {
@@ -129,7 +146,9 @@ export interface PaymentTable {
 export interface NavItem {
   title: string;
   href: string;
-  icon?: React.ReactNode;
+  icon: React.ComponentType;
+  group: string;
+  name?: string; // Added for compatibility
   submenu?: NavItem[];
 }
 
@@ -137,13 +156,14 @@ export interface DeliveryRoute {
   id: string;
   name: string;
   date: Date;
-  salesRepId: string;
+  salesRepId?: string;
   salesRepName?: string;
-  vehicleId: string; 
+  driverName?: string;
+  vehicleId?: string; 
   vehicleName?: string;
   stops: RouteStop[];
   totalDistance?: number;
-  status?: 'planned' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'planned' | 'in_progress' | 'completed' | 'cancelled' | 'planning' | 'assigned' | 'in-progress';
   notes?: string;
 }
 
@@ -156,19 +176,37 @@ export interface RouteStop {
   state: string;
   zipCode: string;
   position: number;
+  sequence?: number;
+  status?: 'pending' | 'completed';
   completed?: boolean;
   arrivalTime?: Date;
   departureTime?: Date;
+  estimatedArrival?: Date;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Backup {
   id: string;
-  filename: string;
-  size: number;
-  createdAt: Date;
-  dataType: 'all' | 'customers' | 'products' | 'orders' | 'payments';
-  recordCount: number;
+  name: string;
+  date: Date;
+  description?: string;
+  filename?: string;
+  size?: number;
+  createdAt?: Date;
+  dataType?: 'all' | 'customers' | 'products' | 'orders' | 'payments';
+  recordCount?: number;
   downloadUrl?: string;
+  data?: {
+    customers?: Customer[];
+    products?: Product[];
+    orders?: Order[];
+    payments?: Payment[];
+    routes?: DeliveryRoute[];
+    loads?: Load[];
+    salesReps?: SalesRep[];
+    vehicles?: Vehicle[];
+  };
 }
 
 export interface LoadItem {

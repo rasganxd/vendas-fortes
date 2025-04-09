@@ -87,7 +87,7 @@ export const useRoutesPage = () => {
       city: customer.city,
       state: customer.state,
       zipCode: customer.zipCode,
-      sequence: selectedRoute.stops.length + 1,
+      position: selectedRoute.stops.length + 1,
       status: 'pending'
     };
 
@@ -109,7 +109,7 @@ export const useRoutesPage = () => {
     
     const resequencedStops = updatedStops.map((stop, index) => ({
       ...stop,
-      sequence: index + 1
+      position: index + 1
     }));
     
     updateRoute(selectedRoute.id, { stops: resequencedStops });
@@ -128,7 +128,7 @@ export const useRoutesPage = () => {
       date: date,
       vehicleId: vehicleId,
       vehicleName: selectedVehicle ? selectedVehicle.name : undefined,
-      status: 'planning',
+      status: 'planned',
       stops: []
     };
 
@@ -148,10 +148,11 @@ export const useRoutesPage = () => {
     if (!selectedRoute) return [];
     
     const assignedOrderIds = selectedRoute.stops.map(stop => stop.orderId);
-    return orders.filter(order => 
-      !assignedOrderIds.includes(order.id) && 
-      (order.status === 'confirmed' || order.status === 'draft')
-    );
+    return orders.filter(order => {
+      if (!order.status) return false;
+      return !assignedOrderIds.includes(order.id) && 
+        (order.status === 'confirmed' || order.status === 'draft');
+    });
   };
 
   return {

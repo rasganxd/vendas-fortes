@@ -37,7 +37,7 @@ interface EditLoadDialogProps {
 
 export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDialogProps) => {
   const [name, setName] = useState('');
-  const [status, setStatus] = useState<'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered'>('planning');
+  const [status, setStatus] = useState<string>('planning');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -45,7 +45,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
   useEffect(() => {
     if (load && open) {
       setName(load.name);
-      setStatus(load.status);
+      setStatus(load.status || 'planning');
       setDate(load.date);
     }
   }, [load, open]);
@@ -91,7 +91,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
           
           <div className="grid gap-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(value: 'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered') => setStatus(value)}>
+            <Select value={status} onValueChange={(value: string) => setStatus(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o status" />
               </SelectTrigger>

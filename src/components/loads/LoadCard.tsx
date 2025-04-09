@@ -18,7 +18,7 @@ interface LoadCardProps {
 export const LoadCard = ({ load, onView, onEdit, onDelete, onPrint }: LoadCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | undefined) => {
     switch (status) {
       case 'planning':
         return <Badge variant="outline">Planejamento</Badge>;
@@ -31,7 +31,7 @@ export const LoadCard = ({ load, onView, onEdit, onDelete, onPrint }: LoadCardPr
       case 'delivered':
         return <Badge className="bg-green-500">Entregue</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge>{status || 'Sem Status'}</Badge>;
     }
   };
   
@@ -54,7 +54,7 @@ export const LoadCard = ({ load, onView, onEdit, onDelete, onPrint }: LoadCardPr
         <div className="text-sm mb-3">
           <div className="flex justify-between mb-1">
             <span className="text-gray-500">Pedidos:</span>
-            <span className="font-medium">{load.items.length}</span>
+            <span className="font-medium">{load.items ? load.items.length : 0}</span>
           </div>
           <div className="flex justify-between mb-1">
             <span className="text-gray-500">Veículo:</span>

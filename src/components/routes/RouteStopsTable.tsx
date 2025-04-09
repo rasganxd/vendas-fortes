@@ -16,7 +16,12 @@ export function RouteStopsTable({
   onRemoveStop,
   onEditOrder
 }: RouteStopsTableProps) {
-  const sortedStops = [...stops].sort((a, b) => a.sequence - b.sequence);
+  const sortedStops = [...stops].sort((a, b) => {
+    // Use either sequence or position, whichever is available
+    const aPos = a.sequence !== undefined ? a.sequence : a.position;
+    const bPos = b.sequence !== undefined ? b.sequence : b.position;
+    return aPos - bPos;
+  });
   
   return (
     <div className="border rounded-lg overflow-auto">
@@ -32,14 +37,14 @@ export function RouteStopsTable({
         </thead>
         <tbody className="divide-y divide-gray-200">
           {sortedStops.map((stop) => (
-            <tr key={stop.id} className={stop.status === 'completed' ? 'bg-green-50' : undefined}>
-              <td className="py-3 px-4">{stop.sequence}</td>
+            <tr key={stop.id} className={stop.status === 'completed' || stop.completed ? 'bg-green-50' : undefined}>
+              <td className="py-3 px-4">{stop.sequence !== undefined ? stop.sequence : stop.position}</td>
               <td className="py-3 px-4">{stop.customerName}</td>
               <td className="py-3 px-4 text-gray-600 text-sm">
                 {stop.address}, {stop.city} - {stop.state}
               </td>
               <td className="py-3 px-4 text-center">
-                {stop.status === 'completed' ? (
+                {stop.status === 'completed' || stop.completed ? (
                   <span className="inline-flex items-center gap-1 text-green-600 text-xs">
                     <Check size={14} />
                     <span>Concluído</span>

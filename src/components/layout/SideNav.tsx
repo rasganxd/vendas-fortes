@@ -27,67 +27,78 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const navigation: NavItem[] = [
   {
-    name: "Dashboard",
+    title: "Dashboard",
+    name: "Dashboard", // For compatibility
     href: "/",
     icon: LayoutDashboard,
     group: "geral"
   },
   {
-    name: "Clientes",
+    title: "Clientes",
+    name: "Clientes", // For compatibility
     href: "/clientes",
     icon: Users,
     group: "cadastro"
   },
   {
-    name: "Produtos",
+    title: "Produtos",
+    name: "Produtos", // For compatibility
     href: "/produtos",
     icon: Package,
     group: "cadastro"
   },
   {
-    name: "Pedidos",
+    title: "Pedidos",
+    name: "Pedidos", // For compatibility
     href: "/pedidos",
     icon: FileText,
     group: "vendas"
   },
   {
-    name: "Pagamentos",
+    title: "Pagamentos",
+    name: "Pagamentos", // For compatibility
     href: "/pagamentos",
     icon: Coins,
     group: "financeiro"
   },
   {
-    name: "Tabelas Pagto",
+    title: "Tabelas Pagto",
+    name: "Tabelas Pagto", // For compatibility
     href: "/pagamentos/tabelas", 
     icon: CreditCard,
     group: "financeiro"
   },
   {
-    name: "Rotas",
+    title: "Rotas",
+    name: "Rotas", // For compatibility
     href: "/rotas",
     icon: ListChecks,
     group: "logistics"
   },
   {
-    name: "Cargas",
+    title: "Cargas",
+    name: "Cargas", // For compatibility
     href: "/cargas",
     icon: Package,
     group: "logistics"
   },
   {
-    name: "Veículos",
+    title: "Veículos",
+    name: "Veículos", // For compatibility
     href: "/veiculos",
     icon: Truck,
     group: "logistics"
   },
   {
-    name: "Config",
+    title: "Config",
+    name: "Config", // For compatibility
     href: "/configuracoes",
     icon: Settings,
     group: "sistema"
   },
   {
-    name: "Dados",
+    title: "Dados",
+    name: "Dados", // For compatibility
     href: "/manutencao",
     icon: Database,
     group: "sistema"
@@ -128,13 +139,14 @@ export default function SideNav() {
                 <h3 className="text-xs uppercase font-medium text-gray-500 px-4 mb-1">{groupLabels[group] || group}</h3>
                 {items.map((item) => {
                   const isActive = location.pathname === item.href;
+                  const Icon = item.icon;
                   
                   return (
-                    <SidebarMenuItem key={item.name}>
-                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.name} size="sm">
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.title} size="sm">
                         <Link to={item.href} className="flex items-center px-4 py-1.5 text-sm font-medium">
-                          <item.icon className="h-4 w-4 mr-3" />
-                          <span className="truncate">{item.name}</span>
+                          <Icon className="h-4 w-4 mr-3" />
+                          <span className="truncate">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
