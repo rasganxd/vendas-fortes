@@ -1,3 +1,4 @@
+
 import { Load, Order, OrderItem } from '@/types';
 import { loadService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
@@ -60,6 +61,10 @@ export const useLoads = () => {
         // Convert empty strings or undefined to null since Firestore accepts null values
         vehicleName: load.vehicleName === undefined ? undefined : (load.vehicleName || null),
         notes: load.notes === undefined ? undefined : (load.notes || null),
+        // Ensure orderIds is updated if items have changed
+        orderIds: load.items 
+          ? Array.from(new Set(load.items.map(item => item.orderId || '').filter(id => id !== '')))
+          : load.orderIds
       };
       
       // Update in Firebase
