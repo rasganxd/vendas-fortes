@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -80,6 +81,11 @@ export default function BuildLoad() {
   useEffect(() => {
     setLockedOrderIds(getLockedOrderIds());
   }, [getLockedOrderIds]);
+
+  // Get the orders that are locked/blocked
+  const blockedOrders = orders.filter(order => 
+    lockedOrderIds.includes(order.id)
+  );
 
   const filteredOrders = orders.filter(order =>
     (order.customerName.toLowerCase().includes(search.toLowerCase()) ||
