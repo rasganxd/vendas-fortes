@@ -21,6 +21,7 @@ import { RouteProductsList } from './RouteProductsList';
 import RouteFinancialReport from './RouteFinancialReport';
 import { useAppContext } from '@/hooks/useAppContext';
 import { toast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface RouteDetailDialogProps {
   open: boolean;
@@ -38,6 +39,7 @@ export const RouteDetailDialog = ({
   onRemoveStop 
 }: RouteDetailDialogProps) => {
   const { orders } = useAppContext();
+  const navigate = useNavigate();
   
   if (!route) return null;
 
@@ -52,6 +54,11 @@ export const RouteDetailDialog = ({
       title: "Rota salva",
       description: "A rota foi salva com sucesso!"
     });
+    onOpenChange(false);
+  };
+
+  const handleEditOrder = (orderId: string) => {
+    navigate(`/pedidos/novo?id=${orderId}`);
     onOpenChange(false);
   };
 

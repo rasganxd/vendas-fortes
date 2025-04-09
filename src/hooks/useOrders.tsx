@@ -16,6 +16,10 @@ export const loadOrders = async (): Promise<Order[]> => {
 export const useOrders = () => {
   const { orders, setOrders } = useAppContext();
 
+  const getOrderById = (id: string): Order | undefined => {
+    return orders.find(order => order.id === id);
+  };
+
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
       const id = await orderService.add(order);
@@ -97,6 +101,7 @@ export const useOrders = () => {
 
   return {
     orders,
+    getOrderById,
     addOrder,
     updateOrder,
     updateOrderPaymentMethod,

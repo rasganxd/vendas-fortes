@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -96,6 +97,10 @@ export default function Orders() {
   const handleDeleteOrder = (order: Order) => {
     setSelectedOrder(order);
     setIsDeleteDialogOpen(true);
+  };
+  
+  const handleEditOrder = (order: Order) => {
+    navigate(`/pedidos/novo?id=${order.id}`);
   };
   
   const confirmDeleteOrder = async () => {
@@ -255,7 +260,11 @@ export default function Orders() {
                           >
                             <Eye size={16} />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditOrder(order)}
+                          >
                             <FilePenLine size={16} />
                           </Button>
                           <Button
