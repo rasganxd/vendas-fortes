@@ -31,6 +31,7 @@ export interface BuildLoadItem {
   productName: string;
   quantity: number;
   status: 'pending' | 'loaded' | 'delivered';
+  productCode?: number; // Added productCode
 }
 
 export default function BuildLoad() {
@@ -110,7 +111,8 @@ export default function BuildLoad() {
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
-          status: 'pending'
+          status: 'pending',
+          productCode: item.productCode // Include the product code
         });
       });
     });
@@ -136,12 +138,17 @@ export default function BuildLoad() {
         const order = selectedOrders.find(o => o.id === orderId);
         if (order) {
           order.items.forEach(item => {
+            const buildItem = buildLoadItems.find(
+              bi => bi.orderId === orderId && bi.productId === item.productId
+            );
+            
             loadItems.push({
               productId: item.productId,
               productName: item.productName,
               quantity: item.quantity,
               orderId: order.id,
-              orderItems: [item]
+              orderItems: [item],
+              productCode: item.productCode // Ensure product code is included
             });
           });
         }

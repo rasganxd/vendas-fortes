@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -78,13 +79,15 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
     
     setIsLoading(true);
     
+    // Ensure orderIds are properly collected from the current items
+    const orderIds = Array.from(new Set(currentItems.map(item => item.orderId || '').filter(id => id !== '')));
+    
     const updatedLoad: Partial<Load> = {
       name,
       status,
       notes,
       items: currentItems,
-      // Update orderIds based on current items
-      orderIds: Array.from(new Set(currentItems.map(item => item.orderId || ''))).filter(id => id !== '')
+      orderIds: orderIds
     };
     
     try {
@@ -131,11 +134,13 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
     ordersToAdd.forEach(order => {
       order.items.forEach(item => {
         newLoadItems.push({
+          id: uuid(),
           orderId: order.id,
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
-          orderItems: [item]
+          orderItems: [item],
+          productCode: item.productCode // Ensure product code is included
         });
       });
     });

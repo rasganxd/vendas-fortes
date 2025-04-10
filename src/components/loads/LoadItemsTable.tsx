@@ -20,38 +20,56 @@ const LoadItemsTable: React.FC<LoadItemsTableProps> = ({
   items,
   handleRemoveFromLoad
 }) => {
+  // Group items by orderId to avoid removing all items from the same order
+  const orderGroups = items.reduce((acc, item) => {
+    if (!acc[item.orderId]) {
+      acc[item.orderId] = [];
+    }
+    acc[item.orderId].push(item);
+    return acc;
+  }, {} as Record<string, BuildLoadItem[]>);
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Pedido</TableHead>
+          <TableHead>Código</TableHead>
           <TableHead>Produto</TableHead>
           <TableHead>Quantidade</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell className="font-medium">{item.orderId.substring(0, 8)}</TableCell>
-            <TableCell>{item.productName}</TableCell>
-            <TableCell>{item.quantity}</TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveFromLoad(item.orderId)}
-                >
-                  Remover
-                </Button>
-              </div>
-            </TableCell>
-          </TableRow>
+        {Object.entries(orderGroups).map(([orderId, orderItems]) => (
+          <React.Fragment key={orderId}>
+            {orderItems.map((item, index) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">
+                  {index === 0 ? item.orderId.substring(0, 8) : ""}
+                </TableCell>
+                <TableCell>{item.productCode || "-"}</TableCell>
+                <TableCell>{item.productName}</TableCell>
+                <TableCell>{item.quantity}</TableCell>
+                <TableCell className="text-right">
+                  {index === 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveFromLoad(item.orderId)}
+                      className="hover:text-red-500"
+                    >
+                      Remover
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </React.Fragment>
         ))}
         {items.length === 0 && (
           <TableRow>
-            <TableCell colSpan={4} className="text-center py-4">
+            <TableCell colSpan={5} className="text-center py-4">
               Nenhum item adicionado à carga
             </TableCell>
           </TableRow>
