@@ -1,3 +1,4 @@
+
 import { useAppContext } from './useAppContext';
 import { useOrders } from './useOrders';
 import { toast } from '@/components/ui/use-toast';
@@ -151,7 +152,7 @@ export const usePayments = () => {
           customerId: order.customerId,
           customerName: order.customerName,
           amount: order.total,
-          method: 'promissoria',
+          method: order.paymentMethod as any, // Fix type issue
           status: 'pending',
           date: new Date(),
           notes: `Nota Promissória - Pedido #${order.id.substring(0, 6)}`

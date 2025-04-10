@@ -7,7 +7,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Printer, Lock } from 'lucide-react';
-import { Load } from '@/types';
+import { Load, Order } from '@/types';
 import { LoadCard } from '@/components/loads/LoadCard';
 import { EmptyLoads } from '@/components/loads/EmptyLoads';
 import { EditLoadDialog } from '@/components/loads/EditLoadDialog';
@@ -20,12 +20,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Progress } from '@/components/ui/progress';
 import { formatDateToBR } from '@/lib/date-utils';
 import { FileCheck, Weight, Calendar, Truck, Package } from 'lucide-react';
@@ -113,6 +107,48 @@ export default function Loads() {
   const getCustomerCode = (customerId: string) => {
     const customer = customers.find(c => c.id === customerId);
     return customer?.code || "-";
+  };
+
+  // Function to get a simplified view of orders in a load
+  const renderSimplifiedOrdersList = (orders: Order[]) => {
+    if (!orders || orders.length === 0) {
+      return (
+        <div className="text-center py-4 text-gray-500">
+          Nenhum pedido adicionado a esta carga
+        </div>
+      );
+    }
+
+    return (
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 text-gray-600">
+          <tr>
+            <th className="py-2 px-3 text-left">Cliente</th>
+            <th className="py-2 px-3 text-center">Produtos</th>
+            <th className="py-2 px-3 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => {
+            const customerCode = getCustomerCode(order.customerId);
+            return (
+              <tr key={order.id} className="border-t">
+                <td className="py-2 px-3">
+                  <span className="font-medium">{customerCode}</span> - {order.customerName}
+                </td>
+                <td className="py-2 px-3 text-center">{order.items.length}</td>
+                <td className="py-2 px-3 text-right">
+                  {order.total.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
   };
 
   return (
@@ -203,58 +239,7 @@ export default function Loads() {
               )}
             </div>
             <div className="p-3">
-              <Accordion type="multiple" className="w-full text-sm">
-                {selectedLoad?.items?.map((item) => {
-                  // Get orders from context to find customer code
-                  const orderId = item.orderId || '';
-                  const orders = getOrdersFromLoad(selectedLoad);
-                  const order = orders.find(o => o.id === orderId);
-                  const customerCode = order ? getCustomerCode(order.customerId) : "-";
-                  
-                  return (
-                    <AccordionItem key={item.id || `${orderId}-${item.productId}`} value={item.id || item.orderId || ''} className="border-b last:border-0">
-                      <AccordionTrigger className="py-2 px-2 hover:no-underline hover:bg-gray-50">
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2">
-                            <FileCheck size={14} className="text-gray-500" />
-                            <span>Cliente: {customerCode}</span>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-2 py-2 border-t text-xs">
-                        <div className="flex items-center justify-between text-gray-600 mb-2">
-                          <div className="flex items-center gap-1">
-                            <Weight size={12} />
-                            <span>Peso: {item.totalWeight || 0} kg</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Package size={12} />
-                            <span>Volume: {item.totalVolume || 0} m³</span>
-                          </div>
-                        </div>
-                        <div className="border rounded-md mt-2">
-                          <table className="w-full">
-                            <thead className="bg-gray-50 text-xs text-gray-600">
-                              <tr>
-                                <th className="py-1.5 px-2 text-left">Produto</th>
-                                <th className="py-1.5 px-2 text-right">Qtd</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {item.orderItems?.map((orderItem) => (
-                                <tr key={orderItem.id} className="border-t">
-                                  <td className="py-1.5 px-2">{orderItem.productName}</td>
-                                  <td className="py-1.5 px-2 text-right">{orderItem.quantity}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
+              {selectedLoad && renderSimplifiedOrdersList(getOrdersFromLoad(selectedLoad))}
             </div>
           </div>
           
