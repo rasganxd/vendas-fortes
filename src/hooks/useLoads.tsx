@@ -152,6 +152,7 @@ export const useLoads = () => {
           id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
           productId: item.productId,
           productName: item.productName,
+          productCode: item.productCode || 0,  // Ensure product code is included
           quantity: item.quantity,
           unitPrice: (item.orderItems && item.orderItems[0]?.unitPrice) || 0,
           total: (item.orderItems && item.orderItems[0]?.unitPrice) 

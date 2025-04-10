@@ -15,6 +15,7 @@ interface LoadPickingListProps {
 
 interface AggregatedProduct {
   productId: string;
+  productCode: string | number;
   productName: string;
   quantity: number;
   unit: string;
@@ -38,6 +39,7 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
         } else {
           productsMap.set(item.productId, {
             productId: item.productId,
+            productCode: item.productCode || 0,
             productName: item.productName,
             quantity: item.quantity,
             unit: 'un', // Unidade padrão
@@ -121,7 +123,7 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
             <tbody>
               {aggregatedProducts.map((product) => (
                 <tr key={product.productId}>
-                  <td className="border p-2">{product.productId}</td>
+                  <td className="border p-2">{product.productCode}</td>
                   <td className="border p-2">{product.productName}</td>
                   <td className="border p-2 text-center">{product.quantity}</td>
                   <td className="border p-2 text-center">{product.unit}</td>

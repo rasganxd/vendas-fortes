@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -81,7 +80,7 @@ export default function NewOrder() {
         setOrderItems(orderToEdit.items.map(item => ({
           productId: item.productId,
           productName: item.productName,
-          productCode: item.productCode,
+          productCode: item.productCode || 0,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           total: item.unitPrice * item.quantity
@@ -110,7 +109,7 @@ export default function NewOrder() {
         });
       }
     }
-  }, [location.search, getOrderById, customers, salesReps]);
+  }, [location.search, getOrderById, customers, salesReps, orders]);
 
   const handleAddItem = (product: Product, quantity: number, price: number) => {
     const existingItem = orderItems.find(item => item.productId === product.id);
