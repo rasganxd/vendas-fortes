@@ -115,7 +115,10 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
           
           <div className="flex justify-between items-center mb-6">
             <div>
-              <p className="font-semibold">{selectedOrder?.paymentStatus}</p>
+              {/* Payment status without the "pending" word */}
+              {selectedOrder.paymentStatus !== 'pending' && (
+                <p className="font-semibold">{selectedOrder?.paymentStatus}</p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-gray-600">Subtotal: 

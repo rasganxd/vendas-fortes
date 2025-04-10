@@ -189,7 +189,10 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
                     
                     <div className="flex justify-between items-center mb-2">
                       <div>
-                        <p className="font-semibold">{order.paymentStatus}</p>
+                        {/* Remove pending payment status from display */}
+                        {order.paymentStatus !== 'pending' && (
+                          <p className="font-semibold">{order.paymentStatus}</p>
+                        )}
                         {order.paymentMethod && (
                           <p className="text-sm">{order.paymentMethod}</p>
                         )}
