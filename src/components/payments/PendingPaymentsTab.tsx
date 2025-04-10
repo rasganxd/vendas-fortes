@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Order, PaymentTable } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -53,7 +52,6 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<{ [key: string]: boolean }>({});
   const [paymentValues, setPaymentValues] = useState<{ [key: string]: { amount: number; method: string } }>({});
 
-  // Initialize payment values for each order
   React.useEffect(() => {
     const initialValues = {} as { [key: string]: { amount: number; method: string } };
     pendingPaymentOrders.forEach(order => {
@@ -92,7 +90,6 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
 
     const { amount, method } = paymentValue;
     
-    // Validate payment amount
     if (!amount || amount <= 0) {
       toast({
         title: "Erro de validação",
@@ -102,7 +99,6 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
       return;
     }
 
-    // Validate that amount doesn't exceed pending amount
     const pendingAmount = order.total - order.paid;
     if (amount > pendingAmount) {
       toast({

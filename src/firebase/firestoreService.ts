@@ -1,4 +1,5 @@
-import { firestore } from './firebaseConfig';
+
+import { db as firestore } from './config';
 import { 
   collection,
   doc,
@@ -11,7 +12,7 @@ import {
   QuerySnapshot,
   DocumentData,
 } from 'firebase/firestore';
-import { Customer, SalesRep, Product, Order, PaymentTable } from '@/types';
+import { Customer, SalesRep, Product, Order, PaymentTable, Payment } from '@/types';
 
 // Generic function to convert Firestore Timestamp to JavaScript Date
 const convertTimestampToDate = (data: any): any => {
@@ -86,7 +87,7 @@ const createService = <T extends { id?: string }>(collectionName: string) => {
     update: async (id: string, item: Partial<T>): Promise<void> => {
       try {
         const docRef = doc(firestore, collectionName, id);
-        await updateDoc(docRef, item);
+        await updateDoc(docRef, item as any);
       } catch (error) {
         console.error(`Erro ao atualizar documento com ID ${id} em ${collectionName}:`, error);
         throw error;
@@ -110,6 +111,10 @@ export const customerService = createService<Customer>('customers');
 export const salesRepService = createService<SalesRep>('salesReps');
 export const productService = createService<Product>('products');
 export const paymentTableService = createService<PaymentTable>('paymentTables');
+export const paymentService = createService<Payment>('payments');
+export const routeService = createService<any>('routes');
+export const loadService = createService<any>('loads');
+export const vehicleService = createService<any>('vehicles');
 
 export const orderService = {
   getAll: async (): Promise<Order[]> => {
