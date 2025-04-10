@@ -92,10 +92,20 @@ export default function ProductSearchInput({
   const filteredProducts = searchTerm
     ? products.filter(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.code?.toString() === searchTerm || 
-        product.code?.toString().includes(searchTerm)
+        (product.code?.toString() === searchTerm) || 
+        (product.code?.toString()?.includes(searchTerm))
       )
     : [];
+  
+  // Sort results to prioritize exact code matches
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    // Exact code matches come first
+    const aExactCodeMatch = a.code?.toString() === searchTerm;
+    const bExactCodeMatch = b.code?.toString() === searchTerm;
+    if (aExactCodeMatch && !bExactCodeMatch) return -1;
+    if (!aExactCodeMatch && bExactCodeMatch) return 1;
+    return 0;
+  });
   
   if (inlineLayout) {
     return (
@@ -113,12 +123,12 @@ export default function ProductSearchInput({
                 onChange={handleSearch}
                 autoComplete="off"
               />
-              {showResults && filteredProducts.length > 0 && (
+              {showResults && sortedProducts.length > 0 && (
                 <div 
                   ref={resultsRef}
                   className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
                 >
-                  {filteredProducts.map(product => (
+                  {sortedProducts.map(product => (
                     <div
                       key={product.id}
                       className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
@@ -204,12 +214,12 @@ export default function ProductSearchInput({
           onChange={handleSearch}
           autoComplete="off"
         />
-        {showResults && filteredProducts.length > 0 && (
+        {showResults && sortedProducts.length > 0 && (
           <div 
             ref={resultsRef}
             className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
           >
-            {filteredProducts.map(product => (
+            {sortedProducts.map(product => (
               <div
                 key={product.id}
                 className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"

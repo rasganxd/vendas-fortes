@@ -129,6 +129,7 @@ export default function NewOrder() {
       setOrderItems([...orderItems, {
         productId: product.id,
         productName: product.name,
+        productCode: product.code, // Store the product code explicitly
         quantity: quantity,
         unitPrice: price,
         total: price * quantity

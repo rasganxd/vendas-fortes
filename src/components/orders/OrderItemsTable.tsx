@@ -38,7 +38,7 @@ export default function OrderItemsTable({
             <tbody>
               {orderItems.map((item) => (
                 <tr key={item.productId} className="border-t">
-                  <td className="px-4 py-3">{item.productId.substring(0, 6) || '—'}</td>
+                  <td className="px-4 py-3">{item.productCode || '—'}</td>
                   <td className="px-4 py-3">{item.productName}</td>
                   <td className="px-4 py-3 text-center">{item.quantity}</td>
                   <td className="px-4 py-3 text-center">un</td>

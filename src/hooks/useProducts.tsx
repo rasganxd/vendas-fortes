@@ -27,9 +27,9 @@ export const useProducts = () => {
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
-      // Assign the next available code if not provided
-      const nextCode = product.code || getNextProductCode();
-      const productWithCode = { ...product, code: nextCode };
+      // Ensure the product has a code - if not provided, assign the next available one
+      const productCode = product.code || getNextProductCode();
+      const productWithCode = { ...product, code: productCode };
       
       // Add to Firebase
       const id = await productService.add(productWithCode);
@@ -55,12 +55,23 @@ export const useProducts = () => {
 
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
+      // Never allow code to be undefined or null when updating
+      const updateData = { ...product };
+      if (updateData.code === undefined || updateData.code === null) {
+        const existingProduct = products.find(p => p.id === id);
+        if (existingProduct && existingProduct.code) {
+          updateData.code = existingProduct.code;
+        }
+      }
+      
       // Update in Firebase
-      await productService.update(id, product);
+      await productService.update(id, updateData);
+      
       // Update local state
       setProducts(products.map(p => 
-        p.id === id ? { ...p, ...product } : p
+        p.id === id ? { ...p, ...updateData } : p
       ));
+      
       toast({
         title: "Produto atualizado",
         description: "Produto atualizado com sucesso!"

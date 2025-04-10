@@ -1,4 +1,3 @@
-
 import { db as firestore } from './config';
 import { 
   collection,
@@ -127,7 +126,11 @@ export const orderService = {
           id: doc.id,
           createdAt: data.createdAt instanceof Timestamp 
             ? data.createdAt.toDate() 
-            : new Date(data.createdAt)
+            : new Date(data.createdAt),
+          items: data.items.map(item => ({
+            ...item,
+            productCode: item.productCode || '' // Ensure productCode is preserved
+          }))
         } as Order;
       });
     } catch (error) {
@@ -138,7 +141,16 @@ export const orderService = {
 
   add: async (order: Omit<Order, 'id'>): Promise<string> => {
     try {
-      const docRef = await addDoc(collection(firestore, 'orders'), order);
+      // Make sure product codes are included in each order item
+      const orderWithProductCodes = {
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          productCode: item.productCode || ''
+        }))
+      };
+      
+      const docRef = await addDoc(collection(firestore, 'orders'), orderWithProductCodes);
       return docRef.id;
     } catch (error) {
       console.error("Erro ao adicionar pedido:", error);
@@ -149,17 +161,20 @@ export const orderService = {
   getById: async (id: string): Promise<Order | null> => {
     try {
       const orderRef = doc(firestore, 'orders', id);
-      const orderSnap = await getDocs(collection(firestore, 'orders'));
-      const orderDoc = orderSnap.docs.find(doc => doc.id === id);
+      const orderSnap = await getDoc(orderRef);
       
-      if (orderDoc) {
-        const data = orderDoc.data() as Omit<Order, 'id'>;
+      if (orderSnap.exists()) {
+        const data = orderSnap.data() as Omit<Order, 'id'>;
         return { 
           ...data, 
-          id: orderDoc.id,
+          id: orderSnap.id,
           createdAt: data.createdAt instanceof Timestamp 
             ? data.createdAt.toDate() 
-            : new Date(data.createdAt)
+            : new Date(data.createdAt),
+          items: data.items.map(item => ({
+            ...item,
+            productCode: item.productCode || ''
+          }))
         };
       }
       return null;
