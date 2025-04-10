@@ -1,362 +1,184 @@
+import { firestore } from './firebaseConfig';
 import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  serverTimestamp, 
-  Timestamp
-} from "firebase/firestore";
-import { db } from "./config";
-import { 
-  Customer, 
-  Product, 
-  Order, 
-  Payment, 
-  DeliveryRoute, 
-  Load, 
-  SalesRep, 
-  Vehicle,
-  PaymentTable
-} from "@/types";
+  collection,
+  doc,
+  addDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  Timestamp,
+  QuerySnapshot,
+  DocumentData,
+} from 'firebase/firestore';
+import { Customer, SalesRep, Product, Order, PaymentTable } from '@/types';
 
-const convertTimestampToDate = (data: any) => {
-  const newData = { ...data };
-  
-  Object.keys(newData).forEach(key => {
-    if (newData[key] instanceof Timestamp) {
-      newData[key] = newData[key].toDate();
+// Generic function to convert Firestore Timestamp to JavaScript Date
+const convertTimestampToDate = (data: any): any => {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      const value = data[key];
+
+      if (value instanceof Timestamp) {
+        data[key] = value.toDate();
+      } else if (typeof value === 'object') {
+        convertTimestampToDate(value);
+      }
     }
-  });
-  
-  return newData;
+  }
+
+  return data;
 };
 
-export const customerService = {
-  async getAll(): Promise<Customer[]> {
-    const customersRef = collection(db, "customers");
-    const snapshot = await getDocs(customersRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...convertTimestampToDate(doc.data()) 
-    } as Customer));
-  },
-  
-  async add(customer: Omit<Customer, "id">): Promise<string> {
-    const customerData = {
-      ...customer,
-      createdAt: serverTimestamp()
-    };
-    const docRef = await addDoc(collection(db, "customers"), customerData);
-    return docRef.id;
-  },
-  
-  async update(id: string, customer: Partial<Customer>): Promise<void> {
-    const customerRef = doc(db, "customers", id);
-    await updateDoc(customerRef, customer);
-  },
-  
-  async delete(id: string): Promise<void> {
-    const customerRef = doc(db, "customers", id);
-    await deleteDoc(customerRef);
-  }
+// Generic service functions
+const createService = <T extends { id?: string }>(collectionName: string) => {
+  return {
+    getAll: async (): Promise<T[]> => {
+      try {
+        const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(firestore, collectionName));
+        return querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            ...convertTimestampToDate(data),
+            id: doc.id
+          } as T;
+        });
+      } catch (error) {
+        console.error(`Erro ao buscar todos os documentos de ${collectionName}:`, error);
+        throw error;
+      }
+    },
+
+    add: async (item: Omit<T, 'id'>): Promise<string> => {
+      try {
+        const docRef = await addDoc(collection(firestore, collectionName), item);
+        return docRef.id;
+      } catch (error) {
+        console.error(`Erro ao adicionar documento em ${collectionName}:`, error);
+        throw error;
+      }
+    },
+
+    getById: async (id: string): Promise<T | null> => {
+      try {
+        const docRef = doc(firestore, collectionName, id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          return {
+            ...convertTimestampToDate(docSnap.data()),
+            id: docSnap.id
+          } as T;
+        } else {
+          console.log("Documento não encontrado!");
+          return null;
+        }
+      } catch (error) {
+        console.error(`Erro ao buscar documento com ID ${id} em ${collectionName}:`, error);
+        throw error;
+      }
+    },
+
+    update: async (id: string, item: Partial<T>): Promise<void> => {
+      try {
+        const docRef = doc(firestore, collectionName, id);
+        await updateDoc(docRef, item);
+      } catch (error) {
+        console.error(`Erro ao atualizar documento com ID ${id} em ${collectionName}:`, error);
+        throw error;
+      }
+    },
+
+    delete: async (id: string): Promise<void> => {
+      try {
+        const docRef = doc(firestore, collectionName, id);
+        await deleteDoc(docRef);
+      } catch (error) {
+        console.error(`Erro ao deletar documento com ID ${id} em ${collectionName}:`, error);
+        throw error;
+      }
+    },
+  };
 };
 
-export const productService = {
-  async getAll(): Promise<Product[]> {
-    const productsRef = collection(db, "products");
-    const snapshot = await getDocs(productsRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...doc.data() 
-    } as Product));
-  },
-  
-  async add(product: Omit<Product, "id">): Promise<string> {
-    const docRef = await addDoc(collection(db, "products"), product);
-    return docRef.id;
-  },
-  
-  async update(id: string, product: Partial<Product>): Promise<void> {
-    const productRef = doc(db, "products", id);
-    await updateDoc(productRef, product);
-  },
-  
-  async delete(id: string): Promise<void> {
-    const productRef = doc(db, "products", id);
-    await deleteDoc(productRef);
-  }
-};
+// Specific service instances
+export const customerService = createService<Customer>('customers');
+export const salesRepService = createService<SalesRep>('salesReps');
+export const productService = createService<Product>('products');
+export const paymentTableService = createService<PaymentTable>('paymentTables');
 
 export const orderService = {
-  async getAll(): Promise<Order[]> {
-    const ordersRef = collection(db, "orders");
-    const snapshot = await getDocs(ordersRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...convertTimestampToDate(doc.data()) 
-    } as Order));
-  },
-  
-  async add(order: Omit<Order, "id">): Promise<string> {
-    const orderData = {
-      ...order,
-      createdAt: serverTimestamp()
-    };
-    const docRef = await addDoc(collection(db, "orders"), orderData);
-    return docRef.id;
-  },
-  
-  async update(id: string, order: Partial<Order>): Promise<void> {
-    const orderRef = doc(db, "orders", id);
-    await updateDoc(orderRef, order);
-  },
-  
-  async delete(id: string): Promise<void> {
-    const orderRef = doc(db, "orders", id);
-    await deleteDoc(orderRef);
-  }
-};
-
-export const vehicleService = {
-  async getAll(): Promise<Vehicle[]> {
-    const vehiclesRef = collection(db, "vehicles");
-    const snapshot = await getDocs(vehiclesRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...convertTimestampToDate(doc.data()) 
-    } as Vehicle));
-  },
-  
-  async add(vehicle: Omit<Vehicle, "id">): Promise<string> {
-    const vehicleData = {
-      ...vehicle,
-      createdAt: serverTimestamp()
-    };
-    const docRef = await addDoc(collection(db, "vehicles"), vehicleData);
-    return docRef.id;
-  },
-  
-  async update(id: string, vehicle: Partial<Vehicle>): Promise<void> {
-    const vehicleRef = doc(db, "vehicles", id);
-    await updateDoc(vehicleRef, vehicle);
-  },
-  
-  async delete(id: string): Promise<void> {
-    if (!id) {
-      throw new Error("ID do veículo é obrigatório para exclusão");
-    }
-    console.log("Tentando excluir veículo com ID:", id);
-    const vehicleRef = doc(db, "vehicles", id);
-    await deleteDoc(vehicleRef);
-    console.log("Veículo excluído do Firestore com ID:", id);
-  }
-};
-
-export const paymentService = {
-  getAll: async () => {
+  getAll: async (): Promise<Order[]> => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'payments'));
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Payment[];
+      const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(firestore, 'orders'));
+      return querySnapshot.docs.map(doc => {
+        const data = doc.data() as Omit<Order, 'id'>;
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: data.createdAt instanceof Timestamp 
+            ? data.createdAt.toDate() 
+            : new Date(data.createdAt)
+        } as Order;
+      });
     } catch (error) {
-      console.error('Error getting payments:', error);
+      console.error("Erro ao buscar todos os pedidos:", error);
       return [];
     }
   },
-  getById: async (id: string) => {
+
+  add: async (order: Omit<Order, 'id'>): Promise<string> => {
     try {
-      const docRef = doc(db, 'payments', id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Payment;
-      }
-      return null;
-    } catch (error) {
-      console.error('Error getting payment:', error);
-      return null;
-    }
-  },
-  getOrderById: async (orderId: string) => {
-    try {
-      const orderRef = doc(db, 'orders', orderId);
-      const orderSnap = await getDocs(collection(db, 'orders')).then(
-        snapshot => snapshot.docs.find(doc => doc.id === orderId)
-      );
-      
-      if (orderSnap) {
-        return { id: orderSnap.id, ...orderSnap.data() };
-      }
-      return null;
-    } catch (error) {
-      console.error("Error getting order by id:", error);
-      throw error;
-    }
-  },
-  add: async (payment: Omit<Payment, 'id'>) => {
-    try {
-      const docRef = await addDoc(collection(db, 'payments'), {
-        ...payment,
-        createdAt: serverTimestamp()
-      });
+      const docRef = await addDoc(collection(firestore, 'orders'), order);
       return docRef.id;
     } catch (error) {
-      console.error('Error adding payment:', error);
-      throw error;
+      console.error("Erro ao adicionar pedido:", error);
+      return "";
     }
   },
-  update: async (id: string, data: Partial<Payment>) => {
+  
+  getById: async (id: string): Promise<Order | null> => {
     try {
-      const docRef = doc(db, 'payments', id);
-      await updateDoc(docRef, {
-        ...data,
-        updatedAt: serverTimestamp()
-      });
-      return true;
+      const orderRef = doc(firestore, 'orders', id);
+      const orderSnap = await getDocs(collection(firestore, 'orders'));
+      const orderDoc = orderSnap.docs.find(doc => doc.id === id);
+      
+      if (orderDoc) {
+        const data = orderDoc.data() as Omit<Order, 'id'>;
+        return { 
+          ...data, 
+          id: orderDoc.id,
+          createdAt: data.createdAt instanceof Timestamp 
+            ? data.createdAt.toDate() 
+            : new Date(data.createdAt)
+        };
+      }
+      return null;
     } catch (error) {
-      console.error('Error updating payment:', error);
-      throw error;
+      console.error("Error getting order by ID:", error);
+      return null;
     }
   },
-  delete: async (id: string) => {
+
+  update: async (id: string, order: Partial<Order>): Promise<void> => {
     try {
-      const docRef = doc(db, 'payments', id);
-      await deleteDoc(docRef);
-      return true;
+      const orderRef = doc(firestore, 'orders', id);
+      await updateDoc(orderRef, order);
     } catch (error) {
-      console.error('Error deleting payment:', error);
-      throw error;
+      console.error("Erro ao atualizar pedido:", error);
     }
-  }
-};
+  },
 
-export const salesRepService = {
-  async getAll(): Promise<SalesRep[]> {
-    const salesRepsRef = collection(db, "salesReps");
-    const snapshot = await getDocs(salesRepsRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...doc.data() 
-    } as SalesRep));
-  },
-  
-  async add(salesRep: Omit<SalesRep, "id">): Promise<string> {
-    const docRef = await addDoc(collection(db, "salesReps"), salesRep);
-    return docRef.id;
-  },
-  
-  async update(id: string, salesRep: Partial<SalesRep>): Promise<void> {
-    const salesRepRef = doc(db, "salesReps", id);
-    await updateDoc(salesRepRef, salesRep);
-  },
-  
-  async delete(id: string): Promise<void> {
-    const salesRepRef = doc(db, "salesReps", id);
-    await deleteDoc(salesRepRef);
-  }
-};
-
-export const routeService = {
-  async getAll(): Promise<DeliveryRoute[]> {
-    const routesRef = collection(db, "routes");
-    const snapshot = await getDocs(routesRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...convertTimestampToDate(doc.data()) 
-    } as DeliveryRoute));
-  },
-  
-  async add(route: Omit<DeliveryRoute, "id">): Promise<string> {
-    const routeData = {
-      ...route,
-      createdAt: serverTimestamp()
-    };
-    const docRef = await addDoc(collection(db, "routes"), routeData);
-    return docRef.id;
-  },
-  
-  async update(id: string, route: Partial<DeliveryRoute>): Promise<void> {
-    const routeRef = doc(db, "routes", id);
-    await updateDoc(routeRef, route);
-  },
-  
-  async delete(id: string): Promise<void> {
-    if (!id) {
-      throw new Error("ID da rota é obrigatório para exclusão");
+  delete: async (id: string): Promise<void> => {
+    try {
+      const orderRef = doc(firestore, 'orders', id);
+      await deleteDoc(orderRef);
+    } catch (error) {
+      console.error("Erro ao excluir pedido:", error);
     }
-    console.log("Tentando excluir rota com ID:", id);
-    const routeRef = doc(db, "routes", id);
-    await deleteDoc(routeRef);
-    console.log("Documento excluído do Firestore com ID:", id);
-  }
-};
-
-export const loadService = {
-  async getAll(): Promise<Load[]> {
-    const loadsRef = collection(db, "loads");
-    const snapshot = await getDocs(loadsRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...convertTimestampToDate(doc.data()) 
-    } as Load));
   },
-  
-  async add(load: Omit<Load, "id">): Promise<string> {
-    const loadData = {
-      ...load,
-      createdAt: serverTimestamp()
-    };
-    const docRef = await addDoc(collection(db, "loads"), loadData);
-    return docRef.id;
-  },
-  
-  async update(id: string, load: Partial<Load>): Promise<void> {
-    const loadRef = doc(db, "loads", id);
-    await updateDoc(loadRef, load);
-  },
-  
-  async delete(id: string): Promise<void> {
-    const loadRef = doc(db, "loads", id);
-    await deleteDoc(loadRef);
-  }
-};
-
-export const paymentTableService = {
-  async getAll(): Promise<PaymentTable[]> {
-    const paymentTablesRef = collection(db, "paymentTables");
-    const snapshot = await getDocs(paymentTablesRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...convertTimestampToDate(doc.data()) 
-    } as PaymentTable));
-  },
-  
-  async add(paymentTable: Omit<PaymentTable, "id">): Promise<string> {
-    const paymentTableData = {
-      ...paymentTable,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-    const docRef = await addDoc(collection(db, "paymentTables"), paymentTableData);
-    return docRef.id;
-  },
-  
-  async update(id: string, paymentTable: Partial<PaymentTable>): Promise<void> {
-    const updateData = {
-      ...paymentTable,
-      updatedAt: serverTimestamp()
-    };
-    const paymentTableRef = doc(db, "paymentTables", id);
-    await updateDoc(paymentTableRef, updateData);
-  },
-  
-  async delete(id: string): Promise<void> {
-    const paymentTableRef = doc(db, "paymentTables", id);
-    await deleteDoc(paymentTableRef);
-  }
 };

@@ -88,10 +88,12 @@ export default function ProductSearchInput({
     };
   }, []);
   
+  // Update the filtering logic to prioritize exact code matches and show code in the results
   const filteredProducts = searchTerm
     ? products.filter(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.code.toString().includes(searchTerm)
+        product.code?.toString() === searchTerm || 
+        product.code?.toString().includes(searchTerm)
       )
     : [];
   
@@ -122,7 +124,10 @@ export default function ProductSearchInput({
                       className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
                       onClick={() => handleProductSelect(product)}
                     >
-                      <span>{product.name}</span>
+                      <div className="flex gap-2">
+                        <span className="font-medium text-gray-500">#{product.code}</span>
+                        <span>{product.name}</span>
+                      </div>
                       <span className="text-gray-600">
                         {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </span>
@@ -210,7 +215,10 @@ export default function ProductSearchInput({
                 className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
                 onClick={() => handleProductSelect(product)}
               >
-                <span>{product.name}</span>
+                <div className="flex gap-2">
+                  <span className="font-medium text-gray-500">#{product.code}</span>
+                  <span>{product.name}</span>
+                </div>
                 <span className="text-gray-600">
                   {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
