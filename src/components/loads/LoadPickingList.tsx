@@ -2,10 +2,10 @@
 import { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Order } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
-import { Printer, PackageCheck, TruckIcon, CreditCard, ClipboardCheck } from 'lucide-react';
+import { Printer, Package, TruckIcon, FileText } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface LoadPickingListProps {
   orders: Order[];
@@ -70,100 +70,105 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
   return (
     <div className="space-y-4">
       {/* Versão para impressão */}
-      <div ref={componentRef} className="p-6">
-        <div className="text-center mb-6">
+      <div ref={componentRef} className="p-4">
+        <div className="text-center mb-4">
           <h1 className="text-2xl font-bold text-sales-800">Romaneio de Separação</h1>
           <p className="text-gray-500">{loadName} - Data: {formatDateToBR(new Date())}</p>
         </div>
         
         {/* Resumo do carregamento */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="border rounded-md p-3 bg-gray-50 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <PackageCheck className="text-sales-800" size={20} />
-              <h3 className="font-medium">Produtos Distintos</h3>
-            </div>
-            <p className="text-2xl font-bold text-sales-800">{aggregatedProducts.length}</p>
-          </div>
-          <div className="border rounded-md p-3 bg-gray-50 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <TruckIcon className="text-sales-800" size={20} />
-              <h3 className="font-medium">Entregas</h3>
-            </div>
-            <p className="text-2xl font-bold text-sales-800">{deliveryCount}</p>
-          </div>
-          <div className="border rounded-md p-3 bg-gray-50 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <CreditCard className="text-sales-800" size={20} />
-              <h3 className="font-medium">Valor Total</h3>
-            </div>
-            <p className="text-2xl font-bold text-sales-800">
-              {totalValue.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
-            </p>
-          </div>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <Card className="bg-gray-50">
+            <CardHeader className="py-3 px-4">
+              <div className="flex items-center gap-2">
+                <Package className="text-sales-800" size={18} />
+                <CardTitle className="text-sm font-medium">Produtos</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              <p className="text-xl font-bold text-sales-800">{aggregatedProducts.length}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gray-50">
+            <CardHeader className="py-3 px-4">
+              <div className="flex items-center gap-2">
+                <TruckIcon className="text-sales-800" size={18} />
+                <CardTitle className="text-sm font-medium">Entregas</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              <p className="text-xl font-bold text-sales-800">{deliveryCount}</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gray-50">
+            <CardHeader className="py-3 px-4">
+              <div className="flex items-center gap-2">
+                <FileText className="text-sales-800" size={18} />
+                <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="py-2 px-4">
+              <p className="text-xl font-bold text-sales-800">
+                {totalValue.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
+              </p>
+            </CardContent>
+          </Card>
         </div>
         
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <ClipboardCheck className="text-sales-800" size={18} />
-            <h2 className="text-lg font-semibold">Produtos para Separação</h2>
-          </div>
-          <div className="border rounded-md overflow-hidden shadow-sm">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-sales-50 text-sales-800">
-                  <th className="border border-gray-200 p-2 text-left">Código</th>
-                  <th className="border border-gray-200 p-2 text-left">Produto</th>
-                  <th className="border border-gray-200 p-2 text-center">Qtd.</th>
-                  <th className="border border-gray-200 p-2 text-center">Un.</th>
-                  <th className="border border-gray-200 p-2 text-right">Valor Unit.</th>
-                  <th className="border border-gray-200 p-2 text-right">Total</th>
-                  <th className="border border-gray-200 p-2 text-center">Conferido</th>
-                </tr>
-              </thead>
-              <tbody>
-                {aggregatedProducts.map((product) => (
-                  <tr key={product.productId} className="hover:bg-gray-50">
-                    <td className="border border-gray-200 p-2">{product.productCode}</td>
-                    <td className="border border-gray-200 p-2">{product.productName}</td>
-                    <td className="border border-gray-200 p-2 text-center">{product.quantity}</td>
-                    <td className="border border-gray-200 p-2 text-center">{product.unit}</td>
-                    <td className="border border-gray-200 p-2 text-right">
-                      {product.unitPrice.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      })}
-                    </td>
-                    <td className="border border-gray-200 p-2 text-right">
-                      {product.total.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      })}
-                    </td>
-                    <td className="border border-gray-200 p-2 text-center">
-                      <div className="h-6 w-6 border border-gray-400 rounded-sm mx-auto"></div>
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-sales-50 font-bold text-sales-800">
-                  <td className="border border-gray-200 p-2" colSpan={4}>TOTAL</td>
-                  <td className="border border-gray-200 p-2 text-right" colSpan={2}>
-                    {totalValue.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    })}
-                  </td>
-                  <td className="border border-gray-200 p-2"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* Tabela simplificada de produtos */}
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-sales-50 text-sales-800">
+              <th className="border p-2 text-left">Código</th>
+              <th className="border p-2 text-left">Produto</th>
+              <th className="border p-2 text-center">Qtd.</th>
+              <th className="border p-2 text-right">Valor Unit.</th>
+              <th className="border p-2 text-right">Total</th>
+              <th className="border p-2 text-center">Conferido</th>
+            </tr>
+          </thead>
+          <tbody>
+            {aggregatedProducts.map((product) => (
+              <tr key={product.productId} className="hover:bg-gray-50">
+                <td className="border p-2">{product.productCode}</td>
+                <td className="border p-2">{product.productName}</td>
+                <td className="border p-2 text-center">{product.quantity}</td>
+                <td className="border p-2 text-right">
+                  {product.unitPrice.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
+                </td>
+                <td className="border p-2 text-right">
+                  {product.total.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
+                </td>
+                <td className="border p-2 text-center">
+                  <div className="h-5 w-5 border border-gray-400 rounded-sm mx-auto"></div>
+                </td>
+              </tr>
+            ))}
+            <tr className="bg-sales-50 font-bold text-sales-800">
+              <td className="border p-2" colSpan={4}>TOTAL</td>
+              <td className="border p-2 text-right">
+                {totalValue.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
+              </td>
+              <td className="border p-2"></td>
+            </tr>
+          </tbody>
+        </table>
         
-        <div className="mt-8">
+        <div className="mt-6">
           <div className="border-t pt-4">
             <p className="text-center">Assinatura do responsável: ___________________________________</p>
           </div>
