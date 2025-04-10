@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/hooks/useAppContext';
 import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
+import { formatDateToBR } from '@/lib/date-utils';
 
 interface PromissoryNotesTabProps {
   pendingPaymentOrders: Array<{
@@ -21,13 +22,15 @@ interface PromissoryNotesTabProps {
   paymentTables: PaymentTable[];
   customers: Customer[];
   orders: Order[];
+  payments: any[];
 }
 
 const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
   pendingPaymentOrders,
   paymentTables,
   customers,
-  orders
+  orders,
+  payments
 }) => {
   const { paymentTables: allPaymentTables } = useAppContext();
   const [showPromissoryNote, setShowPromissoryNote] = useState(false);
@@ -51,23 +54,37 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
     return customers.find(c => c.id === customerId);
   };
 
-  // Filter orders that use promissory notes
-  const filteredOrders = orders.filter(order => {
-    // Filter by search term, payment method, and payment table type
-    const matchesSearch = search === '' || 
+  // Get all orders that use promissory notes OR have promissory payments
+  const getPromissoryNoteOrders = () => {
+    // Get orders with promissory notes payment method
+    const promissoryOrders = orders.filter(order => {
+      // Check if payment method is promissory note
+      if (order.paymentMethod === 'promissoria') return true;
+      
+      // Check if payment table is a promissory note type
+      const paymentTable = order.paymentTableId ? 
+        allPaymentTables.find(pt => pt.id === order.paymentTableId) : null;
+      
+      return paymentTable?.type === 'promissory_note';
+    });
+    
+    // Get orders that have promissory note payments
+    const ordersWithPromissoryPayments = orders.filter(order => 
+      payments.some(p => p.orderId === order.id && p.method === 'promissoria')
+    );
+    
+    // Combine both lists and remove duplicates
+    const combinedOrders = [...promissoryOrders, ...ordersWithPromissoryPayments];
+    const uniqueOrders = Array.from(new Map(combinedOrders.map(order => [order.id, order])).values());
+    
+    return uniqueOrders;
+  };
+
+  // Filter orders by search term
+  const filteredOrders = getPromissoryNoteOrders().filter(order => {
+    return search === '' || 
       order.customerName?.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
-    
-    // Check if this is a promissory note order
-    const isPromissoryNote = order.paymentMethod === 'promissoria';
-    
-    // Check if payment table is a promissory note type
-    const paymentTable = order.paymentTableId ? 
-      allPaymentTables.find(pt => pt.id === order.paymentTableId) : null;
-    
-    const isPromissoryNoteTable = paymentTable?.type === 'promissory_note';
-    
-    return matchesSearch && isPromissoryNote && isPromissoryNoteTable;
   });
 
   useEffect(() => {
@@ -126,21 +143,38 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
                 const paymentTable = order.paymentTableId ? 
                   allPaymentTables.find(pt => pt.id === order.paymentTableId) : null;
                 
-                if (!paymentTable) return null;
+                // Find promissory note payment for this order
+                const promissoryPayment = payments.find(
+                  p => p.orderId === order.id && p.method === 'promissoria'
+                );
                 
                 return (
                   <Card key={order.id} className="border shadow-sm">
                     <CardContent className="p-6">
                       <div className="font-medium text-lg mb-1">{order.customerName}</div>
-                      <div className="text-sm text-gray-600 mb-3">Pedido: {order.id}</div>
+                      <div className="text-sm text-gray-600 mb-3">
+                        Pedido: {order.id}
+                        {order.createdAt && (
+                          <span className="ml-2">
+                            ({formatDateToBR(order.createdAt)})
+                          </span>
+                        )}
+                      </div>
                       <div className="flex justify-between items-center">
                         <div>
                           <div className="text-sm text-gray-700">
                             Total: {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </div>
-                          <div className="text-sm font-semibold text-blue-600 mt-1">
-                            Tabela: {paymentTable.name}
-                          </div>
+                          {paymentTable && (
+                            <div className="text-sm font-semibold text-blue-600 mt-1">
+                              Tabela: {paymentTable.name}
+                            </div>
+                          )}
+                          {promissoryPayment && (
+                            <div className="text-sm text-green-600 mt-1">
+                              Nota Promissória Registrada
+                            </div>
+                          )}
                         </div>
                         <Button 
                           className="bg-blue-600 hover:bg-blue-700 flex gap-1"

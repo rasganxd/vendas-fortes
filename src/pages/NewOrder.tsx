@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
+import { usePayments } from '@/hooks/usePayments';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -21,6 +22,7 @@ export default function NewOrder() {
   const { customers, salesReps, products, orders } = useAppContext();
   const { addOrder, getOrderById, updateOrder } = useOrders();
   const { paymentTables } = usePaymentTables();
+  const { createAutomaticPaymentRecord } = usePayments();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -224,6 +226,14 @@ export default function NewOrder() {
           title: "Pedido Atualizado",
           description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
         });
+
+        // Create automatic payment record if needed (for promissory notes)
+        if (paymentMethod === 'promissoria') {
+          await createAutomaticPaymentRecord({
+            ...orderData,
+            id: orderId
+          });
+        }
       } else {
         orderId = await addOrder(orderData);
         
@@ -232,6 +242,14 @@ export default function NewOrder() {
             title: "Pedido Criado",
             description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
           });
+          
+          // Create automatic payment record if needed (for promissory notes)
+          if (paymentMethod === 'promissoria') {
+            await createAutomaticPaymentRecord({
+              ...orderData,
+              id: orderId
+            });
+          }
         }
       }
       

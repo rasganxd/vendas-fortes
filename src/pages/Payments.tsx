@@ -25,7 +25,8 @@ export default function Payments() {
     { value: 'credit', label: 'Cartão de Crédito' },
     { value: 'debit', label: 'Cartão de Débito' },
     { value: 'transfer', label: 'Transferência' },
-    { value: 'check', label: 'Cheque' }
+    { value: 'check', label: 'Cheque' },
+    { value: 'promissoria', label: 'Nota Promissória' }
   ];
 
   const pendingPaymentOrders = orders
@@ -39,6 +40,7 @@ export default function Payments() {
       customerId: order.customerId,
       total: order.total,
       paymentTableId: order.paymentTableId,
+      paymentMethod: order.paymentMethod,
       paid: payments
         .filter(p => p.orderId === order.id && p.status === 'completed')
         .reduce((sum, p) => sum + p.amount, 0)
@@ -150,6 +152,7 @@ export default function Payments() {
                   paymentTables={paymentTables}
                   customers={customers}
                   orders={orders}
+                  payments={payments}
                 />
               )}
             </CardContent>

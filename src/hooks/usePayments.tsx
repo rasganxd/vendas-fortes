@@ -1,4 +1,3 @@
-
 import { useAppContext } from './useAppContext';
 import { useOrders } from './useOrders';
 import { toast } from '@/components/ui/use-toast';
@@ -143,11 +142,37 @@ export const usePayments = () => {
     }
   };
 
+  const createAutomaticPaymentRecord = async (order: any) => {
+    try {
+      // For promissory notes or other payment methods that need tracking
+      if (order.paymentMethod === 'promissoria' && order.paymentTableId) {
+        await addPayment({
+          orderId: order.id,
+          customerId: order.customerId,
+          customerName: order.customerName,
+          amount: order.total,
+          method: 'promissoria',
+          status: 'pending',
+          date: new Date(),
+          notes: `Nota Promissória - Pedido #${order.id.substring(0, 6)}`
+        });
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Erro ao criar registro de pagamento automático:", error);
+      return false;
+    }
+  };
+
   return {
     calculateTotal,
     confirmPayment,
     addPayment,
     updatePayment,
-    deletePayment
+    deletePayment,
+    createAutomaticPaymentRecord
   };
 };

@@ -17,8 +17,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FilePenLine, Printer } from "lucide-react";
+import { FilePenLine, Printer, FileText } from "lucide-react";
 import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
+import { Badge } from '@/components/ui/badge';
 
 interface PaymentOptionsInputProps {
   paymentTables: PaymentTable[];
@@ -59,8 +60,13 @@ export default function PaymentOptionsInput({
     // If payment table is selected, also set a default payment method
     if (value) {
       const selected = paymentTables.find(pt => pt.id === value);
-      if (selected && !paymentMethod) {
-        setPaymentMethod('dinheiro'); // Default to cash
+      if (selected) {
+        // If promissory note payment table, automatically set payment method to promissory note
+        if (selected.type === 'promissory_note') {
+          setPaymentMethod('promissoria');
+        } else if (!paymentMethod) {
+          setPaymentMethod('dinheiro'); // Default to cash for other payment tables
+        }
       }
     }
     
@@ -94,7 +100,10 @@ export default function PaymentOptionsInput({
           <SelectContent>
             {paymentTables.map(table => (
               <SelectItem key={table.id} value={table.id}>
-                {table.name}
+                {table.name} 
+                {table.type === 'promissory_note' && (
+                  <Badge className="ml-2 bg-blue-500">Promissória</Badge>
+                )}
               </SelectItem>
             ))}
             {paymentTables.length === 0 && (
@@ -104,6 +113,13 @@ export default function PaymentOptionsInput({
             )}
           </SelectContent>
         </Select>
+        
+        {isPromissoryNoteType && (
+          <div className="mt-2 text-xs text-blue-600 flex items-center">
+            <FileText size={14} className="mr-1" />
+            Nota promissória será gerada automaticamente
+          </div>
+        )}
       </div>
     );
   }
@@ -121,6 +137,9 @@ export default function PaymentOptionsInput({
             {paymentTables.map(table => (
               <SelectItem key={table.id} value={table.id}>
                 {table.name}
+                {table.type === 'promissory_note' && (
+                  <Badge className="ml-2 bg-blue-500">Promissória</Badge>
+                )}
               </SelectItem>
             ))}
             {paymentTables.length === 0 && (
@@ -134,7 +153,11 @@ export default function PaymentOptionsInput({
       
       <div>
         <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
-        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+        <Select 
+          value={paymentMethod} 
+          onValueChange={setPaymentMethod}
+          disabled={isPromissoryNoteType} // Auto-select promissory for promissory note tables
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione uma forma de pagamento" />
           </SelectTrigger>
@@ -144,11 +167,15 @@ export default function PaymentOptionsInput({
             <SelectItem value="cheque">Cheque</SelectItem>
             <SelectItem value="boleto">Boleto</SelectItem>
             <SelectItem value="pix">PIX</SelectItem>
-            {isPromissoryNoteType && (
-              <SelectItem value="promissoria">Nota Promissória</SelectItem>
-            )}
+            <SelectItem value="promissoria">Nota Promissória</SelectItem>
           </SelectContent>
         </Select>
+        
+        {isPromissoryNoteType && (
+          <p className="mt-1 text-sm text-blue-600">
+            Pagamento com nota promissória será gerado automaticamente
+          </p>
+        )}
       </div>
       
       {selectedPaymentTable && (
@@ -163,7 +190,7 @@ export default function PaymentOptionsInput({
             ))}
           </div>
           
-          {isPromissoryNoteType && paymentMethod === "promissoria" && customerId && (
+          {isPromissoryNoteType && customerId && (
             <div className="mt-3">
               <Dialog open={showPromissoryNote} onOpenChange={setShowPromissoryNote}>
                 <DialogTrigger asChild>
@@ -173,7 +200,7 @@ export default function PaymentOptionsInput({
                     className="w-full mt-2 flex items-center justify-center gap-2"
                   >
                     <FilePenLine size={16} />
-                    Gerar Nota Promissória
+                    Visualizar Nota Promissória
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-2xl">
