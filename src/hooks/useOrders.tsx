@@ -22,13 +22,19 @@ export const useOrders = () => {
 
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
+      console.log("Adding order to database:", order);
       const id = await orderService.add(order);
+      console.log("Order added successfully, received ID:", id);
+      
+      if (!id) {
+        throw new Error("Failed to add order: No ID returned");
+      }
+      
       const newOrder = { ...order, id } as Order;
       setOrders([...orders, newOrder]);
-      toast({
-        title: "Pedido adicionado",
-        description: "Pedido adicionado com sucesso!"
-      });
+      
+      console.log("State updated with new order");
+      
       return id;
     } catch (error) {
       console.error("Erro ao adicionar pedido:", error);

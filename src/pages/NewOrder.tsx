@@ -172,6 +172,7 @@ export default function NewOrder() {
     setSelectedPaymentTable('');
     setIsEditMode(false);
     setCurrentOrderId(null);
+    setCustomerInputValue('');
   };
 
   const handleCreateOrder = async () => {
@@ -204,6 +205,7 @@ export default function NewOrder() {
     
     try {
       setIsSubmitting(true);
+      console.log("Starting order submission process...");
       
       // Get the selected payment table
       const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
@@ -227,6 +229,7 @@ export default function NewOrder() {
       let orderId;
       
       if (isEditMode && currentOrderId) {
+        console.log("Updating existing order:", currentOrderId);
         await updateOrder(currentOrderId, orderData);
         orderId = currentOrderId;
         
@@ -243,7 +246,9 @@ export default function NewOrder() {
           });
         }
       } else {
+        console.log("Creating new order");
         orderId = await addOrder(orderData);
+        console.log("Order created with ID:", orderId);
         
         if (orderId) {
           toast({
@@ -258,6 +263,8 @@ export default function NewOrder() {
               id: orderId
             });
           }
+        } else {
+          throw new Error("Falha ao criar pedido: ID não retornado");
         }
       }
       
