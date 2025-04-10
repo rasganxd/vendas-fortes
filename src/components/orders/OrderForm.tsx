@@ -9,7 +9,6 @@ import ProductSearchInput from './ProductSearchInput';
 import OrderItemsTable from './OrderItemsTable';
 import { Button } from "@/components/ui/button";
 import { Save, FileText } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
 
 interface OrderFormProps {
   customers: Customer[];
@@ -32,7 +31,7 @@ interface OrderFormProps {
   handleViewRecentPurchases: () => void;
   customerInputValue: string;
   salesRepInputValue?: string;
-  // Novo: handlers para adicionar e remover itens
+  // Handlers para adicionar e remover itens
   handleAddItem: (product: Product, quantity: number, price: number) => void;
   handleRemoveItem: (productId: string) => void;
 }
@@ -58,7 +57,7 @@ export default function OrderForm({
   handleViewRecentPurchases,
   customerInputValue,
   salesRepInputValue = '',
-  // Novo: handlers para adicionar e remover itens
+  // Handlers para adicionar e remover itens
   handleAddItem,
   handleRemoveItem
 }: OrderFormProps) {

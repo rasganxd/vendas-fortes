@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Order, OrderItem, Customer, SalesRep } from '@/types';
+import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
@@ -9,7 +8,6 @@ import { usePayments } from '@/hooks/usePayments';
 import { toast } from '@/components/ui/use-toast';
 import OrderForm from './OrderForm';
 import RecentPurchasesDialog from './RecentPurchasesDialog';
-import { FileText } from "lucide-react";
 
 export default function OrderFormContainer() {
   const { customers, salesReps, products, orders } = useAppContext();
@@ -260,8 +258,7 @@ export default function OrderFormContainer() {
     }
   };
 
-  // Corrigido: handler para adicionar um item ao pedido
-  const handleAddItem = (product, quantity, price) => {
+  const handleAddItem = (product: Product, quantity: number, price: number) => {
     console.log("Adding item to order:", product, quantity, price);
     
     const existingItem = orderItems.find(item => item.productId === product.id);
@@ -296,8 +293,7 @@ export default function OrderFormContainer() {
     });
   };
 
-  // Corrigido: handler para remover um item do pedido
-  const handleRemoveItem = (productId) => {
+  const handleRemoveItem = (productId: string) => {
     console.log("Removing item with productId:", productId);
     const updatedItems = orderItems.filter(item => item.productId !== productId);
     console.log("Order items after removal:", updatedItems);

@@ -49,7 +49,12 @@ export default function OrderItemsTable({
                     {(item.unitPrice * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <Button variant="ghost" size="sm" onClick={() => onRemoveItem(item.productId)}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => onRemoveItem(item.productId)}
+                      type="button"
+                    >
                       <Trash2 size={16} className="text-red-500" />
                     </Button>
                   </td>
