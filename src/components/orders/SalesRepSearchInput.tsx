@@ -1,5 +1,5 @@
 
-import React, { useState, KeyboardEvent } from 'react';
+import React, { useState, KeyboardEvent, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ interface SalesRepSearchInputProps {
   inputRef?: React.RefObject<HTMLInputElement>;
   onEnterPress?: () => void;
   compact?: boolean;
+  initialInputValue?: string;
 }
 
 export default function SalesRepSearchInput({
@@ -30,11 +31,21 @@ export default function SalesRepSearchInput({
   setSelectedSalesRep,
   inputRef,
   onEnterPress,
-  compact = false
+  compact = false,
+  initialInputValue = ''
 }: SalesRepSearchInputProps) {
-  const [salesRepInput, setSalesRepInput] = useState('');
+  const [salesRepInput, setSalesRepInput] = useState(initialInputValue);
   const [isSalesRepSearchOpen, setIsSalesRepSearchOpen] = useState(false);
   const [salesRepSearch, setSalesRepSearch] = useState('');
+
+  // Set initial value if selected sales rep changes or initialInputValue is provided
+  useEffect(() => {
+    if (selectedSalesRep) {
+      setSalesRepInput(`${selectedSalesRep.code} - ${selectedSalesRep.name}`);
+    } else if (initialInputValue) {
+      setSalesRepInput(initialInputValue);
+    }
+  }, [selectedSalesRep, initialInputValue]);
 
   const filteredSalesReps = salesReps.filter(rep => 
     rep.name.toLowerCase().includes(salesRepSearch.toLowerCase()) ||

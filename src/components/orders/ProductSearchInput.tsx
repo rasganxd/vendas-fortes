@@ -20,7 +20,7 @@ export default function ProductSearchInput({
 }: ProductSearchInputProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
+  const [quantity, setQuantity] = useState<number | null>(null);
   const [price, setPrice] = useState<number>(0);
   const [showResults, setShowResults] = useState(false);
   
@@ -33,21 +33,50 @@ export default function ProductSearchInput({
     setShowResults(e.target.value.length > 0);
   };
   
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Check if input is a product code
+      const codeMatch = searchTerm.match(/^(\d+)$/);
+      if (codeMatch) {
+        const productCode = codeMatch[1];
+        const product = products.find(p => p.code?.toString() === productCode);
+        
+        if (product) {
+          handleProductSelect(product);
+          return;
+        }
+      }
+      
+      // If not a direct code match, and we have results, select the first one
+      if (sortedProducts.length > 0) {
+        handleProductSelect(sortedProducts[0]);
+      }
+    }
+  };
+  
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
     setSearchTerm(product.name);
     setPrice(product.price);
     setShowResults(false);
+    setQuantity(null); // Reset quantity to empty when selecting a product
     setTimeout(() => quantityInputRef.current?.focus(), 50);
   };
   
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Allow empty value
+    if (e.target.value === '') {
+      setQuantity(null);
+      return;
+    }
+    
     // Only allow numbers and prevent negative values
     const value = e.target.value.replace(/[^\d]/g, '');
-    const numericValue = value ? parseInt(value, 10) : 0;
+    const numericValue = value ? parseInt(value, 10) : null;
     
-    // Ensure quantity is always at least 1
-    setQuantity(numericValue > 0 ? numericValue : 1);
+    setQuantity(numericValue);
   };
   
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,22 +85,25 @@ export default function ProductSearchInput({
   };
   
   const handleAddToOrder = () => {
-    if (selectedProduct) {
+    if (selectedProduct && (quantity !== null && quantity > 0)) {
       addItemToOrder(selectedProduct, quantity, price);
       setSearchTerm('');
       setSelectedProduct(null);
-      setQuantity(1);
+      setQuantity(null); // Reset to empty
       setPrice(0);
       setTimeout(() => inputRef?.current?.focus(), 50);
     }
   };
   
   const incrementQuantity = () => {
-    setQuantity(prev => prev + 1);
+    setQuantity(prev => (prev === null ? 1 : prev + 1));
   };
   
   const decrementQuantity = () => {
-    setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+    setQuantity(prev => {
+      if (prev === null) return null;
+      return prev > 1 ? prev - 1 : 1;
+    });
   };
   
   // Close results when clicking outside
@@ -121,6 +153,7 @@ export default function ProductSearchInput({
                 placeholder="Buscar produto pelo nome ou código"
                 value={searchTerm}
                 onChange={handleSearch}
+                onKeyDown={handleSearchKeyDown}
                 autoComplete="off"
               />
               {showResults && sortedProducts.length > 0 && (
@@ -162,8 +195,9 @@ export default function ProductSearchInput({
               ref={quantityInputRef}
               type="text"
               className="w-16 h-8 text-center text-sm"
-              value={quantity}
+              value={quantity === null ? '' : quantity.toString()}
               onChange={handleQuantityChange}
+              placeholder="Qtd"
               onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
             />
             <Button 
@@ -191,7 +225,7 @@ export default function ProductSearchInput({
           <Button 
             type="button"
             className="h-8 bg-sales-800 hover:bg-sales-700"
-            disabled={!selectedProduct}
+            disabled={!selectedProduct || quantity === null || quantity <= 0}
             onClick={handleAddToOrder}
           >
             Adicionar
@@ -212,6 +246,7 @@ export default function ProductSearchInput({
           placeholder="Buscar produto pelo nome ou código"
           value={searchTerm}
           onChange={handleSearch}
+          onKeyDown={handleSearchKeyDown}
           autoComplete="off"
         />
         {showResults && sortedProducts.length > 0 && (
@@ -254,8 +289,9 @@ export default function ProductSearchInput({
             <Input
               type="text"
               className="mx-2 text-center"
-              value={quantity}
+              value={quantity === null ? '' : quantity.toString()}
               onChange={handleQuantityChange}
+              placeholder="Quantidade"
             />
             <Button 
               type="button" 
@@ -282,7 +318,7 @@ export default function ProductSearchInput({
           <Button 
             type="button" 
             className="w-full bg-sales-800 hover:bg-sales-700"
-            disabled={!selectedProduct}
+            disabled={!selectedProduct || quantity === null || quantity <= 0}
             onClick={handleAddToOrder}
           >
             Adicionar ao Pedido

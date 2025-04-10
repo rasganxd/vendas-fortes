@@ -31,6 +31,7 @@ interface OrderFormProps {
   isEditMode: boolean;
   handleViewRecentPurchases: () => void;
   customerInputValue: string;
+  salesRepInputValue?: string;
 }
 
 export default function OrderForm({
@@ -52,7 +53,8 @@ export default function OrderForm({
   handleCreateOrder,
   isEditMode,
   handleViewRecentPurchases,
-  customerInputValue
+  customerInputValue,
+  salesRepInputValue = ''
 }: OrderFormProps) {
   const salesRepInputRef = useRef<HTMLInputElement>(null);
   const customerInputRef = useRef<HTMLInputElement>(null);
@@ -117,6 +119,7 @@ export default function OrderForm({
                 inputRef={salesRepInputRef}
                 onEnterPress={() => customerInputRef.current?.focus()}
                 compact={true}
+                initialInputValue={salesRepInputValue}
               />
             </div>
             

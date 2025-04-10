@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep } from '@/types';
@@ -30,6 +29,7 @@ export default function OrderFormContainer() {
   const [selectedPaymentTable, setSelectedPaymentTable] = useState('');
   
   const [customerInputValue, setCustomerInputValue] = useState('');
+  const [salesRepInputValue, setSalesRepInputValue] = useState('');
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -67,6 +67,10 @@ export default function OrderFormContainer() {
         if (salesRep) {
           console.log("Setting sales rep:", salesRep);
           setSelectedSalesRep(salesRep);
+          
+          // Set the sales rep input value for display
+          const displayValue = salesRep.code ? `${salesRep.code} - ${salesRep.name}` : salesRep.name;
+          setSalesRepInputValue(displayValue);
         } else {
           console.warn("Sales rep not found for ID:", orderToEdit.salesRepId);
         }
@@ -115,6 +119,7 @@ export default function OrderFormContainer() {
     setIsEditMode(false);
     setCurrentOrderId(null);
     setCustomerInputValue('');
+    setSalesRepInputValue('');
   };
 
   const calculateTotal = () => {
@@ -273,6 +278,7 @@ export default function OrderFormContainer() {
         isEditMode={isEditMode}
         handleViewRecentPurchases={handleViewRecentPurchases}
         customerInputValue={customerInputValue}
+        salesRepInputValue={salesRepInputValue}
       />
 
       <RecentPurchasesDialog
