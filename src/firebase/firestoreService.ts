@@ -205,27 +205,30 @@ export const orderService = {
     try {
       const orderRef = doc(firestore, 'orders', id);
       
-      // Log what we're updating to verify items are included
       console.log(`Updating order ${id} in Firestore with data:`, order);
       
-      // Prepare uma cópia limpa para o Firestore (sem campos undefined)
+      // Make sure order items are properly formatted with all needed fields
+      if (order.items && Array.isArray(order.items)) {
+        console.log("Order items being updated:", order.items);
+        
+        // Ensure each item has the necessary fields
+        order.items = order.items.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          productCode: item.productCode,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.unitPrice * item.quantity
+        }));
+      }
+      
+      // Remove any undefined values from the order object
       const cleanOrderData = Object.entries(order).reduce((acc, [key, value]) => {
         if (value !== undefined) {
           acc[key] = value;
         }
         return acc;
       }, {} as Record<string, any>);
-      
-      // Ensure items array is being passed correctly
-      if (cleanOrderData.items) {
-        console.log("Order items being updated:", cleanOrderData.items);
-        
-        // Certifique-se de que os códigos dos produtos são preservados
-        cleanOrderData.items = cleanOrderData.items.map((item: any) => ({
-          ...item,
-          productCode: item.productCode
-        }));
-      }
       
       await updateDoc(orderRef, cleanOrderData);
       console.log("Order successfully updated in Firestore");

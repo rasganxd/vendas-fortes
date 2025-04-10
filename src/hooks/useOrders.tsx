@@ -47,27 +47,33 @@ export const useOrders = () => {
     }
   };
 
-  const updateOrder = async (id: string, order: Partial<Order>) => {
+  const updateOrder = async (id: string, orderData: Partial<Order>) => {
     try {
       console.log("Updating order with ID:", id);
-      console.log("New order data:", order);
+      console.log("New order data:", orderData);
       
-      // Primeiro, obtenha o pedido existente para garantir que temos todos os dados
+      // Get the current order from the local state
       const currentOrder = getOrderById(id);
       if (!currentOrder) {
         throw new Error(`Pedido com ID ${id} não encontrado`);
       }
       
-      // Mescle os dados atuais com as alterações
-      const updatedOrderData = { ...currentOrder, ...order };
+      // Create a complete merged order with all data
+      const updatedOrderData = { 
+        ...currentOrder, 
+        ...orderData,
+        // Ensure items are preserved and properly merged
+        items: orderData.items || currentOrder.items
+      };
+      
       console.log("Complete order data being sent to Firebase:", updatedOrderData);
       
-      // Envie o pedido completo para garantir que todos os campos sejam atualizados
+      // Send the complete order to Firebase
       await orderService.update(id, updatedOrderData);
       
-      // Atualize o pedido no estado local
+      // Update the local state with the complete order
       setOrders(orders.map(o => 
-        o.id === id ? { ...o, ...order } : o
+        o.id === id ? updatedOrderData as Order : o
       ));
       
       console.log("Order updated successfully");

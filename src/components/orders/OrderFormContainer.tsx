@@ -77,6 +77,7 @@ export default function OrderFormContainer() {
         }
         
         // Set order items
+        console.log("Setting order items:", orderToEdit.items);
         setOrderItems(orderToEdit.items.map(item => ({
           productId: item.productId,
           productName: item.productName,
@@ -158,6 +159,7 @@ export default function OrderFormContainer() {
     try {
       setIsSubmitting(true);
       console.log("Starting order submission process...");
+      console.log("Current order items:", orderItems);
       
       // Get the selected payment table
       const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
