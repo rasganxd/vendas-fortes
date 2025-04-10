@@ -28,9 +28,10 @@ export interface Product {
 }
 
 export interface OrderItem {
-  id: string;
+  id?: string;
   productId: string;
   productName: string;
+  productCode?: number | undefined;
   quantity: number;
   unitPrice: number;
   total: number;

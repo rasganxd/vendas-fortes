@@ -1,3 +1,4 @@
+
 import { db as firestore } from './config';
 import { 
   collection,
@@ -129,7 +130,7 @@ export const orderService = {
             : new Date(data.createdAt),
           items: data.items.map(item => ({
             ...item,
-            productCode: item.productCode || '' // Ensure productCode is preserved
+            productCode: item.productCode // Preserve product code
           }))
         } as Order;
       });
@@ -146,7 +147,7 @@ export const orderService = {
         ...order,
         items: order.items.map(item => ({
           ...item,
-          productCode: item.productCode || ''
+          productCode: item.productCode
         }))
       };
       
@@ -173,7 +174,7 @@ export const orderService = {
             : new Date(data.createdAt),
           items: data.items.map(item => ({
             ...item,
-            productCode: item.productCode || ''
+            productCode: item.productCode
           }))
         };
       }

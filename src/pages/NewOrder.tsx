@@ -32,7 +32,7 @@ export default function NewOrder() {
   
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedSalesRep, setSelectedSalesRep] = useState<SalesRep | null>(null);
-  const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
@@ -79,12 +79,12 @@ export default function NewOrder() {
         
         // Set order items
         setOrderItems(orderToEdit.items.map(item => ({
-          ...item,
           productId: item.productId,
           productName: item.productName,
+          productCode: item.productCode,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          total: item.total
+          total: item.unitPrice * item.quantity
         })));
         
         // Set payment method
@@ -129,7 +129,7 @@ export default function NewOrder() {
       setOrderItems([...orderItems, {
         productId: product.id,
         productName: product.name,
-        productCode: product.code, // Store the product code explicitly
+        productCode: product.code,
         quantity: quantity,
         unitPrice: price,
         total: price * quantity
@@ -204,7 +204,7 @@ export default function NewOrder() {
         customerName: selectedCustomer.name,
         salesRepId: selectedSalesRep.id,
         salesRepName: selectedSalesRep.name,
-        items: orderItems as OrderItem[],
+        items: orderItems,
         total: calculateTotal(),
         paymentStatus: "pending" as Order["paymentStatus"],
         paymentMethod: paymentMethod || "",
@@ -350,7 +350,7 @@ export default function NewOrder() {
       <Card>
         <CardContent className="p-0">
           <OrderItemsTable 
-            orderItems={orderItems as OrderItem[]}
+            orderItems={orderItems}
             onRemoveItem={handleRemoveItem}
             calculateTotal={calculateTotal}
           />
