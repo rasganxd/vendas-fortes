@@ -67,7 +67,9 @@ export default function Products() {
     price: 0,
     unit: '',
     stock: 0,
-    category: ''
+    category: '',
+    costPrice: 0,
+    maxDiscountPercentage: 0
   });
 
   const categories = ['Grãos', 'Mercearia', 'Massas', 'Bebidas', 'Higiene', 'Limpeza', 'Outros'];
@@ -107,7 +109,9 @@ export default function Products() {
       price: 0,
       unit: '',
       stock: 0,
-      category: ''
+      category: '',
+      costPrice: 0,
+      maxDiscountPercentage: 0
     });
     
     setIsAddDialogOpen(true);
@@ -150,7 +154,9 @@ export default function Products() {
       price: product.price,
       unit: product.unit,
       stock: product.stock,
-      category: product.category
+      category: product.category,
+      costPrice: product.costPrice || 0,
+      maxDiscountPercentage: product.maxDiscountPercentage || 0
     });
     setIsEditDialogOpen(true);
   };
@@ -286,7 +292,20 @@ export default function Products() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="price">Preço</Label>
+                        <Label htmlFor="costPrice">Preço de Custo</Label>
+                        <Input
+                          id="costPrice"
+                          name="costPrice"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.costPrice}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="price">Preço de Venda</Label>
                         <Input
                           id="price"
                           name="price"
@@ -296,6 +315,21 @@ export default function Products() {
                           value={formData.price}
                           onChange={handleInputChange}
                           required
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="maxDiscountPercentage">Desconto Máximo (%)</Label>
+                        <Input
+                          id="maxDiscountPercentage"
+                          name="maxDiscountPercentage"
+                          type="number"
+                          step="1"
+                          min="0"
+                          max="100"
+                          value={formData.maxDiscountPercentage}
+                          onChange={handleInputChange}
                         />
                       </div>
                       <div className="space-y-2">
@@ -382,8 +416,8 @@ export default function Products() {
                   <TableHead>Código</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Categoria</TableHead>
+                  <TableHead>Custo</TableHead>
                   <TableHead>Preço</TableHead>
-                  <TableHead>Unidade</TableHead>
                   <TableHead>Estoque</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -404,9 +438,11 @@ export default function Products() {
                       <Badge variant="outline">{product.category}</Badge>
                     </TableCell>
                     <TableCell>
+                      {product.costPrice !== undefined ? product.costPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
+                    </TableCell>
+                    <TableCell>
                       {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </TableCell>
-                    <TableCell>{product.unit}</TableCell>
                     <TableCell>
                       <span className={`font-medium ${
                         product.stock < 50 ? 'text-red-600' : 
@@ -500,7 +536,20 @@ export default function Products() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-price">Preço</Label>
+                  <Label htmlFor="edit-costPrice">Preço de Custo</Label>
+                  <Input
+                    id="edit-costPrice"
+                    name="costPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.costPrice}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price">Preço de Venda</Label>
                   <Input
                     id="edit-price"
                     name="price"
@@ -510,6 +559,21 @@ export default function Products() {
                     value={formData.price}
                     onChange={handleInputChange}
                     required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-maxDiscountPercentage">Desconto Máximo (%)</Label>
+                  <Input
+                    id="edit-maxDiscountPercentage"
+                    name="maxDiscountPercentage"
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="100"
+                    value={formData.maxDiscountPercentage}
+                    onChange={handleInputChange}
                   />
                 </div>
                 <div className="space-y-2">

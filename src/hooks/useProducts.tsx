@@ -106,10 +106,44 @@ export const useProducts = () => {
     }
   };
 
+  // Helper to validate if a discount is allowed for a product
+  const validateProductDiscount = (productId: string, discountedPrice: number): boolean => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return true; // If product not found, allow (safer default)
+    
+    // If no max discount set, allow any price
+    if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) return true;
+    
+    // If price is 0, don't allow (likely an error)
+    if (product.price <= 0) return false;
+    
+    // Calculate the actual discount percentage
+    const discountPercentage = ((product.price - discountedPrice) / product.price) * 100;
+    
+    // Check if discount is within allowed range
+    return discountPercentage <= product.maxDiscountPercentage;
+  };
+
+  // Helper to calculate minimum price based on maximum discount
+  const getMinimumPrice = (productId: string): number => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return 0;
+    
+    if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) {
+      return 0; // No minimum price if no maximum discount defined
+    }
+    
+    // Calculate minimum price based on maximum discount percentage
+    const minimumPrice = product.price * (1 - (product.maxDiscountPercentage / 100));
+    return parseFloat(minimumPrice.toFixed(2)); // Round to 2 decimal places
+  };
+
   return {
     products,
     addProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    validateProductDiscount,
+    getMinimumPrice
   };
 };

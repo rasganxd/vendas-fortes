@@ -1,3 +1,4 @@
+
 import { LucideIcon } from "lucide-react";
 
 export interface Customer {
@@ -39,6 +40,7 @@ export interface Product {
   commission?: number;
   taxRate?: number;
   costPrice?: number;
+  maxDiscountPercentage?: number;
   minimumPrice?: number;
   volumeDiscounts?: VolumeDiscount[];
 }
