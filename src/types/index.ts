@@ -1,3 +1,4 @@
+import { LucideIcon } from "lucide-react";
 
 export interface Customer {
   id: string;
@@ -12,6 +13,13 @@ export interface Customer {
   code?: number;
   visitDays?: string[];
   notes?: string;
+  segment?: string;
+  priority?: 'high' | 'medium' | 'low';
+  visitFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+  preferredVisitDay?: string;
+  preferredVisitTime?: string;
+  visitSequence?: number;
+  lastVisitDate?: Date;
 }
 
 export interface Product {
@@ -25,6 +33,14 @@ export interface Product {
   unit?: string;
   stock?: number;
   category?: string;
+  groupId?: string;
+  categoryId?: string;
+  brandId?: string;
+  commission?: number;
+  taxRate?: number;
+  costPrice?: number;
+  minimumPrice?: number;
+  volumeDiscounts?: VolumeDiscount[];
 }
 
 export interface OrderItem {
@@ -78,6 +94,9 @@ export interface Route {
   name: string;
   salesRepId: string;
   customerIds: string[];
+  segment?: string;
+  visitDay?: string;
+  visitFrequency?: 'weekly' | 'biweekly' | 'monthly';
 }
 
 export interface LoadItem {
@@ -111,6 +130,7 @@ export interface SalesRep {
   role?: string;
   region?: string;
   active?: boolean;
+  commission?: number;
 }
 
 export interface Vehicle {
@@ -153,7 +173,29 @@ export interface PaymentTable {
   updatedAt?: Date;
 }
 
-import { LucideIcon } from "lucide-react";
+export interface ProductGroup {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  groupId?: string;
+  description?: string;
+}
+
+export interface ProductBrand {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface VolumeDiscount {
+  minQuantity: number;
+  discountPercentage: number;
+}
 
 export interface NavItem {
   title: string;

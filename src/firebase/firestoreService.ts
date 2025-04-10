@@ -12,7 +12,17 @@ import {
   QuerySnapshot,
   DocumentData,
 } from 'firebase/firestore';
-import { Customer, SalesRep, Product, Order, PaymentTable, Payment } from '@/types';
+import { 
+  Customer, 
+  SalesRep, 
+  Product, 
+  Order, 
+  PaymentTable, 
+  Payment, 
+  ProductGroup,
+  ProductCategory,
+  ProductBrand
+} from '@/types';
 
 // Generic function to convert Firestore Timestamp to JavaScript Date
 const convertTimestampToDate = (data: any): any => {
@@ -110,6 +120,9 @@ const createService = <T extends { id?: string }>(collectionName: string) => {
 export const customerService = createService<Customer>('customers');
 export const salesRepService = createService<SalesRep>('salesReps');
 export const productService = createService<Product>('products');
+export const productGroupService = createService<ProductGroup>('productGroups');
+export const productCategoryService = createService<ProductCategory>('productCategories');
+export const productBrandService = createService<ProductBrand>('productBrands');
 export const paymentTableService = createService<PaymentTable>('paymentTables');
 export const paymentService = createService<Payment>('payments');
 export const routeService = createService<any>('routes');
