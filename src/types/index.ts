@@ -100,11 +100,13 @@ export interface Route {
 }
 
 export interface LoadItem {
+  id?: string;
   productId: string;
   productName: string;
   quantity: number;
   orderId?: string;
   orderItems?: OrderItem[];
+  productCode?: number;
 }
 
 export interface Load {
