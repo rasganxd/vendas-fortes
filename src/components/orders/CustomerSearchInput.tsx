@@ -1,5 +1,5 @@
 
-import React, { useState, KeyboardEvent } from 'react';
+import React, { useState, KeyboardEvent, useEffect } from 'react';
 import { Customer } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ interface CustomerSearchInputProps {
   inputRef?: React.RefObject<HTMLInputElement>;
   onEnterPress?: () => void;
   compact?: boolean;
+  initialInputValue?: string; // Add this prop
 }
 
 export default function CustomerSearchInput({
@@ -36,11 +37,19 @@ export default function CustomerSearchInput({
   onViewRecentPurchases,
   inputRef,
   onEnterPress,
-  compact = false
+  compact = false,
+  initialInputValue = '' // Set default value
 }: CustomerSearchInputProps) {
-  const [customerInput, setCustomerInput] = useState('');
+  const [customerInput, setCustomerInput] = useState(initialInputValue);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
+
+  // Update customer input when initialInputValue changes
+  useEffect(() => {
+    if (initialInputValue && initialInputValue !== customerInput) {
+      setCustomerInput(initialInputValue);
+    }
+  }, [initialInputValue]);
 
   const filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||

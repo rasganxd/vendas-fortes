@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -40,6 +41,9 @@ export default function NewOrder() {
   
   const [paymentMethod, setPaymentMethod] = useState('');
   const [selectedPaymentTable, setSelectedPaymentTable] = useState('');
+  
+  // Add this state variable to track the display value for the customer field
+  const [customerInputValue, setCustomerInputValue] = useState('');
 
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
 
@@ -65,6 +69,10 @@ export default function NewOrder() {
         if (customer) {
           console.log("Setting customer:", customer);
           setSelectedCustomer(customer);
+          
+          // Set the customer input value for display
+          const displayValue = customer.code ? `${customer.code} - ${customer.name}` : customer.name;
+          setCustomerInputValue(displayValue);
         } else {
           console.warn("Customer not found for ID:", orderToEdit.customerId);
         }
@@ -315,6 +323,7 @@ export default function NewOrder() {
                 inputRef={customerInputRef}
                 onEnterPress={() => paymentTableRef.current?.focus()}
                 compact={true}
+                initialInputValue={customerInputValue} // Pass the pre-populated value
               />
             </div>
             
