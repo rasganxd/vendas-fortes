@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Order, Customer } from '@/types';
@@ -114,7 +115,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
           
           <div className="flex justify-between items-center mb-6">
             <div>
-              <p className="font-semibold">Pagamento: {selectedOrder?.paymentStatus}</p>
+              <p className="font-semibold">{selectedOrder?.paymentStatus}</p>
             </div>
             <div className="text-right">
               <p className="text-gray-600">Subtotal: 

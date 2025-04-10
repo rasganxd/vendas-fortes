@@ -141,7 +141,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
                 <div key={order.id}>
                   <div className="print-order">
                     <div className="text-center mb-4">
-                      <h2 className="font-bold text-lg">PEDIDO #{order.id.substring(0, 8).toUpperCase()}</h2>
                       <p className="text-gray-600">
                         Data: {formatDateToBR(order.createdAt)}
                       </p>
@@ -190,9 +189,9 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
                     
                     <div className="flex justify-between items-center mb-2">
                       <div>
-                        <p className="font-semibold">Pagamento: {order.paymentStatus}</p>
+                        <p className="font-semibold">{order.paymentStatus}</p>
                         {order.paymentMethod && (
-                          <p className="text-sm">Forma: {order.paymentMethod}</p>
+                          <p className="text-sm">{order.paymentMethod}</p>
                         )}
                       </div>
                       <div className="text-right">
