@@ -24,8 +24,8 @@ export const useLoads = () => {
         // Convert empty strings or undefined to null since Firestore accepts null values
         vehicleName: load.vehicleName || null,
         notes: load.notes || null,
-        // Garantir que o orderIds seja um array único
-        orderIds: load.orderIds ? Array.from(new Set(load.orderIds)) : [],
+        // Ensure that orderIds is a unique array of valid IDs
+        orderIds: load.orderIds ? Array.from(new Set(load.orderIds.filter(id => id !== ''))) : [],
         status: load.status || 'planning',
         date: load.date || new Date(),
         locked: load.locked || false // Default to unlocked
@@ -55,25 +55,38 @@ export const useLoads = () => {
 
   const updateLoad = async (id: string, load: Partial<Load>) => {
     try {
-      // Clean the load object to remove undefined values before sending to Firestore
-      const cleanedLoad = {
-        ...load,
-        // Convert empty strings or undefined to null since Firestore accepts null values
-        vehicleName: load.vehicleName === undefined ? undefined : (load.vehicleName || null),
-        notes: load.notes === undefined ? undefined : (load.notes || null),
-        // Ensure orderIds is updated if items have changed
-        orderIds: load.items 
-          ? Array.from(new Set(load.items.map(item => item.orderId || '').filter(id => id !== '')))
-          : load.orderIds
-      };
+      // Ensure we handle undefined values properly to avoid Firebase errors
+      const cleanedLoad = { ...load };
+      
+      // Only include vehicleName if it's explicitly passed, otherwise remove it
+      if ('vehicleName' in load) {
+        cleanedLoad.vehicleName = load.vehicleName || null;
+      } else {
+        delete cleanedLoad.vehicleName;
+      }
+      
+      // Handle notes similarly
+      if ('notes' in load) {
+        cleanedLoad.notes = load.notes || null;
+      } else {
+        delete cleanedLoad.notes;
+      }
+      
+      // Ensure orderIds is up to date if items have changed
+      if (load.items) {
+        cleanedLoad.orderIds = Array.from(
+          new Set(load.items.map(item => item.orderId || '').filter(id => id !== ''))
+        );
+      }
       
       // Update in Firebase
       await loadService.update(id, cleanedLoad);
       
-      // Update local state
+      // Update local state - merge current loads with updated load
       setLoads(loads.map(l => 
         l.id === id ? { ...l, ...cleanedLoad } : l
       ));
+      
       toast({
         title: "Carregamento atualizado",
         description: "Carregamento atualizado com sucesso!"
@@ -85,6 +98,7 @@ export const useLoads = () => {
         description: "Houve um problema ao atualizar o carregamento.",
         variant: "destructive"
       });
+      throw error; // Propagate error to caller
     }
   };
 
@@ -152,7 +166,7 @@ export const useLoads = () => {
           id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
           productId: item.productId,
           productName: item.productName,
-          productCode: item.productCode || 0,  // Ensure product code is included
+          productCode: item.productCode || 0,
           quantity: item.quantity,
           unitPrice: (item.orderItems && item.orderItems[0]?.unitPrice) || 0,
           total: (item.orderItems && item.orderItems[0]?.unitPrice) 

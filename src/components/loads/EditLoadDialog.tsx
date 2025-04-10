@@ -79,7 +79,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
     
     setIsLoading(true);
     
-    // Ensure orderIds are properly collected from the current items
+    // Extract all unique order IDs from current items
     const orderIds = Array.from(new Set(currentItems.map(item => item.orderId || '').filter(id => id !== '')));
     
     const updatedLoad: Partial<Load> = {
@@ -152,7 +152,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
           productName: item.productName,
           quantity: item.quantity,
           orderItems: [item],
-          productCode: item.productCode // Ensure product code is included
+          productCode: item.productCode
         });
       });
     });
