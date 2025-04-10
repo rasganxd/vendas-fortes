@@ -42,9 +42,7 @@ export default function NewOrder() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [selectedPaymentTable, setSelectedPaymentTable] = useState('');
   
-  // Add this state variable to track the display value for the customer field
   const [customerInputValue, setCustomerInputValue] = useState('');
-
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -122,6 +120,8 @@ export default function NewOrder() {
   }, [location.search, getOrderById, customers, salesReps, orders]);
 
   const handleAddItem = (product: Product, quantity: number, price: number) => {
+    console.log("Adding item to order:", product, quantity, price);
+    
     const existingItem = orderItems.find(item => item.productId === product.id);
     
     if (existingItem) {
@@ -323,7 +323,7 @@ export default function NewOrder() {
                 inputRef={customerInputRef}
                 onEnterPress={() => paymentTableRef.current?.focus()}
                 compact={true}
-                initialInputValue={customerInputValue} // Pass the pre-populated value
+                initialInputValue={customerInputValue}
               />
             </div>
             

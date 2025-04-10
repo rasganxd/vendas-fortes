@@ -27,7 +27,7 @@ interface CustomerSearchInputProps {
   inputRef?: React.RefObject<HTMLInputElement>;
   onEnterPress?: () => void;
   compact?: boolean;
-  initialInputValue?: string; // Add this prop
+  initialInputValue?: string;
 }
 
 export default function CustomerSearchInput({
@@ -38,7 +38,7 @@ export default function CustomerSearchInput({
   inputRef,
   onEnterPress,
   compact = false,
-  initialInputValue = '' // Set default value
+  initialInputValue = ''
 }: CustomerSearchInputProps) {
   const [customerInput, setCustomerInput] = useState(initialInputValue);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
