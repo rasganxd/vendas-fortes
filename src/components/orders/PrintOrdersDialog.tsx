@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Order, Customer } from '@/types';
@@ -189,7 +188,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
                     
                     <div className="flex justify-between items-center mb-2">
                       <div>
-                        {/* Remove pending payment status from display */}
                         {order.paymentStatus !== 'pending' && (
                           <p className="font-semibold">{order.paymentStatus}</p>
                         )}

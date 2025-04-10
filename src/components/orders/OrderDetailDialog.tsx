@@ -115,9 +115,12 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
           
           <div className="flex justify-between items-center mb-6">
             <div>
-              {/* Payment status without the "pending" word */}
+              {/* Payment status without the "pending" word and with payment method */}
               {selectedOrder.paymentStatus !== 'pending' && (
                 <p className="font-semibold">{selectedOrder?.paymentStatus}</p>
+              )}
+              {selectedOrder.paymentMethod && (
+                <p className="text-gray-700">{selectedOrder.paymentMethod}</p>
               )}
             </div>
             <div className="text-right">
