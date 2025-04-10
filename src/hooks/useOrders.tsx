@@ -52,10 +52,20 @@ export const useOrders = () => {
       console.log("Updating order with ID:", id);
       console.log("New order data:", order);
       
-      // Ensure we're sending the complete order items array to Firebase
-      await orderService.update(id, order);
+      // Primeiro, obtenha o pedido existente para garantir que temos todos os dados
+      const currentOrder = getOrderById(id);
+      if (!currentOrder) {
+        throw new Error(`Pedido com ID ${id} não encontrado`);
+      }
       
-      // Update the order in the local state
+      // Mescle os dados atuais com as alterações
+      const updatedOrderData = { ...currentOrder, ...order };
+      console.log("Complete order data being sent to Firebase:", updatedOrderData);
+      
+      // Envie o pedido completo para garantir que todos os campos sejam atualizados
+      await orderService.update(id, updatedOrderData);
+      
+      // Atualize o pedido no estado local
       setOrders(orders.map(o => 
         o.id === id ? { ...o, ...order } : o
       ));
