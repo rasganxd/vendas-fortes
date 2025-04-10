@@ -33,7 +33,7 @@ import { toast } from '@/components/ui/use-toast';
 
 export default function Loads() {
   const navigate = useNavigate();
-  const { loads } = useAppContext();
+  const { loads, customers } = useAppContext();
   const { deleteLoad, updateLoad, getOrdersFromLoad } = useLoads();
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -107,6 +107,12 @@ export default function Loads() {
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  // Get customer code for an order
+  const getCustomerCode = (customerId: string) => {
+    const customer = customers.find(c => c.id === customerId);
+    return customer?.code || "-";
   };
 
   return (
@@ -198,48 +204,56 @@ export default function Loads() {
             </div>
             <div className="p-3">
               <Accordion type="multiple" className="w-full text-sm">
-                {selectedLoad?.items?.map((item) => (
-                  <AccordionItem key={item.id} value={item.id || item.orderId} className="border-b last:border-0">
-                    <AccordionTrigger className="py-2 px-2 hover:no-underline hover:bg-gray-50">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <FileCheck size={14} className="text-gray-500" />
-                          <span>Pedido: {item.orderId}</span>
+                {selectedLoad?.items?.map((item) => {
+                  // Get orders from context to find customer code
+                  const orderId = item.orderId || '';
+                  const orders = getOrdersFromLoad(selectedLoad);
+                  const order = orders.find(o => o.id === orderId);
+                  const customerCode = order ? getCustomerCode(order.customerId) : "-";
+                  
+                  return (
+                    <AccordionItem key={item.id || `${orderId}-${item.productId}`} value={item.id || item.orderId || ''} className="border-b last:border-0">
+                      <AccordionTrigger className="py-2 px-2 hover:no-underline hover:bg-gray-50">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <FileCheck size={14} className="text-gray-500" />
+                            <span>Cliente: {customerCode}</span>
+                          </div>
                         </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-2 py-2 border-t text-xs">
-                      <div className="flex items-center justify-between text-gray-600 mb-2">
-                        <div className="flex items-center gap-1">
-                          <Weight size={12} />
-                          <span>Peso: {item.totalWeight || 0} kg</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-2 py-2 border-t text-xs">
+                        <div className="flex items-center justify-between text-gray-600 mb-2">
+                          <div className="flex items-center gap-1">
+                            <Weight size={12} />
+                            <span>Peso: {item.totalWeight || 0} kg</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Package size={12} />
+                            <span>Volume: {item.totalVolume || 0} m³</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Package size={12} />
-                          <span>Volume: {item.totalVolume || 0} m³</span>
-                        </div>
-                      </div>
-                      <div className="border rounded-md mt-2">
-                        <table className="w-full">
-                          <thead className="bg-gray-50 text-xs text-gray-600">
-                            <tr>
-                              <th className="py-1.5 px-2 text-left">Produto</th>
-                              <th className="py-1.5 px-2 text-right">Qtd</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {item.orderItems?.map((orderItem) => (
-                              <tr key={orderItem.id} className="border-t">
-                                <td className="py-1.5 px-2">{orderItem.productName}</td>
-                                <td className="py-1.5 px-2 text-right">{orderItem.quantity}</td>
+                        <div className="border rounded-md mt-2">
+                          <table className="w-full">
+                            <thead className="bg-gray-50 text-xs text-gray-600">
+                              <tr>
+                                <th className="py-1.5 px-2 text-left">Produto</th>
+                                <th className="py-1.5 px-2 text-right">Qtd</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
+                            </thead>
+                            <tbody>
+                              {item.orderItems?.map((orderItem) => (
+                                <tr key={orderItem.id} className="border-t">
+                                  <td className="py-1.5 px-2">{orderItem.productName}</td>
+                                  <td className="py-1.5 px-2 text-right">{orderItem.quantity}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
               </Accordion>
             </div>
           </div>

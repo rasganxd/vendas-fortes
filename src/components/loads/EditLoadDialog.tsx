@@ -56,7 +56,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
   const [tab, setTab] = useState('details');
   const [search, setSearch] = useState('');
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
-  const { orders } = useAppContext();
+  const { orders, customers } = useAppContext();
   const [currentItems, setCurrentItems] = useState<LoadItem[]>([]);
   
   // Reset form when dialog opens with new load data
@@ -116,6 +116,18 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
     } else {
       setSelectedOrderIds(prev => prev.filter(id => id !== order.id));
     }
+  };
+
+  // Get customer code and order total
+  const getOrderInfo = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return { customerCode: "-", orderTotal: 0 };
+    
+    const customer = customers.find(c => c.id === order.customerId);
+    const customerCode = customer?.code || "-";
+    const orderTotal = order.total;
+    
+    return { customerCode, orderTotal };
   };
 
   const handleAddSelectedOrders = () => {
@@ -223,19 +235,22 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Pedido</TableHead>
+                          <TableHead>Cliente</TableHead>
                           <TableHead>Produto</TableHead>
                           <TableHead className="text-right">Quantidade</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {currentItems.map((item, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{item.orderId?.substring(0, 8)}</TableCell>
-                            <TableCell>{item.productName}</TableCell>
-                            <TableCell className="text-right">{item.quantity}</TableCell>
-                          </TableRow>
-                        ))}
+                        {currentItems.map((item, index) => {
+                          const { customerCode } = item.orderId ? getOrderInfo(item.orderId) : { customerCode: "-" };
+                          return (
+                            <TableRow key={index}>
+                              <TableCell>{customerCode}</TableCell>
+                              <TableCell>{item.productName}</TableCell>
+                              <TableCell className="text-right">{item.quantity}</TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
@@ -255,8 +270,8 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Pedido</TableHead>
-                        <TableHead>Cliente</TableHead>
+                        <TableHead>Código Cliente</TableHead>
+                        <TableHead>Total Pedido</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -264,11 +279,11 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
                       {Array.from(
                         new Set(currentItems.map(item => item.orderId))
                       ).map(orderId => {
-                        const order = orders.find(o => o.id === orderId);
+                        const { customerCode, orderTotal } = orderId ? getOrderInfo(orderId) : { customerCode: "-", orderTotal: 0 };
                         return (
                           <TableRow key={orderId}>
-                            <TableCell>{orderId?.substring(0, 8)}</TableCell>
-                            <TableCell>{order?.customerName || "Cliente não encontrado"}</TableCell>
+                            <TableCell>{customerCode}</TableCell>
+                            <TableCell>R$ {orderTotal.toFixed(2)}</TableCell>
                             <TableCell className="text-right">
                               <Button
                                 variant="ghost"
@@ -320,28 +335,34 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-10">Sel.</TableHead>
-                        <TableHead>Pedido</TableHead>
+                        <TableHead>Código Cliente</TableHead>
                         <TableHead>Cliente</TableHead>
+                        <TableHead>Total</TableHead>
                         <TableHead>Itens</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell>
-                            <Checkbox 
-                              checked={selectedOrderIds.includes(order.id)}
-                              onCheckedChange={(checked) => handleOrderSelect(order, !!checked)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
-                          <TableCell>{order.customerName}</TableCell>
-                          <TableCell>{order.items.length} item(s)</TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredOrders.map((order) => {
+                        const customer = customers.find(c => c.id === order.customerId);
+                        const customerCode = customer?.code || "-";
+                        return (
+                          <TableRow key={order.id}>
+                            <TableCell>
+                              <Checkbox 
+                                checked={selectedOrderIds.includes(order.id)}
+                                onCheckedChange={(checked) => handleOrderSelect(order, !!checked)}
+                              />
+                            </TableCell>
+                            <TableCell>{customerCode}</TableCell>
+                            <TableCell>{order.customerName}</TableCell>
+                            <TableCell>R$ {order.total.toFixed(2)}</TableCell>
+                            <TableCell>{order.items.length} item(s)</TableCell>
+                          </TableRow>
+                        );
+                      })}
                       {filteredOrders.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center py-4">
+                          <TableCell colSpan={5} className="text-center py-4">
                             Não há pedidos disponíveis para adicionar
                           </TableCell>
                         </TableRow>
