@@ -164,6 +164,9 @@ export const orderService = {
         }))
       };
       
+      // Log before adding
+      console.log("Adding order to Firestore:", orderWithProductCodes);
+      
       const docRef = await addDoc(collection(firestore, 'orders'), orderWithProductCodes);
       return docRef.id;
     } catch (error) {
@@ -201,9 +204,20 @@ export const orderService = {
   update: async (id: string, order: Partial<Order>): Promise<void> => {
     try {
       const orderRef = doc(firestore, 'orders', id);
+      
+      // Log what we're updating to verify items are included
+      console.log(`Updating order ${id} in Firestore with data:`, order);
+      
+      // Ensure items array is being passed correctly
+      if (order.items) {
+        console.log("Order items being updated:", order.items);
+      }
+      
       await updateDoc(orderRef, order);
+      console.log("Order successfully updated in Firestore");
     } catch (error) {
       console.error("Erro ao atualizar pedido:", error);
+      throw error; // Rethrow to handle in calling function
     }
   },
 

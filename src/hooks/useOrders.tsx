@@ -49,10 +49,19 @@ export const useOrders = () => {
 
   const updateOrder = async (id: string, order: Partial<Order>) => {
     try {
+      console.log("Updating order with ID:", id);
+      console.log("New order data:", order);
+      
+      // Ensure we're sending the complete order items array to Firebase
       await orderService.update(id, order);
+      
+      // Update the order in the local state
       setOrders(orders.map(o => 
         o.id === id ? { ...o, ...order } : o
       ));
+      
+      console.log("Order updated successfully");
+      
       toast({
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"

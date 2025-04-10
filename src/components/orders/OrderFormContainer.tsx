@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep } from '@/types';
@@ -176,6 +177,7 @@ export default function OrderFormContainer() {
       };
       
       console.log("Saving order with data:", orderData);
+      console.log("Order items being saved:", orderItems);
       
       let orderId;
       
