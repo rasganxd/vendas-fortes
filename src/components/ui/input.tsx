@@ -16,7 +16,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           let inputValue = e.target.value.replace(/\D/g, '');
           
           // Convert to number and divide by 100 to get decimal value
-          const numValue = parseInt(inputValue) / 100;
+          const numValue = parseInt(inputValue || '0') / 100;
           
           // Format as Brazilian currency
           inputValue = numValue.toLocaleString('pt-BR', {

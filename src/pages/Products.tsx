@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -85,8 +84,10 @@ export default function Products() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    if (name === 'price' || name === 'stock' || name === 'code') {
+    if (name === 'price' || name === 'stock' || name === 'code' || name === 'costPrice') {
       setFormData(prev => ({ ...prev, [name]: Number(value) }));
+    } else if (name === 'maxDiscountPercentage') {
+      setFormData(prev => ({ ...prev, [name]: parseFloat(value) }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -97,7 +98,6 @@ export default function Products() {
   };
 
   const handleAddClick = () => {
-    // Reset form and set next available code
     const nextCode = products.length > 0 
       ? Math.max(...products.map(p => p.code || 0)) + 1 
       : 1;
@@ -325,7 +325,7 @@ export default function Products() {
                           id="maxDiscountPercentage"
                           name="maxDiscountPercentage"
                           type="number"
-                          step="1"
+                          step="0.01"
                           min="0"
                           max="100"
                           value={formData.maxDiscountPercentage}
@@ -569,7 +569,7 @@ export default function Products() {
                     id="edit-maxDiscountPercentage"
                     name="maxDiscountPercentage"
                     type="number"
-                    step="1"
+                    step="0.01"
                     min="0"
                     max="100"
                     value={formData.maxDiscountPercentage}

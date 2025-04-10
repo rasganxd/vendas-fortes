@@ -120,8 +120,8 @@ export const useProducts = () => {
     // Calculate the actual discount percentage
     const discountPercentage = ((product.price - discountedPrice) / product.price) * 100;
     
-    // Check if discount is within allowed range
-    return discountPercentage <= product.maxDiscountPercentage;
+    // Check if discount is within allowed range - usando toFixed(2) para comparação precisa
+    return parseFloat(discountPercentage.toFixed(2)) <= parseFloat(product.maxDiscountPercentage.toFixed(2));
   };
 
   // Helper to calculate minimum price based on maximum discount
