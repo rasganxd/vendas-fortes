@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface LoadItemsTableProps {
   items: BuildLoadItem[];
@@ -20,6 +21,8 @@ const LoadItemsTable: React.FC<LoadItemsTableProps> = ({
   items,
   handleRemoveFromLoad
 }) => {
+  const { orders, customers } = useAppContext();
+
   // Group items by orderId to avoid removing all items from the same order
   const orderGroups = items.reduce((acc, item) => {
     if (!acc[item.orderId]) {
@@ -29,47 +32,67 @@ const LoadItemsTable: React.FC<LoadItemsTableProps> = ({
     return acc;
   }, {} as Record<string, BuildLoadItem[]>);
 
+  // Get customer code and order total for each order
+  const getOrderInfo = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return { customerCode: "-", orderTotal: 0 };
+    
+    const customer = customers.find(c => c.id === order.customerId);
+    const customerCode = customer?.code || "-";
+    const orderTotal = order.total;
+    
+    return { customerCode, orderTotal };
+  };
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Pedido</TableHead>
+          <TableHead>Código Cliente</TableHead>
           <TableHead>Código</TableHead>
           <TableHead>Produto</TableHead>
           <TableHead>Quantidade</TableHead>
+          <TableHead>Total Pedido</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {Object.entries(orderGroups).map(([orderId, orderItems]) => (
-          <React.Fragment key={orderId}>
-            {orderItems.map((item, index) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">
-                  {index === 0 ? item.orderId.substring(0, 8) : ""}
-                </TableCell>
-                <TableCell>{item.productCode || "-"}</TableCell>
-                <TableCell>{item.productName}</TableCell>
-                <TableCell>{item.quantity}</TableCell>
-                <TableCell className="text-right">
-                  {index === 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveFromLoad(item.orderId)}
-                      className="hover:text-red-500"
-                    >
-                      Remover
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </React.Fragment>
-        ))}
+        {Object.entries(orderGroups).map(([orderId, orderItems]) => {
+          const { customerCode, orderTotal } = getOrderInfo(orderId);
+          
+          return (
+            <React.Fragment key={orderId}>
+              {orderItems.map((item, index) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">
+                    {index === 0 ? customerCode : ""}
+                  </TableCell>
+                  <TableCell>{item.productCode || "-"}</TableCell>
+                  <TableCell>{item.productName}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>
+                    {index === 0 ? `R$ ${orderTotal.toFixed(2)}` : ""}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {index === 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveFromLoad(item.orderId)}
+                        className="hover:text-red-500"
+                      >
+                        Remover
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </React.Fragment>
+          );
+        })}
         {items.length === 0 && (
           <TableRow>
-            <TableCell colSpan={5} className="text-center py-4">
+            <TableCell colSpan={6} className="text-center py-4">
               Nenhum item adicionado à carga
             </TableCell>
           </TableRow>
