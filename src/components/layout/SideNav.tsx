@@ -12,7 +12,8 @@ import {
   Database,
   CreditCard,
   UserRound,
-  LucideIcon
+  LucideIcon,
+  ChevronRight
 } from "lucide-react";
 
 import { 
@@ -26,6 +27,7 @@ import {
 
 import { NavItem } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 const navigation: NavItem[] = [
   {
@@ -136,27 +138,42 @@ export default function SideNav() {
   };
   
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarHeader className="px-4 py-3 border-b">
-        <h1 className="text-xl font-bold text-sales-800">SalesTrack</h1>
+    <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-sm">
+      <SidebarHeader className="px-5 py-4 flex items-center justify-between bg-gradient-to-r from-sales-700 to-sales-800">
+        <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
-      <ScrollArea className="h-full">
-        <SidebarContent className="py-2 px-2">
+      <ScrollArea className="h-full bg-gradient-to-b from-white to-gray-50">
+        <SidebarContent className="py-4 px-3">
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (
-              <div key={group} className="mb-3">
-                <h3 className="text-xs uppercase font-medium text-gray-500 px-4 mb-1">{groupLabels[group] || group}</h3>
+              <div key={group} className="mb-6">
+                <h3 className="text-xs uppercase font-semibold text-sales-800/70 px-3 mb-2 flex items-center">
+                  <ChevronRight size={14} className="mr-1 text-sales-600" />
+                  {groupLabels[group] || group}
+                </h3>
                 {items.map((item) => {
                   const isActive = location.pathname === item.href;
                   const IconComponent = item.icon as LucideIcon;
                   
                   return (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.title} size="sm">
-                        <Link to={item.href} className="flex items-center px-4 py-1.5 text-sm font-medium">
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={isActive} 
+                        tooltip={item.title} 
+                        size="sm"
+                        className={cn(
+                          "transition-all duration-200 rounded-lg",
+                          isActive ? "bg-sales-50 text-sales-800 font-medium" : "hover:bg-gray-100"
+                        )}
+                      >
+                        <Link to={item.href} className="flex items-center px-3 py-2 text-sm">
                           {IconComponent && (
-                            <div className="mr-3">
-                              <IconComponent size={16} />
+                            <div className={cn(
+                              "mr-3 flex items-center justify-center w-6 h-6 rounded-md",
+                              isActive ? "text-sales-700" : "text-gray-500"
+                            )}>
+                              <IconComponent size={18} />
                             </div>
                           )}
                           <span className="truncate">{item.title}</span>
