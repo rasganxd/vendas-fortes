@@ -32,6 +32,9 @@ interface OrderFormProps {
   handleViewRecentPurchases: () => void;
   customerInputValue: string;
   salesRepInputValue?: string;
+  // Novo: handlers para adicionar e remover itens
+  handleAddItem: (product: Product, quantity: number, price: number) => void;
+  handleRemoveItem: (productId: string) => void;
 }
 
 export default function OrderForm({
@@ -54,53 +57,15 @@ export default function OrderForm({
   isEditMode,
   handleViewRecentPurchases,
   customerInputValue,
-  salesRepInputValue = ''
+  salesRepInputValue = '',
+  // Novo: handlers para adicionar e remover itens
+  handleAddItem,
+  handleRemoveItem
 }: OrderFormProps) {
   const salesRepInputRef = useRef<HTMLInputElement>(null);
   const customerInputRef = useRef<HTMLInputElement>(null);
   const paymentTableRef = useRef<HTMLButtonElement>(null);
   const productInputRef = useRef<HTMLInputElement>(null);
-  
-  const handleAddItem = (product: Product, quantity: number, price: number) => {
-    console.log("Adding item to order:", product, quantity, price);
-    
-    const existingItem = orderItems.find(item => item.productId === product.id);
-    
-    if (existingItem) {
-      const updatedItems = orderItems.map(item =>
-        item.productId === product.id ? 
-          { 
-            ...item, 
-            quantity: (item.quantity || 0) + quantity,
-            total: (item.unitPrice || price) * ((item.quantity || 0) + quantity)
-          } : item
-      );
-      setOrderItems(updatedItems);
-    } else {
-      setOrderItems([...orderItems, {
-        productId: product.id,
-        productName: product.name,
-        productCode: product.code,
-        quantity: quantity,
-        unitPrice: price,
-        total: price * quantity
-      }]);
-    }
-    
-    toast({
-      title: "Item adicionado",
-      description: `${quantity}x ${product.name} adicionado ao pedido`
-    });
-  };
-
-  const handleRemoveItem = (productId: string) => {
-    const updatedItems = orderItems.filter(item => item.productId !== productId);
-    setOrderItems(updatedItems);
-    toast({
-      title: "Item removido",
-      description: "Item removido do pedido"
-    });
-  };
 
   const calculateTotal = () => {
     return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);

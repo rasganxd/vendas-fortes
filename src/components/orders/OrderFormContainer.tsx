@@ -260,6 +260,55 @@ export default function OrderFormContainer() {
     }
   };
 
+  // Corrigido: handler para adicionar um item ao pedido
+  const handleAddItem = (product, quantity, price) => {
+    console.log("Adding item to order:", product, quantity, price);
+    
+    const existingItem = orderItems.find(item => item.productId === product.id);
+    
+    if (existingItem) {
+      const updatedItems = orderItems.map(item =>
+        item.productId === product.id ? 
+          { 
+            ...item, 
+            quantity: (item.quantity || 0) + quantity,
+            total: (item.unitPrice || price) * ((item.quantity || 0) + quantity)
+          } : item
+      );
+      setOrderItems(updatedItems);
+      console.log("Updated order items:", updatedItems);
+    } else {
+      const newItem = {
+        productId: product.id,
+        productName: product.name,
+        productCode: product.code,
+        quantity: quantity,
+        unitPrice: price,
+        total: price * quantity
+      };
+      setOrderItems(prevItems => [...prevItems, newItem]);
+      console.log("New item added:", newItem);
+    }
+    
+    toast({
+      title: "Item adicionado",
+      description: `${quantity}x ${product.name} adicionado ao pedido`
+    });
+  };
+
+  // Corrigido: handler para remover um item do pedido
+  const handleRemoveItem = (productId) => {
+    console.log("Removing item with productId:", productId);
+    const updatedItems = orderItems.filter(item => item.productId !== productId);
+    console.log("Order items after removal:", updatedItems);
+    setOrderItems(updatedItems);
+    
+    toast({
+      title: "Item removido",
+      description: "Item removido do pedido"
+    });
+  };
+
   return (
     <>
       <OrderForm 
@@ -283,6 +332,8 @@ export default function OrderFormContainer() {
         handleViewRecentPurchases={handleViewRecentPurchases}
         customerInputValue={customerInputValue}
         salesRepInputValue={salesRepInputValue}
+        handleAddItem={handleAddItem}
+        handleRemoveItem={handleRemoveItem}
       />
 
       <RecentPurchasesDialog
