@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState } from 'react';
-import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle, PaymentTable, Backup, PaymentMethod } from '@/types';
+import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle, PaymentTable, Backup, PaymentMethod, ProductGroup, ProductCategory, ProductBrand } from '@/types';
 import { loadCustomers } from '@/hooks/useCustomers';
 import { loadProducts } from '@/hooks/useProducts';
 import { loadOrders } from '@/hooks/useOrders';
@@ -9,6 +9,7 @@ import { loadLoads } from '@/hooks/useLoads';
 import { loadSalesReps } from '@/hooks/useSalesReps';
 import { loadVehicles } from '@/hooks/useVehicles';
 import { loadPaymentTables } from '@/hooks/usePaymentTables';
+import { loadProductGroups, loadProductCategories, loadProductBrands } from '@/hooks/useProductClassifications';
 
 // Interface for the context
 interface AppContextType {
@@ -35,6 +36,14 @@ interface AppContextType {
   backups: Backup[];
   setBackups: React.Dispatch<React.SetStateAction<Backup[]>>;
   isLoading: boolean;
+  
+  // Product classifications
+  productGroups: ProductGroup[];
+  setProductGroups: React.Dispatch<React.SetStateAction<ProductGroup[]>>;
+  productCategories: ProductCategory[];
+  setProductCategories: React.Dispatch<React.SetStateAction<ProductCategory[]>>;
+  productBrands: ProductBrand[];
+  setProductBrands: React.Dispatch<React.SetStateAction<ProductBrand[]>>;
   
   // Route operations
   updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
@@ -88,6 +97,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [backups, setBackups] = useState<Backup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Add states for product classifications
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
+  const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
 
   // Route operations
   const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
@@ -245,7 +259,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           loadsData,
           salesRepsData,
           vehiclesData,
-          paymentTablesData
+          paymentTablesData,
+          productGroupsData,
+          productCategoriesData,
+          productBrandsData
         ] = await Promise.all([
           loadCustomers(),
           loadProducts(),
@@ -255,7 +272,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           loadLoads(),
           loadSalesReps(),
           loadVehicles(),
-          loadPaymentTables()
+          loadPaymentTables(),
+          loadProductGroups(),
+          loadProductCategories(),
+          loadProductBrands()
         ]);
         
         setCustomers(customersData);
@@ -267,6 +287,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setSalesReps(salesRepsData);
         setVehicles(vehiclesData);
         setPaymentTables(paymentTablesData);
+        setProductGroups(productGroupsData);
+        setProductCategories(productCategoriesData);
+        setProductBrands(productBrandsData);
         
         setPaymentMethods([
           { id: '1', name: 'Dinheiro', type: 'cash', active: true },
@@ -301,6 +324,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       paymentMethods, setPaymentMethods,
       backups, setBackups,
       isLoading,
+      productGroups, setProductGroups,
+      productCategories, setProductCategories,
+      productBrands, setProductBrands,
       updateRoute,
       addRoute,
       deleteRoute,
