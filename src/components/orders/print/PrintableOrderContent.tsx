@@ -14,6 +14,21 @@ const PrintableOrderContent: React.FC<PrintableOrderContentProps> = ({
   customers,
   formatCurrency
 }) => {
+  // Function to get a human-readable payment method name
+  const getPaymentMethodName = (order: Order) => {
+    if (!order.paymentMethod) return 'Não especificado';
+    
+    switch(order.paymentMethod.toLowerCase()) {
+      case 'dinheiro': return 'Dinheiro';
+      case 'cartao': return 'Cartão';
+      case 'cheque': return 'Cheque';
+      case 'boleto': return 'Boleto';
+      case 'pix': return 'PIX';
+      case 'promissoria': return 'Nota Promissória';
+      default: return order.paymentMethod;
+    }
+  }
+
   return (
     <div className="hidden">
       <div className="p-4">
@@ -74,12 +89,16 @@ const PrintableOrderContent: React.FC<PrintableOrderContentProps> = ({
                 
                 <div className="flex justify-between items-center mb-2">
                   <div>
-                    {order.paymentStatus !== 'pending' && (
-                      <p className="font-semibold">{order.paymentStatus}</p>
-                    )}
-                    {order.paymentMethod && (
-                      <p className="text-sm">{order.paymentMethod}</p>
-                    )}
+                    {/* Display payment status and payment method */}
+                    <p className="font-semibold">
+                      {order.paymentStatus === 'paid' ? 'Pago' : 
+                       order.paymentStatus === 'partial' ? 'Pago Parcialmente' : 
+                       'Pendente'}
+                    </p>
+                    {/* Show the correct payment method name */}
+                    <p className="text-sm">
+                      <span className="font-medium">Forma de Pagamento:</span> {getPaymentMethodName(order)}
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="font-bold">Total: 

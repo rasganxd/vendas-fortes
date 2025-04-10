@@ -19,17 +19,18 @@ const RouteFinancialReport = ({ route, orders, onClose }: RouteFinancialReportPr
   // Calculate the total value of all orders in the route
   const totalRouteValue = orders.reduce((sum, order) => sum + order.total, 0);
   
-  // Get payment method display name
+  // Get payment method display name - Updated for proper mapping
   const getPaymentMethodName = (paymentStatus: string, method?: string) => {
     if (paymentStatus === 'pending') return 'A prazo';
     
     if (method) {
-      switch(method) {
-        case 'cash': return 'À vista (Dinheiro)';
-        case 'credit': return 'Cartão de Crédito';
-        case 'debit': return 'Cartão de Débito';
-        case 'transfer': return 'Transferência';
-        case 'check': return 'Cheque';
+      switch(method.toLowerCase()) {
+        case 'dinheiro': return 'À vista (Dinheiro)';
+        case 'cartao': return 'Cartão de Crédito';
+        case 'cheque': return 'Cheque';
+        case 'boleto': return 'Boleto';
+        case 'pix': return 'PIX';
+        case 'promissoria': return 'Nota Promissória';
         default: return method;
       }
     }
@@ -42,12 +43,13 @@ const RouteFinancialReport = ({ route, orders, onClose }: RouteFinancialReportPr
     if (paymentStatus === 'pending') return FileText;
     
     if (method) {
-      switch(method) {
-        case 'cash': return DollarSign;
-        case 'credit': 
-        case 'debit': return CreditCard;
-        case 'transfer': return Receipt;
-        case 'check': return FileText;
+      switch(method.toLowerCase()) {
+        case 'dinheiro': return DollarSign;
+        case 'cartao': return CreditCard;
+        case 'pix': 
+        case 'boleto': return Receipt;
+        case 'cheque': 
+        case 'promissoria': return FileText;
         default: return Receipt;
       }
     }
