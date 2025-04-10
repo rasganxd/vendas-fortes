@@ -3,6 +3,7 @@ import { Payment } from '@/types';
 import { paymentService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
 import { useAppContext } from './useAppContext';
+import { useOrders } from './useOrders';
 
 export const loadPayments = async (): Promise<Payment[]> => {
   try {
@@ -15,12 +16,28 @@ export const loadPayments = async (): Promise<Payment[]> => {
 
 export const usePayments = () => {
   const { payments, setPayments } = useAppContext();
+  const { updateOrder } = useOrders();
 
   const addPayment = async (payment: Omit<Payment, 'id'>) => {
     try {
       const id = await paymentService.add(payment);
       const newPayment = { ...payment, id };
       setPayments([...payments, newPayment]);
+      
+      // Update order payment status
+      const { orderId, amount } = payment;
+      const relevantPayments = [...payments, newPayment]
+        .filter(p => p.orderId === orderId && p.status === 'completed');
+      
+      const totalPaid = relevantPayments.reduce((sum, p) => sum + p.amount, 0);
+      
+      // Find order in context
+      const order = await paymentService.getOrderById(orderId);
+      if (order) {
+        const newStatus = totalPaid >= order.total ? 'paid' : totalPaid > 0 ? 'partial' : 'pending';
+        await updateOrder(orderId, { paymentStatus: newStatus });
+      }
+      
       toast({
         title: "Pagamento adicionado",
         description: "Pagamento adicionado com sucesso!"
@@ -33,7 +50,7 @@ export const usePayments = () => {
         description: "Houve um problema ao adicionar o pagamento.",
         variant: "destructive"
       });
-      return "";
+      throw error;
     }
   };
 
@@ -54,6 +71,7 @@ export const usePayments = () => {
         description: "Houve um problema ao atualizar o pagamento.",
         variant: "destructive"
       });
+      throw error;
     }
   };
 
@@ -72,6 +90,7 @@ export const usePayments = () => {
         description: "Houve um problema ao excluir o pagamento.",
         variant: "destructive"
       });
+      throw error;
     }
   };
   

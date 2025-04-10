@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Order, PaymentTable } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
+import { usePayments } from '@/hooks/usePayments';
 
 interface PaymentMethod {
   value: string;
@@ -46,6 +49,96 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
   paymentMethods,
   onViewPromissoryNote
 }) => {
+  const { addPayment } = usePayments();
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState<{ [key: string]: boolean }>({});
+  const [paymentValues, setPaymentValues] = useState<{ [key: string]: { amount: number; method: string } }>({});
+
+  // Initialize payment values for each order
+  React.useEffect(() => {
+    const initialValues = {} as { [key: string]: { amount: number; method: string } };
+    pendingPaymentOrders.forEach(order => {
+      initialValues[order.id] = {
+        amount: order.total - order.paid,
+        method: 'cash'
+      };
+    });
+    setPaymentValues(initialValues);
+  }, [pendingPaymentOrders]);
+
+  const handleOpenPaymentDialog = (orderId: string) => {
+    setPaymentDialogOpen(prev => ({ ...prev, [orderId]: true }));
+  };
+
+  const handleClosePaymentDialog = (orderId: string) => {
+    setPaymentDialogOpen(prev => ({ ...prev, [orderId]: false }));
+  };
+
+  const handlePaymentChange = (orderId: string, field: 'amount' | 'method', value: any) => {
+    setPaymentValues(prev => ({
+      ...prev,
+      [orderId]: {
+        ...prev[orderId],
+        [field]: field === 'amount' ? Number(value) : value
+      }
+    }));
+  };
+
+  const handleSubmitPayment = async (orderId: string) => {
+    const order = pendingPaymentOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    const paymentValue = paymentValues[orderId];
+    if (!paymentValue) return;
+
+    const { amount, method } = paymentValue;
+    
+    // Validate payment amount
+    if (!amount || amount <= 0) {
+      toast({
+        title: "Erro de validação",
+        description: "O valor do pagamento deve ser maior que zero.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate that amount doesn't exceed pending amount
+    const pendingAmount = order.total - order.paid;
+    if (amount > pendingAmount) {
+      toast({
+        title: "Erro de validação",
+        description: "O valor do pagamento não pode exceder o valor pendente.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await addPayment({
+        orderId: orderId,
+        amount: amount,
+        method: method as any,
+        status: 'completed',
+        date: new Date(),
+        notes: `Pagamento de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+      });
+
+      handleClosePaymentDialog(orderId);
+
+      toast({
+        title: "Pagamento registrado",
+        description: "O pagamento foi registrado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao registrar pagamento:", error);
+      toast({
+        title: "Erro",
+        description: "Houve um problema ao registrar o pagamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (pendingPaymentOrders.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -88,54 +181,74 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
                       <FileText size={14} /> Promissória
                     </Button>
                   )}
-                  <Dialog>
+                  <Dialog 
+                    open={paymentDialogOpen[order.id]} 
+                    onOpenChange={(open) => {
+                      if (open) {
+                        handleOpenPaymentDialog(order.id);
+                      } else {
+                        handleClosePaymentDialog(order.id);
+                      }
+                    }}
+                  >
+                    <DialogTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        className="bg-teal-600 hover:bg-teal-700 text-xs flex gap-1"
+                        onClick={() => handleOpenPaymentDialog(order.id)}
+                      >
+                        <Plus size={14} /> Pagar
+                      </Button>
+                    </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>
                         <DialogTitle>Registrar Pagamento</DialogTitle>
                       </DialogHeader>
-                      <form>
-                        <div className="grid gap-4 py-4">
-                          <div className="space-y-2">
-                            <Label>Pedido</Label>
-                            <div className="p-2 border rounded-md bg-gray-50">
-                              {order.id} - {order.customerName}
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`amount-${order.id}`}>Valor</Label>
-                            <Input
-                              id={`amount-${order.id}`}
-                              type="number"
-                              step="0.01"
-                              min="0.01"
-                              max={pendingAmount}
-                              defaultValue={pendingAmount.toFixed(2)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`method-${order.id}`}>Método de Pagamento</Label>
-                            <Select defaultValue="cash">
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o método" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {paymentMethods.map(method => (
-                                  <SelectItem key={method.value} value={method.value}>{method.label}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                      <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                          <Label>Pedido</Label>
+                          <div className="p-2 border rounded-md bg-gray-50">
+                            {order.id} - {order.customerName}
                           </div>
                         </div>
-                        <div className="flex justify-end">
-                          <Button className="bg-sales-800 hover:bg-sales-700">
-                            Confirmar Pagamento
-                          </Button>
+                        <div className="space-y-2">
+                          <Label htmlFor={`amount-${order.id}`}>Valor</Label>
+                          <Input
+                            id={`amount-${order.id}`}
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            max={pendingAmount}
+                            value={paymentValues[order.id]?.amount || pendingAmount}
+                            onChange={(e) => handlePaymentChange(order.id, 'amount', e.target.value)}
+                          />
                         </div>
-                      </form>
+                        <div className="space-y-2">
+                          <Label htmlFor={`method-${order.id}`}>Método de Pagamento</Label>
+                          <Select 
+                            value={paymentValues[order.id]?.method || 'cash'}
+                            onValueChange={(value) => handlePaymentChange(order.id, 'method', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o método" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {paymentMethods.map(method => (
+                                <SelectItem key={method.value} value={method.value}>{method.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button 
+                          className="bg-sales-800 hover:bg-sales-700"
+                          onClick={() => handleSubmitPayment(order.id)}
+                        >
+                          Confirmar Pagamento
+                        </Button>
+                      </div>
                     </DialogContent>
-                    <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs flex gap-1">
-                      <Plus size={14} /> Pagar
-                    </Button>
                   </Dialog>
                 </div>
               </div>

@@ -23,11 +23,9 @@ import {
   PaymentTable
 } from "@/types";
 
-// Converte timestamp do Firestore para Date
 const convertTimestampToDate = (data: any) => {
   const newData = { ...data };
   
-  // Verifica se há timestamps e converte para Date
   Object.keys(newData).forEach(key => {
     if (newData[key] instanceof Timestamp) {
       newData[key] = newData[key].toDate();
@@ -37,7 +35,6 @@ const convertTimestampToDate = (data: any) => {
   return newData;
 };
 
-// Serviço para Customers
 export const customerService = {
   async getAll(): Promise<Customer[]> {
     const customersRef = collection(db, "customers");
@@ -68,7 +65,6 @@ export const customerService = {
   }
 };
 
-// Serviço para Products
 export const productService = {
   async getAll(): Promise<Product[]> {
     const productsRef = collection(db, "products");
@@ -95,7 +91,6 @@ export const productService = {
   }
 };
 
-// Serviço para Orders
 export const orderService = {
   async getAll(): Promise<Order[]> {
     const ordersRef = collection(db, "orders");
@@ -126,7 +121,6 @@ export const orderService = {
   }
 };
 
-// Serviço para Veículos
 export const vehicleService = {
   async getAll(): Promise<Vehicle[]> {
     const vehiclesRef = collection(db, "vehicles");
@@ -162,38 +156,82 @@ export const vehicleService = {
   }
 };
 
-// Serviço para Pagamentos
 export const paymentService = {
-  async getAll(): Promise<Payment[]> {
-    const paymentsRef = collection(db, "payments");
-    const snapshot = await getDocs(paymentsRef);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...convertTimestampToDate(doc.data()) 
-    } as Payment));
+  getAll: async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'payments'));
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Payment[];
+    } catch (error) {
+      console.error('Error getting payments:', error);
+      return [];
+    }
   },
-  
-  async add(payment: Omit<Payment, "id">): Promise<string> {
-    const paymentData = {
-      ...payment,
-      createdAt: serverTimestamp()
-    };
-    const docRef = await addDoc(collection(db, "payments"), paymentData);
-    return docRef.id;
+  getById: async (id: string) => {
+    try {
+      const docRef = doc(db, 'payments', id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Payment;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting payment:', error);
+      return null;
+    }
   },
-  
-  async update(id: string, payment: Partial<Payment>): Promise<void> {
-    const paymentRef = doc(db, "payments", id);
-    await updateDoc(paymentRef, payment);
+  getOrderById: async (id: string) => {
+    try {
+      const docRef = doc(db, 'orders', id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Order;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting order:', error);
+      return null;
+    }
   },
-  
-  async delete(id: string): Promise<void> {
-    const paymentRef = doc(db, "payments", id);
-    await deleteDoc(paymentRef);
+  add: async (payment: Omit<Payment, 'id'>) => {
+    try {
+      const docRef = await addDoc(collection(db, 'payments'), {
+        ...payment,
+        createdAt: serverTimestamp()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding payment:', error);
+      throw error;
+    }
+  },
+  update: async (id: string, data: Partial<Payment>) => {
+    try {
+      const docRef = doc(db, 'payments', id);
+      await updateDoc(docRef, {
+        ...data,
+        updatedAt: serverTimestamp()
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating payment:', error);
+      throw error;
+    }
+  },
+  delete: async (id: string) => {
+    try {
+      const docRef = doc(db, 'payments', id);
+      await deleteDoc(docRef);
+      return true;
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      throw error;
+    }
   }
 };
 
-// Serviço para Representantes de Vendas
 export const salesRepService = {
   async getAll(): Promise<SalesRep[]> {
     const salesRepsRef = collection(db, "salesReps");
@@ -220,7 +258,6 @@ export const salesRepService = {
   }
 };
 
-// Serviço para Rotas
 export const routeService = {
   async getAll(): Promise<DeliveryRoute[]> {
     const routesRef = collection(db, "routes");
@@ -256,7 +293,6 @@ export const routeService = {
   }
 };
 
-// Serviço para Carregamentos
 export const loadService = {
   async getAll(): Promise<Load[]> {
     const loadsRef = collection(db, "loads");
@@ -287,7 +323,6 @@ export const loadService = {
   }
 };
 
-// Serviço para Tabelas de Pagamento
 export const paymentTableService = {
   async getAll(): Promise<PaymentTable[]> {
     const paymentTablesRef = collection(db, "paymentTables");
