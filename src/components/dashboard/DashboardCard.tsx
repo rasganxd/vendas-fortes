@@ -12,6 +12,7 @@ interface DashboardCardProps {
     isPositive: boolean;
   };
   valueClassName?: string;
+  className?: string;
 }
 
 export default function DashboardCard({
@@ -20,13 +21,17 @@ export default function DashboardCard({
   icon,
   trend,
   valueClassName,
+  className,
 }: DashboardCardProps) {
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+    <div className={cn(
+      "rounded-lg p-6 border shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1",
+      className || "bg-white"
+    )}>
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-gray-500">{title}</h3>
         {icon && (
-          <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+          <div className="h-10 w-10 rounded-full bg-white/80 shadow-sm flex items-center justify-center">
             {icon}
           </div>
         )}

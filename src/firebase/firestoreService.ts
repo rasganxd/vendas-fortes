@@ -182,17 +182,20 @@ export const paymentService = {
       return null;
     }
   },
-  getOrderById: async (id: string) => {
+  getOrderById: async (orderId: string) => {
     try {
-      const docRef = doc(db, 'orders', id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Order;
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnap = await getDocs(collection(db, 'orders')).then(
+        snapshot => snapshot.docs.find(doc => doc.id === orderId)
+      );
+      
+      if (orderSnap) {
+        return { id: orderSnap.id, ...orderSnap.data() };
       }
       return null;
     } catch (error) {
-      console.error('Error getting order:', error);
-      return null;
+      console.error("Error getting order by id:", error);
+      throw error;
     }
   },
   add: async (payment: Omit<Payment, 'id'>) => {
