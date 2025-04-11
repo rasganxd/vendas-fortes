@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -106,7 +105,6 @@ export default function ProductSearchInput({
     });
   };
   
-  // Close results when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (resultsRef.current && !resultsRef.current.contains(event.target as Node)) {
@@ -120,7 +118,6 @@ export default function ProductSearchInput({
     };
   }, []);
   
-  // Update the filtering logic to prioritize exact code matches and show code in the results
   const filteredProducts = searchTerm
     ? products.filter(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,7 +126,6 @@ export default function ProductSearchInput({
       )
     : [];
   
-  // Sort results to prioritize exact code matches
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     // Exact code matches come first
     const aExactCodeMatch = a.code?.toString() === searchTerm;
@@ -184,7 +180,7 @@ export default function ProductSearchInput({
               type="button" 
               variant="outline" 
               size="icon" 
-              className="h-10 w-10 rounded-r-none border-r-0"
+              className="h-10 w-10 rounded-r-none border-r-0 hover:bg-gray-50 transition-colors"
               onClick={decrementQuantity}
             >
               <Minus size={16} />
@@ -192,7 +188,7 @@ export default function ProductSearchInput({
             <Input
               ref={quantityInputRef}
               type="text"
-              className="w-14 h-10 text-center border-x-0 rounded-none"
+              className="w-14 h-10 text-center border-x-0 rounded-none focus:ring-0 focus:border-gray-300 hover:border-gray-300"
               value={quantity === null ? '' : quantity.toString()}
               onChange={handleQuantityChange}
               onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
@@ -201,14 +197,13 @@ export default function ProductSearchInput({
               type="button" 
               variant="outline" 
               size="icon" 
-              className="h-10 w-10 rounded-l-none border-l-0"
+              className="h-10 w-10 rounded-l-none border-l-0 hover:bg-gray-50 transition-colors"
               onClick={incrementQuantity}
             >
               <Plus size={16} />
             </Button>
           </div>
           
-          {/* Add price field */}
           <div className="w-28">
             <Input
               ref={priceInputRef}
