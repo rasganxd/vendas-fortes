@@ -6,7 +6,9 @@ import OrderFormContainer from '@/components/orders/OrderFormContainer';
 export default function NewOrder() {
   return (
     <PageLayout title="Digitação de Pedidos">
-      <OrderFormContainer />
+      <div className="max-w-6xl mx-auto">
+        <OrderFormContainer />
+      </div>
     </PageLayout>
   );
 }

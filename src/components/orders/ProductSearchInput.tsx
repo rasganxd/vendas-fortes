@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -61,7 +60,7 @@ export default function ProductSearchInput({
     setSearchTerm(product.name);
     setPrice(product.price);
     setShowResults(false);
-    setQuantity(null); // Reset quantity to empty when selecting a product
+    setQuantity(1); // Set default quantity to 1 when selecting a product
     setTimeout(() => quantityInputRef.current?.focus(), 50);
   };
   
@@ -142,51 +141,49 @@ export default function ProductSearchInput({
   if (inlineLayout) {
     return (
       <div className="relative w-full">
-        <div className="flex gap-2">
-          <div className="w-full">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
-              <Input
-                ref={inputRef}
-                type="text"
-                className="pl-10 w-full h-8 text-sm"
-                placeholder="Buscar produto pelo nome ou código"
-                value={searchTerm}
-                onChange={handleSearch}
-                onKeyDown={handleSearchKeyDown}
-                autoComplete="off"
-              />
-              {showResults && sortedProducts.length > 0 && (
-                <div 
-                  ref={resultsRef}
-                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
-                >
-                  {sortedProducts.map(product => (
-                    <div
-                      key={product.id}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
-                      onClick={() => handleProductSelect(product)}
-                    >
-                      <div className="flex gap-2">
-                        <span className="font-medium text-gray-500">#{product.code}</span>
-                        <span>{product.name}</span>
-                      </div>
-                      <span className="text-gray-600">
-                        {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </span>
+        <div className="flex items-center gap-2 h-10">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
+            <Input
+              ref={inputRef}
+              type="text"
+              className="pl-10 h-10"
+              placeholder="Buscar produto pelo nome ou código"
+              value={searchTerm}
+              onChange={handleSearch}
+              onKeyDown={handleSearchKeyDown}
+              autoComplete="off"
+            />
+            {showResults && sortedProducts.length > 0 && (
+              <div 
+                ref={resultsRef}
+                className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
+              >
+                {sortedProducts.map(product => (
+                  <div
+                    key={product.id}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+                    onClick={() => handleProductSelect(product)}
+                  >
+                    <div className="flex gap-2">
+                      <span className="font-medium text-gray-500">#{product.code}</span>
+                      <span>{product.name}</span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <span className="text-gray-600">
+                      {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
-          <div className="flex gap-1">
+          <div className="flex items-center">
             <Button 
               type="button" 
               variant="outline" 
               size="icon" 
-              className="h-8 w-8"
+              className="h-10 w-10 rounded-r-none border-r-0"
               onClick={decrementQuantity}
             >
               <Minus size={16} />
@@ -194,38 +191,25 @@ export default function ProductSearchInput({
             <Input
               ref={quantityInputRef}
               type="text"
-              className="w-16 h-8 text-center text-sm"
+              className="w-14 h-10 text-center border-x-0 rounded-none"
               value={quantity === null ? '' : quantity.toString()}
               onChange={handleQuantityChange}
-              placeholder="Qtd"
-              onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
             />
             <Button 
               type="button" 
               variant="outline" 
               size="icon" 
-              className="h-8 w-8"
+              className="h-10 w-10 rounded-l-none border-l-0"
               onClick={incrementQuantity}
             >
               <Plus size={16} />
             </Button>
           </div>
           
-          <div>
-            <Input
-              ref={priceInputRef}
-              type="text"
-              className="w-24 h-8 text-sm"
-              value={price.toString()}
-              onChange={handlePriceChange}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
-            />
-          </div>
-          
           <Button 
             type="button"
-            className="h-8 bg-sales-800 hover:bg-sales-700"
-            disabled={!selectedProduct || quantity === null || quantity <= 0}
+            className="h-10 bg-gray-500 hover:bg-gray-600 text-white"
             onClick={handleAddToOrder}
           >
             Adicionar
@@ -235,7 +219,6 @@ export default function ProductSearchInput({
     );
   }
   
-  // Default layout (not inline)
   return (
     <div className="space-y-4">
       <div className="relative">

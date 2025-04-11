@@ -102,44 +102,45 @@ export default function SalesRepSearchInput({
 
   return (
     <>
-      <div className="space-y-1">
-        <Label htmlFor="salesRep" className={compact ? "text-xs text-gray-500" : ""}>
+      <div className="space-y-2">
+        <Label htmlFor="salesRep">
           Vendedor
         </Label>
         <div className="flex items-center gap-2">
-          <Input
-            type="text"
-            id="salesRep"
-            placeholder="Digite o código do vendedor"
-            value={salesRepInput}
-            onChange={handleSalesRepInputChange}
-            onKeyDown={handleKeyDown}
-            ref={inputRef}
-            className={`w-full ${compact ? "h-8 text-sm" : ""}`}
-          />
+          <div className="relative flex-1">
+            <Input
+              type="text"
+              id="salesRep"
+              placeholder="Digite o código do vendedor"
+              value={salesRepInput}
+              onChange={handleSalesRepInputChange}
+              onKeyDown={handleKeyDown}
+              ref={inputRef}
+              className="w-full pr-10"
+            />
+            {selectedSalesRep && (
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => {
+                  setSelectedSalesRep(null);
+                  setSalesRepInput('');
+                }}
+                className="absolute right-0 top-0 h-10 w-10"
+              >
+                <X size={16} />
+              </Button>
+            )}
+          </div>
           <Button 
             type="button" 
             variant="outline" 
             size="icon" 
             onClick={() => setIsSalesRepSearchOpen(true)}
-            className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
           >
-            <Search size={compact ? 14 : 18} />
+            <Search size={18} />
           </Button>
-          {selectedSalesRep && (
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => {
-                setSelectedSalesRep(null);
-                setSalesRepInput('');
-              }}
-              className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
-            >
-              <X size={compact ? 14 : 18} />
-            </Button>
-          )}
         </div>
       </div>
 

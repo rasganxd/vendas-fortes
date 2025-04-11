@@ -73,8 +73,8 @@ export default function OrderForm({
   return (
     <>
       <div className="bg-white border rounded-md p-6 mb-4">
-        <div className="grid grid-cols-12 gap-x-4 gap-y-6">
-          <div className="col-span-8 grid grid-cols-1 gap-y-4">
+        <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-y-5">
             <div>
               <SalesRepSearchInput
                 salesReps={salesReps}
@@ -82,7 +82,6 @@ export default function OrderForm({
                 setSelectedSalesRep={setSelectedSalesRep}
                 inputRef={salesRepInputRef}
                 onEnterPress={() => customerInputRef.current?.focus()}
-                compact={true}
                 initialInputValue={salesRepInputValue}
               />
             </div>
@@ -95,7 +94,6 @@ export default function OrderForm({
                 onViewRecentPurchases={handleViewRecentPurchases}
                 inputRef={customerInputRef}
                 onEnterPress={() => paymentTableRef.current?.focus()}
-                compact={true}
                 initialInputValue={customerInputValue}
               />
             </div>
@@ -116,32 +114,27 @@ export default function OrderForm({
               />
             </div>
             
-            <div>
-              <ProductSearchInput
-                products={products}
-                addItemToOrder={handleAddItem}
-                inlineLayout={true}
-                inputRef={productInputRef}
-              />
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <ProductSearchInput
+                  products={products}
+                  addItemToOrder={handleAddItem}
+                  inlineLayout={true}
+                  inputRef={productInputRef}
+                />
+              </div>
+              
+              <div>
+                <Button 
+                  onClick={handleCreateOrder} 
+                  disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
+                  className="h-10 bg-sales-800 hover:bg-sales-700 text-white"
+                >
+                  <Save size={16} className="mr-2" />
+                  {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}
+                </Button>
+              </div>
             </div>
-          </div>
-          
-          <div className="col-span-4 grid grid-cols-1 gap-2">
-            <Button 
-              variant="outline" 
-              className="justify-start mb-2"
-              onClick={handleViewRecentPurchases}
-            >
-              <FileText size={16} className="mr-2" /> Últimas Compras
-            </Button>
-            <Button 
-              onClick={handleCreateOrder} 
-              disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
-              className="w-full bg-sales-800 hover:bg-sales-700 text-white"
-            >
-              <Save size={16} className="mr-2" />
-              {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}
-            </Button>
           </div>
         </div>
       </div>

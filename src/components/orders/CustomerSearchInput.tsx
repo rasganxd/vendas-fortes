@@ -106,9 +106,9 @@ export default function CustomerSearchInput({
 
   return (
     <>
-      <div className="space-y-1">
+      <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <Label htmlFor="customer" className={compact ? "text-xs text-gray-500" : ""}>
+          <Label htmlFor="customer">
             Cliente
           </Label>
           {selectedCustomer && (
@@ -125,87 +125,91 @@ export default function CustomerSearchInput({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Input
-            type="text"
-            id="customer"
-            placeholder="Digite o código do cliente"
-            value={customerInput}
-            onChange={handleCustomerInputChange}
-            onKeyDown={handleKeyDown}
-            ref={inputRef}
-            className={`w-full ${compact ? "h-8 text-sm" : ""}`}
-          />
-          <Popover open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
-            <PopoverTrigger asChild>
+          <div className="relative flex-1">
+            <Input
+              type="text"
+              id="customer"
+              placeholder="Digite o código do cliente"
+              value={customerInput}
+              onChange={handleCustomerInputChange}
+              onKeyDown={handleKeyDown}
+              ref={inputRef}
+              className="w-full pr-10"
+            />
+            {selectedCustomer && (
               <Button 
                 type="button" 
-                variant="outline" 
+                variant="ghost" 
                 size="icon" 
-                className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
+                onClick={() => {
+                  setSelectedCustomer(null);
+                  setCustomerInput('');
+                }}
+                className="absolute right-0 top-0 h-10 w-10"
               >
-                <Search size={compact ? 14 : 18} />
+                <X size={16} />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
-              <Command>
-                <CommandInput 
-                  placeholder="Buscar cliente por código ou nome..." 
-                  value={customerSearch}
-                  onValueChange={setCustomerSearch}
-                />
-                <CommandList>
-                  <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                  <CommandGroup>
-                    {filteredCustomers.map((customer) => (
-                      <CommandItem
-                        key={customer.id}
-                        value={customer.id}
-                        onSelect={() => {
-                          setSelectedCustomer(customer);
-                          setCustomerInput(`${customer.code} - ${customer.name}`);
-                          setIsCustomerSearchOpen(false);
-                          setCustomerSearch('');
-                          // Navigate to next field on selection
-                          if (onEnterPress) {
-                            setTimeout(onEnterPress, 50);
-                          }
-                        }}
-                        className="cursor-pointer py-2 px-2"
-                      >
-                        <div className="flex flex-col">
-                          <div className="flex items-center">
-                            <span className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-medium mr-2">
-                              {customer.code || "---"}
-                            </span>
-                            <span className="font-medium">{customer.name}</span>
-                          </div>
-                          <span className="text-xs text-gray-500 ml-7">
-                            {customer.city}{customer.state ? `, ${customer.state}` : ''}
-                          </span>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          {selectedCustomer && (
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => {
-                setSelectedCustomer(null);
-                setCustomerInput('');
-              }}
-              className={`shrink-0 ${compact ? "h-8 w-8" : ""}`}
-            >
-              <X size={compact ? 14 : 18} />
-            </Button>
-          )}
+            )}
+          </div>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="icon" 
+            onClick={() => setIsCustomerSearchOpen(true)}
+          >
+            <Search size={18} />
+          </Button>
         </div>
       </div>
+
+      <Popover open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
+        <PopoverTrigger asChild>
+          <div className="hidden" /> {/* Hidden trigger for controlled usage */}
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-0" align="start">
+          <Command>
+            <CommandInput 
+              placeholder="Buscar cliente por código ou nome..." 
+              value={customerSearch}
+              onValueChange={setCustomerSearch}
+            />
+            <CommandList>
+              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+              <CommandGroup>
+                {filteredCustomers.map((customer) => (
+                  <CommandItem
+                    key={customer.id}
+                    value={customer.id}
+                    onSelect={() => {
+                      setSelectedCustomer(customer);
+                      setCustomerInput(`${customer.code} - ${customer.name}`);
+                      setIsCustomerSearchOpen(false);
+                      setCustomerSearch('');
+                      // Navigate to next field on selection
+                      if (onEnterPress) {
+                        setTimeout(onEnterPress, 50);
+                      }
+                    }}
+                    className="cursor-pointer py-2 px-2"
+                  >
+                    <div className="flex flex-col">
+                      <div className="flex items-center">
+                        <span className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-medium mr-2">
+                          {customer.code || "---"}
+                        </span>
+                        <span className="font-medium">{customer.name}</span>
+                      </div>
+                      <span className="text-xs text-gray-500 ml-7">
+                        {customer.city}{customer.state ? `, ${customer.state}` : ''}
+                      </span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </>
   );
 }
