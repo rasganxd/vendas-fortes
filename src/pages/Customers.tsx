@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, ClockIcon } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { useCustomers } from '@/hooks/useCustomers';
 import { Customer } from '@/types';
@@ -14,6 +14,13 @@ import {
   DialogTitle,
   DialogDescription
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Componentes importados
 import CustomersTable from '@/components/customers/CustomersTable';
@@ -29,7 +36,8 @@ const Customers = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-
+  const [sortBy, setSortBy] = useState<string>('name');
+  
   const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
     setIsDialogOpen(true);
@@ -69,12 +77,35 @@ const Customers = () => {
     setIsNewCustomerDialogOpen(true);
   };
 
+  // Filter customers based on search term
   const filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (customer.document || '').includes(searchTerm) ||
     customer.phone.includes(searchTerm) ||
     (customer.code?.toString() || '').includes(searchTerm)
   );
+
+  // Sort customers based on selected sort option
+  const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'code':
+        return (a.code || 0) - (b.code || 0);
+      case 'visitFrequency':
+        const frequencyOrder = {
+          'weekly': 1,
+          'biweekly': 2,
+          'monthly': 3,
+          'quarterly': 4,
+          undefined: 5
+        };
+        return (frequencyOrder[a.visitFrequency as keyof typeof frequencyOrder] || 5) - 
+               (frequencyOrder[b.visitFrequency as keyof typeof frequencyOrder] || 5);
+      default:
+        return a.name.localeCompare(b.name);
+    }
+  });
 
   return (
     <PageLayout 
@@ -92,18 +123,37 @@ const Customers = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button 
-          className="bg-sales-800 hover:bg-sales-700 w-full sm:w-auto"
-          onClick={handleNewCustomer}
-        >
-          <Plus size={16} className="mr-2" />
-          Adicionar Novo Cliente
-        </Button>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Select onValueChange={setSortBy} defaultValue={sortBy}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Nome</SelectItem>
+              <SelectItem value="code">Código</SelectItem>
+              <SelectItem value="visitFrequency">
+                <div className="flex items-center">
+                  <ClockIcon className="mr-2 h-4 w-4" />
+                  Frequência de Visita
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button 
+            className="bg-sales-800 hover:bg-sales-700"
+            onClick={handleNewCustomer}
+          >
+            <Plus size={16} className="mr-2" />
+            Adicionar Cliente
+          </Button>
+        </div>
       </div>
 
       <Card className="overflow-hidden">
         <CustomersTable 
-          customers={filteredCustomers}
+          customers={sortedCustomers}
           onView={handleViewCustomerDetails}
           onEdit={handleEditCustomer}
           onDelete={handleDeleteCustomer}

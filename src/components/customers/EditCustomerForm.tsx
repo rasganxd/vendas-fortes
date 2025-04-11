@@ -14,6 +14,13 @@ import {
 } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DialogFooter } from '@/components/ui/dialog';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 
 interface EditCustomerFormProps {
   customer: Customer;
@@ -43,7 +50,8 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       state: customer.state || '',
       zipCode: customer.zipCode || '',
       notes: customer.notes || '',
-      visitDays: customer.visitDays || []
+      visitDays: customer.visitDays || [],
+      visitFrequency: customer.visitFrequency || 'weekly'
     }
   });
 
@@ -157,6 +165,35 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="visitFrequency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Frequência de Visitas</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a frequência" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="weekly">Semanal</SelectItem>
+                    <SelectItem value="biweekly">Quinzenal</SelectItem>
+                    <SelectItem value="monthly">Mensal</SelectItem>
+                    <SelectItem value="quarterly">Trimestral</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

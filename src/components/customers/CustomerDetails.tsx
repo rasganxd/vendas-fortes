@@ -18,7 +18,8 @@ import {
   DollarSign,
   User,
   ShoppingBag,
-  CalendarDays
+  CalendarDays,
+  Clock
 } from 'lucide-react';
 
 interface CustomerDetailsProps {
@@ -35,6 +36,21 @@ interface FrequentProduct {
   totalQuantity: number;
   occurrences: number;
 }
+
+const getFrequencyLabel = (frequency: string | undefined) => {
+  switch (frequency) {
+    case 'weekly':
+      return 'Semanal';
+    case 'biweekly':
+      return 'Quinzenal';
+    case 'monthly':
+      return 'Mensal';
+    case 'quarterly':
+      return 'Trimestral';
+    default:
+      return 'Não definida';
+  }
+};
 
 const CustomerDetails: React.FC<CustomerDetailsProps> = ({ customer, onEdit, onDelete }) => {
   const { orders } = useAppContext();
@@ -120,6 +136,12 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({ customer, onEdit, onD
                     </span>
                   </div>
                 )}
+                <div className="flex items-center text-gray-600 mb-2">
+                  <Clock className="mr-2 h-4 w-4" />
+                  <span>
+                    Frequência de visita: {getFrequencyLabel(customer.visitFrequency)}
+                  </span>
+                </div>
               </div>
               <div>
                 <p className="text-gray-700">
