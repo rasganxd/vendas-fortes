@@ -14,10 +14,9 @@ import {
   CommandList
 } from "@/components/ui/command";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 
 interface CustomerSearchInputProps {
   customers: Customer[];
@@ -162,12 +161,10 @@ export default function CustomerSearchInput({
         </div>
       </div>
 
-      <Popover open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
-        <PopoverTrigger asChild>
-          <div className="hidden" /> {/* Hidden trigger for controlled usage */}
-        </PopoverTrigger>
-        <PopoverContent className="w-80 p-0" align="start">
-          <Command>
+      {/* Replace Popover with Dialog for customer search */}
+      <Dialog open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
+        <DialogContent className="sm:max-w-md p-0">
+          <Command className="rounded-lg border shadow-md">
             <CommandInput 
               placeholder="Buscar cliente por código ou nome..." 
               value={customerSearch}
@@ -208,8 +205,8 @@ export default function CustomerSearchInput({
               </CommandGroup>
             </CommandList>
           </Command>
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
