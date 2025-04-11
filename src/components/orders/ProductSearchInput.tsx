@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -194,7 +195,7 @@ export default function ProductSearchInput({
               className="w-14 h-10 text-center border-x-0 rounded-none"
               value={quantity === null ? '' : quantity.toString()}
               onChange={handleQuantityChange}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
+              onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
             />
             <Button 
               type="button" 
@@ -205,6 +206,19 @@ export default function ProductSearchInput({
             >
               <Plus size={16} />
             </Button>
+          </div>
+          
+          {/* Add price field */}
+          <div className="w-28">
+            <Input
+              ref={priceInputRef}
+              type="text"
+              className="h-10 text-center"
+              placeholder="Valor"
+              value={price ? price.toString() : ''}
+              onChange={handlePriceChange}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
+            />
           </div>
           
           <Button 
