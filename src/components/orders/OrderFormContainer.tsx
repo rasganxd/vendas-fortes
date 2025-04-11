@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -15,7 +15,7 @@ export default function OrderFormContainer() {
   const { paymentTables } = usePaymentTables();
   const { createAutomaticPaymentRecord } = usePayments();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedSalesRep, setSelectedSalesRep] = useState<SalesRep | null>(null);
@@ -36,8 +36,7 @@ export default function OrderFormContainer() {
   }, [paymentTables]);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const orderId = params.get('id');
+    const orderId = searchParams.get('id');
     
     if (orderId) {
       console.log("Getting order with ID:", orderId);
@@ -108,7 +107,7 @@ export default function OrderFormContainer() {
         });
       }
     }
-  }, [location.search, getOrderById, customers, salesReps, orders]);
+  }, [searchParams, getOrderById, customers, salesReps, orders]);
 
   const resetForm = () => {
     setSelectedCustomer(null);

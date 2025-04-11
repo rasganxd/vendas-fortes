@@ -1,4 +1,3 @@
-
 import { Order } from '@/types';
 import { orderService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
@@ -82,6 +81,8 @@ export const useOrders = () => {
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
       });
+      
+      return id;
     } catch (error) {
       console.error("Erro ao atualizar pedido:", error);
       toast({
@@ -89,6 +90,7 @@ export const useOrders = () => {
         description: "Houve um problema ao atualizar o pedido.",
         variant: "destructive"
       });
+      return "";
     }
   };
 
