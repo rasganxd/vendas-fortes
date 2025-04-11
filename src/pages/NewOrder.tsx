@@ -12,7 +12,7 @@ export default function NewOrder() {
   
   return (
     <PageLayout title={pageTitle}>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <OrderFormContainer />
       </div>
     </PageLayout>

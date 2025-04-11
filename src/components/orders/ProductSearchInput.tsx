@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Minus } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart } from 'lucide-react';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -135,81 +135,91 @@ export default function ProductSearchInput({
     return 0;
   });
   
-  if (inlineLayout) {
-    return (
-      <div className="relative w-full">
-        <div className="flex items-center gap-2 h-10">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
-            <Input
-              ref={inputRef}
-              type="text"
-              className="pl-10 h-10"
-              placeholder="Buscar produto pelo nome ou código"
-              value={searchTerm}
-              onChange={handleSearch}
-              onKeyDown={handleSearchKeyDown}
-              autoComplete="off"
-            />
-            {showResults && sortedProducts.length > 0 && (
-              <div 
-                ref={resultsRef}
-                className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
-              >
-                {sortedProducts.map(product => (
-                  <div
-                    key={product.id}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
-                    onClick={() => handleProductSelect(product)}
-                  >
-                    <div className="flex gap-2">
-                      <span className="font-medium text-gray-500">#{product.code}</span>
-                      <span>{product.name}</span>
-                    </div>
-                    <span className="text-gray-600">
-                      {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          
+  return (
+    <div className="relative w-full">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+        <div className="relative flex-1 w-full">
           <div className="flex items-center">
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="icon" 
-              className="h-10 w-10 rounded-r-none border-r-0 hover:bg-gray-50 transition-colors"
-              onClick={decrementQuantity}
-            >
-              <Minus size={16} />
-            </Button>
-            <Input
-              ref={quantityInputRef}
-              type="text"
-              className="w-14 h-10 text-center border-x-0 rounded-none focus:ring-0 focus:border-gray-300 hover:border-gray-300"
-              value={quantity === null ? '' : quantity.toString()}
-              onChange={handleQuantityChange}
-              onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
-            />
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="icon" 
-              className="h-10 w-10 rounded-l-none border-l-0 hover:bg-gray-50 transition-colors"
-              onClick={incrementQuantity}
-            >
-              <Plus size={16} />
-            </Button>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
+              <Input
+                ref={inputRef}
+                type="text"
+                className="pl-10 h-11 border-gray-300 focus:border-blue-400 focus:ring-blue-400"
+                placeholder="Buscar produto pelo nome ou código"
+                value={searchTerm}
+                onChange={handleSearch}
+                onKeyDown={handleSearchKeyDown}
+                autoComplete="off"
+              />
+              
+              {showResults && sortedProducts.length > 0 && (
+                <div 
+                  ref={resultsRef}
+                  className="absolute z-50 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
+                >
+                  {sortedProducts.map(product => (
+                    <div
+                      key={product.id}
+                      className="px-4 py-3 hover:bg-gray-100 cursor-pointer flex justify-between border-b border-gray-100 last:border-0"
+                      onClick={() => handleProductSelect(product)}
+                    >
+                      <div className="flex gap-3">
+                        <span className="font-medium text-gray-500">#{product.code}</span>
+                        <span className="font-medium">{product.name}</span>
+                      </div>
+                      <span className="text-gray-600 font-medium">
+                        {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3 w-full md:w-auto">
+          <div className="flex-none">
+            <div className="flex items-center">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon" 
+                className="h-11 w-11 rounded-r-none border-r-0 hover:bg-gray-50 transition-colors"
+                onClick={decrementQuantity}
+              >
+                <Minus size={16} />
+              </Button>
+              
+              <Input
+                ref={quantityInputRef}
+                type="text"
+                className="w-16 h-11 text-center border-x-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                value={quantity === null ? '' : quantity.toString()}
+                onChange={handleQuantityChange}
+                onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
+                placeholder="Qtd"
+              />
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon" 
+                className="h-11 w-11 rounded-l-none border-l-0 hover:bg-gray-50 transition-colors"
+                onClick={incrementQuantity}
+              >
+                <Plus size={16} />
+              </Button>
+            </div>
           </div>
           
-          <div className="w-28">
+          <div className="flex-none">
             <Input
               ref={priceInputRef}
               type="text"
-              className="h-10 text-center"
-              placeholder="Valor"
+              className="h-11 text-center w-28 border-gray-300"
+              placeholder="Preço"
               value={price ? price.toString() : ''}
               onChange={handlePriceChange}
               onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
@@ -218,102 +228,12 @@ export default function ProductSearchInput({
           
           <Button 
             type="button"
-            className="h-10 bg-gray-500 hover:bg-gray-600 text-white"
-            onClick={handleAddToOrder}
-          >
-            Adicionar
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
-        <Input
-          type="text"
-          className="pl-10"
-          placeholder="Buscar produto pelo nome ou código"
-          value={searchTerm}
-          onChange={handleSearch}
-          onKeyDown={handleSearchKeyDown}
-          autoComplete="off"
-        />
-        {showResults && sortedProducts.length > 0 && (
-          <div 
-            ref={resultsRef}
-            className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
-          >
-            {sortedProducts.map(product => (
-              <div
-                key={product.id}
-                className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
-                onClick={() => handleProductSelect(product)}
-              >
-                <div className="flex gap-2">
-                  <span className="font-medium text-gray-500">#{product.code}</span>
-                  <span>{product.name}</span>
-                </div>
-                <span className="text-gray-600">
-                  {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm text-gray-700 mb-1">Quantidade</label>
-          <div className="flex items-center">
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="icon" 
-              className="h-10 w-10"
-              onClick={decrementQuantity}
-            >
-              <Minus size={18} />
-            </Button>
-            <Input
-              type="text"
-              className="mx-2 text-center"
-              value={quantity === null ? '' : quantity.toString()}
-              onChange={handleQuantityChange}
-              placeholder="Quantidade"
-            />
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="icon" 
-              className="h-10 w-10"
-              onClick={incrementQuantity}
-            >
-              <Plus size={18} />
-            </Button>
-          </div>
-        </div>
-        
-        <div>
-          <label className="block text-sm text-gray-700 mb-1">Preço Unitário</label>
-          <Input
-            type="text"
-            value={price.toString()}
-            onChange={handlePriceChange}
-          />
-        </div>
-        
-        <div className="flex items-end">
-          <Button 
-            type="button" 
-            className="w-full bg-sales-800 hover:bg-sales-700"
+            className="h-11 flex-none w-32 bg-sales-800 hover:bg-sales-700 text-white"
             disabled={!selectedProduct || quantity === null || quantity <= 0}
             onClick={handleAddToOrder}
           >
-            Adicionar ao Pedido
+            <ShoppingCart size={18} className="mr-2" />
+            Adicionar
           </Button>
         </div>
       </div>

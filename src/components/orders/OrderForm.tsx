@@ -8,7 +8,7 @@ import PaymentOptionsInput from './PaymentOptionsInput';
 import ProductSearchInput from './ProductSearchInput';
 import OrderItemsTable from './OrderItemsTable';
 import { Button } from "@/components/ui/button";
-import { Save, FileText } from "lucide-react";
+import { Save, FileText, ClipboardList } from "lucide-react";
 
 interface OrderFormProps {
   customers: Customer[];
@@ -71,75 +71,91 @@ export default function OrderForm({
   };
 
   return (
-    <>
-      <div className="bg-white border rounded-md p-6 mb-4">
-        <div className="grid grid-cols-1 gap-6">
-          <div className="grid grid-cols-1 gap-y-5">
-            <div>
-              <SalesRepSearchInput
-                salesReps={salesReps}
-                selectedSalesRep={selectedSalesRep}
-                setSelectedSalesRep={setSelectedSalesRep}
-                inputRef={salesRepInputRef}
-                onEnterPress={() => customerInputRef.current?.focus()}
-                initialInputValue={salesRepInputValue}
-              />
-            </div>
-            
-            <div>
-              <CustomerSearchInput 
-                customers={customers}
-                selectedCustomer={selectedCustomer}
-                setSelectedCustomer={setSelectedCustomer}
-                onViewRecentPurchases={handleViewRecentPurchases}
-                inputRef={customerInputRef}
-                onEnterPress={() => paymentTableRef.current?.focus()}
-                initialInputValue={customerInputValue}
-              />
-            </div>
-            
-            <div>
-              <PaymentOptionsInput
-                paymentTables={paymentTables}
-                selectedPaymentTable={selectedPaymentTable}
-                setSelectedPaymentTable={setSelectedPaymentTable}
-                paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
-                simplifiedView={true}
-                buttonRef={paymentTableRef}
-                onSelectComplete={() => productInputRef.current?.focus()}
-                customerId={selectedCustomer?.id}
-                customerName={selectedCustomer?.name}
-                orderTotal={calculateTotal()}
-              />
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <ProductSearchInput
-                  products={products}
-                  addItemToOrder={handleAddItem}
-                  inlineLayout={true}
-                  inputRef={productInputRef}
+    <div className="space-y-6">
+      <Card className="shadow-md border-gray-200">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+              <div className="relative">
+                <SalesRepSearchInput
+                  salesReps={salesReps}
+                  selectedSalesRep={selectedSalesRep}
+                  setSelectedSalesRep={setSelectedSalesRep}
+                  inputRef={salesRepInputRef}
+                  onEnterPress={() => customerInputRef.current?.focus()}
+                  initialInputValue={salesRepInputValue}
                 />
               </div>
               
-              <div>
+              <div className="relative">
+                <CustomerSearchInput 
+                  customers={customers}
+                  selectedCustomer={selectedCustomer}
+                  setSelectedCustomer={setSelectedCustomer}
+                  onViewRecentPurchases={handleViewRecentPurchases}
+                  inputRef={customerInputRef}
+                  onEnterPress={() => paymentTableRef.current?.focus()}
+                  initialInputValue={customerInputValue}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+              <div className="relative">
+                <PaymentOptionsInput
+                  paymentTables={paymentTables}
+                  selectedPaymentTable={selectedPaymentTable}
+                  setSelectedPaymentTable={setSelectedPaymentTable}
+                  paymentMethod={paymentMethod}
+                  setPaymentMethod={setPaymentMethod}
+                  simplifiedView={true}
+                  buttonRef={paymentTableRef}
+                  onSelectComplete={() => productInputRef.current?.focus()}
+                  customerId={selectedCustomer?.id}
+                  customerName={selectedCustomer?.name}
+                  orderTotal={calculateTotal()}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <Button 
+                    onClick={handleViewRecentPurchases} 
+                    variant="outline" 
+                    className="w-full border-dashed border-gray-300 hover:border-gray-400 text-gray-700"
+                    disabled={!selectedCustomer}
+                  >
+                    <ClipboardList size={18} className="mr-2" />
+                    Visualizar Compras Recentes
+                  </Button>
+                </div>
+                
                 <Button 
                   onClick={handleCreateOrder} 
                   disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
-                  className="h-10 bg-sales-800 hover:bg-sales-700 text-white"
+                  className="w-48 h-11 bg-sales-800 hover:bg-sales-700 text-white"
                 >
-                  <Save size={16} className="mr-2" />
+                  <Save size={18} className="mr-2" />
                   {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}
                 </Button>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
       
-      <Card>
+      <Card className="shadow-md border-gray-200">
+        <CardContent className="pt-6">
+          <ProductSearchInput
+            products={products}
+            addItemToOrder={handleAddItem}
+            inlineLayout={true}
+            inputRef={productInputRef}
+          />
+        </CardContent>
+      </Card>
+      
+      <Card className="shadow-md border-gray-200">
         <CardContent className="p-0">
           <OrderItemsTable 
             orderItems={orderItems}
@@ -148,6 +164,6 @@ export default function OrderForm({
           />
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }
