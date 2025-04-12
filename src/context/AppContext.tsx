@@ -1,4 +1,3 @@
-
 import React, { createContext, useState } from 'react';
 import { Customer, Product, Order, Payment, Route, Load, SalesRep, Vehicle, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -9,9 +8,15 @@ import { useRoutes } from '@/hooks/useRoutes';
 import { useLoads } from '@/hooks/useLoads';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { useVehicles } from '@/hooks/useVehicles';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { useBackups } from '@/hooks/useBackups';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useProductGroups } from '@/hooks/useProductGroups';
+import { useProductCategories } from '@/hooks/useProductCategories';
+import { useProductBrands } from '@/hooks/useProductBrands';
+import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
+import { toast } from '@/components/ui/use-toast';
 
 interface AppContextType {
   // Data arrays
@@ -40,7 +45,12 @@ interface AppContextType {
   isLoadingLoads: boolean;
   isLoadingSalesReps: boolean;
   isLoadingVehicles: boolean;
+  isLoadingPaymentMethods: boolean;
   isLoadingPaymentTables: boolean;
+  isLoadingProductGroups: boolean;
+  isLoadingProductCategories: boolean;
+  isLoadingProductBrands: boolean;
+  isLoadingDeliveryRoutes: boolean;
   isLoadingBackups: boolean;
   
   // State setters
@@ -64,7 +74,7 @@ interface AppContextType {
   // Route operations
   addRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
   updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
-  deleteRoute: (id: string) => Promise<boolean>;
+  deleteRoute: (id: string) => Promise<void>;
   
   // Customer operations
   addCustomer: (customer: Omit<Customer, 'id'>) => Promise<string>;
@@ -113,6 +123,26 @@ interface AppContextType {
   updatePaymentTable: (id: string, paymentTable: Partial<PaymentTable>) => Promise<void>;
   deletePaymentTable: (id: string) => Promise<void>;
   
+  // ProductGroup operations
+  addProductGroup: (group: Omit<ProductGroup, 'id'>) => Promise<string>;
+  updateProductGroup: (id: string, group: Partial<ProductGroup>) => Promise<void>;
+  deleteProductGroup: (id: string) => Promise<void>;
+  
+  // ProductCategory operations
+  addProductCategory: (category: Omit<ProductCategory, 'id'>) => Promise<string>;
+  updateProductCategory: (id: string, category: Partial<ProductCategory>) => Promise<void>;
+  deleteProductCategory: (id: string) => Promise<void>;
+  
+  // ProductBrand operations
+  addProductBrand: (brand: Omit<ProductBrand, 'id'>) => Promise<string>;
+  updateProductBrand: (id: string, brand: Partial<ProductBrand>) => Promise<void>;
+  deleteProductBrand: (id: string) => Promise<void>;
+  
+  // DeliveryRoute operations
+  addDeliveryRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
+  updateDeliveryRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
+  deleteDeliveryRoute: (id: string) => Promise<void>;
+  
   // Backup operations
   createBackup: (name: string, description?: string) => string;
   restoreBackup: (id: string) => boolean;
@@ -121,6 +151,9 @@ interface AppContextType {
   // App Settings
   settings: AppSettings | null;
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<boolean>;
+  
+  // System operations
+  startNewMonth: () => void;
 }
 
 export const AppContext = createContext<AppContextType>({
@@ -150,7 +183,12 @@ export const AppContext = createContext<AppContextType>({
   isLoadingLoads: true,
   isLoadingSalesReps: true,
   isLoadingVehicles: true,
+  isLoadingPaymentMethods: true,
   isLoadingPaymentTables: true,
+  isLoadingProductGroups: true,
+  isLoadingProductCategories: true,
+  isLoadingProductBrands: true,
+  isLoadingDeliveryRoutes: true,
   isLoadingBackups: true,
   
   // Empty setters
@@ -173,7 +211,7 @@ export const AppContext = createContext<AppContextType>({
   // Empty method implementations
   addRoute: async () => "",
   updateRoute: async () => {},
-  deleteRoute: async () => false,
+  deleteRoute: async () => {},
   addCustomer: async () => "",
   updateCustomer: async () => {},
   deleteCustomer: async () => {},
@@ -203,11 +241,24 @@ export const AppContext = createContext<AppContextType>({
   addPaymentTable: async () => "",
   updatePaymentTable: async () => {},
   deletePaymentTable: async () => {},
+  addProductGroup: async () => "",
+  updateProductGroup: async () => {},
+  deleteProductGroup: async () => {},
+  addProductCategory: async () => "",
+  updateProductCategory: async () => {},
+  deleteProductCategory: async () => {},
+  addProductBrand: async () => "",
+  updateProductBrand: async () => {},
+  deleteProductBrand: async () => {},
+  addDeliveryRoute: async () => "",
+  updateDeliveryRoute: async () => {},
+  deleteDeliveryRoute: async () => {},
   createBackup: () => "",
   restoreBackup: () => false,
   deleteBackup: () => false,
   settings: null,
   updateSettings: async () => false,
+  startNewMonth: () => {},
 });
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
@@ -303,6 +354,38 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   } = usePaymentTables();
   
   const {
+    productGroups: fetchedProductGroups,
+    isLoading: isLoadingProductGroups,
+    addProductGroup,
+    updateProductGroup,
+    deleteProductGroup
+  } = useProductGroups();
+  
+  const {
+    productCategories: fetchedProductCategories,
+    isLoading: isLoadingProductCategories,
+    addProductCategory,
+    updateProductCategory,
+    deleteProductCategory
+  } = useProductCategories();
+  
+  const {
+    productBrands: fetchedProductBrands,
+    isLoading: isLoadingProductBrands,
+    addProductBrand,
+    updateProductBrand,
+    deleteProductBrand
+  } = useProductBrands();
+  
+  const {
+    deliveryRoutes: fetchedDeliveryRoutes,
+    isLoading: isLoadingDeliveryRoutes,
+    addDeliveryRoute,
+    updateDeliveryRoute,
+    deleteDeliveryRoute
+  } = useDeliveryRoutes();
+  
+  const {
     backups,
     createBackup,
     restoreBackup,
@@ -316,6 +399,21 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     updateSettings,
     isLoading: isLoadingSettings
   } = useAppSettings();
+
+  // Function to start a new month (archiving old data)
+  const startNewMonth = () => {
+    // Create a backup first
+    const backupId = createBackup("Monthly Backup", "Backup created during month transition");
+    
+    // Archive old orders or perform other cleanup
+    // This is a placeholder - actual implementation would depend on requirements
+    console.log("Starting new month. Backup created with ID:", backupId);
+    
+    toast({
+      title: "New month started",
+      description: "A backup was created and the system is ready for a new month."
+    });
+  };
 
   return (
     <AppContext.Provider
@@ -331,10 +429,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         vehicles,
         paymentMethods,
         paymentTables,
-        productGroups,
-        productCategories,
-        productBrands,
-        deliveryRoutes,
+        productGroups: productGroups.length > 0 ? productGroups : fetchedProductGroups,
+        productCategories: productCategories.length > 0 ? productCategories : fetchedProductCategories,
+        productBrands: productBrands.length > 0 ? productBrands : fetchedProductBrands,
+        deliveryRoutes: deliveryRoutes.length > 0 ? deliveryRoutes : fetchedDeliveryRoutes,
         backups,
         
         // Loading states
@@ -346,7 +444,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         isLoadingLoads,
         isLoadingSalesReps,
         isLoadingVehicles,
+        isLoadingPaymentMethods: false,
         isLoadingPaymentTables,
+        isLoadingProductGroups,
+        isLoadingProductCategories,
+        isLoadingProductBrands,
+        isLoadingDeliveryRoutes,
         isLoadingBackups,
         
         // State setters
@@ -387,9 +490,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         addPayment,
         updatePayment,
         deletePayment,
-        addPaymentMethod: async () => "", // Placeholder
-        updatePaymentMethod: async () => {}, // Placeholder
-        deletePaymentMethod: async () => {}, // Placeholder
+        addPaymentMethod: async (method) => {
+          const { addPaymentMethod } = usePaymentMethods();
+          return addPaymentMethod(method);
+        },
+        updatePaymentMethod: async (id, method) => {
+          const { updatePaymentMethod } = usePaymentMethods();
+          await updatePaymentMethod(id, method);
+        },
+        deletePaymentMethod: async (id) => {
+          const { deletePaymentMethod } = usePaymentMethods();
+          await deletePaymentMethod(id);
+        },
         addLoad,
         updateLoad,
         deleteLoad,
@@ -399,11 +511,24 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         addPaymentTable,
         updatePaymentTable,
         deletePaymentTable,
+        addProductGroup,
+        updateProductGroup,
+        deleteProductGroup,
+        addProductCategory,
+        updateProductCategory,
+        deleteProductCategory,
+        addProductBrand,
+        updateProductBrand,
+        deleteProductBrand,
+        addDeliveryRoute,
+        updateDeliveryRoute,
+        deleteDeliveryRoute,
         createBackup,
         restoreBackup,
         deleteBackup,
         settings,
         updateSettings,
+        startNewMonth
       }}
     >
       {children}
