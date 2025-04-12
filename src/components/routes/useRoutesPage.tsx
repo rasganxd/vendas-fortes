@@ -9,9 +9,9 @@ export const useRoutesPage = () => {
     routes, 
     orders, 
     vehicles, 
-    updateRoute: contextUpdateRoute, 
-    addRoute: contextAddRoute, 
-    deleteRoute: contextDeleteRoute 
+    updateRoute, 
+    addRoute, 
+    deleteRoute 
   } = useAppContext();
   
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
@@ -44,7 +44,7 @@ export const useRoutesPage = () => {
     try {
       setIsDeleting(true);
       console.log("Confirmando exclusão da rota:", routeToDelete);
-      await contextDeleteRoute(routeToDelete);
+      await deleteRoute(routeToDelete);
       
       // Se a rota que foi excluída era a selecionada, limpar a seleção
       if (selectedRoute && selectedRoute.id === routeToDelete) {
@@ -101,7 +101,7 @@ export const useRoutesPage = () => {
     };
 
     const updatedStops = [...selectedRoute.stops, newStop];
-    contextUpdateRoute(selectedRoute.id, { stops: updatedStops });
+    updateRoute(selectedRoute.id, { stops: updatedStops });
     
     setSelectedRoute({
       ...selectedRoute,
@@ -121,7 +121,7 @@ export const useRoutesPage = () => {
       position: index + 1
     }));
     
-    contextUpdateRoute(selectedRoute.id, { stops: resequencedStops });
+    updateRoute(selectedRoute.id, { stops: resequencedStops });
     
     setSelectedRoute({
       ...selectedRoute,
@@ -141,12 +141,12 @@ export const useRoutesPage = () => {
       stops: []
     };
 
-    contextAddRoute(newRoute);
+    addRoute(newRoute);
     setIsNewRouteDialogOpen(false);
   };
 
   const handleSaveRouteChanges = async (id: string, updatedRoute: Partial<DeliveryRoute>) => {
-    await contextUpdateRoute(id, updatedRoute);
+    await updateRoute(id, updatedRoute);
     toast({
       title: "Rota atualizada",
       description: "As alterações foram salvas com sucesso.",
