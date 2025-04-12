@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Customer, SalesRep, PaymentTable, Product, OrderItem } from '@/types';
@@ -31,7 +30,6 @@ interface OrderFormProps {
   handleViewRecentPurchases: () => void;
   customerInputValue: string;
   salesRepInputValue?: string;
-  // Handlers para adicionar e remover itens
   handleAddItem: (product: Product, quantity: number, price: number) => void;
   handleRemoveItem: (productId: string) => void;
 }
@@ -57,7 +55,6 @@ export default function OrderForm({
   handleViewRecentPurchases,
   customerInputValue,
   salesRepInputValue = '',
-  // Handlers para adicionar e remover itens
   handleAddItem,
   handleRemoveItem
 }: OrderFormProps) {
@@ -92,7 +89,6 @@ export default function OrderForm({
                   customers={customers}
                   selectedCustomer={selectedCustomer}
                   setSelectedCustomer={setSelectedCustomer}
-                  onViewRecentPurchases={handleViewRecentPurchases}
                   inputRef={customerInputRef}
                   onEnterPress={() => paymentTableRef.current?.focus()}
                   initialInputValue={customerInputValue}

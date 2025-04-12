@@ -3,7 +3,7 @@ import React from 'react';
 import { Customer } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, X, FileText } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useCustomerSearch } from '@/hooks/useCustomerSearch';
 import CustomerSearchDialog from './CustomerSearchDialog';
@@ -12,7 +12,6 @@ interface CustomerSearchInputProps {
   customers: Customer[];
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer | null) => void;
-  onViewRecentPurchases: () => void;
   inputRef?: React.RefObject<HTMLInputElement>;
   onEnterPress?: () => void;
   compact?: boolean;
@@ -23,7 +22,6 @@ export default function CustomerSearchInput({
   customers,
   selectedCustomer,
   setSelectedCustomer,
-  onViewRecentPurchases,
   inputRef,
   onEnterPress,
   compact = false,
@@ -51,23 +49,9 @@ export default function CustomerSearchInput({
   return (
     <>
       <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <Label htmlFor="customer">
-            Cliente
-          </Label>
-          {selectedCustomer && (
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 text-xs"
-              onClick={onViewRecentPurchases}
-            >
-              <FileText size={14} className="mr-1" />
-              Ver compras recentes
-            </Button>
-          )}
-        </div>
+        <Label htmlFor="customer">
+          Cliente
+        </Label>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Input
@@ -117,3 +101,4 @@ export default function CustomerSearchInput({
     </>
   );
 }
+
