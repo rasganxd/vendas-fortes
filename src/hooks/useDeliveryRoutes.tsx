@@ -43,7 +43,6 @@ export const useDeliveryRoutes = () => {
         title: "Rota atualizada",
         description: "Rota de entrega atualizada com sucesso!"
       });
-      return true;
     } catch (error) {
       console.error("Erro ao atualizar rota de entrega:", error);
       toast({
@@ -51,7 +50,6 @@ export const useDeliveryRoutes = () => {
         description: "Houve um problema ao atualizar a rota de entrega.",
         variant: "destructive"
       });
-      return false;
     }
   };
 
@@ -62,7 +60,6 @@ export const useDeliveryRoutes = () => {
         title: "Rota excluída",
         description: "Rota de entrega excluída com sucesso!"
       });
-      return true;
     } catch (error) {
       console.error("Erro ao excluir rota de entrega:", error);
       toast({
@@ -70,7 +67,6 @@ export const useDeliveryRoutes = () => {
         description: "Houve um problema ao excluir a rota de entrega.",
         variant: "destructive"
       });
-      return false;
     }
   };
 

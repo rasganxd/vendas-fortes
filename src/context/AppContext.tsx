@@ -1,3 +1,4 @@
+
 import React, { createContext, useState } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
@@ -31,6 +32,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
   const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
   
+  const customersHook = useCustomers();
   const { 
     customers,
     addCustomer,
@@ -39,8 +41,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     generateNextCode: generateNextCustomerCode,
     isLoading: isLoadingCustomers,
     setCustomers
-  } = useCustomers();
+  } = customersHook;
   
+  const productsHook = useProducts();
   const { 
     products,
     addProduct,
@@ -48,8 +51,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteProduct,
     isLoading: isLoadingProducts,
     setProducts
-  } = useProducts();
+  } = productsHook;
   
+  const ordersHook = useOrders();
   const { 
     orders,
     getOrderById,
@@ -58,17 +62,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteOrder,
     isLoading: isLoadingOrders,
     setOrders
-  } = useOrders();
+  } = ordersHook;
   
+  const paymentsHook = usePayments();
   const {
     payments,
     addPayment,
     updatePayment,
     deletePayment,
     isLoading: isLoadingPayments,
-    setPayments
-  } = usePayments();
+    setPayments,
+    createAutomaticPaymentRecord
+  } = paymentsHook;
   
+  const routesHook = useRoutes();
   const {
     routes,
     addRoute,
@@ -76,8 +83,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteRoute,
     isLoading: isLoadingRoutes,
     setRoutes
-  } = useRoutes();
+  } = routesHook;
   
+  const loadsHook = useLoads();
   const {
     loads,
     addLoad,
@@ -85,8 +93,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteLoad,
     isLoading: isLoadingLoads,
     setLoads
-  } = useLoads();
+  } = loadsHook;
   
+  const salesRepsHook = useSalesReps();
   const {
     salesReps,
     addSalesRep,
@@ -94,8 +103,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteSalesRep,
     isLoading: isLoadingSalesReps,
     setSalesReps
-  } = useSalesReps();
+  } = salesRepsHook;
   
+  const vehiclesHook = useVehicles();
   const {
     vehicles,
     addVehicle,
@@ -103,8 +113,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteVehicle,
     isLoading: isLoadingVehicles,
     setVehicles
-  } = useVehicles();
+  } = vehiclesHook;
   
+  const paymentTablesHook = usePaymentTables();
   const {
     paymentTables,
     addPaymentTable,
@@ -112,7 +123,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deletePaymentTable,
     isLoading: isLoadingPaymentTables,
     setPaymentTables
-  } = usePaymentTables();
+  } = paymentTablesHook;
   
   const {
     productGroups: fetchedProductGroups,
@@ -146,6 +157,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteDeliveryRoute
   } = useDeliveryRoutes();
   
+  const backupsHook = useBackups();
   const {
     backups,
     createBackup,
@@ -153,7 +165,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteBackup,
     isLoading: isLoadingBackups,
     setBackups
-  } = useBackups();
+  } = backupsHook;
   
   const { 
     settings,

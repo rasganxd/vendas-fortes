@@ -1,8 +1,8 @@
 
+import { useState } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
-import { useAppContext } from './useAppContext';
 
 export const loadCustomers = async (): Promise<Customer[]> => {
   try {
@@ -14,7 +14,8 @@ export const loadCustomers = async (): Promise<Customer[]> => {
 };
 
 export const useCustomers = () => {
-  const { customers, setCustomers } = useAppContext();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Function to generate next available code
   const generateNextCode = (): number => {
@@ -109,6 +110,8 @@ export const useCustomers = () => {
     addCustomer,
     updateCustomer,
     deleteCustomer,
-    generateNextCode
+    generateNextCode,
+    isLoading,
+    setCustomers
   };
 };

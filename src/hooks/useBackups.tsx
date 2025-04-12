@@ -11,10 +11,12 @@ export const useBackups = () => {
   
   const { 
     customers, products, orders, payments,
-    routes, loads, salesReps, vehicles
+    routes, loads, salesReps, vehicles,
+    setCustomers, setProducts, setOrders, setPayments,
+    setRoutes, setLoads, setSalesReps, setVehicles
   } = useAppContext();
 
-  // Função para gerar ID único
+  // Function to generate unique ID
   const generateId = () => {
     return uuidv4();
   };
@@ -31,7 +33,7 @@ export const useBackups = () => {
         products,
         orders,
         payments,
-        routes,
+        routes: routes as unknown as DeliveryRoute[],
         loads,
         salesReps,
         vehicles
@@ -49,12 +51,6 @@ export const useBackups = () => {
   const restoreBackup = (id: string) => {
     const backup = backups.find(b => b.id === id);
     if (!backup) return false;
-    
-    // Get the setter methods from context
-    const { 
-      setCustomers, setProducts, setOrders, setPayments, 
-      setRoutes, setLoads, setSalesReps, setVehicles 
-    } = useAppContext();
     
     // Restore data if it exists in the backup
     if (backup.data.customers) {
