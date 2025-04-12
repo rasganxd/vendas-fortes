@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Payment, Order } from '@/types';
+import { Payment, Order, Customer } from '@/types';
 import { Search, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ import PaymentForm from './PaymentForm';
 interface PaymentsHistoryTabProps {
   payments: Payment[];
   orders: Order[];
+  customers: Customer[];
   pendingPaymentOrders: Array<{
     id: string;
     customerName: string;
@@ -41,6 +42,7 @@ interface PaymentsHistoryTabProps {
 const PaymentsHistoryTab: React.FC<PaymentsHistoryTabProps> = ({
   payments,
   orders,
+  customers,
   pendingPaymentOrders,
   paymentMethods,
   handleAddPayment
@@ -48,10 +50,14 @@ const PaymentsHistoryTab: React.FC<PaymentsHistoryTabProps> = ({
   const [search, setSearch] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
-  const filteredPayments = payments.filter(payment =>
-    payment.orderId.toLowerCase().includes(search.toLowerCase()) ||
-    payment.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredPayments = payments.filter(payment => {
+    const order = orders.find(o => o.id === payment.orderId);
+    const customer = order ? customers.find(c => c.id === order.customerId) : null;
+    
+    return (customer?.code?.toString().toLowerCase().includes(search.toLowerCase()) ||
+            customer?.name.toLowerCase().includes(search.toLowerCase()) ||
+            payment.id.toLowerCase().includes(search.toLowerCase()));
+  });
   
   const getMethodBadge = (method: string) => {
     switch (method) {
@@ -65,6 +71,8 @@ const PaymentsHistoryTab: React.FC<PaymentsHistoryTabProps> = ({
         return <Badge className="bg-purple-500">Transferência</Badge>;
       case 'check':
         return <Badge className="bg-amber-500">Cheque</Badge>;
+      case 'promissoria':
+        return <Badge className="bg-orange-500">Promissória</Badge>;
       default:
         return <Badge>{method}</Badge>;
     }
@@ -76,7 +84,7 @@ const PaymentsHistoryTab: React.FC<PaymentsHistoryTabProps> = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
           <Input
-            placeholder="Buscar pagamentos..."
+            placeholder="Buscar por código ou nome do cliente..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -110,7 +118,7 @@ const PaymentsHistoryTab: React.FC<PaymentsHistoryTabProps> = ({
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
-              <TableHead>Pedido</TableHead>
+              <TableHead>Cliente</TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Método</TableHead>
               <TableHead>Valor</TableHead>
@@ -127,13 +135,14 @@ const PaymentsHistoryTab: React.FC<PaymentsHistoryTabProps> = ({
             ) : (
               filteredPayments.map((payment) => {
                 const order = orders.find(o => o.id === payment.orderId);
+                const customer = order ? customers.find(c => c.id === order.customerId) : null;
+                
                 return (
                   <TableRow key={payment.id}>
                     <TableCell className="font-medium">{payment.id}</TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        <div>{payment.orderId}</div>
-                        <div className="text-xs text-gray-500">{order?.customerName}</div>
+                        <div>{customer?.code ? `${customer.code} - ` : ''}{customer?.name || 'Cliente não encontrado'}</div>
                       </div>
                     </TableCell>
                     <TableCell>{formatDateToBR(payment.date)}</TableCell>
@@ -158,3 +167,4 @@ const PaymentsHistoryTab: React.FC<PaymentsHistoryTabProps> = ({
 };
 
 export default PaymentsHistoryTab;
+
