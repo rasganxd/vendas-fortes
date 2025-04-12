@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/hooks/useAppContext';
 import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
 import { formatDateToBR } from '@/lib/date-utils';
+import { useSearchParams } from 'react-router-dom';
 
 interface PromissoryNotesTabProps {
   pendingPaymentOrders: Array<{
@@ -37,6 +38,17 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
   const [selectedPaymentTable, setSelectedPaymentTable] = useState<PaymentTable | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [search, setSearch] = useState('');
+  
+  // Get orderId from URL query params to auto-highlight order
+  const [searchParams] = useSearchParams();
+  const orderIdFromParams = searchParams.get('orderId');
+  
+  // Auto-open the promissory note view if orderId is in the URL
+  useEffect(() => {
+    if (orderIdFromParams) {
+      handleViewPromissoryNote(orderIdFromParams);
+    }
+  }, [orderIdFromParams]);
   
   const handleViewPromissoryNote = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
@@ -86,11 +98,6 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
       order.customerName?.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
   });
-
-  useEffect(() => {
-    console.log("All orders:", orders);
-    console.log("Promissory note orders:", filteredOrders);
-  }, [orders, filteredOrders]);
 
   return (
     <>
@@ -148,8 +155,14 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
                   p => p.orderId === order.id && p.method === 'promissoria'
                 );
                 
+                // Highlight the card if it matches the orderId from URL
+                const isHighlighted = order.id === orderIdFromParams;
+                
                 return (
-                  <Card key={order.id} className="border shadow-sm">
+                  <Card 
+                    key={order.id} 
+                    className={`border shadow-sm transition-all ${isHighlighted ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200' : ''}`}
+                  >
                     <CardContent className="p-6">
                       <div className="font-medium text-lg mb-1">{order.customerName}</div>
                       <div className="text-sm text-gray-600 mb-3">
@@ -177,10 +190,10 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
                           )}
                         </div>
                         <Button 
-                          className="bg-blue-600 hover:bg-blue-700 flex gap-1"
+                          className={`${isHighlighted ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} flex gap-1`}
                           onClick={() => handleViewPromissoryNote(order.id)}
                         >
-                          <FileText size={16} className="mr-1" /> Visualizar Promissória
+                          <FileText size={16} className="mr-1" /> {isHighlighted ? 'Visualizar Agora' : 'Visualizar Promissória'}
                         </Button>
                       </div>
                     </CardContent>

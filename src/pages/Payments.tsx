@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePayments } from '@/hooks/usePayments';
 import PageLayout from '@/components/layout/PageLayout';
@@ -11,14 +11,37 @@ import PromissoryNotesTab from '@/components/payments/PromissoryNotesTab';
 import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
 import { Button } from '@/components/ui/button';
 import { Payment, PaymentTable } from '@/types';
+import { useSearchParams } from 'react-router-dom';
 
 export default function Payments() {
   const { payments, orders, paymentTables, customers } = useAppContext();
   const { addPayment } = usePayments();
-  const [activeTab, setActiveTab] = useState("pending");
+  const [searchParams] = useSearchParams();
+  
+  // Get tab and orderId from URL query params
+  const tabFromParams = searchParams.get('tab');
+  const orderIdFromParams = searchParams.get('orderId');
+  
+  // Set active tab based on URL param or default to "pending"
+  const [activeTab, setActiveTab] = useState(tabFromParams || "pending");
   const [selectedPaymentTable, setSelectedPaymentTable] = useState<PaymentTable | null>(null);
-  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const [selectedOrderId, setSelectedOrderId] = useState<string>(orderIdFromParams || '');
   const [showPromissoryNote, setShowPromissoryNote] = useState(false);
+
+  // Effect to handle orderId parameter to auto-show the promissory note
+  useEffect(() => {
+    if (orderIdFromParams) {
+      const order = orders.find(o => o.id === orderIdFromParams);
+      if (order && order.paymentTableId) {
+        const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
+        if (paymentTable && paymentTable.type === 'promissory_note') {
+          setSelectedPaymentTable(paymentTable);
+          setSelectedOrderId(orderIdFromParams);
+          setShowPromissoryNote(true);
+        }
+      }
+    }
+  }, [orderIdFromParams, orders, paymentTables]);
 
   const paymentMethods = [
     { value: 'cash', label: 'Dinheiro' },
