@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+
+import React, { createContext, useState } from 'react';
 import { Customer, Product, Order, Payment, Route, Load, SalesRep, Vehicle, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
@@ -8,12 +9,7 @@ import { useRoutes } from '@/hooks/useRoutes';
 import { useLoads } from '@/hooks/useLoads';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { useVehicles } from '@/hooks/useVehicles';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
-import { useProductGroups } from '@/hooks/useProductGroups';
-import { useProductCategories } from '@/hooks/useProductCategories';
-import { useProductBrands } from '@/hooks/useProductBrands';
-import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
 import { useBackups } from '@/hooks/useBackups';
 import { useAppSettings } from '@/hooks/useAppSettings';
 
@@ -41,18 +37,13 @@ interface AppContextType {
   isLoadingLoads: boolean;
   isLoadingSalesReps: boolean;
   isLoadingVehicles: boolean;
-  isLoadingPaymentMethods: boolean;
   isLoadingPaymentTables: boolean;
-  isLoadingProductGroups: boolean;
-  isLoadingProductCategories: boolean;
-  isLoadingProductBrands: boolean;
-  isLoadingDeliveryRoutes: boolean;
   isLoadingBackups: boolean;
   settings: AppSettings | null;
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<boolean>;
 }
 
-const AppContext = createContext<AppContextType>({
+export const AppContext = createContext<AppContextType>({
   customers: [],
   products: [],
   orders: [],
@@ -76,20 +67,19 @@ const AppContext = createContext<AppContextType>({
   isLoadingLoads: true,
   isLoadingSalesReps: true,
   isLoadingVehicles: true,
-  isLoadingPaymentMethods: true,
   isLoadingPaymentTables: true,
-  isLoadingProductGroups: true,
-  isLoadingProductCategories: true,
-  isLoadingProductBrands: true,
-  isLoadingDeliveryRoutes: true,
   isLoadingBackups: true,
   settings: null,
   updateSettings: async () => false,
 });
 
-export const useAppContext = () => useContext(AppContext);
-
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
+  const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
+  const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
+  
   const { 
     customers, 
     isLoading: isLoadingCustomers 
@@ -123,29 +113,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading: isLoadingVehicles 
   } = useVehicles();
   const { 
-    paymentMethods, 
-    isLoading: isLoadingPaymentMethods 
-  } = usePaymentMethods();
-  const { 
     paymentTables, 
     isLoading: isLoadingPaymentTables 
   } = usePaymentTables();
-   const {
-    productGroups,
-    isLoading: isLoadingProductGroups
-  } = useProductGroups();
-  const {
-    productCategories,
-    isLoading: isLoadingProductCategories
-  } = useProductCategories();
-  const {
-    productBrands,
-    isLoading: isLoadingProductBrands
-  } = useProductBrands();
-  const {
-    deliveryRoutes,
-    isLoading: isLoadingDeliveryRoutes
-  } = useDeliveryRoutes();
   const {
     backups,
     isLoading: isLoadingBackups
@@ -157,7 +127,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading: isLoadingSettings
   } = useAppSettings();
   
-  const isLoading = isLoadingCustomers || isLoadingProducts || isLoadingOrders || isLoadingPayments || isLoadingRoutes || isLoadingLoads || isLoadingSalesReps || isLoadingVehicles || isLoadingPaymentMethods || isLoadingPaymentTables || isLoadingProductGroups || isLoadingProductCategories || isLoadingProductBrands || isLoadingDeliveryRoutes || isLoadingBackups || isLoadingSettings;
+  const isLoading = isLoadingCustomers || isLoadingProducts || isLoadingOrders || isLoadingPayments || isLoadingRoutes || isLoadingLoads || isLoadingSalesReps || isLoadingVehicles || isLoadingPaymentTables || isLoadingBackups || isLoadingSettings;
 
   return (
     <AppContext.Provider
@@ -185,12 +155,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         isLoadingLoads,
         isLoadingSalesReps,
         isLoadingVehicles,
-        isLoadingPaymentMethods,
         isLoadingPaymentTables,
-        isLoadingProductGroups,
-        isLoadingProductCategories,
-        isLoadingProductBrands,
-        isLoadingDeliveryRoutes,
         isLoadingBackups,
         settings,
         updateSettings,
