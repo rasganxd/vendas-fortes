@@ -1,4 +1,3 @@
-
 import { LucideIcon } from "lucide-react";
 
 export interface Customer {
@@ -265,4 +264,18 @@ export interface Backup {
     salesReps?: SalesRep[];
     vehicles?: Vehicle[];
   };
+}
+
+export interface CompanySettings {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  document: string;
+  logo?: string;
+  footer: string;
+}
+
+export interface AppSettings {
+  company?: CompanySettings;
 }

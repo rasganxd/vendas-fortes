@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Order, Customer } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
+import { useAppContext } from '@/hooks/useAppContext';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,8 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
   formatCurrency,
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
+  const { settings } = useAppContext();
+  const companyData = settings?.company;
   
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
@@ -63,6 +66,15 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
         </DialogHeader>
         
         <div ref={printRef} className="p-4">
+          {companyData?.name && (
+            <div className="text-center mb-4">
+              <h2 className="font-bold text-xl">{companyData.name}</h2>
+              {companyData.document && (
+                <p className="text-sm text-gray-600">CNPJ: {companyData.document}</p>
+              )}
+            </div>
+          )}
+          
           <div className="text-center mb-6">
             <p className="text-gray-600">
               Data: {selectedOrder ? formatDateToBR(selectedOrder.createdAt) : ''}
@@ -140,8 +152,14 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
           )}
           
           <div className="mt-8 text-center text-gray-500 text-sm">
-            <p>ForcaVendas - Sistema de Gestão de Vendas</p>
-            <p>Para qualquer suporte: (11) 9999-8888</p>
+            {companyData?.footer ? (
+              <p>{companyData.footer}</p>
+            ) : (
+              <>
+                <p>{companyData?.name || 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
+                <p>Para qualquer suporte: {companyData?.phone || '(11) 9999-8888'}</p>
+              </>
+            )}
           </div>
         </div>
       </DialogContent>

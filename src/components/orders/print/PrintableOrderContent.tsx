@@ -2,6 +2,7 @@
 import React from 'react';
 import { Order, Customer } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface PrintableOrderContentProps {
   orders: Order[];
@@ -14,6 +15,9 @@ const PrintableOrderContent: React.FC<PrintableOrderContentProps> = ({
   customers,
   formatCurrency
 }) => {
+  const { settings } = useAppContext();
+  const companyData = settings?.company;
+
   // Function to get a human-readable payment method name
   const getPaymentMethodName = (order: Order) => {
     if (!order.paymentMethod) return 'Não especificado';
@@ -32,6 +36,24 @@ const PrintableOrderContent: React.FC<PrintableOrderContentProps> = ({
   return (
     <div className="hidden">
       <div className="p-4">
+        {companyData?.name && (
+          <div className="text-center mb-4 pt-2">
+            <h2 className="font-bold text-xl">{companyData.name}</h2>
+            {companyData.document && (
+              <p className="text-sm text-gray-600">CNPJ: {companyData.document}</p>
+            )}
+            {companyData.address && (
+              <p className="text-sm text-gray-600">{companyData.address}</p>
+            )}
+            {(companyData.phone || companyData.email) && (
+              <p className="text-sm text-gray-600">
+                {companyData.phone}{companyData.phone && companyData.email ? ' | ' : ''}
+                {companyData.email}
+              </p>
+            )}
+          </div>
+        )}
+
         {orders.map((order, orderIndex) => {
           const orderCustomer = customers.find(c => c.id === order.customerId);
           
@@ -121,8 +143,14 @@ const PrintableOrderContent: React.FC<PrintableOrderContentProps> = ({
         })}
         
         <div className="print-footer">
-          <p>ForcaVendas - Sistema de Gestão de Vendas</p>
-          <p>Para qualquer suporte: (11) 9999-8888</p>
+          {companyData?.footer ? (
+            <p>{companyData.footer}</p>
+          ) : (
+            <>
+              <p>{companyData?.name || 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
+              <p>Para qualquer suporte: {companyData?.phone || '(11) 9999-8888'}</p>
+            </>
+          )}
         </div>
       </div>
     </div>

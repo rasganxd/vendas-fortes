@@ -1,208 +1,167 @@
-import React, { createContext, useEffect, useState } from 'react';
-import { Customer, Product, Order, Payment, DeliveryRoute, Load, SalesRep, Vehicle, PaymentTable, Backup, PaymentMethod, ProductGroup, ProductCategory, ProductBrand } from '@/types';
-import { loadCustomers } from '@/hooks/useCustomers';
-import { loadProducts } from '@/hooks/useProducts';
-import { loadOrders } from '@/hooks/useOrders';
-import { loadPayments } from '@/hooks/usePayments';
-import { loadRoutes } from '@/hooks/useRoutes';
-import { loadLoads } from '@/hooks/useLoads';
-import { loadSalesReps } from '@/hooks/useSalesReps';
-import { loadVehicles } from '@/hooks/useVehicles';
-import { loadPaymentTables } from '@/hooks/usePaymentTables';
-import { loadProductGroups, loadProductCategories, loadProductBrands } from '@/hooks/useProductClassifications';
+import React, { createContext, useContext, useState } from 'react';
+import { Customer, Product, Order, Payment, Route, Load, SalesRep, Vehicle, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
+import { useCustomers } from '@/hooks/useCustomers';
+import { useProducts } from '@/hooks/useProducts';
+import { useOrders } from '@/hooks/useOrders';
+import { usePayments } from '@/hooks/usePayments';
+import { useRoutes } from '@/hooks/useRoutes';
+import { useLoads } from '@/hooks/useLoads';
+import { useSalesReps } from '@/hooks/useSalesReps';
+import { useVehicles } from '@/hooks/useVehicles';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import { usePaymentTables } from '@/hooks/usePaymentTables';
+import { useProductGroups } from '@/hooks/useProductGroups';
+import { useProductCategories } from '@/hooks/useProductCategories';
+import { useProductBrands } from '@/hooks/useProductBrands';
+import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
+import { useBackups } from '@/hooks/useBackups';
+import { useAppSettings } from '@/hooks/useAppSettings';
 
-// Interface for the context
 interface AppContextType {
   customers: Customer[];
-  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   products: Product[];
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   orders: Order[];
-  setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   payments: Payment[];
-  setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
-  routes: DeliveryRoute[];
-  setRoutes: React.Dispatch<React.SetStateAction<DeliveryRoute[]>>;
+  routes: Route[];
   loads: Load[];
-  setLoads: React.Dispatch<React.SetStateAction<Load[]>>;
   salesReps: SalesRep[];
-  setSalesReps: React.Dispatch<React.SetStateAction<SalesRep[]>>;
   vehicles: Vehicle[];
-  setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
-  paymentTables: PaymentTable[];
-  setPaymentTables: React.Dispatch<React.SetStateAction<PaymentTable[]>>;
   paymentMethods: PaymentMethod[];
-  setPaymentMethods: React.Dispatch<React.SetStateAction<PaymentMethod[]>>;
-  backups: Backup[];
-  setBackups: React.Dispatch<React.SetStateAction<Backup[]>>;
-  isLoading: boolean;
-  
-  // Product classifications
+  paymentTables: PaymentTable[];
   productGroups: ProductGroup[];
-  setProductGroups: React.Dispatch<React.SetStateAction<ProductGroup[]>>;
   productCategories: ProductCategory[];
-  setProductCategories: React.Dispatch<React.SetStateAction<ProductCategory[]>>;
   productBrands: ProductBrand[];
-  setProductBrands: React.Dispatch<React.SetStateAction<ProductBrand[]>>;
-  
-  // Route operations
-  updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
-  addRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
-  deleteRoute: (id: string) => Promise<boolean>;
-  
-  // Vehicle operations
-  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
-  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<boolean>;
-  deleteVehicle: (id: string) => Promise<boolean>;
-  
-  // SalesRep operations
-  addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
-  updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => Promise<boolean>;
-  deleteSalesRep: (id: string) => Promise<boolean>;
-  
-  // Product operations
-  addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
-  updateProduct: (id: string, product: Partial<Product>) => Promise<boolean>;
-  deleteProduct: (id: string) => Promise<boolean>;
-  
-  // Payment operations
-  addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
-  
-  // PaymentMethod operations
-  addPaymentMethod: (paymentMethod: Omit<PaymentMethod, 'id'>) => Promise<string>;
-  updatePaymentMethod: (id: string, paymentMethod: Partial<PaymentMethod>) => Promise<boolean>;
-  deletePaymentMethod: (id: string) => Promise<boolean>;
-  
-  // Backup operations
-  createBackup: (name: string, description?: string) => string;
-  restoreBackup: (id: string) => boolean;
-  deleteBackup: (id: string) => boolean;
-  startNewMonth: () => void;
+  deliveryRoutes: DeliveryRoute[];
+  backups: Backup[];
+  isLoadingCustomers: boolean;
+  isLoadingProducts: boolean;
+  isLoadingOrders: boolean;
+  isLoadingPayments: boolean;
+  isLoadingRoutes: boolean;
+  isLoadingLoads: boolean;
+  isLoadingSalesReps: boolean;
+  isLoadingVehicles: boolean;
+  isLoadingPaymentMethods: boolean;
+  isLoadingPaymentTables: boolean;
+  isLoadingProductGroups: boolean;
+  isLoadingProductCategories: boolean;
+  isLoadingProductBrands: boolean;
+  isLoadingDeliveryRoutes: boolean;
+  isLoadingBackups: boolean;
+  settings: AppSettings | null;
+  updateSettings: (newSettings: Partial<AppSettings>) => Promise<boolean>;
 }
 
-// Create the context
-export const AppContext = createContext<AppContextType | null>(null);
+const AppContext = createContext<AppContextType>({
+  customers: [],
+  products: [],
+  orders: [],
+  payments: [],
+  routes: [],
+  loads: [],
+  salesReps: [],
+  vehicles: [],
+  paymentMethods: [],
+  paymentTables: [],
+  productGroups: [],
+  productCategories: [],
+  productBrands: [],
+  deliveryRoutes: [],
+  backups: [],
+  isLoadingCustomers: true,
+  isLoadingProducts: true,
+  isLoadingOrders: true,
+  isLoadingPayments: true,
+  isLoadingRoutes: true,
+  isLoadingLoads: true,
+  isLoadingSalesReps: true,
+  isLoadingVehicles: true,
+  isLoadingPaymentMethods: true,
+  isLoadingPaymentTables: true,
+  isLoadingProductGroups: true,
+  isLoadingProductCategories: true,
+  isLoadingProductBrands: true,
+  isLoadingDeliveryRoutes: true,
+  isLoadingBackups: true,
+  settings: null,
+  updateSettings: async () => false,
+});
 
-// Provider component
+export const useAppContext = () => useContext(AppContext);
+
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
-  const [loads, setLoads] = useState<Load[]>([]);
-  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [paymentTables, setPaymentTables] = useState<PaymentTable[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [backups, setBackups] = useState<Backup[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { 
+    customers, 
+    isLoading: isLoadingCustomers 
+  } = useCustomers();
+  const { 
+    products, 
+    isLoading: isLoadingProducts 
+  } = useProducts();
+  const { 
+    orders, 
+    isLoading: isLoadingOrders 
+  } = useOrders();
+  const { 
+    payments, 
+    isLoading: isLoadingPayments 
+  } = usePayments();
+  const { 
+    routes, 
+    isLoading: isLoadingRoutes 
+  } = useRoutes();
+  const { 
+    loads, 
+    isLoading: isLoadingLoads 
+  } = useLoads();
+  const { 
+    salesReps, 
+    isLoading: isLoadingSalesReps 
+  } = useSalesReps();
+  const { 
+    vehicles, 
+    isLoading: isLoadingVehicles 
+  } = useVehicles();
+  const { 
+    paymentMethods, 
+    isLoading: isLoadingPaymentMethods 
+  } = usePaymentMethods();
+  const { 
+    paymentTables, 
+    isLoading: isLoadingPaymentTables 
+  } = usePaymentTables();
+   const {
+    productGroups,
+    isLoading: isLoadingProductGroups
+  } = useProductGroups();
+  const {
+    productCategories,
+    isLoading: isLoadingProductCategories
+  } = useProductCategories();
+  const {
+    productBrands,
+    isLoading: isLoadingProductBrands
+  } = useProductBrands();
+  const {
+    deliveryRoutes,
+    isLoading: isLoadingDeliveryRoutes
+  } = useDeliveryRoutes();
+  const {
+    backups,
+    isLoading: isLoadingBackups
+  } = useBackups();
   
-  // Add states for product classifications
-  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
-  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
-  const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
+  const { 
+    settings,
+    updateSettings,
+    isLoading: isLoadingSettings
+  } = useAppSettings();
+  
+  const isLoading = isLoadingCustomers || isLoadingProducts || isLoadingOrders || isLoadingPayments || isLoadingRoutes || isLoadingLoads || isLoadingSalesReps || isLoadingVehicles || isLoadingPaymentMethods || isLoadingPaymentTables || isLoadingProductGroups || isLoadingProductCategories || isLoadingProductBrands || isLoadingDeliveryRoutes || isLoadingBackups || isLoadingSettings;
 
-  // Route operations
-  const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
-    setRoutes(routes.map(r => r.id === id ? { ...r, ...route } : r));
-  };
-
-  const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 15);
-    setRoutes([...routes, { ...route, id }]);
-    return id;
-  };
-
-  const deleteRoute = async (id: string) => {
-    setRoutes(routes.filter(r => r.id !== id));
-    return true;
-  };
-
-  // Vehicle operations
-  const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 15);
-    setVehicles([...vehicles, { ...vehicle, id }]);
-    return id;
-  };
-
-  const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
-    setVehicles(vehicles.map(v => v.id === id ? { ...v, ...vehicle } : v));
-    return true;
-  };
-
-  const deleteVehicle = async (id: string) => {
-    setVehicles(vehicles.filter(v => v.id !== id));
-    return true;
-  };
-
-  // SalesRep operations
-  const addSalesRep = async (salesRep: Omit<SalesRep, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 15);
-    setSalesReps([...salesReps, { ...salesRep, id }]);
-    return id;
-  };
-
-  const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>) => {
-    setSalesReps(salesReps.map(s => s.id === id ? { ...s, ...salesRep } : s));
-    return true;
-  };
-
-  const deleteSalesRep = async (id: string) => {
-    setSalesReps(salesReps.filter(s => s.id !== id));
-    return true;
-  };
-
-  // Product operations
-  const addProduct = async (product: Omit<Product, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 15);
-    setProducts([...products, { ...product, id }]);
-    return id;
-  };
-
-  const updateProduct = async (id: string, product: Partial<Product>) => {
-    setProducts(products.map(p => p.id === id ? { ...p, ...product } : p));
-    return true;
-  };
-
-  const deleteProduct = async (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
-    return true;
-  };
-
-  // Payment operations
-  const addPayment = async (payment: Omit<Payment, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 15);
-    setPayments([...payments, { ...payment, id }]);
-    return id;
-  };
-
-  // PaymentMethod operations
-  const addPaymentMethod = async (paymentMethod: Omit<PaymentMethod, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 15);
-    setPaymentMethods([...paymentMethods, { ...paymentMethod, id }]);
-    return id;
-  };
-
-  const updatePaymentMethod = async (id: string, paymentMethod: Partial<PaymentMethod>) => {
-    setPaymentMethods(methods => methods.map(m => m.id === id ? { ...m, ...paymentMethod } : m));
-    return true;
-  };
-
-  const deletePaymentMethod = async (id: string) => {
-    setPaymentMethods(methods => methods.filter(m => m.id !== id));
-    return true;
-  };
-
-  // Backup operations
-  const createBackup = (name: string, description?: string) => {
-    const id = Math.random().toString(36).substring(2, 15);
-    const newBackup: Backup = {
-      id,
-      name,
-      description,
-      date: new Date(),
-      data: {
+  return (
+    <AppContext.Provider
+      value={{
         customers,
         products,
         orders,
@@ -210,144 +169,33 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         routes,
         loads,
         salesReps,
-        vehicles
-      }
-    };
-    setBackups([...backups, newBackup]);
-    return id;
-  };
-
-  const restoreBackup = (id: string) => {
-    const backup = backups.find(b => b.id === id);
-    if (!backup) return false;
-    
-    setCustomers(backup.data.customers || []);
-    setProducts(backup.data.products || []);
-    setOrders(backup.data.orders || []);
-    setPayments(backup.data.payments || []);
-    setRoutes(backup.data.routes || []);
-    setLoads(backup.data.loads || []);
-    setSalesReps(backup.data.salesReps || []);
-    if (backup.data.vehicles) {
-      setVehicles(backup.data.vehicles);
-    }
-    
-    return true;
-  };
-
-  const deleteBackup = (id: string) => {
-    setBackups(backups.filter(b => b.id !== id));
-    return true;
-  };
-
-  const startNewMonth = () => {
-    console.log("Starting new month");
-  };
-
-  // Load all data
-  useEffect(() => {
-    const loadAllData = async () => {
-      setIsLoading(true);
-      
-      try {
-        const [
-          customersData, 
-          productsData, 
-          ordersData, 
-          paymentsData, 
-          routesData,
-          loadsData,
-          salesRepsData,
-          vehiclesData,
-          paymentTablesData,
-          productGroupsData,
-          productCategoriesData,
-          productBrandsData
-        ] = await Promise.all([
-          loadCustomers(),
-          loadProducts(),
-          loadOrders(),
-          loadPayments(),
-          loadRoutes(),
-          loadLoads(),
-          loadSalesReps(),
-          loadVehicles(),
-          loadPaymentTables(),
-          loadProductGroups(),
-          loadProductCategories(),
-          loadProductBrands()
-        ]);
-        
-        setCustomers(customersData);
-        setProducts(productsData);
-        setOrders(ordersData);
-        setPayments(paymentsData);
-        setRoutes(routesData);
-        setLoads(loadsData);
-        setSalesReps(salesRepsData);
-        setVehicles(vehiclesData);
-        setPaymentTables(paymentTablesData);
-        setProductGroups(productGroupsData);
-        setProductCategories(productCategoriesData);
-        setProductBrands(productBrandsData);
-        
-        setPaymentMethods([
-          { id: '1', name: 'Dinheiro', type: 'cash', active: true },
-          { id: '2', name: 'Cartão de Crédito', type: 'credit', active: true },
-          { id: '3', name: 'Cartão de Débito', type: 'debit', active: true },
-          { id: '4', name: 'Transferência', type: 'transfer', active: true },
-          { id: '5', name: 'Cheque', type: 'check', active: true },
-        ]);
-        
-        console.log('Todos os dados foram carregados com sucesso!');
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadAllData();
-  }, []);
-
-  return (
-    <AppContext.Provider value={{ 
-      customers, setCustomers, 
-      products, setProducts,
-      orders, setOrders,
-      payments, setPayments,
-      routes, setRoutes,
-      loads, setLoads,
-      salesReps, setSalesReps,
-      vehicles, setVehicles,
-      paymentTables, setPaymentTables,
-      paymentMethods, setPaymentMethods,
-      backups, setBackups,
-      isLoading,
-      productGroups, setProductGroups,
-      productCategories, setProductCategories,
-      productBrands, setProductBrands,
-      updateRoute,
-      addRoute,
-      deleteRoute,
-      addVehicle,
-      updateVehicle,
-      deleteVehicle,
-      addSalesRep,
-      updateSalesRep,
-      deleteSalesRep,
-      addProduct,
-      updateProduct,
-      deleteProduct,
-      addPayment,
-      addPaymentMethod,
-      updatePaymentMethod,
-      deletePaymentMethod,
-      createBackup,
-      restoreBackup,
-      deleteBackup,
-      startNewMonth
-    }}>
+        vehicles,
+        paymentMethods,
+        paymentTables,
+        productGroups,
+        productCategories,
+        productBrands,
+        deliveryRoutes,
+        backups,
+        isLoadingCustomers,
+        isLoadingProducts,
+        isLoadingOrders,
+        isLoadingPayments,
+        isLoadingRoutes,
+        isLoadingLoads,
+        isLoadingSalesReps,
+        isLoadingVehicles,
+        isLoadingPaymentMethods,
+        isLoadingPaymentTables,
+        isLoadingProductGroups,
+        isLoadingProductCategories,
+        isLoadingProductBrands,
+        isLoadingDeliveryRoutes,
+        isLoadingBackups,
+        settings,
+        updateSettings,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
