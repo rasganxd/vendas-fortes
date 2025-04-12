@@ -161,7 +161,7 @@ export default function CustomerSearchInput({
         </div>
       </div>
 
-      {/* Replace Popover with Dialog for customer search */}
+      {/* Removed separate dialog for customer search */}
       <Dialog open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
         <DialogContent className="sm:max-w-md p-0">
           <Command className="rounded-lg border shadow-md">
@@ -210,3 +210,4 @@ export default function CustomerSearchInput({
     </>
   );
 }
+
