@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -223,17 +222,10 @@ export default function OrderFormContainer() {
       
       resetForm();
       
-      // Check if the order uses promissory note payment method
-      // If so, redirect to the payments page with the promissory tab selected
-      if (paymentMethod === 'promissoria') {
-        setTimeout(() => {
-          navigate('/pagamentos?tab=promissory&orderId=' + orderId);
-        }, 1500);
-      } else {
-        setTimeout(() => {
-          navigate('/pedidos');
-        }, 1500);
-      }
+      // Always navigate back to the orders list after successful creation/update
+      setTimeout(() => {
+        navigate('/pedidos');
+      }, 1500);
     } catch (error) {
       console.error("Erro ao processar pedido:", error);
       toast({
