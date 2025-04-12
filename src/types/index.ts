@@ -168,7 +168,7 @@ export interface PaymentTable {
   id: string;
   name: string;
   terms: PaymentTableTerm[];
-  type?: 'standard' | 'promissory_note' | 'financing';
+  type: 'standard' | 'promissory_note' | 'card' | 'check' | 'cash' | 'bank_slip';
   payableTo?: string;
   paymentLocation?: string;
   description?: string;

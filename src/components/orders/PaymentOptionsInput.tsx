@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FilePenLine, Printer, FileText } from "lucide-react";
+import { FilePenLine, Printer, FileText, CreditCard, Check, Banknote } from "lucide-react";
 import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
 import { Badge } from '@/components/ui/badge';
 
@@ -61,11 +61,25 @@ export default function PaymentOptionsInput({
     if (value) {
       const selected = paymentTables.find(pt => pt.id === value);
       if (selected) {
-        // If promissory note payment table, automatically set payment method to promissory note
-        if (selected.type === 'promissory_note') {
-          setPaymentMethod('promissoria');
-        } else if (!paymentMethod) {
-          setPaymentMethod('dinheiro'); // Default to cash for other payment tables
+        // Set payment method based on table type
+        switch (selected.type) {
+          case 'promissory_note':
+            setPaymentMethod('promissoria');
+            break;
+          case 'card':
+            setPaymentMethod('cartao');
+            break;
+          case 'check':
+            setPaymentMethod('cheque');
+            break;
+          case 'cash':
+            setPaymentMethod('dinheiro');
+            break;
+          case 'bank_slip':
+            setPaymentMethod('boleto');
+            break;
+          default:
+            setPaymentMethod('dinheiro'); // Default
         }
       }
     }
@@ -73,6 +87,24 @@ export default function PaymentOptionsInput({
     // Call onSelectComplete callback when done
     if (onSelectComplete) {
       setTimeout(onSelectComplete, 50);
+    }
+  };
+
+  // Helper function to get payment type badge
+  const getPaymentTypeBadge = (type?: string) => {
+    switch (type) {
+      case 'card':
+        return <Badge className="ml-2 bg-blue-500 flex gap-1 items-center"><CreditCard size={12} className="mr-1" />Cartão</Badge>;
+      case 'cash':
+        return <Badge className="ml-2 bg-green-500 flex gap-1 items-center"><Banknote size={12} className="mr-1" />À Vista</Badge>;
+      case 'check':
+        return <Badge className="ml-2 bg-purple-500 flex gap-1 items-center"><Check size={12} className="mr-1" />Cheque</Badge>;
+      case 'promissory_note':
+        return <Badge className="ml-2 bg-amber-500 flex gap-1 items-center"><FileText size={12} className="mr-1" />Promissória</Badge>;
+      case 'bank_slip':
+        return <Badge className="ml-2 bg-gray-500 flex gap-1 items-center"><FileText size={12} className="mr-1" />Boleto</Badge>;
+      default:
+        return <Badge className="ml-2 bg-blue-500">Padrão</Badge>;
     }
   };
 
@@ -100,10 +132,10 @@ export default function PaymentOptionsInput({
           <SelectContent>
             {paymentTables.map(table => (
               <SelectItem key={table.id} value={table.id}>
-                {table.name} 
-                {table.type === 'promissory_note' && (
-                  <Badge className="ml-2 bg-blue-500">Promissória</Badge>
-                )}
+                <div className="flex items-center">
+                  {table.name} 
+                  {getPaymentTypeBadge(table.type)}
+                </div>
               </SelectItem>
             ))}
             {paymentTables.length === 0 && (
@@ -129,17 +161,17 @@ export default function PaymentOptionsInput({
     <div className="space-y-4">
       <div>
         <Label htmlFor="paymentTable">Tabela de Pagamento</Label>
-        <Select value={selectedPaymentTable} onValueChange={setSelectedPaymentTable}>
+        <Select value={selectedPaymentTable} onValueChange={handleSelectPaymentTable}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione uma tabela" />
           </SelectTrigger>
           <SelectContent>
             {paymentTables.map(table => (
               <SelectItem key={table.id} value={table.id}>
-                {table.name}
-                {table.type === 'promissory_note' && (
-                  <Badge className="ml-2 bg-blue-500">Promissória</Badge>
-                )}
+                <div className="flex items-center">
+                  {table.name}
+                  {getPaymentTypeBadge(table.type)}
+                </div>
               </SelectItem>
             ))}
             {paymentTables.length === 0 && (
@@ -156,7 +188,7 @@ export default function PaymentOptionsInput({
         <Select 
           value={paymentMethod} 
           onValueChange={setPaymentMethod}
-          disabled={isPromissoryNoteType} // Auto-select promissory for promissory note tables
+          disabled={!!selectedTable?.type && selectedTable.type !== 'standard'} // Auto-select based on table type
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione uma forma de pagamento" />

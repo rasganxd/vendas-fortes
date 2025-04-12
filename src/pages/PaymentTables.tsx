@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -32,11 +31,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Trash, Edit, Plus, Info, Calendar } from 'lucide-react';
+import { PlusCircle, Trash, Edit, Plus, Info, Calendar, CreditCard, Banknote, FileText, Check } from 'lucide-react';
 import { formatDateToBR } from '@/lib/date-utils';
 import { toast } from "@/components/ui/use-toast";
 import { PaymentTable, PaymentTableTerm } from '@/types';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function PaymentTables() {
   const { paymentTables, addPaymentTable, updatePaymentTable, deletePaymentTable } = usePaymentTables();
@@ -55,6 +61,7 @@ export default function PaymentTables() {
   const [tableForm, setTableForm] = useState({
     name: '',
     description: '',
+    type: 'standard' as PaymentTable['type'],
     active: true
   });
   
@@ -71,6 +78,7 @@ export default function PaymentTables() {
       setTableForm({
         name: table.name,
         description: table.description || '',
+        type: table.type || 'standard',
         active: table.active !== false // default to true if undefined
       });
     } else {
@@ -78,6 +86,7 @@ export default function PaymentTables() {
       setTableForm({
         name: '',
         description: '',
+        type: 'standard',
         active: true
       });
     }
@@ -131,6 +140,13 @@ export default function PaymentTables() {
     }));
   };
 
+  const handleTableTypeChange = (value: PaymentTable['type']) => {
+    setTableForm(prev => ({
+      ...prev,
+      type: value
+    }));
+  };
+
   const handleSubmitTable = async () => {
     if (!tableForm.name) {
       toast({
@@ -147,6 +163,7 @@ export default function PaymentTables() {
         await updatePaymentTable(editingTable.id, {
           name: tableForm.name,
           description: tableForm.description,
+          type: tableForm.type,
           active: tableForm.active
         });
         toast({ title: "Tabela atualizada com sucesso" });
@@ -155,6 +172,7 @@ export default function PaymentTables() {
         const tableId = await addPaymentTable({
           name: tableForm.name,
           description: tableForm.description,
+          type: tableForm.type,
           active: tableForm.active,
           terms: []
         });
@@ -289,6 +307,40 @@ export default function PaymentTables() {
     return terms.reduce((sum, term) => sum + term.percentage, 0);
   };
 
+  const getPaymentTypeIcon = (type?: string) => {
+    switch (type) {
+      case 'card':
+        return <CreditCard size={16} className="mr-2 text-blue-500" />;
+      case 'cash':
+        return <Banknote size={16} className="mr-2 text-green-500" />;
+      case 'check':
+        return <Check size={16} className="mr-2 text-purple-500" />;
+      case 'promissory_note':
+        return <FileText size={16} className="mr-2 text-amber-500" />;
+      case 'bank_slip':
+        return <FileText size={16} className="mr-2 text-gray-500" />;
+      default:
+        return <Info size={16} className="mr-2 text-gray-400" />;
+    }
+  };
+
+  const getPaymentTypeDisplayName = (type?: string) => {
+    switch (type) {
+      case 'card':
+        return 'Cartão';
+      case 'cash':
+        return 'À Vista';
+      case 'check':
+        return 'Cheque';
+      case 'promissory_note':
+        return 'Nota Promissória';
+      case 'bank_slip':
+        return 'Boleto';
+      default:
+        return 'Padrão';
+    }
+  };
+
   return (
     <PageLayout title="Tabelas de Pagamento">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -329,9 +381,14 @@ export default function PaymentTables() {
                     onClick={() => setSelectedTable(table)}
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{table.name}</p>
-                        <p className="text-sm text-gray-500">{table.terms.length} prazos</p>
+                      <div className="flex items-center">
+                        {getPaymentTypeIcon(table.type)}
+                        <div>
+                          <p className="font-medium">{table.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {getPaymentTypeDisplayName(table.type)} • {table.terms.length} prazos
+                          </p>
+                        </div>
                       </div>
                       <div>
                         {table.active !== false ? (
@@ -352,9 +409,17 @@ export default function PaymentTables() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>{selectedTable ? selectedTable.name : 'Detalhes da Tabela'}</CardTitle>
                 {selectedTable && (
-                  <CardDescription>{selectedTable.description}</CardDescription>
+                  <div className="flex items-center">
+                    {getPaymentTypeIcon(selectedTable.type)}
+                    <CardTitle>{selectedTable.name}</CardTitle>
+                  </div>
+                )}
+                {!selectedTable && <CardTitle>Detalhes da Tabela</CardTitle>}
+                {selectedTable && (
+                  <CardDescription className="mt-1">
+                    {selectedTable.description} • {getPaymentTypeDisplayName(selectedTable.type)}
+                  </CardDescription>
                 )}
               </div>
               {selectedTable && (
@@ -506,6 +571,27 @@ export default function PaymentTables() {
                 onChange={handleTableFormChange}
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="type">Tipo de Pagamento</Label>
+              <Select
+                value={tableForm.type}
+                onValueChange={handleTableTypeChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Padrão</SelectItem>
+                  <SelectItem value="promissory_note">Nota Promissória</SelectItem>
+                  <SelectItem value="card">Cartão</SelectItem>
+                  <SelectItem value="check">Cheque</SelectItem>
+                  <SelectItem value="cash">À Vista</SelectItem>
+                  <SelectItem value="bank_slip">Boleto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="description">Descrição (opcional)</Label>
               <Input
@@ -602,7 +688,7 @@ export default function PaymentTables() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir tabela de pagamento</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta tabela de pagamento? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir esta tabela de pagamento? Esta ação n��o pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
