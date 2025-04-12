@@ -1,22 +1,12 @@
 
-import React, { useState, KeyboardEvent, useEffect } from 'react';
+import React from 'react';
 import { Customer } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, FileText } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { 
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { useCustomerSearch } from '@/hooks/useCustomerSearch';
+import CustomerSearchDialog from './CustomerSearchDialog';
 
 interface CustomerSearchInputProps {
   customers: Customer[];
@@ -39,69 +29,24 @@ export default function CustomerSearchInput({
   compact = false,
   initialInputValue = ''
 }: CustomerSearchInputProps) {
-  const [customerInput, setCustomerInput] = useState(initialInputValue);
-  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
-  const [customerSearch, setCustomerSearch] = useState('');
-
-  // Update customer input when initialInputValue changes
-  useEffect(() => {
-    if (initialInputValue && initialInputValue !== customerInput) {
-      setCustomerInput(initialInputValue);
-    }
-  }, [initialInputValue]);
-
-  const filteredCustomers = customers.filter(customer => 
-    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    customer.code?.toString().includes(customerSearch)
-  );
-
-  const findCustomerByCode = (code: string) => {
-    const foundCustomer = customers.find(c => c.code && c.code.toString() === code);
-    if (foundCustomer) {
-      setSelectedCustomer(foundCustomer);
-      setCustomerInput(`${foundCustomer.code} - ${foundCustomer.name}`);
-      return true;
-    }
-    return false;
-  };
-
-  const handleCustomerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setCustomerInput(value);
-    
-    // Check if input is just a code number
-    const codeMatch = value.match(/^(\d+)$/);
-    if (codeMatch) {
-      findCustomerByCode(codeMatch[1]);
-    } else if (!value) {
-      setSelectedCustomer(null);
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && onEnterPress) {
-      e.preventDefault();
-      
-      // If we have a valid number but haven't selected a customer yet, try to find one
-      const codeMatch = customerInput.match(/^(\d+)$/);
-      if (codeMatch && !selectedCustomer) {
-        const found = findCustomerByCode(codeMatch[1]);
-        if (found) {
-          // Give it a moment to set the state before moving to the next field
-          setTimeout(() => {
-            onEnterPress();
-          }, 50);
-          return;
-        }
-      }
-      
-      if (selectedCustomer) {
-        onEnterPress();
-      } else {
-        setIsCustomerSearchOpen(true);
-      }
-    }
-  };
+  const {
+    customerInput,
+    setCustomerInput,
+    isCustomerSearchOpen,
+    setIsCustomerSearchOpen,
+    customerSearch,
+    setCustomerSearch,
+    filteredCustomers,
+    handleCustomerInputChange,
+    handleKeyDown,
+    handleCustomerSelect
+  } = useCustomerSearch({
+    customers,
+    selectedCustomer,
+    setSelectedCustomer,
+    initialInputValue,
+    onEnterPress
+  });
 
   return (
     <>
@@ -161,53 +106,14 @@ export default function CustomerSearchInput({
         </div>
       </div>
 
-      {/* Removed separate dialog for customer search */}
-      <Dialog open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
-        <DialogContent className="sm:max-w-md p-0">
-          <Command className="rounded-lg border shadow-md">
-            <CommandInput 
-              placeholder="Buscar cliente por código ou nome..." 
-              value={customerSearch}
-              onValueChange={setCustomerSearch}
-            />
-            <CommandList>
-              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-              <CommandGroup>
-                {filteredCustomers.map((customer) => (
-                  <CommandItem
-                    key={customer.id}
-                    value={customer.id}
-                    onSelect={() => {
-                      setSelectedCustomer(customer);
-                      setCustomerInput(`${customer.code} - ${customer.name}`);
-                      setIsCustomerSearchOpen(false);
-                      setCustomerSearch('');
-                      // Navigate to next field on selection
-                      if (onEnterPress) {
-                        setTimeout(onEnterPress, 50);
-                      }
-                    }}
-                    className="cursor-pointer py-2 px-2"
-                  >
-                    <div className="flex flex-col">
-                      <div className="flex items-center">
-                        <span className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-medium mr-2">
-                          {customer.code || "---"}
-                        </span>
-                        <span className="font-medium">{customer.name}</span>
-                      </div>
-                      <span className="text-xs text-gray-500 ml-7">
-                        {customer.city}{customer.state ? `, ${customer.state}` : ''}
-                      </span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </DialogContent>
-      </Dialog>
+      <CustomerSearchDialog
+        open={isCustomerSearchOpen}
+        onOpenChange={setIsCustomerSearchOpen}
+        customers={filteredCustomers}
+        customerSearch={customerSearch}
+        onSearchChange={setCustomerSearch}
+        onSelectCustomer={handleCustomerSelect}
+      />
     </>
   );
 }
-
