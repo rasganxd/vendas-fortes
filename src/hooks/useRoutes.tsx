@@ -1,8 +1,8 @@
 
 import { DeliveryRoute } from '@/types';
+import { useState, useEffect } from 'react';
 import { routeService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
-import { useAppContext } from './useAppContext';
 
 export const loadRoutes = async (): Promise<DeliveryRoute[]> => {
   try {
@@ -14,7 +14,24 @@ export const loadRoutes = async (): Promise<DeliveryRoute[]> => {
 };
 
 export const useRoutes = () => {
-  const { routes, setRoutes } = useAppContext();
+  const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize routes when component mounts
+  useEffect(() => {
+    const fetchRoutes = async () => {
+      try {
+        const loadedRoutes = await loadRoutes();
+        setRoutes(loadedRoutes);
+      } catch (error) {
+        console.error("Error loading routes:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRoutes();
+  }, []);
 
   const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
     try {
@@ -53,6 +70,7 @@ export const useRoutes = () => {
         title: "Rota atualizada",
         description: "Rota atualizada com sucesso!"
       });
+      return true;
     } catch (error) {
       console.error("Erro ao atualizar rota:", error);
       toast({
@@ -60,6 +78,7 @@ export const useRoutes = () => {
         description: "Houve um problema ao atualizar a rota.",
         variant: "destructive"
       });
+      return false;
     }
   };
 
@@ -82,14 +101,16 @@ export const useRoutes = () => {
         description: "Houve um problema ao excluir a rota.",
         variant: "destructive"
       });
-      throw error;
+      return false;
     }
   };
 
   return {
     routes,
+    isLoading,
     addRoute,
     updateRoute,
-    deleteRoute
+    deleteRoute,
+    setRoutes
   };
 };

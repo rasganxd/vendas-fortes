@@ -1,59 +1,52 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 
 export const useProductGroups = () => {
-  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>([
+    { id: '1', name: 'Bebidas', description: 'Bebidas em geral' },
+    { id: '2', name: 'Alimentos', description: 'Alimentos em geral' },
+    { id: '3', name: 'Limpeza', description: 'Produtos de limpeza' },
+    { id: '4', name: 'Higiene', description: 'Produtos de higiene pessoal' }
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Mock data for product groups
-    const initialProductGroups: ProductGroup[] = [
-      { id: '1', name: 'Alimentos', description: 'Produtos alimentícios' },
-      { id: '2', name: 'Bebidas', description: 'Bebidas diversas' },
-      { id: '3', name: 'Limpeza', description: 'Produtos de limpeza' },
-    ];
-    
-    setProductGroups(initialProductGroups);
-    setIsLoading(false);
-  }, []);
-
-  const addProductGroup = async (productGroup: Omit<ProductGroup, 'id'>) => {
+  const addProductGroup = async (group: Omit<ProductGroup, 'id'>) => {
     try {
-      const newId = Math.random().toString(36).substring(2, 11);
-      const newProductGroup = { ...productGroup, id: newId };
-      setProductGroups([...productGroups, newProductGroup]);
+      const newId = Math.random().toString(36).substring(2, 9);
+      const newGroup = { ...group, id: newId };
+      setProductGroups([...productGroups, newGroup]);
       toast({
-        title: "Grupo de produto adicionado",
+        title: "Grupo adicionado",
         description: "Grupo de produto adicionado com sucesso!"
       });
       return newId;
     } catch (error) {
-      console.error("Erro ao adicionar grupo de produto:", error);
+      console.error("Erro ao adicionar grupo:", error);
       toast({
-        title: "Erro ao adicionar grupo de produto",
-        description: "Houve um problema ao adicionar o grupo de produto.",
+        title: "Erro ao adicionar",
+        description: "Não foi possível adicionar o grupo de produtos.",
         variant: "destructive"
       });
       return "";
     }
   };
 
-  const updateProductGroup = async (id: string, productGroup: Partial<ProductGroup>) => {
+  const updateProductGroup = async (id: string, group: Partial<ProductGroup>) => {
     try {
-      setProductGroups(productGroups.map(pg => 
-        pg.id === id ? { ...pg, ...productGroup } : pg
-      ));
+      setProductGroups(
+        productGroups.map(pg => (pg.id === id ? { ...pg, ...group } : pg))
+      );
       toast({
-        title: "Grupo de produto atualizado",
+        title: "Grupo atualizado",
         description: "Grupo de produto atualizado com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao atualizar grupo de produto:", error);
+      console.error("Erro ao atualizar grupo:", error);
       toast({
-        title: "Erro ao atualizar grupo de produto",
-        description: "Houve um problema ao atualizar o grupo de produto.",
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar o grupo de produtos.",
         variant: "destructive"
       });
     }
@@ -63,14 +56,14 @@ export const useProductGroups = () => {
     try {
       setProductGroups(productGroups.filter(pg => pg.id !== id));
       toast({
-        title: "Grupo de produto excluído",
+        title: "Grupo excluído",
         description: "Grupo de produto excluído com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao excluir grupo de produto:", error);
+      console.error("Erro ao excluir grupo:", error);
       toast({
-        title: "Erro ao excluir grupo de produto",
-        description: "Houve um problema ao excluir o grupo de produto.",
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o grupo de produtos.",
         variant: "destructive"
       });
     }
@@ -81,6 +74,7 @@ export const useProductGroups = () => {
     isLoading,
     addProductGroup,
     updateProductGroup,
-    deleteProductGroup
+    deleteProductGroup,
+    setProductGroups
   };
 };

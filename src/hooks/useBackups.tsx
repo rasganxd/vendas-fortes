@@ -1,13 +1,15 @@
 
 import { useState } from 'react';
-import { Backup } from '@/types';
+import { Backup, DeliveryRoute } from '@/types';
 import { useAppContext } from './useAppContext';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/use-toast';
 
 export const useBackups = () => {
+  const [backups, setBackups] = useState<Backup[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const { 
-    backups, setBackups,
     customers, products, orders, payments,
     routes, loads, salesReps, vehicles
   } = useAppContext();
@@ -48,18 +50,43 @@ export const useBackups = () => {
     const backup = backups.find(b => b.id === id);
     if (!backup) return false;
     
+    // Get the setter methods from context
     const { 
       setCustomers, setProducts, setOrders, setPayments, 
       setRoutes, setLoads, setSalesReps, setVehicles 
     } = useAppContext();
     
-    setCustomers(backup.data.customers || []);
-    setProducts(backup.data.products || []);
-    setOrders(backup.data.orders || []);
-    setPayments(backup.data.payments || []);
-    setRoutes(backup.data.routes || []);
-    setLoads(backup.data.loads || []);
-    setSalesReps(backup.data.salesReps || []);
+    // Restore data if it exists in the backup
+    if (backup.data.customers) {
+      setCustomers(backup.data.customers);
+    }
+    
+    if (backup.data.products) {
+      setProducts(backup.data.products);
+    }
+    
+    if (backup.data.orders) {
+      setOrders(backup.data.orders);
+    }
+    
+    if (backup.data.payments) {
+      setPayments(backup.data.payments);
+    }
+    
+    if (backup.data.routes) {
+      // Ensure the routes match the DeliveryRoute type
+      const deliveryRoutes = backup.data.routes as unknown as DeliveryRoute[];
+      setRoutes(deliveryRoutes);
+    }
+    
+    if (backup.data.loads) {
+      setLoads(backup.data.loads);
+    }
+    
+    if (backup.data.salesReps) {
+      setSalesReps(backup.data.salesReps);
+    }
+    
     if (backup.data.vehicles) {
       setVehicles(backup.data.vehicles);
     }
@@ -83,8 +110,10 @@ export const useBackups = () => {
 
   return {
     backups,
+    isLoading,
     createBackup,
     restoreBackup,
-    deleteBackup
+    deleteBackup,
+    setBackups
   };
 };

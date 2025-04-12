@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePayments } from '@/hooks/usePayments';
@@ -18,17 +17,14 @@ export default function Payments() {
   const { addPayment } = usePayments();
   const [searchParams] = useSearchParams();
   
-  // Get tab and orderId from URL query params
   const tabFromParams = searchParams.get('tab');
   const orderIdFromParams = searchParams.get('orderId');
   
-  // Set active tab based on URL param or default to "pending"
   const [activeTab, setActiveTab] = useState(tabFromParams || "pending");
   const [selectedPaymentTable, setSelectedPaymentTable] = useState<PaymentTable | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string>(orderIdFromParams || '');
   const [showPromissoryNote, setShowPromissoryNote] = useState(false);
 
-  // Effect to handle orderId parameter to auto-show the promissory note
   useEffect(() => {
     if (orderIdFromParams) {
       const order = orders.find(o => o.id === orderIdFromParams);
@@ -116,21 +112,14 @@ export default function Payments() {
         </TabsContent>
         
         <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Pagamentos</CardTitle>
-              <CardDescription>Registro de todos os pagamentos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PaymentsHistoryTab 
-                payments={payments}
-                orders={orders}
-                pendingPaymentOrders={pendingPaymentOrders}
-                paymentMethods={paymentMethods}
-                handleAddPayment={handleAddPayment}
-              />
-            </CardContent>
-          </Card>
+          <PaymentsHistoryTab
+            payments={payments}
+            orders={orders}
+            customers={customers}
+            pendingPaymentOrders={pendingPaymentOrders}
+            paymentMethods={paymentMethods}
+            handleAddPayment={handleAddPayment}
+          />
         </TabsContent>
         
         <TabsContent value="promissory">

@@ -5,7 +5,15 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { toast } from '@/components/ui/use-toast';
 
 export const useRoutesPage = () => {
-  const { routes, orders, vehicles, updateRoute, addRoute, deleteRoute } = useAppContext();
+  const { 
+    routes, 
+    orders, 
+    vehicles, 
+    updateRoute, 
+    addRoute, 
+    deleteRoute 
+  } = useAppContext();
+  
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false);
@@ -175,11 +183,95 @@ export const useRoutesPage = () => {
     handleEditRoute,
     handleDeleteRoute,
     confirmDeleteRoute,
-    handleAddOrderToRoute,
-    addOrderToRoute,
-    removeOrderFromRoute,
-    handleCreateNewRoute,
-    handleSaveRouteChanges,
-    getUnassignedOrders
+    handleAddOrderToRoute: () => {
+      if (!selectedRoute) return;
+      setIsAddOrderDialogOpen(true);
+    },
+    addOrderToRoute: (orderId: string) => {
+      if (!selectedRoute) return;
+      
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const customer = {
+        name: order.customerName,
+        address: order.deliveryAddress || '',
+        city: order.deliveryCity || '',
+        state: order.deliveryState || '',
+        zipCode: order.deliveryZipCode || '',
+      };
+
+      const newStop: RouteStop = {
+        id: Math.random().toString(36).substring(2, 10),
+        orderId: order.id,
+        customerName: customer.name,
+        address: customer.address,
+        city: customer.city,
+        state: customer.state,
+        zipCode: customer.zipCode,
+        position: selectedRoute.stops.length + 1,
+        sequence: selectedRoute.stops.length + 1,
+        status: 'pending'
+      };
+
+      const updatedStops = [...selectedRoute.stops, newStop];
+      updateRoute(selectedRoute.id, { stops: updatedStops });
+      
+      setSelectedRoute({
+        ...selectedRoute,
+        stops: updatedStops
+      });
+      
+      setIsAddOrderDialogOpen(false);
+    },
+    removeOrderFromRoute: (stopId: string) => {
+      if (!selectedRoute) return;
+      
+      const updatedStops = selectedRoute.stops.filter(s => s.id !== stopId);
+      
+      const resequencedStops = updatedStops.map((stop, index) => ({
+        ...stop,
+        position: index + 1
+      }));
+      
+      updateRoute(selectedRoute.id, { stops: resequencedStops });
+      
+      setSelectedRoute({
+        ...selectedRoute,
+        stops: resequencedStops
+      });
+    },
+    handleCreateNewRoute: (name: string, date: Date, vehicleId: string) => {
+      const selectedVehicle = vehicles.find(v => v.id === vehicleId);
+
+      const newRoute: Omit<DeliveryRoute, 'id'> = {
+        name: name,
+        date: date,
+        vehicleId: vehicleId,
+        vehicleName: selectedVehicle ? selectedVehicle.name : undefined,
+        status: 'planning',
+        stops: []
+      };
+
+      addRoute(newRoute);
+      setIsNewRouteDialogOpen(false);
+    },
+    handleSaveRouteChanges: async (id: string, updatedRoute: Partial<DeliveryRoute>) => {
+      await updateRoute(id, updatedRoute);
+      toast({
+        title: "Rota atualizada",
+        description: "As alterações foram salvas com sucesso.",
+      });
+    },
+    getUnassignedOrders: () => {
+      if (!selectedRoute) return [];
+      
+      const assignedOrderIds = selectedRoute.stops.map(stop => stop.orderId);
+      return orders.filter(order => {
+        if (order.status === undefined) return false;
+        return !assignedOrderIds.includes(order.id) && 
+          (order.status === 'confirmed' || order.status === 'draft');
+      });
+    }
   };
 };
