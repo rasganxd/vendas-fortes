@@ -1,12 +1,38 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { salesRepService } from '@/firebase/firestoreService';
 
+export const loadSalesReps = async (): Promise<SalesRep[]> => {
+  try {
+    return await salesRepService.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar representantes:", error);
+    return [];
+  }
+};
+
 export const useSalesReps = () => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize sales reps when component mounts
+  useEffect(() => {
+    const fetchSalesReps = async () => {
+      try {
+        setIsLoading(true);
+        const loadedSalesReps = await loadSalesReps();
+        setSalesReps(loadedSalesReps);
+      } catch (error) {
+        console.error("Erro ao carregar representantes:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSalesReps();
+  }, []);
 
   // Function to generate next available code
   const generateNextCode = (): number => {

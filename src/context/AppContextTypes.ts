@@ -69,6 +69,8 @@ export interface AppContextType {
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  validateProductDiscount: (productId: string, discountedPrice: number) => boolean;
+  getMinimumPrice: (productId: string) => number;
   
   // Order operations
   getOrderById: (id: string) => Order | undefined;
@@ -137,4 +139,7 @@ export interface AppContextType {
   
   // System operations
   startNewMonth: () => void;
+  
+  // Added missing property for validateProductDiscount & getMinimumPrice
+  createAutomaticPaymentRecord: (order: Order) => Promise<void>;
 }

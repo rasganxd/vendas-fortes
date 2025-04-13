@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
@@ -16,6 +16,23 @@ export const loadCustomers = async (): Promise<Customer[]> => {
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Initialize customers when component mounts
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setIsLoading(true);
+        const loadedCustomers = await loadCustomers();
+        setCustomers(loadedCustomers);
+      } catch (error) {
+        console.error("Erro ao carregar clientes:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
   
   // Function to generate next available code
   const generateNextCode = (): number => {
