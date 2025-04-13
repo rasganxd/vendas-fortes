@@ -1,3 +1,5 @@
+
+import { useState } from 'react';
 import { Order } from '@/types';
 import { orderService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
@@ -14,6 +16,7 @@ export const loadOrders = async (): Promise<Order[]> => {
 
 export const useOrders = () => {
   const { orders, setOrders } = useAppContext();
+  const [isLoading, setIsLoading] = useState(false);
 
   const getOrderById = (id: string): Order | undefined => {
     return orders.find(order => order.id === id);
@@ -138,6 +141,8 @@ export const useOrders = () => {
     addOrder,
     updateOrder,
     updateOrderPaymentMethod,
-    deleteOrder
+    deleteOrder,
+    isLoading,
+    setOrders
   };
 };

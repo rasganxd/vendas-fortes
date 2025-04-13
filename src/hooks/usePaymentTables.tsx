@@ -19,16 +19,19 @@ export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
 
 export const usePaymentTables = () => {
   const { paymentTables, setPaymentTables } = useAppContext();
+  const [isLoading, setIsLoading] = useState(false);
   
   // Load payment tables when the hook is first used
   useEffect(() => {
     if (paymentTables.length === 0) {
       console.log("Initial load of payment tables");
+      setIsLoading(true);
       loadPaymentTables().then(tables => {
         if (tables.length > 0) {
           console.log("Setting payment tables:", tables);
           setPaymentTables(tables);
         }
+        setIsLoading(false);
       });
     }
   }, []);
@@ -54,7 +57,7 @@ export const usePaymentTables = () => {
     }
   };
 
-  const updatePaymentTable = async (id: string, paymentTable: Partial<PaymentTable>) => {
+  const updatePaymentTable = async (id: string, paymentTable: Partial<PaymentTable>): Promise<void> => {
     try {
       await paymentTableService.update(id, paymentTable);
       setPaymentTables(paymentTables.map(p => 
@@ -64,7 +67,6 @@ export const usePaymentTables = () => {
         title: "Tabela de pagamento atualizada",
         description: "Tabela de pagamento atualizada com sucesso!"
       });
-      return true;
     } catch (error) {
       console.error("Erro ao atualizar tabela de pagamento:", error);
       toast({
@@ -72,11 +74,10 @@ export const usePaymentTables = () => {
         description: "Houve um problema ao atualizar a tabela de pagamento.",
         variant: "destructive"
       });
-      return false;
     }
   };
 
-  const deletePaymentTable = async (id: string) => {
+  const deletePaymentTable = async (id: string): Promise<void> => {
     try {
       await paymentTableService.delete(id);
       setPaymentTables(paymentTables.filter(p => p.id !== id));
@@ -84,7 +85,6 @@ export const usePaymentTables = () => {
         title: "Tabela de pagamento excluída",
         description: "Tabela de pagamento excluída com sucesso!"
       });
-      return true;
     } catch (error) {
       console.error("Erro ao excluir tabela de pagamento:", error);
       toast({
@@ -92,7 +92,6 @@ export const usePaymentTables = () => {
         description: "Houve um problema ao excluir a tabela de pagamento.",
         variant: "destructive"
       });
-      return false;
     }
   };
 
@@ -100,6 +99,8 @@ export const usePaymentTables = () => {
     paymentTables,
     addPaymentTable,
     updatePaymentTable,
-    deletePaymentTable
+    deletePaymentTable,
+    isLoading,
+    setPaymentTables
   };
 };

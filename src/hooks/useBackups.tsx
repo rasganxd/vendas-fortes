@@ -48,9 +48,9 @@ export const useBackups = () => {
     return id;
   };
 
-  const restoreBackup = (id: string) => {
+  const restoreBackup = (id: string): void => {
     const backup = backups.find(b => b.id === id);
-    if (!backup) return false;
+    if (!backup) return;
     
     // Restore data if it exists in the backup
     if (backup.data.customers) {
@@ -91,17 +91,14 @@ export const useBackups = () => {
       title: "Backup restaurado",
       description: `Backup "${backup.name}" restaurado com sucesso!`,
     });
-    
-    return true;
   };
 
-  const deleteBackup = (id: string) => {
+  const deleteBackup = (id: string): void => {
     setBackups(backups.filter(b => b.id !== id));
     toast({
       title: "Backup excluído",
       description: "Backup excluído com sucesso!",
     });
-    return true;
   };
 
   return {

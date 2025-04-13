@@ -32,7 +32,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
   const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
   
-  const customersHook = useCustomers();
+  // Get customers hook data
   const { 
     customers,
     addCustomer,
@@ -41,9 +41,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     generateNextCode: generateNextCustomerCode,
     isLoading: isLoadingCustomers,
     setCustomers
-  } = customersHook;
+  } = useCustomers();
   
-  const productsHook = useProducts();
+  // Get products hook data
   const { 
     products,
     addProduct,
@@ -51,9 +51,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteProduct,
     isLoading: isLoadingProducts,
     setProducts
-  } = productsHook;
+  } = useProducts();
   
-  const ordersHook = useOrders();
+  // Get orders hook data
   const { 
     orders,
     getOrderById,
@@ -62,9 +62,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteOrder,
     isLoading: isLoadingOrders,
     setOrders
-  } = ordersHook;
+  } = useOrders();
   
-  const paymentsHook = usePayments();
+  // Get payments hook data
   const {
     payments,
     addPayment,
@@ -73,9 +73,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading: isLoadingPayments,
     setPayments,
     createAutomaticPaymentRecord
-  } = paymentsHook;
+  } = usePayments();
   
-  const routesHook = useRoutes();
+  // Get routes hook data
   const {
     routes,
     addRoute,
@@ -83,9 +83,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteRoute,
     isLoading: isLoadingRoutes,
     setRoutes
-  } = routesHook;
+  } = useRoutes();
   
-  const loadsHook = useLoads();
+  // Get loads hook data
   const {
     loads,
     addLoad,
@@ -93,9 +93,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteLoad,
     isLoading: isLoadingLoads,
     setLoads
-  } = loadsHook;
+  } = useLoads();
   
-  const salesRepsHook = useSalesReps();
+  // Get sales reps hook data
   const {
     salesReps,
     addSalesRep,
@@ -103,9 +103,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteSalesRep,
     isLoading: isLoadingSalesReps,
     setSalesReps
-  } = salesRepsHook;
+  } = useSalesReps();
   
-  const vehiclesHook = useVehicles();
+  // Get vehicles hook data
   const {
     vehicles,
     addVehicle,
@@ -113,9 +113,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteVehicle,
     isLoading: isLoadingVehicles,
     setVehicles
-  } = vehiclesHook;
+  } = useVehicles();
   
-  const paymentTablesHook = usePaymentTables();
+  // Get payment tables hook data
   const {
     paymentTables,
     addPaymentTable,
@@ -123,8 +123,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deletePaymentTable,
     isLoading: isLoadingPaymentTables,
     setPaymentTables
-  } = paymentTablesHook;
+  } = usePaymentTables();
   
+  // Get product groups, categories, and brands data
   const {
     productGroups: fetchedProductGroups,
     isLoading: isLoadingProductGroups,
@@ -149,6 +150,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteProductBrand
   } = useProductBrands();
   
+  // Get delivery routes data
   const {
     deliveryRoutes: fetchedDeliveryRoutes,
     isLoading: isLoadingDeliveryRoutes,
@@ -157,7 +159,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteDeliveryRoute
   } = useDeliveryRoutes();
   
-  const backupsHook = useBackups();
+  // Get backups hook data
   const {
     backups,
     createBackup,
@@ -165,8 +167,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteBackup,
     isLoading: isLoadingBackups,
     setBackups
-  } = backupsHook;
+  } = useBackups();
   
+  // Get app settings hook data
   const { 
     settings,
     updateSettings,
@@ -177,6 +180,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     startNewMonthUtil(createBackup);
   };
 
+  // Build context value object
   const contextValue: AppContextType = {
     customers,
     products,
@@ -226,27 +230,39 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setDeliveryRoutes,
     setBackups,
     
+    // Route operations with fixed return types
     addRoute,
     updateRoute,
     deleteRoute,
+    
+    // Customer operations
     addCustomer,
     updateCustomer,
     deleteCustomer,
     generateNextCustomerCode,
+    
+    // Product operations
     addProduct,
     updateProduct,
     deleteProduct,
+    
+    // Order operations
     getOrderById,
     addOrder,
     updateOrder,
     deleteOrder,
+    
+    // Vehicle operations
     addVehicle,
     updateVehicle,
     deleteVehicle,
+    
+    // Payment operations with fixed return types
     addPayment,
     updatePayment,
     deletePayment,
     
+    // PaymentMethod operations
     addPaymentMethod: async (method) => {
       const { addPaymentMethod } = usePaymentMethods();
       return addPaymentMethod(method);
@@ -260,15 +276,26 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       await deletePaymentMethod(id);
     },
     
+    // Load operations
     addLoad,
     updateLoad,
     deleteLoad,
+    
+    // SalesRep operations
     addSalesRep,
     updateSalesRep,
     deleteSalesRep,
+    
+    // PaymentTable operations with fixed return types
     addPaymentTable,
-    updatePaymentTable,
-    deletePaymentTable,
+    updatePaymentTable: async (id, paymentTable) => {
+      await updatePaymentTable(id, paymentTable);
+    },
+    deletePaymentTable: async (id) => {
+      await deletePaymentTable(id);
+    },
+    
+    // Product classification operations
     addProductGroup,
     updateProductGroup,
     deleteProductGroup,
@@ -278,12 +305,27 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     addProductBrand,
     updateProductBrand,
     deleteProductBrand,
+    
+    // DeliveryRoute operations with fixed return types
     addDeliveryRoute,
-    updateDeliveryRoute,
-    deleteDeliveryRoute,
+    updateDeliveryRoute: async (id, route) => {
+      await updateDeliveryRoute(id, route);
+    },
+    deleteDeliveryRoute: async (id) => {
+      await deleteDeliveryRoute(id);
+    },
+    
+    // Backup operations
     createBackup,
-    restoreBackup,
-    deleteBackup,
+    restoreBackup: (id) => {
+      restoreBackup(id);
+      return true;
+    },
+    deleteBackup: (id) => {
+      deleteBackup(id);
+      return true;
+    },
+    
     settings,
     updateSettings,
     startNewMonth

@@ -34,7 +34,7 @@ export const useDeliveryRoutes = () => {
     }
   };
 
-  const updateDeliveryRoute = async (id: string, deliveryRoute: Partial<DeliveryRoute>) => {
+  const updateDeliveryRoute = async (id: string, deliveryRoute: Partial<DeliveryRoute>): Promise<void> => {
     try {
       setDeliveryRoutes(deliveryRoutes.map(dr => 
         dr.id === id ? { ...dr, ...deliveryRoute } : dr
@@ -53,7 +53,7 @@ export const useDeliveryRoutes = () => {
     }
   };
 
-  const deleteDeliveryRoute = async (id: string) => {
+  const deleteDeliveryRoute = async (id: string): Promise<void> => {
     try {
       setDeliveryRoutes(deliveryRoutes.filter(dr => dr.id !== id));
       toast({
