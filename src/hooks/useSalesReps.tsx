@@ -1,6 +1,8 @@
+
 import { useState } from 'react';
 import { SalesRep } from '@/types';
 import { toast } from '@/components/ui/use-toast';
+import { salesRepService } from '@/firebase/firestoreService';
 
 export const useSalesReps = () => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);

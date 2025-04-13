@@ -1,4 +1,3 @@
-
 import React, { createContext, useState } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
@@ -308,10 +307,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     
     // DeliveryRoute operations with fixed return types
     addDeliveryRoute,
-    updateDeliveryRoute: async (id, route) => {
+    updateDeliveryRoute: async (id: string, route: Partial<DeliveryRoute>) => {
       await updateDeliveryRoute(id, route);
     },
-    deleteDeliveryRoute: async (id) => {
+    deleteDeliveryRoute: async (id: string) => {
       await deleteDeliveryRoute(id);
     },
     
