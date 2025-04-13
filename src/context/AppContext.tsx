@@ -1,7 +1,6 @@
 
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
-import { useProducts } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
 import { usePayments } from '@/hooks/usePayments';
 import { useRoutes } from '@/hooks/useRoutes';
@@ -16,23 +15,46 @@ import { useProductGroups } from '@/hooks/useProductGroups';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
+import { loadProducts } from '@/hooks/useProducts';
 import { AppContextType } from './AppContextTypes';
 import { defaultContextValues } from './defaultContextValues';
 import { startNewMonth as startNewMonthUtil } from './utils/systemOperations';
 import { Customer, Product, Order, Payment, Route, Load, SalesRep, 
   Vehicle, PaymentMethod, PaymentTable, ProductGroup, 
   ProductCategory, ProductBrand, DeliveryRoute } from '@/types';
+import { productService } from '@/firebase/firestoreService';
+import { toast } from '@/components/ui/use-toast';
 
 export const AppContext = createContext<AppContextType>(defaultContextValues);
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
+  // Estados para todos os dados
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
   const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
   
-  // Get customers hook data
+  // Carregar produtos diretamente
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoadingProducts(true);
+        const loadedProducts = await loadProducts();
+        setProducts(loadedProducts);
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Obter dados do hook de clientes
   const { 
     customers,
     addCustomer,
@@ -43,17 +65,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setCustomers
   } = useCustomers();
   
-  // Get products hook data
-  const { 
-    products,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    isLoading: isLoadingProducts,
-    setProducts
-  } = useProducts();
-  
-  // Get orders hook data
+  // Obter dados do hook de pedidos
   const { 
     orders,
     getOrderById,
@@ -64,7 +76,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setOrders
   } = useOrders();
   
-  // Get payments hook data
+  // Obter dados do hook de pagamentos
   const {
     payments,
     addPayment,
@@ -75,7 +87,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     createAutomaticPaymentRecord
   } = usePayments();
   
-  // Get routes hook data
+  // Obter dados do hook de rotas
   const {
     routes,
     addRoute,
@@ -85,7 +97,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setRoutes
   } = useRoutes();
   
-  // Get loads hook data
+  // Obter dados do hook de cargas
   const {
     loads,
     addLoad,
@@ -95,7 +107,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setLoads
   } = useLoads();
   
-  // Get sales reps hook data
+  // Obter dados do hook de representantes de vendas
   const {
     salesReps,
     addSalesRep,
@@ -105,7 +117,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setSalesReps
   } = useSalesReps();
   
-  // Get vehicles hook data
+  // Obter dados do hook de veículos
   const {
     vehicles,
     addVehicle,
@@ -115,7 +127,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setVehicles
   } = useVehicles();
   
-  // Get payment tables hook data
+  // Obter dados do hook de tabelas de pagamento
   const {
     paymentTables,
     addPaymentTable,
@@ -125,7 +137,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setPaymentTables
   } = usePaymentTables();
   
-  // Get product groups, categories, and brands data
+  // Obter grupos, categorias e marcas de produtos
   const {
     productGroups: fetchedProductGroups,
     isLoading: isLoadingProductGroups,
@@ -150,7 +162,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteProductBrand
   } = useProductBrands();
   
-  // Get delivery routes data
+  // Obter dados de rotas de entrega
   const {
     deliveryRoutes: fetchedDeliveryRoutes,
     isLoading: isLoadingDeliveryRoutes,
@@ -159,7 +171,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteDeliveryRoute
   } = useDeliveryRoutes();
   
-  // Get backups hook data
+  // Obter dados do hook de backups
   const {
     backups,
     createBackup,
@@ -169,18 +181,125 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setBackups
   } = useBackups();
   
-  // Get app settings hook data
+  // Obter dados do hook de configurações do aplicativo
   const { 
     settings,
     updateSettings,
     isLoading: isLoadingSettings
   } = useAppSettings();
 
+  // Funções de produto implementadas diretamente
+  const addProduct = async (product: Omit<Product, 'id'>) => {
+    try {
+      // Garantir que o produto tenha um código
+      const productCode = product.code || (products.length > 0 
+        ? Math.max(...products.map(p => p.code || 0)) + 1 
+        : 1);
+      const productWithCode = { ...product, code: productCode };
+      
+      // Adicionar ao Firebase
+      const id = await productService.add(productWithCode);
+      const newProduct = { ...productWithCode, id };
+      
+      // Atualizar o estado local
+      setProducts([...products, newProduct]);
+      toast({
+        title: "Produto adicionado",
+        description: "Produto adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar produto:", error);
+      toast({
+        title: "Erro ao adicionar produto",
+        description: "Houve um problema ao adicionar o produto.",
+        variant: "destructive"
+      });
+      return "";
+    }
+  };
+
+  const updateProduct = async (id: string, product: Partial<Product>) => {
+    try {
+      // Nunca permitir que o código seja indefinido ou nulo ao atualizar
+      const updateData = { ...product };
+      if (updateData.code === undefined || updateData.code === null) {
+        const existingProduct = products.find(p => p.id === id);
+        if (existingProduct && existingProduct.code) {
+          updateData.code = existingProduct.code;
+        }
+      }
+      
+      // Atualizar no Firebase
+      await productService.update(id, updateData);
+      
+      // Atualizar o estado local
+      setProducts(products.map(p => 
+        p.id === id ? { ...p, ...updateData } : p
+      ));
+      
+      toast({
+        title: "Produto atualizado",
+        description: "Produto atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar produto:", error);
+      toast({
+        title: "Erro ao atualizar produto",
+        description: "Houve um problema ao atualizar o produto.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteProduct = async (id: string) => {
+    try {
+      // Excluir do Firebase
+      await productService.delete(id);
+      // Atualizar o estado local
+      setProducts(products.filter(p => p.id !== id));
+      toast({
+        title: "Produto excluído",
+        description: "Produto excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir produto:", error);
+      toast({
+        title: "Erro ao excluir produto",
+        description: "Houve um problema ao excluir o produto.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const validateProductDiscount = (productId: string, discountedPrice: number): boolean => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return true;
+    
+    if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) return true;
+    if (product.price <= 0) return false;
+    
+    const discountPercentage = ((product.price - discountedPrice) / product.price) * 100;
+    return parseFloat(discountPercentage.toFixed(2)) <= parseFloat(product.maxDiscountPercentage.toFixed(2));
+  };
+
+  const getMinimumPrice = (productId: string): number => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return 0;
+    
+    if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) {
+      return 0;
+    }
+    
+    const minimumPrice = product.price * (1 - (product.maxDiscountPercentage / 100));
+    return parseFloat(minimumPrice.toFixed(2));
+  };
+
   const startNewMonth = () => {
     startNewMonthUtil(createBackup);
   };
 
-  // Build context value object
+  // Construir objeto de valor de contexto
   const contextValue: AppContextType = {
     customers,
     products,
@@ -230,39 +349,42 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setDeliveryRoutes,
     setBackups,
     
-    // Route operations with fixed return types
+    // Operações de rota com tipos de retorno fixos
     addRoute,
     updateRoute,
     deleteRoute,
     
-    // Customer operations
+    // Operações de cliente
     addCustomer,
     updateCustomer,
     deleteCustomer,
     generateNextCustomerCode,
     
-    // Product operations
+    // Operações de produto
     addProduct,
     updateProduct,
     deleteProduct,
+    validateProductDiscount,
+    getMinimumPrice,
     
-    // Order operations
+    // Operações de pedido
     getOrderById,
     addOrder,
     updateOrder,
     deleteOrder,
     
-    // Vehicle operations
+    // Operações de veículo
     addVehicle,
     updateVehicle,
     deleteVehicle,
     
-    // Payment operations with fixed return types
+    // Operações de pagamento com tipos de retorno fixos
     addPayment,
     updatePayment,
     deletePayment,
+    createAutomaticPaymentRecord,
     
-    // PaymentMethod operations
+    // Operações de método de pagamento
     addPaymentMethod: async (method) => {
       const { addPaymentMethod } = usePaymentMethods();
       return addPaymentMethod(method);
@@ -276,17 +398,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       await deletePaymentMethod(id);
     },
     
-    // Load operations
+    // Operações de carga
     addLoad,
     updateLoad,
     deleteLoad,
     
-    // SalesRep operations
+    // Operações de representante de vendas
     addSalesRep,
     updateSalesRep,
     deleteSalesRep,
     
-    // PaymentTable operations with fixed return types
+    // Operações de tabela de pagamento com tipos de retorno fixos
     addPaymentTable,
     updatePaymentTable: async (id: string, paymentTable: Partial<PaymentTable>): Promise<void> => {
       await updatePaymentTable(id, paymentTable);
@@ -295,7 +417,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       await deletePaymentTable(id);
     },
     
-    // Product classification operations
+    // Operações de classificação de produto
     addProductGroup,
     updateProductGroup,
     deleteProductGroup,
@@ -306,7 +428,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     updateProductBrand,
     deleteProductBrand,
     
-    // DeliveryRoute operations with fixed return types
+    // Operações de rota de entrega com tipos de retorno fixos
     addDeliveryRoute,
     updateDeliveryRoute: async (id: string, route: Partial<DeliveryRoute>): Promise<void> => {
       await updateDeliveryRoute(id, route);
@@ -315,7 +437,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       await deleteDeliveryRoute(id);
     },
     
-    // Backup operations
+    // Operações de backup
     createBackup,
     restoreBackup: (id) => {
       restoreBackup(id);
