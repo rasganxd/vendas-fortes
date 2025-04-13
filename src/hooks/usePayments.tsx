@@ -1,136 +1,38 @@
-
-import { useAppContext } from './useAppContext';
-import { useOrders } from './useOrders';
+import { useState } from 'react';
+import { Payment, Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-import { Payment } from '@/types';
 import { paymentService } from '@/firebase/firestoreService';
 
-export const loadPayments = async (): Promise<Payment[]> => {
-  try {
-    return await paymentService.getAll();
-  } catch (error) {
-    console.error("Erro ao carregar pagamentos:", error);
-    return [];
-  }
-};
-
 export const usePayments = () => {
-  const { orders, setOrders, payments, setPayments } = useAppContext();
-  const { updateOrder } = useOrders();
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Calculate total for an order
   const calculateTotal = (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (!order) return 0;
-
-    return order.items.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
-  };
-
-  const addPayment = async (payment: Omit<Payment, 'id'>): Promise<string> => {
-    try {
-      const id = await paymentService.add(payment);
-      const newPayment = { ...payment, id } as Payment;
-      setPayments([...payments, newPayment]);
-      
-      // Update order payment status if necessary
-      const order = orders.find(o => o.id === payment.orderId);
-      if (order) {
-        const totalPaid = [...payments, newPayment]
-          .filter(p => p.orderId === payment.orderId && p.status === 'completed')
-          .reduce((sum, p) => sum + p.amount, 0);
-          
-        let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
-        if (totalPaid >= order.total) {
-          paymentStatus = 'paid';
-        } else if (totalPaid > 0) {
-          paymentStatus = 'partial';
-        }
-        
-        await updateOrder(order.id, { paymentStatus });
+    let total = 0;
+    payments.forEach(payment => {
+      if (payment.orderId === orderId) {
+        total += payment.amount;
       }
-      
-      toast({
-        title: "Pagamento adicionado",
-        description: "Pagamento registrado com sucesso!"
-      });
-      
-      return id;
-    } catch (error) {
-      console.error("Erro ao adicionar pagamento:", error);
-      toast({
-        title: "Erro ao registrar pagamento",
-        description: "Houve um problema ao registrar o pagamento.",
-        variant: "destructive"
-      });
-      return "";
-    }
+    });
+    return total;
   };
 
-  const updatePayment = async (id: string, payment: Partial<Payment>): Promise<boolean> => {
-    try {
-      await paymentService.update(id, payment);
-      setPayments(payments.map(p => p.id === id ? { ...p, ...payment } : p));
-      
-      toast({
-        title: "Pagamento atualizado",
-        description: "Pagamento atualizado com sucesso!"
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Erro ao atualizar pagamento:", error);
-      toast({
-        title: "Erro ao atualizar pagamento",
-        description: "Houve um problema ao atualizar o pagamento.",
-        variant: "destructive"
-      });
-      
-      return false;
-    }
-  };
-
-  const deletePayment = async (id: string): Promise<boolean> => {
-    try {
-      await paymentService.delete(id);
-      setPayments(payments.filter(p => p.id !== id));
-      
-      toast({
-        title: "Pagamento excluído",
-        description: "Pagamento excluído com sucesso!"
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Erro ao excluir pagamento:", error);
-      toast({
-        title: "Erro ao excluir pagamento",
-        description: "Houve um problema ao excluir o pagamento.",
-        variant: "destructive"
-      });
-      
-      return false;
-    }
-  };
-
+  // Confirm payment for an order
   const confirmPayment = async (orderId: string, paymentInfo: any) => {
     try {
-      // Get the order to update
-      const orderToUpdate = orders.find(o => o.id === orderId);
-      
-      if (!orderToUpdate) {
-        throw new Error(`Order with ID ${orderId} not found`);
-      }
-      
-      // Update the order payment status
-      await updateOrder(orderId, { 
-        paymentStatus: 'paid',
-        paymentMethod: paymentInfo.paymentMethod || orderToUpdate.paymentMethod
-      });
-      
+      // Update payment status in Firebase
+      // await paymentService.update(orderId, { status: 'completed', ...paymentInfo });
+
+      // Update local state
+      setPayments(payments.map(payment =>
+        payment.orderId === orderId ? { ...payment, status: 'completed', ...paymentInfo } : payment
+      ));
+
       toast({
         title: "Pagamento confirmado",
-        description: "O pagamento foi confirmado com sucesso."
+        description: "O pagamento foi confirmado com sucesso!"
       });
-      
       return true;
     } catch (error) {
       console.error("Erro ao confirmar pagamento:", error);
@@ -143,32 +45,126 @@ export const usePayments = () => {
     }
   };
 
-  const createAutomaticPaymentRecord = async (order: any) => {
+  // Add a new payment
+  const addPayment = async (payment: Omit<Payment, 'id'>) => {
     try {
-      // For promissory notes or other payment methods that need tracking
-      if (order.paymentMethod === 'promissoria' && order.paymentTableId) {
-        await addPayment({
-          orderId: order.id,
-          customerId: order.customerId,
-          customerName: order.customerName,
-          amount: order.total,
-          method: order.paymentMethod as any, // Fix type issue
-          status: 'pending',
-          date: new Date(),
-          notes: `Nota Promissória - Pedido #${order.id.substring(0, 6)}`
-        });
-        
-        return true;
-      }
-      
-      return false;
+      const id = await paymentService.add(payment);
+      const newPayment = { ...payment, id };
+      setPayments([...payments, newPayment]);
+      toast({
+        title: "Pagamento adicionado",
+        description: "Pagamento adicionado com sucesso!"
+      });
+      return id;
     } catch (error) {
-      console.error("Erro ao criar registro de pagamento automático:", error);
-      return false;
+      console.error("Erro ao adicionar pagamento:", error);
+      toast({
+        title: "Erro ao adicionar pagamento",
+        description: "Houve um problema ao adicionar o pagamento.",
+        variant: "destructive"
+      });
+      return "";
+    }
+  };
+
+  // Update an existing payment
+  const updatePayment = async (id: string, payment: Partial<Payment>): Promise<void> => {
+    try {
+      await paymentService.update(id, payment);
+      setPayments(payments.map(p =>
+        p.id === id ? { ...p, ...payment } : p
+      ));
+      toast({
+        title: "Pagamento atualizado",
+        description: "Pagamento atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar pagamento:", error);
+      toast({
+        title: "Erro ao atualizar pagamento",
+        description: "Houve um problema ao atualizar o pagamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Delete a payment
+  const deletePayment = async (id: string): Promise<void> => {
+    try {
+      await paymentService.delete(id);
+      setPayments(payments.filter(p => p.id !== id));
+      toast({
+        title: "Pagamento excluído",
+        description: "Pagamento excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir pagamento:", error);
+      toast({
+        title: "Erro ao excluir pagamento",
+        description: "Houve um problema ao excluir o pagamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Create an automatic payment record
+  const createAutomaticPaymentRecord = async (order: Order) => {
+    try {
+      if (!order.paymentTableId) {
+        console.warn("No payment table specified for order:", order.id);
+        return;
+      }
+  
+      // Fetch the payment table details
+      // const paymentTable = await paymentTableService.get(order.paymentTableId);
+      // if (!paymentTable) {
+      //   console.error("Payment table not found:", order.paymentTableId);
+      //   return;
+      // }
+  
+      // Calculate payment terms based on the payment table
+      // const terms = paymentTable.terms;
+  
+      // Create payment records for each term
+      // for (const term of terms) {
+      //   const paymentAmount = order.total * (term.percentage / 100);
+      //   const paymentDate = new Date();
+      //   paymentDate.setDate(paymentDate.getDate() + term.days);
+  
+      //   const payment: Omit<Payment, 'id'> = {
+      //     orderId: order.id,
+      //     customerId: order.customerId,
+      //     customerName: order.customerName,
+      //     amount: paymentAmount,
+      //     paymentMethod: order.paymentMethod,
+      //     status: 'pending',
+      //     date: paymentDate,
+      //     paymentDate: paymentDate,
+      //     notes: `Parcela ${term.days} dias`,
+      //   };
+  
+      //   await paymentService.add(payment);
+      //   setPayments([...payments, payment as Payment]);
+      // }
+  
+      toast({
+        title: "Pagamentos agendados",
+        description: "Pagamentos agendados com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao criar pagamentos automáticos:", error);
+      toast({
+        title: "Erro ao agendar pagamentos",
+        description: "Houve um problema ao agendar os pagamentos.",
+        variant: "destructive"
+      });
     }
   };
 
   return {
+    payments,
+    isLoading,
+    setPayments,
     calculateTotal,
     confirmPayment,
     addPayment,

@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import { Load, Order, OrderItem } from '@/types';
 import { loadService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
@@ -14,6 +14,7 @@ export const loadLoads = async (): Promise<Load[]> => {
 };
 
 export const useLoads = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const { loads, setLoads } = useAppContext();
 
   const addLoad = async (load: Omit<Load, 'id'>) => {
@@ -210,6 +211,8 @@ export const useLoads = () => {
 
   return {
     loads,
+    isLoading,
+    setLoads,
     addLoad,
     updateLoad,
     deleteLoad,

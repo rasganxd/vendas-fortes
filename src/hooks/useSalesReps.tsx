@@ -1,28 +1,18 @@
-
+import { useState } from 'react';
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
-import { useAppContext } from './useAppContext';
-
-export const loadSalesReps = async (): Promise<SalesRep[]> => {
-  try {
-    return await salesRepService.getAll();
-  } catch (error) {
-    console.error("Erro ao carregar representantes:", error);
-    return [];
-  }
-};
 
 export const useSalesReps = () => {
-  const { salesReps, setSalesReps } = useAppContext();
-  
+  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   // Function to generate next available code
   const generateNextCode = (): number => {
     if (salesReps.length === 0) return 1;
     
     // Find the highest existing code
     const highestCode = salesReps.reduce(
-      (max, rep) => (rep.code && rep.code > max ? rep.code : max), 
+      (max, salesRep) => (salesRep.code && salesRep.code > max ? salesRep.code : max), 
       0
     );
     
@@ -105,6 +95,8 @@ export const useSalesReps = () => {
 
   return {
     salesReps,
+    isLoading,
+    setSalesReps,
     addSalesRep,
     updateSalesRep,
     deleteSalesRep,

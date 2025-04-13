@@ -117,7 +117,7 @@ export const useOrders = () => {
     }
   };
 
-  const deleteOrder = async (id: string) => {
+  const deleteOrder = async (id: string): Promise<void> => {
     try {
       await orderService.delete(id);
       setOrders(orders.filter(o => o.id !== id));
