@@ -1,3 +1,4 @@
+
 import React, { createContext, useState } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
@@ -287,10 +288,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     
     // PaymentTable operations with fixed return types
     addPaymentTable,
-    updatePaymentTable: async (id, paymentTable) => {
+    updatePaymentTable: async (id: string, paymentTable: Partial<PaymentTable>): Promise<void> => {
       await updatePaymentTable(id, paymentTable);
     },
-    deletePaymentTable: async (id) => {
+    deletePaymentTable: async (id: string): Promise<void> => {
       await deletePaymentTable(id);
     },
     
@@ -307,10 +308,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     
     // DeliveryRoute operations with fixed return types
     addDeliveryRoute,
-    updateDeliveryRoute: async (id: string, route: Partial<DeliveryRoute>) => {
+    updateDeliveryRoute: async (id: string, route: Partial<DeliveryRoute>): Promise<void> => {
       await updateDeliveryRoute(id, route);
     },
-    deleteDeliveryRoute: async (id: string) => {
+    deleteDeliveryRoute: async (id: string): Promise<void> => {
       await deleteDeliveryRoute(id);
     },
     

@@ -57,7 +57,7 @@ export const useRoutes = () => {
     }
   };
 
-  const updateRoute = async (id: string, route: Partial<DeliveryRoute>) => {
+  const updateRoute = async (id: string, route: Partial<DeliveryRoute>): Promise<void> => {
     try {
       // Update in Firebase
       await routeService.update(id, route);
@@ -70,7 +70,6 @@ export const useRoutes = () => {
         title: "Rota atualizada",
         description: "Rota atualizada com sucesso!"
       });
-      return true;
     } catch (error) {
       console.error("Erro ao atualizar rota:", error);
       toast({
@@ -78,11 +77,10 @@ export const useRoutes = () => {
         description: "Houve um problema ao atualizar a rota.",
         variant: "destructive"
       });
-      return false;
     }
   };
 
-  const deleteRoute = async (id: string) => {
+  const deleteRoute = async (id: string): Promise<void> => {
     try {
       // Delete from Firebase
       await routeService.delete(id);
@@ -93,7 +91,6 @@ export const useRoutes = () => {
         title: "Rota excluída",
         description: "Rota excluída com sucesso!"
       });
-      return true;
     } catch (error) {
       console.error("Erro ao excluir rota:", error);
       toast({
@@ -101,7 +98,6 @@ export const useRoutes = () => {
         description: "Houve um problema ao excluir a rota.",
         variant: "destructive"
       });
-      return false;
     }
   };
 
