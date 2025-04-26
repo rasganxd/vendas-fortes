@@ -45,6 +45,31 @@ const convertTimestampToDate = (data: any): any => {
   return data;
 };
 
+// Helper to prepare data for Firestore (converting Date objects to Timestamps)
+const prepareDataForFirestore = (data: any): any => {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  const result: any = Array.isArray(data) ? [] : {};
+
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      const value = data[key];
+
+      if (value instanceof Date) {
+        result[key] = Timestamp.fromDate(value);
+      } else if (typeof value === 'object' && value !== null) {
+        result[key] = prepareDataForFirestore(value);
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+
+  return result;
+};
+
 // Generic service functions
 const createService = <T extends { id?: string }>(collectionName: string) => {
   return {
@@ -66,7 +91,12 @@ const createService = <T extends { id?: string }>(collectionName: string) => {
 
     add: async (item: Omit<T, 'id'>): Promise<string> => {
       try {
-        const docRef = await addDoc(collection(firestore, collectionName), item);
+        // Prepare data for Firestore by converting Date objects to Timestamps
+        const firestoreItem = prepareDataForFirestore(item);
+        console.log(`Adding ${collectionName} to Firestore:`, firestoreItem);
+        
+        const docRef = await addDoc(collection(firestore, collectionName), firestoreItem);
+        console.log(`Added ${collectionName} with ID:`, docRef.id);
         return docRef.id;
       } catch (error) {
         console.error(`Erro ao adicionar documento em ${collectionName}:`, error);
@@ -97,7 +127,12 @@ const createService = <T extends { id?: string }>(collectionName: string) => {
     update: async (id: string, item: Partial<T>): Promise<void> => {
       try {
         const docRef = doc(firestore, collectionName, id);
-        await updateDoc(docRef, item as any);
+        // Prepare data for Firestore by converting Date objects to Timestamps
+        const firestoreItem = prepareDataForFirestore(item);
+        console.log(`Updating ${collectionName} with ID ${id}:`, firestoreItem);
+        
+        await updateDoc(docRef, firestoreItem as any);
+        console.log(`Updated ${collectionName} with ID:`, id);
       } catch (error) {
         console.error(`Erro ao atualizar documento com ID ${id} em ${collectionName}:`, error);
         throw error;

@@ -18,29 +18,44 @@ export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
 };
 
 export const usePaymentTables = () => {
-  const { paymentTables, setPaymentTables } = useAppContext();
-  const [isLoading, setIsLoading] = useState(false);
+  const { paymentTables, setPaymentTables, isLoadingPaymentTables } = useAppContext();
+  const [isLoading, setIsLoading] = useState(isLoadingPaymentTables);
   
   // Load payment tables when the hook is first used
   useEffect(() => {
-    if (paymentTables.length === 0) {
-      console.log("Initial load of payment tables");
-      setIsLoading(true);
-      loadPaymentTables().then(tables => {
+    const fetchPaymentTables = async () => {
+      try {
+        console.log("Initial load of payment tables");
+        setIsLoading(true);
+        const tables = await loadPaymentTables();
         if (tables.length > 0) {
           console.log("Setting payment tables:", tables);
           setPaymentTables(tables);
         }
+      } catch (error) {
+        console.error("Erro ao carregar tabelas de pagamento:", error);
+      } finally {
         setIsLoading(false);
-      });
-    }
+      }
+    };
+
+    fetchPaymentTables();
   }, []);
 
   const addPaymentTable = async (paymentTable: Omit<PaymentTable, 'id'>) => {
     try {
-      const id = await paymentTableService.add(paymentTable);
-      const newPaymentTable = { ...paymentTable, id };
+      // Add creation timestamp if not present
+      const paymentTableWithTimestamp = {
+        ...paymentTable,
+        createdAt: paymentTable.createdAt || new Date()
+      };
+
+      const id = await paymentTableService.add(paymentTableWithTimestamp);
+      const newPaymentTable = { ...paymentTableWithTimestamp, id };
+      
+      // Update local state with the new table
       setPaymentTables([...paymentTables, newPaymentTable]);
+      
       toast({
         title: "Tabela de pagamento adicionada",
         description: "Tabela de pagamento adicionada com sucesso!"
@@ -59,10 +74,19 @@ export const usePaymentTables = () => {
 
   const updatePaymentTable = async (id: string, paymentTable: Partial<PaymentTable>): Promise<void> => {
     try {
-      await paymentTableService.update(id, paymentTable);
+      // Add update timestamp
+      const updateData = {
+        ...paymentTable,
+        updatedAt: new Date()
+      };
+      
+      await paymentTableService.update(id, updateData);
+      
+      // Update local state
       setPaymentTables(paymentTables.map(p => 
-        p.id === id ? { ...p, ...paymentTable } : p
+        p.id === id ? { ...p, ...updateData } : p
       ));
+      
       toast({
         title: "Tabela de pagamento atualizada",
         description: "Tabela de pagamento atualizada com sucesso!"
@@ -80,7 +104,10 @@ export const usePaymentTables = () => {
   const deletePaymentTable = async (id: string): Promise<void> => {
     try {
       await paymentTableService.delete(id);
+      
+      // Update local state
       setPaymentTables(paymentTables.filter(p => p.id !== id));
+      
       toast({
         title: "Tabela de pagamento excluída",
         description: "Tabela de pagamento excluída com sucesso!"
