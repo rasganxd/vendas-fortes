@@ -15,6 +15,7 @@ import { useProductGroups } from '@/hooks/useProductGroups';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
+import { useOrders } from '@/hooks/useOrders';
 import { loadProducts } from '@/hooks/useProducts';
 import { AppContextType } from './AppContextTypes';
 import { defaultContextValues } from './defaultContextValues';
@@ -29,16 +30,25 @@ export const AppContext = createContext<AppContextType>(defaultContextValues);
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   // Estados para todos os dados
   const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
   const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
+  
+  // Get order hook data (moved before the useEffect to avoid redeclarations)
+  const { 
+    orders,
+    setOrders,
+    isLoading: isLoadingOrders,
+    getOrderById,
+    addOrder,
+    updateOrder,
+    deleteOrder
+  } = useOrders();
   
   // Load core data on app initialization
   useEffect(() => {
@@ -59,13 +69,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         console.log(`Loaded ${loadedProducts.length} products`);
         setProducts(loadedProducts);
         setIsLoadingProducts(false);
-        
-        // Start loading orders
-        setIsLoadingOrders(true);
-        const loadedOrders = await loadOrders();
-        console.log(`Loaded ${loadedOrders.length} orders`);
-        setOrders(loadedOrders);
-        setIsLoadingOrders(false);
         
       } catch (error) {
         console.error("Error loading core data:", error);
@@ -89,16 +92,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   } = useCustomers();
   
   // Obter dados de outras hooks
-  const { 
-    orders: fetchedOrders,
-    getOrderById,
-    addOrder,
-    updateOrder,
-    deleteOrder,
-    isLoading: isLoadingOrders,
-    setOrders
-  } = useOrders();
-  
   const { 
     payments,
     addPayment,

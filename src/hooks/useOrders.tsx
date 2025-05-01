@@ -18,29 +18,27 @@ export const loadOrders = async (): Promise<Order[]> => {
 };
 
 export const useOrders = () => {
-  const { orders, setOrders } = useAppContext();
-  const [isLoading, setIsLoading] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Initial load if orders array is empty
+  // Initial load
   useEffect(() => {
     const fetchOrders = async () => {
-      if (orders.length === 0) {
-        try {
-          console.log("Initial fetch of orders...");
-          setIsLoading(true);
-          const loadedOrders = await loadOrders();
-          console.log(`Fetched ${loadedOrders.length} orders`);
-          setOrders(loadedOrders);
-        } catch (error) {
-          console.error("Error loading orders:", error);
-        } finally {
-          setIsLoading(false);
-        }
+      try {
+        console.log("Fetching orders...");
+        setIsLoading(true);
+        const loadedOrders = await loadOrders();
+        console.log(`Fetched ${loadedOrders.length} orders`);
+        setOrders(loadedOrders);
+      } catch (error) {
+        console.error("Error loading orders:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchOrders();
-  }, [orders.length, setOrders]);
+  }, []);
 
   const getOrderById = (id: string): Order | undefined => {
     return orders.find(order => order.id === id);
