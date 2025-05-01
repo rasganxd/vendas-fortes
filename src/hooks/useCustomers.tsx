@@ -6,7 +6,10 @@ import { toast } from '@/components/ui/use-toast';
 
 export const loadCustomers = async (): Promise<Customer[]> => {
   try {
-    return await customerService.getAll();
+    console.log("Loading customers from Firebase");
+    const customers = await customerService.getAll();
+    console.log("Loaded customers:", customers);
+    return customers;
   } catch (error) {
     console.error("Erro ao carregar clientes:", error);
     return [];
@@ -22,7 +25,9 @@ export const useCustomers = () => {
     const fetchCustomers = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching customers...");
         const loadedCustomers = await loadCustomers();
+        console.log(`Fetched ${loadedCustomers.length} customers:`, loadedCustomers);
         setCustomers(loadedCustomers);
       } catch (error) {
         console.error("Erro ao carregar clientes:", error);
@@ -50,6 +55,8 @@ export const useCustomers = () => {
   
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
+      console.log("Adding customer:", customer);
+      
       // If no code is provided, generate one
       if (!customer.code) {
         customer.code = generateNextCode();
@@ -57,10 +64,12 @@ export const useCustomers = () => {
       
       // Add to Firebase with code
       const id = await customerService.add(customer);
+      console.log("Customer added with ID:", id);
+      
       const newCustomer = { ...customer, id } as Customer;
       
       // Update local state
-      setCustomers([...customers, newCustomer]);
+      setCustomers(prev => [...prev, newCustomer]);
       toast({
         title: "Cliente adicionado",
         description: "Cliente adicionado com sucesso!"
@@ -79,6 +88,8 @@ export const useCustomers = () => {
 
   const updateCustomer = async (id: string, customer: Partial<Customer>) => {
     try {
+      console.log("Updating customer:", id, customer);
+      
       // Update in Firebase
       await customerService.update(id, customer);
       
@@ -103,6 +114,8 @@ export const useCustomers = () => {
 
   const deleteCustomer = async (id: string) => {
     try {
+      console.log("Deleting customer:", id);
+      
       // Delete from Firebase
       await customerService.delete(id);
       

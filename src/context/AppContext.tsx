@@ -1,7 +1,7 @@
-
 import React, { createContext, useState, useEffect } from 'react';
-import { useCustomers } from '@/hooks/useCustomers';
-import { useOrders } from '@/hooks/useOrders';
+import { useCustomers, loadCustomers } from '@/hooks/useCustomers';
+import { loadOrders } from '@/hooks/useOrders';
+import { customerService, productService, orderService } from '@/firebase/firestoreService';
 import { usePayments } from '@/hooks/usePayments';
 import { useRoutes } from '@/hooks/useRoutes';
 import { useLoads } from '@/hooks/useLoads';
@@ -22,7 +22,6 @@ import { startNewMonth as startNewMonthUtil } from './utils/systemOperations';
 import { Customer, Product, Order, Payment, Route, Load, SalesRep, 
   Vehicle, PaymentMethod, PaymentTable, ProductGroup, 
   ProductCategory, ProductBrand, DeliveryRoute } from '@/types';
-import { productService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
 
 export const AppContext = createContext<AppContextType>(defaultContextValues);
@@ -30,44 +29,68 @@ export const AppContext = createContext<AppContextType>(defaultContextValues);
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   // Estados para todos os dados
   const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
   const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
   
-  // Carregar produtos diretamente
+  // Load core data on app initialization
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchCoreData = async () => {
       try {
+        console.log("Fetching core application data...");
+        
+        // Start loading customers
+        setIsLoadingCustomers(true);
+        const loadedCustomers = await loadCustomers();
+        console.log(`Loaded ${loadedCustomers.length} customers`);
+        setCustomers(loadedCustomers);
+        setIsLoadingCustomers(false);
+        
+        // Start loading products
         setIsLoadingProducts(true);
         const loadedProducts = await loadProducts();
+        console.log(`Loaded ${loadedProducts.length} products`);
         setProducts(loadedProducts);
-      } catch (error) {
-        console.error("Erro ao carregar produtos:", error);
-      } finally {
         setIsLoadingProducts(false);
+        
+        // Start loading orders
+        setIsLoadingOrders(true);
+        const loadedOrders = await loadOrders();
+        console.log(`Loaded ${loadedOrders.length} orders`);
+        setOrders(loadedOrders);
+        setIsLoadingOrders(false);
+        
+      } catch (error) {
+        console.error("Error loading core data:", error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Houve um problema ao carregar os dados do sistema.",
+          variant: "destructive"
+        });
       }
     };
 
-    fetchProducts();
+    fetchCoreData();
   }, []);
-
+  
   // Obter dados do hook de clientes
   const { 
-    customers,
     addCustomer,
     updateCustomer,
     deleteCustomer,
-    generateNextCode: generateNextCustomerCode,
-    isLoading: isLoadingCustomers,
-    setCustomers
+    generateNextCode: generateNextCustomerCode
   } = useCustomers();
   
-  // Obter dados do hook de pedidos
+  // Obter dados de outras hooks
   const { 
-    orders,
+    orders: fetchedOrders,
     getOrderById,
     addOrder,
     updateOrder,
@@ -76,8 +99,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setOrders
   } = useOrders();
   
-  // Obter dados do hook de pagamentos
-  const {
+  const { 
     payments,
     addPayment,
     updatePayment,
@@ -87,7 +109,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     createAutomaticPaymentRecord
   } = usePayments();
   
-  // Obter dados do hook de rotas
   const {
     routes,
     addRoute,
@@ -97,7 +118,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setRoutes
   } = useRoutes();
   
-  // Obter dados do hook de cargas
   const {
     loads,
     addLoad,
@@ -107,7 +127,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setLoads
   } = useLoads();
   
-  // Obter dados do hook de representantes de vendas
   const {
     salesReps,
     addSalesRep,
@@ -117,7 +136,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setSalesReps
   } = useSalesReps();
   
-  // Obter dados do hook de veículos
   const {
     vehicles,
     addVehicle,
@@ -127,7 +145,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setVehicles
   } = useVehicles();
   
-  // Obter dados do hook de tabelas de pagamento
   const {
     paymentTables,
     addPaymentTable,
@@ -137,7 +154,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setPaymentTables
   } = usePaymentTables();
   
-  // Obter grupos, categorias e marcas de produtos
   const {
     productGroups: fetchedProductGroups,
     isLoading: isLoadingProductGroups,
@@ -162,7 +178,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteProductBrand
   } = useProductBrands();
   
-  // Obter dados de rotas de entrega
   const {
     deliveryRoutes: fetchedDeliveryRoutes,
     isLoading: isLoadingDeliveryRoutes,
@@ -171,7 +186,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteDeliveryRoute
   } = useDeliveryRoutes();
   
-  // Obter dados do hook de backups
   const {
     backups,
     createBackup,
@@ -181,7 +195,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setBackups
   } = useBackups();
   
-  // Obter dados do hook de configurações do aplicativo
   const { 
     settings,
     updateSettings,
@@ -197,9 +210,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         : 1);
       const productWithCode = { ...product, code: productCode };
       
+      console.log("Adding product to Firebase:", productWithCode);
+      
       // Adicionar ao Firebase
       const id = await productService.add(productWithCode);
       const newProduct = { ...productWithCode, id };
+      
+      console.log("Product added with ID:", id);
       
       // Atualizar o estado local
       setProducts([...products, newProduct]);

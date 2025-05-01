@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { orderService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
@@ -7,7 +7,10 @@ import { useAppContext } from './useAppContext';
 
 export const loadOrders = async (): Promise<Order[]> => {
   try {
-    return await orderService.getAll();
+    console.log("Loading orders from Firebase");
+    const orders = await orderService.getAll();
+    console.log("Loaded orders:", orders);
+    return orders;
   } catch (error) {
     console.error("Erro ao carregar pedidos:", error);
     return [];
@@ -17,6 +20,27 @@ export const loadOrders = async (): Promise<Order[]> => {
 export const useOrders = () => {
   const { orders, setOrders } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Initial load if orders array is empty
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (orders.length === 0) {
+        try {
+          console.log("Initial fetch of orders...");
+          setIsLoading(true);
+          const loadedOrders = await loadOrders();
+          console.log(`Fetched ${loadedOrders.length} orders`);
+          setOrders(loadedOrders);
+        } catch (error) {
+          console.error("Error loading orders:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchOrders();
+  }, [orders.length, setOrders]);
 
   const getOrderById = (id: string): Order | undefined => {
     return orders.find(order => order.id === id);
