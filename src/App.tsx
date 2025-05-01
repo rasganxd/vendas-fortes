@@ -36,29 +36,31 @@ function App() {
         <TooltipProvider>
           <BrowserRouter>
             <SidebarProvider>
-              <div className="flex min-h-screen w-full bg-gradient-to-br from-blue-50 to-gray-100">
+              <div className="flex min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-slate-100">
                 <SideNav />
                 <div className="flex-1 overflow-hidden">
                   <Toaster />
                   <Sonner />
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/clientes" element={<Customers />} />
-                    <Route path="/produtos" element={<Products />} />
-                    <Route path="/pedidos" element={<Orders />} />
-                    <Route path="/pedidos/novo" element={<NewOrder />} />
-                    <Route path="/pagamentos" element={<Payments />} />
-                    <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
-                    <Route path="/rotas" element={<RoutePlanning />} />
-                    <Route path="/cargas" element={<Loads />} />
-                    <Route path="/cargas/montar" element={<BuildLoad />} />
-                    <Route path="/vendedores" element={<SalesReps />} />
-                    <Route path="/formas-pagamento" element={<PaymentMethods />} />
-                    <Route path="/manutencao" element={<SystemMaintenance />} />
-                    <Route path="/veiculos" element={<Vehicles />} />
-                    <Route path="/configuracoes" element={<Settings />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <div className="h-full overflow-auto p-4 md:p-6 animate-fade-in">
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/clientes" element={<Customers />} />
+                      <Route path="/produtos" element={<Products />} />
+                      <Route path="/pedidos" element={<Orders />} />
+                      <Route path="/pedidos/novo" element={<NewOrder />} />
+                      <Route path="/pagamentos" element={<Payments />} />
+                      <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
+                      <Route path="/rotas" element={<RoutePlanning />} />
+                      <Route path="/cargas" element={<Loads />} />
+                      <Route path="/cargas/montar" element={<BuildLoad />} />
+                      <Route path="/vendedores" element={<SalesReps />} />
+                      <Route path="/formas-pagamento" element={<PaymentMethods />} />
+                      <Route path="/manutencao" element={<SystemMaintenance />} />
+                      <Route path="/veiculos" element={<Vehicles />} />
+                      <Route path="/configuracoes" element={<Settings />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </div>
                 </div>
               </div>
             </SidebarProvider>

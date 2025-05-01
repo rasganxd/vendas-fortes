@@ -1,5 +1,4 @@
 
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -110,7 +109,7 @@
     @apply text-2xl font-bold text-sales-800 mb-6;
   }
   
-  /* Animações */
+  /* Animations */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
@@ -136,5 +135,72 @@
   
   .side-nav-item.active {
     @apply bg-blue-100 text-blue-700 font-medium;
+  }
+  
+  /* New Card Styles */
+  .glass-card {
+    @apply bg-white/90 backdrop-blur-sm border border-gray-100 rounded-xl shadow-lg;
+  }
+  
+  .gradient-bg {
+    @apply bg-gradient-to-br from-blue-50 to-sky-100;
+  }
+  
+  .dashboard-card {
+    @apply bg-white rounded-xl shadow-md p-5 border border-gray-100 hover:shadow-lg transition-all duration-300;
+  }
+  
+  .card-header {
+    @apply text-lg font-semibold text-gray-800 mb-2;
+  }
+  
+  .btn-primary {
+    @apply bg-sales-800 hover:bg-sales-700 text-white font-medium py-2 px-4 rounded-md transition-all;
+  }
+  
+  .btn-secondary {
+    @apply bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md transition-all;
+  }
+  
+  .btn-outline {
+    @apply border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-md transition-all;
+  }
+  
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded;
+  }
+  
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded;
+  }
+  
+  .badge-danger {
+    @apply bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded;
+  }
+  
+  .badge-info {
+    @apply bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded;
+  }
+  
+  .divider {
+    @apply h-px w-full bg-gray-200 my-4;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-pretty {
+    text-wrap: pretty;
   }
 }
