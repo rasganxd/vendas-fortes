@@ -6,23 +6,25 @@ interface PageLayoutProps {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
-  description?: string; // Add description prop to match usage in Settings.tsx
+  description?: string;
 }
 
 export default function PageLayout({ children, title, subtitle, description }: PageLayoutProps) {
   return (
-    <div className="flex-1 bg-gray-50">
+    <div className="flex-1 bg-background">
       <div className="container mx-auto px-4 py-5">
         {title && (
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-sales-800">{title}</h1>
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+              {title}
+            </h1>
             {subtitle && (
-              <p className="mt-1 text-sm text-gray-600">{subtitle}</p>
+              <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
             )}
             {description && (
-              <p className="mt-1 text-sm text-gray-600">{description}</p>
+              <p className="mt-2 text-sm text-gray-500">{description}</p>
             )}
-            <div className="h-1 w-16 bg-sales-800 mt-2 rounded-full"></div>
+            <div className="h-1 w-20 bg-blue-600 mt-3 rounded-full"></div>
           </div>
         )}
         <div>
