@@ -4,18 +4,54 @@ import { ProductBrand } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 
 export const useProductBrands = () => {
+  const currentDate = new Date();
+  
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([
-    { id: '1', name: 'Coca-Cola', description: 'Bebidas Coca-Cola' },
-    { id: '2', name: 'Ambev', description: 'Cervejas e refrigerantes' },
-    { id: '3', name: 'Nestlé', description: 'Alimentos e bebidas' },
-    { id: '4', name: 'Unilever', description: 'Produtos de limpeza e higiene' }
+    { 
+      id: '1', 
+      name: 'Coca-Cola', 
+      description: 'Bebidas Coca-Cola',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate 
+    },
+    { 
+      id: '2', 
+      name: 'Ambev', 
+      description: 'Cervejas e refrigerantes',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate 
+    },
+    { 
+      id: '3', 
+      name: 'Nestlé', 
+      description: 'Alimentos e bebidas',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate 
+    },
+    { 
+      id: '4', 
+      name: 'Unilever', 
+      description: 'Produtos de limpeza e higiene',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate 
+    }
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addProductBrand = async (brand: Omit<ProductBrand, 'id'>) => {
     try {
       const newId = Math.random().toString(36).substring(2, 9);
-      const newBrand = { ...brand, id: newId };
+      const newBrand: ProductBrand = { 
+        ...brand, 
+        id: newId,
+        notes: brand.notes || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       setProductBrands([...productBrands, newBrand]);
       toast({
         title: "Marca adicionada",
@@ -36,7 +72,11 @@ export const useProductBrands = () => {
   const updateProductBrand = async (id: string, brand: Partial<ProductBrand>) => {
     try {
       setProductBrands(
-        productBrands.map(pb => (pb.id === id ? { ...pb, ...brand } : pb))
+        productBrands.map(pb => (pb.id === id ? { 
+          ...pb, 
+          ...brand,
+          updatedAt: new Date()
+        } : pb))
       );
       toast({
         title: "Marca atualizada",

@@ -1,135 +1,125 @@
 
-/**
- * Format a number as Brazilian currency (BRL)
- * @param value - The number to format
- * @returns Formatted currency string
- */
-export const formatCurrency = (value: number | undefined): string => {
-  if (value === undefined || value === null) {
-    return 'R$ 0,00';
-  }
-  
+// Format currency to Brazilian Real format
+export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'BRL',
+    currency: 'BRL'
   }).format(value);
 };
 
-/**
- * Format a number as a percentage
- * @param value - The number to format
- * @returns Formatted percentage string
- */
-export const formatPercent = (value: number | undefined): string => {
+// Convert a number to words (for currency)
+export const formatCurrencyInWords = (value: number | undefined): string => {
   if (value === undefined || value === null) {
-    return '0%';
+    return "zero reais";
   }
-  
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value / 100);
-};
 
-/**
- * Convert a number to its text representation in Portuguese
- * @param value - The number to convert
- * @returns Text representation of the number
- */
-export const numberToWords = (value: number): string => {
-  if (value === undefined || value === null) {
-    return 'zero';
+  if (value === 0) {
+    return "zero reais";
   }
-  
+
   const units = [
-    '', 'um', 'dois', 'três', 'quatro', 'cinco', 
-    'seis', 'sete', 'oito', 'nove', 'dez', 'onze',
-    'doze', 'treze', 'catorze', 'quinze', 'dezesseis',
-    'dezessete', 'dezoito', 'dezenove'
+    "", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", 
+    "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", 
+    "dezoito", "dezenove"
   ];
   
   const tens = [
-    '', '', 'vinte', 'trinta', 'quarenta', 'cinquenta',
-    'sessenta', 'setenta', 'oitenta', 'noventa'
+    "", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"
   ];
   
   const hundreds = [
-    '', 'cento', 'duzentos', 'trezentos', 'quatrocentos',
-    'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'
+    "", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", 
+    "seiscentos", "setecentos", "oitocentos", "novecentos"
   ];
+
+  // Convert to number with 2 decimal places
+  const valueFixed = Math.round(value * 100) / 100;
   
-  if (value === 0) return 'zero';
+  // Split integer and decimal parts
+  const [integerPart, decimalPart = 0] = valueFixed.toString().split('.').map(Number);
   
-  const formatBelowThousand = (n: number): string => {
-    let result = '';
-    
-    if (n >= 100) {
-      if (n === 100) return 'cem';
-      result += hundreds[Math.floor(n / 100)] + ' e ';
-      n %= 100;
+  // Format integer part
+  const formatInteger = (num: number): string => {
+    if (num === 0) return "";
+    if (num < 20) return units[num];
+    if (num < 100) {
+      const unit = num % 10;
+      return tens[Math.floor(num / 10)] + (unit ? " e " + units[unit] : "");
     }
-    
-    if (n >= 20) {
-      result += tens[Math.floor(n / 10)] + ' e ';
-      n %= 10;
+    if (num === 100) return "cem";
+    if (num < 1000) {
+      const remainder = num % 100;
+      return hundreds[Math.floor(num / 100)] + (remainder ? " e " + formatInteger(remainder) : "");
     }
-    
-    if (n > 0) {
-      result += units[n];
-    } else if (result.endsWith(' e ')) {
-      result = result.slice(0, -3); // Remove trailing ' e '
+    if (num < 1000000) {
+      const thousands = Math.floor(num / 1000);
+      const remainder = num % 1000;
+      const thousandsText = thousands === 1 ? "mil" : formatInteger(thousands) + " mil";
+      return thousandsText + (remainder ? " " + formatInteger(remainder) : "");
     }
-    
-    return result;
+    // Handle millions
+    const millions = Math.floor(num / 1000000);
+    const remainder = num % 1000000;
+    const millionsText = millions === 1 ? "um milhão" : formatInteger(millions) + " milhões";
+    return millionsText + (remainder ? " " + formatInteger(remainder) : "");
   };
 
-  // Handle thousands and millions
-  let result = '';
-  if (value >= 1000000) {
-    const millions = Math.floor(value / 1000000);
-    value %= 1000000;
-    result += formatBelowThousand(millions) + (millions === 1 ? ' milhão' : ' milhões');
-    if (value > 0) result += ' e ';
+  // Format the result
+  let result = "";
+  
+  // Integer part
+  if (integerPart === 0) {
+    result = "zero reais";
+  } else {
+    const integerText = formatInteger(integerPart);
+    result = integerText + " " + (integerPart === 1 ? "real" : "reais");
   }
   
-  if (value >= 1000) {
-    const thousands = Math.floor(value / 1000);
-    value %= 1000;
-    result += formatBelowThousand(thousands) + ' mil';
-    if (value > 0) result += ' e ';
-  }
-  
-  if (value > 0) {
-    result += formatBelowThousand(value);
+  // Decimal part (centavos)
+  if (decimalPart > 0) {
+    // For formatting two digits (e.g., 0.05 -> "cinco centavos")
+    const formattedDecimal = decimalPart < 10 ? formatInteger(decimalPart * 10) : formatInteger(decimalPart);
+    result += " e " + formattedDecimal + " " + (decimalPart === 1 ? "centavo" : "centavos");
   }
   
   return result;
 };
 
-/**
- * Format a currency amount in words (for official documents)
- * @param value - The amount to format
- * @returns Text representation of the amount
- */
-export const formatCurrencyInWords = (value: number | undefined): string => {
-  if (value === undefined || value === null) {
-    return 'zero reais';
-  }
-  
-  const intValue = Math.floor(value);
-  const centValue = Math.round((value - intValue) * 100);
-  
-  const reaisText = intValue > 0 ? numberToWords(intValue) + (intValue === 1 ? ' real' : ' reais') : '';
-  const centavosText = centValue > 0 ? numberToWords(centValue) + (centValue === 1 ? ' centavo' : ' centavos') : '';
-  
-  if (reaisText && centavosText) {
-    return reaisText + ' e ' + centavosText;
-  } else if (reaisText) {
-    return reaisText;
-  } else if (centavosText) {
-    return centavosText;
-  } else {
-    return 'zero reais';
-  }
+// Format date to Brazilian format (DD/MM/YYYY)
+export const formatDateBR = (date: Date): string => {
+  return new Intl.DateTimeFormat('pt-BR').format(date);
+};
+
+// Format date to short format (DD/MM/YY)
+export const formatDateShort = (date: Date): string => {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit'
+  }).format(date);
+};
+
+// Format date and time
+export const formatDateTime = (date: Date): string => {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+};
+
+// Format number with thousands separator
+export const formatNumber = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR').format(value);
+};
+
+// Format percentage
+export const formatPercentage = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value / 100);
 };

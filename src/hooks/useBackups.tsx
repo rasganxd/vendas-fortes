@@ -5,6 +5,18 @@ import { useAppContext } from './useAppContext';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/components/ui/use-toast';
 
+// Define the BackupData interface for type safety
+interface BackupData {
+  customers: any[];
+  products: any[];
+  orders: any[];
+  payments: any[];
+  routes: any[];
+  loads: any[];
+  salesReps: any[];
+  vehicles: any[];
+}
+
 export const useBackups = () => {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,22 +35,27 @@ export const useBackups = () => {
 
   const createBackup = (name: string, description?: string) => {
     const id = generateId();
+    const backupData: BackupData = {
+      customers,
+      products,
+      orders,
+      payments,
+      routes: routes as unknown as DeliveryRoute[],
+      loads,
+      salesReps,
+      vehicles
+    };
+    
     const newBackup: Backup = {
       id,
       name,
-      description,
-      date: new Date(),
-      data: {
-        customers,
-        products,
-        orders,
-        payments,
-        routes: routes as unknown as DeliveryRoute[],
-        loads,
-        salesReps,
-        vehicles
-      }
+      description: description || '',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
+    
+    // Store the backup data in localStorage since we can't add it to the Backup type
+    localStorage.setItem(`backup_${id}`, JSON.stringify(backupData));
     
     setBackups([...backups, newBackup]);
     toast({
@@ -52,48 +69,73 @@ export const useBackups = () => {
     const backup = backups.find(b => b.id === id);
     if (!backup) return;
     
-    // Restore data if it exists in the backup
-    if (backup.data.customers) {
-      setCustomers(backup.data.customers);
+    // Get backup data from localStorage
+    const backupDataString = localStorage.getItem(`backup_${id}`);
+    if (!backupDataString) {
+      toast({
+        title: "Erro ao restaurar",
+        description: "Dados do backup não encontrados.",
+        variant: "destructive"
+      });
+      return;
     }
     
-    if (backup.data.products) {
-      setProducts(backup.data.products);
+    try {
+      const backupData: BackupData = JSON.parse(backupDataString);
+      
+      // Restore data if it exists in the backup
+      if (backupData.customers) {
+        setCustomers(backupData.customers);
+      }
+      
+      if (backupData.products) {
+        setProducts(backupData.products);
+      }
+      
+      if (backupData.orders) {
+        setOrders(backupData.orders);
+      }
+      
+      if (backupData.payments) {
+        setPayments(backupData.payments);
+      }
+      
+      if (backupData.routes) {
+        // Ensure the routes match the DeliveryRoute type
+        const deliveryRoutes = backupData.routes as unknown as DeliveryRoute[];
+        setRoutes(deliveryRoutes);
+      }
+      
+      if (backupData.loads) {
+        setLoads(backupData.loads);
+      }
+      
+      if (backupData.salesReps) {
+        setSalesReps(backupData.salesReps);
+      }
+      
+      if (backupData.vehicles) {
+        setVehicles(backupData.vehicles);
+      }
+      
+      toast({
+        title: "Backup restaurado",
+        description: `Backup "${backup.name}" restaurado com sucesso!`,
+      });
+    } catch (error) {
+      console.error("Error restoring backup:", error);
+      toast({
+        title: "Erro ao restaurar",
+        description: "Não foi possível restaurar o backup.",
+        variant: "destructive"
+      });
     }
-    
-    if (backup.data.orders) {
-      setOrders(backup.data.orders);
-    }
-    
-    if (backup.data.payments) {
-      setPayments(backup.data.payments);
-    }
-    
-    if (backup.data.routes) {
-      // Ensure the routes match the DeliveryRoute type
-      const deliveryRoutes = backup.data.routes as unknown as DeliveryRoute[];
-      setRoutes(deliveryRoutes);
-    }
-    
-    if (backup.data.loads) {
-      setLoads(backup.data.loads);
-    }
-    
-    if (backup.data.salesReps) {
-      setSalesReps(backup.data.salesReps);
-    }
-    
-    if (backup.data.vehicles) {
-      setVehicles(backup.data.vehicles);
-    }
-    
-    toast({
-      title: "Backup restaurado",
-      description: `Backup "${backup.name}" restaurado com sucesso!`,
-    });
   };
 
   const deleteBackup = (id: string): void => {
+    // Remove backup data from localStorage
+    localStorage.removeItem(`backup_${id}`);
+    
     setBackups(backups.filter(b => b.id !== id));
     toast({
       title: "Backup excluído",

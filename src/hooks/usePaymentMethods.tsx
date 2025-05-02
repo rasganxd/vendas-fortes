@@ -1,33 +1,43 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { PaymentMethod } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 
 export const usePaymentMethods = () => {
+  const currentDate = new Date();
+  
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    {
-      id: '1',
-      name: 'Dinheiro',
-      type: 'cash',
-      active: true
+    { 
+      id: '1', 
+      name: 'Dinheiro', 
+      description: 'Pagamento em espécie',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
     },
-    {
-      id: '2',
-      name: 'Cartão de Crédito',
-      type: 'credit',
-      active: true
+    { 
+      id: '2', 
+      name: 'Cartão de Crédito', 
+      description: 'Pagamento com cartão de crédito',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
     },
-    {
-      id: '3',
-      name: 'Cartão de Débito',
-      type: 'debit',
-      active: true
+    { 
+      id: '3', 
+      name: 'Cartão de Débito', 
+      description: 'Pagamento com cartão de débito',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
     },
-    {
-      id: '4',
-      name: 'Transferência',
-      type: 'transfer',
-      active: true
+    { 
+      id: '4', 
+      name: 'Transferência Bancária', 
+      description: 'Transferência bancária ou PIX',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,18 +45,24 @@ export const usePaymentMethods = () => {
   const addPaymentMethod = async (method: Omit<PaymentMethod, 'id'>) => {
     try {
       const newId = Math.random().toString(36).substring(2, 9);
-      const newMethod = { ...method, id: newId };
+      const newMethod: PaymentMethod = { 
+        ...method, 
+        id: newId,
+        notes: method.notes || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       setPaymentMethods([...paymentMethods, newMethod]);
       toast({
-        title: "Forma de pagamento adicionada",
-        description: "Forma de pagamento adicionada com sucesso!"
+        title: "Método adicionado",
+        description: "Método de pagamento adicionado com sucesso!"
       });
       return newId;
     } catch (error) {
-      console.error("Erro ao adicionar forma de pagamento:", error);
+      console.error("Erro ao adicionar método:", error);
       toast({
         title: "Erro ao adicionar",
-        description: "Não foi possível adicionar a forma de pagamento.",
+        description: "Não foi possível adicionar o método de pagamento.",
         variant: "destructive"
       });
       return "";
@@ -56,17 +72,21 @@ export const usePaymentMethods = () => {
   const updatePaymentMethod = async (id: string, method: Partial<PaymentMethod>) => {
     try {
       setPaymentMethods(
-        paymentMethods.map(pm => (pm.id === id ? { ...pm, ...method } : pm))
+        paymentMethods.map(pm => (pm.id === id ? { 
+          ...pm, 
+          ...method,
+          updatedAt: new Date()
+        } : pm))
       );
       toast({
-        title: "Forma de pagamento atualizada",
-        description: "Forma de pagamento atualizada com sucesso!"
+        title: "Método atualizado",
+        description: "Método de pagamento atualizado com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao atualizar forma de pagamento:", error);
+      console.error("Erro ao atualizar método:", error);
       toast({
         title: "Erro ao atualizar",
-        description: "Não foi possível atualizar a forma de pagamento.",
+        description: "Não foi possível atualizar o método de pagamento.",
         variant: "destructive"
       });
     }
@@ -76,14 +96,14 @@ export const usePaymentMethods = () => {
     try {
       setPaymentMethods(paymentMethods.filter(pm => pm.id !== id));
       toast({
-        title: "Forma de pagamento excluída",
-        description: "Forma de pagamento excluída com sucesso!"
+        title: "Método excluído",
+        description: "Método de pagamento excluído com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao excluir forma de pagamento:", error);
+      console.error("Erro ao excluir método:", error);
       toast({
         title: "Erro ao excluir",
-        description: "Não foi possível excluir a forma de pagamento.",
+        description: "Não foi possível excluir o método de pagamento.",
         variant: "destructive"
       });
     }

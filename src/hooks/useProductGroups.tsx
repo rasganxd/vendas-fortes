@@ -4,18 +4,54 @@ import { ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 
 export const useProductGroups = () => {
+  const currentDate = new Date();
+  
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([
-    { id: '1', name: 'Bebidas', description: 'Bebidas em geral' },
-    { id: '2', name: 'Alimentos', description: 'Alimentos em geral' },
-    { id: '3', name: 'Limpeza', description: 'Produtos de limpeza' },
-    { id: '4', name: 'Higiene', description: 'Produtos de higiene pessoal' }
+    { 
+      id: '1', 
+      name: 'Bebidas', 
+      description: 'Bebidas em geral',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
+    },
+    { 
+      id: '2', 
+      name: 'Alimentos', 
+      description: 'Alimentos em geral',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
+    },
+    { 
+      id: '3', 
+      name: 'Limpeza', 
+      description: 'Produtos de limpeza',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
+    },
+    { 
+      id: '4', 
+      name: 'Higiene', 
+      description: 'Produtos de higiene pessoal',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
+    }
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addProductGroup = async (group: Omit<ProductGroup, 'id'>) => {
     try {
       const newId = Math.random().toString(36).substring(2, 9);
-      const newGroup = { ...group, id: newId };
+      const newGroup: ProductGroup = { 
+        ...group, 
+        id: newId,
+        notes: group.notes || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       setProductGroups([...productGroups, newGroup]);
       toast({
         title: "Grupo adicionado",
@@ -36,7 +72,11 @@ export const useProductGroups = () => {
   const updateProductGroup = async (id: string, group: Partial<ProductGroup>) => {
     try {
       setProductGroups(
-        productGroups.map(pg => (pg.id === id ? { ...pg, ...group } : pg))
+        productGroups.map(pg => (pg.id === id ? { 
+          ...pg, 
+          ...group,
+          updatedAt: new Date()
+        } : pg))
       );
       toast({
         title: "Grupo atualizado",

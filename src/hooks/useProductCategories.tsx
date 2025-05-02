@@ -4,18 +4,58 @@ import { ProductCategory } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 
 export const useProductCategories = () => {
+  const currentDate = new Date();
+  
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([
-    { id: '1', name: 'Refrigerantes', groupId: '1', description: 'Refrigerantes em lata e garrafa' },
-    { id: '2', name: 'Cervejas', groupId: '1', description: 'Cervejas em lata e garrafa' },
-    { id: '3', name: 'Biscoitos', groupId: '2', description: 'Biscoitos e bolachas' },
-    { id: '4', name: 'Detergentes', groupId: '3', description: 'Detergentes líquidos e em pó' }
+    { 
+      id: '1', 
+      name: 'Refrigerantes', 
+      groupId: '1', 
+      description: 'Refrigerantes em lata e garrafa',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
+    },
+    { 
+      id: '2', 
+      name: 'Cervejas', 
+      groupId: '1', 
+      description: 'Cervejas em lata e garrafa',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
+    },
+    { 
+      id: '3', 
+      name: 'Biscoitos', 
+      groupId: '2', 
+      description: 'Biscoitos e bolachas',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
+    },
+    { 
+      id: '4', 
+      name: 'Detergentes', 
+      groupId: '3', 
+      description: 'Detergentes líquidos e em pó',
+      notes: '',
+      createdAt: currentDate,
+      updatedAt: currentDate
+    }
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addProductCategory = async (category: Omit<ProductCategory, 'id'>) => {
     try {
       const newId = Math.random().toString(36).substring(2, 9);
-      const newCategory = { ...category, id: newId };
+      const newCategory: ProductCategory = { 
+        ...category, 
+        id: newId,
+        notes: category.notes || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       setProductCategories([...productCategories, newCategory]);
       toast({
         title: "Categoria adicionada",
@@ -36,7 +76,11 @@ export const useProductCategories = () => {
   const updateProductCategory = async (id: string, category: Partial<ProductCategory>) => {
     try {
       setProductCategories(
-        productCategories.map(pc => (pc.id === id ? { ...pc, ...category } : pc))
+        productCategories.map(pc => (pc.id === id ? { 
+          ...pc, 
+          ...category,
+          updatedAt: new Date()
+        } : pc))
       );
       toast({
         title: "Categoria atualizada",

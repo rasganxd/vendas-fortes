@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect } from 'react';
 import { useCustomers, loadCustomers } from '@/hooks/useCustomers';
 import { loadOrders } from '@/hooks/useOrders';
@@ -20,7 +21,7 @@ import { loadProducts } from '@/hooks/useProducts';
 import { AppContextType } from './AppContextTypes';
 import { defaultContextValues } from './defaultContextValues';
 import { startNewMonth as startNewMonthUtil } from './utils/systemOperations';
-import { Customer, Product, Order, Payment, Route, Load, SalesRep, 
+import { Customer, Product, Order, Payment, Load, SalesRep, 
   Vehicle, PaymentMethod, PaymentTable, ProductGroup, 
   ProductCategory, ProductBrand, DeliveryRoute } from '@/types';
 import { toast } from '@/components/ui/use-toast';
@@ -309,6 +310,39 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     startNewMonthUtil(createBackup);
   };
 
+  // Add clearCache implementation
+  const clearCache = async (): Promise<void> => {
+    try {
+      console.log("Clearing application cache...");
+      // Clear local storage
+      localStorage.clear();
+      // Reset any internal cache states you might have
+      
+      // Refresh data from server/database
+      const loadedCustomers = await loadCustomers();
+      setCustomers(loadedCustomers);
+      
+      const loadedProducts = await loadProducts();
+      setProducts(loadedProducts);
+      
+      const loadedOrders = await loadOrders();
+      setOrders(loadedOrders);
+      
+      toast({
+        title: "Cache limpo",
+        description: "Cache do aplicativo limpo com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao limpar cache:", error);
+      toast({
+        title: "Erro",
+        description: "Houve um erro ao limpar o cache do aplicativo.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   // Construir objeto de valor de contexto
   const contextValue: AppContextType = {
     customers,
@@ -460,7 +494,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     
     settings,
     updateSettings,
-    startNewMonth
+    startNewMonth,
+    clearCache // Add clearCache to the context value
   };
 
   return (

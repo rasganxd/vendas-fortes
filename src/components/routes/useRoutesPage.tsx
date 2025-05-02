@@ -82,7 +82,7 @@ export const useRoutesPage = () => {
     const newStop: RouteStop = {
       id: Math.random().toString(36).substring(2, 10),
       orderId: order.id,
-      customerId: order.customerId, // Adding the required customerId
+      customerId: order.customerId,
       customerName: order.customerName,
       address: order.deliveryAddress || '',
       city: order.deliveryCity || '',
@@ -133,7 +133,7 @@ export const useRoutesPage = () => {
       date: date,
       vehicleId: vehicleId,
       vehicleName: selectedVehicle ? selectedVehicle.name : '',
-      status: 'pending', // Use 'pending' instead of 'planning' to match the type
+      status: 'pending',
       stops: [],
       driverId: '',
       driverName: '',

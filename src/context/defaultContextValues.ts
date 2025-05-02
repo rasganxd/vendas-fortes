@@ -64,8 +64,8 @@ export const defaultContextValues: AppContextType = {
   addProduct: async () => "",
   updateProduct: async () => {},
   deleteProduct: async () => {},
-  validateProductDiscount: () => true,  // Add the missing property
-  getMinimumPrice: () => 0,  // Add the missing property
+  validateProductDiscount: () => true,
+  getMinimumPrice: () => 0,
   getOrderById: () => undefined,
   addOrder: async () => "",
   updateOrder: async () => "",
@@ -106,5 +106,6 @@ export const defaultContextValues: AppContextType = {
   settings: null,
   updateSettings: async () => false,
   startNewMonth: () => {},
-  createAutomaticPaymentRecord: async () => {},  // Add the missing property
+  createAutomaticPaymentRecord: async () => {},
+  clearCache: async () => {}, // Add the missing clearCache property
 };
