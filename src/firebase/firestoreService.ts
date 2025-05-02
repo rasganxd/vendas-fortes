@@ -1,4 +1,3 @@
-
 import { db as firestore } from './config';
 import { 
   collection,
@@ -178,7 +177,9 @@ export const orderService = {
             : new Date(data.createdAt),
           items: data.items.map(item => ({
             ...item,
-            productCode: item.productCode // Preserve product code
+            productCode: item.productCode || 0,
+            price: item.price || item.unitPrice || 0,
+            discount: item.discount || 0
           }))
         } as Order;
       });
@@ -250,10 +251,12 @@ export const orderService = {
         order.items = order.items.map(item => ({
           productId: item.productId,
           productName: item.productName,
-          productCode: item.productCode,
+          productCode: item.productCode || 0,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          total: item.unitPrice * item.quantity
+          price: item.price || item.unitPrice || 0,
+          unitPrice: item.unitPrice || item.price || 0,
+          discount: item.discount || 0,
+          total: (item.unitPrice || item.price || 0) * item.quantity
         }));
       }
       

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { ProductCategory } from '@/types';
 import { toast } from '@/components/ui/use-toast';
@@ -10,7 +9,6 @@ export const useProductCategories = () => {
     { 
       id: '1', 
       name: 'Refrigerantes', 
-      groupId: '1', 
       description: 'Refrigerantes em lata e garrafa',
       notes: '',
       createdAt: currentDate,
@@ -19,7 +17,6 @@ export const useProductCategories = () => {
     { 
       id: '2', 
       name: 'Cervejas', 
-      groupId: '1', 
       description: 'Cervejas em lata e garrafa',
       notes: '',
       createdAt: currentDate,
@@ -28,7 +25,6 @@ export const useProductCategories = () => {
     { 
       id: '3', 
       name: 'Biscoitos', 
-      groupId: '2', 
       description: 'Biscoitos e bolachas',
       notes: '',
       createdAt: currentDate,
@@ -37,7 +33,6 @@ export const useProductCategories = () => {
     { 
       id: '4', 
       name: 'Detergentes', 
-      groupId: '3', 
       description: 'Detergentes líquidos e em pó',
       notes: '',
       createdAt: currentDate,

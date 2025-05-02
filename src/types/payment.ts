@@ -33,6 +33,8 @@ export interface PaymentMethod {
   notes: string;
   createdAt: Date;
   updatedAt: Date;
+  type?: string; // Added type property
+  active?: boolean; // Added active property
 }
 
 export interface PaymentTable {
@@ -44,13 +46,24 @@ export interface PaymentTable {
   createdAt: Date;
   updatedAt: Date;
   type?: string;
-  terms?: string;
+  terms?: PaymentTableInstallment[];
   payableTo?: string;
   paymentLocation?: string;
+  active?: boolean; // Added active property
 }
 
 export interface PaymentTableInstallment {
   installment: number;
   percentage: number;
   days: number;
+  id?: string; // Added ID for identification
+  description?: string; // Added description
+}
+
+// Add this interface for PaymentTableTerm for compatibility
+export interface PaymentTableTerm {
+  id: string;
+  days: number;
+  percentage: number;
+  description?: string;
 }

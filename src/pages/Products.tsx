@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import {
@@ -29,7 +29,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -44,21 +43,36 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash, CloudUpload } from 'lucide-react';
+import { Plus, Search, Edit, Trash } from 'lucide-react';
 import { Product } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+interface FormErrors {
+  code?: string;
+  name?: string;
+  price?: string;
+  stock?: string;
+}
 
 export default function Products() {
-  const { products, addProduct, updateProduct, deleteProduct } = useAppContext();
+  const { products, addProduct, updateProduct, deleteProduct, productCategories } = useAppContext();
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [firestoreStatus, setFirestoreStatus] = useState<{ success: boolean; message: string } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product>({
+    id: '',
+    code: 0,
+    name: '',
+    description: '',
+    price: 0,
+    cost: 0,
+    stock: 0,
+    minStock: 0,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
   const [formData, setFormData] = useState({
     code: 0,
     name: '',
@@ -66,156 +80,158 @@ export default function Products() {
     price: 0,
     unit: '',
     stock: 0,
+    minStock: 0,
     category: '',
     costPrice: 0,
     maxDiscountPercentage: 0
   });
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  const categories = ['Grãos', 'Mercearia', 'Massas', 'Bebidas', 'Higiene', 'Limpeza', 'Outros'];
-  const units = ['kg', 'litro', 'pacote', 'unidade', 'caixa', 'fardo'];
+  const filterProducts = () => {
+    return products.filter(product => {
+      const nameMatch = product.name.toLowerCase().includes(search.toLowerCase());
+      const codeMatch = product.code.toString().includes(search);
+      const categoryMatch = selectedCategory ? (product.categoryId === selectedCategory) : true;
+      return (nameMatch || codeMatch) && categoryMatch;
+    });
+  };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(search.toLowerCase()) ||
-    product.description.toLowerCase().includes(search.toLowerCase()) ||
-    product.category.toLowerCase().includes(search.toLowerCase()) ||
-    (product.code?.toString() || '').includes(search)
-  );
+  const validateForm = (): boolean => {
+    let errors: FormErrors = {};
+    if (!formData.code) {
+      errors.code = 'Código é obrigatório';
+    }
+    if (!formData.name) {
+      errors.name = 'Nome é obrigatório';
+    }
+    if (!formData.price) {
+      errors.price = 'Preço é obrigatório';
+    }
+    if (!formData.stock) {
+      errors.stock = 'Estoque é obrigatório';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === 'price' || name === 'stock' || name === 'code' || name === 'costPrice') {
-      setFormData(prev => ({ ...prev, [name]: Number(value) }));
-    } else if (name === 'maxDiscountPercentage') {
-      setFormData(prev => ({ ...prev, [name]: parseFloat(value) }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+  const handleAddProduct = async () => {
+    if (validateForm()) {
+      try {
+        const newProduct = {
+          code: Number(formData.code),
+          name: formData.name,
+          description: formData.description,
+          price: Number(formData.price),
+          unit: formData.unit,
+          stock: Number(formData.stock),
+          minStock: Number(formData.minStock || 0),
+          categoryId: formData.category, // Use categoryId instead of category
+          cost: Number(formData.costPrice || 0), // Use cost instead of costPrice
+          maxDiscountPercentage: Number(formData.maxDiscountPercentage || 0),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        await addProduct(newProduct);
+        setIsAddDialogOpen(false);
+      } catch (error) {
+        console.error("Error adding product:", error);
+      }
     }
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleUpdateProduct = async () => {
+    if (validateForm()) {
+      try {
+        await updateProduct(editingProduct.id, {
+          code: Number(formData.code),
+          name: formData.name,
+          description: formData.description,
+          price: Number(formData.price),
+          unit: formData.unit,
+          stock: Number(formData.stock),
+          minStock: Number(formData.minStock || 0),
+          categoryId: formData.category, // Use categoryId instead of category
+          cost: Number(formData.costPrice || 0), // Use cost instead of costPrice
+          maxDiscountPercentage: Number(formData.maxDiscountPercentage || 0),
+          updatedAt: new Date()
+        });
+        setIsEditDialogOpen(false);
+      } catch (error) {
+        console.error("Error updating product:", error);
+      }
+    }
   };
 
-  const handleAddClick = () => {
-    const nextCode = products.length > 0 
-      ? Math.max(...products.map(p => p.code || 0)) + 1 
-      : 1;
-    
+  const handleDeleteProduct = async () => {
+    try {
+      await deleteProduct(editingProduct.id);
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
+  };
+
+  const handleOpenAddDialog = () => {
     setFormData({
-      code: nextCode,
+      code: 0,
       name: '',
       description: '',
       price: 0,
       unit: '',
       stock: 0,
+      minStock: 0,
       category: '',
       costPrice: 0,
       maxDiscountPercentage: 0
     });
-    
+    setFormErrors({});
     setIsAddDialogOpen(true);
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setFirestoreStatus(null);
-    
-    try {
-      await addProduct(formData);
-      
-      setFirestoreStatus({
-        success: true,
-        message: "Produto salvo com sucesso"
-      });
-      
-      setTimeout(() => {
-        setIsAddDialogOpen(false);
-        setFirestoreStatus(null);
-      }, 2000);
-    } catch (error) {
-      console.error("Erro ao salvar produto:", error);
-      setFirestoreStatus({
-        success: false,
-        message: `Erro ao salvar: ${(error as Error).message}`
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEditClick = (product: Product) => {
-    setSelectedProduct(product);
+  const handleOpenEditDialog = (product: Product) => {
+    setEditingProduct(product);
     setFormData({
       code: product.code,
       name: product.name,
       description: product.description,
       price: product.price,
-      unit: product.unit,
+      unit: product.unit || '',
       stock: product.stock,
-      category: product.category,
-      costPrice: product.costPrice || 0,
+      minStock: product.minStock || 0,
+      category: product.categoryId || '',
+      costPrice: product.cost || 0,
       maxDiscountPercentage: product.maxDiscountPercentage || 0
     });
+    setFormErrors({});
     setIsEditDialogOpen(true);
   };
 
-  const handleEditProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedProduct) {
-      setIsSubmitting(true);
-      setFirestoreStatus(null);
-      
-      try {
-        await updateProduct(selectedProduct.id, formData);
-        setFirestoreStatus({
-          success: true,
-          message: "Produto atualizado com sucesso"
-        });
-        
-        setTimeout(() => {
-          setIsEditDialogOpen(false);
-          setFirestoreStatus(null);
-        }, 2000);
-      } catch (error) {
-        console.error("Erro ao atualizar produto:", error);
-        setFirestoreStatus({
-          success: false,
-          message: `Erro ao atualizar: ${(error as Error).message}`
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
-  const handleDeleteClick = (product: Product) => {
-    setSelectedProduct(product);
+  const handleOpenDeleteDialog = (product: Product) => {
+    setEditingProduct(product);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteProduct = async () => {
-    if (selectedProduct) {
-      setIsSubmitting(true);
-      
-      try {
-        await deleteProduct(selectedProduct.id);
-        toast({
-          title: "Produto excluído",
-          description: `Produto ${selectedProduct.name} foi excluído do Firebase com sucesso.`,
-        });
-      } catch (error) {
-        toast({
-          title: "Erro ao excluir",
-          description: `Erro ao excluir do Firebase: ${(error as Error).message}`,
-          variant: "destructive"
-        });
-      } finally {
-        setIsSubmitting(false);
-        setIsDeleteDialogOpen(false);
-      }
-    }
+  const handleCloseDialog = () => {
+    setIsAddDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setIsDeleteDialogOpen(false);
+    setFormErrors({});
+  };
+
+  const renderCategoryName = (product: Product) => {
+    if (!product.categoryId) return "-";
+    const category = productCategories.find(c => c.id === product.categoryId);
+    return category ? category.name : "-";
+  };
+
+  const renderCostPrice = (product: Product) => {
+    return formatCurrency(product.cost); // Use cost instead of costPrice
+  };
+
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || value === null) return 'R$ 0,00';
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
   return (
@@ -224,14 +240,14 @@ export default function Products() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Catálogo de Produtos</CardTitle>
+              <CardTitle>Lista de Produtos</CardTitle>
               <CardDescription>
-                Gerencie seu estoque e preços - Integração com Firebase Firestore ativa
+                Gerencie seus produtos
               </CardDescription>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleAddClick}>
+                <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleOpenAddDialog}>
                   <Plus size={16} className="mr-2" /> Novo Produto
                 </Button>
               </DialogTrigger>
@@ -239,160 +255,111 @@ export default function Products() {
                 <DialogHeader>
                   <DialogTitle>Adicionar Produto</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleAddProduct}>
-                  {firestoreStatus && (
-                    <Alert className={firestoreStatus.success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}>
-                      {firestoreStatus.success ? (
-                        <CloudUpload className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <CloudUpload className="h-4 w-4 text-red-600" />
-                      )}
-                      <AlertTitle>
-                        {firestoreStatus.success ? "Sucesso!" : "Erro!"}
-                      </AlertTitle>
-                      <AlertDescription>
-                        {firestoreStatus.message}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="code">Código do Produto</Label>
-                      <Input
-                        id="code"
-                        name="code"
-                        type="number"
-                        min="1"
-                        value={formData.code}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Nome do Produto</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Descrição</Label>
-                      <Textarea
-                        id="description"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        rows={3}
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="costPrice">Preço de Custo</Label>
-                        <Input
-                          id="costPrice"
-                          name="costPrice"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.costPrice}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="price">Preço de Venda</Label>
-                        <Input
-                          id="price"
-                          name="price"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.price}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="maxDiscountPercentage">Desconto Máximo (%)</Label>
-                        <Input
-                          id="maxDiscountPercentage"
-                          name="maxDiscountPercentage"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          value={formData.maxDiscountPercentage}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stock">Estoque</Label>
-                        <Input
-                          id="stock"
-                          name="stock"
-                          type="number"
-                          min="0"
-                          value={formData.stock}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="unit">Unidade</Label>
-                        <Select
-                          value={formData.unit}
-                          onValueChange={(value) => handleSelectChange('unit', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {units.map(unit => (
-                              <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="category">Categoria</Label>
-                        <Select
-                          value={formData.category}
-                          onValueChange={(value) => handleSelectChange('category', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map(category => (
-                              <SelectItem key={category} value={category}>{category}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-code">Código</Label>
+                    <Input
+                      id="new-code"
+                      type="number"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: Number(e.target.value) })}
+                    />
+                    {formErrors.code && <p className="text-red-500 text-sm">{formErrors.code}</p>}
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      className="bg-sales-800 hover:bg-sales-700"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Salvando..." : "Salvar"}
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-name">Nome</Label>
+                    <Input
+                      id="new-name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                    {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
                   </div>
-                </form>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-description">Descrição</Label>
+                    <Input
+                      id="new-description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-price">Preço</Label>
+                    <Input
+                      id="new-price"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    />
+                    {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-unit">Unidade</Label>
+                    <Input
+                      id="new-unit"
+                      value={formData.unit}
+                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-stock">Estoque</Label>
+                    <Input
+                      id="new-stock"
+                      type="number"
+                      value={formData.stock}
+                      onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                    />
+                    {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="new-minStock">Estoque Mínimo</Label>
+                    <Input
+                      id="new-minStock"
+                      type="number"
+                      value={formData.minStock}
+                      onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-category">Categoria</Label>
+                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {productCategories.map(category => (
+                          <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-costPrice">Preço de Custo</Label>
+                    <Input
+                      id="new-costPrice"
+                      type="number"
+                      value={formData.costPrice}
+                      onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-maxDiscountPercentage">Máximo % de Desconto</Label>
+                    <Input
+                      id="new-maxDiscountPercentage"
+                      type="number"
+                      value={formData.maxDiscountPercentage}
+                      onChange={(e) => setFormData({ ...formData, maxDiscountPercentage: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleAddProduct}>
+                    Adicionar
+                  </Button>
+                </div>
               </DialogContent>
             </Dialog>
           </div>
@@ -408,6 +375,20 @@ export default function Products() {
                 className="pl-10"
               />
             </div>
+            <div className="mt-2">
+              <Label htmlFor="category-filter">Filtrar por Categoria:</Label>
+              <Select onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Todas as Categorias" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas as Categorias</SelectItem>
+                  {productCategories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="relative overflow-x-auto rounded-md border">
             <Table>
@@ -416,54 +397,32 @@ export default function Products() {
                   <TableHead>Código</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Custo</TableHead>
                   <TableHead>Preço</TableHead>
                   <TableHead>Estoque</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => (
+                {filterProducts().map((product) => (
                   <TableRow key={product.id}>
-                    <TableCell className="font-medium">
-                      {product.code || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-xs text-gray-500">{product.description}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{product.category}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {product.costPrice !== undefined ? product.costPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`font-medium ${
-                        product.stock < 50 ? 'text-red-600' : 
-                        product.stock < 100 ? 'text-yellow-600' : 'text-green-600'
-                      }`}>
-                        {product.stock}
-                      </span>
-                    </TableCell>
+                    <TableCell className="font-medium">{product.code}</TableCell>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>{renderCategoryName(product)}</TableCell>
+                    <TableCell>{formatCurrency(product.price)}</TableCell>
+                    <TableCell>{product.stock}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleEditClick(product)}
+                          onClick={() => handleOpenEditDialog(product)}
                         >
                           <Edit size={16} />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteClick(product)}
+                          onClick={() => handleOpenDeleteDialog(product)}
                         >
                           <Trash size={16} />
                         </Button>
@@ -483,160 +442,111 @@ export default function Products() {
           <DialogHeader>
             <DialogTitle>Editar Produto</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleEditProduct}>
-            {firestoreStatus && (
-              <Alert className={firestoreStatus.success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}>
-                {firestoreStatus.success ? (
-                  <CloudUpload className="h-4 w-4 text-green-600" />
-                ) : (
-                  <CloudUpload className="h-4 w-4 text-red-600" />
-                )}
-                <AlertTitle>
-                  {firestoreStatus.success ? "Sucesso!" : "Erro!"}
-                </AlertTitle>
-                <AlertDescription>
-                  {firestoreStatus.message}
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-code">Código do Produto</Label>
-                <Input
-                  id="edit-code"
-                  name="code"
-                  type="number"
-                  min="1"
-                  value={formData.code}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Nome do Produto</Label>
-                <Input
-                  id="edit-name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Descrição</Label>
-                <Textarea
-                  id="edit-description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-costPrice">Preço de Custo</Label>
-                  <Input
-                    id="edit-costPrice"
-                    name="costPrice"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.costPrice}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-price">Preço de Venda</Label>
-                  <Input
-                    id="edit-price"
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-maxDiscountPercentage">Desconto Máximo (%)</Label>
-                  <Input
-                    id="edit-maxDiscountPercentage"
-                    name="maxDiscountPercentage"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={formData.maxDiscountPercentage}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-stock">Estoque</Label>
-                  <Input
-                    id="edit-stock"
-                    name="stock"
-                    type="number"
-                    min="0"
-                    value={formData.stock}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-unit">Unidade</Label>
-                  <Select
-                    value={formData.unit}
-                    onValueChange={(value) => handleSelectChange('unit', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {units.map(unit => (
-                        <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-category">Categoria</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => handleSelectChange('category', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-code">Código</Label>
+              <Input
+                id="edit-code"
+                type="number"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: Number(e.target.value) })}
+              />
+              {formErrors.code && <p className="text-red-500 text-sm">{formErrors.code}</p>}
             </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                className="bg-sales-800 hover:bg-sales-700"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Atualizando..." : "Atualizar"}
-              </Button>
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome</Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+              {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
             </div>
-          </form>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Descrição</Label>
+              <Input
+                id="edit-description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-price">Preço</Label>
+              <Input
+                id="edit-price"
+                type="number"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+              />
+              {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-unit">Unidade</Label>
+              <Input
+                id="edit-unit"
+                value={formData.unit}
+                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-stock">Estoque</Label>
+              <Input
+                id="edit-stock"
+                type="number"
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+              />
+              {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-minStock">Estoque Mínimo</Label>
+              <Input
+                id="edit-minStock"
+                type="number"
+                value={formData.minStock}
+                onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-category">Categoria</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productCategories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-costPrice">Preço de Custo</Label>
+              <Input
+                id="edit-costPrice"
+                type="number"
+                value={formData.costPrice}
+                onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-maxDiscountPercentage">Máximo % de Desconto</Label>
+              <Input
+                id="edit-maxDiscountPercentage"
+                type="number"
+                value={formData.maxDiscountPercentage}
+                onChange={(e) => setFormData({ ...formData, maxDiscountPercentage: Number(e.target.value) })}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={handleCloseDialog}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleUpdateProduct}>
+              Atualizar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -646,17 +556,13 @@ export default function Products() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmação de exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o produto {selectedProduct?.name}? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o produto {editingProduct.name}? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteProduct} 
-              className="bg-red-600 hover:bg-red-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Excluindo..." : "Excluir"}
+            <AlertDialogCancel onClick={handleCloseDialog}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProduct} className="bg-red-600 hover:bg-red-700">
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

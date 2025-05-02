@@ -34,7 +34,7 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Trash, Edit, Plus, Info, Calendar, CreditCard, Banknote, FileText, Check } from 'lucide-react';
 import { formatDateToBR } from '@/lib/date-utils';
 import { toast } from "@/components/ui/use-toast";
-import { PaymentTable, PaymentTableTerm } from '@/types';
+import { PaymentTable, PaymentTableInstallment, PaymentTableTerm } from '@/types';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import {
   Select,
@@ -164,7 +164,8 @@ export default function PaymentTables() {
           name: tableForm.name,
           description: tableForm.description,
           type: tableForm.type,
-          active: tableForm.active
+          active: tableForm.active,
+          installments: editingTable.installments // Preserve existing installments
         });
         toast({ title: "Tabela atualizada com sucesso" });
       } else {
@@ -174,7 +175,11 @@ export default function PaymentTables() {
           description: tableForm.description,
           type: tableForm.type,
           active: tableForm.active,
-          terms: []
+          terms: [], // Initialize with empty terms array
+          installments: [], // Initialize with empty installments array
+          notes: '',
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
         
         // Find the new table in paymentTables and set it as selected
@@ -195,6 +200,7 @@ export default function PaymentTables() {
     }
   };
 
+  // Fix the terms handling to work with arrays
   const handleSubmitTerm = async () => {
     if (!selectedTable) return;
 
@@ -208,11 +214,15 @@ export default function PaymentTables() {
     }
 
     try {
-      let updatedTerms: PaymentTableTerm[];
+      let updatedTerms: PaymentTableTerm[] = [];
+      
+      if (!selectedTable.terms) {
+        selectedTable.terms = [];
+      }
       
       if (editingTerm) {
         // Update existing term
-        updatedTerms = selectedTable.terms.map(term => 
+        updatedTerms = Array.isArray(selectedTable.terms) ? selectedTable.terms.map(term => 
           term.id === editingTerm.id 
             ? {
                 ...term,
@@ -221,7 +231,7 @@ export default function PaymentTables() {
                 description: termForm.description
               }
             : term
-        );
+        ) : [];
       } else {
         // Create new term
         const newTerm: PaymentTableTerm = {
@@ -230,7 +240,7 @@ export default function PaymentTables() {
           percentage: termForm.percentage,
           description: termForm.description
         };
-        updatedTerms = [...selectedTable.terms, newTerm];
+        updatedTerms = Array.isArray(selectedTable.terms) ? [...selectedTable.terms, newTerm] : [newTerm];
       }
 
       // Sort terms by days
@@ -262,7 +272,8 @@ export default function PaymentTables() {
       await deletePaymentTable(deletingItemId);
       
       if (selectedTable && selectedTable.id === deletingItemId) {
-        setSelectedTable(paymentTables.filter(t => t.id !== deletingItemId)[0] || null);
+        const remainingTables = paymentTables.filter(t => t.id !== deletingItemId);
+        setSelectedTable(remainingTables.length > 0 ? remainingTables[0] : null);
       }
       
       toast({ title: "Tabela excluída com sucesso" });
@@ -280,10 +291,11 @@ export default function PaymentTables() {
   };
 
   const handleDeleteTerm = async () => {
-    if (!deletingItemId || !selectedTable) return;
+    if (!deletingItemId || !selectedTable || !selectedTable.terms) return;
     
     try {
-      const updatedTerms = selectedTable.terms.filter(term => term.id !== deletingItemId);
+      const termsArray = Array.isArray(selectedTable.terms) ? selectedTable.terms : [];
+      const updatedTerms = termsArray.filter(term => term.id !== deletingItemId);
       
       await updatePaymentTable(selectedTable.id, {
         terms: updatedTerms
@@ -303,7 +315,8 @@ export default function PaymentTables() {
     }
   };
 
-  const calculateTotal = (terms: PaymentTableTerm[]) => {
+  const calculateTotal = (terms: PaymentTableTerm[] | undefined) => {
+    if (!terms || !Array.isArray(terms)) return 0;
     return terms.reduce((sum, term) => sum + term.percentage, 0);
   };
 

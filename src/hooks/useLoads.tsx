@@ -169,10 +169,10 @@ export const useLoads = () => {
           productName: item.productName,
           productCode: item.productCode || 0,
           quantity: item.quantity,
-          unitPrice: (item.orderItems && item.orderItems[0]?.unitPrice) || 0,
-          total: (item.orderItems && item.orderItems[0]?.unitPrice) 
-            ? item.quantity * item.orderItems[0].unitPrice
-            : 0
+          price: item.unitPrice || 0,
+          unitPrice: item.unitPrice || 0,
+          discount: 0,
+          total: item.unitPrice ? item.quantity * item.unitPrice : 0
         };
         
         orderItemsMap.get(item.orderId)?.push(orderItem);
@@ -180,19 +180,30 @@ export const useLoads = () => {
     });
     
     // Converter o mapa em array de pedidos
-    return Array.from(orderItemsMap.entries()).map(([orderId, items]) => ({
+    const orders = Array.from(orderItemsMap.entries()).map(([orderId, items]) => ({
       id: orderId,
+      code: 0,
       customerName: "Cliente não especificado",
       customerId: "",
+      date: new Date(),
+      dueDate: new Date(),
       createdAt: new Date(),
+      updatedAt: new Date(),
       total: items.reduce((sum, item) => sum + item.total, 0),
+      discount: 0,
       items: items,
       salesRepId: "",
       salesRepName: "",
       status: "delivered" as const,
       paymentStatus: "paid" as const,
-      paymentMethod: ""
+      paymentMethod: "",
+      paymentMethodId: "",
+      paymentTableId: "",
+      payments: [],
+      notes: ""
     }));
+    
+    return orders;
   };
 
   // Nova função para obter todos os IDs de pedidos em cargas bloqueadas

@@ -1,7 +1,5 @@
-
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
-import { usePayments } from '@/hooks/usePayments';
 import PageLayout from '@/components/layout/PageLayout';
 import {
   Table,
@@ -30,13 +28,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -45,130 +36,172 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Plus, Search, Edit, Trash } from 'lucide-react';
 import { Payment } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
-import { Search, Plus, Edit, Trash } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { toast } from '@/components/ui/use-toast';
+
+interface FormErrors {
+  orderId?: string;
+  amount?: string;
+  method?: string;
+  date?: string;
+}
 
 export default function PaymentsList() {
-  const { payments, orders } = useAppContext();
-  const { addPayment, updatePayment, deletePayment } = usePayments();
+  const { payments, addPayment, updatePayment, deletePayment, orders } = useAppContext();
   const [search, setSearch] = useState('');
-  const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  
-  const [newPayment, setNewPayment] = useState<Omit<Payment, 'id'>>({
-    orderId: '',
-    amount: 0,
-    method: 'cash',
-    status: 'completed',
-    date: new Date(),
-    notes: ''
-  });
-  
   const [editingPayment, setEditingPayment] = useState<Payment>({
     id: '',
     orderId: '',
+    date: new Date(),
     amount: 0,
-    method: 'cash',
-    status: 'completed',
+    method: '',
+    notes: '',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+  const [formData, setFormData] = useState({
+    orderId: '',
+    amount: 0,
+    method: '',
+    status: 'pending',
     date: new Date(),
     notes: ''
   });
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  const filteredPayments = payments.filter(payment => {
-    const order = orders.find(o => o.id === payment.orderId);
-    const orderCustomerName = order ? order.customerName.toLowerCase() : '';
-    
-    return payment.orderId.toLowerCase().includes(search.toLowerCase()) ||
-           orderCustomerName.includes(search.toLowerCase()) ||
-           (payment.notes && payment.notes.toLowerCase().includes(search.toLowerCase()));
-  });
+  const filteredPayments = payments.filter(payment =>
+    payment.orderId.toLowerCase().includes(search.toLowerCase()) ||
+    payment.method.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const validateForm = (payment: Omit<Payment, 'id'>): boolean => {
-    let errors: Record<string, string> = {};
-    
-    if (!payment.orderId) {
+  const validateForm = (): boolean => {
+    let errors: FormErrors = {};
+    if (!formData.orderId) {
       errors.orderId = 'Pedido é obrigatório';
     }
-    
-    if (!payment.amount || payment.amount <= 0) {
-      errors.amount = 'Valor deve ser maior que zero';
+    if (!formData.amount) {
+      errors.amount = 'Valor é obrigatório';
     }
-    
-    if (!payment.method) {
-      errors.method = 'Método de pagamento é obrigatório';
+    if (!formData.method) {
+      errors.method = 'Método é obrigatório';
     }
-    
+    if (!formData.date) {
+      errors.date = 'Data é obrigatória';
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleNewPayment = () => {
-    setNewPayment({
+  const handleAddDialogOpen = () => {
+    setFormData({
       orderId: '',
       amount: 0,
-      method: 'cash',
-      status: 'completed',
+      method: '',
+      status: 'pending',
       date: new Date(),
       notes: ''
     });
     setFormErrors({});
-    setIsNewDialogOpen(true);
+    setIsAddDialogOpen(true);
   };
 
-  const handleEditPayment = (payment: Payment) => {
+  const handleEditClick = (payment: Payment) => {
     setEditingPayment(payment);
-    setFormErrors({});
+    setFormData({
+      orderId: payment.orderId,
+      amount: payment.amount,
+      method: payment.method,
+      status: payment.status || 'pending',
+      date: payment.date,
+      notes: payment.notes
+    });
     setIsEditDialogOpen(true);
   };
 
-  const handleDeletePayment = (payment: Payment) => {
+  const handleDeleteClick = (payment: Payment) => {
     setEditingPayment(payment);
     setIsDeleteDialogOpen(true);
   };
 
+  const handleCloseDialog = () => {
+    setIsAddDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setIsDeleteDialogOpen(false);
+    setFormErrors({});
+  };
+
   const handleAddPayment = async () => {
-    if (validateForm(newPayment)) {
-      await addPayment(newPayment);
-      setIsNewDialogOpen(false);
+    if (validateForm()) {
+      try {
+        await addPayment({
+          orderId: formData.orderId,
+          amount: formData.amount,
+          method: formData.method,
+          status: formData.status,
+          date: formData.date,
+          notes: formData.notes,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        setIsAddDialogOpen(false);
+        setFormErrors({});
+        resetFormData();
+      } catch (error) {
+        console.error("Error adding payment:", error);
+      }
     }
   };
 
-  const handleUpdatePayment = async () => {
-    if (validateForm(editingPayment)) {
-      await updatePayment(editingPayment.id, editingPayment);
-      setIsEditDialogOpen(false);
+  const handleEditPayment = async () => {
+    if (validateForm()) {
+      try {
+        await updatePayment(editingPayment.id, {
+          orderId: formData.orderId,
+          amount: formData.amount,
+          method: formData.method,
+          status: formData.status,
+          date: formData.date,
+          notes: formData.notes,
+          updatedAt: new Date()
+        });
+        setIsEditDialogOpen(false);
+        setFormErrors({});
+      } catch (error) {
+        console.error("Error updating payment:", error);
+      }
     }
   };
 
   const handleDeleteConfirmation = async () => {
-    await deletePayment(editingPayment.id);
-    setIsDeleteDialogOpen(false);
-  };
-
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="border-yellow-500 text-yellow-500">Pendente</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500">Concluído</Badge>;
-      case 'failed':
-        return <Badge variant="destructive">Falhou</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+    try {
+      await deletePayment(editingPayment.id);
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting payment:", error);
     }
   };
 
-  const getOrderCustomerName = (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    return order ? order.customerName : 'Cliente não encontrado';
+  const resetFormData = () => {
+    setFormData({
+      orderId: '',
+      amount: 0,
+      method: '',
+      status: 'pending',
+      date: new Date(),
+      notes: ''
+    });
   };
 
   return (
@@ -178,11 +211,13 @@ export default function PaymentsList() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Lista de Pagamentos</CardTitle>
-              <CardDescription>Gerencie todos os pagamentos</CardDescription>
+              <CardDescription>
+                Gerencie os pagamentos recebidos
+              </CardDescription>
             </div>
-            <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleNewPayment}>
+                <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleAddDialogOpen}>
                   <Plus size={16} className="mr-2" /> Novo Pagamento
                 </Button>
               </DialogTrigger>
@@ -192,93 +227,75 @@ export default function PaymentsList() {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="orderId">Pedido</Label>
-                    <Select 
-                      value={newPayment.orderId} 
-                      onValueChange={(value) => setNewPayment({ ...newPayment, orderId: value })}
-                    >
+                    <Label htmlFor="order-id">Pedido</Label>
+                    <Select value={formData.orderId} onValueChange={(value) => setFormData({ ...formData, orderId: value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um pedido" />
                       </SelectTrigger>
                       <SelectContent>
-                        {orders.map(order => (
-                          <SelectItem key={order.id} value={order.id}>
-                            {order.id} - {order.customerName}
-                          </SelectItem>
+                        {orders.map((order) => (
+                          <SelectItem key={order.id} value={order.id}>{order.id}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {formErrors.orderId && <p className="text-red-500 text-sm">{formErrors.orderId}</p>}
                   </div>
-                  
                   <div className="space-y-2">
                     <Label htmlFor="amount">Valor</Label>
                     <Input
                       id="amount"
                       type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={newPayment.amount}
-                      onChange={(e) => setNewPayment({ ...newPayment, amount: parseFloat(e.target.value) || 0 })}
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
                     />
                     {formErrors.amount && <p className="text-red-500 text-sm">{formErrors.amount}</p>}
                   </div>
-                  
                   <div className="space-y-2">
-                    <Label htmlFor="method">Método de Pagamento</Label>
-                    <Select 
-                      value={newPayment.method} 
-                      onValueChange={(value: 'cash' | 'credit' | 'debit' | 'transfer' | 'check') => 
-                        setNewPayment({ ...newPayment, method: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o método" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Dinheiro</SelectItem>
-                        <SelectItem value="credit">Cartão de crédito</SelectItem>
-                        <SelectItem value="debit">Cartão de débito</SelectItem>
-                        <SelectItem value="transfer">Transferência</SelectItem>
-                        <SelectItem value="check">Cheque</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="method">Método</Label>
+                    <Input
+                      id="method"
+                      value={formData.method}
+                      onChange={(e) => setFormData({ ...formData, method: e.target.value })}
+                    />
                     {formErrors.method && <p className="text-red-500 text-sm">{formErrors.method}</p>}
                   </div>
-                  
                   <div className="space-y-2">
                     <Label htmlFor="status">Status</Label>
-                    <Select 
-                      value={newPayment.status} 
-                      onValueChange={(value: 'pending' | 'completed' | 'failed') => 
-                        setNewPayment({ ...newPayment, status: value })
-                      }
-                    >
+                    <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
+                        <SelectValue placeholder="Selecione um status" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="completed">Concluído</SelectItem>
-                        <SelectItem value="failed">Falhou</SelectItem>
+                        <SelectItem value="partial">Parcial</SelectItem>
+                        <SelectItem value="paid">Pago</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  
                   <div className="space-y-2">
-                    <Label htmlFor="notes">Observações</Label>
+                    <Label htmlFor="date">Data</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formatDateToBR(formData.date)}
+                      onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value) })}
+                    />
+                    {formErrors.date && <p className="text-red-500 text-sm">{formErrors.date}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notas</Label>
                     <Input
                       id="notes"
-                      value={newPayment.notes || ''}
-                      onChange={(e) => setNewPayment({ ...newPayment, notes: e.target.value })}
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsNewDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
                     Cancelar
                   </Button>
-                  <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleAddPayment}>
+                  <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleAddPayment}>
                     Adicionar
                   </Button>
                 </div>
@@ -303,58 +320,41 @@ export default function PaymentsList() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Pedido</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Data</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Método</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Data</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPayments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                      Nenhum pagamento encontrado
+                {filteredPayments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="font-medium">{payment.orderId}</TableCell>
+                    <TableCell>R$ {payment.amount}</TableCell>
+                    <TableCell>{payment.method}</TableCell>
+                    <TableCell>{payment.status}</TableCell>
+                    <TableCell>{formatDateToBR(payment.date)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditClick(payment)}
+                        >
+                          <Edit size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(payment)}
+                        >
+                          <Trash size={16} />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredPayments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium">{payment.orderId}</TableCell>
-                      <TableCell>{getOrderCustomerName(payment.orderId)}</TableCell>
-                      <TableCell>{formatDateToBR(payment.date)}</TableCell>
-                      <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                      <TableCell>
-                        {payment.method === 'cash' && 'Dinheiro'}
-                        {payment.method === 'credit' && 'Cartão de crédito'}
-                        {payment.method === 'debit' && 'Cartão de débito'}
-                        {payment.method === 'transfer' && 'Transferência'}
-                        {payment.method === 'check' && 'Cheque'}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditPayment(payment)}
-                          >
-                            <Edit size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeletePayment(payment)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Trash size={16} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
@@ -369,93 +369,75 @@ export default function PaymentsList() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-orderId">Pedido</Label>
-              <Select 
-                value={editingPayment.orderId} 
-                onValueChange={(value) => setEditingPayment({ ...editingPayment, orderId: value })}
-              >
+              <Label htmlFor="order-id">Pedido</Label>
+              <Select value={formData.orderId} onValueChange={(value) => setFormData({ ...formData, orderId: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um pedido" />
                 </SelectTrigger>
                 <SelectContent>
-                  {orders.map(order => (
-                    <SelectItem key={order.id} value={order.id}>
-                      {order.id} - {order.customerName}
-                    </SelectItem>
+                  {orders.map((order) => (
+                    <SelectItem key={order.id} value={order.id}>{order.id}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {formErrors.orderId && <p className="text-red-500 text-sm">{formErrors.orderId}</p>}
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="edit-amount">Valor</Label>
+              <Label htmlFor="amount">Valor</Label>
               <Input
-                id="edit-amount"
+                id="amount"
                 type="number"
-                min="0.01"
-                step="0.01"
-                value={editingPayment.amount}
-                onChange={(e) => setEditingPayment({ ...editingPayment, amount: parseFloat(e.target.value) || 0 })}
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
               />
               {formErrors.amount && <p className="text-red-500 text-sm">{formErrors.amount}</p>}
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="edit-method">Método de Pagamento</Label>
-              <Select 
-                value={editingPayment.method} 
-                onValueChange={(value: 'cash' | 'credit' | 'debit' | 'transfer' | 'check') => 
-                  setEditingPayment({ ...editingPayment, method: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o método" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Dinheiro</SelectItem>
-                  <SelectItem value="credit">Cartão de crédito</SelectItem>
-                  <SelectItem value="debit">Cartão de débito</SelectItem>
-                  <SelectItem value="transfer">Transferência</SelectItem>
-                  <SelectItem value="check">Cheque</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="method">Método</Label>
+              <Input
+                id="method"
+                value={formData.method}
+                onChange={(e) => setFormData({ ...formData, method: e.target.value })}
+              />
               {formErrors.method && <p className="text-red-500 text-sm">{formErrors.method}</p>}
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
-              <Select 
-                value={editingPayment.status} 
-                onValueChange={(value: 'pending' | 'completed' | 'failed') => 
-                  setEditingPayment({ ...editingPayment, status: value })
-                }
-              >
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o status" />
+                  <SelectValue placeholder="Selecione um status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="completed">Concluído</SelectItem>
-                  <SelectItem value="failed">Falhou</SelectItem>
+                  <SelectItem value="partial">Parcial</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="edit-notes">Observações</Label>
+              <Label htmlFor="date">Data</Label>
               <Input
-                id="edit-notes"
-                value={editingPayment.notes || ''}
-                onChange={(e) => setEditingPayment({ ...editingPayment, notes: e.target.value })}
+                id="date"
+                type="date"
+                value={formatDateToBR(formData.date)}
+                onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value) })}
+              />
+              {formErrors.date && <p className="text-red-500 text-sm">{formErrors.date}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notas</Label>
+              <Input
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button type="button" variant="outline" onClick={handleCloseDialog}>
               Cancelar
             </Button>
-            <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleUpdatePayment}>
+            <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleEditPayment}>
               Atualizar
             </Button>
           </div>
@@ -466,14 +448,13 @@ export default function PaymentsList() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Confirmação de exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir este pagamento no valor de {formatCurrency(editingPayment.amount)}?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o pagamento? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCloseDialog}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirmation} className="bg-red-600 hover:bg-red-700">
               Excluir
             </AlertDialogAction>

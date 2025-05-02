@@ -1,170 +1,107 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
-import { usePayments } from '@/hooks/usePayments';
 import PageLayout from '@/components/layout/PageLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PendingPaymentsTab from '@/components/payments/PendingPaymentsTab';
-import PaymentsHistoryTab from '@/components/payments/PaymentsHistoryTab';
-import PromissoryNotesTab from '@/components/payments/PromissoryNotesTab';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Order } from '@/types';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Payment } from '@/types';
-import { useSearchParams } from 'react-router-dom';
-import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
+import { formatDateToBR } from '@/lib/date-utils';
+import { Badge } from '@/components/ui/badge';
 
 export default function Payments() {
-  const { payments, orders, paymentTables, customers } = useAppContext();
-  const { addPayment } = usePayments();
-  const [searchParams] = useSearchParams();
-  
-  const tabFromParams = searchParams.get('tab');
-  const orderIdFromParams = searchParams.get('orderId');
-  
-  const [activeTab, setActiveTab] = useState(tabFromParams || "pending");
+  const { orders } = useAppContext();
+  const [search, setSearch] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
 
-  // Initialize with a default empty tab - don't show promissory note until explicitly requested
-  const [showPromissoryNote, setShowPromissoryNote] = useState(false);
-  const [promissoryNotePayment, setPromissoryNotePayment] = useState<Payment | null>(null);
-
-  useEffect(() => {
-    if (orderIdFromParams) {
-      const order = orders.find(o => o.id === orderIdFromParams);
-      if (order) {
-        // Look for existing payment or create a temporary one for display
-        const existingPayment = payments.find(p => p.orderId === orderIdFromParams && p.method === 'promissoria');
-        
-        if (existingPayment) {
-          setPromissoryNotePayment(existingPayment);
-          setShowPromissoryNote(true);
-        } else {
-          // Create a temporary payment object for display purposes
-          const customer = customers.find(c => c.id === order.customerId);
-          if (customer) {
-            const now = new Date();
-            const newPayment: Payment = {
-              id: 'temp-' + Date.now(),
-              orderId: order.id,
-              date: now,
-              dueDate: order.dueDate || now,
-              amount: order.total,
-              method: 'promissoria',
-              notes: '',
-              customerName: customer.name || order.customerName,
-              customerDocument: customer.document,
-              customerAddress: customer.address,
-              createdAt: now,
-              updatedAt: now
-            };
-            setPromissoryNotePayment(newPayment);
-            setShowPromissoryNote(true);
-          }
-        }
-      }
-    }
-  }, [orderIdFromParams, orders, payments, customers]);
-
-  const paymentMethods = [
-    { value: 'cash', label: 'Dinheiro' },
-    { value: 'credit', label: 'Cartão de Crédito' },
-    { value: 'debit', label: 'Cartão de Débito' },
-    { value: 'transfer', label: 'Transferência' },
-    { value: 'check', label: 'Cheque' },
-    { value: 'promissoria', label: 'Nota Promissória' }
-  ];
-
-  const pendingPaymentOrders = orders
-    .filter(order => 
-      order.status !== 'cancelled' && 
-      (order.paymentStatus === 'pending' || order.paymentStatus === 'partial')
-    )
-    .map(order => ({
-      id: order.id,
-      customerName: order.customerName,
-      customerId: order.customerId,
-      total: order.total,
-      paymentTableId: order.paymentTableId,
-      paymentMethod: order.paymentMethod,
-      paid: payments
-        .filter(p => p.orderId === order.id && p.status === 'completed')
-        .reduce((sum, p) => sum + p.amount, 0)
-    }));
-    
-  const handleAddPayment = (paymentData: Omit<Payment, 'id'>) => {
-    return addPayment(paymentData);
-  };
+  const filteredOrders = orders.filter(order => {
+    if (!showArchived && order.archived) return false;
+    return order.customerName.toLowerCase().includes(search.toLowerCase()) ||
+      order.id.toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <PageLayout title="Pagamentos">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="pending">Pagamentos Pendentes</TabsTrigger>
-          <TabsTrigger value="history">Histórico de Pagamentos</TabsTrigger>
-          <TabsTrigger value="promissory">Notas Promissórias</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="pending" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pagamentos Pendentes</CardTitle>
-              <CardDescription>Pedidos com pagamentos em aberto</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PendingPaymentsTab
-                pendingPaymentOrders={pendingPaymentOrders}
-                paymentTables={paymentTables}
-                paymentMethods={paymentMethods}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Lista de Pedidos</CardTitle>
+              <CardDescription>
+                Gerencie os pagamentos dos seus pedidos
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
+              <Input
+                placeholder="Buscar pedidos..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="history">
-          <PaymentsHistoryTab
-            payments={payments}
-            orders={orders}
-            customers={customers}
-            pendingPaymentOrders={pendingPaymentOrders}
-            paymentMethods={paymentMethods}
-            handleAddPayment={handleAddPayment}
-          />
-        </TabsContent>
-        
-        <TabsContent value="promissory">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notas Promissórias</CardTitle>
-              <CardDescription>Visualização e impressão de notas promissórias</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {showPromissoryNote && promissoryNotePayment ? (
-                <div className="mt-4">
-                  <div className="mb-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowPromissoryNote(false)}
-                      className="mb-4"
-                    >
-                      Voltar para lista
-                    </Button>
-                  </div>
-                  
-                  {/* Make sure we always pass a valid payment object */}
-                  <PromissoryNoteView payment={promissoryNotePayment} />
-                </div>
-              ) : (
-                <PromissoryNotesTab
-                  pendingPaymentOrders={pendingPaymentOrders}
-                  paymentTables={paymentTables}
-                  customers={customers}
-                  orders={orders}
-                  payments={payments}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </div>
+          <div className="relative overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">{order.code}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>{formatDateToBR(order.date)}</TableCell>
+                    <TableCell>R$ {order.total.toFixed(2)}</TableCell>
+                    <TableCell>
+                      {order.status === "pending" && <Badge variant="outline">Pendente</Badge>}
+                      {order.status === "processing" && <Badge className="bg-blue-500">Processando</Badge>}
+                      {order.status === "completed" && <Badge className="bg-green-500">Concluído</Badge>}
+                      {order.status === "canceled" && <Badge variant="destructive">Cancelado</Badge>}
+                      {order.status === "confirmed" && <Badge className="bg-green-600">Confirmado</Badge>}
+                      {order.status === "draft" && <Badge variant="secondary">Rascunho</Badge>}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link to={`/pedidos/${order.id}/pagamentos`}>
+                        <Button variant="ghost" size="sm">
+                          Gerenciar Pagamentos
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </PageLayout>
   );
 }
