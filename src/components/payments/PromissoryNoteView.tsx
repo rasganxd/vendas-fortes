@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Payment } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';

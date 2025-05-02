@@ -9,6 +9,21 @@ export interface Payment {
   createdAt: Date;
   updatedAt: Date;
   status?: string;
+  
+  // Additional properties used in PromissoryNoteView
+  dueDate?: Date;
+  amountInWords?: string;
+  paymentLocation?: string;
+  emissionLocation?: string;
+  customerName?: string;
+  customerDocument?: string;
+  customerAddress?: string;
+  installments?: PaymentInstallment[];
+}
+
+export interface PaymentInstallment {
+  dueDate: Date;
+  amount: number;
 }
 
 export interface PaymentMethod {

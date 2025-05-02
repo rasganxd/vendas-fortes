@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Customer, Order, PaymentTable } from '@/types';
+import { Customer, Order, PaymentTable, Payment } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ interface PromissoryNotesTabProps {
   paymentTables: PaymentTable[];
   customers: Customer[];
   orders: Order[];
-  payments: any[];
+  payments: Payment[];
 }
 
 const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
@@ -38,6 +38,7 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
   const [selectedPaymentTable, setSelectedPaymentTable] = useState<PaymentTable | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [search, setSearch] = useState('');
+  const [promissoryNotePayment, setPromissoryNotePayment] = useState<Payment | null>(null);
   
   // Get orderId from URL query params to auto-highlight order
   const [searchParams] = useSearchParams();
@@ -57,15 +58,37 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
       if (paymentTable && paymentTable.type === 'promissory_note') {
         setSelectedPaymentTable(paymentTable);
         setSelectedOrderId(orderId);
+        
+        // Create or find a payment object for the promissory note
+        const existingPayment = payments.find(p => p.orderId === orderId && p.method === 'promissoria');
+        
+        if (existingPayment) {
+          setPromissoryNotePayment(existingPayment);
+        } else {
+          // Create a temporary payment object
+          const customer = customers.find(c => c.id === order.customerId);
+          const newPayment: Payment = {
+            id: 'temp-' + Date.now(),
+            orderId: order.id,
+            date: new Date(),
+            dueDate: order.dueDate || new Date(),
+            amount: order.total,
+            method: 'promissoria',
+            notes: '',
+            customerName: customer?.name || order.customerName,
+            customerDocument: customer?.document,
+            customerAddress: customer?.address,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          setPromissoryNotePayment(newPayment);
+        }
+        
         setShowPromissoryNote(true);
       }
     }
   };
   
-  const getOrderCustomer = (customerId: string) => {
-    return customers.find(c => c.id === customerId);
-  };
-
   // Get all orders that use promissory notes OR have promissory payments
   const getPromissoryNoteOrders = () => {
     // Get orders with promissory notes payment method
@@ -101,7 +124,7 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
 
   return (
     <>
-      {showPromissoryNote && selectedPaymentTable && selectedOrderId ? (
+      {showPromissoryNote && selectedPaymentTable && selectedOrderId && promissoryNotePayment ? (
         <div className="mt-4">
           <div className="mb-4">
             <Button 
@@ -113,22 +136,7 @@ const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
             </Button>
           </div>
           
-          {(() => {
-            const order = orders.find(o => o.id === selectedOrderId);
-            if (!order) return <div>Pedido não encontrado</div>;
-            
-            const customer = getOrderCustomer(order.customerId);
-            if (!customer) return <div>Cliente não encontrado</div>;
-            
-            return (
-              <PromissoryNoteView
-                customerId={customer.id}
-                customerName={customer.name}
-                paymentTable={selectedPaymentTable}
-                total={order.total}
-              />
-            );
-          })()}
+          <PromissoryNoteView payment={promissoryNotePayment} />
         </div>
       ) : (
         <div>
