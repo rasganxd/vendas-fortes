@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePayments } from '@/hooks/usePayments';
@@ -7,9 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PendingPaymentsTab from '@/components/payments/PendingPaymentsTab';
 import PaymentsHistoryTab from '@/components/payments/PaymentsHistoryTab';
 import PromissoryNotesTab from '@/components/payments/PromissoryNotesTab';
-import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
 import { Button } from '@/components/ui/button';
-import { Payment, PaymentTable } from '@/types';
+import { Payment } from '@/types';
 import { useSearchParams } from 'react-router-dom';
 
 export default function Payments() {
@@ -21,23 +21,46 @@ export default function Payments() {
   const orderIdFromParams = searchParams.get('orderId');
   
   const [activeTab, setActiveTab] = useState(tabFromParams || "pending");
-  const [selectedPaymentTable, setSelectedPaymentTable] = useState<PaymentTable | null>(null);
-  const [selectedOrderId, setSelectedOrderId] = useState<string>(orderIdFromParams || '');
+
+  // Initialize with a default empty tab - don't show promissory note until explicitly requested
   const [showPromissoryNote, setShowPromissoryNote] = useState(false);
+  const [promissoryNotePayment, setPromissoryNotePayment] = useState<Payment | null>(null);
 
   useEffect(() => {
     if (orderIdFromParams) {
       const order = orders.find(o => o.id === orderIdFromParams);
-      if (order && order.paymentTableId) {
-        const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
-        if (paymentTable && paymentTable.type === 'promissory_note') {
-          setSelectedPaymentTable(paymentTable);
-          setSelectedOrderId(orderIdFromParams);
+      if (order) {
+        // Look for existing payment or create a temporary one for display
+        const existingPayment = payments.find(p => p.orderId === orderIdFromParams && p.method === 'promissoria');
+        
+        if (existingPayment) {
+          setPromissoryNotePayment(existingPayment);
           setShowPromissoryNote(true);
+        } else {
+          // Create a temporary payment object for display purposes
+          const customer = customers.find(c => c.id === order.customerId);
+          if (customer) {
+            const newPayment: Payment = {
+              id: 'temp-' + Date.now(),
+              orderId: order.id,
+              date: new Date(),
+              dueDate: order.dueDate || new Date(),
+              amount: order.total,
+              method: 'promissoria',
+              notes: '',
+              customerName: customer.name || order.customerName,
+              customerDocument: customer.document,
+              customerAddress: customer.address,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            setPromissoryNotePayment(newPayment);
+            setShowPromissoryNote(true);
+          }
         }
       }
     }
-  }, [orderIdFromParams, orders, paymentTables]);
+  }, [orderIdFromParams, orders, payments, customers]);
 
   const paymentMethods = [
     { value: 'cash', label: 'Dinheiro' },
@@ -65,24 +88,8 @@ export default function Payments() {
         .reduce((sum, p) => sum + p.amount, 0)
     }));
     
-  const handleViewPromissoryNote = (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (order && order.paymentTableId) {
-      const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
-      if (paymentTable && paymentTable.type === 'promissory_note') {
-        setSelectedPaymentTable(paymentTable);
-        setSelectedOrderId(orderId);
-        setShowPromissoryNote(true);
-      }
-    }
-  };
-
   const handleAddPayment = (paymentData: Omit<Payment, 'id'>) => {
     return addPayment(paymentData);
-  };
-
-  const getOrderCustomer = (customerId: string) => {
-    return customers.find(c => c.id === customerId);
   };
 
   return (
@@ -105,7 +112,6 @@ export default function Payments() {
                 pendingPaymentOrders={pendingPaymentOrders}
                 paymentTables={paymentTables}
                 paymentMethods={paymentMethods}
-                onViewPromissoryNote={handleViewPromissoryNote}
               />
             </CardContent>
           </Card>
@@ -129,7 +135,7 @@ export default function Payments() {
               <CardDescription>Visualização e impressão de notas promissórias</CardDescription>
             </CardHeader>
             <CardContent>
-              {showPromissoryNote && selectedPaymentTable && selectedOrderId ? (
+              {showPromissoryNote && promissoryNotePayment ? (
                 <div className="mt-4">
                   <div className="mb-4">
                     <Button 
@@ -141,22 +147,8 @@ export default function Payments() {
                     </Button>
                   </div>
                   
-                  {(() => {
-                    const order = orders.find(o => o.id === selectedOrderId);
-                    if (!order) return <div>Pedido não encontrado</div>;
-                    
-                    const customer = getOrderCustomer(order.customerId);
-                    if (!customer) return <div>Cliente não encontrado</div>;
-                    
-                    return (
-                      <PromissoryNoteView
-                        customerId={customer.id}
-                        customerName={customer.name}
-                        paymentTable={selectedPaymentTable}
-                        total={order.total}
-                      />
-                    );
-                  })()}
+                  {/* Make sure we always pass a valid payment object */}
+                  <PromissoryNoteView payment={promissoryNotePayment} />
                 </div>
               ) : (
                 <PromissoryNotesTab

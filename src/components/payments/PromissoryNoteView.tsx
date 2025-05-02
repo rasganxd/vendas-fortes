@@ -13,6 +13,11 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
   const { settings } = useAppContext();
   const companyData = settings?.company;
 
+  // Safety check to prevent rendering if payment is undefined
+  if (!payment) {
+    return <div className="p-4">No payment data available</div>;
+  }
+
   return (
     <div className="p-4 max-w-2xl mx-auto">
       {/* Company Header */}
@@ -63,7 +68,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
 
       {/* Customer Info */}
       <div className="mt-8">
-        <p><span className="font-semibold">Nome:</span> {payment.customerName}</p>
+        <p><span className="font-semibold">Nome:</span> {payment.customerName || "___________________"}</p>
         {payment.customerDocument && (
           <p><span className="font-semibold">CPF/CNPJ:</span> {payment.customerDocument}</p>
         )}
