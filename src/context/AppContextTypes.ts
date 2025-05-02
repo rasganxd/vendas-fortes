@@ -139,6 +139,7 @@ export interface AppContextType {
   
   // System operations
   startNewMonth: () => void;
+  clearCache: () => Promise<void>; // Added missing clearCache method
   
   // Added missing property for validateProductDiscount & getMinimumPrice
   createAutomaticPaymentRecord: (order: Order) => Promise<void>;

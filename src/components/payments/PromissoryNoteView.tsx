@@ -2,7 +2,7 @@
 import React from 'react';
 import { Payment } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
-import { formatCurrency } from '@/lib/format-utils';
+import { formatCurrency, formatCurrencyInWords } from '@/lib/format-utils';
 import { useAppContext } from '@/hooks/useAppContext';
 
 interface PromissoryNoteViewProps {
@@ -48,7 +48,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
         <p className="mb-4">
           Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || new Date())}</span>,
           pagarei por esta única via de NOTA PROMISSÓRIA a {companyData?.name || "___________________"},
-          ou à sua ordem, a quantia de {formatCurrency(payment.amount || 0)} ({payment.amountInWords || "___________________"}),
+          ou à sua ordem, a quantia de {formatCurrency(payment.amount || 0)} ({payment.amountInWords || formatCurrencyInWords(payment.amount)}),
           em moeda corrente deste país.
         </p>
         <p>
