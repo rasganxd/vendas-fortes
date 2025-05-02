@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Load, LoadItem, Order, OrderItem, Customer, SalesRep } from '@/types';
 import { loadService } from '@/firebase/firestoreService';
@@ -46,16 +47,15 @@ export const useLoads = () => {
     }
   }, [contextLoads]);
 
-  // Fix the issues with unitPrice and ensure delivered status is handled correctly
+  // Calculate total from items using price instead of unitPrice
   const calculateItemsTotal = (items: LoadItem[]) => {
     return items.reduce((total, item) => {
-      // Use price instead of unitPrice
       return total + (item.price * item.quantity);
     }, 0);
   };
 
-  // In the generateOrdersFromLoad function, modify the status to use "completed" instead of "delivered"
-  const generateOrdersFromLoad = (load: Load): Order[] => {
+  // Get orders from a specific load
+  const getOrdersFromLoad = (load: Load): Order[] => {
     // Group the items by customer
     const itemsByCustomer: { [customerId: string]: LoadItem[] } = {};
     
@@ -77,10 +77,10 @@ export const useLoads = () => {
         productName: item.productName,
         productCode: item.productCode || 0,
         quantity: item.quantity,
-        price: item.price, // Use price instead of unitPrice
+        price: item.price,
         unitPrice: item.price, // For compatibility
         discount: 0,
-        total: item.price * item.quantity // Use price instead of unitPrice
+        total: item.price * item.quantity
       }));
       
       return {
@@ -88,7 +88,7 @@ export const useLoads = () => {
         code: generateOrderCode(),
         customerId,
         customerName: customer?.name || 'Cliente não encontrado',
-        salesRepId: load.salesRepId,
+        salesRepId: load.salesRepId || '',
         salesRepName: salesReps.find(sr => sr.id === load.salesRepId)?.name || '',
         date: load.date,
         dueDate: load.date,
@@ -106,6 +106,27 @@ export const useLoads = () => {
         updatedAt: new Date()
       };
     });
+  };
+
+  // Toggle lock status on a load
+  const toggleLoadLock = async (id: string, isLocked: boolean) => {
+    try {
+      await loadService.update(id, { locked: isLocked });
+      const updatedLoads = loads.map(l => (l.id === id ? { ...l, locked: isLocked } : l));
+      setLocalLoads(updatedLoads);
+      setLoads(updatedLoads);
+      toast({
+        title: isLocked ? "Carga bloqueada" : "Carga desbloqueada",
+        description: isLocked ? "A carga foi bloqueada com sucesso!" : "A carga foi desbloqueada com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao alterar status de bloqueio da carga:", error);
+      toast({
+        title: "Erro ao alterar status",
+        description: "Houve um problema ao alterar o status de bloqueio da carga.",
+        variant: "destructive"
+      });
+    }
   };
 
   const addLoad = async (load: Omit<Load, 'id'>) => {
@@ -178,7 +199,7 @@ export const useLoads = () => {
         throw new Error("Carga não encontrada.");
       }
 
-      const newOrders = generateOrdersFromLoad(load);
+      const newOrders = getOrdersFromLoad(load);
       setOrders([...orders, ...newOrders]);
 
       toast({
@@ -204,6 +225,8 @@ export const useLoads = () => {
     updateLoad,
     deleteLoad,
     generateOrders,
-    setLoads
+    setLoads,
+    getOrdersFromLoad, // Export the function
+    toggleLoadLock     // Export the new function
   };
 };

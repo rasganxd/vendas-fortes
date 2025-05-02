@@ -1,15 +1,14 @@
 
 export interface SalesRep {
   id: string;
-  code: number;
   name: string;
-  phone: string;
   email: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
+  phone: string;
+  document: string;
   notes: string;
   createdAt: Date;
   updatedAt: Date;
+  role?: string; // Add as an optional field
+  region?: string; // Add as an optional field
+  active?: boolean; // Add as an optional field
 }

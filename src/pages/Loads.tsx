@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -28,7 +27,7 @@ import { toast } from '@/components/ui/use-toast';
 export default function Loads() {
   const navigate = useNavigate();
   const { loads, customers } = useAppContext();
-  const { deleteLoad, updateLoad, getOrdersFromLoad } = useLoads();
+  const { deleteLoad, updateLoad, getOrdersFromLoad, toggleLoadLock } = useLoads();
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

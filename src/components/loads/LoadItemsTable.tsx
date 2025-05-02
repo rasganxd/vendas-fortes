@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { LoadItem } from '@/types';
-// Fix the import issue by using a proper interface for items
 import { formatCurrency } from '@/lib/format-utils';
 import {
   Table,
@@ -52,37 +51,38 @@ const LoadItemsTable: React.FC<LoadItemsTableProps> = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {displayItems.map((item) => (
-          <TableRow key={`${item.productId}-${item.id}`}>
-            <TableCell className="font-medium">
-              {item.productName}
-              {item.productCode && <span className="text-xs ml-1 text-muted-foreground">#{item.productCode}</span>}
-            </TableCell>
-            <TableCell className="text-center">
-              {item.quantity}
-            </TableCell>
-            <TableCell className="text-center">
-              {formatCurrency(item.price)}
-            </TableCell>
-            <TableCell className="text-right font-medium">
-              {formatCurrency(item.price * item.quantity)}
-            </TableCell>
-            {showActions && !isReadOnly && (
-              <TableCell className="text-right">
-                {onRemoveItem && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => onRemoveItem(item.productId)}
-                  >
-                    <Trash size={16} className="text-destructive" />
-                  </Button>
-                )}
+        {displayItems.length > 0 ? (
+          displayItems.map((item) => (
+            <TableRow key={`${item.productId}-${item.id}`}>
+              <TableCell className="font-medium">
+                {item.productName}
+                {item.productCode && <span className="text-xs ml-1 text-muted-foreground">#{item.productCode}</span>}
               </TableCell>
-            )}
-          </TableRow>
-        ))}
-        {displayItems.length === 0 && (
+              <TableCell className="text-center">
+                {item.quantity}
+              </TableCell>
+              <TableCell className="text-center">
+                {formatCurrency(item.price)}
+              </TableCell>
+              <TableCell className="text-right font-medium">
+                {formatCurrency(item.price * item.quantity)}
+              </TableCell>
+              {showActions && !isReadOnly && (
+                <TableCell className="text-right">
+                  {onRemoveItem && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => onRemoveItem(item.productId)}
+                    >
+                      <Trash size={16} className="text-destructive" />
+                    </Button>
+                  )}
+                </TableCell>
+              )}
+            </TableRow>
+          ))
+        ) : (
           <TableRow>
             <TableCell colSpan={showActions ? 5 : 4} className="text-center py-6 text-gray-500">
               Nenhum item adicionado

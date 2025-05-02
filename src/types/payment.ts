@@ -46,7 +46,7 @@ export interface PaymentTable {
   createdAt: Date;
   updatedAt: Date;
   type?: string;
-  terms?: PaymentTableInstallment[]; // Changed from PaymentTableTerm[] to match installments
+  terms?: PaymentTableTerm[]; // Use PaymentTableTerm type
   payableTo?: string;
   paymentLocation?: string;
   active?: boolean; // Added active property
@@ -56,15 +56,16 @@ export interface PaymentTableInstallment {
   installment: number;
   percentage: number;
   days: number;
-  id: string; // Changed from optional to required to match PaymentTableTerm
+  id?: string; // Make id optional here
   description?: string;
 }
 
-// Update PaymentTableTerm to match PaymentTableInstallment
+// Update PaymentTableTerm to ensure it has required properties
 export interface PaymentTableTerm {
   id: string;
   days: number;
   percentage: number;
   description?: string;
-  installment: number; // Added to match PaymentTableInstallment
+  installment: number; // This property is required
 }
+
