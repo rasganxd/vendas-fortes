@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -51,7 +52,7 @@ interface FormErrors {
   name?: string;
 }
 
-// Atualizar o tipo para método de pagamento para incluir o tipo "card"
+// Update the type for payment method to include the type "card"
 type PaymentMethodType = 'cash' | 'credit' | 'debit' | 'transfer' | 'check' | 'card' | 'other';
 
 export default function PaymentMethods() {
@@ -63,11 +64,19 @@ export default function PaymentMethods() {
   const [editingMethod, setEditingMethod] = useState<PaymentMethod>({
     id: '',
     name: '',
+    description: '',
+    notes: '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     type: 'cash',
     active: true
   });
   const [newMethod, setNewMethod] = useState<Omit<PaymentMethod, 'id'>>({
     name: '',
+    description: '',
+    notes: '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     type: 'cash',
     active: true
   });
@@ -75,7 +84,7 @@ export default function PaymentMethods() {
 
   const filteredMethods = paymentMethods.filter(method =>
     method.name.toLowerCase().includes(search.toLowerCase()) ||
-    method.type.toLowerCase().includes(search.toLowerCase())
+    (method.type && method.type.toLowerCase().includes(search.toLowerCase()))
   );
 
   const validateForm = (method: Omit<PaymentMethod, 'id'>): boolean => {
@@ -90,6 +99,10 @@ export default function PaymentMethods() {
   const handleNewMethod = () => {
     setNewMethod({
       name: '',
+      description: '',
+      notes: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
       type: 'cash',
       active: true
     });
@@ -119,6 +132,10 @@ export default function PaymentMethods() {
       try {
         await addPaymentMethod({
           name: newMethod.name,
+          description: newMethod.description,
+          notes: newMethod.notes,
+          createdAt: newMethod.createdAt,
+          updatedAt: newMethod.updatedAt,
           type: newMethod.type,
           active: newMethod.active
         });
@@ -135,6 +152,9 @@ export default function PaymentMethods() {
       try {
         await updatePaymentMethod(editingMethod.id, {
           name: editingMethod.name,
+          description: editingMethod.description,
+          notes: editingMethod.notes,
+          updatedAt: new Date(),
           type: editingMethod.type,
           active: editingMethod.active
         });
@@ -155,7 +175,7 @@ export default function PaymentMethods() {
     }
   };
 
-  // Atualizar a função handleTypeChange para usar o tipo atualizado
+  // Update the function handleTypeChange to use the type
   const handleTypeChange = (value: PaymentMethodType) => {
     setEditingMethod({...editingMethod, type: value});
   };
