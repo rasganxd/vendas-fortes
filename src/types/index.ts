@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   code: number;
@@ -8,9 +9,14 @@ export interface Customer {
   city: string;
   state: string;
   zip: string;
+  zipCode?: string; // Added for compatibility
   notes: string;
   createdAt: Date;
   updatedAt: Date;
+  // Added missing properties
+  document?: string;
+  visitDays?: string[];
+  visitFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
 }
 
 export interface Product {
@@ -40,10 +46,11 @@ export interface Order {
   total: number;
   discount: number;
   notes: string;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'delivered';
   items: OrderItem[];
   payments: Payment[];
   salesRepId?: string;
+  salesRepName?: string;
   paymentMethodId?: string;
   paymentTableId?: string;
   deliveryRouteId?: string;
@@ -54,6 +61,10 @@ export interface Order {
   deliveryZip?: string;
   createdAt: Date;
   updatedAt: Date;
+  // Added missing properties
+  archived?: boolean;
+  paymentStatus?: 'pending' | 'partial' | 'paid';
+  paymentMethod?: string;
 }
 
 export interface OrderItem {
@@ -64,6 +75,9 @@ export interface OrderItem {
   price: number;
   discount: number;
   total: number;
+  // Added missing properties
+  id?: string;
+  unitPrice?: number;
 }
 
 export interface Payment {
@@ -108,6 +122,11 @@ export interface Load {
   items: LoadItem[];
   createdAt: Date;
   updatedAt: Date;
+  // Added missing properties
+  name?: string;
+  status?: string;
+  locked?: boolean;
+  orderIds?: string[];
 }
 
 export interface LoadItem {
@@ -117,6 +136,9 @@ export interface LoadItem {
   quantity: number;
   weight: number;
   volume: number;
+  // Added missing properties
+  id?: string;
+  orderId?: string;
 }
 
 export interface SalesRep {
@@ -220,4 +242,13 @@ export interface AppSettings {
     secondaryColor?: string;
     accentColor?: string;
   };
+}
+
+// Add NavItem interface which is used in SideNav component
+export interface NavItem {
+  title: string;
+  href: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  submenu?: NavItem[];
+  expanded?: boolean;
 }
