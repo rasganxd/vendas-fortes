@@ -1,11 +1,11 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/hooks/useAppContext";
 import { Palette, SwatchBook } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { AppSettings } from '@/types';
 
 const defaultThemes = [
   { name: "Azul (Padrão)", primaryColor: "#1C64F2", secondaryColor: "#047481", accentColor: "#0694A2" },
@@ -26,12 +26,37 @@ export default function ThemeSettings() {
   
   const [isSaving, setIsSaving] = useState(false);
   
+  // Update local state when settings change
+  useEffect(() => {
+    if (settings?.theme) {
+      setCustomColors({
+        primaryColor: settings.theme.primaryColor || '#1C64F2',
+        secondaryColor: settings.theme.secondaryColor || '#047481',
+        accentColor: settings.theme.accentColor || '#0694A2',
+      });
+      
+      // Try to find if current colors match any predefined theme
+      const matchingTheme = defaultThemes.find(theme => 
+        theme.primaryColor === settings.theme?.primaryColor &&
+        theme.secondaryColor === settings.theme?.secondaryColor &&
+        theme.accentColor === settings.theme?.accentColor
+      );
+      
+      if (matchingTheme) {
+        setSelectedTheme(matchingTheme.name);
+      } else {
+        setSelectedTheme(null);
+      }
+    }
+  }, [settings]);
+  
   const handleColorChange = (type: 'primaryColor' | 'secondaryColor' | 'accentColor', color: string) => {
     setCustomColors(prev => ({ ...prev, [type]: color }));
-    setSelectedTheme(null); // Desseleciona tema quando há mudança de cor personalizada
+    setSelectedTheme(null); // Deselect theme when there's a custom color change
   };
   
   const applyTheme = async (primary: string, secondary: string, accent: string) => {
+    console.log('Applying theme with colors:', primary, secondary, accent);
     setIsSaving(true);
     try {
       await updateSettings({
@@ -42,16 +67,12 @@ export default function ThemeSettings() {
         }
       });
       
-      // Atualize as variáveis CSS para refletir as mudanças imediatamente
-      document.documentElement.style.setProperty('--primary', primary);
-      document.documentElement.style.setProperty('--secondary', secondary);
-      document.documentElement.style.setProperty('--accent', accent);
-      
       toast({
         title: "Tema atualizado",
         description: "As cores do sistema foram atualizadas com sucesso."
       });
     } catch (error) {
+      console.error('Error updating theme:', error);
       toast({
         title: "Erro ao atualizar tema",
         description: "Não foi possível salvar as configurações de cores.",

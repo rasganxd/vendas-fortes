@@ -2,66 +2,15 @@
 export interface DeliveryRoute {
   id: string;
   name: string;
-  description: string;
-  salesRepId?: string;
-  vehicleId?: string;
-  daysOfWeek: string[];
-  startTime: string;
-  endTime: string;
-  frequency: string;
-  notes: string;
-  createdAt: Date;
-  updatedAt: Date;
-  status?: string;
-  date?: Date;
-}
-
-export interface Load {
-  id: string;
-  code: number;
   date: Date;
-  routeId: string;
-  routeName: string;
+  driverId: string;
+  driverName: string; // For compatibility
   vehicleId: string;
-  vehicleName: string;
-  salesRepId: string;
-  salesRepName: string;
-  totalWeight: number;
-  totalVolume: number;
-  notes: string;
-  items: LoadItem[];
+  vehicleName: string; // For compatibility
+  stops: RouteStop[];
+  status: 'pending' | 'in-progress' | 'completed';
   createdAt: Date;
   updatedAt: Date;
-  name?: string;
-  status?: string;
-  locked?: boolean;
-  orderIds?: string[];
-}
-
-export interface LoadItem {
-  productId: string;
-  productCode: number;
-  productName: string;
-  quantity: number;
-  weight: number;
-  volume: number;
-  id?: string;
-  orderId?: string;
-}
-
-export interface Vehicle {
-  id: string;
-  code: number;
-  name: string;
-  description: string;
-  capacityWeight: number;
-  capacityVolume: number;
-  notes: string;
-  createdAt: Date;
-  updatedAt: Date;
-  type?: string;
-  active?: boolean;
-  driverName?: string;
 }
 
 export interface RouteStop {
@@ -71,5 +20,36 @@ export interface RouteStop {
   address: string;
   city: string;
   state: string;
-  position: number;
+  zip: string;
+  lat: number;
+  lng: number;
+  sequence: number;
+  status: 'pending' | 'completed';
+  completed: boolean;
+  orderId?: string;
+}
+
+export interface Load {
+  id: string;
+  name: string;
+  date: Date;
+  vehicleId: string;
+  items: LoadItem[];
+  status: 'pending' | 'in-progress' | 'completed';
+  total: number;
+  notes: string;
+  createdAt: Date;
+  updatedAt: Date;
+  orderIds?: string[];
+  locked?: boolean;
+}
+
+export interface LoadItem {
+  id?: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  total?: number;
+  orderId?: string;
+  orderItems?: OrderItem[];
 }

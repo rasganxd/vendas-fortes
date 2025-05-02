@@ -12,6 +12,7 @@ export interface Product {
   groupId?: string;
   categoryId?: string;
   brandId?: string;
+  unit?: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -4,39 +4,34 @@ export interface Order {
   code: number;
   customerId: string;
   customerName: string;
+  salesRepId: string;
+  salesRepName: string;
   date: Date;
   dueDate: Date;
+  items: OrderItem[];
   total: number;
   discount: number;
+  status: 'pending' | 'processing' | 'completed' | 'canceled';
+  paymentStatus: 'pending' | 'partial' | 'paid';
+  paymentMethodId: string;
+  paymentMethod: string; // For compatibility
+  paymentTableId: string;
+  payments: string[];
   notes: string;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'delivered';
-  items: OrderItem[];
-  payments: Payment[];
-  salesRepId?: string;
-  salesRepName?: string;
-  paymentMethodId?: string;
-  paymentTableId?: string;
-  deliveryRouteId?: string;
-  deliveryDate?: Date;
-  deliveryAddress?: string;
-  deliveryCity?: string;
-  deliveryState?: string;
-  deliveryZip?: string;
   createdAt: Date;
   updatedAt: Date;
   archived?: boolean;
-  paymentStatus?: 'pending' | 'partial' | 'paid';
-  paymentMethod?: string;
+  deliveryZip?: string;
 }
 
 export interface OrderItem {
+  id?: string;
   productId: string;
-  productCode: number;
   productName: string;
+  productCode: number;
   quantity: number;
   price: number;
+  unitPrice: number; // For compatibility
   discount: number;
   total: number;
-  id?: string;
-  unitPrice?: number;
 }

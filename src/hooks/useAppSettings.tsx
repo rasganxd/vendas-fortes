@@ -20,16 +20,8 @@ export const useAppSettings = () => {
         const fetchedSettings = settingsSnap.data() as AppSettings;
         setSettings(fetchedSettings);
         
-        // Aplica as cores do tema, se existirem
-        if (fetchedSettings.theme?.primaryColor) {
-          document.documentElement.style.setProperty('--primary', fetchedSettings.theme.primaryColor);
-        }
-        if (fetchedSettings.theme?.secondaryColor) {
-          document.documentElement.style.setProperty('--secondary', fetchedSettings.theme.secondaryColor);
-        }
-        if (fetchedSettings.theme?.accentColor) {
-          document.documentElement.style.setProperty('--accent', fetchedSettings.theme.accentColor);
-        }
+        // Apply theme colors
+        applyThemeColors(fetchedSettings.theme);
       } else {
         // Initialize with default settings if none exist
         const defaultSettings: AppSettings = {
@@ -49,6 +41,9 @@ export const useAppSettings = () => {
         };
         await setDoc(settingsRef, defaultSettings);
         setSettings(defaultSettings);
+        
+        // Apply default theme colors
+        applyThemeColors(defaultSettings.theme);
       }
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -64,12 +59,76 @@ export const useAppSettings = () => {
       const updatedSettings = { ...settings, ...newSettings };
       await setDoc(settingsRef, updatedSettings);
       setSettings(updatedSettings);
+      
+      // If theme was updated, apply the new colors
+      if (newSettings.theme) {
+        applyThemeColors(newSettings.theme);
+      }
+      
       return true;
     } catch (err) {
       console.error('Error updating settings:', err);
       setError(err as Error);
       throw err;
     }
+  };
+  
+  // Helper function to apply theme colors to CSS variables
+  const applyThemeColors = (theme?: AppSettings['theme']) => {
+    if (!theme) return;
+    
+    console.log('Applying theme colors:', theme);
+    
+    if (theme.primaryColor) {
+      document.documentElement.style.setProperty('--primary', convertHexToHSL(theme.primaryColor));
+    }
+    if (theme.secondaryColor) {
+      document.documentElement.style.setProperty('--secondary', convertHexToHSL(theme.secondaryColor));
+    }
+    if (theme.accentColor) {
+      document.documentElement.style.setProperty('--accent', convertHexToHSL(theme.accentColor));
+    }
+  };
+  
+  // Convert hex color to HSL format for CSS variables
+  const convertHexToHSL = (hex: string): string => {
+    // Remove the # if present
+    hex = hex.replace(/^#/, '');
+    
+    // Parse the hex values
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    const l = (max + min) / 2;
+    
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      
+      switch (max) {
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        case b:
+          h = (r - g) / d + 4;
+          break;
+      }
+      
+      h = Math.round(h * 60);
+    }
+    
+    s = Math.round(s * 100);
+    const lightness = Math.round(l * 100);
+    
+    return `${h} ${s}% ${lightness}%`;
   };
 
   useEffect(() => {
