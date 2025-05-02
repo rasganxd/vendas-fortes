@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -127,10 +128,10 @@ export default function SideNav() {
   
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium">
-      <SidebarHeader className="px-5 py-4 flex items-center justify-between bg-gradient-diagonal from-blue-700 to-blue-900">
+      <SidebarHeader className="px-5 py-4 flex items-center justify-between bg-gradient-diagonal from-primary to-primary/80">
         <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
-      <ScrollArea className="h-full bg-gradient-to-b from-blue-800 to-blue-900">
+      <ScrollArea className="h-full sidebar-gradient">
         <SidebarContent className="py-4 px-3">
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (
@@ -152,7 +153,7 @@ export default function SideNav() {
                         size="sm"
                         className={cn(
                           "transition-all duration-200 rounded-lg",
-                          isActive ? "bg-blue-700 text-white font-medium" : "text-gray-300 hover:bg-blue-800/60 hover:text-white"
+                          isActive ? "bg-primary/80 text-white font-medium" : "text-gray-300 hover:bg-primary/30 hover:text-white"
                         )}
                       >
                         <Link to={item.href} className="flex items-center px-3 py-2 text-sm">

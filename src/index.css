@@ -137,6 +137,11 @@
   h3 {
     @apply text-xl md:text-2xl;
   }
+  
+  /* Sidebar gradient that uses CSS variables */
+  .sidebar-gradient {
+    background: linear-gradient(to bottom, hsl(var(--primary)) 0%, hsl(var(--primary)/0.8) 100%);
+  }
 }
 
 @layer components {

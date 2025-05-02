@@ -79,15 +79,29 @@ export const useAppSettings = () => {
     
     console.log('Applying theme colors:', theme);
     
+    // Convert hex to HSL and apply to CSS variables
     if (theme.primaryColor) {
-      document.documentElement.style.setProperty('--primary', convertHexToHSL(theme.primaryColor));
+      const primaryHsl = convertHexToHSL(theme.primaryColor);
+      document.documentElement.style.setProperty('--primary', primaryHsl);
+      document.documentElement.style.setProperty('--sidebar-primary', primaryHsl);
+      // Also update some other variables to create cohesive look
+      document.documentElement.style.setProperty('--ring', primaryHsl);
     }
+    
     if (theme.secondaryColor) {
-      document.documentElement.style.setProperty('--secondary', convertHexToHSL(theme.secondaryColor));
+      const secondaryHsl = convertHexToHSL(theme.secondaryColor);
+      document.documentElement.style.setProperty('--secondary', secondaryHsl);
     }
+    
     if (theme.accentColor) {
-      document.documentElement.style.setProperty('--accent', convertHexToHSL(theme.accentColor));
+      const accentHsl = convertHexToHSL(theme.accentColor);
+      document.documentElement.style.setProperty('--accent', accentHsl);
     }
+    
+    // Force a repaint to ensure the changes are applied
+    document.body.style.display = 'none';
+    document.body.offsetHeight; // This triggers a reflow
+    document.body.style.display = '';
   };
   
   // Convert hex color to HSL format for CSS variables

@@ -4,6 +4,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanySettings from '@/components/settings/CompanySettings';
 import ThemeSettings from '@/components/settings/ThemeSettings';
+import SystemSettings from '@/components/settings/SystemSettings';
 
 export default function Settings() {
   return (
@@ -22,9 +23,7 @@ export default function Settings() {
             <ThemeSettings />
           </TabsContent>
           <TabsContent value="system" className="mt-6">
-            <div className="text-center py-8 text-gray-500">
-              <p>Configurações do sistema serão implementadas em breve.</p>
-            </div>
+            <SystemSettings />
           </TabsContent>
         </Tabs>
       </div>
