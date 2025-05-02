@@ -1,7 +1,7 @@
+
 import React, { useState } from 'react';
 import { Order, PaymentTable } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Plus } from 'lucide-react';
 import {
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import { usePayments } from '@/hooks/usePayments';
+import { useNavigate } from 'react-router-dom';
 
 interface PaymentMethod {
   value: string;
@@ -36,19 +37,19 @@ interface PendingPaymentsTabProps {
     total: number;
     paymentTableId: string | undefined;
     paid: number;
+    paymentMethod?: string;
   }>;
   paymentTables: PaymentTable[];
   paymentMethods: PaymentMethod[];
-  onViewPromissoryNote: (orderId: string) => void;
 }
 
 const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
   pendingPaymentOrders,
   paymentTables,
-  paymentMethods,
-  onViewPromissoryNote
+  paymentMethods
 }) => {
   const { addPayment } = usePayments();
+  const navigate = useNavigate();
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<{ [key: string]: boolean }>({});
   const [paymentValues, setPaymentValues] = useState<{ [key: string]: { amount: number; method: string } }>({});
 
@@ -57,7 +58,7 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
     pendingPaymentOrders.forEach(order => {
       initialValues[order.id] = {
         amount: order.total - order.paid,
-        method: 'cash'
+        method: order.paymentMethod || 'cash'
       };
     });
     setPaymentValues(initialValues);
@@ -79,6 +80,10 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
         [field]: field === 'amount' ? Number(value) : value
       }
     }));
+  };
+
+  const handleViewPromissoryNote = (orderId: string) => {
+    navigate(`/pagamentos?tab=promissory&orderId=${orderId}`);
   };
 
   const handleSubmitPayment = async (orderId: string) => {
@@ -109,14 +114,18 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
       return;
     }
 
+    const now = new Date();
+
     try {
       await addPayment({
         orderId: orderId,
         amount: amount,
-        method: method as any,
+        method: method as string,
         status: 'completed',
-        date: new Date(),
-        notes: `Pagamento de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+        date: now,
+        notes: `Pagamento de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+        createdAt: now,
+        updatedAt: now
       });
 
       handleClosePaymentDialog(orderId);
@@ -172,7 +181,7 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
                     <Button 
                       size="sm" 
                       className="bg-blue-600 hover:bg-blue-700 text-xs flex gap-1"
-                      onClick={() => onViewPromissoryNote(order.id)}
+                      onClick={() => handleViewPromissoryNote(order.id)}
                     >
                       <FileText size={14} /> Promissória
                     </Button>

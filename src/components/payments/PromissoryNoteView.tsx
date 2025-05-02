@@ -39,7 +39,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
           NOTA PROMISSÓRIA
         </h1>
         <p className="mt-2 text-right">
-          <span className="font-semibold">Valor:</span> {formatCurrency(payment.amount)}
+          <span className="font-semibold">Valor:</span> {formatCurrency(payment.amount || 0)}
         </p>
       </div>
 
@@ -48,7 +48,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
         <p className="mb-4">
           Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || new Date())}</span>,
           pagarei por esta única via de NOTA PROMISSÓRIA a {companyData?.name || "___________________"},
-          ou à sua ordem, a quantia de {formatCurrency(payment.amount)} ({payment.amountInWords || "___________________"}),
+          ou à sua ordem, a quantia de {formatCurrency(payment.amount || 0)} ({payment.amountInWords || "___________________"}),
           em moeda corrente deste país.
         </p>
         <p>
@@ -59,7 +59,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
       {/* Signatures */}
       <div className="mt-12">
         <p className="text-right mb-2">
-          {payment.emissionLocation || "___________________"}, {formatDateToBR(payment.date)}
+          {payment.emissionLocation || "___________________"}, {formatDateToBR(payment.date || new Date())}
         </p>
         <div className="border-t border-gray-400 pt-2 mt-16 text-center">
           <p>Assinatura do Emitente</p>
@@ -89,7 +89,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
             <ul className="list-disc pl-5">
               {payment.installments.map((installment, index) => (
                 <li key={index}>
-                  {formatDateToBR(installment.dueDate)}: {formatCurrency(installment.amount)}
+                  {formatDateToBR(installment.dueDate || new Date())}: {formatCurrency(installment.amount)}
                 </li>
               ))}
             </ul>

@@ -1,13 +1,12 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -20,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { PaymentTable } from '@/types';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
-import { Check, ChevronsUpDown } from 'lucide-react';
 
 interface PaymentOptionsInputProps {
   paymentTables: PaymentTable[];
@@ -53,15 +51,11 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
   const [installmentValue, setInstallmentValue] = useState<number>(0);
   const [totalWithInterest, setTotalWithInterest] = useState<number>(orderTotal || 0);
   const [interestRate, setInterestRate] = useState<number>(0);
-  const [paymentNotes, setPaymentNotes] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
   const [isManualValue, setIsManualValue] = useState(false);
   const [manualInstallmentValue, setManualInstallmentValue] = useState<number>(0);
   const [isPromissoryNote, setIsPromissoryNote] = useState(false);
-  const [isEditingPromissoryNote, setIsEditingPromissoryNote] = useState(false);
-  const [promissoryNoteDetails, setPromissoryNoteDetails] = useState<{ date: Date | null; amount: number; }[]>([]);
   const [isPaymentTableDialogOpen, setIsPaymentTableDialogOpen] = useState(false);
-  const [isPaymentMethodDialogOpen, setIsPaymentMethodDialogOpen] = useState(false);
   const { addPaymentTable } = usePaymentTables();
   const paymentMethodInputRef = useRef<HTMLInputElement>(null);
 
@@ -137,9 +131,11 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
     }
 
     try {
+      // Create a default payment table with empty installments array
       const newTableId = await addPaymentTable({
         name: newTableName,
         description: `Tabela de pagamento criada para ${customerName} (${customerId})`,
+        installments: [], // Adding the required installments array
         notes: `Condições especiais para o cliente ${customerName}.`,
         createdAt: new Date(),
         updatedAt: new Date()

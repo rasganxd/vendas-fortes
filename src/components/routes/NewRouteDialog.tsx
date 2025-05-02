@@ -89,7 +89,6 @@ export const NewRouteDialog = ({ open, onOpenChange, vehicles, onCreateRoute }: 
                   vehicles.map(vehicle => (
                     <SelectItem key={vehicle.id} value={vehicle.id}>
                       {vehicle.name}
-                      {vehicle.driverName ? ` (${vehicle.driverName})` : ''}
                     </SelectItem>
                   ))
                 ) : (

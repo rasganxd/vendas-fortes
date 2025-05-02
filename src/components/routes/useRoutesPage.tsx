@@ -79,22 +79,15 @@ export const useRoutesPage = () => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    const customer = {
-      name: order.customerName,
-      address: order.deliveryAddress || '',
-      city: order.deliveryCity || '',
-      state: order.deliveryState || '',
-      zipCode: order.deliveryZip || '',
-    };
-
     const newStop: RouteStop = {
       id: Math.random().toString(36).substring(2, 10),
       orderId: order.id,
-      customerName: customer.name,
-      address: customer.address,
-      city: customer.city,
-      state: customer.state,
-      zip: customer.zipCode, // Using correct property name
+      customerId: order.customerId, // Adding the required customerId
+      customerName: order.customerName,
+      address: order.deliveryAddress || '',
+      city: order.deliveryCity || '',
+      state: order.deliveryState || '',
+      zip: order.deliveryZip || '',
       sequence: selectedRoute.stops.length + 1,
       position: selectedRoute.stops.length + 1,
       status: 'pending',

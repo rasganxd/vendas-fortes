@@ -38,6 +38,10 @@ export const formatPercent = (value: number | undefined): string => {
  * @returns Text representation of the number
  */
 export const numberToWords = (value: number): string => {
+  if (value === undefined || value === null) {
+    return 'zero';
+  }
+  
   const units = [
     '', 'um', 'dois', 'três', 'quatro', 'cinco', 
     'seis', 'sete', 'oito', 'nove', 'dez', 'onze',
@@ -108,7 +112,11 @@ export const numberToWords = (value: number): string => {
  * @param value - The amount to format
  * @returns Text representation of the amount
  */
-export const formatCurrencyInWords = (value: number): string => {
+export const formatCurrencyInWords = (value: number | undefined): string => {
+  if (value === undefined || value === null) {
+    return 'zero reais';
+  }
+  
   const intValue = Math.floor(value);
   const centValue = Math.round((value - intValue) * 100);
   

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -73,16 +74,19 @@ export default function OrderFormContainer() {
           console.warn("Sales rep not found for ID:", orderToEdit.salesRepId);
         }
         
-        // Set order items
+        // Set order items, adding required properties if missing
         console.log("Setting order items:", orderToEdit.items);
-        setOrderItems(orderToEdit.items.map(item => ({
+        const updatedItems: OrderItem[] = orderToEdit.items.map(item => ({
           productId: item.productId,
           productName: item.productName,
           productCode: item.productCode || 0,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
+          price: item.price || item.unitPrice,
+          discount: item.discount || 0,
           total: item.unitPrice * item.quantity
-        })));
+        }));
+        setOrderItems(updatedItems);
         
         // Set payment method
         if (orderToEdit.paymentMethod) {
@@ -145,7 +149,7 @@ export default function OrderFormContainer() {
       const newItem: OrderItem = {
         productId: product.id,
         productName: product.name,
-        productCode: product.code,
+        productCode: product.code || 0,
         quantity: quantity,
         price: price,
         unitPrice: price,
@@ -159,6 +163,14 @@ export default function OrderFormContainer() {
     toast({
       title: "Item adicionado",
       description: `${quantity}x ${product.name} adicionado ao pedido`
+    });
+  };
+
+  const handleRemoveItem = (productId: string) => {
+    setOrderItems(items => items.filter(item => item.productId !== productId));
+    toast({
+      title: "Item removido",
+      description: "Item removido do pedido"
     });
   };
 
@@ -198,7 +210,7 @@ export default function OrderFormContainer() {
       // Get the selected payment table
       const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
       
-      const orderData: Partial<Order> = {
+      const orderData = {
         customerId: selectedCustomer.id,
         customerName: selectedCustomer.name,
         salesRepId: selectedSalesRep!.id,
@@ -237,8 +249,9 @@ export default function OrderFormContainer() {
         if (paymentMethod === 'promissoria') {
           await createAutomaticPaymentRecord({
             ...orderData,
-            id: orderId
-          });
+            id: orderId,
+            code: orderData.code || 0 // Ensure code is not undefined
+          } as Order);
         }
       } else {
         console.log("Creating new order");
@@ -255,8 +268,9 @@ export default function OrderFormContainer() {
           if (paymentMethod === 'promissoria') {
             await createAutomaticPaymentRecord({
               ...orderData,
-              id: orderId
-            });
+              id: orderId,
+              code: orderData.code || 0 // Ensure code is not undefined
+            } as Order);
           }
         } else {
           throw new Error("Falha ao criar pedido: ID não retornado");

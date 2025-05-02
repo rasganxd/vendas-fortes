@@ -11,6 +11,7 @@ import PromissoryNotesTab from '@/components/payments/PromissoryNotesTab';
 import { Button } from '@/components/ui/button';
 import { Payment } from '@/types';
 import { useSearchParams } from 'react-router-dom';
+import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
 
 export default function Payments() {
   const { payments, orders, paymentTables, customers } = useAppContext();
@@ -40,19 +41,20 @@ export default function Payments() {
           // Create a temporary payment object for display purposes
           const customer = customers.find(c => c.id === order.customerId);
           if (customer) {
+            const now = new Date();
             const newPayment: Payment = {
               id: 'temp-' + Date.now(),
               orderId: order.id,
-              date: new Date(),
-              dueDate: order.dueDate || new Date(),
+              date: now,
+              dueDate: order.dueDate || now,
               amount: order.total,
               method: 'promissoria',
               notes: '',
               customerName: customer.name || order.customerName,
               customerDocument: customer.document,
               customerAddress: customer.address,
-              createdAt: new Date(),
-              updatedAt: new Date()
+              createdAt: now,
+              updatedAt: now
             };
             setPromissoryNotePayment(newPayment);
             setShowPromissoryNote(true);
