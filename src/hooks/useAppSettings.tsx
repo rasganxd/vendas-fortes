@@ -17,7 +17,19 @@ export const useAppSettings = () => {
       const settingsSnap = await getDoc(settingsRef);
       
       if (settingsSnap.exists()) {
-        setSettings(settingsSnap.data() as AppSettings);
+        const fetchedSettings = settingsSnap.data() as AppSettings;
+        setSettings(fetchedSettings);
+        
+        // Aplica as cores do tema, se existirem
+        if (fetchedSettings.theme?.primaryColor) {
+          document.documentElement.style.setProperty('--primary', fetchedSettings.theme.primaryColor);
+        }
+        if (fetchedSettings.theme?.secondaryColor) {
+          document.documentElement.style.setProperty('--secondary', fetchedSettings.theme.secondaryColor);
+        }
+        if (fetchedSettings.theme?.accentColor) {
+          document.documentElement.style.setProperty('--accent', fetchedSettings.theme.accentColor);
+        }
       } else {
         // Initialize with default settings if none exist
         const defaultSettings: AppSettings = {
@@ -28,6 +40,11 @@ export const useAppSettings = () => {
             email: '',
             document: '',
             footer: 'Para qualquer suporte: (11) 9999-8888'
+          },
+          theme: {
+            primaryColor: '#1C64F2',
+            secondaryColor: '#047481',
+            accentColor: '#0694A2'
           }
         };
         await setDoc(settingsRef, defaultSettings);

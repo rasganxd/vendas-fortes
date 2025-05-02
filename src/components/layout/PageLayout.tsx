@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,10 @@ interface PageLayoutProps {
 }
 
 export default function PageLayout({ children, title, subtitle, description }: PageLayoutProps) {
+  const { settings } = useAppContext();
+  
+  const accentColor = settings?.theme?.primaryColor || '#1C64F2';
+  
   return (
     <div className="flex-1 bg-background">
       <div className="container mx-auto px-4 py-5">
@@ -24,7 +29,10 @@ export default function PageLayout({ children, title, subtitle, description }: P
             {description && (
               <p className="mt-2 text-sm text-gray-500">{description}</p>
             )}
-            <div className="h-1 w-20 bg-blue-600 mt-3 rounded-full"></div>
+            <div 
+              className="h-1 w-20 mt-3 rounded-full"
+              style={{ backgroundColor: accentColor }}
+            ></div>
           </div>
         )}
         <div>
