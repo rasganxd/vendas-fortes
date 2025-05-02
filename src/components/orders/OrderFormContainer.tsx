@@ -125,6 +125,43 @@ export default function OrderFormContainer() {
     return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
   };
 
+  const handleAddItem = (product: Product, quantity: number, price: number) => {
+    console.log("Adding item to order:", product, quantity, price);
+    
+    const existingItem = orderItems.find(item => item.productId === product.id);
+    
+    if (existingItem) {
+      const updatedItems = orderItems.map(item =>
+        item.productId === product.id ? 
+          { 
+            ...item, 
+            quantity: (item.quantity || 0) + quantity,
+            total: (item.unitPrice || price) * ((item.quantity || 0) + quantity)
+          } : item
+      );
+      setOrderItems(updatedItems);
+      console.log("Updated order items:", updatedItems);
+    } else {
+      const newItem: OrderItem = {
+        productId: product.id,
+        productName: product.name,
+        productCode: product.code,
+        quantity: quantity,
+        price: price,
+        unitPrice: price,
+        discount: 0,
+        total: price * quantity
+      };
+      setOrderItems(prevItems => [...prevItems, newItem]);
+      console.log("New item added:", newItem);
+    }
+    
+    toast({
+      title: "Item adicionado",
+      description: `${quantity}x ${product.name} adicionado ao pedido`
+    });
+  };
+
   const handleCreateOrder = async () => {
     if (!selectedCustomer) {
       toast({
@@ -161,22 +198,28 @@ export default function OrderFormContainer() {
       // Get the selected payment table
       const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
       
-      const orderData = {
+      const orderData: Partial<Order> = {
         customerId: selectedCustomer.id,
         customerName: selectedCustomer.name,
-        salesRepId: selectedSalesRep.id,
-        salesRepName: selectedSalesRep.name,
+        salesRepId: selectedSalesRep!.id,
+        salesRepName: selectedSalesRep!.name,
         items: orderItems,
         total: calculateTotal(),
         paymentStatus: "pending" as Order["paymentStatus"],
         paymentMethod: paymentMethod || "",
-        paymentTableId: selectedPaymentTable || undefined,
+        paymentTableId: selectedPaymentTable || "",
+        code: Math.floor(Math.random() * 10000), // Generate a random code
+        date: new Date(),
+        dueDate: new Date(),
+        discount: 0,
+        payments: [],
+        notes: "",
         createdAt: new Date(),
+        updatedAt: new Date(),
         status: "draft" as Order["status"],
       };
       
       console.log("Saving order with data:", orderData);
-      console.log("Order items being saved:", orderItems);
       
       let orderId;
       
@@ -199,7 +242,7 @@ export default function OrderFormContainer() {
         }
       } else {
         console.log("Creating new order");
-        orderId = await addOrder(orderData);
+        orderId = await addOrder(orderData as Omit<Order, "id">);
         console.log("Order created with ID:", orderId);
         
         if (orderId) {
@@ -256,53 +299,6 @@ export default function OrderFormContainer() {
         description: "Selecione um cliente primeiro para ver compras recentes.",
       });
     }
-  };
-
-  const handleAddItem = (product: Product, quantity: number, price: number) => {
-    console.log("Adding item to order:", product, quantity, price);
-    
-    const existingItem = orderItems.find(item => item.productId === product.id);
-    
-    if (existingItem) {
-      const updatedItems = orderItems.map(item =>
-        item.productId === product.id ? 
-          { 
-            ...item, 
-            quantity: (item.quantity || 0) + quantity,
-            total: (item.unitPrice || price) * ((item.quantity || 0) + quantity)
-          } : item
-      );
-      setOrderItems(updatedItems);
-      console.log("Updated order items:", updatedItems);
-    } else {
-      const newItem = {
-        productId: product.id,
-        productName: product.name,
-        productCode: product.code,
-        quantity: quantity,
-        unitPrice: price,
-        total: price * quantity
-      };
-      setOrderItems(prevItems => [...prevItems, newItem]);
-      console.log("New item added:", newItem);
-    }
-    
-    toast({
-      title: "Item adicionado",
-      description: `${quantity}x ${product.name} adicionado ao pedido`
-    });
-  };
-
-  const handleRemoveItem = (productId: string) => {
-    console.log("Removing item with productId:", productId);
-    const updatedItems = orderItems.filter(item => item.productId !== productId);
-    console.log("Order items after removal:", updatedItems);
-    setOrderItems(updatedItems);
-    
-    toast({
-      title: "Item removido",
-      description: "Item removido do pedido"
-    });
   };
 
   return (

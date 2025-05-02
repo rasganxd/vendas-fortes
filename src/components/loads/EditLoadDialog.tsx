@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -62,7 +61,8 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
   // Reset form when dialog opens with new load data
   useEffect(() => {
     if (load && open) {
-      setName(load.name);
+      setName(load.name || '');
+      // Map any route status to one of our acceptable values
       setStatus(load.status || 'planning');
       setNotes(load.notes || '');
       // Set current items
@@ -84,7 +84,7 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
     
     const updatedLoad: Partial<Load> = {
       name,
-      status,
+      status: status as Load['status'], // Cast to the correct type
       notes,
       items: currentItems,
       orderIds: orderIds
@@ -151,8 +151,8 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
-          orderItems: [item],
-          productCode: item.productCode
+          orderItems: [item]
+          // Remove productCode as it's not in the LoadItem interface
         });
       });
     });

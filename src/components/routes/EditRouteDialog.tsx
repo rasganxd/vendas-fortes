@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -83,7 +82,7 @@ export const EditRouteDialog = ({ open, onOpenChange, route, vehicles, onSave }:
     
     const updatedRoute: Partial<DeliveryRoute> = {
       name,
-      status,
+      status: status as 'pending' | 'in-progress' | 'completed' | 'planning' | 'assigned',
       date,
       vehicleId: vehicleId || undefined,
       vehicleName: selectedVehicle ? selectedVehicle.name : undefined,

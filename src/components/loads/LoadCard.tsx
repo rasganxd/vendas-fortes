@@ -74,7 +74,7 @@ export const LoadCard: React.FC<LoadCardProps> = ({
     <Card className="h-full">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{load.name}</CardTitle>
+          <CardTitle className="text-lg">{load.name || 'Carga sem nome'}</CardTitle>
           <div className="flex items-center">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -148,7 +148,7 @@ export const LoadCard: React.FC<LoadCardProps> = ({
           <div className="flex items-center gap-1 text-gray-500">
             <Package size={14} />
             <span className="text-sm">
-              {load.orderIds ? `${load.orderIds.length} pedidos` : 'Sem pedidos'}
+              {load.orderIds && load.orderIds.length > 0 ? `${load.orderIds.length} pedidos` : 'Sem pedidos'}
             </span>
           </div>
         </div>

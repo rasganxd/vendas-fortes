@@ -1,149 +1,106 @@
-
-import { useRef } from 'react';
-import { Button } from "@/components/ui/button";
-import { PaymentTable } from '@/types';
-import { useReactToPrint } from 'react-to-print';
-import { Printer } from 'lucide-react';
-import { formatDateToBR, addDays } from '@/lib/date-utils';
+import React from 'react';
+import { Payment } from '@/types';
+import { formatDateToBR } from '@/lib/date-utils';
+import { formatCurrency } from '@/lib/format-utils';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface PromissoryNoteViewProps {
-  customerId: string;
-  customerName: string;
-  paymentTable: PaymentTable;
-  total: number;
+  payment: Payment;
 }
 
-export default function PromissoryNoteView({
-  customerId,
-  customerName,
-  paymentTable,
-  total
-}: PromissoryNoteViewProps) {
-  const printRef = useRef<HTMLDivElement>(null);
-
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: `NotaPromissoria-${customerName}`,
-    removeAfterPrint: true,
-  });
-  
-  // Define styles for printing
-  const printStyles = `
-    @media print {
-      @page {
-        size: A4;
-        margin: 0.5cm;
-      }
-      .print-promissory-note {
-        page-break-inside: avoid;
-      }
-      .no-print {
-        display: none;
-      }
-    }
-  `;
-  
-  // Calculate installment amounts
-  const installments = paymentTable.terms.map(term => {
-    const amount = (term.percentage / 100) * total;
-    const dueDate = addDays(new Date(), term.days);
-    return {
-      ...term,
-      amount,
-      dueDate
-    };
-  });
-  
-  // Format currency
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-  
-  // Convert number to words for the promissory note
-  const numberToWords = (num: number) => {
-    // This is a simplified implementation
-    // For a real-world application, you would use a dedicated library
-    const units = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
-    const teens = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
-    const tens = ['', 'dez', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
-    const hundreds = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
-    
-    if (num === 0) return 'zero';
-    
-    if (num < 10) return units[num];
-    if (num < 20) return teens[num - 10];
-    if (num < 100) {
-      const unit = num % 10;
-      const ten = Math.floor(num / 10);
-      return tens[ten] + (unit ? ' e ' + units[unit] : '');
-    }
-    
-    if (num === 100) return 'cem';
-    if (num < 1000) {
-      const remainder = num % 100;
-      const hundred = Math.floor(num / 100);
-      return hundreds[hundred] + (remainder ? ' e ' + numberToWords(remainder) : '');
-    }
-    
-    // This is a simplified version - in reality you would handle thousands, millions, etc.
-    return num.toString();
-  };
+const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
+  const { settings } = useAppContext();
+  const companyData = settings?.company;
 
   return (
-    <div>
-      <style>{printStyles}</style>
-      
-      <div className="mb-4 flex justify-end no-print">
-        <Button onClick={() => handlePrint()} className="flex items-center gap-2">
-          <Printer size={16} /> Imprimir Nota Promissória
-        </Button>
+    <div className="p-4 max-w-2xl mx-auto">
+      {/* Company Header */}
+      {companyData?.name && (
+        <div className="text-center mb-6">
+          <h2 className="font-bold text-xl">{companyData.name}</h2>
+          {companyData.document && (
+            <p className="text-sm text-gray-600">CNPJ: {companyData.document}</p>
+          )}
+          {companyData.address && (
+            <p className="text-sm text-gray-600">{companyData.address}</p>
+          )}
+        </div>
+      )}
+
+      {/* Title */}
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold uppercase border-b-2 border-t-2 border-gray-800 py-2">
+          NOTA PROMISSÓRIA
+        </h1>
+        <p className="mt-2 text-right">
+          <span className="font-semibold">Valor:</span> {formatCurrency(payment.amount)}
+        </p>
       </div>
-      
-      <div ref={printRef} className="p-4 border rounded-lg">
-        {installments.map((installment, index) => (
-          <div key={installment.id} className="print-promissory-note mb-8 last:mb-0">
-            <div className="text-center font-bold text-xl border-b-2 border-black pb-2 mb-4">
-              NOTA PROMISSÓRIA
-            </div>
-            
-            <div className="flex justify-between mb-6">
-              <div>
-                <span className="font-bold">Valor:</span> {formatCurrency(installment.amount)}
-              </div>
-              <div>
-                <span className="font-bold">Vencimento:</span> {formatDateToBR(installment.dueDate)}
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <p className="text-justify">
-                Ao {formatDateToBR(installment.dueDate)}, pagarei por esta única via de NOTA PROMISSÓRIA a {
-                  paymentTable.payableTo || "ordem"
-                } ou à sua ordem, a quantia de {formatCurrency(installment.amount)} ({
-                  numberToWords(Math.floor(installment.amount))
-                } reais e {
-                  numberToWords(Math.round((installment.amount % 1) * 100))
-                } centavos), pagável em {paymentTable.paymentLocation || "local acordado"}.
-              </p>
-            </div>
-            
-            <div className="mb-8">
-              <div className="font-semibold">Emitente:</div>
-              <div>{customerName}</div>
-              <div>ID: {customerId}</div>
-            </div>
-            
-            <div className="mt-12 border-t pt-4">
-              <div className="text-center">_______________________________________________________</div>
-              <div className="text-center">Assinatura do Emitente</div>
-            </div>
-            
-            {index < installments.length - 1 && (
-              <div className="page-break-after my-10 border-b border-dashed"></div>
-            )}
+
+      {/* Main Content */}
+      <div className="mb-6 text-justify">
+        <p className="mb-4">
+          Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || new Date())}</span>,
+          pagarei por esta única via de NOTA PROMISSÓRIA a {companyData?.name || "___________________"},
+          ou à sua ordem, a quantia de {formatCurrency(payment.amount)} ({payment.amountInWords || "___________________"}),
+          em moeda corrente deste país.
+        </p>
+        <p>
+          Pagável em {payment.paymentLocation || "___________________"}
+        </p>
+      </div>
+
+      {/* Signatures */}
+      <div className="mt-12">
+        <p className="text-right mb-2">
+          {payment.emissionLocation || "___________________"}, {formatDateToBR(payment.date)}
+        </p>
+        <div className="border-t border-gray-400 pt-2 mt-16 text-center">
+          <p>Assinatura do Emitente</p>
+        </div>
+      </div>
+
+      {/* Customer Info */}
+      <div className="mt-8">
+        <p><span className="font-semibold">Nome:</span> {payment.customerName}</p>
+        {payment.customerDocument && (
+          <p><span className="font-semibold">CPF/CNPJ:</span> {payment.customerDocument}</p>
+        )}
+        {payment.customerAddress && (
+          <p><span className="font-semibold">Endereço:</span> {payment.customerAddress}</p>
+        )}
+      </div>
+
+      {/* Payment Details */}
+      <div className="mt-8 text-sm">
+        <p><span className="font-semibold">Referente ao pedido:</span> {payment.orderId}</p>
+        {payment.notes && (
+          <p><span className="font-semibold">Observações:</span> {payment.notes}</p>
+        )}
+        {payment.installments && Array.isArray(payment.installments) && payment.installments.length > 0 && (
+          <div className="mt-4">
+            <p className="font-semibold">Parcelas:</p>
+            <ul className="list-disc pl-5">
+              {payment.installments.map((installment, index) => (
+                <li key={index}>
+                  {formatDateToBR(installment.dueDate)}: {formatCurrency(installment.amount)}
+                </li>
+              ))}
+            </ul>
           </div>
-        ))}
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="mt-12 text-center text-xs text-gray-500">
+        {companyData?.footer ? (
+          <p>{companyData.footer}</p>
+        ) : (
+          <p>Este documento não tem valor fiscal - Apenas para controle interno</p>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default PromissoryNoteView;

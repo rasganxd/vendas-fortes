@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { DeliveryRoute, RouteStop } from '@/types';
+import { DeliveryRoute, RouteStop, Order } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import { toast } from '@/components/ui/use-toast';
 
@@ -84,7 +84,7 @@ export const useRoutesPage = () => {
       address: order.deliveryAddress || '',
       city: order.deliveryCity || '',
       state: order.deliveryState || '',
-      zipCode: order.deliveryZipCode || '',
+      zipCode: order.deliveryZip || '',
     };
 
     const newStop: RouteStop = {
@@ -94,10 +94,13 @@ export const useRoutesPage = () => {
       address: customer.address,
       city: customer.city,
       state: customer.state,
-      zipCode: customer.zipCode,
-      position: selectedRoute.stops.length + 1,
+      zip: customer.zipCode, // Using correct property name
       sequence: selectedRoute.stops.length + 1,
-      status: 'pending'
+      position: selectedRoute.stops.length + 1,
+      status: 'pending',
+      lat: 0,
+      lng: 0,
+      completed: false
     };
 
     const updatedStops = [...selectedRoute.stops, newStop];
@@ -136,9 +139,13 @@ export const useRoutesPage = () => {
       name: name,
       date: date,
       vehicleId: vehicleId,
-      vehicleName: selectedVehicle ? selectedVehicle.name : undefined,
-      status: 'planning', // Use 'planning' status
-      stops: []
+      vehicleName: selectedVehicle ? selectedVehicle.name : '',
+      status: 'pending', // Use 'pending' instead of 'planning' to match the type
+      stops: [],
+      driverId: '',
+      driverName: '',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     addRoute(newRoute);
@@ -158,9 +165,10 @@ export const useRoutesPage = () => {
     
     const assignedOrderIds = selectedRoute.stops.map(stop => stop.orderId);
     return orders.filter(order => {
-      if (order.status === undefined) return false;
+      // Make sure we filter appropriately based on valid status values
+      if (!order.status) return false;
       return !assignedOrderIds.includes(order.id) && 
-        (order.status === 'confirmed' || order.status === 'draft');
+        ['confirmed', 'draft', 'pending', 'processing'].includes(order.status);
     });
   };
 

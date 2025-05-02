@@ -8,7 +8,7 @@ export interface DeliveryRoute {
   vehicleId: string;
   vehicleName: string; // For compatibility
   stops: RouteStop[];
-  status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in-progress' | 'completed' | 'planning' | 'assigned';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,9 +21,11 @@ export interface RouteStop {
   city: string;
   state: string;
   zip: string;
+  zipCode?: string; // For compatibility
   lat: number;
   lng: number;
   sequence: number;
+  position: number; // For compatibility
   status: 'pending' | 'completed';
   completed: boolean;
   orderId?: string;
@@ -34,8 +36,9 @@ export interface Load {
   name: string;
   date: Date;
   vehicleId: string;
+  vehicleName?: string; // For compatibility
   items: LoadItem[];
-  status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in-progress' | 'completed' | 'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered';
   total: number;
   notes: string;
   createdAt: Date;
@@ -52,4 +55,17 @@ export interface LoadItem {
   total?: number;
   orderId?: string;
   orderItems?: OrderItem[];
+  productCode?: number; // For compatibility
+}
+
+export interface OrderItem {
+  id?: string;
+  productId: string;
+  productName: string;
+  productCode: number;
+  quantity: number;
+  price: number;
+  unitPrice: number;
+  discount: number;
+  total: number;
 }

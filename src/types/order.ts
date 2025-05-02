@@ -11,7 +11,7 @@ export interface Order {
   items: OrderItem[];
   total: number;
   discount: number;
-  status: 'pending' | 'processing' | 'completed' | 'canceled';
+  status: 'pending' | 'processing' | 'completed' | 'canceled' | 'confirmed' | 'draft';
   paymentStatus: 'pending' | 'partial' | 'paid';
   paymentMethodId: string;
   paymentMethod: string; // For compatibility
@@ -22,6 +22,9 @@ export interface Order {
   updatedAt: Date;
   archived?: boolean;
   deliveryZip?: string;
+  deliveryAddress?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
 }
 
 export interface OrderItem {

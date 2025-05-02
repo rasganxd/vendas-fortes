@@ -8,3 +8,4 @@ export * from './delivery';
 export * from './personnel';
 export * from './system';
 export * from './ui';
+export * from './vehicle';
