@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -32,84 +31,72 @@ import { cn } from "@/lib/utils";
 const navigation: NavItem[] = [
   {
     title: "Dashboard",
-    name: "Dashboard", // For compatibility
     href: "/",
     icon: LayoutDashboard,
     group: "geral"
   },
   {
     title: "Clientes",
-    name: "Clientes", // For compatibility
     href: "/clientes",
     icon: Users,
     group: "cadastro"
   },
   {
     title: "Produtos",
-    name: "Produtos", // For compatibility
     href: "/produtos",
     icon: Package,
     group: "cadastro"
   },
   {
     title: "Vendedores",
-    name: "Vendedores", // For compatibility
     href: "/vendedores",
     icon: UserRound,
     group: "cadastro"
   },
   {
     title: "Pedidos",
-    name: "Pedidos", // For compatibility
     href: "/pedidos",
     icon: FileText,
     group: "vendas"
   },
   {
     title: "Pagamentos",
-    name: "Pagamentos", // For compatibility
     href: "/pagamentos",
     icon: Coins,
     group: "financeiro"
   },
   {
     title: "Tabelas Pagto",
-    name: "Tabelas Pagto", // For compatibility
     href: "/pagamentos/tabelas", 
     icon: CreditCard,
     group: "financeiro"
   },
   {
     title: "Rotas",
-    name: "Rotas", // For compatibility
     href: "/rotas",
     icon: ListChecks,
     group: "logistics"
   },
   {
     title: "Cargas",
-    name: "Cargas", // For compatibility
     href: "/cargas",
     icon: Package,
     group: "logistics"
   },
   {
     title: "Veículos",
-    name: "Veículos", // For compatibility
     href: "/veiculos",
     icon: Truck,
     group: "logistics"
   },
   {
     title: "Config",
-    name: "Config", // For compatibility
     href: "/configuracoes",
     icon: Settings,
     group: "sistema"
   },
   {
     title: "Dados",
-    name: "Dados", // For compatibility
     href: "/manutencao",
     icon: Database,
     group: "sistema"
@@ -121,9 +108,10 @@ export default function SideNav() {
   
   // Group the navigation items by their group
   const groupedNavItems = navigation.reduce((groups, item) => {
-    const group = groups[item.group] || [];
-    group.push(item);
-    groups[item.group] = group;
+    const group = item.group || 'other';
+    const groupArray = groups[group] || [];
+    groupArray.push(item);
+    groups[group] = groupArray;
     return groups;
   }, {} as Record<string, NavItem[]>);
 

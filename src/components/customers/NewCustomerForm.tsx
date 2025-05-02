@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -28,6 +27,24 @@ interface NewCustomerFormProps {
   onCancel: () => void;
 }
 
+type CustomerFormValues = {
+  code: number;
+  name: string;
+  document: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  notes: string;
+  visitDays: string[];
+  visitFrequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+  email: string;
+  zip: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 const visitDaysOptions = [
   { id: "monday", label: "Segunda" },
   { id: "tuesday", label: "Terça" },
@@ -39,7 +56,7 @@ const visitDaysOptions = [
 ];
 
 const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit, onCancel }) => {
-  const form = useForm({
+  const form = useForm<CustomerFormValues>({
     defaultValues: {
       code: initialCode,
       name: '',
@@ -51,13 +68,25 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       zipCode: '',
       notes: '',
       visitDays: [] as string[],
-      visitFrequency: 'weekly' as 'weekly' | 'biweekly' | 'monthly' | 'quarterly'
+      visitFrequency: 'weekly',
+      email: '',
+      zip: '',
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   });
 
+  const handleSubmit = (data: CustomerFormValues) => {
+    onSubmit({
+      ...data,
+      // Ensure zip is set from zipCode for backward compatibility
+      zip: data.zipCode
+    });
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="code"
