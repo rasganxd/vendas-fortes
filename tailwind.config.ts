@@ -63,30 +63,30 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// App specific colors with muted palette (changed from bright to muted)
+				// Paleta de cores mais sofisticada e neutra
 				sales: {
-					50: '#f8f9fa',
-					100: '#f1f3f5',
-					200: '#e9ecef',
-					300: '#dee2e6',
-					400: '#ced4da',
-					500: '#adb5bd',
-					600: '#868e96',
-					700: '#495057',
-					800: '#343a40', // Primary deep blue replaced with gray
-					900: '#212529',
+					50: '#f8f9fc',
+					100: '#f1f3f9',
+					200: '#e5e9f2',
+					300: '#d0d7e5',
+					400: '#a4b0c8',
+					500: '#7d8daa',
+					600: '#5c6b89',
+					700: '#465169',
+					800: '#2d364a', // Cor principal - azul profundo mais escuro
+					900: '#1a202e',
 				},
 				teal: {
-					50: '#f0fdfa',
-					100: '#e6f7f7',
-					200: '#ccefef',
-					300: '#a8ddde',
-					400: '#79c7c8',
-					500: '#57aeb0',
-					600: '#3e8a8c', // Accent teal
-					700: '#2d6566',
-					800: '#1e4445',
-					900: '#133334',
+					50: '#edf8f8',
+					100: '#d5eded',
+					200: '#b0dbdb',
+					300: '#83c5c5',
+					400: '#57aeae',
+					500: '#3d9191',
+					600: '#2d7575', // Acento - teal mais suave
+					700: '#235a5a',
+					800: '#1b4545',
+					900: '#102828',
 				},
 				emerald: {
 					50: '#ecfdf5',
