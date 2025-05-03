@@ -1,22 +1,24 @@
-
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
+import { salesRepService } from '@/firebase/firestoreService'; 
 import { toast } from '@/components/ui/use-toast';
-import { salesRepService } from '@/firebase/firestoreService';
+import { mockSalesReps } from '@/data/mock';
 
 export const loadSalesReps = async (): Promise<SalesRep[]> => {
   try {
-    return await salesRepService.getAll();
+    const salesReps = await salesRepService.getAll();
+    return salesReps;
   } catch (error) {
-    console.error("Erro ao carregar representantes:", error);
-    return [];
+    console.error("Error loading sales reps:", error);
+    // If Firebase fails, return mock data
+    return mockSalesReps;
   }
 };
 
 export const useSalesReps = () => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  
   // Initialize sales reps when component mounts
   useEffect(() => {
     const fetchSalesReps = async () => {
@@ -25,7 +27,7 @@ export const useSalesReps = () => {
         const loadedSalesReps = await loadSalesReps();
         setSalesReps(loadedSalesReps);
       } catch (error) {
-        console.error("Erro ao carregar representantes:", error);
+        console.error("Error loading sales reps:", error);
       } finally {
         setIsLoading(false);
       }
@@ -33,7 +35,7 @@ export const useSalesReps = () => {
 
     fetchSalesReps();
   }, []);
-
+  
   // Function to generate next available code
   const generateNextCode = (): number => {
     if (salesReps.length === 0) return 1;
@@ -124,10 +126,10 @@ export const useSalesReps = () => {
   return {
     salesReps,
     isLoading,
-    setSalesReps,
     addSalesRep,
     updateSalesRep,
     deleteSalesRep,
-    generateNextCode
+    generateNextCode,
+    setSalesReps
   };
 };
