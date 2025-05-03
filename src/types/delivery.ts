@@ -37,6 +37,7 @@ export interface Load {
   date: Date;
   vehicleId: string;
   vehicleName?: string; // For compatibility
+  salesRepId?: string; // Add salesRepId property
   items: LoadItem[];
   status: 'pending' | 'in-progress' | 'completed' | 'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered';
   total: number;
@@ -52,10 +53,12 @@ export interface LoadItem {
   productId: string;
   productName: string;
   quantity: number;
+  price: number; // Add price property
   total?: number;
   orderId?: string;
   orderItems?: OrderItem[];
   productCode?: number; // For compatibility
+  customerId?: string; // Add customerId property
 }
 
 export interface OrderItem {

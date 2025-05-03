@@ -14,13 +14,12 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
-// Add the missing generateId function
+// Generate a unique ID using uuid
 export function generateId(): string {
   return uuidv4();
 }
 
-// Add the missing generateOrderCode function
+// Generate a random order code (6-digit number)
 export function generateOrderCode(): number {
-  // Generate a random 6-digit number for order codes
   return Math.floor(100000 + Math.random() * 900000);
 }

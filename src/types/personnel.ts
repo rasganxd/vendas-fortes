@@ -8,7 +8,8 @@ export interface SalesRep {
   notes: string;
   createdAt: Date;
   updatedAt: Date;
-  role?: string; // Add as an optional field
-  region?: string; // Add as an optional field
-  active?: boolean; // Add as an optional field
+  role?: string; // Optional field
+  region?: string; // Optional field
+  active?: boolean; // Optional field
+  code?: number; // Add code property
 }

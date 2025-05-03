@@ -60,7 +60,7 @@ export interface PaymentTableInstallment {
   description?: string;
 }
 
-// Update PaymentTableTerm to ensure it has required properties
+// Update PaymentTableTerm to ensure consistency with PaymentTableInstallment
 export interface PaymentTableTerm {
   id: string;
   days: number;
@@ -68,4 +68,3 @@ export interface PaymentTableTerm {
   description?: string;
   installment: number; // This property is required
 }
-

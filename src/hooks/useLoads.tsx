@@ -47,7 +47,7 @@ export const useLoads = () => {
     }
   }, [contextLoads]);
 
-  // Calculate total from items using price instead of unitPrice
+  // Calculate total from items using price
   const calculateItemsTotal = (items: LoadItem[]) => {
     return items.reduce((total, item) => {
       return total + (item.price * item.quantity);
@@ -60,6 +60,8 @@ export const useLoads = () => {
     const itemsByCustomer: { [customerId: string]: LoadItem[] } = {};
     
     load.items.forEach(item => {
+      if (!item.customerId) return; // Skip items without customerId
+      
       if (!itemsByCustomer[item.customerId]) {
         itemsByCustomer[item.customerId] = [];
       }
@@ -226,7 +228,7 @@ export const useLoads = () => {
     deleteLoad,
     generateOrders,
     setLoads,
-    getOrdersFromLoad, // Export the function
-    toggleLoadLock     // Export the new function
+    getOrdersFromLoad,
+    toggleLoadLock
   };
 };
