@@ -1,4 +1,3 @@
-
 import { 
   Customer, 
   Product, 
@@ -126,7 +125,7 @@ export const mockProducts: Product[] = [
     stock: 500,
     minStock: 50,
     unit: 'kg',
-    categoryId: 'cat1',
+    categoryId: 'cat1', // Changed from category to categoryId
     groupId: 'group1',
     brandId: 'brand1',
     createdAt: currentDate,
@@ -202,13 +201,17 @@ export const mockSalesReps: SalesRep[] = [
     name: 'João Silva',
     email: 'joao.silva@empresa.com',
     phone: '(11) 98765-4321',
-    address: 'Rua das Flores, 123',
+    address: 'Rua das Flores, 123', // Address is now valid
     city: 'São Paulo',
     state: 'SP',
     zip: '01234-567',
+    document: 'documento-sr1',
     notes: '',
     createdAt: currentDate,
-    updatedAt: currentDate
+    updatedAt: currentDate,
+    role: 'admin',
+    region: 'Zona Sul',
+    active: true
   },
   {
     id: 'sr2',
@@ -423,7 +426,7 @@ interface MockLoadItem {
   orderId?: string;
 }
 
-// Mock Load Items
+// Mock Load Items with price property
 const mockLoadItems = mockOrders
   .filter(order => order.status === 'confirmed')
   .flatMap(order => {
@@ -432,9 +435,11 @@ const mockLoadItems = mockOrders
       productId: item.productId,
       productName: item.productName,
       quantity: item.quantity,
+      price: item.price, // Add price property
       total: item.price * item.quantity,
       orderId: order.id,
-      productCode: item.productCode
+      productCode: item.productCode,
+      customerId: order.customerId // Add customerId
     }));
   });
 
@@ -446,6 +451,7 @@ export const mockLoads: Load[] = [
     date: randomFutureDate(),
     vehicleId: 'veh1',
     vehicleName: 'Van 01',
+    salesRepId: 'sr1', // Add salesRepId
     items: mockLoadItems.slice(0, 3),
     status: 'planning',
     total: mockLoadItems.slice(0, 3).reduce((sum, item) => sum + (item.total || 0), 0),
@@ -459,6 +465,7 @@ export const mockLoads: Load[] = [
     date: randomFutureDate(),
     vehicleId: 'veh2',
     vehicleName: 'Van 02',
+    salesRepId: 'sr2', // Add salesRepId
     items: mockLoadItems.slice(3),
     status: 'planning',
     total: mockLoadItems.slice(3).reduce((sum, item) => sum + (item.total || 0), 0),

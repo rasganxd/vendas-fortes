@@ -156,6 +156,7 @@ export default function BuildLoad() {
       productId: selectedProduct.id,
       productName: selectedProduct.name,
       quantity: quantity,
+      price: selectedProduct.price, // Add price property
     };
 
     setOrderItems([...orderItems, newLoadItem]);

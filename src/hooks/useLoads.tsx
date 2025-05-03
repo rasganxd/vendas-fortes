@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Load, LoadItem, Order, OrderItem, Customer, SalesRep } from '@/types';
 import { loadService } from '@/firebase/firestoreService';
@@ -97,7 +96,7 @@ export const useLoads = () => {
         items: orderItems,
         total: calculateItemsTotal(items),
         discount: 0,
-        status: 'completed', // Use completed instead of delivered
+        status: 'completed', // Using 'completed' instead of 'delivered'
         paymentStatus: 'paid',
         paymentMethod: 'auto-generated',
         paymentMethodId: '',

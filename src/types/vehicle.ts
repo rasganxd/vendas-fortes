@@ -11,4 +11,5 @@ export interface Vehicle {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  driverName?: string; // Add driverName property
 }

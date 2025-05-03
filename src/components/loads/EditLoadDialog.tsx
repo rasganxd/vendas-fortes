@@ -151,8 +151,9 @@ export const EditLoadDialog = ({ open, onOpenChange, load, onSave }: EditLoadDia
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
-          orderItems: [item]
-          // Remove productCode as it's not in the LoadItem interface
+          orderItems: [item],
+          price: item.price, // Add price property
+          customerId: order.customerId // Add customerId for consistency
         });
       });
     });

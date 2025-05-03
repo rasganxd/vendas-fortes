@@ -1,741 +1,338 @@
-import { useState } from 'react';
-import PageLayout from '@/components/layout/PageLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Trash, Edit, Plus, Info, Calendar, CreditCard, Banknote, FileText, Check } from 'lucide-react';
-import { formatDateToBR } from '@/lib/date-utils';
-import { toast } from "@/components/ui/use-toast";
-import { PaymentTable, PaymentTableInstallment, PaymentTableTerm } from '@/types';
-import { usePaymentTables } from '@/hooks/usePaymentTables';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableCaption,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn, generateId } from "@/lib/utils"
+import { format } from "date-fns"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { toast } from "@/components/ui/use-toast"
+import { Trash } from 'lucide-react';
+import { PaymentTable, PaymentTableInstallment, PaymentTableTerm } from '@/types';
+import PageLayout from '@/components/layout/PageLayout';
+
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Nome deve ter pelo menos 2 caracteres.",
+  }),
+  description: z.string().optional(),
+  type: z.string().optional(),
+  payableTo: z.string().optional(),
+  paymentLocation: z.string().optional(),
+  active: z.boolean().default(true),
+})
 
 export default function PaymentTables() {
-  const { paymentTables, addPaymentTable, updatePaymentTable, deletePaymentTable } = usePaymentTables();
+  const [open, setOpen] = useState(false);
+  const [days, setDays] = useState(0);
+  const [percentage, setPercentage] = useState(0);
+  const [description, setDescription] = useState('');
+  const [currentTerms, setCurrentTerms] = useState<PaymentTableTerm[]>([]);
 
-  const [isTableDialogOpen, setIsTableDialogOpen] = useState(false);
-  const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
-  const [isDeleteTableDialogOpen, setIsDeleteTableDialogOpen] = useState(false);
-  const [isDeleteTermDialogOpen, setIsDeleteTermDialogOpen] = useState(false);
-  
-  const [editingTable, setEditingTable] = useState<PaymentTable | null>(null);
-  const [editingTerm, setEditingTerm] = useState<PaymentTableTerm | null>(null);
-  const [selectedTable, setSelectedTable] = useState<PaymentTable | null>(null);
-  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
-  
-  // Form for payment table
-  const [tableForm, setTableForm] = useState({
-    name: '',
-    description: '',
-    type: 'standard' as PaymentTable['type'],
-    active: true
-  });
-  
-  // Form for payment term
-  const [termForm, setTermForm] = useState({
-    days: 0,
-    percentage: 0,
-    description: ''
-  });
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      type: "boleto",
+      payableTo: "",
+      paymentLocation: "",
+      active: true,
+    },
+  })
 
-  const handleOpenTableDialog = (table?: PaymentTable) => {
-    if (table) {
-      setEditingTable(table);
-      setTableForm({
-        name: table.name,
-        description: table.description || '',
-        type: table.type || 'standard',
-        active: table.active !== false // default to true if undefined
-      });
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    // Do something with the form values.
+    // ✅ This will be type-safe and validated.
+    console.log(values)
+  }
+
+  // Add the installment property when creating terms
+  const handleAddTerm = () => {
+    if (days > 0 && percentage > 0) {
+      const newTerm: PaymentTableTerm = {
+        id: generateId(),
+        days,
+        percentage,
+        description,
+        installment: currentTerms.length + 1 // Add installment property
+      };
+      
+      setCurrentTerms([...currentTerms, newTerm]);
+      setDays(0);
+      setPercentage(0);
+      setDescription('');
     } else {
-      setEditingTable(null);
-      setTableForm({
-        name: '',
-        description: '',
-        type: 'standard',
-        active: true
-      });
-    }
-    setIsTableDialogOpen(true);
-  };
-
-  const handleOpenTermDialog = (term?: PaymentTableTerm) => {
-    if (!selectedTable) return;
-    
-    if (term) {
-      setEditingTerm(term);
-      setTermForm({
-        days: term.days,
-        percentage: term.percentage,
-        description: term.description || ''
-      });
-    } else {
-      setEditingTerm(null);
-      setTermForm({
-        days: 0,
-        percentage: 0,
-        description: ''
-      });
-    }
-    setIsTermDialogOpen(true);
-  };
-
-  const handleOpenDeleteTableDialog = (tableId: string) => {
-    setDeletingItemId(tableId);
-    setIsDeleteTableDialogOpen(true);
-  };
-
-  const handleOpenDeleteTermDialog = (termId: string) => {
-    setDeletingItemId(termId);
-    setIsDeleteTermDialogOpen(true);
-  };
-
-  const handleTableFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setTableForm(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleTermFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setTermForm(prev => ({
-      ...prev,
-      [name]: name === 'days' || name === 'percentage' ? parseFloat(value) : value
-    }));
-  };
-
-  const handleTableTypeChange = (value: PaymentTable['type']) => {
-    setTableForm(prev => ({
-      ...prev,
-      type: value
-    }));
-  };
-
-  const handleSubmitTable = async () => {
-    if (!tableForm.name) {
       toast({
+        variant: "destructive",
         title: "Erro",
-        description: "Nome da tabela é obrigatório",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      if (editingTable) {
-        // Update existing table
-        await updatePaymentTable(editingTable.id, {
-          name: tableForm.name,
-          description: tableForm.description,
-          type: tableForm.type,
-          active: tableForm.active,
-          installments: editingTable.installments // Preserve existing installments
-        });
-        toast({ title: "Tabela atualizada com sucesso" });
-      } else {
-        // Create new table
-        const tableId = await addPaymentTable({
-          name: tableForm.name,
-          description: tableForm.description,
-          type: tableForm.type,
-          active: tableForm.active,
-          terms: [], // Initialize with empty terms array
-          installments: [], // Initialize with empty installments array
-          notes: '',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-        
-        // Find the new table in paymentTables and set it as selected
-        const newTable = paymentTables.find(t => t.id === tableId);
-        if (newTable) {
-          setSelectedTable(newTable);
-        }
-        toast({ title: "Tabela criada com sucesso" });
-      }
-      setIsTableDialogOpen(false);
-    } catch (error) {
-      console.error("Erro ao salvar tabela:", error);
-      toast({ 
-        title: "Erro ao salvar tabela", 
-        description: "Ocorreu um erro ao salvar a tabela de pagamento.", 
-        variant: "destructive" 
+        description: "Os campos de dias e percentagem são obrigatórios."
       });
     }
   };
 
-  // Fix the terms handling to work with arrays
-  const handleSubmitTerm = async () => {
-    if (!selectedTable) return;
-
-    if (termForm.percentage <= 0) {
-      toast({
-        title: "Erro",
-        description: "Percentual deve ser maior que zero",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      let updatedTerms: PaymentTableTerm[] = [];
-      
-      if (!selectedTable.terms) {
-        selectedTable.terms = [];
-      }
-      
-      if (editingTerm) {
-        // Update existing term
-        updatedTerms = Array.isArray(selectedTable.terms) ? selectedTable.terms.map(term => 
-          term.id === editingTerm.id 
-            ? {
-                ...term,
-                days: termForm.days,
-                percentage: termForm.percentage,
-                description: termForm.description
-              }
-            : term
-        ) : [];
-      } else {
-        // Create new term
-        const newTerm: PaymentTableTerm = {
-          id: `${selectedTable.id}-${Date.now()}`,
-          days: termForm.days,
-          percentage: termForm.percentage,
-          description: termForm.description
-        };
-        updatedTerms = Array.isArray(selectedTable.terms) ? [...selectedTable.terms, newTerm] : [newTerm];
-      }
-
-      // Sort terms by days
-      updatedTerms.sort((a, b) => a.days - b.days);
-
-      // Update the payment table with new terms
-      await updatePaymentTable(selectedTable.id, {
-        terms: updatedTerms
-      });
-
-      setIsTermDialogOpen(false);
-      toast({ 
-        title: editingTerm ? "Prazo atualizado com sucesso" : "Prazo adicionado com sucesso" 
-      });
-    } catch (error) {
-      console.error("Erro ao salvar prazo:", error);
-      toast({ 
-        title: "Erro ao salvar prazo", 
-        description: "Ocorreu um erro ao salvar o prazo de pagamento.", 
-        variant: "destructive" 
-      });
-    }
-  };
-
-  const handleDeleteTable = async () => {
-    if (!deletingItemId) return;
-    
-    try {
-      await deletePaymentTable(deletingItemId);
-      
-      if (selectedTable && selectedTable.id === deletingItemId) {
-        const remainingTables = paymentTables.filter(t => t.id !== deletingItemId);
-        setSelectedTable(remainingTables.length > 0 ? remainingTables[0] : null);
-      }
-      
-      toast({ title: "Tabela excluída com sucesso" });
-    } catch (error) {
-      console.error("Erro ao excluir tabela:", error);
-      toast({ 
-        title: "Erro ao excluir tabela", 
-        description: "Ocorreu um erro ao excluir a tabela de pagamento.", 
-        variant: "destructive" 
-      });
-    } finally {
-      setIsDeleteTableDialogOpen(false);
-      setDeletingItemId(null);
-    }
-  };
-
-  const handleDeleteTerm = async () => {
-    if (!deletingItemId || !selectedTable || !selectedTable.terms) return;
-    
-    try {
-      const termsArray = Array.isArray(selectedTable.terms) ? selectedTable.terms : [];
-      const updatedTerms = termsArray.filter(term => term.id !== deletingItemId);
-      
-      await updatePaymentTable(selectedTable.id, {
-        terms: updatedTerms
-      });
-      
-      toast({ title: "Prazo excluído com sucesso" });
-    } catch (error) {
-      console.error("Erro ao excluir prazo:", error);
-      toast({ 
-        title: "Erro ao excluir prazo", 
-        description: "Ocorreu um erro ao excluir o prazo de pagamento.", 
-        variant: "destructive" 
-      });
-    } finally {
-      setIsDeleteTermDialogOpen(false);
-      setDeletingItemId(null);
-    }
-  };
-
-  const calculateTotal = (terms: PaymentTableTerm[] | undefined) => {
-    if (!terms || !Array.isArray(terms)) return 0;
-    return terms.reduce((sum, term) => sum + term.percentage, 0);
-  };
-
-  const getPaymentTypeIcon = (type?: string) => {
-    switch (type) {
-      case 'card':
-        return <CreditCard size={16} className="mr-2 text-blue-500" />;
-      case 'cash':
-        return <Banknote size={16} className="mr-2 text-green-500" />;
-      case 'check':
-        return <Check size={16} className="mr-2 text-purple-500" />;
-      case 'promissory_note':
-        return <FileText size={16} className="mr-2 text-amber-500" />;
-      case 'bank_slip':
-        return <FileText size={16} className="mr-2 text-gray-500" />;
-      default:
-        return <Info size={16} className="mr-2 text-gray-400" />;
-    }
-  };
-
-  const getPaymentTypeDisplayName = (type?: string) => {
-    switch (type) {
-      case 'card':
-        return 'Cartão';
-      case 'cash':
-        return 'À Vista';
-      case 'check':
-        return 'Cheque';
-      case 'promissory_note':
-        return 'Nota Promissória';
-      case 'bank_slip':
-        return 'Boleto';
-      default:
-        return 'Padrão';
-    }
+  const handleRemoveTerm = (id: string) => {
+    setCurrentTerms(prevTerms => prevTerms.filter(term => term.id !== id));
   };
 
   return (
     <PageLayout title="Tabelas de Pagamento">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Tabelas</CardTitle>
-              <Button 
-                onClick={() => handleOpenTableDialog()} 
-                variant="outline" 
-                size="sm"
-              >
-                <PlusCircle size={16} className="mr-2" />
-                Nova Tabela
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {paymentTables.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>Nenhuma tabela de pagamento cadastrada</p>
-                <Button 
-                  onClick={() => handleOpenTableDialog()}
-                  variant="outline" 
-                  className="mt-2"
-                >
-                  Cadastrar Tabela
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {paymentTables.map(table => (
-                  <div
-                    key={table.id}
-                    className={`p-3 border rounded-md cursor-pointer ${
-                      selectedTable?.id === table.id ? 'bg-blue-50 border-blue-200' : ''
-                    }`}
-                    onClick={() => setSelectedTable(table)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        {getPaymentTypeIcon(table.type)}
-                        <div>
-                          <p className="font-medium">{table.name}</p>
-                          <p className="text-sm text-gray-500">
-                            {getPaymentTypeDisplayName(table.type)} • {table.terms.length} prazos
-                          </p>
-                        </div>
-                      </div>
-                      <div>
-                        {table.active !== false ? (
-                          <Badge className="bg-green-600">Ativo</Badge>
-                        ) : (
-                          <Badge variant="outline">Inativo</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                {selectedTable && (
-                  <div className="flex items-center">
-                    {getPaymentTypeIcon(selectedTable.type)}
-                    <CardTitle>{selectedTable.name}</CardTitle>
-                  </div>
-                )}
-                {!selectedTable && <CardTitle>Detalhes da Tabela</CardTitle>}
-                {selectedTable && (
-                  <CardDescription className="mt-1">
-                    {selectedTable.description} • {getPaymentTypeDisplayName(selectedTable.type)}
-                  </CardDescription>
-                )}
-              </div>
-              {selectedTable && (
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleOpenTableDialog(selectedTable)}
-                  >
-                    <Edit size={16} className="mr-2" />
-                    Editar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleOpenDeleteTableDialog(selectedTable.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash size={16} className="mr-2" />
-                    Excluir
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!selectedTable ? (
-              <div className="text-center py-12 text-gray-500">
-                <Info size={40} className="mx-auto text-gray-300 mb-4" />
-                <p>Selecione uma tabela de pagamento para visualizar os detalhes</p>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      Criado em: {formatDateToBR(selectedTable.createdAt)}
-                    </p>
-                    {selectedTable.updatedAt && (
-                      <p className="text-sm text-gray-500">
-                        Atualizado em: {formatDateToBR(selectedTable.updatedAt)}
-                      </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Tabelas de Pagamento</CardTitle>
+          <CardDescription>
+            Gerencie as tabelas de pagamento da sua empresa
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>Adicionar Tabela</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Adicionar Tabela</DialogTitle>
+                <DialogDescription>
+                  Crie uma nova tabela de pagamento
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome da tabela" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Descrição da tabela" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um tipo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="boleto">Boleto</SelectItem>
+                            <SelectItem value="cartao">Cartão</SelectItem>
+                            <SelectItem value="pix">PIX</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="payableTo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Favorecido</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Favorecido" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="paymentLocation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Local de Pagamento</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Local de Pagamento" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel>Ativo</FormLabel>
+                          <FormDescription>
+                            Essa tabela está ativa?
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit">Criar Tabela</Button>
+                </form>
+              </Form>
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4">Condições de Pagamento</h3>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="days">Dias</Label>
+                    <Input
+                      type="number"
+                      id="days"
+                      value={days}
+                      onChange={(e) => setDays(Number(e.target.value))}
+                    />
                   </div>
-                  <Button 
-                    onClick={() => handleOpenTermDialog()} 
-                    className="bg-sales-800 hover:bg-sales-700"
-                  >
-                    <Plus size={16} className="mr-2" />
-                    Adicionar Prazo
-                  </Button>
+                  <div>
+                    <Label htmlFor="percentage">Percentagem</Label>
+                    <Input
+                      type="number"
+                      id="percentage"
+                      value={percentage}
+                      onChange={(e) => setPercentage(Number(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Descrição</Label>
+                    <Input
+                      type="text"
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </div>
                 </div>
-
-                <div className="border rounded-md">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Dias</TableHead>
-                        <TableHead>Percentual</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedTable.terms.length === 0 ? (
+                <Button onClick={handleAddTerm}>Adicionar Condição</Button>
+                {currentTerms.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-md font-semibold mb-2">Condições Adicionadas</h4>
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center py-4 text-gray-500">
-                            Nenhum prazo cadastrado para esta tabela
-                          </TableCell>
+                          <TableHead>Dias</TableHead>
+                          <TableHead>Percentagem</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
-                      ) : (
-                        selectedTable.terms.map(term => (
+                      </TableHeader>
+                      <TableBody>
+                        {currentTerms.map(term => (
                           <TableRow key={term.id}>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <Calendar size={16} className="mr-2 text-gray-400" />
-                                {term.days}
-                              </div>
-                            </TableCell>
-                            <TableCell>{term.percentage}%</TableCell>
+                            <TableCell>{term.days}</TableCell>
+                            <TableCell>{term.percentage}</TableCell>
                             <TableCell>{term.description}</TableCell>
                             <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleOpenTermDialog(term)}
-                                >
-                                  <Edit size={16} />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleOpenDeleteTermDialog(term.id)}
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <Trash size={16} />
-                                </Button>
-                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleRemoveTerm(term.id)}
+                              >
+                                <Trash size={16} className="text-destructive" />
+                              </Button>
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                      {selectedTable.terms.length > 0 && (
-                        <TableRow>
-                          <TableCell colSpan={1} className="font-bold">
-                            Total
-                          </TableCell>
-                          <TableCell className="font-bold">
-                            {calculateTotal(selectedTable.terms).toFixed(2)}%
-                          </TableCell>
-                          <TableCell colSpan={2}></TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-                
-                {calculateTotal(selectedTable.terms) !== 100 && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800">
-                    <p className="flex items-center">
-                      <Info size={16} className="mr-2" />
-                      O total dos percentuais deve ser igual a 100%. Atualmente: {calculateTotal(selectedTable.terms).toFixed(2)}%
-                    </p>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Dialog for adding/editing payment table */}
-      <Dialog open={isTableDialogOpen} onOpenChange={setIsTableDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {editingTable ? 'Editar Tabela de Pagamento' : 'Nova Tabela de Pagamento'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Nome da tabela de pagamento"
-                value={tableForm.name}
-                onChange={handleTableFormChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="type">Tipo de Pagamento</Label>
-              <Select
-                value={tableForm.type}
-                onValueChange={handleTableTypeChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo de pagamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Padrão</SelectItem>
-                  <SelectItem value="promissory_note">Nota Promissória</SelectItem>
-                  <SelectItem value="card">Cartão</SelectItem>
-                  <SelectItem value="check">Cheque</SelectItem>
-                  <SelectItem value="cash">À Vista</SelectItem>
-                  <SelectItem value="bank_slip">Boleto</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição (opcional)</Label>
-              <Input
-                id="description"
-                name="description"
-                placeholder="Descrição da tabela de pagamento"
-                value={tableForm.description}
-                onChange={handleTableFormChange}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="active"
-                name="active"
-                checked={tableForm.active}
-                onCheckedChange={(checked) => 
-                  setTableForm(prev => ({ ...prev, active: checked }))
-                }
-              />
-              <Label htmlFor="active">Tabela Ativa</Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTableDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleSubmitTable}>
-              {editingTable ? 'Atualizar' : 'Cadastrar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog for adding/editing payment term */}
-      <Dialog open={isTermDialogOpen} onOpenChange={setIsTermDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {editingTerm ? 'Editar Prazo de Pagamento' : 'Novo Prazo de Pagamento'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="days">Dias</Label>
-              <Input
-                id="days"
-                name="days"
-                type="number"
-                min="0"
-                placeholder="Dias para pagamento"
-                value={termForm.days}
-                onChange={handleTermFormChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="percentage">Percentual (%)</Label>
-              <Input
-                id="percentage"
-                name="percentage"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                placeholder="Percentual do valor total"
-                value={termForm.percentage}
-                onChange={handleTermFormChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="termDescription">Descrição (opcional)</Label>
-              <Input
-                id="termDescription"
-                name="description"
-                placeholder="Ex: Entrada, 1ª parcela, etc"
-                value={termForm.description}
-                onChange={handleTermFormChange}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTermDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleSubmitTerm}>
-              {editingTerm ? 'Atualizar' : 'Adicionar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Alert dialog for deleting payment table */}
-      <AlertDialog open={isDeleteTableDialogOpen} onOpenChange={setIsDeleteTableDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir tabela de pagamento</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir esta tabela de pagamento? Esta ação n��o pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteTable}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Alert dialog for deleting payment term */}
-      <AlertDialog open={isDeleteTermDialogOpen} onOpenChange={setIsDeleteTermDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir prazo de pagamento</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este prazo de pagamento? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteTerm}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Salvar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
     </PageLayout>
-  );
+  )
 }

@@ -55,7 +55,7 @@ interface FormErrors {
 }
 
 export default function SalesReps() {
-  const { salesReps, addSalesRep, updateSalesRep, deleteSalesRep, generateNextCode } = useSalesReps();
+  const { salesReps, addSalesRep, updateSalesRep, deleteSalesRep, generateNextCode, generateNextSalesRepCode } = useSalesReps();
   const [search, setSearch] = useState('');
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -66,7 +66,12 @@ export default function SalesReps() {
     name: '',
     email: '',
     phone: '',
+    document: '', // Add required property
+    notes: '', // Add required property
+    createdAt: new Date(), // Add required property
+    updatedAt: new Date(), // Add required property
     role: 'sales',
+    region: '',
     active: true
   });
   const [newSalesRep, setNewSalesRep] = useState<Omit<SalesRep, 'id'>>({
@@ -74,7 +79,12 @@ export default function SalesReps() {
     name: '',
     email: '',
     phone: '',
+    document: '', // Add required property
+    notes: '', // Add required property
+    createdAt: new Date(), // Add required property
+    updatedAt: new Date(), // Add required property
     role: 'sales',
+    region: '',
     active: true
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -117,6 +127,10 @@ export default function SalesReps() {
       name: '',
       email: '',
       phone: '',
+      document: '', // Add required property
+      notes: '', // Add required property
+      createdAt: new Date(), // Add required property
+      updatedAt: new Date(), // Add required property
       role: 'sales',
       region: '',
       active: true
@@ -150,6 +164,10 @@ export default function SalesReps() {
           name: newSalesRep.name,
           email: newSalesRep.email,
           phone: newSalesRep.phone,
+          document: newSalesRep.document, // Add required property
+          notes: newSalesRep.notes, // Add required property
+          createdAt: newSalesRep.createdAt, // Add required property
+          updatedAt: newSalesRep.updatedAt, // Add required property
           role: newSalesRep.role as 'admin' | 'manager' | 'sales' | 'driver',
           region: newSalesRep.region,
           active: newSalesRep.active
@@ -170,6 +188,10 @@ export default function SalesReps() {
           name: editingSalesRep.name,
           email: editingSalesRep.email,
           phone: editingSalesRep.phone,
+          document: editingSalesRep.document, // Add required property
+          notes: editingSalesRep.notes, // Add required property
+          createdAt: editingSalesRep.createdAt, // Add required property
+          updatedAt: editingSalesRep.updatedAt, // Add required property
           role: editingSalesRep.role as 'admin' | 'manager' | 'sales' | 'driver',
           region: editingSalesRep.region,
           active: editingSalesRep.active

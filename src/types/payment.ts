@@ -60,7 +60,7 @@ export interface PaymentTableInstallment {
   description?: string;
 }
 
-// Update PaymentTableTerm to ensure consistency with PaymentTableInstallment
+// Make PaymentTableTerm and PaymentTableInstallment interface compatible
 export interface PaymentTableTerm {
   id: string;
   days: number;
