@@ -16,5 +16,24 @@ export interface Customer {
   document?: string;
   visitDays?: string[];
   visitFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
-  visitSequence?: number; // Novo campo para sequência de visita
+  visitSequence?: number;
 }
+
+export type CustomerFormValues = {
+  code: number;
+  name: string;
+  document: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  notes: string;
+  visitDays: string[];
+  visitFrequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+  email: string;
+  zip: string;
+  createdAt: Date;
+  updatedAt: Date;
+  visitSequence: number;
+};
