@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import {
   Table,
@@ -19,7 +20,7 @@ import { Plus, Edit, Trash } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
 const SalesRepsPage = () => {
-  const { salesReps, addSalesRep, generateNextCode, isLoading, setSalesReps } = useSalesReps();
+  const { salesReps, addSalesRep, updateSalesRep, generateNextCode, isLoading, setSalesReps } = useSalesReps();
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
@@ -75,6 +76,26 @@ const SalesRepsPage = () => {
         description: "Houve um problema ao criar o representante de vendas.",
         variant: "destructive",
       })
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedSalesRep) return;
+    
+    try {
+      await updateSalesRep(selectedSalesRep.id, selectedSalesRep);
+      setOpenEdit(false);
+      toast({
+        title: "Representante de vendas atualizado",
+        description: "Representante de vendas atualizado com sucesso!",
+      });
+    } catch (error) {
+      console.error("Error updating sales rep:", error);
+      toast({
+        title: "Erro ao atualizar representante de vendas",
+        description: "Houve um problema ao atualizar o representante de vendas.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -159,11 +180,8 @@ const SalesRepsPage = () => {
           open={openEdit}
           onOpenChange={setOpenEdit}
           salesRep={selectedSalesRep}
-          setSalesRep={(updatedSalesRep) => {
-            if (selectedSalesRep) {
-              setSalesReps(salesReps.map(sr => sr.id === selectedSalesRep.id ? updatedSalesRep : sr));
-            }
-          }}
+          setSalesRep={setSelectedSalesRep}
+          onSave={handleUpdate}
           title="Editar Representante de Vendas"
         />
       )}
