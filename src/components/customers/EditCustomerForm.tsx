@@ -21,6 +21,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface EditCustomerFormProps {
   customer: Customer;
@@ -51,26 +52,58 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       zipCode: customer.zipCode || '',
       notes: customer.notes || '',
       visitDays: customer.visitDays || [],
-      visitFrequency: customer.visitFrequency || 'weekly'
+      visitFrequency: customer.visitFrequency || 'weekly',
+      visitSequence: customer.visitSequence || 1
     }
   });
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="code"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Código</FormLabel>
-              <FormControl>
-                <Input {...field} type="number" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Código</FormLabel>
+                <FormControl>
+                  <Input {...field} type="number" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="visitSequence"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sequência de Visita (1-1000)</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="number"
+                    min={1}
+                    max={1000}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (value >= 1 && value <= 1000) {
+                        field.onChange(value);
+                      } else if (value < 1) {
+                        field.onChange(1);
+                      } else if (value > 1000) {
+                        field.onChange(1000);
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         
         <FormField
           control={form.control}
@@ -255,7 +288,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
             <FormItem>
               <FormLabel>Observações</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Textarea {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

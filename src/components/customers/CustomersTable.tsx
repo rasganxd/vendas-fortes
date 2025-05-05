@@ -1,16 +1,23 @@
 
 import React from 'react';
-import { Customer } from '@/types';
-import { Edit, Trash2, Eye, MapPin } from 'lucide-react';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Eye, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
+import { Customer } from '@/types';
+import { formatVisitFrequency } from './constants';
 
 interface CustomersTableProps {
   customers: Customer[];
@@ -19,76 +26,74 @@ interface CustomersTableProps {
   onDelete: (id: string) => void;
 }
 
-const CustomersTable: React.FC<CustomersTableProps> = ({ customers, onView, onEdit, onDelete }) => {
+const CustomersTable: React.FC<CustomersTableProps> = ({
+  customers,
+  onView,
+  onEdit,
+  onDelete
+}) => {
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-16">Código</TableHead>
+          <TableHead className="w-[80px]">Código</TableHead>
           <TableHead>Nome</TableHead>
-          <TableHead className="hidden md:table-cell">Documento</TableHead>
           <TableHead className="hidden md:table-cell">Telefone</TableHead>
-          <TableHead className="hidden lg:table-cell">Endereço</TableHead>
+          <TableHead className="hidden lg:table-cell">Cidade</TableHead>
+          <TableHead className="hidden lg:table-cell">Frequência</TableHead>
+          <TableHead className="hidden md:table-cell">Seq. Visita</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {customers.length > 0 ? (
+        {customers.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+              Nenhum cliente encontrado
+            </TableCell>
+          </TableRow>
+        ) : (
           customers.map((customer) => (
-            <TableRow key={customer.id} className="hover:bg-muted/50">
-              <TableCell className="font-medium">{customer.code || 'N/A'}</TableCell>
+            <TableRow key={customer.id}>
+              <TableCell className="font-medium">{customer.code}</TableCell>
               <TableCell>{customer.name}</TableCell>
-              <TableCell className="hidden md:table-cell">{customer.document || 'Não informado'}</TableCell>
               <TableCell className="hidden md:table-cell">{customer.phone}</TableCell>
+              <TableCell className="hidden lg:table-cell">{customer.city}</TableCell>
               <TableCell className="hidden lg:table-cell">
-                {customer.address ? (
-                  <div className="flex items-center">
-                    <MapPin className="h-3 w-3 mr-1 text-gray-500" />
-                    <span className="truncate max-w-[200px]">
-                      {customer.address}, {customer.city}/{customer.state}
-                    </span>
-                  </div>
-                ) : (
-                  'Não informado'
-                )}
+                {customer.visitFrequency ? formatVisitFrequency(customer.visitFrequency) : '—'}
+              </TableCell>
+              <TableCell className="hidden md:table-cell">
+                {customer.visitSequence || '—'}
               </TableCell>
               <TableCell className="text-right">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => onView(customer)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Eye className="h-4 w-4" />
-                  <span className="sr-only">Detalhes</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => onEdit(customer)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span className="sr-only">Editar</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => onDelete(customer.id)}
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Excluir</span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Abrir menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onView(customer)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Visualizar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit(customer)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => onDelete(customer.id)}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan={6} className="h-24 text-center">
-              Nenhum cliente encontrado.
-            </TableCell>
-          </TableRow>
         )}
       </TableBody>
     </Table>

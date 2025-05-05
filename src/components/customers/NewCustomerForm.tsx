@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface NewCustomerFormProps {
   initialCode: number;
@@ -43,6 +45,7 @@ type CustomerFormValues = {
   zip: string;
   createdAt: Date;
   updatedAt: Date;
+  visitSequence: number;
 };
 
 const visitDaysOptions = [
@@ -72,7 +75,8 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       email: '',
       zip: '',
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      visitSequence: 1
     }
   });
 
@@ -87,19 +91,50 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="code"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Código</FormLabel>
-              <FormControl>
-                <Input {...field} type="number" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Código</FormLabel>
+                <FormControl>
+                  <Input {...field} type="number" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="visitSequence"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sequência de Visita (1-1000)</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="number"
+                    min={1}
+                    max={1000}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (value >= 1 && value <= 1000) {
+                        field.onChange(value);
+                      } else if (value < 1) {
+                        field.onChange(1);
+                      } else if (value > 1000) {
+                        field.onChange(1000);
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         
         <FormField
           control={form.control}
@@ -284,7 +319,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
             <FormItem>
               <FormLabel>Observações</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Textarea {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

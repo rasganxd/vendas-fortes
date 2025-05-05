@@ -16,4 +16,5 @@ export interface Customer {
   document?: string;
   visitDays?: string[];
   visitFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+  visitSequence?: number; // Novo campo para sequência de visita
 }
