@@ -57,11 +57,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Vehicle } from '@/types';
 
-// Form schema
+// Form schema - update to match the type requirements
 const vehicleFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
   licensePlate: z.string().min(7, { message: "Placa deve ter pelo menos 7 caracteres" }),
   type: z.enum(["car", "van", "truck", "motorcycle"]),
+  model: z.string().default(""),
   capacity: z.number().min(0, { message: "Capacidade deve ser um número positivo" }),
   driverName: z.string().optional(),
   active: z.boolean().default(true)
@@ -80,7 +81,8 @@ export default function Vehicles() {
     defaultValues: {
       name: "",
       licensePlate: "",
-      type: "car",
+      type: "car" as const,
+      model: "",
       capacity: 0,
       driverName: "",
       active: true
@@ -93,6 +95,7 @@ export default function Vehicles() {
       name: vehicle.name,
       licensePlate: vehicle.licensePlate,
       type: vehicle.type,
+      model: vehicle.model,
       capacity: vehicle.capacity,
       driverName: vehicle.driverName || "",
       active: vehicle.active
@@ -106,6 +109,7 @@ export default function Vehicles() {
       name: "",
       licensePlate: "",
       type: "car",
+      model: "",
       capacity: 0,
       driverName: "",
       active: true
@@ -140,6 +144,7 @@ export default function Vehicles() {
         name: data.name,
         licensePlate: data.licensePlate,
         type: data.type,
+        model: data.model,
         capacity: data.capacity,
         driverName: data.driverName,
         active: data.active
@@ -149,9 +154,12 @@ export default function Vehicles() {
         name: data.name,
         licensePlate: data.licensePlate,
         type: data.type,
+        model: data.model,
         capacity: data.capacity,
         driverName: data.driverName,
-        active: data.active
+        active: data.active,
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
     }
     setIsDialogOpen(false);

@@ -2,7 +2,7 @@
 export interface Vehicle {
   id: string;
   name: string;
-  type: string;
+  type: "car" | "van" | "truck" | "motorcycle";
   licensePlate: string;
   model: string;
   capacity: number;
@@ -11,5 +11,5 @@ export interface Vehicle {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
-  driverName?: string; // Add driverName property
+  driverName?: string; 
 }

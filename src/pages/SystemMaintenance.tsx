@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Backup, Order } from '@/types';
@@ -72,10 +73,12 @@ const SystemMaintenance = () => {
     const today = format(new Date(), 'dd/MM/yyyy');
     const backupId = createBackup(`Backup Diário - ${today}`, 'Backup automático criado ao iniciar novo dia');
     
-    const archivedOrders = orders.filter(order => order.status === 'delivered' || order.status === 'cancelled');
+    // Fix the status comparison - update according to the allowed status values in Order type
+    const archivedOrders = orders.filter(order => order.status === 'completed' || order.status === 'canceled');
     
+    // Fix the status comparison - update according to the allowed status values in Order type
     const pendingOrders = orders.filter(order => 
-      order.status !== 'delivered' && order.status !== 'cancelled'
+      order.status !== 'completed' && order.status !== 'canceled'
     ).map(order => ({
       ...order,
       archived: true

@@ -3,6 +3,8 @@ export interface Backup {
   id: string;
   name: string;
   description: string;
+  date: Date; // Changed from createdAt/updatedAt to match usage in code
+  data: any; // Add the data property which is missing
   createdAt: Date;
   updatedAt: Date;
 }
