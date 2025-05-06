@@ -11,7 +11,7 @@ import Orders from '@/pages/Orders';
 import NewOrder from '@/pages/NewOrder';
 import Loads from '@/pages/Loads';
 import BuildLoad from '@/pages/BuildLoad';
-import Routes from '@/pages/Routes';
+import RoutesPage from '@/pages/RoutesPage';
 import SalesReps from '@/pages/SalesReps';
 import Vehicles from '@/pages/Vehicles';
 import PaymentTables from '@/pages/PaymentTables';
@@ -44,7 +44,7 @@ function App() {
           <Route path="/pedidos/novo" element={<NewOrder />} />
           <Route path="/cargas" element={<Loads />} />
           <Route path="/cargas/:id" element={<BuildLoad />} />
-          <Route path="/rotas" element={<Routes />} />
+          <Route path="/rotas" element={<RoutesPage />} />
           <Route path="/vendedores" element={<SalesReps />} />
           <Route path="/veiculos" element={<Vehicles />} />
           <Route path="/condicoes-pagamento" element={<PaymentTables />} />
