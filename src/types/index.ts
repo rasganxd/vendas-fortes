@@ -4,7 +4,7 @@ export * from './customer';
 export * from './product';
 
 // For order.ts, need to be explicit to avoid duplicate exports
-export { Order } from './order';
+export type { Order } from './order';
 export type { OrderStatus } from './order';
 export type { OrderItem } from './order';
 export type { PaymentSummary } from './order';
