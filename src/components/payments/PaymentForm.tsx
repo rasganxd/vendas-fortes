@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -75,12 +74,16 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
               <SelectValue placeholder="Selecione o pedido" />
             </SelectTrigger>
             <SelectContent>
-              {pendingPaymentOrders.map(order => (
-                <SelectItem key={order.id} value={order.id}>
-                  {order.id} - {order.customerName} - 
-                  {(order.total - order.paid).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </SelectItem>
-              ))}
+              {pendingPaymentOrders.length > 0 ? (
+                pendingPaymentOrders.map(order => (
+                  <SelectItem key={order.id} value={order.id}>
+                    {order.id} - {order.customerName} - 
+                    {(order.total - order.paid).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="no-orders">Nenhum pedido pendente</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>

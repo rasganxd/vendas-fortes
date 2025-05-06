@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
@@ -206,7 +205,7 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
               <SelectValue placeholder="Padrão" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Padrão</SelectItem>
+              <SelectItem value="default-table">Padrão</SelectItem>
               {(Array.isArray(paymentTables) ? paymentTables : []).map((table) => (
                 <SelectItem key={table.id} value={table.id}>
                   {table.name}

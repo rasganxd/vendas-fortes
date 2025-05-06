@@ -1,3 +1,7 @@
+
+// I need to fix the SelectItem components in the Products.tsx file
+// Since it's a large file, I'll only update the relevant parts
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -382,7 +386,7 @@ export default function Products() {
                   <SelectValue placeholder="Todas as Categorias" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as Categorias</SelectItem>
+                  <SelectItem value="all-categories">Todas as Categorias</SelectItem>
                   {productCategories.map(category => (
                     <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                   ))}
