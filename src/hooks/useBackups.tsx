@@ -50,6 +50,8 @@ export const useBackups = () => {
       id,
       name,
       description: description || '',
+      date: new Date(),  // Add the date property
+      data: backupData,  // Add the data property
       createdAt: new Date(),
       updatedAt: new Date()
     };

@@ -11,7 +11,7 @@ export interface Order {
   items: OrderItem[];
   total: number;
   discount: number;
-  status: 'pending' | 'processing' | 'completed' | 'canceled' | 'confirmed' | 'draft';
+  status: OrderStatus;
   paymentStatus: 'pending' | 'partial' | 'paid';
   paymentMethodId: string;
   paymentMethod: string; // For compatibility
@@ -27,6 +27,8 @@ export interface Order {
   deliveryState?: string;
 }
 
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'canceled' | 'confirmed' | 'draft';
+
 export interface OrderItem {
   id?: string;
   productId: string;
@@ -37,4 +39,10 @@ export interface OrderItem {
   unitPrice: number; // For compatibility
   discount: number;
   total: number;
+}
+
+export interface PaymentSummary {
+  total: number;
+  paid: number;
+  pending: number;
 }
