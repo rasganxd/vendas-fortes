@@ -1,8 +1,6 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
-import { ThemeProvider } from '@/components/theme-provider';
-import { AppContextProvider } from '@/context/AppContext';
 import { Toaster } from '@/components/ui/toaster';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
@@ -34,33 +32,29 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <AppContextProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/clientes" element={<Customers />} />
-            <Route path="/produtos" element={<Products />} />
-            <Route path="/pedidos" element={<Orders />} />
-            <Route path="/pedidos/novo" element={<NewOrder />} />
-            <Route path="/cargas" element={<Loads />} />
-            <Route path="/cargas/:id" element={<BuildLoad />} />
-            <Route path="/rotas" element={<Routes />} />
-            <Route path="/vendedores" element={<SalesReps />} />
-            <Route path="/veiculos" element={<Vehicles />} />
-            <Route path="/condicoes-pagamento" element={<PaymentTables />} />
-            <Route path="/metodos-pagamento" element={<PaymentMethods />} />
-            <Route path="/pagamentos" element={<Payments />} />
-            <Route path="/lista-pagamentos" element={<PaymentsList />} />
-            <Route path="/configuracoes" element={<Settings />} />
-            <Route path="/sistema" element={<SystemMaintenance />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
-        <Toaster />
-      </AppContextProvider>
-    </ThemeProvider>
+    <Router>
+      <RouterRoutes>
+        <Route path="/" element={<Index />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/clientes" element={<Customers />} />
+        <Route path="/produtos" element={<Products />} />
+        <Route path="/pedidos" element={<Orders />} />
+        <Route path="/pedidos/novo" element={<NewOrder />} />
+        <Route path="/cargas" element={<Loads />} />
+        <Route path="/cargas/:id" element={<BuildLoad />} />
+        <Route path="/rotas" element={<Routes />} />
+        <Route path="/vendedores" element={<SalesReps />} />
+        <Route path="/veiculos" element={<Vehicles />} />
+        <Route path="/condicoes-pagamento" element={<PaymentTables />} />
+        <Route path="/metodos-pagamento" element={<PaymentMethods />} />
+        <Route path="/pagamentos" element={<Payments />} />
+        <Route path="/lista-pagamentos" element={<PaymentsList />} />
+        <Route path="/configuracoes" element={<Settings />} />
+        <Route path="/sistema" element={<SystemMaintenance />} />
+        <Route path="*" element={<NotFound />} />
+      </RouterRoutes>
+      <Toaster />
+    </Router>
   );
 }
 

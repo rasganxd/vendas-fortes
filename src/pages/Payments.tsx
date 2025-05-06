@@ -10,12 +10,15 @@ import PaymentsHistoryTab from '@/components/payments/PaymentsHistoryTab';
 import PromissoryNotesTab from '@/components/payments/PromissoryNotesTab';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
+import { toast } from '@/components/ui/use-toast';
+import { usePayments } from '@/hooks/usePayments';
 
 export default function Payments() {
   const [activeTab, setActiveTab] = useState<string>('pending');
   const { orders, customers, payments } = useAppContext();
   const { paymentMethods } = usePaymentMethods();
   const { paymentTables } = usePaymentTables();
+  const { addPayment } = usePayments();
 
   // Get pending payment orders (orders that have a balance due)
   const pendingPaymentOrders = orders
@@ -45,6 +48,30 @@ export default function Payments() {
       };
     });
 
+  // Handle add payment
+  const handleAddPayment = async (formData: any) => {
+    try {
+      const now = new Date();
+      await addPayment({
+        ...formData,
+        createdAt: now,
+        updatedAt: now
+      });
+      
+      toast({
+        title: "Pagamento registrado",
+        description: "O pagamento foi registrado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao registrar pagamento:", error);
+      toast({
+        title: "Erro",
+        description: "Houve um problema ao registrar o pagamento.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <PageLayout title="Pagamentos">
       <Card className="mb-8">
@@ -71,7 +98,8 @@ export default function Payments() {
             <TabsContent value="pending">
               <PendingPaymentsTab 
                 pendingPaymentOrders={pendingPaymentOrders}
-                paymentMethods={paymentMethods.map(pm => ({ value: pm.id, label: pm.name }))} 
+                paymentMethods={paymentMethods.map(pm => ({ value: pm.id, label: pm.name }))}
+                paymentTables={paymentTables}
               />
             </TabsContent>
             
@@ -79,6 +107,10 @@ export default function Payments() {
               <PaymentsHistoryTab 
                 payments={payments}
                 orders={orders}
+                customers={customers}
+                pendingPaymentOrders={pendingPaymentOrders}
+                paymentMethods={paymentMethods.map(pm => ({ value: pm.id, label: pm.name }))}
+                handleAddPayment={handleAddPayment}
               />
             </TabsContent>
             
