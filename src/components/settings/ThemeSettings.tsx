@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/hooks/useAppContext";
-import { Palette, SwatchBook } from "lucide-react";
+import { Palette, SwatchBook, RefreshCcw } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { AppSettings } from '@/types';
+import { useAppSettings } from '@/hooks/useAppSettings';
 
 const defaultThemes = [
   { name: "Azul (Padrão)", primaryColor: "#1C64F2", secondaryColor: "#047481", accentColor: "#0694A2" },
@@ -16,7 +18,8 @@ const defaultThemes = [
 ];
 
 export default function ThemeSettings() {
-  const { settings, updateSettings } = useAppContext();
+  // Direct usage of useAppSettings hook for more control
+  const { settings, updateSettings, applyThemeColors } = useAppSettings();
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [customColors, setCustomColors] = useState({
     primaryColor: settings?.theme?.primaryColor || '#1C64F2',
@@ -25,10 +28,11 @@ export default function ThemeSettings() {
   });
   
   const [isSaving, setIsSaving] = useState(false);
+  const colorsInitialized = useRef(false);
   
   // Update local state when settings change
   useEffect(() => {
-    if (settings?.theme) {
+    if (settings?.theme && !colorsInitialized.current) {
       setCustomColors({
         primaryColor: settings.theme.primaryColor || '#1C64F2',
         secondaryColor: settings.theme.secondaryColor || '#047481',
@@ -47,8 +51,22 @@ export default function ThemeSettings() {
       } else {
         setSelectedTheme(null);
       }
+      
+      colorsInitialized.current = true;
     }
   }, [settings]);
+  
+  // Force reapply theme colors when component mounts
+  useEffect(() => {
+    if (settings?.theme) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        applyThemeColors(settings.theme);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [settings, applyThemeColors]);
   
   const handleColorChange = (type: 'primaryColor' | 'secondaryColor' | 'accentColor', color: string) => {
     setCustomColors(prev => ({ ...prev, [type]: color }));
@@ -59,6 +77,14 @@ export default function ThemeSettings() {
     console.log('Applying theme with colors:', primary, secondary, accent);
     setIsSaving(true);
     try {
+      // First apply colors immediately to UI for responsive feedback
+      applyThemeColors({
+        primaryColor: primary,
+        secondaryColor: secondary,
+        accentColor: accent
+      });
+      
+      // Then save to database
       await updateSettings({
         theme: {
           primaryColor: primary,
@@ -102,13 +128,34 @@ export default function ThemeSettings() {
     applyTheme(theme.primaryColor, theme.secondaryColor, theme.accentColor);
   };
   
+  const handleForceRefresh = () => {
+    if (settings?.theme) {
+      applyThemeColors(settings.theme);
+      toast({
+        title: "Cores reaplicadas",
+        description: "As cores do tema foram reaplicadas com sucesso."
+      });
+    }
+  };
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl flex items-center gap-2">
-          <Palette className="text-blue-500" size={20} />
-          Aparência do Sistema
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Palette className="text-blue-500" size={20} />
+            Aparência do Sistema
+          </CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleForceRefresh}
+            className="flex items-center gap-1"
+          >
+            <RefreshCcw size={14} />
+            Reaplicar Cores
+          </Button>
+        </div>
         <CardDescription>
           Personalize as cores do sistema de acordo com a identidade visual da sua empresa.
         </CardDescription>

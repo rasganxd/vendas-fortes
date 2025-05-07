@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
+import { initializeThemeVariables } from "@/lib/utils"
 
 type Theme = "dark" | "light" | "system"
 
@@ -47,6 +48,9 @@ export function ThemeProvider({
     }
 
     root.classList.add(theme)
+    
+    // Initialize theme variables when theme changes
+    initializeThemeVariables();
   }, [theme])
 
   const value = {

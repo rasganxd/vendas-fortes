@@ -35,8 +35,8 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-      <Router>
+    <Router>
+      <ThemeProvider defaultTheme="light" storageKey="ui-theme">
         <SidebarProvider defaultOpen>
           <div className="flex min-h-screen w-full">
             <SideNav />
@@ -63,10 +63,10 @@ function App() {
               </RouterRoutes>
             </div>
           </div>
+          <Toaster />
         </SidebarProvider>
-        <Toaster />
-      </Router>
-    </ThemeProvider>
+      </ThemeProvider>
+    </Router>
   );
 }
 
