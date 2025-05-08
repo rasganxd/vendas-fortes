@@ -82,13 +82,33 @@ export const useOrders = () => {
         throw new Error(`Pedido com ID ${id} não encontrado`);
       }
       
-      // Create a complete merged order with all data
+      // Log details about the items for debugging
+      if (orderData.items) {
+        console.log("Items being updated - item count:", orderData.items.length);
+        console.log("First few items:", orderData.items.slice(0, 3));
+      }
+      
+      // Create a complete merged order with all data, ensuring items are properly processed
       const updatedOrderData = { 
         ...currentOrder, 
         ...orderData,
-        // Ensure items are preserved and properly merged
-        items: orderData.items || currentOrder.items
       };
+      
+      // Specifically handle items to ensure consistency
+      if (orderData.items && orderData.items.length > 0) {
+        // Normalize item data for consistency
+        updatedOrderData.items = orderData.items.map(item => ({
+          id: item.id || undefined, // Keep id if exists
+          productId: item.productId,
+          productName: item.productName,
+          productCode: item.productCode || 0,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice || item.price || 0,
+          price: item.price || item.unitPrice || 0, // Ensure price is set
+          discount: item.discount || 0,
+          total: (item.unitPrice || item.price || 0) * item.quantity
+        }));
+      }
       
       console.log("Complete order data being sent to Firebase:", updatedOrderData);
       

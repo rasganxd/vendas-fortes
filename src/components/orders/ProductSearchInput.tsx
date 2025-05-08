@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,7 @@ export default function ProductSearchInput({
   };
   
   const handleProductSelect = (product: Product) => {
+    console.log("Product selected:", product);
     setSelectedProduct(product);
     setSearchTerm(product.name);
     setPrice(product.price);
@@ -85,11 +87,17 @@ export default function ProductSearchInput({
   
   const handleAddToOrder = () => {
     if (selectedProduct && (quantity !== null && quantity > 0)) {
+      console.log("Adding to order:", selectedProduct, quantity, price);
       addItemToOrder(selectedProduct, quantity, price);
+      
+      // Reset all form fields completely
       setSearchTerm('');
       setSelectedProduct(null);
-      setQuantity(null); // Reset to empty
+      setQuantity(null);
       setPrice(0);
+      setShowResults(false);
+      
+      // Focus back on the search input
       setTimeout(() => inputRef?.current?.focus(), 50);
     }
   };

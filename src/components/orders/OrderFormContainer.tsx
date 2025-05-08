@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -74,19 +73,21 @@ export default function OrderFormContainer() {
           console.warn("Sales rep not found for ID:", orderToEdit.salesRepId);
         }
         
-        // Set order items, adding required properties if missing
+        // Set order items, normalizing properties for consistency
         console.log("Setting order items:", orderToEdit.items);
         const updatedItems: OrderItem[] = orderToEdit.items.map(item => ({
+          id: item.id,
           productId: item.productId,
           productName: item.productName,
           productCode: item.productCode || 0,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          price: item.price || item.unitPrice,
+          unitPrice: item.unitPrice || item.price || 0,
+          price: item.price || item.unitPrice || 0,
           discount: item.discount || 0,
-          total: item.unitPrice * item.quantity
+          total: (item.unitPrice || item.price || 0) * item.quantity
         }));
         setOrderItems(updatedItems);
+        console.log("Normalized order items:", updatedItems);
         
         // Set payment method
         if (orderToEdit.paymentMethod) {
@@ -132,15 +133,19 @@ export default function OrderFormContainer() {
   const handleAddItem = (product: Product, quantity: number, price: number) => {
     console.log("Adding item to order:", product, quantity, price);
     
+    // Check if product already exists in order
     const existingItem = orderItems.find(item => item.productId === product.id);
     
     if (existingItem) {
+      console.log("Updating existing item:", existingItem);
       const updatedItems = orderItems.map(item =>
         item.productId === product.id ? 
           { 
             ...item, 
             quantity: (item.quantity || 0) + quantity,
-            total: (item.unitPrice || price) * ((item.quantity || 0) + quantity)
+            unitPrice: price,  // Update the unit price to the new one
+            price: price,      // Ensure price field is also set for consistency
+            total: price * ((item.quantity || 0) + quantity)
           } : item
       );
       setOrderItems(updatedItems);
@@ -207,6 +212,17 @@ export default function OrderFormContainer() {
       console.log("Starting order submission process...");
       console.log("Current order items:", orderItems);
       
+      // Ensure all order items have consistent fields before submission
+      const normalizedItems = orderItems.map(item => ({
+        ...item,
+        unitPrice: item.unitPrice || item.price || 0,
+        price: item.price || item.unitPrice || 0,
+        discount: item.discount || 0,
+        total: (item.unitPrice || item.price || 0) * item.quantity
+      }));
+      
+      console.log("Normalized order items for submission:", normalizedItems);
+      
       // Get the selected payment table
       const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
       
@@ -215,7 +231,7 @@ export default function OrderFormContainer() {
         customerName: selectedCustomer.name,
         salesRepId: selectedSalesRep!.id,
         salesRepName: selectedSalesRep!.name,
-        items: orderItems,
+        items: normalizedItems,
         total: calculateTotal(),
         paymentStatus: "pending" as Order["paymentStatus"],
         paymentMethod: paymentMethod || "",
