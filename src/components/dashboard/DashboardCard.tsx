@@ -26,10 +26,10 @@ export default function DashboardCard({
   return (
     <div className={cn(
       "rounded-lg p-6 border shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1",
-      className || "bg-white"
+      className || "bg-gradient-to-br from-blue-200 to-blue-100 border-blue-400"
     )}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
+        <h3 className="text-sm font-medium text-gray-700">{title}</h3>
         {icon && (
           <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center">
             {icon}
@@ -37,7 +37,7 @@ export default function DashboardCard({
         )}
       </div>
       <div className="mt-2">
-        <span className={cn('text-2xl font-bold', valueClassName)}>
+        <span className={cn('text-2xl font-bold text-gray-900', valueClassName)}>
           {value}
         </span>
         
@@ -46,7 +46,7 @@ export default function DashboardCard({
             <span
               className={cn(
                 'text-xs font-medium flex items-center',
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
+                trend.isPositive ? 'text-green-700' : 'text-red-700'
               )}
             >
               {trend.isPositive ? (
@@ -56,7 +56,7 @@ export default function DashboardCard({
               )}
               {trend.value}%
             </span>
-            <span className="text-xs text-gray-500 ml-1">vs. mês anterior</span>
+            <span className="text-xs text-gray-600 ml-1">vs. mês anterior</span>
           </div>
         )}
       </div>

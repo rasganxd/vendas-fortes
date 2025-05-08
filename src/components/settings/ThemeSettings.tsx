@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/hooks/useAppContext";
-import { Palette, SwatchBook, RefreshCcw } from "lucide-react";
+import { Palette, SwatchBook, RefreshCcw, Bell } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { AppSettings } from '@/types';
 import { useAppSettings } from '@/hooks/useAppSettings';
@@ -285,8 +285,24 @@ export default function ThemeSettings() {
                 <Button variant="default" className="mr-2">Botão Primário</Button>
                 <Button variant="outline">Botão Secundário</Button>
               </div>
-              <div className="p-3 rounded-md shadow-card" style={{ borderLeftColor: customColors.primaryColor, borderLeftWidth: '4px' }}>
-                Card com destaque
+              
+              <div className="rounded-md shadow-card border overflow-hidden"
+                style={{
+                  background: `linear-gradient(145deg, ${customColors.primaryColor}20, ${customColors.primaryColor}40)`,
+                  borderColor: `${customColors.primaryColor}60`
+                }}
+              >
+                <div className="p-4 flex items-center gap-2">
+                  <div className="rounded-full p-2 flex-shrink-0"
+                    style={{ backgroundColor: `${customColors.primaryColor}40` }}
+                  >
+                    <Bell size={16} style={{ color: customColors.primaryColor }} />
+                  </div>
+                  <div>
+                    <h4 className="font-medium" style={{ color: customColors.primaryColor }}>Card com destaque</h4>
+                    <p className="text-sm" style={{ color: '#333' }}>Exemplo de card personalizado</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
