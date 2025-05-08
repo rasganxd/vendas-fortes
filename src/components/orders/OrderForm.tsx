@@ -152,6 +152,7 @@ export default function OrderForm({
             orderItems={orderItems}
             onRemoveItem={handleRemoveItem}
             calculateTotal={calculateTotal}
+            isEditMode={isEditMode}
           />
         </CardContent>
       </Card>

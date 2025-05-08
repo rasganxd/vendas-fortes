@@ -8,12 +8,14 @@ interface OrderItemsTableProps {
   orderItems: OrderItem[];
   onRemoveItem: (productId: string) => void;
   calculateTotal: () => number;
+  isEditMode?: boolean;
 }
 
 export default function OrderItemsTable({
   orderItems,
   onRemoveItem,
-  calculateTotal
+  calculateTotal,
+  isEditMode = false
 }: OrderItemsTableProps) {
   return (
     <>
@@ -37,7 +39,7 @@ export default function OrderItemsTable({
             </thead>
             <tbody>
               {orderItems.map((item) => (
-                <tr key={item.productId} className="border-t">
+                <tr key={`${item.productId}-${isEditMode ? Math.random() : ''}`} className="border-t">
                   <td className="px-4 py-3">{item.productCode || '—'}</td>
                   <td className="px-4 py-3">{item.productName}</td>
                   <td className="px-4 py-3 text-center">{item.quantity}</td>

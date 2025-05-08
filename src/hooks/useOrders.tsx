@@ -82,32 +82,39 @@ export const useOrders = () => {
         throw new Error(`Pedido com ID ${id} não encontrado`);
       }
       
-      // Log details about the items for debugging
+      // IMPROVED: Better logging for items debugging
       if (orderData.items) {
-        console.log("Items being updated - item count:", orderData.items.length);
-        console.log("First few items:", orderData.items.slice(0, 3));
+        console.log(`Items being updated - count: ${orderData.items.length}`);
+        orderData.items.forEach((item, index) => {
+          console.log(`Item ${index}:`, JSON.stringify(item));
+        });
       }
       
-      // Create a complete merged order with all data, ensuring items are properly processed
+      // Create a complete merged order with all data
       const updatedOrderData = { 
         ...currentOrder, 
         ...orderData,
       };
       
-      // Specifically handle items to ensure consistency
+      // IMPROVED: Enhanced item handling
       if (orderData.items && orderData.items.length > 0) {
-        // Normalize item data for consistency
-        updatedOrderData.items = orderData.items.map(item => ({
-          id: item.id || undefined, // Keep id if exists
-          productId: item.productId,
-          productName: item.productName,
-          productCode: item.productCode || 0,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice || item.price || 0,
-          price: item.price || item.unitPrice || 0, // Ensure price is set
-          discount: item.discount || 0,
-          total: (item.unitPrice || item.price || 0) * item.quantity
-        }));
+        // Normalize item data for consistency and preserve item IDs
+        updatedOrderData.items = orderData.items.map(item => {
+          // If this is an existing item (from the current order), preserve its ID
+          const existingItem = currentOrder.items?.find(i => i.productId === item.productId);
+          
+          return {
+            id: existingItem?.id || item.id, // Keep existing ID if found, or use provided ID
+            productId: item.productId,
+            productName: item.productName,
+            productCode: item.productCode || 0,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice || item.price || 0,
+            price: item.price || item.unitPrice || 0,
+            discount: item.discount || 0,
+            total: (item.unitPrice || item.price || 0) * item.quantity
+          };
+        });
       }
       
       console.log("Complete order data being sent to Firebase:", updatedOrderData);

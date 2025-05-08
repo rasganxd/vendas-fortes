@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -29,6 +30,7 @@ export default function OrderFormContainer() {
   const [customerInputValue, setCustomerInputValue] = useState('');
   const [salesRepInputValue, setSalesRepInputValue] = useState('');
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
+  const [originalOrder, setOriginalOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     console.log("Available payment tables:", paymentTables);
@@ -45,6 +47,7 @@ export default function OrderFormContainer() {
         console.log("Loading order for editing:", orderToEdit);
         setIsEditMode(true);
         setCurrentOrderId(orderId);
+        setOriginalOrder(orderToEdit); // Store the original order
         
         // Find and set customer
         const customer = customers.find(c => c.id === orderToEdit.customerId);
@@ -74,19 +77,26 @@ export default function OrderFormContainer() {
         
         // Set order items, normalizing properties for consistency
         console.log("Setting order items:", orderToEdit.items);
-        const updatedItems: OrderItem[] = orderToEdit.items.map(item => ({
-          id: item.id,
-          productId: item.productId,
-          productName: item.productName,
-          productCode: item.productCode || 0,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice || item.price || 0,
-          price: item.price || item.unitPrice || 0,
-          discount: item.discount || 0,
-          total: (item.unitPrice || item.price || 0) * item.quantity
-        }));
-        setOrderItems(updatedItems);
-        console.log("Normalized order items:", updatedItems);
+        
+        // IMPROVED: Better item normalization to preserve IDs
+        if (orderToEdit.items && Array.isArray(orderToEdit.items)) {
+          const updatedItems: OrderItem[] = orderToEdit.items.map(item => ({
+            id: item.id,  // Preserve the original item ID
+            productId: item.productId,
+            productName: item.productName,
+            productCode: item.productCode || 0,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice || item.price || 0,
+            price: item.price || item.unitPrice || 0,
+            discount: item.discount || 0,
+            total: (item.unitPrice || item.price || 0) * item.quantity
+          }));
+          setOrderItems(updatedItems);
+          console.log("Normalized order items:", updatedItems);
+        } else {
+          console.warn("Order items are missing or not in expected format");
+          setOrderItems([]);
+        }
         
         // Set payment table
         if (orderToEdit.paymentTableId) {
@@ -117,6 +127,7 @@ export default function OrderFormContainer() {
     setCurrentOrderId(null);
     setCustomerInputValue('');
     setSalesRepInputValue('');
+    setOriginalOrder(null);
   };
 
   const calculateTotal = () => {
@@ -144,6 +155,7 @@ export default function OrderFormContainer() {
       setOrderItems(updatedItems);
       console.log("Updated order items:", updatedItems);
     } else {
+      // IMPROVED: Create new item with unique identifier if in edit mode
       const newItem: OrderItem = {
         productId: product.id,
         productName: product.name,
@@ -154,6 +166,7 @@ export default function OrderFormContainer() {
         discount: 0,
         total: price * quantity
       };
+      
       setOrderItems(prevItems => [...prevItems, newItem]);
       console.log("New item added:", newItem);
     }
@@ -165,7 +178,10 @@ export default function OrderFormContainer() {
   };
 
   const handleRemoveItem = (productId: string) => {
+    console.log("Removing item with productId:", productId);
     setOrderItems(items => items.filter(item => item.productId !== productId));
+    console.log("Items after removal:", orderItems.filter(item => item.productId !== productId));
+    
     toast({
       title: "Item removido",
       description: "Item removido do pedido"
@@ -207,7 +223,11 @@ export default function OrderFormContainer() {
       
       // Ensure all order items have consistent fields before submission
       const normalizedItems = orderItems.map(item => ({
-        ...item,
+        id: item.id, // Preserve the original item ID if it exists
+        productId: item.productId,
+        productName: item.productName,
+        productCode: item.productCode || 0,
+        quantity: item.quantity,
         unitPrice: item.unitPrice || item.price || 0,
         price: item.price || item.unitPrice || 0,
         discount: item.discount || 0,
@@ -229,15 +249,15 @@ export default function OrderFormContainer() {
         paymentStatus: "pending" as Order["paymentStatus"],
         paymentMethod: selectedTable?.name || "Padrão", // Use payment table name as payment method
         paymentTableId: selectedPaymentTable,
-        code: Math.floor(Math.random() * 10000), // Generate a random code
-        date: new Date(),
-        dueDate: new Date(),
+        code: isEditMode && originalOrder ? originalOrder.code : Math.floor(Math.random() * 10000), // Keep original code if editing
+        date: isEditMode && originalOrder ? originalOrder.date : new Date(),
+        dueDate: isEditMode && originalOrder ? originalOrder.dueDate : new Date(),
         discount: 0,
-        payments: [],
-        notes: "",
-        createdAt: new Date(),
+        payments: isEditMode && originalOrder ? originalOrder.payments : [],
+        notes: isEditMode && originalOrder ? originalOrder.notes : "",
+        createdAt: isEditMode && originalOrder ? originalOrder.createdAt : new Date(),
         updatedAt: new Date(),
-        status: "draft" as Order["status"],
+        status: isEditMode && originalOrder ? originalOrder.status : "draft" as Order["status"],
       };
       
       console.log("Saving order with data:", orderData);
@@ -246,7 +266,11 @@ export default function OrderFormContainer() {
       
       if (isEditMode && currentOrderId) {
         console.log("Updating existing order:", currentOrderId);
-        await updateOrder(currentOrderId, orderData);
+        // IMPROVED: Pass items array explicitly to ensure correct handling
+        await updateOrder(currentOrderId, {
+          ...orderData,
+          items: normalizedItems // Ensure we're passing the normalized items
+        });
         orderId = currentOrderId;
         
         toast({
