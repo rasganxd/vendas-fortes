@@ -29,9 +29,9 @@ export default function DashboardCard({
       className || "bg-white"
     )}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
         {icon && (
-          <div className="h-10 w-10 rounded-full bg-white/80 shadow-sm flex items-center justify-center">
+          <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center">
             {icon}
           </div>
         )}
@@ -56,7 +56,7 @@ export default function DashboardCard({
               )}
               {trend.value}%
             </span>
-            <span className="text-xs text-gray-400 ml-1">vs. mês anterior</span>
+            <span className="text-xs text-gray-500 ml-1">vs. mês anterior</span>
           </div>
         )}
       </div>

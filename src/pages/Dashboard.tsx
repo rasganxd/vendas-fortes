@@ -66,41 +66,41 @@ export default function Dashboard() {
         <DashboardCard
           title="Total de Vendas"
           value={totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          icon={<DollarSign size={20} />}
+          icon={<DollarSign size={20} className="text-blue-600" />}
           trend={{ value: 12.5, isPositive: true }}
-          valueClassName="text-blue-600"
-          className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200"
+          valueClassName="text-blue-700"
+          className="bg-gradient-to-br from-blue-200 to-blue-100 border-blue-300"
         />
         <DashboardCard
           title="Pagamentos Recebidos"
           value={totalPayments.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          icon={<TrendingUp size={20} />}
+          icon={<TrendingUp size={20} className="text-green-600" />}
           trend={{ value: 8.2, isPositive: true }}
-          valueClassName="text-green-600"
-          className="bg-gradient-to-br from-green-50 to-green-100 border-green-200"
+          valueClassName="text-green-700"
+          className="bg-gradient-to-br from-green-200 to-green-100 border-green-300"
         />
         <DashboardCard
           title="Clientes Ativos"
           value={customers.length}
-          icon={<Users size={20} />}
+          icon={<Users size={20} className="text-purple-600" />}
           trend={{ value: 4.1, isPositive: true }}
-          valueClassName="text-purple-600"
-          className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200"
+          valueClassName="text-purple-700"
+          className="bg-gradient-to-br from-purple-200 to-purple-100 border-purple-300"
         />
         <DashboardCard
           title="Pedidos Pendentes"
           value={confirmedOrders}
-          icon={<ShoppingCart size={20} />}
+          icon={<ShoppingCart size={20} className="text-amber-600" />}
           trend={{ value: 1.5, isPositive: false }}
-          valueClassName="text-amber-600"
-          className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200"
+          valueClassName="text-amber-700"
+          className="bg-gradient-to-br from-amber-200 to-amber-100 border-amber-300"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <SalesChart title="Desempenho de Vendas" className="lg:col-span-2" />
         
-        <Card className="border border-red-100 shadow-sm">
+        <Card className="border border-red-200 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold">Produtos em Baixo Estoque</CardTitle>
@@ -115,13 +115,13 @@ export default function Dashboard() {
             {lowStockProducts.length > 0 ? (
               <ul className="space-y-3">
                 {lowStockProducts.slice(0, 5).map(product => (
-                  <li key={product.id} className="flex items-center justify-between p-2 rounded-md bg-red-50/50">
+                  <li key={product.id} className="flex items-center justify-between p-2 rounded-md bg-red-50/80">
                     <div>
                       <p className="font-medium text-gray-700">{product.name}</p>
                       <p className="text-xs text-gray-500">{product.code}</p>
                     </div>
                     <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                      product.stock < 50 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                      product.stock < 50 ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'
                     }`}>
                       {product.stock} {product.unit}
                     </span>
@@ -138,7 +138,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Card className="lg:col-span-2 border border-blue-100 shadow-sm">
+        <Card className="lg:col-span-2 border border-blue-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Pedidos Recentes</CardTitle>
             <CardDescription>Últimos pedidos registrados</CardDescription>
@@ -148,30 +148,30 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-green-100 shadow-sm">
+        <Card className="border border-green-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Situação Financeira</CardTitle>
             <CardDescription>Resumo dos valores</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="bg-green-50 p-3 rounded-md">
-                <div className="text-sm text-gray-500">Recebido</div>
-                <div className="text-xl font-bold text-green-600">
+              <div className="bg-green-100 p-3 rounded-md">
+                <div className="text-sm text-gray-600">Recebido</div>
+                <div className="text-xl font-bold text-green-700">
                   {totalPayments.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </div>
               </div>
               
-              <div className="bg-amber-50 p-3 rounded-md">
-                <div className="text-sm text-gray-500">Pendente</div>
-                <div className="text-xl font-bold text-amber-600">
+              <div className="bg-amber-100 p-3 rounded-md">
+                <div className="text-sm text-gray-600">Pendente</div>
+                <div className="text-xl font-bold text-amber-700">
                   {pendingPayments.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </div>
               </div>
               
-              <div className="bg-blue-50 p-3 rounded-md">
-                <div className="text-sm text-gray-500">Total</div>
-                <div className="text-xl font-bold text-blue-600">
+              <div className="bg-blue-100 p-3 rounded-md">
+                <div className="text-sm text-gray-600">Total</div>
+                <div className="text-xl font-bold text-blue-700">
                   {totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </div>
               </div>
