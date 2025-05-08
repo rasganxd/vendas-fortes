@@ -1,6 +1,5 @@
 
-import React, { useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
+import React, { useState, useEffect } from 'react';
 import { Order, Customer } from '@/types';
 import {
   Dialog,
@@ -8,13 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-// Import refactored components
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
 import CustomerSelect from './print/CustomerSelect';
-import SelectAllOrdersCheckbox from './print/SelectAllOrdersCheckbox';
-import PrintSummary from './print/PrintSummary';
-import PrintDialogActions from './print/PrintDialogActions';
-import PrintableOrderContent from './print/PrintableOrderContent';
 
 interface PrintOrdersDialogProps {
   isOpen: boolean;
@@ -35,77 +30,93 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
   selectedOrderIds,
   setSelectedOrderIds,
   filteredOrders,
-  formatCurrency,
+  formatCurrency
 }) => {
-  const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('all');
-  const bulkPrintRef = useRef<HTMLDivElement>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
+  const [ordersToPrint, setOrdersToPrint] = useState<Order[]>([]);
   
-  const handleBulkPrint = useReactToPrint({
-    content: () => bulkPrintRef.current,
-    documentTitle: 'Pedidos',
-  });
+  // Ensure customers array is valid
+  const validCustomers = customers.filter(customer => customer && customer.id);
 
-  const handleSelectAllOrders = () => {
-    if (selectedOrderIds.length === filteredOrders.length) {
-      setSelectedOrderIds([]);
+  useEffect(() => {
+    if (selectedOrderIds.length > 0) {
+      setOrdersToPrint(orders.filter(order => selectedOrderIds.includes(order.id)));
     } else {
-      setSelectedOrderIds(filteredOrders.map(order => order.id));
+      const filtered = selectedCustomerId === "all" 
+        ? filteredOrders 
+        : filteredOrders.filter(order => order.customerId === selectedCustomerId);
+      setOrdersToPrint(filtered);
     }
+  }, [selectedOrderIds, selectedCustomerId, orders, filteredOrders]);
+  
+  const handlePrint = () => {
+    window.print();
   };
-
-  const getOrdersBySelection = () => {
-    if (selectedCustomerId === 'all') {
-      return selectedOrderIds.length > 0 
-        ? orders.filter(order => selectedOrderIds.includes(order.id))
-        : filteredOrders;
-    } else {
-      return orders.filter(order => order.customerId === selectedCustomerId);
-    }
-  };
-
-  const printableOrders = getOrdersBySelection();
-
+  
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="mb-6">Imprimir Pedidos</DialogTitle>
+          <DialogTitle>Imprimir Pedidos</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 mb-6">
+        <div className="py-4 space-y-4">
           <CustomerSelect 
-            selectedCustomerId={selectedCustomerId}
+            selectedCustomerId={selectedCustomerId} 
             setSelectedCustomerId={setSelectedCustomerId}
-            customers={customers}
+            customers={validCustomers}
           />
           
-          {selectedCustomerId === 'all' && (
-            <SelectAllOrdersCheckbox 
-              filteredOrders={filteredOrders}
-              selectedOrderIds={selectedOrderIds}
-              handleSelectAllOrders={handleSelectAllOrders}
-            />
-          )}
-          
-          <PrintSummary 
-            printableOrders={printableOrders}
-            selectedCustomerId={selectedCustomerId}
-            customers={customers}
-          />
+          <div className="flex justify-end">
+            <Button onClick={handlePrint} className="flex items-center">
+              <Printer size={16} className="mr-2" /> Imprimir {ordersToPrint.length} pedido(s)
+            </Button>
+          </div>
         </div>
         
-        <PrintDialogActions 
-          handleBulkPrint={handleBulkPrint}
-          onOpenChange={onOpenChange}
-          isPrintDisabled={printableOrders.length === 0}
-        />
-        
-        <div ref={bulkPrintRef}>
-          <PrintableOrderContent 
-            orders={printableOrders}
-            customers={customers}
-            formatCurrency={formatCurrency}
-          />
+        <div className="hidden print:block">
+          {ordersToPrint.map((order, index) => (
+            <div key={order.id} className="print-order">
+              <h3 className="text-lg font-bold">Pedido #{order.code}</h3>
+              <p><strong>Cliente:</strong> {order.customerName}</p>
+              <p><strong>Data:</strong> {order.date instanceof Date 
+                ? order.date.toLocaleDateString('pt-BR') 
+                : new Date(order.date).toLocaleDateString('pt-BR')}
+              </p>
+              
+              <table className="w-full mt-2 border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left">Produto</th>
+                    <th className="text-right">Qtd</th>
+                    <th className="text-right">Preço</th>
+                    <th className="text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map((item) => (
+                    <tr key={item.productId} className="border-b">
+                      <td>{item.productName}</td>
+                      <td className="text-right">{item.quantity}</td>
+                      <td className="text-right">{formatCurrency(item.price || item.unitPrice)}</td>
+                      <td className="text-right">{formatCurrency(item.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={3} className="text-right font-bold">Total:</td>
+                    <td className="text-right font-bold">{formatCurrency(order.total)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+              
+              {index < ordersToPrint.length - 1 && <div className="print-page-break"></div>}
+            </div>
+          ))}
+          <div className="print-footer">
+            <p>Impresso em: {new Date().toLocaleString('pt-BR')}</p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -33,7 +33,12 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
         <SelectContent>
           <SelectItem value="all">Todos os Clientes</SelectItem>
           {customers.map((customer) => (
-            <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>
+            <SelectItem 
+              key={customer.id} 
+              value={customer.id || `customer-${customer.name}`} // Ensure value is never empty
+            >
+              {customer.name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
