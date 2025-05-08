@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect } from 'react';
 import { useCustomers, loadCustomers } from '@/hooks/useCustomers';
 import { loadOrders } from '@/hooks/useOrders';
@@ -148,7 +149,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           toast({
             title: "Modo offline ativado",
             description: "O sistema está usando dados locais devido a problemas de conexão com o Firebase.",
-            variant: "warning"
+            variant: "default"  // Changed from "warning" to "default"
           });
         }
       } catch (error) {

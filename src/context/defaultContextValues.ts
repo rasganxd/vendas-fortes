@@ -35,6 +35,7 @@ export const defaultContextValues: AppContextType = {
   isLoadingProductBrands: true,
   isLoadingDeliveryRoutes: true,
   isLoadingBackups: true,
+  isUsingMockData: false, // Added missing property
   
   // Empty setters
   setCustomers: () => {},
@@ -107,5 +108,5 @@ export const defaultContextValues: AppContextType = {
   updateSettings: async () => false,
   startNewMonth: () => {},
   createAutomaticPaymentRecord: async () => {},
-  clearCache: async () => {}, // Add the missing clearCache property
+  clearCache: async () => {},
 };
