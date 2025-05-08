@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Customer, SalesRep, PaymentTable, Product, OrderItem } from '@/types';
@@ -20,8 +21,6 @@ interface OrderFormProps {
   setSelectedSalesRep: (salesRep: SalesRep | null) => void;
   orderItems: OrderItem[];
   setOrderItems: React.Dispatch<React.SetStateAction<OrderItem[]>>;
-  paymentMethod: string;
-  setPaymentMethod: (method: string) => void;
   selectedPaymentTable: string;
   setSelectedPaymentTable: (id: string) => void;
   isSubmitting: boolean;
@@ -45,8 +44,6 @@ export default function OrderForm({
   setSelectedSalesRep,
   orderItems,
   setOrderItems,
-  paymentMethod,
-  setPaymentMethod,
   selectedPaymentTable,
   setSelectedPaymentTable,
   isSubmitting,
@@ -102,8 +99,6 @@ export default function OrderForm({
                   paymentTables={paymentTables}
                   selectedPaymentTable={selectedPaymentTable}
                   setSelectedPaymentTable={setSelectedPaymentTable}
-                  paymentMethod={paymentMethod}
-                  setPaymentMethod={setPaymentMethod}
                   simplifiedView={true}
                   buttonRef={paymentTableRef}
                   onSelectComplete={() => productInputRef.current?.focus()}

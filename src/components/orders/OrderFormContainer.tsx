@@ -24,8 +24,7 @@ export default function OrderFormContainer() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   
-  const [paymentMethod, setPaymentMethod] = useState('');
-  const [selectedPaymentTable, setSelectedPaymentTable] = useState('');
+  const [selectedPaymentTable, setSelectedPaymentTable] = useState('default-table');
   
   const [customerInputValue, setCustomerInputValue] = useState('');
   const [salesRepInputValue, setSalesRepInputValue] = useState('');
@@ -89,11 +88,6 @@ export default function OrderFormContainer() {
         setOrderItems(updatedItems);
         console.log("Normalized order items:", updatedItems);
         
-        // Set payment method
-        if (orderToEdit.paymentMethod) {
-          setPaymentMethod(orderToEdit.paymentMethod);
-        }
-        
         // Set payment table
         if (orderToEdit.paymentTableId) {
           setSelectedPaymentTable(orderToEdit.paymentTableId);
@@ -118,8 +112,7 @@ export default function OrderFormContainer() {
     setSelectedCustomer(null);
     setSelectedSalesRep(null);
     setOrderItems([]);
-    setPaymentMethod('');
-    setSelectedPaymentTable('');
+    setSelectedPaymentTable('default-table');
     setIsEditMode(false);
     setCurrentOrderId(null);
     setCustomerInputValue('');
@@ -234,8 +227,8 @@ export default function OrderFormContainer() {
         items: normalizedItems,
         total: calculateTotal(),
         paymentStatus: "pending" as Order["paymentStatus"],
-        paymentMethod: paymentMethod || "",
-        paymentTableId: selectedPaymentTable || "",
+        paymentMethod: selectedTable?.name || "Padrão", // Use payment table name as payment method
+        paymentTableId: selectedPaymentTable,
         code: Math.floor(Math.random() * 10000), // Generate a random code
         date: new Date(),
         dueDate: new Date(),
@@ -261,8 +254,9 @@ export default function OrderFormContainer() {
           description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
         });
 
-        // Create automatic payment record if needed (for promissory notes)
-        if (paymentMethod === 'promissoria') {
+        // Create automatic payment record if needed (for promissory note tables)
+        const isPromissoryNote = selectedTable?.name?.toLowerCase().includes('promissoria');
+        if (isPromissoryNote) {
           await createAutomaticPaymentRecord({
             ...orderData,
             id: orderId,
@@ -280,8 +274,9 @@ export default function OrderFormContainer() {
             description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
           });
           
-          // Create automatic payment record if needed (for promissory notes)
-          if (paymentMethod === 'promissoria') {
+          // Create automatic payment record if needed (for promissory note tables)
+          const isPromissoryNote = selectedTable?.name?.toLowerCase().includes('promissoria');
+          if (isPromissoryNote) {
             await createAutomaticPaymentRecord({
               ...orderData,
               id: orderId,
@@ -344,8 +339,6 @@ export default function OrderFormContainer() {
         setSelectedSalesRep={setSelectedSalesRep}
         orderItems={orderItems}
         setOrderItems={setOrderItems}
-        paymentMethod={paymentMethod}
-        setPaymentMethod={setPaymentMethod}
         selectedPaymentTable={selectedPaymentTable}
         setSelectedPaymentTable={setSelectedPaymentTable}
         isSubmitting={isSubmitting}

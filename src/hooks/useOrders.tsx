@@ -139,11 +139,11 @@ export const useOrders = () => {
     }
   };
 
-  const updateOrderPaymentMethod = async (id: string, paymentMethod: string, paymentStatus: 'pending' | 'partial' | 'paid' = 'paid') => {
+  const updateOrderPaymentMethod = async (id: string, paymentTableId: string, paymentStatus: 'pending' | 'partial' | 'paid' = 'paid') => {
     try {
-      await orderService.update(id, { paymentMethod, paymentStatus });
+      await orderService.update(id, { paymentTableId, paymentStatus });
       setOrders(orders.map(o => 
-        o.id === id ? { ...o, paymentMethod, paymentStatus } : o
+        o.id === id ? { ...o, paymentTableId, paymentStatus } : o
       ));
       toast({
         title: "Forma de pagamento atualizada",
