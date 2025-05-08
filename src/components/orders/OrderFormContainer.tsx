@@ -9,6 +9,7 @@ import { usePayments } from '@/hooks/usePayments';
 import { toast } from '@/components/ui/use-toast';
 import OrderForm from './OrderForm';
 import RecentPurchasesDialog from './RecentPurchasesDialog';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function OrderFormContainer() {
   const { customers, salesReps, products, orders } = useAppContext();
@@ -75,13 +76,13 @@ export default function OrderFormContainer() {
           console.warn("Sales rep not found for ID:", orderToEdit.salesRepId);
         }
         
-        // Set order items, normalizing properties for consistency
+        // Set order items, normalizing properties for consistency and ensuring IDs are preserved
         console.log("Setting order items:", orderToEdit.items);
         
-        // IMPROVED: Better item normalization to preserve IDs
+        // IMPROVED: Better item normalization to preserve IDs and ensure data consistency
         if (orderToEdit.items && Array.isArray(orderToEdit.items)) {
           const updatedItems: OrderItem[] = orderToEdit.items.map(item => ({
-            id: item.id,  // Preserve the original item ID
+            id: item.id || uuidv4(),  // Ensure every item has an ID
             productId: item.productId,
             productName: item.productName,
             productCode: item.productCode || 0,
@@ -92,7 +93,7 @@ export default function OrderFormContainer() {
             total: (item.unitPrice || item.price || 0) * item.quantity
           }));
           setOrderItems(updatedItems);
-          console.log("Normalized order items:", updatedItems);
+          console.log("Normalized order items with preserved IDs:", updatedItems);
         } else {
           console.warn("Order items are missing or not in expected format");
           setOrderItems([]);
@@ -155,8 +156,9 @@ export default function OrderFormContainer() {
       setOrderItems(updatedItems);
       console.log("Updated order items:", updatedItems);
     } else {
-      // IMPROVED: Create new item with unique identifier if in edit mode
+      // IMPROVED: Create new item with unique identifier
       const newItem: OrderItem = {
+        id: uuidv4(), // Generate a unique ID for each new item
         productId: product.id,
         productName: product.name,
         productCode: product.code || 0,
@@ -167,8 +169,8 @@ export default function OrderFormContainer() {
         total: price * quantity
       };
       
+      console.log("Adding new item with generated ID:", newItem);
       setOrderItems(prevItems => [...prevItems, newItem]);
-      console.log("New item added:", newItem);
     }
     
     toast({
@@ -221,9 +223,9 @@ export default function OrderFormContainer() {
       console.log("Starting order submission process...");
       console.log("Current order items:", orderItems);
       
-      // Ensure all order items have consistent fields before submission
+      // Ensure all order items have consistent fields and preserved IDs before submission
       const normalizedItems = orderItems.map(item => ({
-        id: item.id, // Preserve the original item ID if it exists
+        id: item.id || uuidv4(), // Ensure every item has an ID
         productId: item.productId,
         productName: item.productName,
         productCode: item.productCode || 0,
@@ -234,7 +236,7 @@ export default function OrderFormContainer() {
         total: (item.unitPrice || item.price || 0) * item.quantity
       }));
       
-      console.log("Normalized order items for submission:", normalizedItems);
+      console.log("Normalized order items for submission with preserved IDs:", normalizedItems);
       
       // Get the selected payment table
       const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
@@ -266,10 +268,10 @@ export default function OrderFormContainer() {
       
       if (isEditMode && currentOrderId) {
         console.log("Updating existing order:", currentOrderId);
-        // IMPROVED: Pass items array explicitly to ensure correct handling
+        // IMPROVED: Pass a clear reference to items array to ensure correct handling
         await updateOrder(currentOrderId, {
           ...orderData,
-          items: normalizedItems // Ensure we're passing the normalized items
+          items: normalizedItems // Ensure we're passing the normalized items with IDs
         });
         orderId = currentOrderId;
         

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OrderItem } from '@/types';
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,16 @@ export default function OrderItemsTable({
   calculateTotal,
   isEditMode = false
 }: OrderItemsTableProps) {
+  // Generate a stable key for an item - use ID if available or create a composite key
+  const getItemKey = (item: OrderItem, index: number) => {
+    // If the item has an ID, use that (most reliable)
+    if (item.id) {
+      return item.id;
+    }
+    // Otherwise use a composite key with productId and index
+    return `${item.productId}-${index}`;
+  };
+
   return (
     <>
       {orderItems.length === 0 ? (
@@ -38,8 +47,8 @@ export default function OrderItemsTable({
               </tr>
             </thead>
             <tbody>
-              {orderItems.map((item) => (
-                <tr key={`${item.productId}-${isEditMode ? Math.random() : ''}`} className="border-t">
+              {orderItems.map((item, index) => (
+                <tr key={getItemKey(item, index)} className="border-t">
                   <td className="px-4 py-3">{item.productCode || '—'}</td>
                   <td className="px-4 py-3">{item.productName}</td>
                   <td className="px-4 py-3 text-center">{item.quantity}</td>

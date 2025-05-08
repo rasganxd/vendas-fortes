@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { Order } from '@/types';
+import { Order, OrderItem } from '@/types';
 import { orderService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
 import { useAppContext } from './useAppContext';
+import { v4 as uuidv4 } from 'uuid';
 
 export const loadOrders = async (): Promise<Order[]> => {
   try {
@@ -82,7 +83,7 @@ export const useOrders = () => {
         throw new Error(`Pedido com ID ${id} não encontrado`);
       }
       
-      // IMPROVED: Better logging for items debugging
+      // IMPROVED: Enhanced logging for items debugging
       if (orderData.items) {
         console.log(`Items being updated - count: ${orderData.items.length}`);
         orderData.items.forEach((item, index) => {
@@ -96,15 +97,27 @@ export const useOrders = () => {
         ...orderData,
       };
       
-      // IMPROVED: Enhanced item handling
+      // IMPROVED: Enhanced item handling with better ID preservation and management
       if (orderData.items && orderData.items.length > 0) {
-        // Normalize item data for consistency and preserve item IDs
+        console.log("Processing order items with improved ID handling");
+        
+        // Create a map of existing items by productId for easier lookup
+        const existingItemsMap = new Map();
+        if (currentOrder.items && Array.isArray(currentOrder.items)) {
+          currentOrder.items.forEach(item => {
+            existingItemsMap.set(item.productId, item);
+          });
+        }
+        
+        // Process each item, preserving IDs for existing items and generating new IDs for new items
         updatedOrderData.items = orderData.items.map(item => {
-          // If this is an existing item (from the current order), preserve its ID
-          const existingItem = currentOrder.items?.find(i => i.productId === item.productId);
+          // Find existing item by productId
+          const existingItem = existingItemsMap.get(item.productId);
           
+          // Create the normalized item with proper ID handling
           return {
-            id: existingItem?.id || item.id, // Keep existing ID if found, or use provided ID
+            // If item has an ID use it, else if there's an existing item use its ID, otherwise generate a new UUID
+            id: item.id || (existingItem ? existingItem.id : uuidv4()),
             productId: item.productId,
             productName: item.productName,
             productCode: item.productCode || 0,
@@ -115,6 +128,8 @@ export const useOrders = () => {
             total: (item.unitPrice || item.price || 0) * item.quantity
           };
         });
+        
+        console.log("Final processed items:", updatedOrderData.items);
       }
       
       console.log("Complete order data being sent to Firebase:", updatedOrderData);
