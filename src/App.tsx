@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import SideNav from '@/components/layout/SideNav';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppProvider } from '@/context/AppContext';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
@@ -35,38 +36,40 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-        <SidebarProvider defaultOpen>
-          <div className="flex min-h-screen w-full">
-            <SideNav />
-            <div className="flex-1">
-              <RouterRoutes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/clientes" element={<Customers />} />
-                <Route path="/produtos" element={<Products />} />
-                <Route path="/pedidos" element={<Orders />} />
-                <Route path="/pedidos/novo" element={<NewOrder />} />
-                <Route path="/cargas" element={<Loads />} />
-                <Route path="/cargas/:id" element={<BuildLoad />} />
-                <Route path="/rotas" element={<RoutesPage />} />
-                <Route path="/vendedores" element={<SalesReps />} />
-                <Route path="/veiculos" element={<Vehicles />} />
-                <Route path="/condicoes-pagamento" element={<PaymentTables />} />
-                <Route path="/metodos-pagamento" element={<PaymentMethods />} />
-                <Route path="/pagamentos" element={<Payments />} />
-                <Route path="/lista-pagamentos" element={<PaymentsList />} />
-                <Route path="/configuracoes" element={<Settings />} />
-                <Route path="/sistema" element={<SystemMaintenance />} />
-                <Route path="*" element={<NotFound />} />
-              </RouterRoutes>
+    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+      <AppProvider>
+        <Router>
+          <SidebarProvider defaultOpen>
+            <div className="flex min-h-screen w-full">
+              <SideNav />
+              <div className="flex-1">
+                <RouterRoutes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/clientes" element={<Customers />} />
+                  <Route path="/produtos" element={<Products />} />
+                  <Route path="/pedidos" element={<Orders />} />
+                  <Route path="/pedidos/novo" element={<NewOrder />} />
+                  <Route path="/cargas" element={<Loads />} />
+                  <Route path="/cargas/:id" element={<BuildLoad />} />
+                  <Route path="/rotas" element={<RoutesPage />} />
+                  <Route path="/vendedores" element={<SalesReps />} />
+                  <Route path="/veiculos" element={<Vehicles />} />
+                  <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
+                  <Route path="/metodos-pagamento" element={<PaymentMethods />} />
+                  <Route path="/pagamentos" element={<Payments />} />
+                  <Route path="/lista-pagamentos" element={<PaymentsList />} />
+                  <Route path="/configuracoes" element={<Settings />} />
+                  <Route path="/manutencao" element={<SystemMaintenance />} />
+                  <Route path="*" element={<NotFound />} />
+                </RouterRoutes>
+              </div>
             </div>
-          </div>
-          <Toaster />
-        </SidebarProvider>
-      </ThemeProvider>
-    </Router>
+            <Toaster />
+          </SidebarProvider>
+        </Router>
+      </AppProvider>
+    </ThemeProvider>
   );
 }
 

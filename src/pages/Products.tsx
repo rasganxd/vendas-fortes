@@ -50,7 +50,7 @@ import {
   TabsList, 
   TabsTrigger 
 } from "@/components/ui/tabs";
-import { Plus, Search, Edit, Trash, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Search, Edit, Trash, Check } from 'lucide-react';
 import { Product } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';

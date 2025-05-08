@@ -125,10 +125,36 @@ export const useProducts = () => {
     }
   };
 
+  // Calcular porcentagem de margem de lucro para um produto
+  const calculateProfitMargin = (productId: string): number => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return 0;
+    
+    const { price, cost } = product;
+    if (!price || !cost || cost <= 0) return 0;
+    
+    return ((price - cost) / price) * 100;
+  };
+
+  // Calcular preço mínimo com base no desconto máximo
+  const calculateMinimumPrice = (productId: string): number => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return 0;
+    
+    const { price, maxDiscountPercentage } = product;
+    if (!price) return 0;
+    
+    if (maxDiscountPercentage === undefined || maxDiscountPercentage === null) {
+      return 0; // Sem preço mínimo se não houver desconto máximo definido
+    }
+    
+    return price * (1 - (maxDiscountPercentage / 100));
+  };
+
   // Auxiliar para validar se um desconto é permitido para um produto
   const validateProductDiscount = (productId: string, discountedPrice: number): boolean => {
     const product = products.find(p => p.id === productId);
-    if (!product) return true; // Se o produto não for encontrado, permitir (padrão mais seguro)
+    if (!product) return true; // Se produto não for encontrado, permitir (padrão mais seguro)
     
     // Se nenhum desconto máximo definido, permitir qualquer preço
     if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) return true;
@@ -157,6 +183,42 @@ export const useProducts = () => {
     return parseFloat(minimumPrice.toFixed(2)); // Arredondar para 2 casas decimais
   };
 
+  // Atualização em lote de vários produtos
+  const batchUpdateProducts = async (updatesArray: {id: string, updates: Partial<Product>}[]): Promise<boolean> => {
+    try {
+      // Processar cada atualização uma por uma
+      for (const update of updatesArray) {
+        await productService.update(update.id, update.updates);
+      }
+      
+      // Atualizar o estado local com todas as alterações
+      const updatedProducts = [...products];
+      for (const update of updatesArray) {
+        const index = updatedProducts.findIndex(p => p.id === update.id);
+        if (index !== -1) {
+          updatedProducts[index] = { ...updatedProducts[index], ...update.updates };
+        }
+      }
+      
+      setProducts(updatedProducts);
+      
+      toast({
+        title: "Produtos atualizados",
+        description: `${updatesArray.length} produtos foram atualizados com sucesso.`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Erro ao atualizar produtos em lote:", error);
+      toast({
+        title: "Erro na atualização em lote",
+        description: "Houve um problema ao atualizar os produtos.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   return {
     products,
     isLoading,
@@ -165,6 +227,9 @@ export const useProducts = () => {
     updateProduct,
     deleteProduct,
     validateProductDiscount,
-    getMinimumPrice
+    getMinimumPrice,
+    calculateProfitMargin,
+    calculateMinimumPrice,
+    batchUpdateProducts
   };
 };

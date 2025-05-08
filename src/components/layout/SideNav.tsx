@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 const navigation: NavItem[] = [
   {
     title: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
     group: "geral"
   },
@@ -97,7 +97,7 @@ const navigation: NavItem[] = [
     group: "sistema"
   },
   {
-    title: "Dados",
+    title: "Manutenção",
     href: "/manutencao",
     icon: Database,
     group: "sistema"
