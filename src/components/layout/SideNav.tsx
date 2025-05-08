@@ -13,7 +13,8 @@ import {
   CreditCard,
   UserRound,
   LucideIcon,
-  ChevronRight
+  ChevronRight,
+  PlusCircle
 } from "lucide-react";
 
 import { 
@@ -58,6 +59,12 @@ const navigation: NavItem[] = [
     title: "Pedidos",
     href: "/pedidos",
     icon: FileText,
+    group: "vendas"
+  },
+  {
+    title: "Digitar Pedido",
+    href: "/pedidos/novo",
+    icon: PlusCircle,
     group: "vendas"
   },
   {
