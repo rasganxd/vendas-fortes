@@ -21,7 +21,7 @@ const PrintDialogActions: React.FC<PrintDialogActionsProps> = ({
       </Button>
       <Button 
         onClick={handleBulkPrint} 
-        className="bg-sales-800 hover:bg-sales-700"
+        variant="sales"
         disabled={isPrintDisabled}
       >
         <Printer size={16} className="mr-2" /> Imprimir

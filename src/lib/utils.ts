@@ -30,6 +30,7 @@ export function initializeThemeVariables(): void {
   const defaultPrimary = '221 83% 53%'; // #1C64F2 in HSL
   const defaultSecondary = '186 94% 25%'; // #047481 in HSL
   const defaultAccent = '184 89% 32%'; // #0694A2 in HSL
+  const salesDefault = '221 83% 53%'; // #1C64F2 in HSL - same as primary for consistency
 
   // Set default variables if they don't exist yet
   if (!getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()) {
@@ -47,6 +48,9 @@ export function initializeThemeVariables(): void {
   // Add sidebar variables which are variants of primary
   document.documentElement.style.setProperty('--sidebar-primary', 
     document.documentElement.style.getPropertyValue('--primary') || defaultPrimary);
+    
+  // Ensure sales colors are consistent with the primary blue
+  document.documentElement.style.setProperty('--sales', salesDefault);
 }
 
 // Convert HEX color to HSL format (helper function)
