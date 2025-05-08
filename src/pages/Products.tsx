@@ -1,7 +1,4 @@
 
-// I need to fix the SelectItem components in the Products.tsx file
-// Since it's a large file, I'll only update the relevant parts
-
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -47,21 +44,31 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { Plus, Search, Edit, Trash } from 'lucide-react';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { Plus, Search, Edit, Trash, ArrowUp, ArrowDown } from 'lucide-react';
 import { Product } from '@/types';
+import { formatCurrency } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 
 interface FormErrors {
   code?: string;
   name?: string;
-  price?: string;
   stock?: string;
+  costPrice?: string;
 }
 
 export default function Products() {
   const { products, addProduct, updateProduct, deleteProduct, productCategories } = useAppContext();
   const [search, setSearch] = useState('');
+  const [pricingSearch, setPricingSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [pricingCategory, setPricingCategory] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -81,21 +88,33 @@ export default function Products() {
     code: 0,
     name: '',
     description: '',
-    price: 0,
     unit: '',
     stock: 0,
     minStock: 0,
     category: '',
     costPrice: 0,
-    maxDiscountPercentage: 0
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [editPrice, setEditPrice] = useState<{id: string, price: number} | null>(null);
+  const [editDiscount, setEditDiscount] = useState<{id: string, discount: number} | null>(null);
+
+  // Define current tab state
+  const [currentTab, setCurrentTab] = useState('list');
 
   const filterProducts = () => {
     return products.filter(product => {
       const nameMatch = product.name.toLowerCase().includes(search.toLowerCase());
       const codeMatch = product.code.toString().includes(search);
       const categoryMatch = selectedCategory ? (product.categoryId === selectedCategory) : true;
+      return (nameMatch || codeMatch) && categoryMatch;
+    });
+  };
+
+  const filterPricingProducts = () => {
+    return products.filter(product => {
+      const nameMatch = product.name.toLowerCase().includes(pricingSearch.toLowerCase());
+      const codeMatch = product.code.toString().includes(pricingSearch);
+      const categoryMatch = pricingCategory ? (product.categoryId === pricingCategory) : true;
       return (nameMatch || codeMatch) && categoryMatch;
     });
   };
@@ -108,11 +127,11 @@ export default function Products() {
     if (!formData.name) {
       errors.name = 'Nome é obrigatório';
     }
-    if (!formData.price) {
-      errors.price = 'Preço é obrigatório';
-    }
-    if (!formData.stock) {
+    if (formData.stock === undefined || formData.stock === null) {
       errors.stock = 'Estoque é obrigatório';
+    }
+    if (!formData.costPrice) {
+      errors.costPrice = 'Preço de custo é obrigatório';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -125,13 +144,13 @@ export default function Products() {
           code: Number(formData.code),
           name: formData.name,
           description: formData.description,
-          price: Number(formData.price),
+          price: 0, // Price will be set in pricing tab
           unit: formData.unit,
           stock: Number(formData.stock),
           minStock: Number(formData.minStock || 0),
-          categoryId: formData.category, // Use categoryId instead of category
-          cost: Number(formData.costPrice || 0), // Use cost instead of costPrice
-          maxDiscountPercentage: Number(formData.maxDiscountPercentage || 0),
+          categoryId: formData.category,
+          cost: Number(formData.costPrice || 0),
+          maxDiscountPercentage: 0, // Will be set in pricing tab
           createdAt: new Date(),
           updatedAt: new Date()
         };
@@ -151,13 +170,11 @@ export default function Products() {
           code: Number(formData.code),
           name: formData.name,
           description: formData.description,
-          price: Number(formData.price),
           unit: formData.unit,
           stock: Number(formData.stock),
           minStock: Number(formData.minStock || 0),
-          categoryId: formData.category, // Use categoryId instead of category
-          cost: Number(formData.costPrice || 0), // Use cost instead of costPrice
-          maxDiscountPercentage: Number(formData.maxDiscountPercentage || 0),
+          categoryId: formData.category,
+          cost: Number(formData.costPrice || 0),
           updatedAt: new Date()
         });
         setIsEditDialogOpen(false);
@@ -181,13 +198,11 @@ export default function Products() {
       code: 0,
       name: '',
       description: '',
-      price: 0,
       unit: '',
       stock: 0,
       minStock: 0,
       category: '',
       costPrice: 0,
-      maxDiscountPercentage: 0
     });
     setFormErrors({});
     setIsAddDialogOpen(true);
@@ -199,13 +214,11 @@ export default function Products() {
       code: product.code,
       name: product.name,
       description: product.description,
-      price: product.price,
       unit: product.unit || '',
       stock: product.stock,
       minStock: product.minStock || 0,
       category: product.categoryId || '',
       costPrice: product.cost || 0,
-      maxDiscountPercentage: product.maxDiscountPercentage || 0
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -229,13 +242,65 @@ export default function Products() {
     return category ? category.name : "-";
   };
 
-  const renderCostPrice = (product: Product) => {
-    return formatCurrency(product.cost); // Use cost instead of costPrice
+  const handleUpdatePrice = async (product: Product, newPrice: number) => {
+    try {
+      await updateProduct(product.id, {
+        price: newPrice,
+        updatedAt: new Date()
+      });
+      setEditPrice(null);
+      toast({
+        title: "Preço atualizado",
+        description: `O preço de ${product.name} foi atualizado com sucesso.`
+      });
+    } catch (error) {
+      console.error("Error updating price:", error);
+      toast({
+        title: "Erro na atualização",
+        description: "Não foi possível atualizar o preço.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const formatCurrency = (value: number | undefined) => {
-    if (value === undefined || value === null) return 'R$ 0,00';
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const handleUpdateDiscount = async (product: Product, newDiscount: number) => {
+    try {
+      await updateProduct(product.id, {
+        maxDiscountPercentage: newDiscount,
+        updatedAt: new Date()
+      });
+      setEditDiscount(null);
+      toast({
+        title: "Desconto máximo atualizado",
+        description: `O desconto máximo de ${product.name} foi atualizado com sucesso.`
+      });
+    } catch (error) {
+      console.error("Error updating discount:", error);
+      toast({
+        title: "Erro na atualização",
+        description: "Não foi possível atualizar o desconto máximo.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Calculate profit margin
+  const calculateProfitMargin = (price: number, cost: number): number => {
+    if (!price || !cost || cost === 0) return 0;
+    return ((price - cost) / price) * 100;
+  };
+
+  // Calculate minimum price based on discount
+  const calculateMinPrice = (price: number, maxDiscount: number): number => {
+    if (!price || maxDiscount === undefined || maxDiscount === null) return 0;
+    return price * (1 - (maxDiscount / 100));
+  };
+
+  // Get margin color based on percentage
+  const getMarginColor = (margin: number): string => {
+    if (margin < 15) return "bg-red-100 text-red-800 border-red-300";
+    if (margin < 30) return "bg-yellow-100 text-yellow-800 border-yellow-300";
+    return "bg-green-100 text-green-800 border-green-300";
   };
 
   return (
@@ -244,199 +309,325 @@ export default function Products() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Lista de Produtos</CardTitle>
+              <CardTitle>Produtos</CardTitle>
               <CardDescription>
-                Gerencie seus produtos
+                Gerencie seu catálogo de produtos
               </CardDescription>
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleOpenAddDialog}>
-                  <Plus size={16} className="mr-2" /> Novo Produto
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Adicionar Produto</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-code">Código</Label>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs 
+            defaultValue="list" 
+            value={currentTab}
+            onValueChange={setCurrentTab}
+            className="w-full"
+          >
+            <TabsList className="mb-4">
+              <TabsTrigger value="list">Lista</TabsTrigger>
+              <TabsTrigger value="pricing">Precificação</TabsTrigger>
+            </TabsList>
+            
+            {/* Lista de Produtos Tab */}
+            <TabsContent value="list" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
                     <Input
-                      id="new-code"
-                      type="number"
-                      value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: Number(e.target.value) })}
-                    />
-                    {formErrors.code && <p className="text-red-500 text-sm">{formErrors.code}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-name">Nome</Label>
-                    <Input
-                      id="new-name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
-                    {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-description">Descrição</Label>
-                    <Input
-                      id="new-description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Buscar produtos..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-10 w-[300px]"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-price">Preço</Label>
-                    <Input
-                      id="new-price"
-                      type="number"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                    />
-                    {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-unit">Unidade</Label>
-                    <Input
-                      id="new-unit"
-                      value={formData.unit}
-                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-stock">Estoque</Label>
-                    <Input
-                      id="new-stock"
-                      type="number"
-                      value={formData.stock}
-                      onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-                    />
-                    {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="new-minStock">Estoque Mínimo</Label>
-                    <Input
-                      id="new-minStock"
-                      type="number"
-                      value={formData.minStock}
-                      onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-category">Categoria</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma categoria" />
+                  <div>
+                    <Label htmlFor="category-filter">Filtrar por Categoria:</Label>
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Todas as Categorias" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="">Todas as Categorias</SelectItem>
                         {productCategories.map(category => (
                           <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-costPrice">Preço de Custo</Label>
-                    <Input
-                      id="new-costPrice"
-                      type="number"
-                      value={formData.costPrice}
-                      onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-maxDiscountPercentage">Máximo % de Desconto</Label>
-                    <Input
-                      id="new-maxDiscountPercentage"
-                      type="number"
-                      value={formData.maxDiscountPercentage}
-                      onChange={(e) => setFormData({ ...formData, maxDiscountPercentage: Number(e.target.value) })}
-                    />
-                  </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleAddProduct}>
-                    Adicionar
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
-              <Input
-                placeholder="Buscar produtos..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="mt-2">
-              <Label htmlFor="category-filter">Filtrar por Categoria:</Label>
-              <Select onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Todas as Categorias" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-categories">Todas as Categorias</SelectItem>
-                  {productCategories.map(category => (
-                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="relative overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Preço</TableHead>
-                  <TableHead>Estoque</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filterProducts().map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.code}</TableCell>
-                    <TableCell>{product.name}</TableCell>
-                    <TableCell>{renderCategoryName(product)}</TableCell>
-                    <TableCell>{formatCurrency(product.price)}</TableCell>
-                    <TableCell>{product.stock}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenEditDialog(product)}
-                        >
-                          <Edit size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenDeleteDialog(product)}
-                        >
-                          <Trash size={16} />
-                        </Button>
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleOpenAddDialog}>
+                      <Plus size={16} className="mr-2" /> Novo Produto
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Produto</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-code">Código</Label>
+                        <Input
+                          id="new-code"
+                          type="number"
+                          value={formData.code}
+                          onChange={(e) => setFormData({ ...formData, code: Number(e.target.value) })}
+                        />
+                        {formErrors.code && <p className="text-red-500 text-sm">{formErrors.code}</p>}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-name">Nome</Label>
+                        <Input
+                          id="new-name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        />
+                        {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-description">Descrição</Label>
+                        <Input
+                          id="new-description"
+                          value={formData.description}
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-costPrice">Preço de Custo</Label>
+                        <Input
+                          id="new-costPrice"
+                          type="number"
+                          value={formData.costPrice}
+                          onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
+                        />
+                        {formErrors.costPrice && <p className="text-red-500 text-sm">{formErrors.costPrice}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-unit">Unidade</Label>
+                        <Input
+                          id="new-unit"
+                          value={formData.unit}
+                          onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-stock">Estoque</Label>
+                        <Input
+                          id="new-stock"
+                          type="number"
+                          value={formData.stock}
+                          onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                        />
+                        {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
+                      </div>
+                       <div className="space-y-2">
+                        <Label htmlFor="new-minStock">Estoque Mínimo</Label>
+                        <Input
+                          id="new-minStock"
+                          type="number"
+                          value={formData.minStock}
+                          onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-category">Categoria</Label>
+                        <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {productCategories.map(category => (
+                              <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleAddProduct}>
+                        Adicionar
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="relative overflow-x-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Preço de Custo</TableHead>
+                      <TableHead>Estoque</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filterProducts().map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell className="font-medium">{product.code}</TableCell>
+                        <TableCell>{product.name}</TableCell>
+                        <TableCell>{renderCategoryName(product)}</TableCell>
+                        <TableCell>{formatCurrency(product.cost)}</TableCell>
+                        <TableCell>{product.stock}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenEditDialog(product)}
+                            >
+                              <Edit size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenDeleteDialog(product)}
+                            >
+                              <Trash size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            
+            {/* Precificação Tab */}
+            <TabsContent value="pricing" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
+                    <Input
+                      placeholder="Buscar produtos..."
+                      value={pricingSearch}
+                      onChange={(e) => setPricingSearch(e.target.value)}
+                      className="pl-10 w-[300px]"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pricing-category-filter">Filtrar por Categoria:</Label>
+                    <Select value={pricingCategory} onValueChange={setPricingCategory}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Todas as Categorias" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Todas as Categorias</SelectItem>
+                        {productCategories.map(category => (
+                          <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="relative overflow-x-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Custo</TableHead>
+                      <TableHead>Preço de Venda</TableHead>
+                      <TableHead>Margem (%)</TableHead>
+                      <TableHead>Desconto Máx.(%)</TableHead>
+                      <TableHead>Preço Mínimo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filterPricingProducts().map((product) => {
+                      const margin = calculateProfitMargin(product.price, product.cost);
+                      const minPrice = calculateMinPrice(product.price, product.maxDiscountPercentage || 0);
+                      return (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-medium">{product.code}</TableCell>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>{formatCurrency(product.cost)}</TableCell>
+                          <TableCell>
+                            {editPrice && editPrice.id === product.id ? (
+                              <div className="flex">
+                                <Input 
+                                  type="number" 
+                                  value={editPrice.price} 
+                                  onChange={(e) => setEditPrice({
+                                    ...editPrice, 
+                                    price: parseFloat(e.target.value)
+                                  })} 
+                                  className="w-24 h-8 mr-2" 
+                                />
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => handleUpdatePrice(product, editPrice.price)}
+                                  className="h-8 p-1"
+                                >
+                                  <Check size={16} />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div 
+                                className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
+                                onClick={() => setEditPrice({id: product.id, price: product.price})}
+                              >
+                                {formatCurrency(product.price)}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getMarginColor(margin)}>
+                              {margin.toFixed(1)}%
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {editDiscount && editDiscount.id === product.id ? (
+                              <div className="flex">
+                                <Input 
+                                  type="number" 
+                                  value={editDiscount.discount} 
+                                  onChange={(e) => setEditDiscount({
+                                    ...editDiscount, 
+                                    discount: parseFloat(e.target.value)
+                                  })} 
+                                  className="w-24 h-8 mr-2" 
+                                />
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => handleUpdateDiscount(product, editDiscount.discount)}
+                                  className="h-8 p-1"
+                                >
+                                  <Check size={16} />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div 
+                                className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
+                                onClick={() => setEditDiscount({id: product.id, discount: product.maxDiscountPercentage || 0})}
+                              >
+                                {product.maxDiscountPercentage?.toFixed(1) || 0}%
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>{formatCurrency(minPrice)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -475,14 +666,14 @@ export default function Products() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-price">Preço</Label>
+              <Label htmlFor="edit-costPrice">Preço de Custo</Label>
               <Input
-                id="edit-price"
+                id="edit-costPrice"
                 type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                value={formData.costPrice}
+                onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
               />
-              {formErrors.price && <p className="text-red-500 text-sm">{formErrors.price}</p>}
+              {formErrors.costPrice && <p className="text-red-500 text-sm">{formErrors.costPrice}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-unit">Unidade</Label>
@@ -523,24 +714,6 @@ export default function Products() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-costPrice">Preço de Custo</Label>
-              <Input
-                id="edit-costPrice"
-                type="number"
-                value={formData.costPrice}
-                onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-maxDiscountPercentage">Máximo % de Desconto</Label>
-              <Input
-                id="edit-maxDiscountPercentage"
-                type="number"
-                value={formData.maxDiscountPercentage}
-                onChange={(e) => setFormData({ ...formData, maxDiscountPercentage: Number(e.target.value) })}
-              />
             </div>
           </div>
           <div className="flex justify-end gap-2">
