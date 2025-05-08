@@ -1,4 +1,3 @@
-
 import { Customer, Product, Order, Payment, Load, SalesRep, Vehicle, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 
 export interface AppContextType {
@@ -35,6 +34,7 @@ export interface AppContextType {
   isLoadingProductBrands: boolean;
   isLoadingDeliveryRoutes: boolean;
   isLoadingBackups: boolean;
+  isUsingMockData: boolean; // New field to track if using mock data
   
   // State setters
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { useCustomers, loadCustomers } from '@/hooks/useCustomers';
 import { loadOrders } from '@/hooks/useOrders';
@@ -25,6 +24,8 @@ import { Customer, Product, Order, Payment, Load, SalesRep,
   Vehicle, PaymentMethod, PaymentTable, ProductGroup, 
   ProductCategory, ProductBrand, DeliveryRoute } from '@/types';
 import { toast } from '@/components/ui/use-toast';
+import { mockProducts } from '@/data/mock/products';
+import { mockCustomers } from '@/data/mock/customers';
 
 export const AppContext = createContext<AppContextType>(defaultContextValues);
 
@@ -34,6 +35,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
@@ -51,6 +53,41 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteOrder
   } = useOrders();
   
+  // Try to load data from localStorage first if available
+  useEffect(() => {
+    // Check if there's any data in localStorage from previous sessions
+    const loadLocalStorage = () => {
+      const localCustomers = localStorage.getItem('mockCustomers');
+      const localProducts = localStorage.getItem('mockProducts');
+      
+      if (localCustomers) {
+        try {
+          const parsedCustomers = JSON.parse(localCustomers);
+          if (Array.isArray(parsedCustomers) && parsedCustomers.length > 0) {
+            setCustomers(parsedCustomers);
+            console.log("Loaded customers from localStorage:", parsedCustomers.length);
+          }
+        } catch (error) {
+          console.error("Error parsing customers from localStorage:", error);
+        }
+      }
+      
+      if (localProducts) {
+        try {
+          const parsedProducts = JSON.parse(localProducts);
+          if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
+            setProducts(parsedProducts);
+            console.log("Loaded products from localStorage:", parsedProducts.length);
+          }
+        } catch (error) {
+          console.error("Error parsing products from localStorage:", error);
+        }
+      }
+    };
+    
+    loadLocalStorage();
+  }, []);
+  
   // Load core data on app initialization
   useEffect(() => {
     const fetchCoreData = async () => {
@@ -59,18 +96,61 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Start loading customers
         setIsLoadingCustomers(true);
-        const loadedCustomers = await loadCustomers();
-        console.log(`Loaded ${loadedCustomers.length} customers`);
-        setCustomers(loadedCustomers);
-        setIsLoadingCustomers(false);
+        let loadedCustomers: Customer[] = [];
+        try {
+          loadedCustomers = await loadCustomers();
+          console.log(`Loaded ${loadedCustomers.length} customers`);
+          setCustomers(loadedCustomers);
+          
+          // Check if we're using mock data
+          if (loadedCustomers.length > 0 && loadedCustomers[0].id.startsWith('local-')) {
+            setIsUsingMockData(true);
+          }
+        } catch (error) {
+          console.error("Failed to load customers:", error);
+          setCustomers(mockCustomers);
+          setIsUsingMockData(true);
+          toast({
+            title: "Erro ao carregar clientes",
+            description: "Usando dados locais temporariamente.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsLoadingCustomers(false);
+        }
         
         // Start loading products
         setIsLoadingProducts(true);
-        const loadedProducts = await loadProducts();
-        console.log(`Loaded ${loadedProducts.length} products`);
-        setProducts(loadedProducts);
-        setIsLoadingProducts(false);
+        try {
+          const loadedProducts = await loadProducts();
+          console.log(`Loaded ${loadedProducts.length} products`);
+          setProducts(loadedProducts);
+          
+          // Check if we're using mock data
+          if (loadedProducts === mockProducts) {
+            setIsUsingMockData(true);
+          }
+        } catch (error) {
+          console.error("Failed to load products:", error);
+          setProducts(mockProducts);
+          setIsUsingMockData(true);
+          toast({
+            title: "Erro ao carregar produtos",
+            description: "Usando dados locais temporariamente.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsLoadingProducts(false);
+        }
         
+        // If using mock data, show a notification
+        if (isUsingMockData) {
+          toast({
+            title: "Modo offline ativado",
+            description: "O sistema está usando dados locais devido a problemas de conexão com o Firebase.",
+            variant: "warning"
+          });
+        }
       } catch (error) {
         console.error("Error loading core data:", error);
         toast({
@@ -376,6 +456,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     isLoadingProductBrands,
     isLoadingDeliveryRoutes,
     isLoadingBackups,
+    isUsingMockData,
     
     setCustomers,
     setProducts,
@@ -393,42 +474,29 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setDeliveryRoutes,
     setBackups,
     
-    // Operações de rota com tipos de retorno fixos
     addRoute,
     updateRoute,
     deleteRoute,
-    
-    // Operações de cliente
     addCustomer,
     updateCustomer,
     deleteCustomer,
     generateNextCustomerCode,
-    
-    // Operações de produto
     addProduct,
     updateProduct,
     deleteProduct,
     validateProductDiscount,
     getMinimumPrice,
-    
-    // Operações de pedido
     getOrderById,
     addOrder,
     updateOrder,
     deleteOrder,
-    
-    // Operações de veículo
     addVehicle,
     updateVehicle,
     deleteVehicle,
-    
-    // Operações de pagamento com tipos de retorno fixos
     addPayment,
     updatePayment,
     deletePayment,
     createAutomaticPaymentRecord,
-    
-    // Operações de método de pagamento
     addPaymentMethod: async (method) => {
       const { addPaymentMethod } = usePaymentMethods();
       return addPaymentMethod(method);
@@ -441,18 +509,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       const { deletePaymentMethod } = usePaymentMethods();
       await deletePaymentMethod(id);
     },
-    
-    // Operações de carga
     addLoad,
     updateLoad,
     deleteLoad,
-    
-    // Operações de representante de vendas
     addSalesRep,
     updateSalesRep,
     deleteSalesRep,
-    
-    // Operações de tabela de pagamento com tipos de retorno fixos
     addPaymentTable,
     updatePaymentTable: async (id: string, paymentTable: Partial<PaymentTable>): Promise<void> => {
       await updatePaymentTable(id, paymentTable);
@@ -460,8 +522,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deletePaymentTable: async (id: string): Promise<void> => {
       await deletePaymentTable(id);
     },
-    
-    // Operações de classificação de produto
     addProductGroup,
     updateProductGroup,
     deleteProductGroup,
@@ -471,8 +531,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     addProductBrand,
     updateProductBrand,
     deleteProductBrand,
-    
-    // Operações de rota de entrega com tipos de retorno fixos
     addDeliveryRoute,
     updateDeliveryRoute: async (id: string, route: Partial<DeliveryRoute>): Promise<void> => {
       await updateDeliveryRoute(id, route);
@@ -480,8 +538,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteDeliveryRoute: async (id: string): Promise<void> => {
       await deleteDeliveryRoute(id);
     },
-    
-    // Operações de backup
     createBackup,
     restoreBackup: (id) => {
       restoreBackup(id);
@@ -491,11 +547,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       deleteBackup(id);
       return true;
     },
-    
     settings,
     updateSettings,
     startNewMonth,
-    clearCache // Add clearCache to the context value
+    clearCache
   };
 
   return (

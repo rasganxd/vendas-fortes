@@ -3,22 +3,31 @@ import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/firebase/firestoreService';
 import { toast } from '@/components/ui/use-toast';
+import { mockCustomers } from '@/data/mock/customers';
 
 export const loadCustomers = async (): Promise<Customer[]> => {
   try {
     console.log("Loading customers from Firebase");
     const customers = await customerService.getAll();
     console.log("Loaded customers:", customers);
-    return customers;
+    
+    if (customers && customers.length > 0) {
+      return customers;
+    } else {
+      console.log("No customers found in Firebase, using mock data");
+      return mockCustomers;
+    }
   } catch (error) {
     console.error("Erro ao carregar clientes:", error);
-    return [];
+    console.log("Using mock customers data instead");
+    return mockCustomers;
   }
 };
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
   
   // Initialize customers when component mounts
   useEffect(() => {
@@ -28,9 +37,16 @@ export const useCustomers = () => {
         console.log("Fetching customers...");
         const loadedCustomers = await loadCustomers();
         console.log(`Fetched ${loadedCustomers.length} customers:`, loadedCustomers);
+        
+        // Check if we're using mock data
+        setIsUsingMockData(loadedCustomers === mockCustomers);
+        
         setCustomers(loadedCustomers);
       } catch (error) {
         console.error("Erro ao carregar clientes:", error);
+        // Fallback to mock data
+        setCustomers(mockCustomers);
+        setIsUsingMockData(true);
       } finally {
         setIsLoading(false);
       }
@@ -62,9 +78,24 @@ export const useCustomers = () => {
         customer.code = generateNextCode();
       }
       
-      // Add to Firebase with code
-      const id = await customerService.add(customer);
-      console.log("Customer added with ID:", id);
+      let id = "";
+      
+      // Try to add to Firebase first
+      try {
+        id = await customerService.add(customer);
+        console.log("Customer added to Firebase with ID:", id);
+      } catch (firebaseError) {
+        console.error("Failed to add customer to Firebase:", firebaseError);
+        
+        // If Firebase fails, generate a local ID and mark as using mock data
+        id = `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        setIsUsingMockData(true);
+        console.log("Generated local ID for customer:", id);
+        
+        // Store updated mock data in localStorage
+        const updatedMockCustomers = [...mockCustomers, { ...customer, id }];
+        localStorage.setItem('mockCustomers', JSON.stringify(updatedMockCustomers));
+      }
       
       const newCustomer = { ...customer, id } as Customer;
       
@@ -90,8 +121,20 @@ export const useCustomers = () => {
     try {
       console.log("Updating customer:", id, customer);
       
-      // Update in Firebase
-      await customerService.update(id, customer);
+      // Try Firebase first
+      try {
+        await customerService.update(id, customer);
+        console.log("Customer updated in Firebase");
+      } catch (firebaseError) {
+        console.error("Failed to update customer in Firebase:", firebaseError);
+        setIsUsingMockData(true);
+        
+        // If Firebase fails, update mock data in localStorage
+        const updatedCustomers = customers.map(c => 
+          c.id === id ? { ...c, ...customer } : c
+        );
+        localStorage.setItem('mockCustomers', JSON.stringify(updatedCustomers));
+      }
       
       // Update local state
       const updatedCustomers = customers.map(c => 
@@ -116,8 +159,18 @@ export const useCustomers = () => {
     try {
       console.log("Deleting customer:", id);
       
-      // Delete from Firebase
-      await customerService.delete(id);
+      // Try Firebase first
+      try {
+        await customerService.delete(id);
+        console.log("Customer deleted from Firebase");
+      } catch (firebaseError) {
+        console.error("Failed to delete customer from Firebase:", firebaseError);
+        setIsUsingMockData(true);
+        
+        // If Firebase fails, update mock data in localStorage
+        const remainingCustomers = customers.filter(c => c.id !== id);
+        localStorage.setItem('mockCustomers', JSON.stringify(remainingCustomers));
+      }
       
       // Update local state
       setCustomers(customers.filter(c => c.id !== id));
@@ -142,6 +195,7 @@ export const useCustomers = () => {
     deleteCustomer,
     generateNextCode,
     isLoading,
-    setCustomers
+    setCustomers,
+    isUsingMockData
   };
 };
