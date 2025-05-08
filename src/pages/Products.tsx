@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -348,7 +347,7 @@ export default function Products() {
                         <SelectValue placeholder="Todas as Categorias" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas as Categorias</SelectItem>
+                        <SelectItem value="all">Todas as Categorias</SelectItem>
                         {productCategories.map(category => (
                           <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                         ))}
@@ -356,6 +355,7 @@ export default function Products() {
                     </Select>
                   </div>
                 </div>
+                
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleOpenAddDialog}>
@@ -522,7 +522,7 @@ export default function Products() {
                         <SelectValue placeholder="Todas as Categorias" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas as Categorias</SelectItem>
+                        <SelectItem value="all">Todas as Categorias</SelectItem>
                         {productCategories.map(category => (
                           <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                         ))}
