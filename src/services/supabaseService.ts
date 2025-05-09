@@ -2,8 +2,11 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
-// Define the table names as a type for type safety
+// Define types for tables in our database
 export type TableName = keyof Database['public']['Tables'];
+export type TableRow<T extends TableName> = Database['public']['Tables'][T]['Row'];
+export type TableInsert<T extends TableName> = Database['public']['Tables'][T]['Insert'];
+export type TableUpdate<T extends TableName> = Database['public']['Tables'][T]['Update'];
 
 // List of available tables to check against
 const validTables: TableName[] = [
@@ -31,14 +34,14 @@ const validTables: TableName[] = [
 ];
 
 // Special case tables that don't have an id field
-const tablesWithoutIdField = ['load_orders'];
+const tablesWithoutIdField = new Set<TableName>(['load_orders']);
 
 /**
  * Creates a service for standard tables with an ID field
  * @param tableName The table name
  * @returns CRUD operations for the table
  */
-export const createStandardService = <T extends TableName>(tableName: T) => {
+export function createStandardService<T extends TableName>(tableName: T) {
   // Type guard to validate table name
   if (!validTables.includes(tableName)) {
     throw new Error(`Invalid table name: ${tableName}`);
@@ -46,7 +49,7 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
   
   return {
     // Get all records from a table
-    getAll: async () => {
+    getAll: async (): Promise<TableRow<T>[]> => {
       try {
         const { data, error } = await supabase
           .from(tableName)
@@ -57,7 +60,7 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
           throw error;
         }
         
-        return data || [];
+        return data as TableRow<T>[];
       } catch (error) {
         console.error(`Error in getAll for ${tableName}:`, error);
         throw error;
@@ -65,10 +68,10 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
     },
     
     // Get a single record by ID
-    getById: async (id: string) => {
+    getById: async (id: string): Promise<TableRow<T> | null> => {
       try {
         // Skip ID lookup for tables without ID
-        if (tablesWithoutIdField.includes(tableName)) {
+        if (tablesWithoutIdField.has(tableName)) {
           throw new Error(`Table ${tableName} does not have an id field`);
         }
         
@@ -76,17 +79,14 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
           .from(tableName)
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
           
         if (error) {
-          if (error.code === 'PGRST116') { // Record not found
-            return null;
-          }
           console.error(`Error fetching ${tableName} with id ${id}:`, error);
           throw error;
         }
         
-        return data;
+        return data as TableRow<T> | null;
       } catch (error) {
         console.error(`Error in getById for ${tableName}:`, error);
         throw error;
@@ -94,11 +94,11 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
     },
     
     // Add a new record
-    add: async (record: Record<string, any>) => {
+    add: async (record: Partial<TableInsert<T>>): Promise<string> => {
       try {
         const { data, error } = await supabase
           .from(tableName)
-          .insert(record)
+          .insert(record as any)
           .select();
           
         if (error) {
@@ -111,13 +111,14 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
         }
         
         // Handle tables without ID field - this should not happen with standard tables
-        if (tablesWithoutIdField.includes(tableName)) {
+        if (tablesWithoutIdField.has(tableName)) {
           // For tables like load_orders, return some identifier
           return 'created';
         }
         
         // Safe to access data[0].id since we've verified this is a standard table
-        return data[0].id;
+        const row = data[0] as any;
+        return row.id || 'unknown';
       } catch (error) {
         console.error(`Error in add for ${tableName}:`, error);
         throw error;
@@ -125,16 +126,16 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
     },
     
     // Update a record
-    update: async (id: string, record: Record<string, any>) => {
+    update: async (id: string, record: Partial<TableUpdate<T>>): Promise<void> => {
       try {
         // Skip ID-based update for tables without ID
-        if (tablesWithoutIdField.includes(tableName)) {
+        if (tablesWithoutIdField.has(tableName)) {
           throw new Error(`Table ${tableName} does not have an id field for updates`);
         }
         
         const { error } = await supabase
           .from(tableName)
-          .update(record)
+          .update(record as any)
           .eq('id', id);
           
         if (error) {
@@ -148,10 +149,10 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
     },
     
     // Delete a record
-    delete: async (id: string) => {
+    delete: async (id: string): Promise<void> => {
       try {
         // Skip ID-based delete for tables without ID
-        if (tablesWithoutIdField.includes(tableName)) {
+        if (tablesWithoutIdField.has(tableName)) {
           throw new Error(`Table ${tableName} does not have an id field for deletion`);
         }
         
@@ -171,7 +172,7 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
     },
     
     // Query records with filters
-    query: async (filters: Record<string, any>) => {
+    query: async (filters: Record<string, any>): Promise<TableRow<T>[]> => {
       try {
         let query = supabase
           .from(tableName)
@@ -191,14 +192,14 @@ export const createStandardService = <T extends TableName>(tableName: T) => {
           throw error;
         }
         
-        return data || [];
+        return data as TableRow<T>[];
       } catch (error) {
         console.error(`Error in query for ${tableName}:`, error);
         throw error;
       }
     }
   };
-};
+}
 
 /**
  * Create service specifically for load_orders which doesn't have an ID field
@@ -217,7 +218,7 @@ export const createLoadOrdersService = () => {
           throw error;
         }
         
-        return data || [];
+        return (data || []) as Database['public']['Tables']['load_orders']['Row'][];
       } catch (error) {
         console.error("Error in getAll for load_orders:", error);
         throw error;

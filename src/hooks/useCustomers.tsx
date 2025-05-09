@@ -2,37 +2,13 @@ import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabaseService';
 import { toast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { transformCustomerData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
 
 export const loadCustomers = async (): Promise<Customer[]> => {
   try {
     console.log("Loading customers from Supabase");
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('name', { ascending: true });
-    
-    if (error) throw error;
-    
-    // Transform data to match Customer type
-    const customers: Customer[] = data.map(customer => ({
-      id: customer.id,
-      code: customer.code,
-      name: customer.name,
-      phone: customer.phone || '',
-      email: customer.email || '',
-      address: customer.address || '',
-      city: customer.city || '',
-      state: customer.state || '',
-      zip: customer.zip || '',
-      document: customer.document || '',
-      notes: customer.notes || '',
-      visitFrequency: customer.visit_frequency || '',
-      visitDays: customer.visit_days || [],
-      visitSequence: customer.visit_sequence || 0,
-      createdAt: new Date(customer.created_at),
-      updatedAt: new Date(customer.updated_at)
-    }));
+    const data = await customerService.getAll();
+    const customers = transformArray(data, transformCustomerData) as Customer[];
     
     console.log(`Loaded ${customers.length} customers from Supabase`);
     return customers;
@@ -82,7 +58,10 @@ export const useCustomers = () => {
         customer.code = generateNextCode();
       }
       
-      const id = await customerService.add(customer);
+      // Transform to Supabase format (snake_case)
+      const supabaseData = prepareForSupabase(customer);
+      
+      const id = await customerService.add(supabaseData);
       const newCustomer = { ...customer, id } as Customer;
       
       setCustomers(prev => [...prev, newCustomer]);
@@ -106,7 +85,10 @@ export const useCustomers = () => {
     try {
       console.log("Updating customer in Supabase:", id, customer);
       
-      await customerService.update(id, customer);
+      // Transform to Supabase format (snake_case)
+      const supabaseData = prepareForSupabase(customer);
+      
+      await customerService.update(id, supabaseData);
       
       setCustomers(customers.map(c => 
         c.id === id ? { ...c, ...customer } : c
