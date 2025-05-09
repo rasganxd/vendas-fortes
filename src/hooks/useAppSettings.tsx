@@ -87,7 +87,24 @@ export const useAppSettings = () => {
       }
       
       if (settingsData) {
-        const fetchedSettings = settingsData as AppSettings;
+        // Transform the data to match AppSettings structure
+        const fetchedSettings: AppSettings = {
+          company: {
+            name: settingsData.company_name || '',
+            address: settingsData.company_address || '',
+            phone: settingsData.company_phone || '',
+            email: settingsData.company_email || '',
+            document: settingsData.company_document || '',
+            footer: settingsData.company_footer || 'Para qualquer suporte: (11) 9999-8888'
+          },
+          theme: {
+            primaryColor: settingsData.primary_color || '#1C64F2',
+            secondaryColor: settingsData.secondary_color || '#047481',
+            accentColor: settingsData.accent_color || '#0694A2'
+          },
+          id: settingsData.id
+        };
+        
         setSettings(fetchedSettings);
         
         // Apply theme colors
@@ -111,12 +128,25 @@ export const useAppSettings = () => {
         };
         
         // Try to insert default settings
-        const { error: insertError } = await supabase
+        const { data: newSettings, error: insertError } = await supabase
           .from('app_settings')
-          .insert(defaultSettings);
+          .insert({
+            company_name: defaultSettings.company.name,
+            company_address: defaultSettings.company.address,
+            company_phone: defaultSettings.company.phone,
+            company_email: defaultSettings.company.email,
+            company_document: defaultSettings.company.document,
+            company_footer: defaultSettings.company.footer,
+            primary_color: defaultSettings.theme.primaryColor,
+            secondary_color: defaultSettings.theme.secondaryColor,
+            accent_color: defaultSettings.theme.accentColor
+          })
+          .select();
           
         if (insertError) {
           console.error("Error inserting default settings:", insertError);
+        } else if (newSettings && newSettings.length > 0) {
+          defaultSettings.id = newSettings[0].id;
         }
         
         setSettings(defaultSettings);
@@ -139,11 +169,29 @@ export const useAppSettings = () => {
     try {
       const updatedSettings = { ...settings, ...newSettings };
       
+      // Convert to Supabase format
+      const supabaseData: Record<string, any> = {};
+      
+      if (newSettings.company) {
+        if (newSettings.company.name !== undefined) supabaseData.company_name = newSettings.company.name;
+        if (newSettings.company.address !== undefined) supabaseData.company_address = newSettings.company.address;
+        if (newSettings.company.phone !== undefined) supabaseData.company_phone = newSettings.company.phone;
+        if (newSettings.company.email !== undefined) supabaseData.company_email = newSettings.company.email;
+        if (newSettings.company.document !== undefined) supabaseData.company_document = newSettings.company.document;
+        if (newSettings.company.footer !== undefined) supabaseData.company_footer = newSettings.company.footer;
+      }
+      
+      if (newSettings.theme) {
+        if (newSettings.theme.primaryColor !== undefined) supabaseData.primary_color = newSettings.theme.primaryColor;
+        if (newSettings.theme.secondaryColor !== undefined) supabaseData.secondary_color = newSettings.theme.secondaryColor;
+        if (newSettings.theme.accentColor !== undefined) supabaseData.accent_color = newSettings.theme.accentColor;
+      }
+      
       // Update settings in Supabase
       const { error: updateError } = await supabase
         .from('app_settings')
-        .update(updatedSettings)
-        .eq('id', settings?.id || 'default');
+        .update(supabaseData)
+        .eq('id', settings?.id || '');
         
       if (updateError) {
         throw updateError;
@@ -153,7 +201,7 @@ export const useAppSettings = () => {
       
       // If theme was updated, apply the new colors
       if (newSettings.theme) {
-        applyThemeColors(newSettings.theme);
+        applyThemeColors(updatedSettings.theme);
       }
       
       return true;

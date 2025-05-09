@@ -1,8 +1,6 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { useCustomers, loadCustomers } from '@/hooks/useCustomers';
 import { loadOrders } from '@/hooks/useOrders';
-import { customerService, productService, orderService } from '@/firebase/firestoreService';
 import { usePayments } from '@/hooks/usePayments';
 import { useRoutes } from '@/hooks/useRoutes';
 import { useLoads } from '@/hooks/useLoads';
@@ -27,6 +25,7 @@ import { Customer, Product, Order, Payment, Load, SalesRep,
 import { toast } from '@/components/ui/use-toast';
 import { mockProducts } from '@/data/mock/products';
 import { mockCustomers } from '@/data/mock/customers';
+import { salesRepService, orderService, customerService, productService } from '@/services/supabaseService';
 
 export const AppContext = createContext<AppContextType>(defaultContextValues);
 
@@ -285,9 +284,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         : 1);
       const productWithCode = { ...product, code: productCode };
       
-      console.log("Adding product to Firebase:", productWithCode);
+      console.log("Adding product to Supabase:", productWithCode);
       
-      // Adicionar ao Firebase
+      // Adicionar ao Supabase
       const id = await productService.add(productWithCode);
       const newProduct = { ...productWithCode, id };
       
@@ -322,7 +321,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
       
-      // Atualizar no Firebase
+      // Atualizar no Supabase
       await productService.update(id, updateData);
       
       // Atualizar o estado local
@@ -346,7 +345,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const deleteProduct = async (id: string) => {
     try {
-      // Excluir do Firebase
+      // Excluir do Supabase
       await productService.delete(id);
       // Atualizar o estado local
       setProducts(products.filter(p => p.id !== id));
