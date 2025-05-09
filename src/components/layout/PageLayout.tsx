@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/hooks/useAppContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -16,29 +17,31 @@ export default function PageLayout({ children, title, subtitle, description }: P
   const accentColor = settings?.theme?.primaryColor || '#1C64F2';
   
   return (
-    <div className="flex-1 bg-background w-full h-screen overflow-y-auto">
-      <div className="container mx-auto px-4 py-5">
-        {title && (
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
-            )}
-            {description && (
-              <p className="mt-2 text-sm text-gray-500">{description}</p>
-            )}
-            <div 
-              className="h-1 w-20 mt-3 rounded-full"
-              style={{ backgroundColor: accentColor }}
-            ></div>
+    <div className="flex-1 bg-background w-full h-screen overflow-hidden">
+      <ScrollArea className="h-full">
+        <div className="container mx-auto px-4 py-5">
+          {title && (
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+              )}
+              {description && (
+                <p className="mt-2 text-sm text-gray-500">{description}</p>
+              )}
+              <div 
+                className="h-1 w-20 mt-3 rounded-full"
+                style={{ backgroundColor: accentColor }}
+              ></div>
+            </div>
+          )}
+          <div>
+            {children}
           </div>
-        )}
-        <div>
-          {children}
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

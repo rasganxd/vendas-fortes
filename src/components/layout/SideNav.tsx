@@ -29,6 +29,8 @@ import {
 import { NavItem } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/theme-provider";
+import { useAppContext } from "@/hooks/useAppContext";
 
 const navigation: NavItem[] = [
   {
@@ -113,6 +115,10 @@ const navigation: NavItem[] = [
 
 export default function SideNav() {
   const location = useLocation();
+  const { theme } = useTheme();
+  const { settings } = useAppContext();
+  
+  const accentColor = settings?.theme?.primaryColor || 'hsl(var(--primary))';
   
   // Group the navigation items by their group
   const groupedNavItems = navigation.reduce((groups, item) => {
@@ -135,16 +141,16 @@ export default function SideNav() {
   
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium">
-      <SidebarHeader className="px-5 py-4 flex items-center justify-between bg-gradient-diagonal from-primary to-primary/80">
+      <SidebarHeader className="px-5 py-4 flex items-center justify-between bg-gradient-diagonal from-sidebar-primary to-sidebar-primary/80">
         <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
-      <ScrollArea className="h-[calc(100vh-64px)] sidebar-scroll-area">
+      <ScrollArea className="h-[calc(100vh-64px)]">
         <SidebarContent className="py-4 px-3">
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (
               <div key={group} className="mb-6">
-                <h3 className="text-xs uppercase font-semibold text-blue-300/70 px-3 mb-2 flex items-center">
-                  <ChevronRight size={14} className="mr-1 text-blue-400" />
+                <h3 className="text-xs uppercase font-semibold text-sidebar-foreground/70 px-3 mb-2 flex items-center">
+                  <ChevronRight size={14} className="mr-1 text-sidebar-foreground/70" />
                   {groupLabels[group] || group}
                 </h3>
                 {items.map((item) => {
@@ -160,14 +166,16 @@ export default function SideNav() {
                         size="sm"
                         className={cn(
                           "transition-all duration-200 rounded-lg",
-                          isActive ? "bg-primary/80 text-white font-medium" : "text-gray-300 hover:bg-primary/30 hover:text-white"
+                          isActive ? 
+                            "bg-sidebar-primary text-sidebar-primary-foreground font-medium" : 
+                            "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         )}
                       >
                         <Link to={item.href} className="flex items-center px-3 py-2 text-sm">
                           {IconComponent && (
                             <div className={cn(
                               "mr-3 flex items-center justify-center w-6 h-6 rounded-md",
-                              isActive ? "text-blue-200" : "text-blue-400"
+                              isActive ? "text-sidebar-primary-foreground/80" : "text-sidebar-foreground"
                             )}>
                               <IconComponent size={18} />
                             </div>
