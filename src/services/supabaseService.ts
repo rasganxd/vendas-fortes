@@ -39,8 +39,7 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      // Safe type casting with type assertion
-      return (data as unknown as T[]) || [];
+      return (data || []) as T[];
     },
     
     // Get a single record by ID
@@ -59,8 +58,7 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      // Safe type casting with type assertion
-      return data as unknown as T;
+      return data as T;
     },
     
     // Add a new record
@@ -134,21 +132,20 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      // Safe type casting with type assertion
-      return (data as unknown as T[]) || [];
+      return (data || []) as T[];
     }
   };
 };
 
 // Create services for each entity
-export const salesRepService = createSupabaseService('sales_reps');
-export const orderService = createSupabaseService('orders');
-export const customerService = createSupabaseService('customers');
-export const productService = createSupabaseService('products');
-export const loadService = createSupabaseService('loads');
-export const paymentService = createSupabaseService('payments');
-export const paymentMethodService = createSupabaseService('payment_methods');
-export const paymentTableService = createSupabaseService('payment_tables');
-export const productGroupService = createSupabaseService('product_groups');
-export const productCategoryService = createSupabaseService('product_categories');
-export const productBrandService = createSupabaseService('product_brands');
+export const salesRepService = createSupabaseService<Record<string, any>>('sales_reps');
+export const orderService = createSupabaseService<Record<string, any>>('orders');
+export const customerService = createSupabaseService<Record<string, any>>('customers');
+export const productService = createSupabaseService<Record<string, any>>('products');
+export const loadService = createSupabaseService<Record<string, any>>('loads');
+export const paymentService = createSupabaseService<Record<string, any>>('payments');
+export const paymentMethodService = createSupabaseService<Record<string, any>>('payment_methods');
+export const paymentTableService = createSupabaseService<Record<string, any>>('payment_tables');
+export const productGroupService = createSupabaseService<Record<string, any>>('product_groups');
+export const productCategoryService = createSupabaseService<Record<string, any>>('product_categories');
+export const productBrandService = createSupabaseService<Record<string, any>>('product_brands');
