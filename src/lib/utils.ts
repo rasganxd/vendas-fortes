@@ -44,15 +44,13 @@ export function initializeThemeVariables(): void {
     document.documentElement.style.setProperty('--accent', defaultAccent);
   }
   
-  // Ensure sidebar variables are consistent with theme variables
-  document.documentElement.style.setProperty('--sidebar-primary', 
-    document.documentElement.style.getPropertyValue('--primary') || defaultPrimary);
+  // Important: Always update sidebar variables to match the current primary color
+  const currentPrimary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || defaultPrimary;
   
-  document.documentElement.style.setProperty('--sidebar-accent', 
-    document.documentElement.style.getPropertyValue('--primary') || defaultPrimary);
-    
-  document.documentElement.style.setProperty('--sidebar-ring', 
-    document.documentElement.style.getPropertyValue('--primary') || defaultPrimary);
+  // Ensure sidebar variables are consistent with theme variables
+  document.documentElement.style.setProperty('--sidebar-primary', currentPrimary);
+  document.documentElement.style.setProperty('--sidebar-accent', currentPrimary);
+  document.documentElement.style.setProperty('--sidebar-ring', currentPrimary);
     
   // Ensure sales colors are consistent with the primary blue
   document.documentElement.style.setProperty('--sales', salesDefault);

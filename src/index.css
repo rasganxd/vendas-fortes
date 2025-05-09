@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -170,6 +171,11 @@
   /* Sidebar gradient that uses CSS variables */
   .sidebar-gradient {
     background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary)/0.8));
+  }
+  
+  /* Dynamic sidebar header that updates with theme changes */
+  .dynamic-sidebar-header {
+    background: linear-gradient(to right, hsl(var(--sidebar-primary)), hsl(var(--sidebar-primary)/0.8));
   }
   
   .active-menu-item {
