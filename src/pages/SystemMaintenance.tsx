@@ -1,7 +1,6 @@
 import React from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DatabaseMigration from '@/components/system/DatabaseMigration';
 import DatabaseSchemaGenerator from '@/components/system/DatabaseSchemaGenerator';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Button } from '@/components/ui/button';
@@ -160,8 +159,6 @@ export default function SystemMaintenance() {
         </TabsList>
         <TabsContent value="database" className="space-y-4">
           <DatabaseSchemaGenerator />
-          
-          <DatabaseMigration />
           
           <Card>
             <CardHeader>
