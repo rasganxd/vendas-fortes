@@ -26,10 +26,11 @@ type TableNames =
   | 'delivery_routes';
 
 // Generic service for CRUD operations on Supabase tables
-export const createSupabaseService = <T extends Record<string, any>>(tableName: TableNames) => {
+// Now returns Record<string, any> instead of generic types to avoid deep type instantiation
+export const createSupabaseService = (tableName: TableNames) => {
   return {
     // Get all records from a table
-    getAll: async (): Promise<T[]> => {
+    getAll: async (): Promise<Record<string, any>[]> => {
       const { data, error } = await supabase
         .from(tableName)
         .select('*');
@@ -39,11 +40,11 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return (data || []) as unknown as T[];
+      return data || [];
     },
     
     // Get a single record by ID
-    getById: async (id: string): Promise<T | null> => {
+    getById: async (id: string): Promise<Record<string, any> | null> => {
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
@@ -58,11 +59,11 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return data as unknown as T;
+      return data;
     },
     
     // Add a new record
-    add: async (record: Omit<T, 'id'>): Promise<string> => {
+    add: async (record: Record<string, any>): Promise<string> => {
       const { data, error } = await supabase
         .from(tableName)
         .insert(record)
@@ -83,11 +84,11 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         return 'created';
       }
       
-      return (data[0] as any).id;
+      return data[0].id;
     },
     
     // Update a record
-    update: async (id: string, record: Partial<T>): Promise<void> => {
+    update: async (id: string, record: Record<string, any>): Promise<void> => {
       const { error } = await supabase
         .from(tableName)
         .update(record)
@@ -113,7 +114,7 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
     },
     
     // Query records with filters
-    query: async (filters: Partial<T>): Promise<T[]> => {
+    query: async (filters: Record<string, any>): Promise<Record<string, any>[]> => {
       let query = supabase
         .from(tableName)
         .select('*');
@@ -132,20 +133,20 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return (data || []) as unknown as T[];
+      return data || [];
     }
   };
 };
 
-// Create services for each entity with explicit unknown type cast to fix deep recursion
-export const salesRepService = createSupabaseService<Record<string, any>>('sales_reps');
-export const orderService = createSupabaseService<Record<string, any>>('orders');
-export const customerService = createSupabaseService<Record<string, any>>('customers');
-export const productService = createSupabaseService<Record<string, any>>('products');
-export const loadService = createSupabaseService<Record<string, any>>('loads');
-export const paymentService = createSupabaseService<Record<string, any>>('payments');
-export const paymentMethodService = createSupabaseService<Record<string, any>>('payment_methods');
-export const paymentTableService = createSupabaseService<Record<string, any>>('payment_tables');
-export const productGroupService = createSupabaseService<Record<string, any>>('product_groups');
-export const productCategoryService = createSupabaseService<Record<string, any>>('product_categories');
-export const productBrandService = createSupabaseService<Record<string, any>>('product_brands');
+// Create services for each entity as a simple object - no generics used
+export const salesRepService = createSupabaseService('sales_reps');
+export const orderService = createSupabaseService('orders');
+export const customerService = createSupabaseService('customers');
+export const productService = createSupabaseService('products');
+export const loadService = createSupabaseService('loads');
+export const paymentService = createSupabaseService('payments');
+export const paymentMethodService = createSupabaseService('payment_methods');
+export const paymentTableService = createSupabaseService('payment_tables');
+export const productGroupService = createSupabaseService('product_groups');
+export const productCategoryService = createSupabaseService('product_categories');
+export const productBrandService = createSupabaseService('product_brands');
