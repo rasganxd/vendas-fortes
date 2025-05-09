@@ -16,7 +16,7 @@ export default function PageLayout({ children, title, subtitle, description }: P
   const accentColor = settings?.theme?.primaryColor || '#1C64F2';
   
   return (
-    <div className="flex-1 bg-background">
+    <div className="flex-1 bg-background overflow-y-auto">
       <div className="container mx-auto px-4 py-5">
         {title && (
           <div className="mb-8">

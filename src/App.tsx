@@ -40,9 +40,9 @@ function App() {
       <AppProvider>
         <Router>
           <SidebarProvider defaultOpen>
-            <div className="flex min-h-screen w-full">
+            <div className="flex min-h-screen w-full overflow-hidden">
               <SideNav />
-              <div className="flex-1">
+              <div className="flex-1 overflow-y-auto">
                 <RouterRoutes>
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
@@ -65,7 +65,7 @@ function App() {
                 </RouterRoutes>
               </div>
             </div>
-            <Toaster /> {/* Changed to use Sonner's Toaster component */}
+            <Toaster />
           </SidebarProvider>
         </Router>
       </AppProvider>

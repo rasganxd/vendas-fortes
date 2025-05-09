@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { PaymentTable } from '@/types';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
