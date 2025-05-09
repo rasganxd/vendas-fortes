@@ -1,12 +1,21 @@
 
 import { DeliveryRoute } from '@/types';
 import { useState, useEffect } from 'react';
-import { routeService } from '@/firebase/firestoreService';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
 export const loadRoutes = async (): Promise<DeliveryRoute[]> => {
   try {
-    return await routeService.getAll();
+    const { data, error } = await supabase
+      .from('delivery_routes')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      throw error;
+    }
+    
+    return data as DeliveryRoute[];
   } catch (error) {
     console.error("Erro ao carregar rotas:", error);
     return [];
@@ -35,9 +44,17 @@ export const useRoutes = () => {
 
   const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
     try {
-      // Add to Firebase
-      const id = await routeService.add(route);
-      const newRoute = { ...route, id } as DeliveryRoute;
+      // Add to Supabase
+      const { data, error } = await supabase
+        .from('delivery_routes')
+        .insert(route)
+        .select();
+        
+      if (error) {
+        throw error;
+      }
+      
+      const newRoute = data[0] as DeliveryRoute;
       
       // Update local state
       setRoutes([...routes, newRoute]);
@@ -45,7 +62,7 @@ export const useRoutes = () => {
         title: "Rota adicionada",
         description: "Rota adicionada com sucesso!"
       });
-      return id;
+      return newRoute.id;
     } catch (error) {
       console.error("Erro ao adicionar rota:", error);
       toast({
@@ -59,8 +76,15 @@ export const useRoutes = () => {
 
   const updateRoute = async (id: string, route: Partial<DeliveryRoute>): Promise<void> => {
     try {
-      // Update in Firebase
-      await routeService.update(id, route);
+      // Update in Supabase
+      const { error } = await supabase
+        .from('delivery_routes')
+        .update(route)
+        .eq('id', id);
+        
+      if (error) {
+        throw error;
+      }
       
       // Update local state
       setRoutes(routes.map(r => 
@@ -82,8 +106,15 @@ export const useRoutes = () => {
 
   const deleteRoute = async (id: string): Promise<void> => {
     try {
-      // Delete from Firebase
-      await routeService.delete(id);
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('delivery_routes')
+        .delete()
+        .eq('id', id);
+        
+      if (error) {
+        throw error;
+      }
       
       // Update local state
       setRoutes(routes.filter(r => r.id !== id));

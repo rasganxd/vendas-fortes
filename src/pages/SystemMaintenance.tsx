@@ -1,7 +1,7 @@
+
 import React from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DatabaseSchemaGenerator from '@/components/system/DatabaseSchemaGenerator';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,69 +151,11 @@ export default function SystemMaintenance() {
 
   return (
     <PageLayout title="Manutenção do Sistema">
-      <Tabs defaultValue="database" className="space-y-4">
+      <Tabs defaultValue="backups" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="database">Banco de Dados</TabsTrigger>
           <TabsTrigger value="backups">Backups</TabsTrigger>
           <TabsTrigger value="settings">Configurações</TabsTrigger>
         </TabsList>
-        <TabsContent value="database" className="space-y-4">
-          <DatabaseSchemaGenerator />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Manutenção de Dados</CardTitle>
-              <CardDescription>
-                Operações de manutenção no banco de dados
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Atenção</AlertTitle>
-                <AlertDescription>
-                  As operações abaixo podem afetar os dados do sistema. Certifique-se de fazer um backup antes de prosseguir.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button 
-                variant="outline" 
-                onClick={handleClearCache}
-                disabled={isClearingCache}
-              >
-                {isClearingCache ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Limpando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Limpar Cache
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="default" 
-                onClick={handleStartNewMonth}
-                disabled={isStartingNewMonth}
-              >
-                {isStartingNewMonth ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                    Iniciar Novo Mês
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
         <TabsContent value="backups">
           <Card>
             <CardHeader>
@@ -296,10 +238,64 @@ export default function SystemMaintenance() {
                 <Database className="h-4 w-4" />
                 <AlertTitle>Configurações do Banco de Dados</AlertTitle>
                 <AlertDescription>
-                  O sistema está configurado para usar o Firebase Firestore como banco de dados.
+                  O sistema está configurado para usar o Supabase como banco de dados.
                 </AlertDescription>
               </Alert>
             </CardContent>
+          </Card>
+          
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Manutenção de Dados</CardTitle>
+              <CardDescription>
+                Operações de manutenção no banco de dados
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Atenção</AlertTitle>
+                <AlertDescription>
+                  As operações abaixo podem afetar os dados do sistema. Certifique-se de fazer um backup antes de prosseguir.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={handleClearCache}
+                disabled={isClearingCache}
+              >
+                {isClearingCache ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Limpando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Limpar Cache
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="default" 
+                onClick={handleStartNewMonth}
+                disabled={isStartingNewMonth}
+              >
+                {isStartingNewMonth ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    Iniciar Novo Mês
+                  </>
+                )}
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
