@@ -25,8 +25,10 @@ type TableNames =
   | 'vehicles'
   | 'delivery_routes';
 
+// Special case tables that don't have an id field
+const tablesWithoutIdField = ['load_orders'];
+
 // Generic service for CRUD operations on Supabase tables
-// Now returns Record<string, any> instead of generic types to avoid deep type instantiation
 export const createSupabaseService = (tableName: TableNames) => {
   return {
     // Get all records from a table
@@ -79,7 +81,7 @@ export const createSupabaseService = (tableName: TableNames) => {
       }
       
       // Handle the special case for tables without an id field
-      if (tableName === 'load_orders') {
+      if (tablesWithoutIdField.includes(tableName)) {
         // For load_orders, return some identifier (even if not an ID)
         return 'created';
       }
