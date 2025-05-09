@@ -3,13 +3,15 @@ import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabaseService';
 import { toast } from '@/components/ui/use-toast';
+import { transformProductData, transformArray } from '@/utils/dataTransformers';
 
 export const loadProducts = async (): Promise<Product[]> => {
   try {
     console.log("Loading products from Supabase");
-    const products = await productService.getAll();
-    console.log(`Loaded ${products.length} products from Supabase`);
-    return products as Product[];
+    const data = await productService.getAll();
+    const transformedProducts = transformArray(data, transformProductData) as Product[];
+    console.log(`Loaded ${transformedProducts.length} products from Supabase`);
+    return transformedProducts;
   } catch (error) {
     console.error("Error loading products:", error);
     // Return an empty array as fallback

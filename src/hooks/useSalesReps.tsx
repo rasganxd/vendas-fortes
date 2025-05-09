@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { salesRepService } from '@/services/supabaseService';
 import { toast } from '@/components/ui/use-toast';
+import { transformSalesRepData, transformArray } from '@/utils/dataTransformers';
 
 export const useSalesReps = () => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
@@ -14,24 +15,7 @@ export const useSalesReps = () => {
         setIsLoading(true);
         const data = await salesRepService.getAll();
         // Transform the data to ensure it matches SalesRep type
-        const formattedData: SalesRep[] = data.map(item => ({
-          id: item.id,
-          code: item.code || 0,
-          name: item.name || '',
-          phone: item.phone || '',
-          email: item.email || '',
-          address: item.address || '',
-          city: item.city || '',
-          state: item.state || '',
-          zip: item.zip || '',
-          region: item.region || '',
-          document: item.document || '',
-          role: item.role || '',
-          active: item.active || false,
-          notes: item.notes || '',
-          createdAt: new Date(item.created_at),
-          updatedAt: new Date(item.updated_at)
-        }));
+        const formattedData = transformArray(data, transformSalesRepData) as SalesRep[];
         setSalesReps(formattedData);
       } catch (error) {
         console.error("Error loading sales reps:", error);
