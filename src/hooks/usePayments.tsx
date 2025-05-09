@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
-import { Payment, Order } from '@/types';
+import { Payment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { Order } from '@/types/order'; // Added import for Order type
 
 export const loadPayments = async (): Promise<Payment[]> => {
   try {
@@ -111,7 +113,10 @@ export const usePayments = () => {
         emission_location: payment.emissionLocation || '',
         notes: payment.notes || '',
         due_date: payment.dueDate ? payment.dueDate.toISOString() : null,
-        amount_in_words: payment.amountInWords || ''
+        amount_in_words: payment.amountInWords || '',
+        payment_date: payment.paymentDate ? payment.paymentDate.toISOString() : null,
+        created_at: payment.createdAt.toISOString(),
+        updated_at: payment.updatedAt.toISOString()
       };
       
       const { data, error } = await supabase
@@ -139,7 +144,9 @@ export const usePayments = () => {
         emissionLocation: newPaymentFromDb.emission_location,
         notes: newPaymentFromDb.notes,
         dueDate: newPaymentFromDb.due_date ? new Date(newPaymentFromDb.due_date) : undefined,
-        amountInWords: newPaymentFromDb.amount_in_words
+        amountInWords: newPaymentFromDb.amount_in_words,
+        createdAt: new Date(newPaymentFromDb.created_at),
+        updatedAt: new Date(newPaymentFromDb.updated_at)
       };
       
       setPayments([...payments, newPayment]);

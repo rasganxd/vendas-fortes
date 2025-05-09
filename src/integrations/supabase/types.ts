@@ -670,6 +670,7 @@ export type Database = {
           method: string | null
           notes: string | null
           order_id: string | null
+          payment_date: string | null
           payment_location: string | null
           status: string | null
           updated_at: string | null
@@ -688,6 +689,7 @@ export type Database = {
           method?: string | null
           notes?: string | null
           order_id?: string | null
+          payment_date?: string | null
           payment_location?: string | null
           status?: string | null
           updated_at?: string | null
@@ -706,6 +708,7 @@ export type Database = {
           method?: string | null
           notes?: string | null
           order_id?: string | null
+          payment_date?: string | null
           payment_location?: string | null
           status?: string | null
           updated_at?: string | null
