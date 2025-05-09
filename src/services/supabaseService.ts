@@ -40,7 +40,7 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
       }
       
       // Use type assertion to ensure proper type conversion
-      return data as unknown as T[];
+      return (data || []) as T[];
     },
     
     // Get a single record by ID
@@ -60,7 +60,7 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
       }
       
       // Use type assertion to ensure proper type conversion
-      return data as unknown as T;
+      return data as T;
     },
     
     // Add a new record
@@ -73,6 +73,10 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
       if (error) {
         console.error(`Error adding record to ${tableName}:`, error);
         throw error;
+      }
+      
+      if (!data || !data[0] || !data[0].id) {
+        throw new Error(`Failed to get ID from newly created ${tableName}`);
       }
       
       return data[0].id;
@@ -125,7 +129,7 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
       }
       
       // Use type assertion to ensure proper type conversion
-      return data as unknown as T[];
+      return (data || []) as T[];
     }
   };
 };

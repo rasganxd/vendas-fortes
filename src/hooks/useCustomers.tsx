@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabaseService';
@@ -157,5 +156,3 @@ export const useCustomers = () => {
     setCustomers
   };
 };
-
-import { supabase } from '@/integrations/supabase/client';

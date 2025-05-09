@@ -1,4 +1,3 @@
-
 export interface Payment {
   id: string;
   orderId: string;
@@ -19,6 +18,7 @@ export interface Payment {
   customerDocument?: string;
   customerAddress?: string;
   installments?: PaymentInstallment[];
+  paymentDate?: Date; // Add missing field that's used in the code
 }
 
 export interface PaymentInstallment {

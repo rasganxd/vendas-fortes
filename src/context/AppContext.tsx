@@ -49,7 +49,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading: isLoadingOrders,
     getOrderById,
     addOrder,
-    updateOrder,
+    updateOrder: updateOrderHook,  // Renamed to avoid conflict
     deleteOrder
   } = useOrders();
   
@@ -423,16 +423,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // In the context provider setup, ensure the function returns a string
-  const updateOrder = async (id: string, orderData: Partial<Order>): Promise<string> => {
-    try {
-      return await updateOrderFunc(id, orderData);
-    } catch (error) {
-      console.error('Error updating order:', error);
-      return '';
-    }
-  };
-
   // Construir objeto de valor de contexto
   const contextValue: AppContextType = {
     customers,
@@ -498,7 +488,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     getMinimumPrice,
     getOrderById,
     addOrder,
-    updateOrder,
+    updateOrder: updateOrderHook,  // Use the hook's updateOrder function directly
     deleteOrder,
     addVehicle,
     updateVehicle,

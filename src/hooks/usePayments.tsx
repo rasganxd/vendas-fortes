@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Payment } from '@/types';
+import { Payment, Order } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -33,8 +33,7 @@ export const loadPayments = async (): Promise<Payment[]> => {
       customerName: payment.customer_name || '',
       customerDocument: payment.customer_document || '',
       customerAddress: payment.customer_address || '',
-      // Handle the paymentDate differently - it's not in the type but used in code
-      // So we'll add it temporarily and handle it specifically in updates
+      // Handle the paymentDate if it exists in the response
       paymentDate: payment.payment_date ? new Date(payment.payment_date) : undefined
     }));
   } catch (error) {
@@ -180,9 +179,9 @@ export const usePayments = () => {
       if (payment.customerDocument !== undefined) supabaseData.customer_document = payment.customerDocument;
       if (payment.customerAddress !== undefined) supabaseData.customer_address = payment.customerAddress;
       
-      // Handle paymentDate specially as it's not in the type definition
-      if ((payment as any).paymentDate !== undefined) {
-        supabaseData.payment_date = (payment as any).paymentDate.toISOString();
+      // Handle paymentDate specifically
+      if (payment.paymentDate !== undefined) {
+        supabaseData.payment_date = payment.paymentDate.toISOString();
       }
       
       // Update in Supabase

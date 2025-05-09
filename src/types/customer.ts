@@ -15,7 +15,7 @@ export interface Customer {
   updatedAt: Date;
   document?: string;
   visitDays?: string[];
-  visitFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+  visitFrequency?: string; // Changed from enum to string to match Supabase data
   visitSequence?: number;
 }
 
@@ -30,7 +30,7 @@ export type CustomerFormValues = {
   zipCode: string;
   notes: string;
   visitDays: string[];
-  visitFrequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+  visitFrequency: string; // Changed from enum to string
   email: string;
   zip: string;
   createdAt: Date;
