@@ -65,7 +65,7 @@ export const DatabaseMigration = () => {
         
         {migrationResults && (
           <div className="space-y-4">
-            <Alert variant={migrationResults.success ? "default" : "warning"}>
+            <Alert variant={migrationResults.success ? "default" : "destructive"}>
               {migrationResults.success ? (
                 <CheckCircle className="h-4 w-4 text-green-500" />
               ) : (

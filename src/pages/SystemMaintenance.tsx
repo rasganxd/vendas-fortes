@@ -2,6 +2,7 @@ import React from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DatabaseMigration from '@/components/system/DatabaseMigration';
+import DatabaseSchemaGenerator from '@/components/system/DatabaseSchemaGenerator';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -158,6 +159,8 @@ export default function SystemMaintenance() {
           <TabsTrigger value="settings">Configurações</TabsTrigger>
         </TabsList>
         <TabsContent value="database" className="space-y-4">
+          <DatabaseSchemaGenerator />
+          
           <DatabaseMigration />
           
           <Card>

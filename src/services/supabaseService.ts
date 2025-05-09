@@ -24,14 +24,14 @@ export const supabase = createClient(
 );
 
 // Function to convert Supabase timestamps to Date objects
-const convertTimestampsToDates = <T extends Record<string, any>>(data: T): T => {
+const convertTimestampsToDates = <T>(data: T): T => {
   if (!data || typeof data !== 'object') {
     return data;
   }
 
   const dateFields = ['created_at', 'updated_at', 'date', 'due_date', 'createdAt', 'updatedAt'];
   
-  const result = { ...data };
+  const result = { ...data } as any;
   
   for (const key in result) {
     if (dateFields.includes(key) && result[key]) {
@@ -41,7 +41,7 @@ const convertTimestampsToDates = <T extends Record<string, any>>(data: T): T => 
     }
   }
   
-  return result;
+  return result as T;
 };
 
 // Function to transform camelCase to snake_case for Supabase
@@ -74,7 +74,7 @@ export const toSnakeCase = (obj: Record<string, any>): Record<string, any> => {
 };
 
 // Function to transform snake_case to camelCase from Supabase
-export const toCamelCase = <T extends Record<string, any>>(obj: Record<string, any>): T => {
+export const toCamelCase = <T>(obj: Record<string, any>): T => {
   if (!obj || typeof obj !== 'object' || obj instanceof Date || Array.isArray(obj)) {
     return obj as T;
   }
@@ -102,8 +102,15 @@ export const toCamelCase = <T extends Record<string, any>>(obj: Record<string, a
   return result as T;
 };
 
+interface GenericItem {
+  id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  [key: string]: any;
+}
+
 // Create generic service for CRUD operations
-const createService = <T extends { id?: string }>(tableName: string) => {
+const createService = <T extends GenericItem>(tableName: string) => {
   return {
     getAll: async (): Promise<T[]> => {
       const { data, error } = await supabase
