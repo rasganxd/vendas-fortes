@@ -26,7 +26,8 @@ export function createStandardService<T extends TableName>(tableName: T) {
           throw error;
         }
         
-        return data as TableRow<T>[];
+        // Use type assertion to help TypeScript understand the data structure
+        return data as unknown as TableRow<T>[];
       } catch (error) {
         console.error(`Error in getAll for ${tableName}:`, error);
         throw error;
@@ -52,7 +53,8 @@ export function createStandardService<T extends TableName>(tableName: T) {
           throw error;
         }
         
-        return data as TableRow<T> | null;
+        // Use type assertion to help TypeScript understand the data structure
+        return data as unknown as TableRow<T> | null;
       } catch (error) {
         console.error(`Error in getById for ${tableName}:`, error);
         throw error;
@@ -158,7 +160,8 @@ export function createStandardService<T extends TableName>(tableName: T) {
           throw error;
         }
         
-        return data as TableRow<T>[];
+        // Use type assertion to help TypeScript understand the data structure
+        return data as unknown as TableRow<T>[];
       } catch (error) {
         console.error(`Error in query for ${tableName}:`, error);
         throw error;
