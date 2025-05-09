@@ -138,7 +138,7 @@ export default function SideNav() {
       <SidebarHeader className="px-5 py-4 flex items-center justify-between bg-gradient-diagonal from-primary to-primary/80">
         <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
-      <ScrollArea className="h-full sidebar-gradient">
+      <ScrollArea className="h-[calc(100vh-64px)] sidebar-scroll-area">
         <SidebarContent className="py-4 px-3">
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (

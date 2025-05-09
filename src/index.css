@@ -47,6 +47,11 @@
     --sidebar-ring: 217 91% 60%;
 
     --radius: 0.5rem;
+
+    /* Scrollbar colors */
+    --scrollbar-track: 214 32% 96%;
+    --scrollbar-thumb: 214 32% 80%;
+    --scrollbar-thumb-hover: 214 32% 70%;
   }
 
   .dark {
@@ -77,6 +82,11 @@
     --border: 220 40% 20%;
     --input: 220 40% 20%;
     --ring: 216 34% 80%;
+
+    /* Dark mode scrollbar colors */
+    --scrollbar-track: 220 40% 10%;
+    --scrollbar-thumb: 220 40% 30%;
+    --scrollbar-thumb-hover: 220 40% 40%;
   }
 }
 
@@ -93,38 +103,53 @@
     @apply bg-background text-foreground font-sans antialiased;
     transition: background-color 0.3s ease;
     overflow-x: hidden;
-    height: 100%;
+    height: 100vh;
   }
   
-  /* Scrollbar styles - make sure they're visible and working */
+  /* Improved scrollbar styles - ensure visibility and consistent behavior */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
-    display: block;
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+    @apply bg-secondary;
+    background-color: hsl(var(--scrollbar-track));
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full;
+    background-color: hsl(var(--scrollbar-thumb));
+    @apply rounded-full;
+    border: 1px solid transparent;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
+    background-color: hsl(var(--scrollbar-thumb-hover));
   }
 
-  /* Allow scrolling in sidebar */
+  /* Enhanced scrolling in sidebar */
   .sidebar-scroll-area {
-    -ms-overflow-style: auto;  /* IE and Edge */
-    scrollbar-width: auto;  /* Firefox */
+    -ms-overflow-style: auto;
+    scrollbar-width: thin;
     overflow-y: auto;
+    scrollbar-color: hsl(var(--scrollbar-thumb)) hsl(var(--scrollbar-track));
   }
   
   .sidebar-scroll-area::-webkit-scrollbar {
-    display: block;
     width: 5px;
+  }
+  
+  .sidebar-scroll-area::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+  
+  .sidebar-scroll-area::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--scrollbar-thumb));
+    border-radius: 10px;
+  }
+  
+  .sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--scrollbar-thumb-hover));
   }
   
   h1, h2, h3, h4, h5, h6 {

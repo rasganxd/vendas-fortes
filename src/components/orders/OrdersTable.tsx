@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -50,83 +51,85 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   };
 
   return (
-    <div className="relative overflow-x-auto rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px] px-2">
-              <Checkbox 
-                checked={filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length} 
-                onCheckedChange={handleSelectAllOrders}
-              />
-            </TableHead>
-            <TableHead>Cliente</TableHead>
-            <TableHead>Data</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Pagamento</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredOrders.length === 0 ? (
+    <div className="relative border rounded-md">
+      <ScrollArea className="h-[calc(100vh-250px)]">
+        <Table>
+          <TableHeader className="sticky top-0 bg-white z-10">
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                Nenhum pedido encontrado
-              </TableCell>
+              <TableHead className="w-[50px] px-2">
+                <Checkbox 
+                  checked={filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length} 
+                  onCheckedChange={handleSelectAllOrders}
+                />
+              </TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Pagamento</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
-          ) : (
-            filteredOrders.map((order) => (
-              <TableRow key={order.id} className={order.archived ? "bg-gray-50" : ""}>
-                <TableCell className="px-2">
-                  <Checkbox 
-                    checked={selectedOrderIds.includes(order.id)} 
-                    onCheckedChange={() => handleToggleOrderSelection(order.id)}
-                  />
-                </TableCell>
-                <TableCell>
-                  {order.customerName}
-                  {order.archived && (
-                    <Badge variant="outline" className="ml-2">
-                      <Archive size={12} className="mr-1" /> Arquivado
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>{formatDateToBR(order.createdAt)}</TableCell>
-                <TableCell>
-                  {formatCurrency(order.total)}
-                </TableCell>
-                <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewOrder(order)}
-                    >
-                      <Eye size={16} />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleEditOrder(order)}
-                    >
-                      <FilePenLine size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteOrder(order)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash size={16} />
-                    </Button>
-                  </div>
+          </TableHeader>
+          <TableBody>
+            {filteredOrders.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                  Nenhum pedido encontrado
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              filteredOrders.map((order) => (
+                <TableRow key={order.id} className={order.archived ? "bg-gray-50" : ""}>
+                  <TableCell className="px-2">
+                    <Checkbox 
+                      checked={selectedOrderIds.includes(order.id)} 
+                      onCheckedChange={() => handleToggleOrderSelection(order.id)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {order.customerName}
+                    {order.archived && (
+                      <Badge variant="outline" className="ml-2">
+                        <Archive size={12} className="mr-1" /> Arquivado
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>{formatDateToBR(order.createdAt)}</TableCell>
+                  <TableCell>
+                    {formatCurrency(order.total)}
+                  </TableCell>
+                  <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewOrder(order)}
+                      >
+                        <Eye size={16} />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditOrder(order)}
+                      >
+                        <FilePenLine size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteOrder(order)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash size={16} />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </ScrollArea>
     </div>
   );
 };
