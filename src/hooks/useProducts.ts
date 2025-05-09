@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
-import { productService } from '@/services/supabaseService';
+import { productService } from '@/services/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { transformProductData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
 

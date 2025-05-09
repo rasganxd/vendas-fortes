@@ -3,6 +3,7 @@ import { PaymentTable } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { useAppContext } from './useAppContext';
+import { paymentTableService } from '@/services/supabase';
 
 export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
   try {

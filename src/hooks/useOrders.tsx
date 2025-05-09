@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { orderService } from '@/services/supabase';
 
 export const loadOrders = async (): Promise<Order[]> => {
   try {

@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { DeliveryRoute } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { createStandardService } from '@/services/supabase';
 
 export const useDeliveryRoutes = () => {
   const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);

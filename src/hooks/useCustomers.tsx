@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
-import { customerService } from '@/services/supabaseService';
+import { customerService } from '@/services/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { transformCustomerData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
 

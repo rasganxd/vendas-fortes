@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/services/supabaseService';
+import { salesRepService } from '@/services/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { transformSalesRepData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
 
