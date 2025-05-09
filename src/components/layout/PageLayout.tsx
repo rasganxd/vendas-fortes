@@ -1,8 +1,8 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/hooks/useAppContext';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CustomScrollArea } from '@/components/ui/custom-scroll-area';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ export default function PageLayout({ children, title, subtitle, description }: P
   
   return (
     <div className="flex-1 bg-background w-full h-screen overflow-hidden">
-      <ScrollArea className="h-full">
+      <CustomScrollArea hideScrollbar={true} className="h-full">
         <div className="container mx-auto px-4 py-5">
           {title && (
             <div className="mb-8">
@@ -36,7 +36,7 @@ export default function PageLayout({ children, title, subtitle, description }: P
             {children}
           </div>
         </div>
-      </ScrollArea>
+      </CustomScrollArea>
     </div>
   );
 }

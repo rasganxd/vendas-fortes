@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 
 import { NavItem } from "@/types";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { CustomScrollArea } from "@/components/ui/custom-scroll-area";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
 import { useAppContext } from "@/hooks/useAppContext";
@@ -168,7 +169,7 @@ export default function SideNav() {
       <SidebarHeader className="px-5 py-4 flex items-center justify-between dynamic-sidebar-header">
         <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
-      <ScrollArea className="h-[calc(100vh-64px)]">
+      <CustomScrollArea hideScrollbar={true} className="h-[calc(100vh-64px)]">
         <SidebarContent className="py-4 px-3">
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (
@@ -214,7 +215,7 @@ export default function SideNav() {
             ))}
           </SidebarMenu>
         </SidebarContent>
-      </ScrollArea>
+      </CustomScrollArea>
     </Sidebar>
   );
 }
