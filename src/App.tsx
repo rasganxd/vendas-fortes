@@ -1,7 +1,7 @@
 
 import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/sonner'; // Changed from ui/toaster to ui/sonner
 import { ThemeProvider } from '@/components/theme-provider';
 import SideNav from '@/components/layout/SideNav';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -65,7 +65,7 @@ function App() {
                 </RouterRoutes>
               </div>
             </div>
-            <Toaster />
+            <Toaster /> {/* Changed to use Sonner's Toaster component */}
           </SidebarProvider>
         </Router>
       </AppProvider>
