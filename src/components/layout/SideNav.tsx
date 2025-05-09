@@ -141,7 +141,10 @@ export default function SideNav() {
   
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium">
-      <SidebarHeader className="px-5 py-4 flex items-center justify-between bg-gradient-diagonal from-sidebar-primary to-sidebar-primary/80">
+      <SidebarHeader className="px-5 py-4 flex items-center justify-between" 
+        style={{ 
+          background: `linear-gradient(to right, ${accentColor}, ${accentColor}CC)`
+        }}>
         <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
       <ScrollArea className="h-[calc(100vh-64px)]">
@@ -167,16 +170,22 @@ export default function SideNav() {
                         className={cn(
                           "transition-all duration-200 rounded-lg",
                           isActive ? 
-                            "bg-sidebar-primary text-sidebar-primary-foreground font-medium" : 
+                            "font-medium" : 
                             "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         )}
+                        style={isActive ? {
+                          backgroundColor: `${accentColor}20`,
+                          color: accentColor
+                        } : undefined}
                       >
                         <Link to={item.href} className="flex items-center px-3 py-2 text-sm">
                           {IconComponent && (
                             <div className={cn(
                               "mr-3 flex items-center justify-center w-6 h-6 rounded-md",
-                              isActive ? "text-sidebar-primary-foreground/80" : "text-sidebar-foreground"
-                            )}>
+                              isActive ? "" : "text-sidebar-foreground"
+                            )}
+                            style={isActive ? { color: accentColor } : undefined}
+                            >
                               <IconComponent size={18} />
                             </div>
                           )}
