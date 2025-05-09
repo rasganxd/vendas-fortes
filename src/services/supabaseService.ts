@@ -47,6 +47,11 @@ export const createSupabaseService = (tableName: TableNames) => {
     
     // Get a single record by ID
     getById: async (id: string): Promise<Record<string, any> | null> => {
+      // Skip ID lookup for tables without ID
+      if (tablesWithoutIdField.includes(tableName)) {
+        throw new Error(`Table ${tableName} does not have an id field`);
+      }
+      
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
@@ -82,7 +87,7 @@ export const createSupabaseService = (tableName: TableNames) => {
       
       // Handle the special case for tables without an id field
       if (tablesWithoutIdField.includes(tableName)) {
-        // For load_orders, return some identifier (even if not an ID)
+        // For tables like load_orders, return some identifier (even if not an ID)
         return 'created';
       }
       
@@ -91,6 +96,11 @@ export const createSupabaseService = (tableName: TableNames) => {
     
     // Update a record
     update: async (id: string, record: Record<string, any>): Promise<void> => {
+      // Skip ID-based update for tables without ID
+      if (tablesWithoutIdField.includes(tableName)) {
+        throw new Error(`Table ${tableName} does not have an id field for updates`);
+      }
+      
       const { error } = await supabase
         .from(tableName)
         .update(record)
@@ -104,6 +114,11 @@ export const createSupabaseService = (tableName: TableNames) => {
     
     // Delete a record
     delete: async (id: string): Promise<void> => {
+      // Skip ID-based delete for tables without ID
+      if (tablesWithoutIdField.includes(tableName)) {
+        throw new Error(`Table ${tableName} does not have an id field for deletion`);
+      }
+      
       const { error } = await supabase
         .from(tableName)
         .delete()
