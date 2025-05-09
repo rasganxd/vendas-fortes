@@ -1,8 +1,18 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
-// Define types for commonly used data structures
+// Define the table names as a type for type safety
+type TableName = keyof Database['public']['Tables'];
+
+// Define types for supabase records
 type SupabaseRecord = Record<string, any>;
+
+// Define a type for supabase response
+type SupabaseResponse = {
+  data: any[] | null;
+  error: any | null;
+};
 
 // Special case tables that don't have an id field
 const tablesWithoutIdField = ['load_orders'];
@@ -16,7 +26,7 @@ export const createSupabaseService = (tableName: string) => {
     getAll: async () => {
       try {
         const { data, error } = await supabase
-          .from(tableName)
+          .from(tableName as TableName)
           .select('*');
           
         if (error) {
@@ -40,7 +50,7 @@ export const createSupabaseService = (tableName: string) => {
       
       try {
         const { data, error } = await supabase
-          .from(tableName)
+          .from(tableName as TableName)
           .select('*')
           .eq('id', id)
           .single();
@@ -64,7 +74,7 @@ export const createSupabaseService = (tableName: string) => {
     add: async (record: SupabaseRecord) => {
       try {
         const { data, error } = await supabase
-          .from(tableName)
+          .from(tableName as TableName)
           .insert(record)
           .select();
           
@@ -83,6 +93,7 @@ export const createSupabaseService = (tableName: string) => {
           return 'created';
         }
         
+        // Safe to access data[0].id for tables with ID
         return data[0].id;
       } catch (error) {
         console.error(`Error in add for ${tableName}:`, error);
@@ -99,7 +110,7 @@ export const createSupabaseService = (tableName: string) => {
       
       try {
         const { error } = await supabase
-          .from(tableName)
+          .from(tableName as TableName)
           .update(record)
           .eq('id', id);
           
@@ -122,7 +133,7 @@ export const createSupabaseService = (tableName: string) => {
       
       try {
         const { error } = await supabase
-          .from(tableName)
+          .from(tableName as TableName)
           .delete()
           .eq('id', id);
           
@@ -140,7 +151,7 @@ export const createSupabaseService = (tableName: string) => {
     query: async (filters: Record<string, any>) => {
       try {
         let query = supabase
-          .from(tableName)
+          .from(tableName as TableName)
           .select('*');
           
         // Apply each filter
@@ -168,82 +179,109 @@ export const createSupabaseService = (tableName: string) => {
 
 // Special service for load_orders which doesn't have an ID field
 export const createLoadOrdersService = () => {
+  const tableName = 'load_orders';
+  
   return {
     // Get all load orders
     getAll: async () => {
-      const { data, error } = await supabase
-        .from('load_orders')
-        .select('*');
+      try {
+        const { data, error } = await supabase
+          .from(tableName as TableName)
+          .select('*');
+          
+        if (error) {
+          console.error('Error fetching load_orders:', error);
+          throw error;
+        }
         
-      if (error) {
-        console.error('Error fetching load_orders:', error);
+        return data || [];
+      } catch (error) {
+        console.error("Error in getAll for load_orders:", error);
         throw error;
       }
-      
-      return data || [];
     },
     
     // Add a new load order relationship
     add: async (loadId: string, orderId: string) => {
-      const record = {
-        load_id: loadId,
-        order_id: orderId
-      };
-      
-      const { error } = await supabase
-        .from('load_orders')
-        .insert(record);
+      try {
+        const record = {
+          load_id: loadId,
+          order_id: orderId
+        };
         
-      if (error) {
-        console.error('Error adding load_order:', error);
+        const { error } = await supabase
+          .from(tableName as TableName)
+          .insert(record);
+          
+        if (error) {
+          console.error('Error adding load_order:', error);
+          throw error;
+        }
+        
+        return 'created';
+      } catch (error) {
+        console.error("Error in add for load_orders:", error);
         throw error;
       }
-      
-      return 'created';
     },
     
     // Delete a load order relationship
     delete: async (loadId: string, orderId: string) => {
-      const { error } = await supabase
-        .from('load_orders')
-        .delete()
-        .eq('load_id', loadId)
-        .eq('order_id', orderId);
-        
-      if (error) {
-        console.error('Error deleting load_order:', error);
+      try {
+        const { error } = await supabase
+          .from(tableName as TableName)
+          .delete()
+          .eq('load_id', loadId)
+          .eq('order_id', orderId);
+          
+        if (error) {
+          console.error('Error deleting load_order:', error);
+          throw error;
+        }
+      } catch (error) {
+        console.error("Error in delete for load_orders:", error);
         throw error;
       }
     },
     
     // Get all orders for a load
     getOrdersForLoad: async (loadId: string) => {
-      const { data, error } = await supabase
-        .from('load_orders')
-        .select('order_id')
-        .eq('load_id', loadId);
+      try {
+        const { data, error } = await supabase
+          .from(tableName as TableName)
+          .select('order_id')
+          .eq('load_id', loadId);
+          
+        if (error) {
+          console.error('Error fetching orders for load:', error);
+          throw error;
+        }
         
-      if (error) {
-        console.error('Error fetching orders for load:', error);
+        return (data || []).map(item => item.order_id);
+      } catch (error) {
+        console.error("Error in getOrdersForLoad:", error);
         throw error;
       }
-      
-      return (data || []).map(item => item.order_id);
     },
     
     // Get all loads for an order
     getLoadsForOrder: async (orderId: string) => {
-      const { data, error } = await supabase
-        .from('load_orders')
-        .select('load_id')
-        .eq('order_id', orderId);
+      try {
+        const { data, error } = await supabase
+          .from(tableName as TableName)
+          .select('load_id')
+          .eq('order_id', orderId);
+          
+        if (error) {
+          console.error('Error fetching loads for order:', error);
+          throw error;
+        }
         
-      if (error) {
-        console.error('Error fetching loads for order:', error);
+        return (data || []).map(item => item.load_id);
+      } catch (error) {
+        console.error("Error in getLoadsForOrder:", error);
         throw error;
       }
-      
-      return (data || []).map(item => item.load_id);
     }
   };
 };
