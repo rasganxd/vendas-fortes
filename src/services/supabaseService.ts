@@ -32,7 +32,7 @@ const tablesWithoutIdField = ['load_orders'];
 export const createSupabaseService = (tableName: TableNames) => {
   return {
     // Get all records from a table
-    getAll: async (): Promise<Record<string, any>[]> => {
+    getAll: async () => {
       const { data, error } = await supabase
         .from(tableName)
         .select('*');
@@ -46,7 +46,7 @@ export const createSupabaseService = (tableName: TableNames) => {
     },
     
     // Get a single record by ID
-    getById: async (id: string): Promise<Record<string, any> | null> => {
+    getById: async (id: string) => {
       // Skip ID lookup for tables without ID
       if (tablesWithoutIdField.includes(tableName)) {
         throw new Error(`Table ${tableName} does not have an id field`);
@@ -70,7 +70,7 @@ export const createSupabaseService = (tableName: TableNames) => {
     },
     
     // Add a new record
-    add: async (record: Record<string, any>): Promise<string> => {
+    add: async (record: any) => {
       const { data, error } = await supabase
         .from(tableName)
         .insert(record)
@@ -87,7 +87,7 @@ export const createSupabaseService = (tableName: TableNames) => {
       
       // Handle the special case for tables without an id field
       if (tablesWithoutIdField.includes(tableName)) {
-        // For tables like load_orders, return some identifier (even if not an ID)
+        // For tables like load_orders, return some identifier
         return 'created';
       }
       
@@ -95,7 +95,7 @@ export const createSupabaseService = (tableName: TableNames) => {
     },
     
     // Update a record
-    update: async (id: string, record: Record<string, any>): Promise<void> => {
+    update: async (id: string, record: any) => {
       // Skip ID-based update for tables without ID
       if (tablesWithoutIdField.includes(tableName)) {
         throw new Error(`Table ${tableName} does not have an id field for updates`);
@@ -113,7 +113,7 @@ export const createSupabaseService = (tableName: TableNames) => {
     },
     
     // Delete a record
-    delete: async (id: string): Promise<void> => {
+    delete: async (id: string) => {
       // Skip ID-based delete for tables without ID
       if (tablesWithoutIdField.includes(tableName)) {
         throw new Error(`Table ${tableName} does not have an id field for deletion`);
@@ -131,7 +131,7 @@ export const createSupabaseService = (tableName: TableNames) => {
     },
     
     // Query records with filters
-    query: async (filters: Record<string, any>): Promise<Record<string, any>[]> => {
+    query: async (filters: Record<string, any>) => {
       let query = supabase
         .from(tableName)
         .select('*');
@@ -155,7 +155,7 @@ export const createSupabaseService = (tableName: TableNames) => {
   };
 };
 
-// Create services for each entity as a simple object - no generics used
+// Create services for each entity
 export const salesRepService = createSupabaseService('sales_reps');
 export const orderService = createSupabaseService('orders');
 export const customerService = createSupabaseService('customers');
