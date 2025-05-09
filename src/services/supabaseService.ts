@@ -3,30 +3,53 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
 // Define the table names as a type for type safety
-type TableName = keyof Database['public']['Tables'];
+export type TableName = keyof Database['public']['Tables'];
 
-// Define types for supabase records
-type SupabaseRecord = Record<string, any>;
-
-// Define a type for supabase response
-type SupabaseResponse = {
-  data: any[] | null;
-  error: any | null;
-};
+// List of available tables to check against
+const validTables: TableName[] = [
+  'app_settings',
+  'customers',
+  'delivery_routes',
+  'load_items',
+  'load_orders',
+  'loads',
+  'order_items',
+  'orders',
+  'payment_installments',
+  'payment_methods',
+  'payment_table_installments',
+  'payment_table_terms',
+  'payment_tables',
+  'payments',
+  'product_brands',
+  'product_categories',
+  'product_groups',
+  'products',
+  'route_stops',
+  'sales_reps',
+  'vehicles'
+];
 
 // Special case tables that don't have an id field
 const tablesWithoutIdField = ['load_orders'];
 
-// Generic service for CRUD operations on Supabase tables
-export const createSupabaseService = (tableName: string) => {
-  const isTableWithoutId = tablesWithoutIdField.includes(tableName);
+/**
+ * Creates a service for standard tables with an ID field
+ * @param tableName The table name
+ * @returns CRUD operations for the table
+ */
+export const createStandardService = <T extends TableName>(tableName: T) => {
+  // Type guard to validate table name
+  if (!validTables.includes(tableName)) {
+    throw new Error(`Invalid table name: ${tableName}`);
+  }
   
   return {
     // Get all records from a table
     getAll: async () => {
       try {
         const { data, error } = await supabase
-          .from(tableName as TableName)
+          .from(tableName)
           .select('*');
           
         if (error) {
@@ -41,16 +64,16 @@ export const createSupabaseService = (tableName: string) => {
       }
     },
     
-    // Get a single record by ID (only for tables with ID)
+    // Get a single record by ID
     getById: async (id: string) => {
-      // Skip ID lookup for tables without ID
-      if (isTableWithoutId) {
-        throw new Error(`Table ${tableName} does not have an id field`);
-      }
-      
       try {
+        // Skip ID lookup for tables without ID
+        if (tablesWithoutIdField.includes(tableName)) {
+          throw new Error(`Table ${tableName} does not have an id field`);
+        }
+        
         const { data, error } = await supabase
-          .from(tableName as TableName)
+          .from(tableName)
           .select('*')
           .eq('id', id)
           .single();
@@ -71,10 +94,10 @@ export const createSupabaseService = (tableName: string) => {
     },
     
     // Add a new record
-    add: async (record: SupabaseRecord) => {
+    add: async (record: Record<string, any>) => {
       try {
         const { data, error } = await supabase
-          .from(tableName as TableName)
+          .from(tableName)
           .insert(record)
           .select();
           
@@ -87,13 +110,13 @@ export const createSupabaseService = (tableName: string) => {
           throw new Error(`Failed to get data from newly created ${tableName}`);
         }
         
-        // Handle the special case for tables without an id field
-        if (isTableWithoutId) {
+        // Handle tables without ID field - this should not happen with standard tables
+        if (tablesWithoutIdField.includes(tableName)) {
           // For tables like load_orders, return some identifier
           return 'created';
         }
         
-        // Safe to access data[0].id for tables with ID
+        // Safe to access data[0].id since we've verified this is a standard table
         return data[0].id;
       } catch (error) {
         console.error(`Error in add for ${tableName}:`, error);
@@ -101,16 +124,16 @@ export const createSupabaseService = (tableName: string) => {
       }
     },
     
-    // Update a record (only for tables with ID)
-    update: async (id: string, record: SupabaseRecord) => {
-      // Skip ID-based update for tables without ID
-      if (isTableWithoutId) {
-        throw new Error(`Table ${tableName} does not have an id field for updates`);
-      }
-      
+    // Update a record
+    update: async (id: string, record: Record<string, any>) => {
       try {
+        // Skip ID-based update for tables without ID
+        if (tablesWithoutIdField.includes(tableName)) {
+          throw new Error(`Table ${tableName} does not have an id field for updates`);
+        }
+        
         const { error } = await supabase
-          .from(tableName as TableName)
+          .from(tableName)
           .update(record)
           .eq('id', id);
           
@@ -124,16 +147,16 @@ export const createSupabaseService = (tableName: string) => {
       }
     },
     
-    // Delete a record (only for tables with ID)
+    // Delete a record
     delete: async (id: string) => {
-      // Skip ID-based delete for tables without ID
-      if (isTableWithoutId) {
-        throw new Error(`Table ${tableName} does not have an id field for deletion`);
-      }
-      
       try {
+        // Skip ID-based delete for tables without ID
+        if (tablesWithoutIdField.includes(tableName)) {
+          throw new Error(`Table ${tableName} does not have an id field for deletion`);
+        }
+        
         const { error } = await supabase
-          .from(tableName as TableName)
+          .from(tableName)
           .delete()
           .eq('id', id);
           
@@ -151,7 +174,7 @@ export const createSupabaseService = (tableName: string) => {
     query: async (filters: Record<string, any>) => {
       try {
         let query = supabase
-          .from(tableName as TableName)
+          .from(tableName)
           .select('*');
           
         // Apply each filter
@@ -177,16 +200,16 @@ export const createSupabaseService = (tableName: string) => {
   };
 };
 
-// Special service for load_orders which doesn't have an ID field
+/**
+ * Create service specifically for load_orders which doesn't have an ID field
+ */
 export const createLoadOrdersService = () => {
-  const tableName = 'load_orders';
-  
   return {
     // Get all load orders
     getAll: async () => {
       try {
         const { data, error } = await supabase
-          .from(tableName as TableName)
+          .from('load_orders')
           .select('*');
           
         if (error) {
@@ -210,7 +233,7 @@ export const createLoadOrdersService = () => {
         };
         
         const { error } = await supabase
-          .from(tableName as TableName)
+          .from('load_orders')
           .insert(record);
           
         if (error) {
@@ -229,7 +252,7 @@ export const createLoadOrdersService = () => {
     delete: async (loadId: string, orderId: string) => {
       try {
         const { error } = await supabase
-          .from(tableName as TableName)
+          .from('load_orders')
           .delete()
           .eq('load_id', loadId)
           .eq('order_id', orderId);
@@ -248,7 +271,7 @@ export const createLoadOrdersService = () => {
     getOrdersForLoad: async (loadId: string) => {
       try {
         const { data, error } = await supabase
-          .from(tableName as TableName)
+          .from('load_orders')
           .select('order_id')
           .eq('load_id', loadId);
           
@@ -268,7 +291,7 @@ export const createLoadOrdersService = () => {
     getLoadsForOrder: async (orderId: string) => {
       try {
         const { data, error } = await supabase
-          .from(tableName as TableName)
+          .from('load_orders')
           .select('load_id')
           .eq('order_id', orderId);
           
@@ -286,16 +309,16 @@ export const createLoadOrdersService = () => {
   };
 };
 
-// Create services for each entity
-export const salesRepService = createSupabaseService('sales_reps');
-export const orderService = createSupabaseService('orders');
-export const customerService = createSupabaseService('customers');
-export const productService = createSupabaseService('products');
-export const loadService = createSupabaseService('loads');
-export const paymentService = createSupabaseService('payments');
-export const paymentMethodService = createSupabaseService('payment_methods');
-export const paymentTableService = createSupabaseService('payment_tables');
-export const productGroupService = createSupabaseService('product_groups');
-export const productCategoryService = createSupabaseService('product_categories');
-export const productBrandService = createSupabaseService('product_brands');
+// Create services for each entity using the appropriate service factory
+export const salesRepService = createStandardService('sales_reps');
+export const orderService = createStandardService('orders');
+export const customerService = createStandardService('customers');
+export const productService = createStandardService('products');
+export const loadService = createStandardService('loads');
+export const paymentService = createStandardService('payments');
+export const paymentMethodService = createStandardService('payment_methods');
+export const paymentTableService = createStandardService('payment_tables');
+export const productGroupService = createStandardService('product_groups');
+export const productCategoryService = createStandardService('product_categories');
+export const productBrandService = createStandardService('product_brands');
 export const loadOrderService = createLoadOrdersService();
