@@ -488,7 +488,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     getMinimumPrice,
     getOrderById,
     addOrder,
-    updateOrder,
+    updateOrder: async (id: string, orderData: Partial<Order>): Promise<string> => {
+      return await updateOrder(id, orderData);
+    },
     deleteOrder,
     addVehicle,
     updateVehicle,

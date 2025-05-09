@@ -89,6 +89,7 @@ export const useAppSettings = () => {
       if (settingsData) {
         // Transform the data to match AppSettings structure
         const fetchedSettings: AppSettings = {
+          id: settingsData.id,
           company: {
             name: settingsData.company_name || '',
             address: settingsData.company_address || '',
@@ -101,8 +102,7 @@ export const useAppSettings = () => {
             primaryColor: settingsData.primary_color || '#1C64F2',
             secondaryColor: settingsData.secondary_color || '#047481',
             accentColor: settingsData.accent_color || '#0694A2'
-          },
-          id: settingsData.id
+          }
         };
         
         setSettings(fetchedSettings);

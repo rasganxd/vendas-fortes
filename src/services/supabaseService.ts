@@ -1,8 +1,32 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Define allowed table names to avoid type errors
+type TableNames = 
+  | 'sales_reps'
+  | 'orders'
+  | 'customers'
+  | 'products'
+  | 'loads'
+  | 'payments'
+  | 'payment_methods'
+  | 'payment_tables'
+  | 'product_groups'
+  | 'product_categories'
+  | 'product_brands'
+  | 'app_settings'
+  | 'payment_table_terms'
+  | 'payment_installments'
+  | 'payment_table_installments'
+  | 'order_items'
+  | 'load_items'
+  | 'load_orders'
+  | 'route_stops'
+  | 'vehicles'
+  | 'delivery_routes';
+
 // Generic service for CRUD operations on Supabase tables
-export const createSupabaseService = <T extends Record<string, any>>(tableName: string) => {
+export const createSupabaseService = <T extends Record<string, any>>(tableName: TableNames) => {
   return {
     // Get all records from a table
     getAll: async (): Promise<T[]> => {

@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { Load, LoadItem, Order, OrderItem, Customer, SalesRep } from '@/types';
-import { loadService } from '@/firebase/firestoreService';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { useAppContext } from './useAppContext';
 import { generateId, generateOrderCode } from '@/lib/utils';
@@ -22,7 +23,55 @@ export const useLoads = () => {
     const fetchLoads = async () => {
       try {
         setIsLoading(true);
-        const fetchedLoads = await loadService.getAll();
+        
+        // Fetch loads from Supabase
+        const { data, error } = await supabase
+          .from('loads')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        // Transform data to match Load type
+        const fetchedLoads: Load[] = data.map(load => ({
+          id: load.id,
+          name: load.name,
+          date: new Date(load.date),
+          salesRepId: load.sales_rep_id || '',
+          vehicleId: load.vehicle_id || '',
+          vehicleName: load.vehicle_name || '',
+          status: load.status || 'pending',
+          notes: load.notes || '',
+          locked: load.locked || false,
+          items: [], // Items will be loaded separately
+          total: load.total || 0,
+          createdAt: new Date(load.created_at),
+          updatedAt: new Date(load.updated_at)
+        }));
+        
+        // Fetch load items for each load
+        for (const load of fetchedLoads) {
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('load_items')
+            .select('*')
+            .eq('load_id', load.id);
+            
+          if (!itemsError && itemsData) {
+            load.items = itemsData.map(item => ({
+              id: item.id,
+              productId: item.product_id || '',
+              productName: item.product_name,
+              productCode: item.product_code || 0,
+              quantity: item.quantity,
+              price: item.price || 0,
+              customerId: item.customer_id || '',
+              loadId: item.load_id,
+              orderId: item.order_id || '',
+              total: item.total || 0
+            }));
+          }
+        }
+        
         setLocalLoads(fetchedLoads);
         setLoads(fetchedLoads);
       } catch (error) {
@@ -96,8 +145,8 @@ export const useLoads = () => {
         items: orderItems,
         total: calculateItemsTotal(items),
         discount: 0,
-        status: 'completed', // Using 'completed' instead of 'delivered'
-        paymentStatus: 'paid',
+        status: 'completed' as 'completed', // Using 'completed' as OrderStatus
+        paymentStatus: 'paid' as 'paid', // Using 'paid' as PaymentStatus
         paymentMethod: 'auto-generated',
         paymentMethodId: '',
         paymentTableId: '',
@@ -112,10 +161,17 @@ export const useLoads = () => {
   // Toggle lock status on a load
   const toggleLoadLock = async (id: string, isLocked: boolean) => {
     try {
-      await loadService.update(id, { locked: isLocked });
+      const { error } = await supabase
+        .from('loads')
+        .update({ locked: isLocked })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
       const updatedLoads = loads.map(l => (l.id === id ? { ...l, locked: isLocked } : l));
       setLocalLoads(updatedLoads);
       setLoads(updatedLoads);
+      
       toast({
         title: isLocked ? "Carga bloqueada" : "Carga desbloqueada",
         description: isLocked ? "A carga foi bloqueada com sucesso!" : "A carga foi desbloqueada com sucesso!"
@@ -132,15 +188,92 @@ export const useLoads = () => {
 
   const addLoad = async (load: Omit<Load, 'id'>) => {
     try {
-      const id = await loadService.add(load);
-      const newLoad: Load = { ...load, id };
+      // Transform load to match Supabase schema
+      const supabaseLoad = {
+        name: load.name,
+        date: load.date.toISOString(),
+        sales_rep_id: load.salesRepId || null,
+        vehicle_id: load.vehicleId || null,
+        vehicle_name: load.vehicleName || null,
+        status: load.status || 'pending',
+        notes: load.notes || '',
+        locked: load.locked || false,
+        total: load.total || 0
+      };
+      
+      // Add to Supabase
+      const { data, error } = await supabase
+        .from('loads')
+        .insert(supabaseLoad)
+        .select();
+        
+      if (error) throw error;
+      
+      const newLoadFromDb = data[0];
+      
+      // Transform back to Load type
+      const newLoad: Load = {
+        id: newLoadFromDb.id,
+        name: newLoadFromDb.name,
+        date: new Date(newLoadFromDb.date),
+        salesRepId: newLoadFromDb.sales_rep_id || '',
+        vehicleId: newLoadFromDb.vehicle_id || '',
+        vehicleName: newLoadFromDb.vehicle_name || '',
+        status: newLoadFromDb.status || 'pending',
+        notes: newLoadFromDb.notes || '',
+        locked: newLoadFromDb.locked || false,
+        items: [],
+        total: newLoadFromDb.total || 0,
+        createdAt: new Date(newLoadFromDb.created_at),
+        updatedAt: new Date(newLoadFromDb.updated_at)
+      };
+      
+      // Add items if any
+      if (load.items && load.items.length > 0) {
+        const supabaseItems = load.items.map(item => ({
+          product_id: item.productId,
+          product_name: item.productName,
+          product_code: item.productCode || 0,
+          quantity: item.quantity,
+          price: item.price || 0,
+          customer_id: item.customerId || null,
+          load_id: newLoad.id,
+          order_id: item.orderId || null,
+          total: item.total || item.price * item.quantity
+        }));
+        
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('load_items')
+          .insert(supabaseItems)
+          .select();
+          
+        if (itemsError) {
+          console.error("Error adding load items:", itemsError);
+        } else if (itemsData) {
+          newLoad.items = itemsData.map(item => ({
+            id: item.id,
+            productId: item.product_id || '',
+            productName: item.product_name,
+            productCode: item.product_code || 0,
+            quantity: item.quantity,
+            price: item.price || 0,
+            customerId: item.customer_id || '',
+            loadId: item.load_id,
+            orderId: item.order_id || '',
+            total: item.total || 0
+          }));
+        }
+      }
+      
       setLocalLoads([...loads, newLoad]);
       setLoads([...loads, newLoad]);
+      
       toast({
         title: "Carga adicionada",
         description: "Carga adicionada com sucesso!"
       });
-      return id;
+      
+      return newLoad.id;
     } catch (error) {
       console.error("Erro ao adicionar carga:", error);
       toast({
@@ -154,10 +287,66 @@ export const useLoads = () => {
 
   const updateLoad = async (id: string, load: Partial<Load>) => {
     try {
-      await loadService.update(id, load);
+      // Transform load to match Supabase schema
+      const supabaseLoad: Record<string, any> = {};
+      
+      if (load.name !== undefined) supabaseLoad.name = load.name;
+      if (load.date !== undefined) supabaseLoad.date = load.date.toISOString();
+      if (load.salesRepId !== undefined) supabaseLoad.sales_rep_id = load.salesRepId;
+      if (load.vehicleId !== undefined) supabaseLoad.vehicle_id = load.vehicleId;
+      if (load.vehicleName !== undefined) supabaseLoad.vehicle_name = load.vehicleName;
+      if (load.status !== undefined) supabaseLoad.status = load.status;
+      if (load.notes !== undefined) supabaseLoad.notes = load.notes;
+      if (load.locked !== undefined) supabaseLoad.locked = load.locked;
+      if (load.total !== undefined) supabaseLoad.total = load.total;
+      
+      // Update in Supabase
+      const { error } = await supabase
+        .from('loads')
+        .update(supabaseLoad)
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update items if provided
+      if (load.items && load.items.length > 0) {
+        // First delete existing items
+        const { error: deleteError } = await supabase
+          .from('load_items')
+          .delete()
+          .eq('load_id', id);
+          
+        if (deleteError) {
+          console.error("Error deleting existing load items:", deleteError);
+        } else {
+          // Then add new items
+          const supabaseItems = load.items.map(item => ({
+            product_id: item.productId,
+            product_name: item.productName,
+            product_code: item.productCode || 0,
+            quantity: item.quantity,
+            price: item.price || 0,
+            customer_id: item.customerId || null,
+            load_id: id,
+            order_id: item.orderId || null,
+            total: item.total || item.price * item.quantity
+          }));
+          
+          const { error: insertError } = await supabase
+            .from('load_items')
+            .insert(supabaseItems);
+            
+          if (insertError) {
+            console.error("Error inserting new load items:", insertError);
+          }
+        }
+      }
+      
+      // Update local state
       const updatedLoads = loads.map(l => (l.id === id ? { ...l, ...load } : l));
       setLocalLoads(updatedLoads);
       setLoads(updatedLoads);
+      
       toast({
         title: "Carga atualizada",
         description: "Carga atualizada com sucesso!"
@@ -174,10 +363,29 @@ export const useLoads = () => {
 
   const deleteLoad = async (id: string) => {
     try {
-      await loadService.delete(id);
+      // First delete related items
+      const { error: itemsError } = await supabase
+        .from('load_items')
+        .delete()
+        .eq('load_id', id);
+        
+      if (itemsError) {
+        console.error("Error deleting load items:", itemsError);
+      }
+      
+      // Then delete the load
+      const { error } = await supabase
+        .from('loads')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
       const updatedLoads = loads.filter(l => l.id !== id);
       setLocalLoads(updatedLoads);
       setLoads(updatedLoads);
+      
       toast({
         title: "Carga excluída",
         description: "Carga excluída com sucesso!"

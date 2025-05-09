@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Order } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,7 +42,8 @@ export const loadOrders = async (): Promise<Order[]> => {
       createdAt: new Date(order.created_at || new Date()),
       updatedAt: new Date(order.updated_at || new Date()),
       archived: order.archived || false,
-      items: [] // Items will be loaded separately if needed
+      items: [], // Items will be loaded separately if needed
+      payments: [], // Initialize with empty payments array
     }));
   } catch (error) {
     console.error("Error loading orders:", error);
@@ -96,10 +98,10 @@ export const useOrders = () => {
         payment_table_id: order.paymentTableId,
         discount: order.discount,
         due_date: order.dueDate ? order.dueDate.toISOString() : null,
-        delivery_address: order.deliveryAddress?.address,
-        delivery_city: order.deliveryAddress?.city,
-        delivery_state: order.deliveryAddress?.state,
-        delivery_zip: order.deliveryAddress?.zip,
+        delivery_address: order.deliveryAddress ? order.deliveryAddress.address : '',
+        delivery_city: order.deliveryAddress ? order.deliveryAddress.city : '',
+        delivery_state: order.deliveryAddress ? order.deliveryAddress.state : '',
+        delivery_zip: order.deliveryAddress ? order.deliveryAddress.zip : '',
         notes: order.notes,
         archived: order.archived
       };
@@ -143,7 +145,8 @@ export const useOrders = () => {
         createdAt: new Date(newOrderFromDb.created_at || new Date()),
         updatedAt: new Date(newOrderFromDb.updated_at || new Date()),
         archived: newOrderFromDb.archived || false,
-        items: [] // Items will be loaded separately if needed
+        items: [], // Items will be loaded separately if needed
+        payments: []
       };
 
       // Update local state
@@ -164,7 +167,7 @@ export const useOrders = () => {
     }
   };
 
-  const updateOrder = async (id: string, orderUpdate: Partial<Order>): Promise<void> => {
+  const updateOrder = async (id: string, orderUpdate: Partial<Order>): Promise<string> => {
     try {
       // Transform Order to match Supabase schema
       const supabaseOrderUpdate: Record<string, any> = {};
@@ -184,10 +187,10 @@ export const useOrders = () => {
       if (orderUpdate.discount !== undefined) supabaseOrderUpdate.discount = orderUpdate.discount;
       if (orderUpdate.dueDate !== undefined) supabaseOrderUpdate.due_date = orderUpdate.dueDate.toISOString();
       if (orderUpdate.deliveryAddress !== undefined) {
-        supabaseOrderUpdate.delivery_address = orderUpdate.deliveryAddress?.address;
-        supabaseOrderUpdate.delivery_city = orderUpdate.deliveryAddress?.city;
-        supabaseOrderUpdate.delivery_state = orderUpdate.deliveryAddress?.state;
-        supabaseOrderUpdate.delivery_zip = orderUpdate.deliveryAddress?.zip;
+        supabaseOrderUpdate.delivery_address = orderUpdate.deliveryAddress.address;
+        supabaseOrderUpdate.delivery_city = orderUpdate.deliveryAddress.city;
+        supabaseOrderUpdate.delivery_state = orderUpdate.deliveryAddress.state;
+        supabaseOrderUpdate.delivery_zip = orderUpdate.deliveryAddress.zip;
       }
       if (orderUpdate.notes !== undefined) supabaseOrderUpdate.notes = orderUpdate.notes;
       if (orderUpdate.archived !== undefined) supabaseOrderUpdate.archived = orderUpdate.archived;
@@ -210,6 +213,8 @@ export const useOrders = () => {
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
       });
+      
+      return id;
     } catch (error) {
       console.error("Erro ao atualizar pedido:", error);
       toast({
@@ -217,6 +222,7 @@ export const useOrders = () => {
         description: "Houve um problema ao atualizar o pedido.",
         variant: "destructive"
       });
+      return "";
     }
   };
 

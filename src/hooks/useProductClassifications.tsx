@@ -1,162 +1,118 @@
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { ProductGroup, ProductCategory, ProductBrand } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { useAppContext } from './useAppContext';
 
-// Load functions for product classifications
-export const loadProductGroups = async (): Promise<ProductGroup[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('product_groups')
-      .select('*')
-      .order('name');
-      
-    if (error) throw error;
-    
-    return data.map(group => ({
-      id: group.id,
-      name: group.name,
-      description: group.description || '',
-      notes: group.notes || '',
-      createdAt: new Date(group.created_at || new Date()),
-      updatedAt: new Date(group.updated_at || new Date())
-    }));
-  } catch (error) {
-    console.error("Erro ao carregar grupos de produtos:", error);
-    return [];
-  }
-};
+export const useProductGroups = () => {
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchProductGroups = async () => {
+      try {
+        setIsLoading(true);
+        
+        const { data, error } = await supabase
+          .from('product_groups')
+          .select('*')
+          .order('name', { ascending: true });
+          
+        if (error) throw error;
+        
+        const groups: ProductGroup[] = data.map(group => ({
+          id: group.id,
+          name: group.name,
+          description: group.description || '',
+          notes: group.notes || '',
+          createdAt: new Date(group.created_at),
+          updatedAt: new Date(group.updated_at)
+        }));
+        
+        setProductGroups(groups);
+      } catch (error) {
+        console.error("Error loading product groups:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-export const loadProductCategories = async (): Promise<ProductCategory[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('product_categories')
-      .select('*')
-      .order('name');
-      
-    if (error) throw error;
-    
-    return data.map(category => ({
-      id: category.id,
-      name: category.name,
-      description: category.description || '',
-      notes: category.notes || '',
-      createdAt: new Date(category.created_at || new Date()),
-      updatedAt: new Date(category.updated_at || new Date())
-    }));
-  } catch (error) {
-    console.error("Erro ao carregar categorias de produtos:", error);
-    return [];
-  }
-};
-
-export const loadProductBrands = async (): Promise<ProductBrand[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('product_brands')
-      .select('*')
-      .order('name');
-      
-    if (error) throw error;
-    
-    return data.map(brand => ({
-      id: brand.id,
-      name: brand.name,
-      description: brand.description || '',
-      notes: brand.notes || '',
-      createdAt: new Date(brand.created_at || new Date()),
-      updatedAt: new Date(brand.updated_at || new Date())
-    }));
-  } catch (error) {
-    console.error("Erro ao carregar marcas de produtos:", error);
-    return [];
-  }
-};
-
-export const useProductClassifications = () => {
-  const { 
-    productGroups, setProductGroups, 
-    productCategories, setProductCategories,
-    productBrands, setProductBrands
-  } = useAppContext();
-
-  // Group Management
-  const addProductGroup = async (group: Omit<ProductGroup, 'id'>) => {
+    fetchProductGroups();
+  }, []);
+  
+  const addProductGroup = async (productGroup: Omit<ProductGroup, 'id'>) => {
     try {
-      const supabaseGroup = {
-        name: group.name,
-        description: group.description,
-        notes: group.notes
-      };
-      
       const { data, error } = await supabase
         .from('product_groups')
-        .insert(supabaseGroup)
+        .insert({
+          name: productGroup.name,
+          description: productGroup.description || '',
+          notes: productGroup.notes || ''
+        })
         .select();
         
       if (error) throw error;
       
-      const newGroupData = data[0];
-      
       const newGroup: ProductGroup = {
-        id: newGroupData.id,
-        name: newGroupData.name,
-        description: newGroupData.description || '',
-        notes: newGroupData.notes || '',
-        createdAt: new Date(newGroupData.created_at || new Date()),
-        updatedAt: new Date(newGroupData.updated_at || new Date())
+        id: data[0].id,
+        name: data[0].name,
+        description: data[0].description || '',
+        notes: data[0].notes || '',
+        createdAt: new Date(data[0].created_at),
+        updatedAt: new Date(data[0].updated_at)
       };
       
       setProductGroups([...productGroups, newGroup]);
+      
       toast({
         title: "Grupo adicionado",
-        description: "Grupo de produtos adicionado com sucesso!"
+        description: "Grupo adicionado com sucesso!"
       });
+      
       return newGroup.id;
     } catch (error) {
-      console.error("Erro ao adicionar grupo de produtos:", error);
+      console.error("Error adding product group:", error);
       toast({
         title: "Erro ao adicionar grupo",
-        description: "Houve um problema ao adicionar o grupo de produtos.",
+        description: "Houve um problema ao adicionar o grupo.",
         variant: "destructive"
       });
       return "";
     }
   };
-
-  const updateProductGroup = async (id: string, group: Partial<ProductGroup>) => {
+  
+  const updateProductGroup = async (id: string, productGroup: Partial<ProductGroup>) => {
     try {
-      const supabaseUpdate: Record<string, any> = {};
-      
-      if (group.name !== undefined) supabaseUpdate.name = group.name;
-      if (group.description !== undefined) supabaseUpdate.description = group.description;
-      if (group.notes !== undefined) supabaseUpdate.notes = group.notes;
-      
       const { error } = await supabase
         .from('product_groups')
-        .update(supabaseUpdate)
+        .update({
+          name: productGroup.name,
+          description: productGroup.description,
+          notes: productGroup.notes
+        })
         .eq('id', id);
         
       if (error) throw error;
       
-      setProductGroups(productGroups.map(g => 
-        g.id === id ? { ...g, ...group } : g
+      setProductGroups(productGroups.map(group => 
+        group.id === id ? { ...group, ...productGroup } : group
       ));
+      
       toast({
         title: "Grupo atualizado",
-        description: "Grupo de produtos atualizado com sucesso!"
+        description: "Grupo atualizado com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao atualizar grupo de produtos:", error);
+      console.error("Error updating product group:", error);
       toast({
         title: "Erro ao atualizar grupo",
-        description: "Houve um problema ao atualizar o grupo de produtos.",
+        description: "Houve um problema ao atualizar o grupo.",
         variant: "destructive"
       });
     }
   };
-
+  
   const deleteProductGroup = async (id: string) => {
     try {
       const { error } = await supabase
@@ -166,97 +122,139 @@ export const useProductClassifications = () => {
         
       if (error) throw error;
       
-      setProductGroups(productGroups.filter(g => g.id !== id));
+      setProductGroups(productGroups.filter(group => group.id !== id));
+      
       toast({
-        title: "Grupo removido",
-        description: "Grupo de produtos removido com sucesso!"
+        title: "Grupo excluído",
+        description: "Grupo excluído com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao remover grupo de produtos:", error);
+      console.error("Error deleting product group:", error);
       toast({
-        title: "Erro ao remover grupo",
-        description: "Houve um problema ao remover o grupo de produtos.",
+        title: "Erro ao excluir grupo",
+        description: "Houve um problema ao excluir o grupo.",
         variant: "destructive"
       });
     }
   };
+  
+  return {
+    productGroups,
+    isLoading,
+    addProductGroup,
+    updateProductGroup,
+    deleteProductGroup
+  };
+};
 
-  // Category Management
-  const addProductCategory = async (category: Omit<ProductCategory, 'id'>) => {
+export const useProductCategories = () => {
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchProductCategories = async () => {
+      try {
+        setIsLoading(true);
+        
+        const { data, error } = await supabase
+          .from('product_categories')
+          .select('*')
+          .order('name', { ascending: true });
+          
+        if (error) throw error;
+        
+        const categories: ProductCategory[] = data.map(category => ({
+          id: category.id,
+          name: category.name,
+          description: category.description || '',
+          notes: category.notes || '',
+          createdAt: new Date(category.created_at),
+          updatedAt: new Date(category.updated_at)
+        }));
+        
+        setProductCategories(categories);
+      } catch (error) {
+        console.error("Error loading product categories:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProductCategories();
+  }, []);
+  
+  const addProductCategory = async (productCategory: Omit<ProductCategory, 'id'>) => {
     try {
-      const supabaseCategory = {
-        name: category.name,
-        description: category.description,
-        notes: category.notes
-      };
-      
       const { data, error } = await supabase
         .from('product_categories')
-        .insert(supabaseCategory)
+        .insert({
+          name: productCategory.name,
+          description: productCategory.description || '',
+          notes: productCategory.notes || ''
+        })
         .select();
         
       if (error) throw error;
       
-      const newCategoryData = data[0];
-      
       const newCategory: ProductCategory = {
-        id: newCategoryData.id,
-        name: newCategoryData.name,
-        description: newCategoryData.description || '',
-        notes: newCategoryData.notes || '',
-        createdAt: new Date(newCategoryData.created_at || new Date()),
-        updatedAt: new Date(newCategoryData.updated_at || new Date())
+        id: data[0].id,
+        name: data[0].name,
+        description: data[0].description || '',
+        notes: data[0].notes || '',
+        createdAt: new Date(data[0].created_at),
+        updatedAt: new Date(data[0].updated_at)
       };
       
       setProductCategories([...productCategories, newCategory]);
+      
       toast({
         title: "Categoria adicionada",
-        description: "Categoria de produtos adicionada com sucesso!"
+        description: "Categoria adicionada com sucesso!"
       });
+      
       return newCategory.id;
     } catch (error) {
-      console.error("Erro ao adicionar categoria de produtos:", error);
+      console.error("Error adding product category:", error);
       toast({
         title: "Erro ao adicionar categoria",
-        description: "Houve um problema ao adicionar a categoria de produtos.",
+        description: "Houve um problema ao adicionar a categoria.",
         variant: "destructive"
       });
       return "";
     }
   };
-
-  const updateProductCategory = async (id: string, category: Partial<ProductCategory>) => {
+  
+  const updateProductCategory = async (id: string, productCategory: Partial<ProductCategory>) => {
     try {
-      const supabaseUpdate: Record<string, any> = {};
-      
-      if (category.name !== undefined) supabaseUpdate.name = category.name;
-      if (category.description !== undefined) supabaseUpdate.description = category.description;
-      if (category.notes !== undefined) supabaseUpdate.notes = category.notes;
-      
       const { error } = await supabase
         .from('product_categories')
-        .update(supabaseUpdate)
+        .update({
+          name: productCategory.name,
+          description: productCategory.description,
+          notes: productCategory.notes
+        })
         .eq('id', id);
         
       if (error) throw error;
       
-      setProductCategories(productCategories.map(c => 
-        c.id === id ? { ...c, ...category } : c
+      setProductCategories(productCategories.map(category => 
+        category.id === id ? { ...category, ...productCategory } : category
       ));
+      
       toast({
         title: "Categoria atualizada",
-        description: "Categoria de produtos atualizada com sucesso!"
+        description: "Categoria atualizada com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao atualizar categoria de produtos:", error);
+      console.error("Error updating product category:", error);
       toast({
         title: "Erro ao atualizar categoria",
-        description: "Houve um problema ao atualizar a categoria de produtos.",
+        description: "Houve um problema ao atualizar a categoria.",
         variant: "destructive"
       });
     }
   };
-
+  
   const deleteProductCategory = async (id: string) => {
     try {
       const { error } = await supabase
@@ -266,97 +264,139 @@ export const useProductClassifications = () => {
         
       if (error) throw error;
       
-      setProductCategories(productCategories.filter(c => c.id !== id));
+      setProductCategories(productCategories.filter(category => category.id !== id));
+      
       toast({
-        title: "Categoria removida",
-        description: "Categoria de produtos removida com sucesso!"
+        title: "Categoria excluída",
+        description: "Categoria excluída com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao remover categoria de produtos:", error);
+      console.error("Error deleting product category:", error);
       toast({
-        title: "Erro ao remover categoria",
-        description: "Houve um problema ao remover a categoria de produtos.",
+        title: "Erro ao excluir categoria",
+        description: "Houve um problema ao excluir a categoria.",
         variant: "destructive"
       });
     }
   };
+  
+  return {
+    productCategories,
+    isLoading,
+    addProductCategory,
+    updateProductCategory,
+    deleteProductCategory
+  };
+};
 
-  // Brand Management
-  const addProductBrand = async (brand: Omit<ProductBrand, 'id'>) => {
+export const useProductBrands = () => {
+  const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchProductBrands = async () => {
+      try {
+        setIsLoading(true);
+        
+        const { data, error } = await supabase
+          .from('product_brands')
+          .select('*')
+          .order('name', { ascending: true });
+          
+        if (error) throw error;
+        
+        const brands: ProductBrand[] = data.map(brand => ({
+          id: brand.id,
+          name: brand.name,
+          description: brand.description || '',
+          notes: brand.notes || '',
+          createdAt: new Date(brand.created_at),
+          updatedAt: new Date(brand.updated_at)
+        }));
+        
+        setProductBrands(brands);
+      } catch (error) {
+        console.error("Error loading product brands:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProductBrands();
+  }, []);
+  
+  const addProductBrand = async (productBrand: Omit<ProductBrand, 'id'>) => {
     try {
-      const supababseBrand = {
-        name: brand.name,
-        description: brand.description,
-        notes: brand.notes
-      };
-      
       const { data, error } = await supabase
         .from('product_brands')
-        .insert(supababseBrand)
+        .insert({
+          name: productBrand.name,
+          description: productBrand.description || '',
+          notes: productBrand.notes || ''
+        })
         .select();
         
       if (error) throw error;
       
-      const newBrandData = data[0];
-      
       const newBrand: ProductBrand = {
-        id: newBrandData.id,
-        name: newBrandData.name,
-        description: newBrandData.description || '',
-        notes: newBrandData.notes || '',
-        createdAt: new Date(newBrandData.created_at || new Date()),
-        updatedAt: new Date(newBrandData.updated_at || new Date())
+        id: data[0].id,
+        name: data[0].name,
+        description: data[0].description || '',
+        notes: data[0].notes || '',
+        createdAt: new Date(data[0].created_at),
+        updatedAt: new Date(data[0].updated_at)
       };
       
       setProductBrands([...productBrands, newBrand]);
+      
       toast({
         title: "Marca adicionada",
-        description: "Marca de produtos adicionada com sucesso!"
+        description: "Marca adicionada com sucesso!"
       });
+      
       return newBrand.id;
     } catch (error) {
-      console.error("Erro ao adicionar marca de produtos:", error);
+      console.error("Error adding product brand:", error);
       toast({
         title: "Erro ao adicionar marca",
-        description: "Houve um problema ao adicionar a marca de produtos.",
+        description: "Houve um problema ao adicionar a marca.",
         variant: "destructive"
       });
       return "";
     }
   };
-
-  const updateProductBrand = async (id: string, brand: Partial<ProductBrand>) => {
+  
+  const updateProductBrand = async (id: string, productBrand: Partial<ProductBrand>) => {
     try {
-      const supabaseUpdate: Record<string, any> = {};
-      
-      if (brand.name !== undefined) supabaseUpdate.name = brand.name;
-      if (brand.description !== undefined) supabaseUpdate.description = brand.description;
-      if (brand.notes !== undefined) supabaseUpdate.notes = brand.notes;
-      
       const { error } = await supabase
         .from('product_brands')
-        .update(supabaseUpdate)
+        .update({
+          name: productBrand.name,
+          description: productBrand.description,
+          notes: productBrand.notes
+        })
         .eq('id', id);
         
       if (error) throw error;
       
-      setProductBrands(productBrands.map(b => 
-        b.id === id ? { ...b, ...brand } : b
+      setProductBrands(productBrands.map(brand => 
+        brand.id === id ? { ...brand, ...productBrand } : brand
       ));
+      
       toast({
         title: "Marca atualizada",
-        description: "Marca de produtos atualizada com sucesso!"
+        description: "Marca atualizada com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao atualizar marca de produtos:", error);
+      console.error("Error updating product brand:", error);
       toast({
         title: "Erro ao atualizar marca",
-        description: "Houve um problema ao atualizar a marca de produtos.",
+        description: "Houve um problema ao atualizar a marca.",
         variant: "destructive"
       });
     }
   };
-
+  
   const deleteProductBrand = async (id: string) => {
     try {
       const { error } = await supabase
@@ -366,31 +406,25 @@ export const useProductClassifications = () => {
         
       if (error) throw error;
       
-      setProductBrands(productBrands.filter(b => b.id !== id));
+      setProductBrands(productBrands.filter(brand => brand.id !== id));
+      
       toast({
-        title: "Marca removida",
-        description: "Marca de produtos removida com sucesso!"
+        title: "Marca excluída",
+        description: "Marca excluída com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao remover marca de produtos:", error);
+      console.error("Error deleting product brand:", error);
       toast({
-        title: "Erro ao remover marca",
-        description: "Houve um problema ao remover a marca de produtos.",
+        title: "Erro ao excluir marca",
+        description: "Houve um problema ao excluir a marca.",
         variant: "destructive"
       });
     }
   };
-
+  
   return {
-    productGroups,
-    productCategories,
     productBrands,
-    addProductGroup,
-    updateProductGroup,
-    deleteProductGroup,
-    addProductCategory,
-    updateProductCategory,
-    deleteProductCategory,
+    isLoading,
     addProductBrand,
     updateProductBrand,
     deleteProductBrand

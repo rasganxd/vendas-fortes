@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabaseService';
@@ -6,7 +7,31 @@ import { toast } from '@/components/ui/use-toast';
 export const loadCustomers = async (): Promise<Customer[]> => {
   try {
     console.log("Loading customers from Supabase");
-    const customers = await customerService.getAll();
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (error) throw error;
+    
+    // Transform data to match Customer type
+    const customers: Customer[] = data.map(customer => ({
+      id: customer.id,
+      code: customer.code,
+      name: customer.name,
+      phone: customer.phone || '',
+      email: customer.email || '',
+      address: customer.address || '',
+      city: customer.city || '',
+      state: customer.state || '',
+      zip: customer.zip || '',
+      document: customer.document || '',
+      notes: customer.notes || '',
+      visitFrequency: customer.visit_frequency || '',
+      visitDays: customer.visit_days || [],
+      visitSequence: customer.visit_sequence || 0
+    }));
+    
     console.log(`Loaded ${customers.length} customers from Supabase`);
     return customers;
   } catch (error) {
@@ -129,3 +154,5 @@ export const useCustomers = () => {
     setCustomers
   };
 };
+
+import { supabase } from '@/integrations/supabase/client';

@@ -24,7 +24,7 @@ export const loadRoutes = async (): Promise<DeliveryRoute[]> => {
       driverName: route.driver_name || '',
       vehicleId: route.vehicle_id || '',
       vehicleName: route.vehicle_name || '',
-      status: route.status || 'pending',
+      status: route.status as "completed" | "pending" | "in-progress" | "planning" | "assigned" || 'pending',
       stops: [],
       createdAt: new Date(route.created_at || new Date()),
       updatedAt: new Date(route.updated_at || new Date())
@@ -89,7 +89,7 @@ export const useRoutes = () => {
         driverName: newRouteFromDb.driver_name || '',
         vehicleId: newRouteFromDb.vehicle_id || '',
         vehicleName: newRouteFromDb.vehicle_name || '',
-        status: newRouteFromDb.status || 'pending',
+        status: newRouteFromDb.status as "completed" | "pending" | "in-progress" | "planning" | "assigned" || 'pending',
         stops: [],
         createdAt: new Date(newRouteFromDb.created_at || new Date()),
         updatedAt: new Date(newRouteFromDb.updated_at || new Date())
