@@ -44,7 +44,7 @@ export function createStandardService<T extends TableName>(tableName: T) {
         const { data, error } = await supabase
           .from(tableName)
           .select('*')
-          .eq('id', id)
+          .eq('id', id as any)
           .maybeSingle();
           
         if (error) {
@@ -102,7 +102,7 @@ export function createStandardService<T extends TableName>(tableName: T) {
         const { error } = await supabase
           .from(tableName)
           .update(record as any)
-          .eq('id', id);
+          .eq('id', id as any);
           
         if (error) {
           console.error(`Error updating record in ${tableName}:`, error);
@@ -125,7 +125,7 @@ export function createStandardService<T extends TableName>(tableName: T) {
         const { error } = await supabase
           .from(tableName)
           .delete()
-          .eq('id', id);
+          .eq('id', id as any);
           
         if (error) {
           console.error(`Error deleting record from ${tableName}:`, error);

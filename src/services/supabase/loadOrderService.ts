@@ -1,57 +1,33 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 
 /**
- * Create service specifically for load_orders which doesn't have an ID field
+ * Creates a specialized service for the load_orders table which doesn't have an ID field
  */
-export const createLoadOrdersService = () => {
+export function createLoadOrdersService() {
   return {
-    // Get all load orders
-    getAll: async () => {
+    // Add a new load-order relationship
+    add: async (loadId: string, orderId: string): Promise<void> => {
       try {
-        const { data, error } = await supabase
-          .from('load_orders')
-          .select('*');
-          
-        if (error) {
-          console.error('Error fetching load_orders:', error);
-          throw error;
-        }
-        
-        return (data || []) as Database['public']['Tables']['load_orders']['Row'][];
-      } catch (error) {
-        console.error("Error in getAll for load_orders:", error);
-        throw error;
-      }
-    },
-    
-    // Add a new load order relationship
-    add: async (loadId: string, orderId: string) => {
-      try {
-        const record = {
-          load_id: loadId,
-          order_id: orderId
-        };
-        
         const { error } = await supabase
           .from('load_orders')
-          .insert(record);
+          .insert({
+            load_id: loadId,
+            order_id: orderId
+          });
           
         if (error) {
-          console.error('Error adding load_order:', error);
+          console.error('Error adding load order:', error);
           throw error;
         }
-        
-        return 'created';
       } catch (error) {
-        console.error("Error in add for load_orders:", error);
+        console.error('Error in load orders add:', error);
         throw error;
       }
     },
     
-    // Delete a load order relationship
-    delete: async (loadId: string, orderId: string) => {
+    // Delete a load-order relationship
+    delete: async (loadId: string, orderId: string): Promise<void> => {
       try {
         const { error } = await supabase
           .from('load_orders')
@@ -60,17 +36,17 @@ export const createLoadOrdersService = () => {
           .eq('order_id', orderId);
           
         if (error) {
-          console.error('Error deleting load_order:', error);
+          console.error('Error deleting load order:', error);
           throw error;
         }
       } catch (error) {
-        console.error("Error in delete for load_orders:", error);
+        console.error('Error in load orders delete:', error);
         throw error;
       }
     },
     
-    // Get all orders for a load
-    getOrdersForLoad: async (loadId: string) => {
+    // Get all orders for a given load
+    getOrdersForLoad: async (loadId: string): Promise<string[]> => {
       try {
         const { data, error } = await supabase
           .from('load_orders')
@@ -78,19 +54,19 @@ export const createLoadOrdersService = () => {
           .eq('load_id', loadId);
           
         if (error) {
-          console.error('Error fetching orders for load:', error);
+          console.error('Error getting orders for load:', error);
           throw error;
         }
         
-        return (data || []).map(item => item.order_id);
+        return data.map(item => item.order_id);
       } catch (error) {
-        console.error("Error in getOrdersForLoad:", error);
+        console.error('Error in getOrdersForLoad:', error);
         throw error;
       }
     },
     
-    // Get all loads for an order
-    getLoadsForOrder: async (orderId: string) => {
+    // Get all loads for a given order
+    getLoadsForOrder: async (orderId: string): Promise<string[]> => {
       try {
         const { data, error } = await supabase
           .from('load_orders')
@@ -98,15 +74,15 @@ export const createLoadOrdersService = () => {
           .eq('order_id', orderId);
           
         if (error) {
-          console.error('Error fetching loads for order:', error);
+          console.error('Error getting loads for order:', error);
           throw error;
         }
         
-        return (data || []).map(item => item.load_id);
+        return data.map(item => item.load_id);
       } catch (error) {
-        console.error("Error in getLoadsForOrder:", error);
+        console.error('Error in getLoadsForOrder:', error);
         throw error;
       }
     }
   };
-};
+}
