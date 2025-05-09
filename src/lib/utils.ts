@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { v4 as uuidv4 } from 'uuid';
@@ -45,12 +44,20 @@ export function initializeThemeVariables(): void {
     document.documentElement.style.setProperty('--accent', defaultAccent);
   }
   
-  // Add sidebar variables which are variants of primary
+  // Ensure sidebar variables are consistent with theme variables
   document.documentElement.style.setProperty('--sidebar-primary', 
+    document.documentElement.style.getPropertyValue('--primary') || defaultPrimary);
+  
+  document.documentElement.style.setProperty('--sidebar-accent', 
+    document.documentElement.style.getPropertyValue('--primary') || defaultPrimary);
+    
+  document.documentElement.style.setProperty('--sidebar-ring', 
     document.documentElement.style.getPropertyValue('--primary') || defaultPrimary);
     
   // Ensure sales colors are consistent with the primary blue
   document.documentElement.style.setProperty('--sales', salesDefault);
+  
+  console.log('Theme variables initialized');
 }
 
 // Convert HEX color to HSL format (helper function)

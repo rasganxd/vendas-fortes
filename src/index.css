@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -36,15 +35,15 @@
     --input: 214 32% 91%;
     --ring: 217 91% 60%;
 
-    /* Sidebar styles */
+    /* Sidebar styles - these now are linked to theme variables */
     --sidebar-background: 220 40% 12%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217 20% 30%;
+    --sidebar-accent: var(--primary);
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 20% 26%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: var(--primary);
 
     --radius: 0.5rem;
 
@@ -170,7 +169,20 @@
   
   /* Sidebar gradient that uses CSS variables */
   .sidebar-gradient {
-    background: linear-gradient(to bottom, hsl(var(--primary)) 0%, hsl(var(--primary)/0.8) 100%);
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary)/0.8));
+  }
+  
+  .active-menu-item {
+    background-color: hsl(var(--primary)/0.12);
+    color: hsl(var(--primary));
+  }
+  
+  .active-icon {
+    color: hsl(var(--primary));
+  }
+  
+  .accent-indicator {
+    background-color: hsl(var(--primary));
   }
 }
 

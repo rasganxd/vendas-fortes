@@ -31,6 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
 import { useAppContext } from "@/hooks/useAppContext";
+import { useEffect, useState } from "react";
 
 const navigation: NavItem[] = [
   {
@@ -117,8 +118,32 @@ export default function SideNav() {
   const location = useLocation();
   const { theme } = useTheme();
   const { settings } = useAppContext();
+  const [themeColors, setThemeColors] = useState({
+    primary: settings?.theme?.primaryColor || 'hsl(var(--primary))',
+    accent: settings?.theme?.accentColor || 'hsl(var(--accent))'
+  });
   
-  const accentColor = settings?.theme?.primaryColor || 'hsl(var(--primary))';
+  // Listen for theme changes
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setThemeColors({
+        primary: settings?.theme?.primaryColor || 'hsl(var(--primary))',
+        accent: settings?.theme?.accentColor || 'hsl(var(--accent))'
+      });
+    };
+
+    // Update colors when settings change
+    if (settings?.theme) {
+      handleThemeChange();
+    }
+    
+    // Listen for custom theme change events
+    document.addEventListener('app-theme-changed', handleThemeChange);
+    
+    return () => {
+      document.removeEventListener('app-theme-changed', handleThemeChange);
+    };
+  }, [settings?.theme]);
   
   // Group the navigation items by their group
   const groupedNavItems = navigation.reduce((groups, item) => {
@@ -141,10 +166,7 @@ export default function SideNav() {
   
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium">
-      <SidebarHeader className="px-5 py-4 flex items-center justify-between" 
-        style={{ 
-          background: `linear-gradient(to right, ${accentColor}, ${accentColor}CC)`
-        }}>
+      <SidebarHeader className="px-5 py-4 flex items-center justify-between sidebar-gradient">
         <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
       <ScrollArea className="h-[calc(100vh-64px)]">
@@ -170,22 +192,16 @@ export default function SideNav() {
                         className={cn(
                           "transition-all duration-200 rounded-lg",
                           isActive ? 
-                            "font-medium" : 
+                            "active-menu-item font-medium" : 
                             "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         )}
-                        style={isActive ? {
-                          backgroundColor: `${accentColor}20`,
-                          color: accentColor
-                        } : undefined}
                       >
                         <Link to={item.href} className="flex items-center px-3 py-2 text-sm">
                           {IconComponent && (
                             <div className={cn(
                               "mr-3 flex items-center justify-center w-6 h-6 rounded-md",
-                              isActive ? "" : "text-sidebar-foreground"
-                            )}
-                            style={isActive ? { color: accentColor } : undefined}
-                            >
+                              isActive ? "active-icon" : "text-sidebar-foreground"
+                            )}>
                               <IconComponent size={18} />
                             </div>
                           )}

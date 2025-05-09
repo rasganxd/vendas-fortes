@@ -29,8 +29,9 @@ export const useAppSettings = () => {
       if (theme.primaryColor) {
         const primaryHsl = convertHexToHSL(theme.primaryColor);
         document.documentElement.style.setProperty('--primary', primaryHsl);
+        
+        // Explicitly set sidebar variables to match the theme
         document.documentElement.style.setProperty('--sidebar-primary', primaryHsl);
-        // Also update some other variables to create cohesive look
         document.documentElement.style.setProperty('--ring', primaryHsl);
       }
       
@@ -42,6 +43,9 @@ export const useAppSettings = () => {
       if (theme.accentColor) {
         const accentHsl = convertHexToHSL(theme.accentColor);
         document.documentElement.style.setProperty('--accent', accentHsl);
+        
+        // Also update sidebar accent colors
+        document.documentElement.style.setProperty('--sidebar-accent', accentHsl);
       }
       
       // Force a repaint to ensure the changes are applied
@@ -50,6 +54,12 @@ export const useAppSettings = () => {
       body.style.display = 'none';
       void body.offsetHeight; // This triggers a reflow
       body.style.display = display || '';
+      
+      // Dispatch a custom event that sidebar components can listen to
+      const themeChangeEvent = new CustomEvent('app-theme-changed', {
+        detail: { theme }
+      });
+      document.dispatchEvent(themeChangeEvent);
       
       console.log('Theme colors applied successfully');
     } catch (err) {
