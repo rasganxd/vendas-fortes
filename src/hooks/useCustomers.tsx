@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabaseService';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const loadCustomers = async (): Promise<Customer[]> => {
   try {
@@ -29,7 +30,9 @@ export const loadCustomers = async (): Promise<Customer[]> => {
       notes: customer.notes || '',
       visitFrequency: customer.visit_frequency || '',
       visitDays: customer.visit_days || [],
-      visitSequence: customer.visit_sequence || 0
+      visitSequence: customer.visit_sequence || 0,
+      createdAt: new Date(customer.created_at),
+      updatedAt: new Date(customer.updated_at)
     }));
     
     console.log(`Loaded ${customers.length} customers from Supabase`);

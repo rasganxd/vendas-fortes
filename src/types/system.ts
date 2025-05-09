@@ -10,6 +10,7 @@ export interface Backup {
 }
 
 export interface AppSettings {
+  id?: string; // Add the id property that's referenced in useAppSettings
   company: {
     name: string;
     address: string;

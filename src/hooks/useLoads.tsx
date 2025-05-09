@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Load, LoadItem, Order, OrderItem, Customer, SalesRep } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,7 +39,7 @@ export const useLoads = () => {
           salesRepId: load.sales_rep_id || '',
           vehicleId: load.vehicle_id || '',
           vehicleName: load.vehicle_name || '',
-          status: load.status || 'pending',
+          status: (load.status || 'pending') as "pending" | "in-progress" | "completed" | "planning" | "loading" | "loaded" | "in-transit" | "delivered",
           notes: load.notes || '',
           locked: load.locked || false,
           items: [], // Items will be loaded separately
@@ -219,7 +218,7 @@ export const useLoads = () => {
         salesRepId: newLoadFromDb.sales_rep_id || '',
         vehicleId: newLoadFromDb.vehicle_id || '',
         vehicleName: newLoadFromDb.vehicle_name || '',
-        status: newLoadFromDb.status || 'pending',
+        status: (newLoadFromDb.status || 'pending') as "pending" | "in-progress" | "completed" | "planning" | "loading" | "loaded" | "in-transit" | "delivered",
         notes: newLoadFromDb.notes || '',
         locked: newLoadFromDb.locked || false,
         items: [],

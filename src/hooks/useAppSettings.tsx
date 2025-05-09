@@ -169,9 +169,6 @@ export const useAppSettings = () => {
     try {
       if (!settings?.id) {
         await fetchSettings();
-        if (!settings?.id) {
-          throw new Error('No settings ID available for update');
-        }
       }
       
       const updatedSettings = { ...settings, ...newSettings };
@@ -194,14 +191,25 @@ export const useAppSettings = () => {
         if (newSettings.theme.accentColor !== undefined) supabaseData.accent_color = newSettings.theme.accentColor;
       }
       
-      // Update settings in Supabase
-      const { error: updateError } = await supabase
-        .from('app_settings')
-        .update(supabaseData)
-        .eq('id', settings?.id);
-        
-      if (updateError) {
-        throw updateError;
+      // Update settings in Supabase if we have an id
+      if (settings?.id) {
+        const { error: updateError } = await supabase
+          .from('app_settings')
+          .update(supabaseData)
+          .eq('id', settings.id);
+          
+        if (updateError) {
+          throw updateError;
+        }
+      } else {
+        // Insert if no id exists yet
+        const { error: insertError } = await supabase
+          .from('app_settings')
+          .insert(supabaseData);
+          
+        if (insertError) {
+          throw insertError;
+        }
       }
       
       setSettings(updatedSettings);

@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { Order } from '@/types';
+import { Order, OrderStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -25,19 +24,17 @@ export const loadOrders = async (): Promise<Order[]> => {
       salesRepId: order.sales_rep_id || '',
       salesRepName: order.sales_rep_name,
       total: order.total,
-      status: order.status || 'pending',
-      paymentStatus: order.payment_status || 'pending',
+      status: (order.status || 'pending') as OrderStatus,
+      paymentStatus: (order.payment_status || 'pending') as 'pending' | 'partial' | 'paid',
       paymentMethod: order.payment_method || '',
       paymentMethodId: order.payment_method_id || '',
       paymentTableId: order.payment_table_id || '',
       discount: order.discount || 0,
-      dueDate: order.due_date ? new Date(order.due_date) : undefined,
-      deliveryAddress: {
-        address: order.delivery_address || '',
-        city: order.delivery_city || '',
-        state: order.delivery_state || '',
-        zip: order.delivery_zip || '',
-      },
+      dueDate: order.due_date ? new Date(order.due_date) : new Date(),
+      deliveryAddress: order.delivery_address || '',
+      deliveryCity: order.delivery_city || '',
+      deliveryState: order.delivery_state || '',
+      deliveryZip: order.delivery_zip || '',
       notes: order.notes || '',
       createdAt: new Date(order.created_at || new Date()),
       updatedAt: new Date(order.updated_at || new Date()),
@@ -98,10 +95,10 @@ export const useOrders = () => {
         payment_table_id: order.paymentTableId,
         discount: order.discount,
         due_date: order.dueDate ? order.dueDate.toISOString() : null,
-        delivery_address: order.deliveryAddress ? order.deliveryAddress.address : '',
-        delivery_city: order.deliveryAddress ? order.deliveryAddress.city : '',
-        delivery_state: order.deliveryAddress ? order.deliveryAddress.state : '',
-        delivery_zip: order.deliveryAddress ? order.deliveryAddress.zip : '',
+        delivery_address: order.deliveryAddress,
+        delivery_city: order.deliveryCity,
+        delivery_state: order.deliveryState,
+        delivery_zip: order.deliveryZip,
         notes: order.notes,
         archived: order.archived
       };
@@ -128,19 +125,17 @@ export const useOrders = () => {
         salesRepId: newOrderFromDb.sales_rep_id || '',
         salesRepName: newOrderFromDb.sales_rep_name,
         total: newOrderFromDb.total,
-        status: newOrderFromDb.status || 'pending',
-        paymentStatus: newOrderFromDb.payment_status || 'pending',
+        status: (newOrderFromDb.status || 'pending') as OrderStatus,
+        paymentStatus: (newOrderFromDb.payment_status || 'pending') as 'pending' | 'partial' | 'paid',
         paymentMethod: newOrderFromDb.payment_method || '',
         paymentMethodId: newOrderFromDb.payment_method_id || '',
         paymentTableId: newOrderFromDb.payment_table_id || '',
         discount: newOrderFromDb.discount || 0,
-        dueDate: newOrderFromDb.due_date ? new Date(newOrderFromDb.due_date) : undefined,
-        deliveryAddress: {
-          address: newOrderFromDb.delivery_address || '',
-          city: newOrderFromDb.delivery_city || '',
-          state: newOrderFromDb.delivery_state || '',
-          zip: newOrderFromDb.delivery_zip || '',
-        },
+        dueDate: newOrderFromDb.due_date ? new Date(newOrderFromDb.due_date) : new Date(),
+        deliveryAddress: newOrderFromDb.delivery_address || '',
+        deliveryCity: newOrderFromDb.delivery_city || '',
+        deliveryState: newOrderFromDb.delivery_state || '',
+        deliveryZip: newOrderFromDb.delivery_zip || '',
         notes: newOrderFromDb.notes || '',
         createdAt: new Date(newOrderFromDb.created_at || new Date()),
         updatedAt: new Date(newOrderFromDb.updated_at || new Date()),
@@ -186,12 +181,10 @@ export const useOrders = () => {
       if (orderUpdate.paymentTableId !== undefined) supabaseOrderUpdate.payment_table_id = orderUpdate.paymentTableId;
       if (orderUpdate.discount !== undefined) supabaseOrderUpdate.discount = orderUpdate.discount;
       if (orderUpdate.dueDate !== undefined) supabaseOrderUpdate.due_date = orderUpdate.dueDate.toISOString();
-      if (orderUpdate.deliveryAddress !== undefined) {
-        supabaseOrderUpdate.delivery_address = orderUpdate.deliveryAddress.address;
-        supabaseOrderUpdate.delivery_city = orderUpdate.deliveryAddress.city;
-        supabaseOrderUpdate.delivery_state = orderUpdate.deliveryAddress.state;
-        supabaseOrderUpdate.delivery_zip = orderUpdate.deliveryAddress.zip;
-      }
+      if (orderUpdate.deliveryAddress !== undefined) supabaseOrderUpdate.delivery_address = orderUpdate.deliveryAddress;
+      if (orderUpdate.deliveryCity !== undefined) supabaseOrderUpdate.delivery_city = orderUpdate.deliveryCity;
+      if (orderUpdate.deliveryState !== undefined) supabaseOrderUpdate.delivery_state = orderUpdate.deliveryState;
+      if (orderUpdate.deliveryZip !== undefined) supabaseOrderUpdate.delivery_zip = orderUpdate.deliveryZip;
       if (orderUpdate.notes !== undefined) supabaseOrderUpdate.notes = orderUpdate.notes;
       if (orderUpdate.archived !== undefined) supabaseOrderUpdate.archived = orderUpdate.archived;
 

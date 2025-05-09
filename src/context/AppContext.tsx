@@ -423,6 +423,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // In the context provider setup, ensure the function returns a string
+  const updateOrder = async (id: string, orderData: Partial<Order>): Promise<string> => {
+    try {
+      return await updateOrderFunc(id, orderData);
+    } catch (error) {
+      console.error('Error updating order:', error);
+      return '';
+    }
+  };
+
   // Construir objeto de valor de contexto
   const contextValue: AppContextType = {
     customers,
@@ -488,9 +498,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     getMinimumPrice,
     getOrderById,
     addOrder,
-    updateOrder: async (id: string, orderData: Partial<Order>): Promise<string> => {
-      return await updateOrder(id, orderData);
-    },
+    updateOrder,
     deleteOrder,
     addVehicle,
     updateVehicle,

@@ -39,7 +39,8 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return data as T[];
+      // Use type assertion to ensure proper type conversion
+      return data as unknown as T[];
     },
     
     // Get a single record by ID
@@ -58,7 +59,8 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return data as T;
+      // Use type assertion to ensure proper type conversion
+      return data as unknown as T;
     },
     
     // Add a new record
@@ -122,7 +124,8 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return data as T[];
+      // Use type assertion to ensure proper type conversion
+      return data as unknown as T[];
     }
   };
 };

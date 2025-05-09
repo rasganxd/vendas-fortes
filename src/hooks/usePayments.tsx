@@ -1,8 +1,47 @@
-
-import { useState } from 'react';
-import { Payment, Order } from '@/types';
-import { toast } from '@/components/ui/use-toast';
+import { useState, useEffect } from 'react';
+import { Payment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
+
+export const loadPayments = async (): Promise<Payment[]> => {
+  try {
+    console.log("Loading payments from Supabase");
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*')
+      .order('date', { ascending: false });
+      
+    if (error) {
+      throw error;
+    }
+    
+    // Transform data to match Payment type
+    return data.map(payment => ({
+      id: payment.id,
+      orderId: payment.order_id || '',
+      date: new Date(payment.date),
+      amount: payment.amount,
+      method: payment.method || '',
+      status: payment.status || 'pending',
+      notes: payment.notes || '',
+      createdAt: new Date(payment.created_at),
+      updatedAt: new Date(payment.updated_at),
+      dueDate: payment.due_date ? new Date(payment.due_date) : undefined,
+      amountInWords: payment.amount_in_words || '',
+      paymentLocation: payment.payment_location || '',
+      emissionLocation: payment.emission_location || '',
+      customerName: payment.customer_name || '',
+      customerDocument: payment.customer_document || '',
+      customerAddress: payment.customer_address || '',
+      // Handle the paymentDate differently - it's not in the type but used in code
+      // So we'll add it temporarily and handle it specifically in updates
+      paymentDate: payment.payment_date ? new Date(payment.payment_date) : undefined
+    }));
+  } catch (error) {
+    console.error("Erro ao carregar pagamentos:", error);
+    return [];
+  }
+};
 
 export const usePayments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -122,36 +161,45 @@ export const usePayments = () => {
   };
 
   // Update an existing payment
-  const updatePayment = async (id: string, payment: Partial<Payment>): Promise<void> => {
+  const updatePayment = async (id: string, payment: Partial<Payment>) => {
     try {
-      // Transform payment to match Supabase schema
-      const supabasePayment: Record<string, any> = {};
+      // Transform Payment to match Supabase schema
+      const supabaseData: Record<string, any> = {};
       
-      if (payment.orderId !== undefined) supabasePayment.order_id = payment.orderId;
-      if (payment.customerName !== undefined) supabasePayment.customer_name = payment.customerName;
-      if (payment.customerDocument !== undefined) supabasePayment.customer_document = payment.customerDocument;
-      if (payment.customerAddress !== undefined) supabasePayment.customer_address = payment.customerAddress;
-      if (payment.amount !== undefined) supabasePayment.amount = payment.amount;
-      if (payment.method !== undefined) supabasePayment.method = payment.method;
-      if (payment.status !== undefined) supabasePayment.status = payment.status;
-      if (payment.date !== undefined) supabasePayment.date = payment.date.toISOString();
-      if (payment.paymentDate !== undefined) supabasePayment.payment_date = payment.paymentDate.toISOString();
-      if (payment.paymentLocation !== undefined) supabasePayment.payment_location = payment.paymentLocation;
-      if (payment.emissionLocation !== undefined) supabasePayment.emission_location = payment.emissionLocation;
-      if (payment.notes !== undefined) supabasePayment.notes = payment.notes;
-      if (payment.dueDate !== undefined) supabasePayment.due_date = payment.dueDate.toISOString();
-      if (payment.amountInWords !== undefined) supabasePayment.amount_in_words = payment.amountInWords;
+      if (payment.orderId !== undefined) supabaseData.order_id = payment.orderId;
+      if (payment.date !== undefined) supabaseData.date = payment.date.toISOString();
+      if (payment.amount !== undefined) supabaseData.amount = payment.amount;
+      if (payment.method !== undefined) supabaseData.method = payment.method;
+      if (payment.status !== undefined) supabaseData.status = payment.status;
+      if (payment.notes !== undefined) supabaseData.notes = payment.notes;
+      if (payment.dueDate !== undefined) supabaseData.due_date = payment.dueDate.toISOString();
+      if (payment.amountInWords !== undefined) supabaseData.amount_in_words = payment.amountInWords;
+      if (payment.paymentLocation !== undefined) supabaseData.payment_location = payment.paymentLocation;
+      if (payment.emissionLocation !== undefined) supabaseData.emission_location = payment.emissionLocation;
+      if (payment.customerName !== undefined) supabaseData.customer_name = payment.customerName;
+      if (payment.customerDocument !== undefined) supabaseData.customer_document = payment.customerDocument;
+      if (payment.customerAddress !== undefined) supabaseData.customer_address = payment.customerAddress;
       
+      // Handle paymentDate specially as it's not in the type definition
+      if ((payment as any).paymentDate !== undefined) {
+        supabaseData.payment_date = (payment as any).paymentDate.toISOString();
+      }
+      
+      // Update in Supabase
       const { error } = await supabase
         .from('payments')
-        .update(supabasePayment)
+        .update(supabaseData)
         .eq('id', id);
         
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
-      setPayments(payments.map(p =>
+      // Update local state
+      setPayments(payments.map(p => 
         p.id === id ? { ...p, ...payment } : p
       ));
+      
       toast({
         title: "Pagamento atualizado",
         description: "Pagamento atualizado com sucesso!"

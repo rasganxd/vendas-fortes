@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   code: number;
@@ -13,6 +14,8 @@ export interface Customer {
   visitFrequency: string;
   visitDays: string[];
   visitSequence: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Product {
@@ -33,7 +36,7 @@ export interface Product {
   brandId: string;
 }
 
-export type OrderStatus = 'completed' | 'pending' | 'in-progress' | 'planning' | 'assigned' | 'draft' | 'canceled';
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'canceled' | 'confirmed' | 'draft';
 export type PaymentStatus = 'pending' | 'partial' | 'paid';
 
 export interface Order {
@@ -58,7 +61,10 @@ export interface Order {
   createdAt: Date;
   updatedAt: Date;
   archived: boolean;
-  deliveryAddress?: string;
+  deliveryAddress: string;
+  deliveryCity: string;
+  deliveryState: string;
+  deliveryZip: string;
 }
 
 export interface OrderItem {
@@ -89,6 +95,9 @@ export interface Payment {
   notes: string;
   dueDate?: Date;
   amountInWords: string;
+  createdAt: Date;
+  updatedAt: Date;
+  installments?: PaymentInstallment[];
 }
 
 export interface DeliveryRoute {
@@ -123,7 +132,7 @@ export interface Load {
   salesRepId: string;
   vehicleId: string;
   vehicleName: string;
-  status: string;
+  status: "completed" | "pending" | "in-progress" | "planning" | "loading" | "loaded" | "in-transit" | "delivered";
   notes: string;
   locked: boolean;
   items: LoadItem[];
@@ -198,6 +207,7 @@ export interface PaymentTable {
   paymentLocation: string;
   type: string;
   terms: PaymentTerm[];
+  installments: PaymentTableInstallment[];
   notes: string;
   active: boolean;
   createdAt: Date;
@@ -209,6 +219,19 @@ export interface PaymentTerm {
   days: number;
   percentage: number;
   installment: number;
+}
+
+export interface PaymentTableInstallment {
+  installment: number;
+  percentage: number;
+  days: number;
+  id?: string;
+  description?: string;
+}
+
+export interface PaymentInstallment {
+  dueDate: Date;
+  amount: number;
 }
 
 export interface ProductGroup {
@@ -245,7 +268,6 @@ export interface Backup {
   createdAt: Date;
 }
 
-// Update AppSettings interface to include id property
 export interface AppSettings {
   id?: string;
   company: {
@@ -256,9 +278,9 @@ export interface AppSettings {
     document: string;
     footer: string;
   };
-  theme: {
-    primaryColor: string;
-    secondaryColor: string;
-    accentColor: string;
+  theme?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    accentColor?: string;
   };
 }

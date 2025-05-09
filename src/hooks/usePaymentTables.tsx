@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { PaymentTable } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +27,7 @@ export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
       notes: table.notes || '',
       active: table.active,
       terms: [], // Terms will need to be loaded separately
+      installments: [], // Add the required property
       createdAt: new Date(table.created_at),
       updatedAt: new Date(table.updated_at)
     }));
@@ -105,6 +105,7 @@ export const usePaymentTables = () => {
         notes: newPaymentTableFromDb.notes || '',
         active: newPaymentTableFromDb.active,
         terms: [], // Terms will need to be handled separately
+        installments: [], // Add the required property
         createdAt: new Date(newPaymentTableFromDb.created_at),
         updatedAt: new Date(newPaymentTableFromDb.updated_at)
       };
