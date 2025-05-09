@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabaseService';
 import { toast } from '@/components/ui/use-toast';
-import { transformProductData, transformArray } from '@/utils/dataTransformers';
+import { transformProductData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
 
 export const loadProducts = async (): Promise<Product[]> => {
   try {
@@ -41,7 +41,10 @@ export const useProducts = () => {
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
-      const id = await productService.add(product);
+      // Convert product to snake_case format for Supabase
+      const supabaseData = prepareForSupabase(product);
+      
+      const id = await productService.add(supabaseData);
       const newProduct = { ...product, id } as Product;
       
       setProducts(prev => [...prev, newProduct]);
@@ -63,7 +66,10 @@ export const useProducts = () => {
 
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
-      await productService.update(id, product);
+      // Convert product to snake_case format for Supabase
+      const supabaseData = prepareForSupabase(product);
+      
+      await productService.update(id, supabaseData);
       
       setProducts(products.map(p => 
         p.id === id ? { ...p, ...product } : p

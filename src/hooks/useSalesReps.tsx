@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { salesRepService } from '@/services/supabaseService';
 import { toast } from '@/components/ui/use-toast';
-import { transformSalesRepData, transformArray } from '@/utils/dataTransformers';
+import { transformSalesRepData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
 
 export const useSalesReps = () => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
@@ -52,21 +52,7 @@ export const useSalesReps = () => {
       const salesRepWithCode = { ...salesRep, code: salesRepCode };
       
       // Transform to Supabase format (snake_case)
-      const supabaseData = {
-        code: salesRepWithCode.code,
-        name: salesRepWithCode.name,
-        phone: salesRepWithCode.phone,
-        email: salesRepWithCode.email,
-        address: salesRepWithCode.address,
-        city: salesRepWithCode.city,
-        state: salesRepWithCode.state,
-        zip: salesRepWithCode.zip,
-        region: salesRepWithCode.region,
-        document: salesRepWithCode.document,
-        role: salesRepWithCode.role,
-        active: salesRepWithCode.active,
-        notes: salesRepWithCode.notes
-      };
+      const supabaseData = prepareForSupabase(salesRepWithCode);
       
       const id = await salesRepService.add(supabaseData);
       const newSalesRep = { ...salesRepWithCode, id } as SalesRep;
@@ -93,20 +79,7 @@ export const useSalesReps = () => {
       console.log("Updating sales rep in Supabase:", id, salesRep);
       
       // Transform to Supabase format (snake_case)
-      const supabaseData: Record<string, any> = {};
-      if (salesRep.code !== undefined) supabaseData.code = salesRep.code;
-      if (salesRep.name !== undefined) supabaseData.name = salesRep.name;
-      if (salesRep.phone !== undefined) supabaseData.phone = salesRep.phone;
-      if (salesRep.email !== undefined) supabaseData.email = salesRep.email;
-      if (salesRep.address !== undefined) supabaseData.address = salesRep.address;
-      if (salesRep.city !== undefined) supabaseData.city = salesRep.city;
-      if (salesRep.state !== undefined) supabaseData.state = salesRep.state;
-      if (salesRep.zip !== undefined) supabaseData.zip = salesRep.zip;
-      if (salesRep.region !== undefined) supabaseData.region = salesRep.region;
-      if (salesRep.document !== undefined) supabaseData.document = salesRep.document;
-      if (salesRep.role !== undefined) supabaseData.role = salesRep.role;
-      if (salesRep.active !== undefined) supabaseData.active = salesRep.active;
-      if (salesRep.notes !== undefined) supabaseData.notes = salesRep.notes;
+      const supabaseData = prepareForSupabase(salesRep);
       
       await salesRepService.update(id, supabaseData);
       
