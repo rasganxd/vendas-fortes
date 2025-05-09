@@ -15,7 +15,7 @@ const PrintDialogActions: React.FC<PrintDialogActionsProps> = ({
   isPrintDisabled
 }) => {
   return (
-    <div className="flex justify-end gap-3">
+    <div className="flex justify-end gap-3 w-full">
       <Button variant="outline" onClick={() => onOpenChange(false)}>
         Cancelar
       </Button>
@@ -23,8 +23,9 @@ const PrintDialogActions: React.FC<PrintDialogActionsProps> = ({
         onClick={handleBulkPrint} 
         variant="sales"
         disabled={isPrintDisabled}
+        className="flex items-center gap-2"
       >
-        <Printer size={16} className="mr-2" /> Imprimir
+        <Printer size={16} /> Imprimir
       </Button>
     </div>
   );

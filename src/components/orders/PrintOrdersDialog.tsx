@@ -6,10 +6,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import CustomerSelect from './print/CustomerSelect';
+import PrintDialogActions from './print/PrintDialogActions';
 
 interface PrintOrdersDialogProps {
   isOpen: boolean;
@@ -66,13 +68,15 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             setSelectedCustomerId={setSelectedCustomerId}
             customers={validCustomers}
           />
-          
-          <div className="flex justify-end">
-            <Button onClick={handlePrint} className="flex items-center">
-              <Printer size={16} className="mr-2" /> Imprimir {ordersToPrint.length} pedido(s)
-            </Button>
-          </div>
         </div>
+        
+        <DialogFooter>
+          <PrintDialogActions
+            handleBulkPrint={handlePrint}
+            onOpenChange={onOpenChange}
+            isPrintDisabled={ordersToPrint.length === 0}
+          />
+        </DialogFooter>
         
         <div className="hidden print:block">
           {ordersToPrint.map((order, index) => (
