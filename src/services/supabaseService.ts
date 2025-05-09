@@ -39,7 +39,7 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return (data || []) as T[];
+      return (data || []) as unknown as T[];
     },
     
     // Get a single record by ID
@@ -58,7 +58,7 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return data as T;
+      return data as unknown as T;
     },
     
     // Add a new record
@@ -132,12 +132,12 @@ export const createSupabaseService = <T extends Record<string, any>>(tableName: 
         throw error;
       }
       
-      return (data || []) as T[];
+      return (data || []) as unknown as T[];
     }
   };
 };
 
-// Create services for each entity
+// Create services for each entity with explicit unknown type cast to fix deep recursion
 export const salesRepService = createSupabaseService<Record<string, any>>('sales_reps');
 export const orderService = createSupabaseService<Record<string, any>>('orders');
 export const customerService = createSupabaseService<Record<string, any>>('customers');
