@@ -1,19 +1,50 @@
-
-import { useState, useEffect } from 'react';
-import { Order, OrderItem } from '@/types';
-import { orderService } from '@/firebase/firestoreService';
+import { useState, useEffect, useCallback } from 'react';
+import { Order } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { useAppContext } from './useAppContext';
-import { v4 as uuidv4 } from 'uuid';
 
 export const loadOrders = async (): Promise<Order[]> => {
   try {
-    console.log("Loading orders from Firebase");
-    const orders = await orderService.getAll();
-    console.log("Loaded orders:", orders);
-    return orders;
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      throw error;
+    }
+    
+    // Transform data to match Order type
+    return data.map(order => ({
+      id: order.id,
+      code: order.code,
+      customerId: order.customer_id || '',
+      customerName: order.customer_name,
+      date: new Date(order.date || new Date()),
+      salesRepId: order.sales_rep_id || '',
+      salesRepName: order.sales_rep_name,
+      total: order.total,
+      status: order.status || 'pending',
+      paymentStatus: order.payment_status || 'pending',
+      paymentMethod: order.payment_method || '',
+      paymentMethodId: order.payment_method_id || '',
+      paymentTableId: order.payment_table_id || '',
+      discount: order.discount || 0,
+      dueDate: order.due_date ? new Date(order.due_date) : undefined,
+      deliveryAddress: {
+        address: order.delivery_address || '',
+        city: order.delivery_city || '',
+        state: order.delivery_state || '',
+        zip: order.delivery_zip || '',
+      },
+      notes: order.notes || '',
+      createdAt: new Date(order.created_at || new Date()),
+      updatedAt: new Date(order.updated_at || new Date()),
+      archived: order.archived || false,
+      items: [] // Items will be loaded separately if needed
+    }));
   } catch (error) {
-    console.error("Erro ao carregar pedidos:", error);
+    console.error("Error loading orders:", error);
     return [];
   }
 };
@@ -22,17 +53,19 @@ export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initial load
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        console.log("Fetching orders...");
         setIsLoading(true);
         const loadedOrders = await loadOrders();
-        console.log(`Fetched ${loadedOrders.length} orders`);
         setOrders(loadedOrders);
       } catch (error) {
         console.error("Error loading orders:", error);
+        toast({
+          title: "Erro ao carregar pedidos",
+          description: "Houve um problema ao carregar os pedidos.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -41,26 +74,85 @@ export const useOrders = () => {
     fetchOrders();
   }, []);
 
-  const getOrderById = (id: string): Order | undefined => {
+  const getOrderById = useCallback((id: string) => {
     return orders.find(order => order.id === id);
-  };
+  }, [orders]);
 
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
-      console.log("Adding order to database:", order);
-      const id = await orderService.add(order);
-      console.log("Order added successfully, received ID:", id);
-      
-      if (!id) {
-        throw new Error("Failed to add order: No ID returned");
+      // Transform Order to match Supabase schema
+      const supabaseOrder = {
+        code: order.code,
+        customer_id: order.customerId,
+        customer_name: order.customerName,
+        date: order.date.toISOString(),
+        sales_rep_id: order.salesRepId,
+        sales_rep_name: order.salesRepName,
+        total: order.total,
+        status: order.status,
+        payment_status: order.paymentStatus,
+        payment_method: order.paymentMethod,
+        payment_method_id: order.paymentMethodId,
+        payment_table_id: order.paymentTableId,
+        discount: order.discount,
+        due_date: order.dueDate ? order.dueDate.toISOString() : null,
+        delivery_address: order.deliveryAddress?.address,
+        delivery_city: order.deliveryAddress?.city,
+        delivery_state: order.deliveryAddress?.state,
+        delivery_zip: order.deliveryAddress?.zip,
+        notes: order.notes,
+        archived: order.archived
+      };
+
+      // Add to Supabase
+      const { data, error } = await supabase
+        .from('orders')
+        .insert(supabaseOrder)
+        .select();
+
+      if (error) {
+        throw error;
       }
-      
-      const newOrder = { ...order, id } as Order;
+
+      const newOrderFromDb = data[0];
+
+      // Transform back to Order type
+      const newOrder: Order = {
+        id: newOrderFromDb.id,
+        code: newOrderFromDb.code,
+        customerId: newOrderFromDb.customer_id || '',
+        customerName: newOrderFromDb.customer_name,
+        date: new Date(newOrderFromDb.date || new Date()),
+        salesRepId: newOrderFromDb.sales_rep_id || '',
+        salesRepName: newOrderFromDb.sales_rep_name,
+        total: newOrderFromDb.total,
+        status: newOrderFromDb.status || 'pending',
+        paymentStatus: newOrderFromDb.payment_status || 'pending',
+        paymentMethod: newOrderFromDb.payment_method || '',
+        paymentMethodId: newOrderFromDb.payment_method_id || '',
+        paymentTableId: newOrderFromDb.payment_table_id || '',
+        discount: newOrderFromDb.discount || 0,
+        dueDate: newOrderFromDb.due_date ? new Date(newOrderFromDb.due_date) : undefined,
+        deliveryAddress: {
+          address: newOrderFromDb.delivery_address || '',
+          city: newOrderFromDb.delivery_city || '',
+          state: newOrderFromDb.delivery_state || '',
+          zip: newOrderFromDb.delivery_zip || '',
+        },
+        notes: newOrderFromDb.notes || '',
+        createdAt: new Date(newOrderFromDb.created_at || new Date()),
+        updatedAt: new Date(newOrderFromDb.updated_at || new Date()),
+        archived: newOrderFromDb.archived || false,
+        items: [] // Items will be loaded separately if needed
+      };
+
+      // Update local state
       setOrders([...orders, newOrder]);
-      
-      console.log("State updated with new order");
-      
-      return id;
+      toast({
+        title: "Pedido adicionado",
+        description: "Pedido adicionado com sucesso!"
+      });
+      return newOrder.id;
     } catch (error) {
       console.error("Erro ao adicionar pedido:", error);
       toast({
@@ -72,84 +164,52 @@ export const useOrders = () => {
     }
   };
 
-  const updateOrder = async (id: string, orderData: Partial<Order>) => {
+  const updateOrder = async (id: string, orderUpdate: Partial<Order>): Promise<void> => {
     try {
-      console.log("Updating order with ID:", id);
-      console.log("New order data:", orderData);
-      
-      // Get the current order from the local state
-      const currentOrder = getOrderById(id);
-      if (!currentOrder) {
-        throw new Error(`Pedido com ID ${id} não encontrado`);
+      // Transform Order to match Supabase schema
+      const supabaseOrderUpdate: Record<string, any> = {};
+
+      if (orderUpdate.code !== undefined) supabaseOrderUpdate.code = orderUpdate.code;
+      if (orderUpdate.customerId !== undefined) supabaseOrderUpdate.customer_id = orderUpdate.customerId;
+      if (orderUpdate.customerName !== undefined) supabaseOrderUpdate.customer_name = orderUpdate.customerName;
+      if (orderUpdate.date !== undefined) supabaseOrderUpdate.date = orderUpdate.date.toISOString();
+      if (orderUpdate.salesRepId !== undefined) supabaseOrderUpdate.sales_rep_id = orderUpdate.salesRepId;
+      if (orderUpdate.salesRepName !== undefined) supabaseOrderUpdate.sales_rep_name = orderUpdate.salesRepName;
+      if (orderUpdate.total !== undefined) supabaseOrderUpdate.total = orderUpdate.total;
+      if (orderUpdate.status !== undefined) supabaseOrderUpdate.status = orderUpdate.status;
+      if (orderUpdate.paymentStatus !== undefined) supabaseOrderUpdate.payment_status = orderUpdate.paymentStatus;
+      if (orderUpdate.paymentMethod !== undefined) supabaseOrderUpdate.payment_method = orderUpdate.paymentMethod;
+      if (orderUpdate.paymentMethodId !== undefined) supabaseOrderUpdate.payment_method_id = orderUpdate.paymentMethodId;
+      if (orderUpdate.paymentTableId !== undefined) supabaseOrderUpdate.payment_table_id = orderUpdate.paymentTableId;
+      if (orderUpdate.discount !== undefined) supabaseOrderUpdate.discount = orderUpdate.discount;
+      if (orderUpdate.dueDate !== undefined) supabaseOrderUpdate.due_date = orderUpdate.dueDate.toISOString();
+      if (orderUpdate.deliveryAddress !== undefined) {
+        supabaseOrderUpdate.delivery_address = orderUpdate.deliveryAddress?.address;
+        supabaseOrderUpdate.delivery_city = orderUpdate.deliveryAddress?.city;
+        supabaseOrderUpdate.delivery_state = orderUpdate.deliveryAddress?.state;
+        supabaseOrderUpdate.delivery_zip = orderUpdate.deliveryAddress?.zip;
       }
-      
-      // IMPROVED: Enhanced logging for items debugging
-      if (orderData.items) {
-        console.log(`Items being updated - count: ${orderData.items.length}`);
-        orderData.items.forEach((item, index) => {
-          console.log(`Item ${index}:`, JSON.stringify(item));
-        });
+      if (orderUpdate.notes !== undefined) supabaseOrderUpdate.notes = orderUpdate.notes;
+      if (orderUpdate.archived !== undefined) supabaseOrderUpdate.archived = orderUpdate.archived;
+
+      // Update in Supabase
+      const { error } = await supabase
+        .from('orders')
+        .update(supabaseOrderUpdate)
+        .eq('id', id);
+
+      if (error) {
+        throw error;
       }
-      
-      // Create a complete merged order with all data
-      const updatedOrderData = { 
-        ...currentOrder, 
-        ...orderData,
-      };
-      
-      // IMPROVED: Enhanced item handling with better ID preservation and management
-      if (orderData.items && orderData.items.length > 0) {
-        console.log("Processing order items with improved ID handling");
-        
-        // Create a map of existing items by productId for easier lookup
-        const existingItemsMap = new Map();
-        if (currentOrder.items && Array.isArray(currentOrder.items)) {
-          currentOrder.items.forEach(item => {
-            existingItemsMap.set(item.productId, item);
-          });
-        }
-        
-        // Process each item, preserving IDs for existing items and generating new IDs for new items
-        updatedOrderData.items = orderData.items.map(item => {
-          // Find existing item by productId
-          const existingItem = existingItemsMap.get(item.productId);
-          
-          // Create the normalized item with proper ID handling
-          return {
-            // If item has an ID use it, else if there's an existing item use its ID, otherwise generate a new UUID
-            id: item.id || (existingItem ? existingItem.id : uuidv4()),
-            productId: item.productId,
-            productName: item.productName,
-            productCode: item.productCode || 0,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice || item.price || 0,
-            price: item.price || item.unitPrice || 0,
-            discount: item.discount || 0,
-            total: (item.unitPrice || item.price || 0) * item.quantity
-          };
-        });
-        
-        console.log("Final processed items:", updatedOrderData.items);
-      }
-      
-      console.log("Complete order data being sent to Firebase:", updatedOrderData);
-      
-      // Send the complete order to Firebase
-      await orderService.update(id, updatedOrderData);
-      
-      // Update the local state with the complete order
-      setOrders(orders.map(o => 
-        o.id === id ? updatedOrderData as Order : o
+
+      // Update local state
+      setOrders(orders.map(o =>
+        o.id === id ? { ...o, ...orderUpdate } : o
       ));
-      
-      console.log("Order updated successfully");
-      
       toast({
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
       });
-      
-      return id;
     } catch (error) {
       console.error("Erro ao atualizar pedido:", error);
       toast({
@@ -157,33 +217,22 @@ export const useOrders = () => {
         description: "Houve um problema ao atualizar o pedido.",
         variant: "destructive"
       });
-      return "";
-    }
-  };
-
-  const updateOrderPaymentMethod = async (id: string, paymentTableId: string, paymentStatus: 'pending' | 'partial' | 'paid' = 'paid') => {
-    try {
-      await orderService.update(id, { paymentTableId, paymentStatus });
-      setOrders(orders.map(o => 
-        o.id === id ? { ...o, paymentTableId, paymentStatus } : o
-      ));
-      toast({
-        title: "Forma de pagamento atualizada",
-        description: "Forma de pagamento atualizada com sucesso!"
-      });
-    } catch (error) {
-      console.error("Erro ao atualizar forma de pagamento:", error);
-      toast({
-        title: "Erro ao atualizar forma de pagamento",
-        description: "Houve um problema ao atualizar a forma de pagamento.",
-        variant: "destructive"
-      });
     }
   };
 
   const deleteOrder = async (id: string): Promise<void> => {
     try {
-      await orderService.delete(id);
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
       setOrders(orders.filter(o => o.id !== id));
       toast({
         title: "Pedido excluído",
@@ -201,12 +250,11 @@ export const useOrders = () => {
 
   return {
     orders,
+    isLoading,
     getOrderById,
     addOrder,
     updateOrder,
-    updateOrderPaymentMethod,
     deleteOrder,
-    isLoading,
     setOrders
   };
 };

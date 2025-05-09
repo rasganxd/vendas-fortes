@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          accent_color: string | null
+          company_address: string | null
+          company_document: string | null
+          company_email: string | null
+          company_footer: string | null
+          company_name: string | null
+          company_phone: string | null
+          created_at: string | null
+          id: string
+          primary_color: string | null
+          secondary_color: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          company_address?: string | null
+          company_document?: string | null
+          company_email?: string | null
+          company_footer?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string | null
+          id?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          company_address?: string | null
+          company_document?: string | null
+          company_email?: string | null
+          company_footer?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string | null
+          id?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null

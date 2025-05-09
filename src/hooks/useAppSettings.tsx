@@ -167,6 +167,13 @@ export const useAppSettings = () => {
 
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     try {
+      if (!settings?.id) {
+        await fetchSettings();
+        if (!settings?.id) {
+          throw new Error('No settings ID available for update');
+        }
+      }
+      
       const updatedSettings = { ...settings, ...newSettings };
       
       // Convert to Supabase format
@@ -191,7 +198,7 @@ export const useAppSettings = () => {
       const { error: updateError } = await supabase
         .from('app_settings')
         .update(supabaseData)
-        .eq('id', settings?.id || '');
+        .eq('id', settings?.id);
         
       if (updateError) {
         throw updateError;
