@@ -40,9 +40,9 @@ function App() {
       <AppProvider>
         <Router>
           <SidebarProvider defaultOpen>
-            <div className="flex min-h-screen w-full overflow-hidden">
+            <div className="flex min-h-screen w-full">
               <SideNav />
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-auto">
                 <RouterRoutes>
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
