@@ -15,7 +15,20 @@ export const loadRoutes = async (): Promise<DeliveryRoute[]> => {
       throw error;
     }
     
-    return data as DeliveryRoute[];
+    // Transform the data to match DeliveryRoute type
+    return data.map(route => ({
+      id: route.id,
+      name: route.name,
+      date: new Date(route.date || new Date()),
+      driverId: route.driver_id || '',
+      driverName: route.driver_name || '',
+      vehicleId: route.vehicle_id || '',
+      vehicleName: route.vehicle_name || '',
+      status: route.status || 'pending',
+      stops: [],
+      createdAt: new Date(route.created_at || new Date()),
+      updatedAt: new Date(route.updated_at || new Date())
+    })) as DeliveryRoute[];
   } catch (error) {
     console.error("Erro ao carregar rotas:", error);
     return [];
@@ -44,17 +57,43 @@ export const useRoutes = () => {
 
   const addRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
     try {
+      // Transform DeliveryRoute to match Supabase schema
+      const supabaseRoute = {
+        name: route.name,
+        date: route.date.toISOString(),
+        driver_id: route.driverId,
+        driver_name: route.driverName,
+        vehicle_id: route.vehicleId,
+        vehicle_name: route.vehicleName,
+        status: route.status
+      };
+
       // Add to Supabase
       const { data, error } = await supabase
         .from('delivery_routes')
-        .insert(route)
+        .insert(supabaseRoute)
         .select();
         
       if (error) {
         throw error;
       }
       
-      const newRoute = data[0] as DeliveryRoute;
+      const newRouteFromDb = data[0];
+      
+      // Transform back to DeliveryRoute type
+      const newRoute: DeliveryRoute = {
+        id: newRouteFromDb.id,
+        name: newRouteFromDb.name,
+        date: new Date(newRouteFromDb.date || new Date()),
+        driverId: newRouteFromDb.driver_id || '',
+        driverName: newRouteFromDb.driver_name || '',
+        vehicleId: newRouteFromDb.vehicle_id || '',
+        vehicleName: newRouteFromDb.vehicle_name || '',
+        status: newRouteFromDb.status || 'pending',
+        stops: [],
+        createdAt: new Date(newRouteFromDb.created_at || new Date()),
+        updatedAt: new Date(newRouteFromDb.updated_at || new Date())
+      };
       
       // Update local state
       setRoutes([...routes, newRoute]);
@@ -74,12 +113,23 @@ export const useRoutes = () => {
     }
   };
 
-  const updateRoute = async (id: string, route: Partial<DeliveryRoute>): Promise<void> => {
+  const updateRoute = async (id: string, routeUpdate: Partial<DeliveryRoute>): Promise<void> => {
     try {
+      // Transform DeliveryRoute to match Supabase schema
+      const supabaseRouteUpdate: Record<string, any> = {};
+      
+      if (routeUpdate.name !== undefined) supabaseRouteUpdate.name = routeUpdate.name;
+      if (routeUpdate.date !== undefined) supabaseRouteUpdate.date = routeUpdate.date.toISOString();
+      if (routeUpdate.driverId !== undefined) supabaseRouteUpdate.driver_id = routeUpdate.driverId;
+      if (routeUpdate.driverName !== undefined) supabaseRouteUpdate.driver_name = routeUpdate.driverName;
+      if (routeUpdate.vehicleId !== undefined) supabaseRouteUpdate.vehicle_id = routeUpdate.vehicleId;
+      if (routeUpdate.vehicleName !== undefined) supabaseRouteUpdate.vehicle_name = routeUpdate.vehicleName;
+      if (routeUpdate.status !== undefined) supabaseRouteUpdate.status = routeUpdate.status;
+      
       // Update in Supabase
       const { error } = await supabase
         .from('delivery_routes')
-        .update(route)
+        .update(supabaseRouteUpdate)
         .eq('id', id);
         
       if (error) {
@@ -88,7 +138,7 @@ export const useRoutes = () => {
       
       // Update local state
       setRoutes(routes.map(r => 
-        r.id === id ? { ...r, ...route } : r
+        r.id === id ? { ...r, ...routeUpdate } : r
       ));
       toast({
         title: "Rota atualizada",

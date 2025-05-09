@@ -1,16 +1,41 @@
+
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/firebase/firestoreService'; 
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { mockSalesReps } from '@/data/mock';
 
 export const loadSalesReps = async (): Promise<SalesRep[]> => {
   try {
-    const salesReps = await salesRepService.getAll();
-    return salesReps;
+    const { data, error } = await supabase
+      .from('sales_reps')
+      .select('*')
+      .order('name');
+      
+    if (error) {
+      throw error;
+    }
+    
+    return data.map(rep => ({
+      id: rep.id,
+      code: rep.code || 0,
+      name: rep.name,
+      email: rep.email || '',
+      phone: rep.phone || '',
+      document: rep.document || '',
+      notes: rep.notes || '',
+      address: rep.address || '',
+      city: rep.city || '',
+      state: rep.state || '',
+      zip: rep.zip || '',
+      createdAt: new Date(rep.created_at || new Date()),
+      updatedAt: new Date(rep.updated_at || new Date()),
+      role: rep.role || 'sales',
+      active: rep.active || true
+    })) as SalesRep[];
   } catch (error) {
     console.error("Error loading sales reps:", error);
-    // If Firebase fails, return mock data
+    // If Supabase fails, return mock data
     return mockSalesReps;
   }
 };
@@ -57,9 +82,52 @@ export const useSalesReps = () => {
         salesRep.code = generateNextCode();
       }
       
-      // Add to Firebase
-      const id = await salesRepService.add(salesRep);
-      const newSalesRep = { ...salesRep, id } as SalesRep;
+      // Transform to Supabase format
+      const supabaseSalesRep = {
+        code: salesRep.code,
+        name: salesRep.name,
+        email: salesRep.email,
+        phone: salesRep.phone,
+        document: salesRep.document,
+        notes: salesRep.notes,
+        address: salesRep.address,
+        city: salesRep.city,
+        state: salesRep.state,
+        zip: salesRep.zip,
+        role: salesRep.role,
+        active: salesRep.active
+      };
+      
+      // Add to Supabase
+      const { data, error } = await supabase
+        .from('sales_reps')
+        .insert(supabaseSalesRep)
+        .select();
+        
+      if (error) {
+        throw error;
+      }
+      
+      const newSalesRepData = data[0];
+      
+      // Transform to our app format
+      const newSalesRep: SalesRep = {
+        id: newSalesRepData.id,
+        code: newSalesRepData.code || 0,
+        name: newSalesRepData.name,
+        email: newSalesRepData.email || '',
+        phone: newSalesRepData.phone || '',
+        document: newSalesRepData.document || '',
+        notes: newSalesRepData.notes || '',
+        address: newSalesRepData.address || '',
+        city: newSalesRepData.city || '',
+        state: newSalesRepData.state || '',
+        zip: newSalesRepData.zip || '',
+        createdAt: new Date(newSalesRepData.created_at || new Date()),
+        updatedAt: new Date(newSalesRepData.updated_at || new Date()),
+        role: newSalesRepData.role || 'sales',
+        active: newSalesRepData.active || true
+      };
       
       // Update local state
       setSalesReps([...salesReps, newSalesRep]);
@@ -67,7 +135,7 @@ export const useSalesReps = () => {
         title: "Representante adicionado",
         description: "Representante adicionado com sucesso!"
       });
-      return id;
+      return newSalesRep.id;
     } catch (error) {
       console.error("Erro ao adicionar representante:", error);
       toast({
@@ -81,8 +149,31 @@ export const useSalesReps = () => {
 
   const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>) => {
     try {
-      // Update in Firebase
-      await salesRepService.update(id, salesRep);
+      // Transform to Supabase format
+      const supabaseUpdate: Record<string, any> = {};
+      
+      if (salesRep.name !== undefined) supabaseUpdate.name = salesRep.name;
+      if (salesRep.code !== undefined) supabaseUpdate.code = salesRep.code;
+      if (salesRep.email !== undefined) supabaseUpdate.email = salesRep.email;
+      if (salesRep.phone !== undefined) supabaseUpdate.phone = salesRep.phone;
+      if (salesRep.document !== undefined) supabaseUpdate.document = salesRep.document;
+      if (salesRep.notes !== undefined) supabaseUpdate.notes = salesRep.notes;
+      if (salesRep.address !== undefined) supabaseUpdate.address = salesRep.address;
+      if (salesRep.city !== undefined) supabaseUpdate.city = salesRep.city;
+      if (salesRep.state !== undefined) supabaseUpdate.state = salesRep.state;
+      if (salesRep.zip !== undefined) supabaseUpdate.zip = salesRep.zip;
+      if (salesRep.role !== undefined) supabaseUpdate.role = salesRep.role;
+      if (salesRep.active !== undefined) supabaseUpdate.active = salesRep.active;
+      
+      // Update in Supabase
+      const { error } = await supabase
+        .from('sales_reps')
+        .update(supabaseUpdate)
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
       
       // Update local state
       setSalesReps(salesReps.map(s => 
@@ -104,8 +195,15 @@ export const useSalesReps = () => {
 
   const deleteSalesRep = async (id: string) => {
     try {
-      // Delete from Firebase
-      await salesRepService.delete(id);
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('sales_reps')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
       
       // Update local state
       setSalesReps(salesReps.filter(s => s.id !== id));

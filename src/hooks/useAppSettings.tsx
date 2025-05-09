@@ -2,8 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { AppSettings } from '@/types';
-import { db } from '@/firebase/config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
 
 // Cache key for storing theme colors in localStorage
 const THEME_COLORS_CACHE_KEY = 'app-theme-colors';
@@ -75,11 +74,20 @@ export const useAppSettings = () => {
   const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true);
-      const settingsRef = doc(db, 'settings', 'appSettings');
-      const settingsSnap = await getDoc(settingsRef);
       
-      if (settingsSnap.exists()) {
-        const fetchedSettings = settingsSnap.data() as AppSettings;
+      // Fetch settings from Supabase
+      const { data: settingsData, error: fetchError } = await supabase
+        .from('app_settings')
+        .select('*')
+        .limit(1)
+        .single();
+        
+      if (fetchError && fetchError.code !== 'PGRST116') { // Not found error code
+        throw fetchError;
+      }
+      
+      if (settingsData) {
+        const fetchedSettings = settingsData as AppSettings;
         setSettings(fetchedSettings);
         
         // Apply theme colors
@@ -101,7 +109,16 @@ export const useAppSettings = () => {
             accentColor: '#0694A2'
           }
         };
-        await setDoc(settingsRef, defaultSettings);
+        
+        // Try to insert default settings
+        const { error: insertError } = await supabase
+          .from('app_settings')
+          .insert(defaultSettings);
+          
+        if (insertError) {
+          console.error("Error inserting default settings:", insertError);
+        }
+        
         setSettings(defaultSettings);
         
         // Apply default theme colors
@@ -111,7 +128,7 @@ export const useAppSettings = () => {
       console.error('Error fetching settings:', err);
       setError(err as Error);
       
-      // If there's an error fetching from Firebase, try to load from cache
+      // If there's an error fetching from Supabase, try to load from cache
       loadCachedTheme();
     } finally {
       setIsLoading(false);
@@ -120,9 +137,18 @@ export const useAppSettings = () => {
 
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     try {
-      const settingsRef = doc(db, 'settings', 'appSettings');
       const updatedSettings = { ...settings, ...newSettings };
-      await setDoc(settingsRef, updatedSettings);
+      
+      // Update settings in Supabase
+      const { error: updateError } = await supabase
+        .from('app_settings')
+        .update(updatedSettings)
+        .eq('id', settings?.id || 'default');
+        
+      if (updateError) {
+        throw updateError;
+      }
+      
       setSettings(updatedSettings);
       
       // If theme was updated, apply the new colors
@@ -195,7 +221,7 @@ export const useAppSettings = () => {
     }
   };
 
-  // Apply cached theme on mount, before Firebase data is available
+  // Apply cached theme on mount, before Supabase data is available
   useEffect(() => {
     loadCachedTheme();
     fetchSettings();

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/firebase/firestoreService';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
 interface DeleteSalesRepDialogProps {
@@ -28,7 +28,14 @@ export const DeleteSalesRepDialog: React.FC<DeleteSalesRepDialogProps> = ({
 }) => {
   const handleDelete = async () => {
     try {
-      await salesRepService.delete(salesRep.id);
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('sales_reps')
+        .delete()
+        .eq('id', salesRep.id);
+      
+      if (error) throw error;
+      
       setSalesReps(currentSalesReps => 
         currentSalesReps.filter(sr => sr.id !== salesRep.id)
       );
