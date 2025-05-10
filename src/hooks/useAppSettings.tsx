@@ -32,12 +32,19 @@ export const useAppSettings = () => {
       
       if (fetchedSettings) {
         setSettings(fetchedSettings);
-        applyThemeColors(fetchedSettings.theme);
+        // Apply the theme colors directly
+        if (fetchedSettings.theme) {
+          console.log("Applying fetched theme colors:", fetchedSettings.theme);
+          applyThemeColors(fetchedSettings.theme);
+        }
       } else {
         // Create default settings if none exist
         const defaultSettings = await createDefaultSettings();
         setSettings(defaultSettings);
-        applyThemeColors(defaultSettings.theme);
+        if (defaultSettings.theme) {
+          console.log("Applying default theme colors:", defaultSettings.theme);
+          applyThemeColors(defaultSettings.theme);
+        }
       }
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -71,7 +78,17 @@ export const useAppSettings = () => {
       
       // If theme was updated, apply the new colors
       if (newSettings.theme) {
-        applyThemeColors(updatedSettings.theme);
+        console.log("Applying updated theme colors:", newSettings.theme);
+        applyThemeColors(newSettings.theme);
+        
+        // Directly apply header color for consistency
+        setTimeout(() => {
+          const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+          if (sidebarHeader && newSettings.theme?.primaryColor) {
+            sidebarHeader.style.background = newSettings.theme.primaryColor;
+            sidebarHeader.style.color = '#ffffff';
+          }
+        }, 10);
       }
       
       return true;
@@ -90,7 +107,17 @@ export const useAppSettings = () => {
     // Re-apply theme on window focus to maintain consistency
     const handleFocus = () => {
       if (settings?.theme) {
+        console.log("Reapplying theme on focus:", settings.theme);
         applyThemeColors(settings.theme);
+        
+        // Directly apply header color for consistency
+        setTimeout(() => {
+          const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+          if (sidebarHeader && settings.theme?.primaryColor) {
+            sidebarHeader.style.background = settings.theme.primaryColor;
+            sidebarHeader.style.color = '#ffffff';
+          }
+        }, 10);
       }
     };
     

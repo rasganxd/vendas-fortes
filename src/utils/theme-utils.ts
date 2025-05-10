@@ -56,19 +56,21 @@ export function convertHexToHSL(hex: string, options?: { darken?: boolean }): st
       }
       
       h = Math.round(h * 60);
+      if (h < 0) h += 360;
     }
     
+    // Calculate saturation and lightness percentages with higher precision
     s = Math.round(s * 100);
     
-    // Option to darken the color for sidebar background
+    // Reduced darkening effect - now only darkens by 20% instead of 60%
     if (options?.darken) {
-      // Reduce lightness for a darker shade of the same color
-      // This helps create a nice contrast for sidebar backgrounds
-      l = Math.max(l * 0.4, 0.1); // Make it darker but not too dark
+      // Reduce lightness for a slightly darker shade of the same color
+      l = Math.max(l * 0.8, 0.15); // 20% darkening, but not too dark
     }
     
     const lightness = Math.round(l * 100);
     
+    // Return precise HSL values
     return `${h} ${s}% ${lightness}%`;
   } catch (err) {
     console.error('Error converting hex to HSL:', err);
@@ -112,13 +114,15 @@ export function applyThemeColors(theme?: {
       document.documentElement.style.setProperty('--sidebar-accent-foreground', '0 0% 100%'); // White text
       document.documentElement.style.setProperty('--ring', primaryHsl);
       
-      // Apply direct CSS for ALL sidebar header elements
+      // Apply solid color (no gradient) to sidebar header directly
       setTimeout(() => {
         const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
         if (sidebarHeader) {
-          const gradientStyle = `linear-gradient(to right, ${theme.primaryColor}, ${theme.primaryColor}cc)`;
-          sidebarHeader.style.background = gradientStyle;
+          // Use the exact color without transparency
+          sidebarHeader.style.background = theme.primaryColor;
           sidebarHeader.style.color = '#ffffff';
+        } else {
+          console.warn("Sidebar header element not found");
         }
       }, 0);
     }
@@ -143,7 +147,7 @@ export function applyThemeColors(theme?: {
     
     // Dispatch a custom event that sidebar components can listen to
     const themeChangeEvent = new CustomEvent('app-theme-changed', {
-      detail: { theme }
+      detail: { theme, exactColors: true }
     });
     document.dispatchEvent(themeChangeEvent);
     

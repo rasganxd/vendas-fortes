@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -131,15 +130,14 @@ export default function SideNav() {
   const applyHeaderStyles = useCallback(() => {
     if (!settings?.theme?.primaryColor) return;
     
-    console.log("Applying header styles with color:", settings.theme.primaryColor);
+    console.log("Applying sidebar header color:", settings.theme.primaryColor);
     setTimeout(() => {
       const headerElement = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
       if (headerElement) {
-        const primaryColor = settings.theme.primaryColor;
-        const gradientStyle = `linear-gradient(to right, ${primaryColor}, ${primaryColor}cc)`;
-        headerElement.style.background = gradientStyle;
+        // Use the exact color without any transparency or gradient
+        headerElement.style.background = settings.theme.primaryColor;
         headerElement.style.color = '#ffffff';
-        console.log("Header styles applied:", gradientStyle);
+        console.log("Header styles applied:", settings.theme.primaryColor);
       } else {
         console.warn("Header element not found for color application");
       }

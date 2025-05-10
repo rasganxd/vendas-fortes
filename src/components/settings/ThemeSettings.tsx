@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,11 +62,10 @@ export default function ThemeSettings() {
       const timer = setTimeout(() => {
         applyThemeColors(settings.theme);
         
-        // Manually update the sidebar header
+        // Manually update the sidebar header with the exact color
         const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
         if (sidebarHeader && settings.theme?.primaryColor) {
-          const gradientStyle = `linear-gradient(to right, ${settings.theme.primaryColor}, ${settings.theme.primaryColor}cc)`;
-          sidebarHeader.style.background = gradientStyle;
+          sidebarHeader.style.background = settings.theme.primaryColor;
           sidebarHeader.style.color = '#ffffff';
         }
       }, 100);
@@ -105,8 +103,8 @@ export default function ThemeSettings() {
       setTimeout(() => {
         const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
         if (sidebarHeader) {
-          const gradientStyle = `linear-gradient(to right, ${primary}, ${primary}cc)`;
-          sidebarHeader.style.background = gradientStyle;
+          // Use exact color without transparency
+          sidebarHeader.style.background = primary;
           sidebarHeader.style.color = '#ffffff';
         }
       }, 50);
@@ -155,9 +153,8 @@ export default function ThemeSettings() {
       setTimeout(() => {
         const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
         if (sidebarHeader) {
-          const primaryColor = settings.theme.primaryColor;
-          const gradientStyle = `linear-gradient(to right, ${primaryColor}, ${primaryColor}cc)`;
-          sidebarHeader.style.background = gradientStyle;
+          // Use exact color without transparency
+          sidebarHeader.style.background = settings.theme.primaryColor;
           sidebarHeader.style.color = '#ffffff';
         }
       }, 50);
