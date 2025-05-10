@@ -94,6 +94,11 @@ export function applyThemeColors(theme?: {
       document.documentElement.style.setProperty('--primary', primaryHsl);
       document.documentElement.style.setProperty('--sidebar-primary', primaryHsl);
       document.documentElement.style.setProperty('--ring', primaryHsl);
+      
+      // Create a darker version of the primary color for sidebar background
+      const darkPrimaryHex = adjustColorBrightness(theme.primaryColor, -0.3);
+      const darkPrimaryHsl = convertHexToHSL(darkPrimaryHex);
+      document.documentElement.style.setProperty('--sidebar-background', darkPrimaryHsl);
     }
     
     if (theme.secondaryColor) {
@@ -111,7 +116,7 @@ export function applyThemeColors(theme?: {
     if (theme.primaryColor) {
       const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
       if (sidebarHeader) {
-        sidebarHeader.style.background = theme.primaryColor;
+        sidebarHeader.style.backgroundColor = theme.primaryColor;
         sidebarHeader.style.color = '#ffffff';
       }
     }
@@ -123,6 +128,51 @@ export function applyThemeColors(theme?: {
   } catch (err) {
     console.error('Error applying theme colors:', err);
   }
+}
+
+/**
+ * Adjust color brightness - darkens or lightens a hex color
+ * @param hex - Hex color code
+ * @param percent - Amount to adjust (-1 to 1, negative darkens, positive lightens)
+ * @returns Adjusted hex color
+ */
+export function adjustColorBrightness(hex: string, percent: number): string {
+  hex = hex.replace(/^#/, '');
+  
+  // Parse the hex string
+  let r = parseInt(hex.slice(0, 2), 16);
+  let g = parseInt(hex.slice(2, 4), 16);
+  let b = parseInt(hex.slice(4, 6), 16);
+  
+  // Convert to 0-1 range
+  r = r / 255;
+  g = g / 255;
+  b = b / 255;
+  
+  // Adjust brightness
+  if (percent < 0) {
+    // Darken
+    r = r * (1 + percent);
+    g = g * (1 + percent);
+    b = b * (1 + percent);
+  } else {
+    // Lighten
+    r = r + (1 - r) * percent;
+    g = g + (1 - g) * percent;
+    b = b + (1 - b) * percent;
+  }
+  
+  // Convert back to 0-255 range
+  r = Math.round(Math.max(0, Math.min(255, r * 255)));
+  g = Math.round(Math.max(0, Math.min(255, g * 255)));
+  b = Math.round(Math.max(0, Math.min(255, b * 255)));
+  
+  // Convert to hex
+  const rHex = r.toString(16).padStart(2, '0');
+  const gHex = g.toString(16).padStart(2, '0');
+  const bHex = b.toString(16).padStart(2, '0');
+  
+  return `#${rHex}${gHex}${bHex}`;
 }
 
 /**

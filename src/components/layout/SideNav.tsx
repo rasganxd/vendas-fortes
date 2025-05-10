@@ -121,19 +121,15 @@ export default function SideNav() {
   
   // Listen for theme changes with simplified effect
   useEffect(() => {
-    const handleThemeChange = () => {
-      // The header styling will be handled by applyThemeColors in theme-utils.ts
-      // This is now a single event handler to apply styling when needed
-      console.log("Theme change detected in SideNav");
-    };
-
-    // Listen for custom theme change events
-    document.addEventListener('app-theme-changed', handleThemeChange);
+    // Add dynamic-sidebar class to the sidebar header to allow styling from CSS
+    const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+    if (sidebarHeader && settings?.theme?.primaryColor) {
+      sidebarHeader.style.backgroundColor = settings.theme.primaryColor;
+      sidebarHeader.style.color = '#ffffff';
+    }
     
-    return () => {
-      document.removeEventListener('app-theme-changed', handleThemeChange);
-    };
-  }, []);
+    console.log("Theme change detected in SideNav");
+  }, [settings?.theme]);
   
   // Group the navigation items by their group
   const groupedNavItems = navigation.reduce((groups, item) => {
@@ -156,7 +152,7 @@ export default function SideNav() {
   
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium">
-      <SidebarHeader className="px-5 py-4 flex items-center justify-between dynamic-sidebar-header">
+      <SidebarHeader className="px-5 py-4 flex items-center justify-between dynamic-sidebar-header transition-colors">
         <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
       <CustomScrollArea hideScrollbar={true} className="h-[calc(100vh-64px)]">
