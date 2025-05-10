@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAppContext } from '@/hooks/useAppContext';
 import { AppSettings } from '@/types';
 import { 
   applyThemeColors, 
@@ -13,7 +12,7 @@ import {
 } from '@/services/settings/settingsService';
 
 /**
- * Hook for managing application settings
+ * Hook for managing application settings with optimized theme handling
  */
 export const useAppSettings = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -32,9 +31,8 @@ export const useAppSettings = () => {
       
       if (fetchedSettings) {
         setSettings(fetchedSettings);
-        // Apply the theme colors directly
+        // Apply the theme colors if present
         if (fetchedSettings.theme) {
-          console.log("Applying fetched theme colors:", fetchedSettings.theme);
           applyThemeColors(fetchedSettings.theme);
         }
       } else {
@@ -42,7 +40,6 @@ export const useAppSettings = () => {
         const defaultSettings = await createDefaultSettings();
         setSettings(defaultSettings);
         if (defaultSettings.theme) {
-          console.log("Applying default theme colors:", defaultSettings.theme);
           applyThemeColors(defaultSettings.theme);
         }
       }
@@ -78,17 +75,7 @@ export const useAppSettings = () => {
       
       // If theme was updated, apply the new colors
       if (newSettings.theme) {
-        console.log("Applying updated theme colors:", newSettings.theme);
         applyThemeColors(newSettings.theme);
-        
-        // Directly apply header color for consistency
-        setTimeout(() => {
-          const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-          if (sidebarHeader && newSettings.theme?.primaryColor) {
-            sidebarHeader.style.background = newSettings.theme.primaryColor;
-            sidebarHeader.style.color = '#ffffff';
-          }
-        }, 10);
       }
       
       return true;
@@ -103,29 +90,7 @@ export const useAppSettings = () => {
   useEffect(() => {
     loadCachedTheme();
     fetchSettings();
-    
-    // Re-apply theme on window focus to maintain consistency
-    const handleFocus = () => {
-      if (settings?.theme) {
-        console.log("Reapplying theme on focus:", settings.theme);
-        applyThemeColors(settings.theme);
-        
-        // Directly apply header color for consistency
-        setTimeout(() => {
-          const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-          if (sidebarHeader && settings.theme?.primaryColor) {
-            sidebarHeader.style.background = settings.theme.primaryColor;
-            sidebarHeader.style.color = '#ffffff';
-          }
-        }, 10);
-      }
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [fetchSettings, settings?.theme]);
+  }, [fetchSettings]);
 
   return {
     settings,

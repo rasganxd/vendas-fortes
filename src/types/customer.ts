@@ -9,13 +9,13 @@ export interface Customer {
   city: string;
   state: string;
   zip: string;
-  zipCode?: string;
+  zipCode?: string; // Keep for backward compatibility, but prefer using zip
   notes: string;
   createdAt: Date;
   updatedAt: Date;
   document?: string;
   visitDays?: string[];
-  visitFrequency?: string; // Changed from enum to string to match Supabase data
+  visitFrequency?: string;
   visitSequence?: number;
 }
 
@@ -27,12 +27,12 @@ export type CustomerFormValues = {
   address: string;
   city: string;
   state: string;
-  zipCode: string;
+  zip: string;
+  zipCode?: string; // Keep for backward compatibility, but prefer using zip
   notes: string;
   visitDays: string[];
-  visitFrequency: string; // Changed from enum to string
+  visitFrequency: string;
   email: string;
-  zip: string;
   createdAt: Date;
   updatedAt: Date;
   visitSequence: number;

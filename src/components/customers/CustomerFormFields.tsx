@@ -36,7 +36,19 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
             <FormItem>
               <FormLabel>Código</FormLabel>
               <FormControl>
-                <Input {...field} type="number" />
+                <Input 
+                  {...field} 
+                  type="number" 
+                  onChange={(e) => {
+                    // Ensure code is always a number
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value)) {
+                      field.onChange(value);
+                    } else {
+                      field.onChange('');
+                    }
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -56,13 +68,15 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
                   min={1}
                   max={1000}
                   onChange={(e) => {
-                    const value = parseInt(e.target.value);
+                    const value = parseInt(e.target.value, 10);
                     if (value >= 1 && value <= 1000) {
                       field.onChange(value);
                     } else if (value < 1) {
                       field.onChange(1);
                     } else if (value > 1000) {
                       field.onChange(1000);
+                    } else {
+                      field.onChange('');
                     }
                   }}
                 />
@@ -95,7 +109,10 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
             <FormItem>
               <FormLabel>CPF/CNPJ</FormLabel>
               <FormControl>
-                <Input {...field} mask="cpfCnpj" />
+                <Input 
+                  {...field} 
+                  // Remove mask attribute to prevent formatting issues
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -159,12 +176,22 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         />
         <FormField
           control={form.control}
-          name="zipCode"
+          name="zip"
           render={({ field }) => (
             <FormItem className="sm:col-span-1 col-span-2">
               <FormLabel>CEP</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input 
+                  {...field} 
+                  // Set both zipCode and zip at the same time
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                    // Also update zipCode field for backward compatibility
+                    if (form.getValues) {
+                      form.setValue('zipCode', e.target.value);
+                    }
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -216,6 +243,9 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
                   control={form.control}
                   name="visitDays"
                   render={({ field }) => {
+                    // Ensure field.value is always an array
+                    const value = Array.isArray(field.value) ? field.value : [];
+                    
                     return (
                       <FormItem
                         key={day.id}
@@ -223,14 +253,12 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
                       >
                         <FormControl>
                           <Checkbox
-                            checked={field.value?.includes(day.id)}
+                            checked={value.includes(day.id)}
                             onCheckedChange={(checked) => {
                               return checked
-                                ? field.onChange([...field.value, day.id])
+                                ? field.onChange([...value, day.id])
                                 : field.onChange(
-                                    field.value?.filter(
-                                      (value) => value !== day.id
-                                    )
+                                    value.filter((val) => val !== day.id)
                                   )
                             }}
                           />

@@ -31,7 +31,6 @@ export const useCustomers = () => {
         setCustomers(loadedCustomers);
       } catch (error) {
         console.error("Error loading customers:", error);
-        // Keep existing fallback logic
       } finally {
         setIsLoading(false);
       }
@@ -55,8 +54,29 @@ export const useCustomers = () => {
     try {
       console.log("Adding customer to Supabase:", customer);
       
+      // Ensure customer has a code
       if (!customer.code) {
         customer.code = generateNextCode();
+      }
+      
+      // Ensure code is a number
+      if (typeof customer.code === 'string') {
+        customer.code = parseInt(customer.code as string, 10);
+      }
+      
+      // Handle zip/zipCode consistency
+      if (customer.zipCode && !customer.zip) {
+        customer.zip = customer.zipCode;
+      }
+      
+      // Ensure visitDays is an array
+      if (!Array.isArray(customer.visitDays)) {
+        customer.visitDays = customer.visitDays ? [customer.visitDays] : [];
+      }
+      
+      // Clean document field (remove mask)
+      if (customer.document) {
+        customer.document = customer.document.replace(/[^\d]/g, '');
       }
       
       // Transform to Supabase format (snake_case)
@@ -85,6 +105,23 @@ export const useCustomers = () => {
   const updateCustomer = async (id: string, customer: Partial<Customer>) => {
     try {
       console.log("Updating customer in Supabase:", id, customer);
+      
+      // Apply the same data validation as in addCustomer
+      if (customer.code && typeof customer.code === 'string') {
+        customer.code = parseInt(customer.code as string, 10);
+      }
+      
+      if (customer.zipCode && !customer.zip) {
+        customer.zip = customer.zipCode;
+      }
+      
+      if (customer.visitDays && !Array.isArray(customer.visitDays)) {
+        customer.visitDays = customer.visitDays ? [customer.visitDays] : [];
+      }
+      
+      if (customer.document) {
+        customer.document = customer.document.replace(/[^\d]/g, '');
+      }
       
       // Transform to Supabase format (snake_case)
       const supabaseData = prepareForSupabase(customer);

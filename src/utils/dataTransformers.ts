@@ -1,4 +1,3 @@
-
 // Utilities for converting data between Supabase format (snake_case) and app format (camelCase)
 
 // Helper function to convert snake_case strings to camelCase
@@ -9,12 +8,6 @@ export const snakeToCamel = (str: string): string => {
 // Helper function to convert camelCase strings to snake_case
 export const camelToSnake = (str: string): string => {
   return str.replace(/([A-Z])/g, (_, letter) => `_${letter.toLowerCase()}`);
-};
-
-// Function to convert string dates to Date objects
-export const convertStringToDate = (dateString: string | null | undefined): Date => {
-  if (!dateString) return new Date();
-  return new Date(dateString);
 };
 
 // Convert a Supabase record to camelCase format
@@ -49,7 +42,41 @@ export const convertToSnakeCase = (data: Record<string, any>): Record<string, an
   return result;
 };
 
-// Transformers for specific entity types
+// Function to safely convert string dates to Date objects
+export const convertStringToDate = (dateString: string | null | undefined): Date => {
+  if (!dateString) return new Date();
+  return new Date(dateString);
+};
+
+// Customer transformer with consistent zip/zipCode handling
+export const transformCustomerData = (data: any): any => {
+  if (!data) return null;
+  
+  const camelCaseData = convertToCamelCase(data);
+  
+  return {
+    id: camelCaseData.id || "",
+    code: typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : camelCaseData.code || 0,
+    name: camelCaseData.name || "",
+    phone: camelCaseData.phone || "",
+    email: camelCaseData.email || "",
+    address: camelCaseData.address || "",
+    city: camelCaseData.city || "",
+    state: camelCaseData.state || "",
+    // Use zip only (zipCode is now just an alias for backward compatibility)
+    zip: camelCaseData.zip || "",
+    document: camelCaseData.document || "",
+    notes: camelCaseData.notes || "",
+    // Ensure visitDays is always an array
+    visitDays: Array.isArray(camelCaseData.visitDays) ? camelCaseData.visitDays : [],
+    visitFrequency: camelCaseData.visitFrequency || "",
+    visitSequence: camelCaseData.visitSequence || 0,
+    createdAt: convertStringToDate(data.created_at),
+    updatedAt: convertStringToDate(data.updated_at)
+  };
+};
+
+// Other transformers like product, salesRep, etc.
 // SalesRep transformer
 export const transformSalesRepData = (data: any): any => {
   if (!data) return null;
@@ -96,33 +123,6 @@ export const transformProductData = (data: any): any => {
     categoryId: camelCaseData.categoryId,
     brandId: camelCaseData.brandId,
     unit: camelCaseData.unit || "",
-    createdAt: convertStringToDate(data.created_at),
-    updatedAt: convertStringToDate(data.updated_at)
-  };
-};
-
-// Customer transformer
-export const transformCustomerData = (data: any): any => {
-  if (!data) return null;
-  
-  const camelCaseData = convertToCamelCase(data);
-  
-  return {
-    id: camelCaseData.id || "",
-    code: camelCaseData.code || 0,
-    name: camelCaseData.name || "",
-    phone: camelCaseData.phone || "",
-    email: camelCaseData.email || "",
-    address: camelCaseData.address || "",
-    city: camelCaseData.city || "",
-    state: camelCaseData.state || "",
-    zip: camelCaseData.zip || "",
-    zipCode: camelCaseData.zip || "",
-    document: camelCaseData.document || "",
-    notes: camelCaseData.notes || "",
-    visitDays: camelCaseData.visitDays || [],
-    visitFrequency: camelCaseData.visitFrequency || "",
-    visitSequence: camelCaseData.visitSequence || 0,
     createdAt: convertStringToDate(data.created_at),
     updatedAt: convertStringToDate(data.updated_at)
   };
@@ -185,32 +185,57 @@ export const transformVehicleData = (data: any): any => {
   };
 };
 
+// Function to prepare data for sending to Supabase (convert to snake_case)
+export function prepareForSupabase(data: Record<string, any>): Record<string, any> {
+  // Create a copy to avoid mutating the original
+  const processedData = { ...data };
+  
+  // Handle special fields before conversion
+  // Remove zipCode field if present to avoid duplication (we just use zip)
+  if (processedData.zipCode !== undefined) {
+    processedData.zip = processedData.zipCode;
+    delete processedData.zipCode;
+  }
+  
+  // Handle date fields to ensure they are properly formatted as ISO strings
+  if (processedData.createdAt instanceof Date) {
+    processedData.created_at = processedData.createdAt.toISOString();
+    delete processedData.createdAt;
+  }
+  
+  if (processedData.updatedAt instanceof Date) {
+    processedData.updated_at = processedData.updatedAt.toISOString();
+    delete processedData.updatedAt;
+  }
+  
+  if (processedData.date instanceof Date) {
+    processedData.date = processedData.date.toISOString();
+  }
+  
+  if (processedData.dueDate instanceof Date) {
+    processedData.due_date = processedData.dueDate.toISOString();
+    delete processedData.dueDate;
+  }
+  
+  // Ensure code is always a number
+  if (processedData.code !== undefined && typeof processedData.code !== 'number') {
+    processedData.code = parseInt(processedData.code, 10);
+  }
+  
+  // Convert all other fields to snake_case for Supabase
+  return convertToSnakeCase(processedData);
+}
+
 // Generic function to transform arrays of data
 export const transformArray = <T>(data: any[], transformer: (item: any) => T): T[] => {
   if (!data || !Array.isArray(data)) return [] as T[];
   return data.map(item => transformer(item));
 };
 
-// Function to prepare data for sending to Supabase (convert to snake_case)
-export const prepareForSupabase = (data: Record<string, any>): Record<string, any> => {
-  const result = convertToSnakeCase(data);
-  
-  // Handle specific date properties that need to be converted to ISO strings
-  if (data.createdAt instanceof Date) {
-    result.created_at = data.createdAt.toISOString();
-  }
-  
-  if (data.updatedAt instanceof Date) {
-    result.updated_at = data.updatedAt.toISOString();
-  }
-  
-  if (data.date instanceof Date) {
-    result.date = data.date.toISOString();
-  }
-  
-  if (data.dueDate instanceof Date) {
-    result.due_date = data.dueDate.toISOString();
-  }
-  
-  return result;
+// Export remaining transformers for other entities
+export {
+  transformSalesRepData,
+  transformProductData,
+  transformOrderData,
+  transformVehicleData
 };

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { DialogFooter } from '@/components/ui/dialog';
-import { Customer, CustomerFormValues } from '@/types';
+import { Customer, CustomerFormValues } from '@/types/customer';
 import CustomerFormFields from './CustomerFormFields';
 
 interface NewCustomerFormProps {
@@ -23,12 +23,12 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       address: '',
       city: '',
       state: '',
+      zip: '',
       zipCode: '',
       notes: '',
       visitDays: [] as string[],
       visitFrequency: 'weekly',
       email: '',
-      zip: '',
       createdAt: new Date(),
       updatedAt: new Date(),
       visitSequence: 1
@@ -36,11 +36,20 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
   });
 
   const handleSubmit = (data: CustomerFormValues) => {
-    onSubmit({
-      ...data,
-      // Ensure zip is set from zipCode for backward compatibility
-      zip: data.zipCode
-    });
+    // Ensure zip and zipCode are consistent
+    data.zipCode = data.zip;
+    
+    // Ensure code is a number
+    if (typeof data.code === 'string') {
+      data.code = parseInt(data.code, 10);
+    }
+    
+    // Ensure visitDays is an array
+    if (!Array.isArray(data.visitDays)) {
+      data.visitDays = data.visitDays ? [data.visitDays as unknown as string] : [];
+    }
+    
+    onSubmit(data);
   };
 
   return (

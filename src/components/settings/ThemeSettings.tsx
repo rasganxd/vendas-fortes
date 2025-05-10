@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/hooks/useAppContext";
-import { Palette, SwatchBook, RefreshCcw, Bell } from "lucide-react";
+import { Palette, SwatchBook, RefreshCcw } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { AppSettings } from '@/types';
 import { useAppSettings } from '@/hooks/useAppSettings';
@@ -17,7 +17,7 @@ const defaultThemes = [
 ];
 
 export default function ThemeSettings() {
-  // Direct usage of useAppSettings hook for more control
+  // Use the optimized useAppSettings hook
   const { settings, updateSettings, applyThemeColors } = useAppSettings();
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [customColors, setCustomColors] = useState({
@@ -29,7 +29,7 @@ export default function ThemeSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const colorsInitialized = useRef(false);
   
-  // Update local state when settings change
+  // Update local state when settings change, reduced to essential code
   useEffect(() => {
     if (settings?.theme && !colorsInitialized.current) {
       setCustomColors({
@@ -38,7 +38,7 @@ export default function ThemeSettings() {
         accentColor: settings.theme.accentColor || '#0694A2',
       });
       
-      // Try to find if current colors match any predefined theme
+      // Find if current colors match any predefined theme
       const matchingTheme = defaultThemes.find(theme => 
         theme.primaryColor === settings.theme?.primaryColor &&
         theme.secondaryColor === settings.theme?.secondaryColor &&
@@ -55,42 +55,22 @@ export default function ThemeSettings() {
     }
   }, [settings]);
   
-  // Force reapply theme colors when component mounts
-  useEffect(() => {
-    if (settings?.theme) {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        applyThemeColors(settings.theme);
-        
-        // Manually update the sidebar header with the exact color
-        const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-        if (sidebarHeader && settings.theme?.primaryColor) {
-          sidebarHeader.style.background = settings.theme.primaryColor;
-          sidebarHeader.style.color = '#ffffff';
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [settings, applyThemeColors]);
-  
   const handleColorChange = (type: 'primaryColor' | 'secondaryColor' | 'accentColor', color: string) => {
     setCustomColors(prev => ({ ...prev, [type]: color }));
     setSelectedTheme(null); // Deselect theme when there's a custom color change
   };
   
   const applyTheme = async (primary: string, secondary: string, accent: string) => {
-    console.log('Applying theme with colors:', primary, secondary, accent);
     setIsSaving(true);
     try {
-      // First apply colors immediately to UI for responsive feedback
+      // Apply theme using our optimized function
       applyThemeColors({
         primaryColor: primary,
         secondaryColor: secondary,
         accentColor: accent
       });
       
-      // Then save to database
+      // Save to database
       await updateSettings({
         theme: {
           primaryColor: primary,
@@ -98,16 +78,6 @@ export default function ThemeSettings() {
           accentColor: accent
         }
       });
-      
-      // Force a redraw of the sidebar header with a delay to ensure the DOM is updated
-      setTimeout(() => {
-        const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-        if (sidebarHeader) {
-          // Use exact color without transparency
-          sidebarHeader.style.background = primary;
-          sidebarHeader.style.color = '#ffffff';
-        }
-      }, 50);
       
       toast({
         title: "Tema atualizado",
@@ -146,18 +116,8 @@ export default function ThemeSettings() {
   
   const handleForceRefresh = () => {
     if (settings?.theme) {
-      // Dispara uma aplicação completa do tema
+      // Reapply the current theme
       applyThemeColors(settings.theme);
-      
-      // Force a redraw of the sidebar header with a small delay
-      setTimeout(() => {
-        const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-        if (sidebarHeader) {
-          // Use exact color without transparency
-          sidebarHeader.style.background = settings.theme.primaryColor;
-          sidebarHeader.style.color = '#ffffff';
-        }
-      }, 50);
       
       toast({
         title: "Cores reaplicadas",

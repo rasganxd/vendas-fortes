@@ -30,9 +30,9 @@ import { CustomScrollArea } from "@/components/ui/custom-scroll-area";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
 import { useAppContext } from "@/hooks/useAppContext";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { applyThemeColors } from "@/utils/theme-utils";
+import { useEffect } from "react";
 
+// Define navigation items
 const navigation: NavItem[] = [
   {
     title: "Dashboard",
@@ -118,77 +118,22 @@ export default function SideNav() {
   const location = useLocation();
   const { theme } = useTheme();
   const { settings } = useAppContext();
-  const [themeColors, setThemeColors] = useState({
-    primary: settings?.theme?.primaryColor || 'hsl(var(--primary))',
-    accent: settings?.theme?.accentColor || 'hsl(var(--accent))'
-  });
   
-  // Use a ref to track if sidebar colors need to be reapplied
-  const needsColorUpdate = useRef(true);
-  
-  // Improved function to apply header styles directly
-  const applyHeaderStyles = useCallback(() => {
-    if (!settings?.theme?.primaryColor) return;
-    
-    console.log("Applying sidebar header color:", settings.theme.primaryColor);
-    setTimeout(() => {
-      const headerElement = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-      if (headerElement) {
-        // Use the exact color without any transparency or gradient
-        headerElement.style.background = settings.theme.primaryColor;
-        headerElement.style.color = '#ffffff';
-        console.log("Header styles applied:", settings.theme.primaryColor);
-      } else {
-        console.warn("Header element not found for color application");
-      }
-    }, 10); // Small timeout to ensure DOM is ready
-  }, [settings?.theme?.primaryColor]);
-  
-  // Initial application of theme
+  // Listen for theme changes with simplified effect
   useEffect(() => {
-    if (needsColorUpdate.current && settings?.theme) {
-      console.log("Initial application of theme colors");
-      applyThemeColors(settings.theme);
-      applyHeaderStyles();
-      needsColorUpdate.current = false;
-    }
-  }, [settings?.theme, applyHeaderStyles]);
-  
-  // Listen for theme changes with improved effect
-  useEffect(() => {
-    const handleThemeChange = (event: Event) => {
-      // Get the theme from the event if available, otherwise use settings
-      const themeEvent = event as CustomEvent;
-      const newTheme = themeEvent.detail?.theme || settings?.theme;
-      
-      console.log("Theme change detected:", newTheme);
-      
-      if (newTheme) {
-        // Update local state
-        setThemeColors({
-          primary: newTheme.primaryColor || 'hsl(var(--primary))',
-          accent: newTheme.accentColor || 'hsl(var(--accent))'
-        });
-        
-        // Apply header styles with a small delay to ensure DOM updates
-        setTimeout(applyHeaderStyles, 50);
-      }
+    const handleThemeChange = () => {
+      // The header styling will be handled by applyThemeColors in theme-utils.ts
+      // This is now a single event handler to apply styling when needed
+      console.log("Theme change detected in SideNav");
     };
 
     // Listen for custom theme change events
     document.addEventListener('app-theme-changed', handleThemeChange);
     
-    // Initial application
-    applyHeaderStyles();
-    
-    // Also listen for focus events to reapply theme (for when returning to tab)
-    window.addEventListener('focus', applyHeaderStyles);
-    
     return () => {
       document.removeEventListener('app-theme-changed', handleThemeChange);
-      window.removeEventListener('focus', applyHeaderStyles);
     };
-  }, [settings?.theme, applyHeaderStyles]);
+  }, []);
   
   // Group the navigation items by their group
   const groupedNavItems = navigation.reduce((groups, item) => {

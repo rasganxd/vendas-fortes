@@ -1,18 +1,17 @@
 
 /**
- * Utility functions for theme management
+ * Streamlined utility functions for theme management
  */
 
 // Cache key for storing theme colors in localStorage
 export const THEME_COLORS_CACHE_KEY = 'app-theme-colors';
 
 /**
- * Converts hex color to HSL string format with options to darken
+ * Converts hex color to HSL string format
  * @param hex - Hex color code (with or without #)
- * @param options - Options for conversion (darken: boolean)
  * @returns HSL color string in format "h s% l%"
  */
-export function convertHexToHSL(hex: string, options?: { darken?: boolean }): string {
+export function convertHexToHSL(hex: string): string {
   try {
     // Remove the # if present
     hex = hex.replace(/^#/, '');
@@ -59,15 +58,8 @@ export function convertHexToHSL(hex: string, options?: { darken?: boolean }): st
       if (h < 0) h += 360;
     }
     
-    // Calculate saturation and lightness percentages with higher precision
+    // Calculate saturation and lightness percentages
     s = Math.round(s * 100);
-    
-    // Reduced darkening effect - now only darkens by 20% instead of 60%
-    if (options?.darken) {
-      // Reduce lightness for a slightly darker shade of the same color
-      l = Math.max(l * 0.8, 0.15); // 20% darkening, but not too dark
-    }
-    
     const lightness = Math.round(l * 100);
     
     // Return precise HSL values
@@ -92,39 +84,16 @@ export function applyThemeColors(theme?: {
     return;
   }
   
-  console.log('Applying theme colors:', theme);
-  
   try {
     // Store in local storage for persistence
     localStorage.setItem(THEME_COLORS_CACHE_KEY, JSON.stringify(theme));
     
     // Convert hex to HSL and apply to CSS variables
     if (theme.primaryColor) {
-      // Primary color application
       const primaryHsl = convertHexToHSL(theme.primaryColor);
       document.documentElement.style.setProperty('--primary', primaryHsl);
-      
-      // Set sidebar background to a darker shade based on the primary color
-      const sidebarBackgroundHsl = convertHexToHSL(theme.primaryColor, { darken: true });
-      document.documentElement.style.setProperty('--sidebar-background', sidebarBackgroundHsl);
-      
-      // Explicitly set sidebar variables to match the theme
       document.documentElement.style.setProperty('--sidebar-primary', primaryHsl);
-      document.documentElement.style.setProperty('--sidebar-foreground', '0 0% 100%'); // White text
-      document.documentElement.style.setProperty('--sidebar-accent-foreground', '0 0% 100%'); // White text
       document.documentElement.style.setProperty('--ring', primaryHsl);
-      
-      // Apply solid color (no gradient) to sidebar header directly
-      setTimeout(() => {
-        const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-        if (sidebarHeader) {
-          // Use the exact color without transparency
-          sidebarHeader.style.background = theme.primaryColor;
-          sidebarHeader.style.color = '#ffffff';
-        } else {
-          console.warn("Sidebar header element not found");
-        }
-      }, 0);
     }
     
     if (theme.secondaryColor) {
@@ -138,20 +107,19 @@ export function applyThemeColors(theme?: {
       document.documentElement.style.setProperty('--sidebar-accent', accentHsl);
     }
     
-    // Force a repaint to ensure the changes are applied
-    const body = document.body;
-    const display = body.style.display;
-    body.style.display = 'none';
-    void body.offsetHeight; // This triggers a reflow
-    body.style.display = display || '';
+    // Apply sidebar styling efficiently
+    if (theme.primaryColor) {
+      const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+      if (sidebarHeader) {
+        sidebarHeader.style.background = theme.primaryColor;
+        sidebarHeader.style.color = '#ffffff';
+      }
+    }
     
-    // Dispatch a custom event that sidebar components can listen to
-    const themeChangeEvent = new CustomEvent('app-theme-changed', {
-      detail: { theme, exactColors: true }
-    });
-    document.dispatchEvent(themeChangeEvent);
-    
-    console.log('Theme colors applied successfully');
+    // Dispatch a single event for theme changes
+    document.dispatchEvent(new CustomEvent('app-theme-changed', {
+      detail: { theme }
+    }));
   } catch (err) {
     console.error('Error applying theme colors:', err);
   }
@@ -165,7 +133,6 @@ export function loadCachedTheme(): void {
     const cachedTheme = localStorage.getItem(THEME_COLORS_CACHE_KEY);
     if (cachedTheme) {
       const parsedTheme = JSON.parse(cachedTheme);
-      console.log('Loaded cached theme colors:', parsedTheme);
       applyThemeColors(parsedTheme);
     }
   } catch (err) {
