@@ -108,7 +108,17 @@ export function applyThemeColors(theme?: {
       
       // Explicitly set sidebar variables to match the theme
       document.documentElement.style.setProperty('--sidebar-primary', primaryHsl);
+      document.documentElement.style.setProperty('--sidebar-foreground', '0 0% 100%'); // White text
+      document.documentElement.style.setProperty('--sidebar-accent-foreground', '0 0% 100%'); // White text
       document.documentElement.style.setProperty('--ring', primaryHsl);
+      
+      // Apply direct CSS for sidebar header (which sometimes doesn't pick up CSS variables)
+      const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+      if (sidebarHeader) {
+        const gradientStyle = `linear-gradient(to right, ${theme.primaryColor}, ${theme.primaryColor}cc)`;
+        sidebarHeader.style.background = gradientStyle;
+        sidebarHeader.style.color = '#ffffff';
+      }
     }
     
     if (theme.secondaryColor) {

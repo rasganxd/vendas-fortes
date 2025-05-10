@@ -31,7 +31,8 @@ import { CustomScrollArea } from "@/components/ui/custom-scroll-area";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
 import { useAppContext } from "@/hooks/useAppContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { applyThemeColors } from "@/utils/theme-utils";
 
 const navigation: NavItem[] = [
   {
@@ -123,35 +124,52 @@ export default function SideNav() {
     accent: settings?.theme?.accentColor || 'hsl(var(--accent))'
   });
   
-  // Listen for theme changes
+  // Improved function to apply header styles directly
+  const applyHeaderStyles = useCallback(() => {
+    if (!settings?.theme) return;
+    
+    const headerElement = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+    if (headerElement) {
+      // Apply gradient background using the theme's primary color
+      const primaryColor = settings.theme.primaryColor;
+      const gradientStyle = `linear-gradient(to right, ${primaryColor}, ${primaryColor}cc)`;
+      headerElement.style.background = gradientStyle;
+      headerElement.style.color = '#ffffff';
+    }
+  }, [settings?.theme]);
+  
+  // Listen for theme changes with improved effect
   useEffect(() => {
     const handleThemeChange = () => {
+      // Update local state
       setThemeColors({
         primary: settings?.theme?.primaryColor || 'hsl(var(--primary))',
         accent: settings?.theme?.accentColor || 'hsl(var(--accent))'
       });
       
-      // Force reapplication of CSS variables
-      const headerElement = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-      if (headerElement) {
-        headerElement.classList.remove('dynamic-sidebar-header');
-        void headerElement.offsetWidth; // Now TypeScript knows offsetWidth exists
-        headerElement.classList.add('dynamic-sidebar-header');
+      // Apply header styles
+      applyHeaderStyles();
+      
+      // Force reapplication of all theme colors to ensure sidebar updates
+      if (settings?.theme) {
+        applyThemeColors(settings.theme);
       }
     };
 
-    // Update colors when settings change
-    if (settings?.theme) {
-      handleThemeChange();
-    }
+    // Initial application
+    handleThemeChange();
     
     // Listen for custom theme change events
     document.addEventListener('app-theme-changed', handleThemeChange);
     
+    // Also listen for focus events to reapply theme (for when returning to tab)
+    window.addEventListener('focus', handleThemeChange);
+    
     return () => {
       document.removeEventListener('app-theme-changed', handleThemeChange);
+      window.removeEventListener('focus', handleThemeChange);
     };
-  }, [settings?.theme]);
+  }, [settings?.theme, applyHeaderStyles]);
   
   // Group the navigation items by their group
   const groupedNavItems = navigation.reduce((groups, item) => {

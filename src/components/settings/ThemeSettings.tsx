@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,6 +93,13 @@ export default function ThemeSettings() {
         }
       });
       
+      // Force a redraw of the sidebar header
+      const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+      if (sidebarHeader) {
+        const gradientStyle = `linear-gradient(to right, ${primary}, ${primary}cc)`;
+        sidebarHeader.style.background = gradientStyle;
+      }
+      
       toast({
         title: "Tema atualizado",
         description: "As cores do sistema foram atualizadas com sucesso."
@@ -130,6 +138,15 @@ export default function ThemeSettings() {
   const handleForceRefresh = () => {
     if (settings?.theme) {
       applyThemeColors(settings.theme);
+      
+      // Force a redraw of the sidebar header
+      const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+      if (sidebarHeader) {
+        const primaryColor = settings.theme.primaryColor;
+        const gradientStyle = `linear-gradient(to right, ${primaryColor}, ${primaryColor}cc)`;
+        sidebarHeader.style.background = gradientStyle;
+      }
+      
       toast({
         title: "Cores reaplicadas",
         description: "As cores do tema foram reaplicadas com sucesso."
