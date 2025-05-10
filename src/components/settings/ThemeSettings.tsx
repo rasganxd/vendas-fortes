@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/hooks/useAppContext";
-import { Palette, SwatchBook, RefreshCcw } from "lucide-react";
+import { Palette, SwatchBook, RefreshCcw, Bell } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { AppSettings } from '@/types';
 import { useAppSettings } from '@/hooks/useAppSettings';

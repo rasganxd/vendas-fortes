@@ -1,3 +1,4 @@
+
 // Utilities for converting data between Supabase format (snake_case) and app format (camelCase)
 
 // Helper function to convert snake_case strings to camelCase
@@ -76,7 +77,6 @@ export const transformCustomerData = (data: any): any => {
   };
 };
 
-// Other transformers like product, salesRep, etc.
 // SalesRep transformer
 export const transformSalesRepData = (data: any): any => {
   if (!data) return null;
@@ -232,10 +232,4 @@ export const transformArray = <T>(data: any[], transformer: (item: any) => T): T
   return data.map(item => transformer(item));
 };
 
-// Export remaining transformers for other entities
-export {
-  transformSalesRepData,
-  transformProductData,
-  transformOrderData,
-  transformVehicleData
-};
+// Note: The exported functions are now only exported once
