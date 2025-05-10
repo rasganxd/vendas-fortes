@@ -132,10 +132,10 @@ export default function SideNav() {
       });
       
       // Force reapplication of CSS variables
-      const headerElement = document.querySelector('.dynamic-sidebar-header');
+      const headerElement = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
       if (headerElement) {
         headerElement.classList.remove('dynamic-sidebar-header');
-        void headerElement.offsetWidth; // Trigger a reflow
+        void headerElement.offsetWidth; // Now TypeScript knows offsetWidth exists
         headerElement.classList.add('dynamic-sidebar-header');
       }
     };
