@@ -98,11 +98,11 @@ export function applyThemeColors(theme?: {
     
     // Convert hex to HSL and apply to CSS variables
     if (theme.primaryColor) {
+      // Primary color application
       const primaryHsl = convertHexToHSL(theme.primaryColor);
       document.documentElement.style.setProperty('--primary', primaryHsl);
       
       // Set sidebar background to a darker shade based on the primary color
-      // This creates a cohesive theme while ensuring contrast for text
       const sidebarBackgroundHsl = convertHexToHSL(theme.primaryColor, { darken: true });
       document.documentElement.style.setProperty('--sidebar-background', sidebarBackgroundHsl);
       
@@ -112,13 +112,15 @@ export function applyThemeColors(theme?: {
       document.documentElement.style.setProperty('--sidebar-accent-foreground', '0 0% 100%'); // White text
       document.documentElement.style.setProperty('--ring', primaryHsl);
       
-      // Apply direct CSS for sidebar header (which sometimes doesn't pick up CSS variables)
-      const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-      if (sidebarHeader) {
-        const gradientStyle = `linear-gradient(to right, ${theme.primaryColor}, ${theme.primaryColor}cc)`;
-        sidebarHeader.style.background = gradientStyle;
-        sidebarHeader.style.color = '#ffffff';
-      }
+      // Apply direct CSS for ALL sidebar header elements
+      setTimeout(() => {
+        const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+        if (sidebarHeader) {
+          const gradientStyle = `linear-gradient(to right, ${theme.primaryColor}, ${theme.primaryColor}cc)`;
+          sidebarHeader.style.background = gradientStyle;
+          sidebarHeader.style.color = '#ffffff';
+        }
+      }, 0);
     }
     
     if (theme.secondaryColor) {
@@ -129,8 +131,6 @@ export function applyThemeColors(theme?: {
     if (theme.accentColor) {
       const accentHsl = convertHexToHSL(theme.accentColor);
       document.documentElement.style.setProperty('--accent', accentHsl);
-      
-      // Also update sidebar accent colors
       document.documentElement.style.setProperty('--sidebar-accent', accentHsl);
     }
     

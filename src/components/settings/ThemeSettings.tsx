@@ -62,6 +62,14 @@ export default function ThemeSettings() {
       // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
         applyThemeColors(settings.theme);
+        
+        // Manually update the sidebar header
+        const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+        if (sidebarHeader && settings.theme?.primaryColor) {
+          const gradientStyle = `linear-gradient(to right, ${settings.theme.primaryColor}, ${settings.theme.primaryColor}cc)`;
+          sidebarHeader.style.background = gradientStyle;
+          sidebarHeader.style.color = '#ffffff';
+        }
       }, 100);
       
       return () => clearTimeout(timer);
@@ -93,12 +101,15 @@ export default function ThemeSettings() {
         }
       });
       
-      // Force a redraw of the sidebar header
-      const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-      if (sidebarHeader) {
-        const gradientStyle = `linear-gradient(to right, ${primary}, ${primary}cc)`;
-        sidebarHeader.style.background = gradientStyle;
-      }
+      // Force a redraw of the sidebar header with a delay to ensure the DOM is updated
+      setTimeout(() => {
+        const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+        if (sidebarHeader) {
+          const gradientStyle = `linear-gradient(to right, ${primary}, ${primary}cc)`;
+          sidebarHeader.style.background = gradientStyle;
+          sidebarHeader.style.color = '#ffffff';
+        }
+      }, 50);
       
       toast({
         title: "Tema atualizado",
@@ -137,15 +148,19 @@ export default function ThemeSettings() {
   
   const handleForceRefresh = () => {
     if (settings?.theme) {
+      // Dispara uma aplicação completa do tema
       applyThemeColors(settings.theme);
       
-      // Force a redraw of the sidebar header
-      const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-      if (sidebarHeader) {
-        const primaryColor = settings.theme.primaryColor;
-        const gradientStyle = `linear-gradient(to right, ${primaryColor}, ${primaryColor}cc)`;
-        sidebarHeader.style.background = gradientStyle;
-      }
+      // Force a redraw of the sidebar header with a small delay
+      setTimeout(() => {
+        const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+        if (sidebarHeader) {
+          const primaryColor = settings.theme.primaryColor;
+          const gradientStyle = `linear-gradient(to right, ${primaryColor}, ${primaryColor}cc)`;
+          sidebarHeader.style.background = gradientStyle;
+          sidebarHeader.style.color = '#ffffff';
+        }
+      }, 50);
       
       toast({
         title: "Cores reaplicadas",

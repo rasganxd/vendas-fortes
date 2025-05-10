@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -180,16 +179,17 @@
   
   /* Sidebar gradient that uses CSS variables and will adapt to theme changes */
   .sidebar-gradient {
-    background: linear-gradient(to right, hsl(var(--sidebar-primary)), hsl(var(--sidebar-primary)/0.8)) !important;
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary)/0.8)) !important;
     color: white !important;
+    transition: background 0.3s ease;
   }
   
   /* Dynamic sidebar header that updates with theme changes */
   .dynamic-sidebar-header {
     /* Using direct style application in JS for more reliable updates */
-    background: linear-gradient(to right, hsl(var(--sidebar-primary)), hsl(var(--sidebar-primary)/0.8));
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary)/0.8));
     color: white !important;
-    transition: background-color 0.3s ease;
+    transition: background 0.3s ease;
   }
   
   .active-menu-item {
