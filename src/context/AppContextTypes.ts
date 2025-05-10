@@ -1,3 +1,4 @@
+
 import { Customer, Product, Order, Payment, Load, SalesRep, Vehicle, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 
 export interface AppContextType {
@@ -65,16 +66,13 @@ export interface AppContextType {
   deleteCustomer: (id: string) => Promise<void>;
   generateNextCustomerCode: () => number;
   
-  // Products
-  products: Product[];
-  isLoadingProducts: boolean;
-  setProducts: (products: Product[]) => void;
+  // Product operations
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   validateProductDiscount: (productId: string, discountedPrice: number) => boolean;
   getMinimumPrice: (productId: string) => number;
-  addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>; // Nova função
+  addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>; // New function for bulk product creation
   
   // Order operations
   getOrderById: (id: string) => Order | undefined;
@@ -143,8 +141,6 @@ export interface AppContextType {
   
   // System operations
   startNewMonth: () => void;
-  clearCache: () => Promise<void>; // Added missing clearCache method
-  
-  // Added missing property for validateProductDiscount & getMinimumPrice
+  clearCache: () => Promise<void>;
   createAutomaticPaymentRecord: (order: Order) => Promise<void>;
 }

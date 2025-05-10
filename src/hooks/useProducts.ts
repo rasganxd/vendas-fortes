@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
-import { productService, createBulkProducts } from '@/services/supabase';
+import { productService } from '@/services/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { transformProductData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
+import { createBulkProducts } from '@/services/supabase/productService';
 
 export const loadProducts = async (): Promise<Product[]> => {
   try {

@@ -15,7 +15,7 @@ export const productBrandService = createStandardService('product_brands');
  * @returns Array of created product IDs
  */
 export const createBulkProducts = async (products: any[]): Promise<string[]> => {
-  const { data, error } = await createStandardService('products').supabase
+  const { data, error } = await productService.client
     .from('products')
     .insert(products)
     .select('id');

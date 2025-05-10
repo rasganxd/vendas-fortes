@@ -14,7 +14,8 @@ export {
   productService,
   productGroupService,
   productCategoryService, 
-  productBrandService 
+  productBrandService,
+  createBulkProducts
 } from './productService';
 
 // Load services
