@@ -1,5 +1,6 @@
 
 import { createStandardService } from './core';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Services for product-related operations
@@ -15,7 +16,7 @@ export const productBrandService = createStandardService('product_brands');
  * @returns Array of created product IDs
  */
 export const createBulkProducts = async (products: any[]): Promise<string[]> => {
-  const { data, error } = await productService.client
+  const { data, error } = await supabase
     .from('products')
     .insert(products)
     .select('id');
