@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
-import { productService } from '@/services/supabase';
+import { productService, createBulkProducts } from '@/services/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { transformProductData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
 
@@ -107,12 +106,81 @@ export const useProducts = () => {
     }
   };
 
+  const validateProductDiscount = (productId: string, discountedPrice: number): boolean => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return true;
+    
+    if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) return true;
+    if (product.price <= 0) return false;
+    
+    const discountPercentage = ((product.price - discountedPrice) / product.price) * 100;
+    return parseFloat(discountPercentage.toFixed(2)) <= parseFloat(product.maxDiscountPercentage.toFixed(2));
+  };
+
+  const getMinimumPrice = (productId: string): number => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return 0;
+    
+    if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) {
+      return 0;
+    }
+    
+    const minimumPrice = product.price * (1 - (product.maxDiscountPercentage / 100));
+    return parseFloat(minimumPrice.toFixed(2));
+  };
+
+  // Calculate profit margin
+  const calculateProfitMargin = (price: number, cost: number): number => {
+    if (!price || !cost || cost === 0) return 0;
+    return ((price - cost) / price) * 100;
+  };
+
+  // Calculate minimum price based on discount
+  const calculateMinimumPrice = (price: number, maxDiscount: number): number => {
+    if (!price || maxDiscount === undefined || maxDiscount === null) return 0;
+    return price * (1 - (maxDiscount / 100));
+  };
+  
+  const addBulkProducts = async (products: Omit<Product, 'id'>[]) => {
+    try {
+      // Converter produtos para formato do Supabase (snake_case)
+      const supabaseData = products.map(product => prepareForSupabase(product));
+      
+      // Adicionar em lote ao Supabase
+      const ids = await createBulkProducts(supabaseData);
+      
+      // Criar produtos completos com IDs
+      const newProducts = products.map((product, index) => ({
+        ...product,
+        id: ids[index]
+      })) as Product[];
+      
+      // Atualizar estado local
+      setProducts(prev => [...prev, ...newProducts]);
+      
+      return ids;
+    } catch (error) {
+      console.error("Error adding bulk products:", error);
+      toast({
+        title: "Erro ao adicionar produtos em lote",
+        description: "Houve um problema ao adicionar os produtos.",
+        variant: "destructive"
+      });
+      return [];
+    }
+  };
+
   return {
     products,
     addProduct,
     updateProduct,
     deleteProduct,
     isLoading,
-    setProducts
+    setProducts,
+    validateProductDiscount,
+    getMinimumPrice,
+    calculateProfitMargin,
+    calculateMinimumPrice,
+    addBulkProducts, // Adicionando nova função
   };
 };

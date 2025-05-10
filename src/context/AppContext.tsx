@@ -26,6 +26,7 @@ import { toast } from '@/components/ui/use-toast';
 import { mockProducts } from '@/data/mock/products';
 import { mockCustomers } from '@/data/mock/customers';
 import { salesRepService, orderService, customerService, productService } from '@/services/supabaseService';
+import { createBulkProducts } from '@/services/supabase/productService';
 
 export const AppContext = createContext<AppContextType>(defaultContextValues);
 
@@ -390,6 +391,65 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     startNewMonthUtil(createBackup);
   };
 
+  // Função para adicionar produtos em massa
+  const addBulkProducts = async (productsArray: Omit<Product, 'id'>[]) => {
+    try {
+      // Preparar dados para o Supabase
+      const supabaseData = productsArray.map(product => {
+        // Garantir que o produto tenha um código
+        const productCode = product.code || (products.length > 0 
+          ? Math.max(...products.map(p => p.code || 0)) + 1 
+          : 1);
+        return { ...product, code: productCode };
+      });
+      
+      let ids: string[] = [];
+      
+      // Adicionar ao Supabase
+      try {
+        ids = await createBulkProducts(supabaseData);
+        console.log("Products added to Supabase with IDs:", ids);
+      } catch (error) {
+        console.error("Failed to add products to Supabase:", error);
+        
+        // Se falhar no Supabase, gerar IDs locais
+        ids = supabaseData.map(() => `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+        setIsUsingMockData(true);
+        
+        // Armazenar dados mock atualizados no localStorage
+        const newMockProducts = supabaseData.map((product, index) => ({
+          ...product,
+          id: ids[index]
+        }));
+        const updatedMockProducts = [...mockProducts, ...newMockProducts];
+        localStorage.setItem('mockProducts', JSON.stringify(updatedMockProducts));
+      }
+      
+      // Criar produtos completos com IDs
+      const newProducts = supabaseData.map((product, index) => ({
+        ...product,
+        id: ids[index]
+      })) as Product[];
+      
+      // Atualizar estado local
+      setProducts([...products, ...newProducts]);
+      toast({
+        title: "Produtos adicionados",
+        description: `${newProducts.length} produtos foram adicionados com sucesso!`
+      });
+      
+      return ids;
+    } catch (error) {
+      console.error("Erro ao adicionar produtos em massa:", error);
+      toast({
+        title: "Erro ao adicionar produtos",
+        description: "Houve um problema ao adicionar os produtos em massa.",
+        variant: "destructive"
+      });
+      return [];
+    }
+  };
+
   // Add clearCache implementation
   const clearCache = async (): Promise<void> => {
     try {
@@ -550,7 +610,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     settings,
     updateSettings,
     startNewMonth,
-    clearCache
+    clearCache,
+    addBulkProducts
   };
 
   return (

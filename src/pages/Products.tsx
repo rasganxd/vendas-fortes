@@ -54,6 +54,7 @@ import { Product } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
+import BulkProductUpload from '@/components/products/BulkProductUpload';
 
 interface FormErrors {
   code?: string;
@@ -63,7 +64,7 @@ interface FormErrors {
 }
 
 export default function Products() {
-  const { products, addProduct, updateProduct, deleteProduct, productCategories } = useAppContext();
+  const { products, addProduct, updateProduct, deleteProduct, productCategories, productGroups, productBrands } = useAppContext();
   const [search, setSearch] = useState('');
   const [pricingSearch, setPricingSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -71,6 +72,7 @@ export default function Products() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product>({
     id: '',
     code: 0,
@@ -302,6 +304,38 @@ export default function Products() {
     return "bg-green-100 text-green-800 border-green-300";
   };
 
+  // Função para obter o próximo código de produto disponível
+  const getNextProductCode = () => {
+    if (products.length === 0) return 1;
+    return Math.max(...products.map(p => p.code)) + 1;
+  };
+
+  // Função para lidar com o cadastro em massa de produtos
+  const handleBulkProductUpload = async (productsToCreate: any[]) => {
+    try {
+      await addBulkProductsToContext(productsToCreate);
+      setIsBulkUploadOpen(false);
+    } catch (error) {
+      console.error("Error in bulk upload:", error);
+    }
+  };
+
+  // Função para adicionar produtos em massa ao contexto
+  const addBulkProductsToContext = async (products: any[]) => {
+    // Se addBulkProducts estiver disponível no contexto, usá-lo
+    if (useAppContext().addBulkProducts) {
+      return useAppContext().addBulkProducts(products);
+    }
+    
+    // Caso contrário, adicionar um por um
+    const results = [];
+    for (const product of products) {
+      const id = await addProduct(product);
+      results.push(id);
+    }
+    return results;
+  };
+
   return (
     <PageLayout title="Produtos">
       <Card>
@@ -356,105 +390,114 @@ export default function Products() {
                   </div>
                 </div>
                 
-                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleOpenAddDialog}>
-                      <Plus size={16} className="mr-2" /> Novo Produto
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Adicionar Produto</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="new-code">Código</Label>
-                        <Input
-                          id="new-code"
-                          type="number"
-                          value={formData.code}
-                          onChange={(e) => setFormData({ ...formData, code: Number(e.target.value) })}
-                        />
-                        {formErrors.code && <p className="text-red-500 text-sm">{formErrors.code}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-name">Nome</Label>
-                        <Input
-                          id="new-name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
-                        {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-description">Descrição</Label>
-                        <Input
-                          id="new-description"
-                          value={formData.description}
-                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-costPrice">Preço de Custo</Label>
-                        <Input
-                          id="new-costPrice"
-                          type="number"
-                          value={formData.costPrice}
-                          onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
-                        />
-                        {formErrors.costPrice && <p className="text-red-500 text-sm">{formErrors.costPrice}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-unit">Unidade</Label>
-                        <Input
-                          id="new-unit"
-                          value={formData.unit}
-                          onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-stock">Estoque</Label>
-                        <Input
-                          id="new-stock"
-                          type="number"
-                          value={formData.stock}
-                          onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-                        />
-                        {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
-                      </div>
-                       <div className="space-y-2">
-                        <Label htmlFor="new-minStock">Estoque Mínimo</Label>
-                        <Input
-                          id="new-minStock"
-                          type="number"
-                          value={formData.minStock}
-                          onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-category">Categoria</Label>
-                        <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {productCategories.map(category => (
-                              <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                        Cancelar
+                <div className="flex space-x-2">
+                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-sales-800 hover:bg-sales-700" onClick={handleOpenAddDialog}>
+                        <Plus size={16} className="mr-2" /> Novo Produto
                       </Button>
-                      <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleAddProduct}>
-                        Adicionar
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Adicionar Produto</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="new-code">Código</Label>
+                          <Input
+                            id="new-code"
+                            type="number"
+                            value={formData.code}
+                            onChange={(e) => setFormData({ ...formData, code: Number(e.target.value) })}
+                          />
+                          {formErrors.code && <p className="text-red-500 text-sm">{formErrors.code}</p>}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-name">Nome</Label>
+                          <Input
+                            id="new-name"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          />
+                          {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-description">Descrição</Label>
+                          <Input
+                            id="new-description"
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-costPrice">Preço de Custo</Label>
+                          <Input
+                            id="new-costPrice"
+                            type="number"
+                            value={formData.costPrice}
+                            onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
+                          />
+                          {formErrors.costPrice && <p className="text-red-500 text-sm">{formErrors.costPrice}</p>}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-unit">Unidade</Label>
+                          <Input
+                            id="new-unit"
+                            value={formData.unit}
+                            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-stock">Estoque</Label>
+                          <Input
+                            id="new-stock"
+                            type="number"
+                            value={formData.stock}
+                            onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                          />
+                          {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
+                        </div>
+                         <div className="space-y-2">
+                          <Label htmlFor="new-minStock">Estoque Mínimo</Label>
+                          <Input
+                            id="new-minStock"
+                            type="number"
+                            value={formData.minStock}
+                            onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-category">Categoria</Label>
+                          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma categoria" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {productCategories.map(category => (
+                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                          Cancelar
+                        </Button>
+                        <Button type="submit" className="bg-sales-800 hover:bg-sales-700" onClick={handleAddProduct}>
+                          Adicionar
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Button 
+                    className="bg-sales-800 hover:bg-sales-700"
+                    onClick={() => setIsBulkUploadOpen(true)}
+                  >
+                    <Plus size={16} className="mr-2" /> Cadastro em Massa
+                  </Button>
+                </div>
               </div>
 
               <div className="relative overflow-x-auto rounded-md border">
@@ -744,6 +787,17 @@ export default function Products() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Upload Dialog */}
+      <BulkProductUpload 
+        isOpen={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+        onSave={handleBulkProductUpload}
+        productCategories={productCategories}
+        productGroups={productGroups}
+        productBrands={productBrands}
+        nextProductCode={getNextProductCode()}
+      />
     </PageLayout>
   );
 }

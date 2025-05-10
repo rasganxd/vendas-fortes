@@ -65,12 +65,16 @@ export interface AppContextType {
   deleteCustomer: (id: string) => Promise<void>;
   generateNextCustomerCode: () => number;
   
-  // Product operations
+  // Products
+  products: Product[];
+  isLoadingProducts: boolean;
+  setProducts: (products: Product[]) => void;
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   validateProductDiscount: (productId: string, discountedPrice: number) => boolean;
   getMinimumPrice: (productId: string) => number;
+  addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>; // Nova função
   
   // Order operations
   getOrderById: (id: string) => Order | undefined;
