@@ -130,6 +130,14 @@ export default function SideNav() {
         primary: settings?.theme?.primaryColor || 'hsl(var(--primary))',
         accent: settings?.theme?.accentColor || 'hsl(var(--accent))'
       });
+      
+      // Force reapplication of CSS variables
+      const headerElement = document.querySelector('.dynamic-sidebar-header');
+      if (headerElement) {
+        headerElement.classList.remove('dynamic-sidebar-header');
+        void headerElement.offsetWidth; // Trigger a reflow
+        headerElement.classList.add('dynamic-sidebar-header');
+      }
     };
 
     // Update colors when settings change

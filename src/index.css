@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -36,7 +37,7 @@
     --ring: 217 91% 60%;
 
     /* Sidebar styles - these now are linked to theme variables */
-    --sidebar-background: 220 40% 12%;
+    --sidebar-background: 221 83% 18%; /* Default dark version of primary */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: 210 40% 98%;
@@ -179,7 +180,7 @@
   
   /* Sidebar gradient that uses CSS variables */
   .sidebar-gradient {
-    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary)/0.8));
+    background: linear-gradient(to right, hsl(var(--sidebar-primary)), hsl(var(--sidebar-primary)/0.8));
   }
   
   /* Dynamic sidebar header that updates with theme changes */

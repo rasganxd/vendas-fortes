@@ -1,3 +1,4 @@
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { v4 as uuidv4 } from 'uuid';
@@ -30,6 +31,7 @@ export function initializeThemeVariables(): void {
   const defaultSecondary = '186 94% 25%'; // #047481 in HSL
   const defaultAccent = '184 89% 32%'; // #0694A2 in HSL
   const salesDefault = '221 83% 53%'; // #1C64F2 in HSL - same as primary for consistency
+  const sidebarBgDefault = '221 83% 18%'; // Darker version of primary color for sidebar
 
   // Set default variables if they don't exist yet
   if (!getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()) {
@@ -44,8 +46,13 @@ export function initializeThemeVariables(): void {
     document.documentElement.style.setProperty('--accent', defaultAccent);
   }
   
-  // Important: Always update sidebar variables to match the current primary color
+  // Important: Always update sidebar variables to match the current theme
   const currentPrimary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || defaultPrimary;
+  
+  // Set sidebar background if not already set (use darkened primary color)
+  if (!getComputedStyle(document.documentElement).getPropertyValue('--sidebar-background').trim()) {
+    document.documentElement.style.setProperty('--sidebar-background', sidebarBgDefault);
+  }
   
   // Ensure sidebar variables are consistent with theme variables
   document.documentElement.style.setProperty('--sidebar-primary', currentPrimary);

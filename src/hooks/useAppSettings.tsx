@@ -30,6 +30,11 @@ export const useAppSettings = () => {
         const primaryHsl = convertHexToHSL(theme.primaryColor);
         document.documentElement.style.setProperty('--primary', primaryHsl);
         
+        // Set sidebar background to a darker shade based on the primary color
+        // This creates a cohesive theme while ensuring contrast for text
+        const sidebarBackgroundHsl = convertHexToHSL(theme.primaryColor, { darken: true });
+        document.documentElement.style.setProperty('--sidebar-background', sidebarBackgroundHsl);
+        
         // Explicitly set sidebar variables to match the theme
         document.documentElement.style.setProperty('--sidebar-primary', primaryHsl);
         document.documentElement.style.setProperty('--ring', primaryHsl);
@@ -238,7 +243,8 @@ export const useAppSettings = () => {
   };
   
   // Improved hex to HSL conversion with better handling of different hex formats
-  const convertHexToHSL = (hex: string): string => {
+  // Now with an option to darken the color for sidebar backgrounds
+  const convertHexToHSL = (hex: string, options?: { darken?: boolean }): string => {
     try {
       // Remove the # if present
       hex = hex.replace(/^#/, '');
@@ -263,7 +269,7 @@ export const useAppSettings = () => {
       const min = Math.min(r, g, b);
       let h = 0;
       let s = 0;
-      const l = (max + min) / 2;
+      let l = (max + min) / 2;
       
       if (max !== min) {
         const d = max - min;
@@ -285,6 +291,14 @@ export const useAppSettings = () => {
       }
       
       s = Math.round(s * 100);
+      
+      // Option to darken the color for sidebar background
+      if (options?.darken) {
+        // Reduce lightness for a darker shade of the same color
+        // This helps create a nice contrast for sidebar backgrounds
+        l = Math.max(l * 0.4, 0.1); // Make it darker but not too dark
+      }
+      
       const lightness = Math.round(l * 100);
       
       return `${h} ${s}% ${lightness}%`;
