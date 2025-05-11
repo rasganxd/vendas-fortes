@@ -28,13 +28,23 @@ export function useCustomerSearch({
     }
   }, [initialInputValue]);
 
+  // Filter customers by name or code
   const filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    customer.code?.toString().includes(customerSearch)
+    (customer.code !== undefined && customer.code.toString().includes(customerSearch))
   );
 
-  const findCustomerByCode = (code: string) => {
-    const foundCustomer = customers.find(c => c.code && c.code.toString() === code);
+  // Find a customer by exact code match
+  const findCustomerByCode = (codeStr: string) => {
+    // Convert input to number for comparison
+    const codeNum = parseInt(codeStr, 10);
+    
+    // Check for NaN after parseInt
+    if (isNaN(codeNum)) return false;
+    
+    // Find customer with matching code
+    const foundCustomer = customers.find(c => c.code === codeNum);
+    
     if (foundCustomer) {
       setSelectedCustomer(foundCustomer);
       setCustomerInput(`${foundCustomer.code} - ${foundCustomer.name}`);

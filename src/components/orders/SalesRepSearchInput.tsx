@@ -47,13 +47,23 @@ export default function SalesRepSearchInput({
     }
   }, [selectedSalesRep, initialInputValue]);
 
+  // Filter sales reps by name or code
   const filteredSalesReps = salesReps.filter(rep => 
     rep.name.toLowerCase().includes(salesRepSearch.toLowerCase()) ||
-    rep.code?.toString().includes(salesRepSearch)
+    (rep.code !== undefined && rep.code.toString().includes(salesRepSearch))
   );
 
-  const findSalesRepByCode = (code: string) => {
-    const foundSalesRep = salesReps.find(r => r.code && r.code.toString() === code);
+  // Find a sales rep by exact code match
+  const findSalesRepByCode = (codeStr: string) => {
+    // Convert input to number for comparison
+    const codeNum = parseInt(codeStr, 10);
+    
+    // Check for NaN after parseInt
+    if (isNaN(codeNum)) return false;
+    
+    // Find sales rep with matching code
+    const foundSalesRep = salesReps.find(r => r.code === codeNum);
+    
     if (foundSalesRep) {
       setSelectedSalesRep(foundSalesRep);
       setSalesRepInput(`${foundSalesRep.code} - ${foundSalesRep.name}`);
