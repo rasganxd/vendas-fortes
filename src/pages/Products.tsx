@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -180,6 +179,7 @@ export default function Products() {
           stock: Number(formData.stock),
           categoryId: formData.category,
           cost: Number(formData.costPrice || 0),
+          minStock: 0, // Add this field with a default of 0 since we removed it from the form
           maxDiscountPercentage: 0, // Will be set in pricing tab
           createdAt: new Date(),
           updatedAt: new Date()
@@ -204,6 +204,8 @@ export default function Products() {
           stock: Number(formData.stock),
           categoryId: formData.category,
           cost: Number(formData.costPrice || 0),
+          // Keep the existing minStock value or default to 0
+          minStock: editingProduct.minStock || 0,
           updatedAt: new Date()
         });
         setIsEditDialogOpen(false);
