@@ -2,6 +2,7 @@
 import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareForSupabase } from '@/utils/dataTransformers';
+import { Tables } from '@/integrations/supabase/types';
 
 /**
  * Services for product-related operations
@@ -10,6 +11,9 @@ export const productService = createStandardService('products');
 export const productGroupService = createStandardService('product_groups');
 export const productCategoryService = createStandardService('product_categories');
 export const productBrandService = createStandardService('product_brands');
+
+// Define the proper type for products from Supabase
+type ProductInsert = Tables<'products'>;
 
 /**
  * Create multiple products at once
@@ -32,13 +36,13 @@ export const createBulkProducts = async (products: any[]): Promise<string[]> => 
       product.price = 0;
     }
     return true;
-  }).map(product => prepareForSupabase(product));
+  }).map(product => prepareForSupabase(product) as ProductInsert);
 
   if (validProducts.length === 0) {
     throw new Error("No valid products to insert");
   }
 
-  // Fix: Use upsert with onConflict for bulk insertion
+  // Use upsert with onConflict for bulk insertion
   const { data, error } = await supabase
     .from('products')
     .upsert(validProducts)
