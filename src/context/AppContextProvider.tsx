@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { AppContextType } from './AppContextTypes';
 import { defaultContextValues } from './defaultContextValues';
@@ -54,11 +53,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   
   // Try to load data from localStorage first if available
   useEffect(() => {
+    console.log("AppProvider: Loading from localStorage");
     loadFromLocalStorage(setCustomers, setProducts);
   }, []);
   
   // Load core data on app initialization
   useEffect(() => {
+    console.log("AppProvider: Loading core data");
     loadCoreData(
       setIsLoadingCustomers,
       setCustomers,
@@ -66,6 +67,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoadingProducts,
       setProducts
     ).then(usingMock => {
+      console.log("AppProvider: Core data loaded, using mock:", usingMock);
       // If using mock data, show a notification
       if (usingMock) {
         toast({
@@ -76,6 +78,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
     });
   }, []);
+  
+  // Debug products changes
+  useEffect(() => {
+    console.log("AppProvider: Products updated, count:", products.length);
+  }, [products]);
   
   // Get data from other hooks
   const { 
@@ -252,12 +259,26 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     generateNextCustomerCode,
     
     // Product operations with bound parameters
-    addProduct: (product) => addProduct(product, products, setProducts),
-    updateProduct: (id, product) => updateProduct(id, product, products, setProducts),
-    deleteProduct: (id) => deleteProduct(id, products, setProducts),
+    addProduct: async (product) => {
+      console.log("Context: Adding product", product);
+      const id = await addProduct(product, products, setProducts);
+      console.log("Context: Product added with ID:", id);
+      return id;
+    },
+    updateProduct: (id, product) => {
+      console.log("Context: Updating product", id, product);
+      return updateProduct(id, product, products, setProducts);
+    },
+    deleteProduct: (id) => {
+      console.log("Context: Deleting product", id);
+      return deleteProduct(id, products, setProducts);
+    },
     validateProductDiscount: (productId, discountedPrice) => validateProductDiscount(productId, discountedPrice, products),
     getMinimumPrice: (productId) => getMinimumPrice(productId, products),
-    addBulkProducts: (productsArray) => addBulkProducts(productsArray, products, setProducts, setIsUsingMockData),
+    addBulkProducts: (productsArray) => {
+      console.log("Context: Adding bulk products", productsArray.length);
+      return addBulkProducts(productsArray, products, setProducts, setIsUsingMockData);
+    },
     
     getOrderById,
     addOrder,

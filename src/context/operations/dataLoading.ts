@@ -1,4 +1,3 @@
-
 import { toast } from '@/components/ui/use-toast';
 import { loadCustomers } from '@/hooks/useCustomers';
 import { loadProducts } from '@/hooks/useProducts';
@@ -50,7 +49,15 @@ export const loadCoreData = async (
     try {
       const loadedProducts = await loadProducts();
       console.log(`Loaded ${loadedProducts.length} products`);
-      setProducts(loadedProducts);
+      // Ensure we use the updater function for setting products
+      setProducts(currentProducts => {
+        // Check if we have real data and return it
+        if (loadedProducts.length > 0) {
+          return loadedProducts;
+        }
+        // Otherwise return current state
+        return currentProducts;
+      });
       
       // Check if we're using mock data
       if (loadedProducts === mockProducts) {
@@ -108,8 +115,14 @@ export const loadFromLocalStorage = (
     try {
       const parsedProducts = JSON.parse(localProducts);
       if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
-        setProducts(parsedProducts);
-        console.log("Loaded products from localStorage:", parsedProducts.length);
+        setProducts(currentProducts => {
+          // Only update from localStorage if we don't have products yet
+          if (currentProducts.length === 0) {
+            console.log("Loaded products from localStorage:", parsedProducts.length);
+            return parsedProducts;
+          }
+          return currentProducts;
+        });
       }
     } catch (error) {
       console.error("Error parsing products from localStorage:", error);

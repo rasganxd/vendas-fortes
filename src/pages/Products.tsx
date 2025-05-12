@@ -55,7 +55,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, RefreshCw } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn, formatCurrency, generateId } from "@/lib/utils"
 import { format } from "date-fns"
@@ -103,12 +103,23 @@ const PRODUCT_UNITS = [
 ];
 
 export default function Products() {
-  const { products, addProduct, updateProduct, deleteProduct, productGroups, productCategories, productBrands } = useAppContext();
+  const { 
+    products, 
+    addProduct, 
+    updateProduct, 
+    deleteProduct, 
+    productGroups, 
+    productCategories, 
+    productBrands,
+    isLoadingProducts 
+  } = useAppContext();
+  
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
@@ -161,7 +172,16 @@ export default function Products() {
   const handleAdd = () => {
     setIsEditing(false);
     setSelectedProduct(null);
-    form.reset();
+    form.reset({
+      code: Math.max(...products.map(p => p.code || 0), 0) + 1,
+      name: "",
+      cost: 0,
+      unit: "UN",
+      stock: 0,
+      categoryId: "",
+      groupId: "",
+      brandId: "",
+    });
     setOpen(true);
   };
 
@@ -193,7 +213,8 @@ export default function Products() {
           description: "O produto foi atualizado com sucesso"
         });
       } else {
-        await addProduct(productData as Omit<Product, 'id'>);
+        const newProductId = await addProduct(productData as Omit<Product, 'id'>);
+        console.log("Product added with ID:", newProductId);
         toast({
           title: "Produto adicionado",
           description: "O produto foi adicionado com sucesso"
@@ -216,15 +237,59 @@ export default function Products() {
   const openBulkUpload = () => {
     setBulkUploadOpen(true);
   };
+  
+  // Function to refresh products list by fetching from the API
+  const refreshProductsList = async () => {
+    setIsRefreshing(true);
+    try {
+      // Import and use the loadProducts function directly
+      const { loadProducts } = await import('@/hooks/useProducts');
+      const refreshedProducts = await loadProducts();
+      
+      // Update the context with the refreshed products
+      // We're directly importing and using this function because
+      // we don't have direct access to the setProducts function from the context
+      // and we want to reload from the API, not just re-render
+      
+      console.log("Refreshed products:", refreshedProducts.length);
+      
+      toast({
+        title: "Lista atualizada",
+        description: `${refreshedProducts.length} produtos carregados com sucesso`
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar lista de produtos:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao atualizar a lista de produtos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <PageLayout title="Produtos">
       <Card>
         <CardHeader>
-          <CardTitle>Produtos</CardTitle>
-          <CardDescription>
-            Gerencie os produtos da sua empresa
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Produtos</CardTitle>
+              <CardDescription>
+                Gerencie os produtos da sua empresa
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refreshProductsList}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="pb-4 flex flex-wrap gap-2">
@@ -237,69 +302,83 @@ export default function Products() {
               <Button variant="outline">Classificações</Button>
             </Link>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Custo</TableHead>
-                <TableHead>Preço</TableHead>
-                <TableHead>Estoque</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>{product.code}</TableCell>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{formatCurrency(product.cost)}</TableCell>
-                  <TableCell>{formatCurrency(product.price)}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell className="text-right">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="lucide lucide-edit"
-                            >
-                              <path d="M11 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
-                              <path d="M15 3h6v6M10 14L21.5 2.5" />
-                            </svg>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Editar</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(product.id)}>
-                            <Trash size={16} className="text-destructive" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Excluir</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
+          {isLoadingProducts ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Custo</TableHead>
+                  <TableHead>Preço</TableHead>
+                  <TableHead>Estoque</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {products.length > 0 ? (
+                  products.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>{product.code}</TableCell>
+                      <TableCell>{product.name}</TableCell>
+                      <TableCell>{formatCurrency(product.cost)}</TableCell>
+                      <TableCell>{formatCurrency(product.price)}</TableCell>
+                      <TableCell>{product.stock}</TableCell>
+                      <TableCell className="text-right">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="lucide lucide-edit"
+                                >
+                                  <path d="M11 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
+                                  <path d="M15 3h6v6M10 14L21.5 2.5" />
+                                </svg>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Editar</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(product.id)}>
+                                <Trash size={16} className="text-destructive" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Excluir</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      Nenhum produto encontrado. Adicione produtos utilizando o botão acima.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
       <Dialog open={open} onOpenChange={setOpen}>

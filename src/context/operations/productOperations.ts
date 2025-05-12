@@ -34,12 +34,18 @@ export const addProduct = async (
     
     // Adicionar ao Supabase usando o serviço
     const id = await productService.add(supabaseData);
-    const newProduct = { ...productWithCode, id };
-    
     console.log("Product added with ID:", id);
     
-    // Atualizar o estado local
-    setProducts([...products, newProduct]);
+    if (!id) {
+      throw new Error("Failed to get product ID from Supabase");
+    }
+    
+    const newProduct = { ...productWithCode, id };
+    console.log("New product with ID:", newProduct);
+    
+    // Atualizar o estado local - ensure we're using the correct setter pattern for state updates
+    setProducts(currentProducts => [...currentProducts, newProduct]);
+    
     toast({
       title: "Produto adicionado",
       description: "Produto adicionado com sucesso!"
@@ -77,11 +83,12 @@ export const updateProduct = async (
     
     // Atualizar no Supabase
     await productService.update(id, updateData);
+    console.log("Product updated in Supabase, ID:", id, "Data:", updateData);
     
-    // Atualizar o estado local
-    setProducts(products.map(p => 
-      p.id === id ? { ...p, ...updateData } : p
-    ));
+    // Atualizar o estado local usando a função de atualização correta
+    setProducts(currentProducts => 
+      currentProducts.map(p => p.id === id ? { ...p, ...updateData } : p)
+    );
     
     toast({
       title: "Produto atualizado",
@@ -205,8 +212,11 @@ export const addBulkProducts = async (
       id: ids[index]
     })) as Product[];
     
-    // Atualizar estado local
-    setProducts([...products, ...newProducts]);
+    console.log("New products to add to state:", newProducts);
+    
+    // Atualizar estado local usando a função de atualização correta
+    setProducts(currentProducts => [...currentProducts, ...newProducts]);
+    
     toast({
       title: "Produtos adicionados",
       description: `${newProducts.length} produtos foram adicionados com sucesso!`
