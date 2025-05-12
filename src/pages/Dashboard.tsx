@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -133,49 +132,6 @@ export default function Dashboard() {
                 Nenhum produto com estoque baixo
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Card className="lg:col-span-2 border border-blue-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Pedidos Recentes</CardTitle>
-            <CardDescription>Últimos pedidos registrados</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RecentOrdersTable orders={recentOrders} />
-          </CardContent>
-        </Card>
-
-        <Card className="border border-green-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Situação Financeira</CardTitle>
-            <CardDescription>Resumo dos valores</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="bg-green-100 p-3 rounded-md">
-                <div className="text-sm text-gray-600">Recebido</div>
-                <div className="text-xl font-bold text-green-700">
-                  {totalPayments.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </div>
-              </div>
-              
-              <div className="bg-amber-100 p-3 rounded-md">
-                <div className="text-sm text-gray-600">Pendente</div>
-                <div className="text-xl font-bold text-amber-700">
-                  {pendingPayments.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </div>
-              </div>
-              
-              <div className="bg-blue-100 p-3 rounded-md">
-                <div className="text-sm text-gray-600">Total</div>
-                <div className="text-xl font-bold text-blue-700">
-                  {totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

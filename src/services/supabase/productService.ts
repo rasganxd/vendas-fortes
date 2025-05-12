@@ -38,9 +38,10 @@ export const createBulkProducts = async (products: any[]): Promise<string[]> => 
     throw new Error("No valid products to insert");
   }
 
+  // Fix: Use upsert with onConflict for bulk insertion
   const { data, error } = await supabase
     .from('products')
-    .insert(validProducts)
+    .upsert(validProducts)
     .select('id');
     
   if (error) {
