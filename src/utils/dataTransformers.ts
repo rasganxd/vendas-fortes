@@ -220,22 +220,52 @@ export function prepareForSupabase(data: Record<string, any>): Record<string, an
                          processedData.code;
   }
   
-  // Preserve required fields explicitly to ensure they're not lost in the conversion
-  const requiredFields = {
-    name: processedData.name,
-    code: processedData.code
-  };
-  
-  // Convert all fields to snake_case for Supabase
-  const snakeCaseData = convertToSnakeCase(processedData);
-  
-  // Ensure required fields are present in the final data
-  if (requiredFields.name !== undefined) {
-    snakeCaseData.name = requiredFields.name;
+  // Special field mapping for products
+  // Map categoryId to category_id
+  if (processedData.categoryId !== undefined) {
+    processedData.category_id = processedData.categoryId;
+    delete processedData.categoryId;
   }
   
-  if (requiredFields.code !== undefined) {
-    snakeCaseData.code = requiredFields.code;
+  // Map groupId to group_id
+  if (processedData.groupId !== undefined) {
+    processedData.group_id = processedData.groupId;
+    delete processedData.groupId;
+  }
+  
+  // Map brandId to brand_id
+  if (processedData.brandId !== undefined) {
+    processedData.brand_id = processedData.brandId;
+    delete processedData.brandId;
+  }
+  
+  // Map minStock to min_stock
+  if (processedData.minStock !== undefined) {
+    processedData.min_stock = processedData.minStock;
+    delete processedData.minStock;
+  }
+  
+  // Map maxDiscountPercentage to max_discount_percentage
+  if (processedData.maxDiscountPercentage !== undefined) {
+    processedData.max_discount_percentage = processedData.maxDiscountPercentage;
+    delete processedData.maxDiscountPercentage;
+  }
+  
+  // Ensure price is set
+  if (processedData.price === undefined || processedData.price === null) {
+    processedData.price = 0;
+  }
+  
+  // Convert all remaining fields to snake_case for Supabase
+  const snakeCaseData = convertToSnakeCase(processedData);
+  
+  // Validate required fields are present
+  if (!snakeCaseData.name || snakeCaseData.name.trim() === '') {
+    throw new Error("Name is required");
+  }
+  
+  if (snakeCaseData.code === undefined || snakeCaseData.code === null) {
+    throw new Error("Code is required");
   }
   
   return snakeCaseData;

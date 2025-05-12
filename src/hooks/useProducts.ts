@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabase';
@@ -42,9 +41,34 @@ export const useProducts = () => {
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
+      // Ensure product has all required fields before inserting
+      if (!product.name || product.name.trim() === '') {
+        toast({
+          title: "Erro ao adicionar produto",
+          description: "Nome do produto é obrigatório.",
+          variant: "destructive"
+        });
+        return "";
+      }
+      
+      if (product.code === undefined || product.code === null) {
+        toast({
+          title: "Erro ao adicionar produto",
+          description: "Código do produto é obrigatório.",
+          variant: "destructive"
+        });
+        return "";
+      }
+      
+      // Ensure price is at least 0
+      if (product.price === undefined || product.price === null) {
+        product.price = 0;
+      }
+      
       // Convert product to snake_case format for Supabase
       const supabaseData = prepareForSupabase(product);
       
+      console.log("Sending product data to Supabase:", supabaseData);
       const id = await productService.add(supabaseData);
       const newProduct = { ...product, id } as Product;
       
@@ -145,20 +169,53 @@ export const useProducts = () => {
   
   const addBulkProducts = async (products: Omit<Product, 'id'>[]) => {
     try {
+      // Ensure all products have required fields
+      const validProducts = products.filter(product => {
+        if (!product.name || product.name.trim() === '') {
+          console.error("Product missing required name field:", product);
+          return false;
+        }
+        if (product.code === undefined || product.code === null) {
+          console.error("Product missing required code field:", product);
+          return false;
+        }
+        // Ensure price is at least 0
+        if (product.price === undefined || product.price === null) {
+          product.price = 0;
+        }
+        return true;
+      });
+      
+      if (validProducts.length === 0) {
+        toast({
+          title: "Erro ao adicionar produtos em lote",
+          description: "Nenhum produto válido para adicionar.",
+          variant: "destructive"
+        });
+        return [];
+      }
+      
       // Converter produtos para formato do Supabase (snake_case)
-      const supabaseData = products.map(product => prepareForSupabase(product));
+      const supabaseData = validProducts.map(product => prepareForSupabase(product));
+      
+      console.log("Sending bulk products to Supabase:", supabaseData);
       
       // Adicionar em lote ao Supabase
       const ids = await createBulkProducts(supabaseData);
       
       // Criar produtos completos com IDs
-      const newProducts = products.map((product, index) => ({
+      const newProducts = validProducts.map((product, index) => ({
         ...product,
         id: ids[index]
       })) as Product[];
       
       // Atualizar estado local
       setProducts(prev => [...prev, ...newProducts]);
+      
+      toast({
+        title: "Produtos adicionados",
+        description: `${ids.length} produtos adicionados com sucesso!`
+      });
       
       return ids;
     } catch (error) {
@@ -183,6 +240,6 @@ export const useProducts = () => {
     getMinimumPrice,
     calculateProfitMargin,
     calculateMinimumPrice,
-    addBulkProducts, // Adicionando nova função
+    addBulkProducts,
   };
 };
