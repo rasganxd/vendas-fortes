@@ -54,17 +54,13 @@ const BulkProductUpload = ({
   
   const [baseCode, setBaseCode] = useState<number>(nextProductCode);
   const [baseName, setBaseName] = useState<string>('');
-  const [baseDescription, setBaseDescription] = useState<string>('');
   const [costPrice, setCostPrice] = useState<number>(0);
   const [displayCost, setDisplayCost] = useState<string>('0,00');
-  const [salePrice, setSalePrice] = useState<number>(0);
-  const [displayPrice, setDisplayPrice] = useState<string>('0,00');
   const [stock, setStock] = useState<number>(0);
   const [unit, setUnit] = useState<string>('UN');
   const [category, setCategory] = useState<string>('');
   const [group, setGroup] = useState<string>('');
   const [brand, setBrand] = useState<string>('');
-  const [maxDiscount, setMaxDiscount] = useState<number>(0);
   const [variants, setVariants] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
@@ -86,22 +82,12 @@ const BulkProductUpload = ({
     }));
   };
 
-  // Handle sale price change
-  const handleSalePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSalePrice = formatCurrencyInput(e.target.value);
-    setSalePrice(newSalePrice);
-    setDisplayPrice(newSalePrice.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }));
-  };
-
   const handleSubmit = async () => {
     // Validação básica
-    if (!baseName || !costPrice || !salePrice) {
+    if (!baseName || !costPrice) {
       toast({
         title: "Campos incompletos",
-        description: "Preencha pelo menos o nome base, preço de custo e preço de venda.",
+        description: "Preencha pelo menos o nome base e preço de custo.",
         variant: "destructive"
       });
       return;
@@ -127,8 +113,8 @@ const BulkProductUpload = ({
         return {
           code: baseCode + index,
           name: productName,
-          description: baseDescription,
-          price: salePrice,
+          description: '',
+          price: costPrice * 1.5, // Definir preço de venda com markup padrão
           cost: costPrice,
           stock: stock,
           minStock: 0,
@@ -136,7 +122,7 @@ const BulkProductUpload = ({
           categoryId: category || undefined,
           groupId: group || undefined,
           brandId: brand || undefined,
-          maxDiscountPercentage: maxDiscount || 0,
+          maxDiscountPercentage: 0, // Valor padrão
           createdAt: new Date(),
           updatedAt: new Date()
         };
@@ -193,29 +179,12 @@ const BulkProductUpload = ({
                 placeholder="Ex: Sorvete"
               />
             </div>
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="baseDescription">Descrição Base</Label>
-              <Input
-                id="baseDescription"
-                value={baseDescription}
-                onChange={(e) => setBaseDescription(e.target.value)}
-                placeholder="Descrição comum a todos os produtos"
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="costPrice">Preço de Custo (R$)</Label>
               <Input
                 id="costPrice"
                 value={displayCost}
                 onChange={handleCostPriceChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="salePrice">Preço de Venda (R$)</Label>
-              <Input
-                id="salePrice"
-                value={displayPrice}
-                onChange={handleSalePriceChange}
               />
             </div>
             <div className="space-y-2">
@@ -242,15 +211,6 @@ const BulkProductUpload = ({
               <p className="text-xs text-muted-foreground">
                 Unidade de medida do produto (UN, KG, L, etc.)
               </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="maxDiscount">Desconto Máximo (%)</Label>
-              <Input
-                id="maxDiscount"
-                type="number"
-                value={maxDiscount}
-                onChange={(e) => setMaxDiscount(Number(e.target.value))}
-              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Categoria</Label>

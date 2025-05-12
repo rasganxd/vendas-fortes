@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -22,7 +21,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Check, X, Plus, FileSpreadsheet, Download, Search } from 'lucide-react';
 import {
@@ -72,13 +70,11 @@ const Products = () => {
   // Form state
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
   const [cost, setCost] = useState('');
+  const [displayCost, setDisplayCost] = useState('');
   const [stock, setStock] = useState('');
   const [unit, setUnit] = useState('un'); // Default to unit
   const [categoryId, setCategoryId] = useState('');
-  const [maxDiscountPercentage, setMaxDiscountPercentage] = useState('');
   
   // List filtering
   const [search, setSearch] = useState('');
@@ -97,6 +93,24 @@ const Products = () => {
       setCode('1');
     }
   }, [products]);
+
+  // Helper function to format currency input
+  const formatCurrencyInput = (value: string): number => {
+    // Remove all non-numeric characters
+    const numericValue = value.replace(/[^\d]/g, '');
+    // Convert to number and divide by 100 to get decimal value
+    return parseFloat(numericValue || '0') / 100;
+  };
+
+  // Handle cost price change
+  const handleCostPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCostPrice = formatCurrencyInput(e.target.value);
+    setCost(newCostPrice.toString());
+    setDisplayCost(newCostPrice.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }));
+  };
 
   const filterProducts = () => {
     return products.filter(product => {
@@ -125,13 +139,11 @@ const Products = () => {
       setCode('1');
     }
     setName('');
-    setDescription('');
-    setPrice('');
     setCost('');
+    setDisplayCost('');
     setStock('');
     setUnit('un');
     setCategoryId('');
-    setMaxDiscountPercentage('');
   };
 
   const handleAddProduct = async () => {
@@ -145,19 +157,20 @@ const Products = () => {
     }
 
     const currentDate = new Date();
+    const costValue = parseFloat(cost) || 0;
     
     try {
       await addProduct({
         code: parseInt(code, 10),
         name,
-        description,
-        price: parseFloat(price) || 0,
+        description: '', // Campo removido
+        price: costValue * 1.5, // Definir preço de venda com markup padrão
         unit,
         stock: parseInt(stock, 10) || 0,
         minStock: 0, // Default to 0
         categoryId,
-        cost: parseFloat(cost) || 0,
-        maxDiscountPercentage: parseFloat(maxDiscountPercentage) || 0,
+        cost: costValue,
+        maxDiscountPercentage: 0, // Campo removido, valor padrão
         createdAt: currentDate,
         updatedAt: currentDate
       });
@@ -179,17 +192,19 @@ const Products = () => {
     if (!selectedProduct) return;
     
     try {
+      const costValue = parseFloat(cost) || 0;
+      
       await updateProduct(selectedProduct.id, {
         code: parseInt(code, 10),
         name,
-        description,
-        price: parseFloat(price) || 0,
+        description: selectedProduct.description || '',
+        price: costValue * 1.5, // Atualizar preço de venda com base no custo
         unit,
         stock: parseInt(stock, 10) || 0,
         minStock: 0, // Set default value
         categoryId,
-        cost: parseFloat(cost) || 0,
-        maxDiscountPercentage: parseFloat(maxDiscountPercentage) || 0,
+        cost: costValue,
+        maxDiscountPercentage: selectedProduct.maxDiscountPercentage || 0,
         updatedAt: new Date()
       });
       
@@ -494,40 +509,15 @@ const Products = () => {
             </div>
             
             <div>
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+              <Label htmlFor="cost">Custo (R$)</Label>
+              <Input
+                id="cost"
+                value={displayCost}
+                onChange={handleCostPriceChange}
               />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price">Preço (R$)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="cost">Custo (R$)</Label>
-                <Input
-                  id="cost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="stock">Estoque</Label>
                 <Input
@@ -554,17 +544,6 @@ const Products = () => {
                     <SelectItem value="pct">Pacote (pct)</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label htmlFor="maxDiscount">Desconto Máximo (%)</Label>
-                <Input
-                  id="maxDiscount"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={maxDiscountPercentage}
-                  onChange={(e) => setMaxDiscountPercentage(e.target.value)}
-                />
               </div>
             </div>
           </div>
@@ -623,40 +602,15 @@ const Products = () => {
             </div>
             
             <div>
-              <Label htmlFor="edit-description">Descrição</Label>
-              <Textarea
-                id="edit-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+              <Label htmlFor="edit-cost">Custo (R$)</Label>
+              <Input
+                id="edit-cost"
+                value={displayCost}
+                onChange={handleCostPriceChange}
               />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-price">Preço (R$)</Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-cost">Custo (R$)</Label>
-                <Input
-                  id="edit-cost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="edit-stock">Estoque</Label>
                 <Input
@@ -683,17 +637,6 @@ const Products = () => {
                     <SelectItem value="pct">Pacote (pct)</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label htmlFor="edit-maxDiscount">Desconto Máximo (%)</Label>
-                <Input
-                  id="edit-maxDiscount"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={maxDiscountPercentage}
-                  onChange={(e) => setMaxDiscountPercentage(e.target.value)}
-                />
               </div>
             </div>
           </div>
