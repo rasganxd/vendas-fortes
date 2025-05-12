@@ -1,17 +1,40 @@
 
 import { toast } from '@/components/ui/use-toast';
 
-// Function to start a new month (archiving old data)
+/**
+ * Starts a new month process in the application
+ * Creates a backup before resetting relevant data
+ * @param createBackup Function to create a backup
+ */
 export const startNewMonth = (createBackup: (name: string, description?: string) => string) => {
-  // Create a backup first
-  const backupId = createBackup("Monthly Backup", "Backup created during month transition");
-  
-  // Archive old orders or perform other cleanup
-  // This is a placeholder - actual implementation would depend on requirements
-  console.log("Starting new month. Backup created with ID:", backupId);
-  
-  toast({
-    title: "New month started",
-    description: "A backup was created and the system is ready for a new month."
-  });
+  try {
+    const backupId = createBackup(
+      `Auto-backup before month close ${new Date().toLocaleDateString()}`,
+      'Automatic backup created before closing month'
+    );
+    
+    if (!backupId) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar backup antes de iniciar novo mês",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Here would be code to reset monthly data, finalize reports, etc.
+    // For now we just show a success message
+    
+    toast({
+      title: "Novo mês iniciado",
+      description: "O sistema foi preparado para o novo mês"
+    });
+  } catch (error) {
+    console.error("Error starting new month:", error);
+    toast({
+      title: "Erro",
+      description: "Houve um problema ao iniciar novo mês",
+      variant: "destructive"
+    });
+  }
 };
