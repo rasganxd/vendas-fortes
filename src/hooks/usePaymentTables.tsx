@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { PaymentTable, PaymentTableInstallment, PaymentTableTerm } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,8 +15,11 @@ export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error("Error loading payment tables:", error);
       throw error;
     }
+    
+    console.log("Available payment tables:", data);
     
     // Load payment table terms for each table
     const tables = await Promise.all(data.map(async (table) => {

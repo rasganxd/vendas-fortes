@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabase';
@@ -9,6 +10,13 @@ export const loadProducts = async (): Promise<Product[]> => {
   try {
     console.log("Loading products from Supabase");
     const data = await productService.getAll();
+    console.log("Raw product data from Supabase:", data);
+    
+    if (!data || data.length === 0) {
+      console.log("No products found in Supabase");
+      return [];
+    }
+    
     const transformedProducts = transformArray(data, transformProductData) as Product[];
     console.log(`Loaded ${transformedProducts.length} products from Supabase`);
     return transformedProducts;

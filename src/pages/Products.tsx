@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -244,14 +243,18 @@ export default function Products() {
     try {
       // Import and use the loadProducts function directly
       const { loadProducts } = await import('@/hooks/useProducts');
+      console.log("Manually refreshing products...");
       const refreshedProducts = await loadProducts();
       
       // Update the context with the refreshed products
-      // We're directly importing and using this function because
-      // we don't have direct access to the setProducts function from the context
-      // and we want to reload from the API, not just re-render
-      
+      // We're directly updating the state in this component
       console.log("Refreshed products:", refreshedProducts.length);
+      
+      // If we got products back, use them directly
+      if (refreshedProducts && refreshedProducts.length > 0) {
+        // Update the app context with the new product list
+        useAppContext().setProducts(refreshedProducts);
+      }
       
       toast({
         title: "Lista atualizada",
@@ -319,7 +322,7 @@ export default function Products() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.length > 0 ? (
+                {products && products.length > 0 ? (
                   products.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell>{product.code}</TableCell>

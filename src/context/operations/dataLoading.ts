@@ -47,20 +47,17 @@ export const loadCoreData = async (
     // Start loading products
     setIsLoadingProducts(true);
     try {
+      console.log("About to load products...");
       const loadedProducts = await loadProducts();
-      console.log(`Loaded ${loadedProducts.length} products`);
-      // Ensure we use the updater function for setting products
-      setProducts(currentProducts => {
-        // Check if we have real data and return it
-        if (loadedProducts.length > 0) {
-          return loadedProducts;
-        }
-        // Otherwise return current state
-        return currentProducts;
-      });
+      console.log(`Loaded ${loadedProducts.length} products from API`);
+      
+      // Always make sure we update the state even if empty array
+      setProducts(loadedProducts);
       
       // Check if we're using mock data
-      if (loadedProducts === mockProducts) {
+      if (loadedProducts.length === 0) {
+        console.log("No products loaded from API, using mock data");
+        setProducts(mockProducts);
         setIsUsingMockData(true);
       }
     } catch (error) {
@@ -73,6 +70,7 @@ export const loadCoreData = async (
         variant: "destructive"
       });
     } finally {
+      console.log("Finished loading products, setting isLoadingProducts to false");
       setIsLoadingProducts(false);
     }
     

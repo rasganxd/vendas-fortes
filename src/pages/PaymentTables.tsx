@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import {
   Card,
@@ -78,7 +77,7 @@ const paymentTableFormSchema = z.object({
 type PaymentTableFormValues = z.infer<typeof paymentTableFormSchema>;
 
 export default function PaymentTables() {
-  const { paymentTables, isLoading, addPaymentTable, updatePaymentTable, deletePaymentTable } = useAppContext();
+  const { paymentTables, isLoadingPaymentTables, addPaymentTable, updatePaymentTable, deletePaymentTable } = useAppContext();
   const [openNewTableDialog, setOpenNewTableDialog] = useState(false);
   const [editTableId, setEditTableId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -230,7 +229,7 @@ export default function PaymentTables() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoadingPaymentTables ? (
             <div className="flex justify-center items-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <span className="ml-2">Carregando tabelas de pagamento...</span>

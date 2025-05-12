@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -47,8 +47,14 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { addPaymentTable } = usePaymentTables();
+  
+  // Add useEffect to log payment tables for debugging
+  useEffect(() => {
+    console.log("Payment tables in PaymentOptionsInput:", paymentTables);
+  }, [paymentTables]);
 
   const handlePaymentTableSelect = (tableId: string) => {
+    console.log("Selected payment table ID:", tableId);
     setSelectedPaymentTable(tableId);
     if (onSelectComplete) {
       onSelectComplete();
@@ -99,7 +105,10 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
     }
   };
 
-  const activePaymentTables = paymentTables.filter(table => table.active !== false);
+  // Filter out inactive payment tables
+  const activePaymentTables = Array.isArray(paymentTables) 
+    ? paymentTables.filter(table => table && table.active !== false)
+    : [];
 
   return (
     <Card>
@@ -126,11 +135,17 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
                 <SelectValue placeholder="Selecione uma tabela" />
               </SelectTrigger>
               <SelectContent>
-                {(Array.isArray(activePaymentTables) ? activePaymentTables : []).map((table) => (
-                  <SelectItem key={table.id} value={table.id}>
-                    {table.name}
+                {activePaymentTables.length > 0 ? (
+                  activePaymentTables.map((table) => (
+                    <SelectItem key={table.id} value={table.id}>
+                      {table.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>
+                    Nenhuma tabela disponível
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           )}
