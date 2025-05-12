@@ -18,6 +18,7 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import { PaymentTable } from '@/types';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
+import { Loader2 } from 'lucide-react';
 
 interface PaymentOptionsInputProps {
   paymentTables: PaymentTable[];
@@ -44,7 +45,7 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
   customerName,
   orderTotal,
 }) => {
-  const [isPaymentTableDialogOpen, setIsPaymentTableDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { addPaymentTable } = usePaymentTables();
 
   const handlePaymentTableSelect = (tableId: string) => {
@@ -64,23 +65,28 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
       return;
     }
 
+    setIsLoading(true);
     try {
       // Create a default payment table with empty installments array
       const newTableId = await addPaymentTable({
         name: newTableName,
         description: `Tabela de pagamento criada para ${customerName} (${customerId})`,
-        installments: [], // Adding the required installments array
+        installments: [], // Adding the required empty installments array
+        terms: [], // Adding required empty terms array
         notes: `Condições especiais para o cliente ${customerName}.`,
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
       setSelectedPaymentTable(newTableId);
-      setIsPaymentTableDialogOpen(false);
       toast({
         title: "Tabela de pagamento criada",
-        description: `Tabela "${newTableName}" criada com sucesso!`
+        description: `Tabela "${newTableName}" criada com sucesso! Agora você pode adicionar condições de pagamento na seção de Tabelas de Pagamento.`
       });
+      
+      if (onSelectComplete) {
+        onSelectComplete();
+      }
     } catch (error) {
       console.error("Erro ao adicionar tabela de pagamento:", error);
       toast({
@@ -88,8 +94,12 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
         description: "Ocorreu um erro ao criar a tabela de pagamento.",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const activePaymentTables = paymentTables.filter(table => table.active !== false);
 
   return (
     <Card>
@@ -102,21 +112,28 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
       <CardContent className="space-y-4">
         <div className="grid gap-4">
           <Label htmlFor="paymentTable">Tabela de Pagamento</Label>
-          <Select
-            onValueChange={handlePaymentTableSelect}
-            defaultValue={selectedPaymentTable}
-          >
-            <SelectTrigger id="paymentTable" ref={buttonRef}>
-              <SelectValue placeholder="Selecione uma tabela" />
-            </SelectTrigger>
-            <SelectContent>
-              {(Array.isArray(paymentTables) ? paymentTables : []).map((table) => (
-                <SelectItem key={table.id} value={table.id}>
-                  {table.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isLoading ? (
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Carregando...</span>
+            </div>
+          ) : (
+            <Select
+              onValueChange={handlePaymentTableSelect}
+              value={selectedPaymentTable}
+            >
+              <SelectTrigger id="paymentTable" ref={buttonRef}>
+                <SelectValue placeholder="Selecione uma tabela" />
+              </SelectTrigger>
+              <SelectContent>
+                {(Array.isArray(activePaymentTables) ? activePaymentTables : []).map((table) => (
+                  <SelectItem key={table.id} value={table.id}>
+                    {table.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardContent>
     </Card>
