@@ -72,14 +72,19 @@ const BulkProductUpload = ({
     return parseFloat(numericValue || '0') / 100;
   };
 
+  // Helper function to format currency display
+  const formatCurrency = (value: number): string => {
+    return value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   // Handle cost price change
   const handleCostPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newCostPrice = formatCurrencyInput(e.target.value);
     setCostPrice(newCostPrice);
-    setDisplayCost(newCostPrice.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }));
+    setDisplayCost(formatCurrency(newCostPrice));
   };
 
   const handleSubmit = async () => {

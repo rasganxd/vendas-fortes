@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import {
   Card,
@@ -45,29 +46,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer"
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn, generateId } from "@/lib/utils"
-import { format } from "date-fns"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -205,34 +191,10 @@ export default function PaymentTables() {
                             <SelectItem value="boleto">Boleto</SelectItem>
                             <SelectItem value="cartao">Cartão</SelectItem>
                             <SelectItem value="pix">PIX</SelectItem>
+                            <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                            <SelectItem value="promissoria">Nota Promissória</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="payableTo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Favorecido</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Favorecido" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="paymentLocation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Local de Pagamento</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Local de Pagamento" {...field} />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

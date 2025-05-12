@@ -107,10 +107,9 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
             defaultValue={selectedPaymentTable}
           >
             <SelectTrigger id="paymentTable" ref={buttonRef}>
-              <SelectValue placeholder="Padrão" />
+              <SelectValue placeholder="Selecione uma tabela" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="default-table">Padrão</SelectItem>
               {(Array.isArray(paymentTables) ? paymentTables : []).map((table) => (
                 <SelectItem key={table.id} value={table.id}>
                   {table.name}
