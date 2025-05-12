@@ -13,7 +13,8 @@ import {
   UserRound,
   LucideIcon,
   ChevronRight,
-  PlusCircle
+  PlusCircle,
+  Tags
 } from "lucide-react";
 
 import { 
@@ -50,6 +51,12 @@ const navigation: NavItem[] = [
     title: "Produtos",
     href: "/produtos",
     icon: Package,
+    group: "cadastro"
+  },
+  {
+    title: "Classificações",
+    href: "/produtos/classificacoes",
+    icon: Tags,
     group: "cadastro"
   },
   {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -66,8 +67,9 @@ import { Trash, Loader2 } from 'lucide-react';
 import { Product, ProductGroup, ProductCategory, ProductBrand } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
+import BulkProductUpload from '@/components/products/BulkProductUpload';
 
-// Define a schema for the product form - removing price field
+// Define a schema for the product form - removing minStock field
 const productFormSchema = z.object({
   code: z.number().min(1, {
     message: "Código deve ser maior que zero.",
@@ -78,7 +80,6 @@ const productFormSchema = z.object({
   cost: z.number(),
   unit: z.string(),
   stock: z.number().optional(),
-  minStock: z.number().optional(),
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
   brandId: z.string().optional(),
@@ -107,6 +108,7 @@ export default function Products() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
@@ -116,7 +118,6 @@ export default function Products() {
       cost: 0,
       unit: "UN",
       stock: 0,
-      minStock: 0,
       categoryId: "",
       groupId: "",
       brandId: "",
@@ -126,14 +127,13 @@ export default function Products() {
   const handleEdit = (product: Product) => {
     setIsEditing(true);
     setSelectedProduct(product);
-    // Set default values for the form - don't include price now
+    // Set default values for the form - removed minStock
     form.reset({
       code: product.code,
       name: product.name,
       cost: product.cost,
-      unit: product.unit,
+      unit: product.unit || "UN",
       stock: product.stock,
-      minStock: product.minStock,
       categoryId: product.categoryId || "",
       groupId: product.groupId || "",
       brandId: product.brandId || "",
@@ -175,11 +175,11 @@ export default function Products() {
         // Set initial price equal to cost (it will be updated in pricing page)
         price: data.cost,
         unit: data.unit,
-        categoryId: data.categoryId || undefined,
-        groupId: data.groupId || undefined,
-        brandId: data.brandId || undefined,
+        categoryId: data.categoryId && data.categoryId !== "none" ? data.categoryId : undefined,
+        groupId: data.groupId && data.groupId !== "none" ? data.groupId : undefined,
+        brandId: data.brandId && data.brandId !== "none" ? data.brandId : undefined,
         stock: data.stock || 0,
-        minStock: data.minStock || 0
+        minStock: 0 // Default value for minStock
       };
       
       if (isEditing && selectedProduct) {
@@ -209,6 +209,10 @@ export default function Products() {
     }
   };
 
+  const openBulkUpload = () => {
+    setBulkUploadOpen(true);
+  };
+
   return (
     <PageLayout title="Produtos">
       <Card>
@@ -221,8 +225,12 @@ export default function Products() {
         <CardContent>
           <div className="pb-4 flex flex-wrap gap-2">
             <Button onClick={handleAdd}>Adicionar Produto</Button>
+            <Button variant="outline" onClick={openBulkUpload}>Cadastro em Massa</Button>
             <Link to="/produtos/precificacao">
               <Button variant="outline">Precificação</Button>
+            </Link>
+            <Link to="/produtos/classificacoes">
+              <Button variant="outline">Classificações</Button>
             </Link>
           </div>
           <Table>
@@ -375,7 +383,7 @@ export default function Products() {
                   )}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <FormField
                   control={form.control}
                   name="stock"
@@ -384,20 +392,6 @@ export default function Products() {
                       <FormLabel>Estoque</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="Estoque" {...field} 
-                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="minStock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estoque Mínimo</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Estoque Mínimo" {...field} 
                           onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)} />
                       </FormControl>
                       <FormMessage />
@@ -413,7 +407,7 @@ export default function Products() {
                     <FormItem>
                       <FormLabel>Categoria</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Categoria" />
                           </SelectTrigger>
@@ -436,7 +430,7 @@ export default function Products() {
                     <FormItem>
                       <FormLabel>Grupo</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Grupo" />
                           </SelectTrigger>
@@ -459,7 +453,7 @@ export default function Products() {
                     <FormItem>
                       <FormLabel>Marca</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Marca" />
                           </SelectTrigger>
@@ -492,6 +486,8 @@ export default function Products() {
           </Form>
         </DialogContent>
       </Dialog>
+      
+      <BulkProductUpload open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
     </PageLayout>
   )
 }
