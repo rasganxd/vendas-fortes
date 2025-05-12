@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -21,6 +20,7 @@ import { toast } from '@/components/ui/use-toast';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { CustomScrollArea } from '@/components/ui/custom-scroll-area';
 import { useAppContext } from '@/hooks/useAppContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Common units for products
 const PRODUCT_UNITS = [
@@ -65,6 +65,7 @@ const BulkProductUpload = ({
   const [brand, setBrand] = useState<string>('');
   const [variants, setVariants] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [definePrice, setDefinePrice] = useState<boolean>(false);
 
   // Helper function to format currency input
   const formatCurrencyInput = (value: string): number => {
@@ -98,10 +99,10 @@ const BulkProductUpload = ({
 
   const handleSubmit = async () => {
     // Validação básica
-    if (!baseName || !costPrice || !sellingPrice) {
+    if (!baseName || !costPrice) {
       toast({
         title: "Campos incompletos",
-        description: "Preencha pelo menos o nome base, preço de custo e preço de venda.",
+        description: "Preencha pelo menos o nome base e preço de custo.",
         variant: "destructive"
       });
       return;
@@ -128,14 +129,14 @@ const BulkProductUpload = ({
           code: baseCode + index,
           name: productName,
           description: '',
-          price: sellingPrice, // Usar preço de venda definido manualmente
+          price: definePrice ? sellingPrice : costPrice, // Usar preço de venda apenas se definido manualmente
           cost: costPrice,
           stock: stock,
           minStock: 0,
           unit: unit,
-          categoryId: category || undefined,
-          groupId: group || undefined,
-          brandId: brand || undefined,
+          categoryId: category === "none" ? undefined : category,
+          groupId: group === "none" ? undefined : group,
+          brandId: brand === "none" ? undefined : brand,
           maxDiscountPercentage: 0, // Valor padrão
           createdAt: new Date(),
           updatedAt: new Date()
@@ -202,12 +203,34 @@ const BulkProductUpload = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sellingPrice">Preço de Venda (R$)</Label>
-              <Input
-                id="sellingPrice"
-                value={displayPrice}
-                onChange={handleSellingPriceChange}
-              />
+              <div className="flex items-center space-x-2 mb-2">
+                <Checkbox
+                  id="definePrice"
+                  checked={definePrice}
+                  onCheckedChange={(checked) => {
+                    setDefinePrice(checked === true);
+                  }}
+                />
+                <label
+                  htmlFor="definePrice"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Definir preço de venda agora
+                </label>
+              </div>
+              {definePrice && (
+                <Input
+                  id="sellingPrice"
+                  value={displayPrice}
+                  onChange={handleSellingPriceChange}
+                  placeholder="Preço de Venda (R$)"
+                />
+              )}
+              {!definePrice && (
+                <p className="text-xs text-muted-foreground">
+                  Defina o preço de venda mais tarde na tela de precificação
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="stock">Estoque</Label>

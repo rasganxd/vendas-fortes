@@ -1,7 +1,7 @@
 
 import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Toaster } from '@/components/ui/sonner'; // Changed from ui/toaster to ui/sonner
+import { Toaster } from '@/components/ui/sonner'; 
 import { ThemeProvider } from '@/components/theme-provider';
 import SideNav from '@/components/layout/SideNav';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -10,6 +10,7 @@ import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
 import Products from '@/pages/Products';
+import ProductPricingPage from '@/pages/ProductPricing';
 import Orders from '@/pages/Orders';
 import NewOrder from '@/pages/NewOrder';
 import Loads from '@/pages/Loads';
@@ -48,6 +49,7 @@ function App() {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/clientes" element={<Customers />} />
                   <Route path="/produtos" element={<Products />} />
+                  <Route path="/produtos/precificacao" element={<ProductPricingPage />} />
                   <Route path="/pedidos" element={<Orders />} />
                   <Route path="/pedidos/novo" element={<NewOrder />} />
                   <Route path="/cargas" element={<Loads />} />

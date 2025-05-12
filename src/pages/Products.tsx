@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -220,8 +222,11 @@ export default function Products() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="pb-4">
+          <div className="pb-4 flex flex-wrap gap-2">
             <Button onClick={handleAdd}>Adicionar Produto</Button>
+            <Link to="/produtos/precificacao">
+              <Button variant="outline">Precificação</Button>
+            </Link>
           </div>
           <Table>
             <TableHeader>
