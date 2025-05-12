@@ -2,6 +2,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 
+// Cache for product search results
+const productSearchCache = new Map<string, Product[]>();
+
 interface UseProductSearchProps {
   products: Product[];
   addItemToOrder: (product: Product, quantity: number, price: number) => void;
@@ -35,8 +38,8 @@ export function useProductSearch({
       // Check if input is a product code
       const codeMatch = searchTerm.match(/^(\d+)$/);
       if (codeMatch) {
-        const productCode = codeMatch[1];
-        const product = products.find(p => p.code?.toString() === productCode);
+        const productCode = parseInt(codeMatch[1], 10);
+        const product = products.find(p => p.code === productCode);
         
         if (product) {
           handleProductSelect(product);
@@ -52,13 +55,12 @@ export function useProductSearch({
   };
   
   const handleProductSelect = (product: Product) => {
-    console.log("Product selected:", product);
     setSelectedProduct(product);
     setSearchTerm(product.name);
     setPrice(product.price);
     setShowResults(false);
     setQuantity(1); // Set default quantity to 1 when selecting a product
-    setTimeout(() => quantityInputRef.current?.focus(), 50);
+    setTimeout(() => quantityInputRef.current?.focus(), 10);
   };
   
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +84,6 @@ export function useProductSearch({
   
   const handleAddToOrder = () => {
     if (selectedProduct && (quantity !== null && quantity > 0)) {
-      console.log("Adding to order:", selectedProduct, quantity, price);
       addItemToOrder(selectedProduct, quantity, price);
       
       // Reset all form fields completely
@@ -93,7 +94,7 @@ export function useProductSearch({
       setShowResults(false);
       
       // Focus back on the search input
-      setTimeout(() => inputRef?.current?.focus(), 50);
+      setTimeout(() => inputRef?.current?.focus(), 10);
     }
   };
   
@@ -121,14 +122,36 @@ export function useProductSearch({
     };
   }, []);
   
-  const filteredProducts = searchTerm
-    ? products.filter(product => 
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.code?.toString() === searchTerm) || 
-        (product.code?.toString()?.includes(searchTerm))
-      )
-    : [];
+  // Get filtered products with caching
+  const getFilteredProducts = () => {
+    if (!searchTerm) return [];
+    
+    // Check cache first
+    const cacheKey = searchTerm.toLowerCase();
+    if (productSearchCache.has(cacheKey)) {
+      return productSearchCache.get(cacheKey) || [];
+    }
+    
+    // Filter products
+    const filtered = products.filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.code !== undefined && product.code.toString() === searchTerm) || 
+      (product.code !== undefined && product.code.toString().includes(searchTerm))
+    );
+    
+    // Store in cache (limit cache size)
+    if (productSearchCache.size > 50) {
+      const firstKey = productSearchCache.keys().next().value;
+      productSearchCache.delete(firstKey);
+    }
+    productSearchCache.set(cacheKey, filtered);
+    
+    return filtered;
+  };
   
+  const filteredProducts = getFilteredProducts();
+  
+  // Sort products with exact code matches first
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     // Exact code matches come first
     const aExactCodeMatch = a.code?.toString() === searchTerm;

@@ -1,20 +1,52 @@
 
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
-import { customerService } from '@/services/supabase';
+import { customerService } from '@/services/supabase/customerService';
 import { toast } from '@/components/ui/use-toast';
-import { transformCustomerData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
+import { transformCustomerData, transformArray } from '@/utils/dataTransformers';
 
-export const loadCustomers = async (): Promise<Customer[]> => {
+// Cache key for localStorage
+const CUSTOMERS_CACHE_KEY = 'app_customers_cache';
+const CUSTOMERS_CACHE_TIMESTAMP_KEY = 'app_customers_cache_timestamp';
+const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Load customers with improved caching strategy
+export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> => {
   try {
-    console.log("Loading customers from Supabase");
+    // Try to get from cache if not forcing refresh
+    if (!forceRefresh) {
+      const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(CUSTOMERS_CACHE_TIMESTAMP_KEY);
+      
+      if (cachedData && cachedTimestamp) {
+        const timestamp = parseInt(cachedTimestamp, 10);
+        const now = Date.now();
+        
+        // If cache is still fresh, use it
+        if (now - timestamp < CACHE_MAX_AGE) {
+          return JSON.parse(cachedData) as Customer[];
+        }
+      }
+    }
+    
+    // If not in cache or cache is stale, fetch from API
     const data = await customerService.getAll();
     const customers = transformArray(data, transformCustomerData) as Customer[];
     
-    console.log(`Loaded ${customers.length} customers from Supabase`);
+    // Store in localStorage cache
+    localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
+    localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+    
     return customers;
   } catch (error) {
     console.error("Error loading customers:", error);
+    
+    // Try to use cached data even if expired as fallback
+    const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
+    if (cachedData) {
+      return JSON.parse(cachedData) as Customer[];
+    }
+    
     throw error;
   }
 };
@@ -31,6 +63,11 @@ export const useCustomers = () => {
         setCustomers(loadedCustomers);
       } catch (error) {
         console.error("Error loading customers:", error);
+        toast({
+          title: "Erro ao carregar clientes",
+          description: "Houve um problema ao carregar os clientes.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -52,8 +89,6 @@ export const useCustomers = () => {
   
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
-      console.log("Adding customer to Supabase:", customer);
-      
       // Ensure customer has a code
       if (!customer.code) {
         customer.code = generateNextCode();
@@ -64,28 +99,21 @@ export const useCustomers = () => {
         customer.code = parseInt(customer.code as string, 10);
       }
       
-      // Handle zip/zipCode consistency
-      if (customer.zipCode && !customer.zip) {
-        customer.zip = customer.zipCode;
-      }
-      
-      // Ensure visitDays is an array
-      if (!Array.isArray(customer.visitDays)) {
-        customer.visitDays = customer.visitDays ? [customer.visitDays] : [];
-      }
-      
-      // Clean document field (remove mask)
-      if (customer.document) {
-        customer.document = customer.document.replace(/[^\d]/g, '');
-      }
-      
-      // Transform to Supabase format (snake_case)
-      const supabaseData = prepareForSupabase(customer);
-      
-      const id = await customerService.add(supabaseData);
+      const id = await customerService.add(customer);
       const newCustomer = { ...customer, id } as Customer;
       
+      // Update local state
       setCustomers(prev => [...prev, newCustomer]);
+      
+      // Update cache
+      const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
+      if (cachedData) {
+        const cached = JSON.parse(cachedData) as Customer[];
+        cached.push(newCustomer);
+        localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(cached));
+        localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      }
+      
       toast({
         title: "Cliente adicionado",
         description: "Cliente adicionado com sucesso!"
@@ -104,33 +132,23 @@ export const useCustomers = () => {
 
   const updateCustomer = async (id: string, customer: Partial<Customer>) => {
     try {
-      console.log("Updating customer in Supabase:", id, customer);
-      
       // Apply the same data validation as in addCustomer
       if (customer.code && typeof customer.code === 'string') {
         customer.code = parseInt(customer.code as string, 10);
       }
       
-      if (customer.zipCode && !customer.zip) {
-        customer.zip = customer.zipCode;
-      }
+      await customerService.update(id, customer);
       
-      if (customer.visitDays && !Array.isArray(customer.visitDays)) {
-        customer.visitDays = customer.visitDays ? [customer.visitDays] : [];
-      }
-      
-      if (customer.document) {
-        customer.document = customer.document.replace(/[^\d]/g, '');
-      }
-      
-      // Transform to Supabase format (snake_case)
-      const supabaseData = prepareForSupabase(customer);
-      
-      await customerService.update(id, supabaseData);
-      
-      setCustomers(customers.map(c => 
+      // Update local state
+      const updatedCustomers = customers.map(c => 
         c.id === id ? { ...c, ...customer } : c
-      ));
+      );
+      setCustomers(updatedCustomers);
+      
+      // Update cache
+      localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(updatedCustomers));
+      localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
       toast({
         title: "Cliente atualizado",
         description: "Cliente atualizado com sucesso!"
@@ -147,11 +165,16 @@ export const useCustomers = () => {
 
   const deleteCustomer = async (id: string) => {
     try {
-      console.log("Deleting customer from Supabase:", id);
-      
       await customerService.delete(id);
       
-      setCustomers(customers.filter(c => c.id !== id));
+      // Update local state
+      const updatedCustomers = customers.filter(c => c.id !== id);
+      setCustomers(updatedCustomers);
+      
+      // Update cache
+      localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(updatedCustomers));
+      localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
       toast({
         title: "Cliente excluído",
         description: "Cliente excluído com sucesso!"
@@ -173,6 +196,17 @@ export const useCustomers = () => {
     deleteCustomer,
     generateNextCode,
     isLoading,
-    setCustomers
+    setCustomers,
+    refreshCustomers: async () => {
+      setIsLoading(true);
+      try {
+        const refreshedCustomers = await loadCustomers(true);
+        setCustomers(refreshedCustomers);
+      } catch (error) {
+        console.error("Error refreshing customers:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
 };

@@ -10,12 +10,20 @@ import { Customer } from '@/types';
  */
 export const customerService = createStandardService('customers');
 
+// Cache for customer lookups by code
+const customerCodeCache = new Map<number, Customer | null>();
+
 /**
  * Get customer by code
  * @param code - Customer code
  * @returns Customer or null if not found
  */
 export const getCustomerByCode = async (code: number): Promise<Customer | null> => {
+  // Check cache first
+  if (customerCodeCache.has(code)) {
+    return customerCodeCache.get(code) || null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('customers')
@@ -24,11 +32,16 @@ export const getCustomerByCode = async (code: number): Promise<Customer | null> 
       .single();
       
     if (error) {
-      console.error("Error fetching customer by code:", error);
+      if (error.code !== 'PGRST116') { // Not found error
+        console.error("Error fetching customer by code:", error);
+      }
+      customerCodeCache.set(code, null);
       return null;
     }
     
-    return transformCustomerData(data);
+    const customer = transformCustomerData(data);
+    customerCodeCache.set(code, customer);
+    return customer;
   } catch (error) {
     console.error("Error in getCustomerByCode:", error);
     return null;
@@ -57,6 +70,21 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
       customerData.code = (lastCustomer?.code || 0) + 1;
     }
     
+    // Ensure code is a number
+    if (typeof customerData.code === 'string') {
+      customerData.code = parseInt(customerData.code, 10);
+    }
+    
+    // Ensure customer has required fields
+    if (!customerData.name) {
+      throw new Error("Customer name is required");
+    }
+    
+    // Ensure visitDays is an array
+    if (!Array.isArray(customerData.visitDays)) {
+      customerData.visitDays = customerData.visitDays ? [customerData.visitDays] : [];
+    }
+    
     // Convert to snake_case and prepare for Supabase
     const supabaseData = prepareForSupabase(customerData);
     
@@ -69,6 +97,11 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
     if (error) {
       console.error("Error creating customer:", error);
       throw error;
+    }
+    
+    // Clear cache for this code
+    if (customerData.code) {
+      customerCodeCache.delete(customerData.code);
     }
     
     return data.id;

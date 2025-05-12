@@ -11,9 +11,21 @@ export const camelToSnake = (str: string): string => {
   return str.replace(/([A-Z])/g, (_, letter) => `_${letter.toLowerCase()}`);
 };
 
-// Convert a Supabase record to camelCase format
+// Cache for converted objects to avoid repeated transformations
+const transformCache = new Map<string, any>();
+const CACHE_SIZE_LIMIT = 100;
+
+// Convert a Supabase record to camelCase format with caching
 export const convertToCamelCase = (data: Record<string, any>): Record<string, any> => {
   if (!data) return {};
+  
+  // Generate a cache key based on the data
+  const cacheKey = `camel_${JSON.stringify(data)}`;
+  
+  // Check if we have a cached version
+  if (transformCache.has(cacheKey)) {
+    return transformCache.get(cacheKey);
+  }
   
   const result: Record<string, any> = {};
   
@@ -24,12 +36,28 @@ export const convertToCamelCase = (data: Record<string, any>): Record<string, an
     }
   }
   
+  // Store in cache (with size limit)
+  if (transformCache.size >= CACHE_SIZE_LIMIT) {
+    // Remove oldest entry
+    const firstKey = transformCache.keys().next().value;
+    transformCache.delete(firstKey);
+  }
+  transformCache.set(cacheKey, result);
+  
   return result;
 };
 
-// Convert a camelCase record to snake_case format for Supabase
+// Convert a camelCase record to snake_case format for Supabase with caching
 export const convertToSnakeCase = (data: Record<string, any>): Record<string, any> => {
   if (!data) return {};
+  
+  // Generate a cache key based on the data
+  const cacheKey = `snake_${JSON.stringify(data)}`;
+  
+  // Check if we have a cached version
+  if (transformCache.has(cacheKey)) {
+    return transformCache.get(cacheKey);
+  }
   
   const result: Record<string, any> = {};
   
@@ -40,6 +68,14 @@ export const convertToSnakeCase = (data: Record<string, any>): Record<string, an
     }
   }
   
+  // Store in cache (with size limit)
+  if (transformCache.size >= CACHE_SIZE_LIMIT) {
+    // Remove oldest entry
+    const firstKey = transformCache.keys().next().value;
+    transformCache.delete(firstKey);
+  }
+  transformCache.set(cacheKey, result);
+  
   return result;
 };
 
@@ -49,7 +85,7 @@ export const convertStringToDate = (dateString: string | null | undefined): Date
   return new Date(dateString);
 };
 
-// Customer transformer with consistent zip/zipCode handling
+// Customer transformer with consistent zip/zipCode handling and reduced transformations
 export const transformCustomerData = (data: any): any => {
   if (!data) return null;
   
@@ -57,27 +93,26 @@ export const transformCustomerData = (data: any): any => {
   
   return {
     id: camelCaseData.id || "",
-    code: typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : camelCaseData.code || 0,
+    code: typeof camelCaseData.code === 'number' ? camelCaseData.code : 
+          typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : 0,
     name: camelCaseData.name || "",
     phone: camelCaseData.phone || "",
     email: camelCaseData.email || "",
     address: camelCaseData.address || "",
     city: camelCaseData.city || "",
     state: camelCaseData.state || "",
-    // Use zip only (zipCode is now just an alias for backward compatibility)
     zip: camelCaseData.zip || "",
     document: camelCaseData.document || "",
     notes: camelCaseData.notes || "",
-    // Ensure visitDays is always an array
     visitDays: Array.isArray(camelCaseData.visitDays) ? camelCaseData.visitDays : [],
     visitFrequency: camelCaseData.visitFrequency || "",
     visitSequence: camelCaseData.visitSequence || 0,
-    createdAt: convertStringToDate(data.created_at),
-    updatedAt: convertStringToDate(data.updated_at)
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
   };
 };
 
-// SalesRep transformer
+// SalesRep transformer with optimized transformation
 export const transformSalesRepData = (data: any): any => {
   if (!data) return null;
 
@@ -85,7 +120,8 @@ export const transformSalesRepData = (data: any): any => {
   
   return {
     id: camelCaseData.id || "",
-    code: camelCaseData.code || 0,
+    code: typeof camelCaseData.code === 'number' ? camelCaseData.code : 
+          typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : 0,
     name: camelCaseData.name || "",
     phone: camelCaseData.phone || "",
     email: camelCaseData.email || "",
@@ -98,12 +134,12 @@ export const transformSalesRepData = (data: any): any => {
     role: camelCaseData.role || "",
     active: camelCaseData.active !== undefined ? camelCaseData.active : true,
     notes: camelCaseData.notes || "",
-    createdAt: convertStringToDate(data.created_at),
-    updatedAt: convertStringToDate(data.updated_at)
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
   };
 };
 
-// Product transformer
+// Product transformer with optimized transformation
 export const transformProductData = (data: any): any => {
   if (!data) return null;
   
@@ -111,7 +147,8 @@ export const transformProductData = (data: any): any => {
   
   return {
     id: camelCaseData.id || "",
-    code: camelCaseData.code || 0,
+    code: typeof camelCaseData.code === 'number' ? camelCaseData.code : 
+          typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : 0,
     name: camelCaseData.name || "",
     description: camelCaseData.description || "",
     price: camelCaseData.price || 0,
@@ -123,12 +160,12 @@ export const transformProductData = (data: any): any => {
     categoryId: camelCaseData.categoryId,
     brandId: camelCaseData.brandId,
     unit: camelCaseData.unit || "",
-    createdAt: convertStringToDate(data.created_at),
-    updatedAt: convertStringToDate(data.updated_at)
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
   };
 };
 
-// Order transformer
+// Order transformer with optimized transformation
 export const transformOrderData = (data: any): any => {
   if (!data) return null;
   
@@ -136,13 +173,14 @@ export const transformOrderData = (data: any): any => {
   
   return {
     id: camelCaseData.id || "",
-    code: camelCaseData.code || 0,
+    code: typeof camelCaseData.code === 'number' ? camelCaseData.code : 
+          typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : 0,
     customerId: camelCaseData.customerId || "",
     customerName: camelCaseData.customerName || "",
     salesRepId: camelCaseData.salesRepId || "",
     salesRepName: camelCaseData.salesRepName || "",
-    date: convertStringToDate(data.date),
-    dueDate: convertStringToDate(data.due_date),
+    date: data.date ? new Date(data.date) : new Date(),
+    dueDate: data.due_date ? new Date(data.due_date) : new Date(),
     items: camelCaseData.items || [],
     total: camelCaseData.total || 0,
     discount: camelCaseData.discount || 0,
@@ -158,30 +196,8 @@ export const transformOrderData = (data: any): any => {
     deliveryAddress: camelCaseData.deliveryAddress || "",
     deliveryCity: camelCaseData.deliveryCity || "",
     deliveryState: camelCaseData.deliveryState || "",
-    createdAt: convertStringToDate(data.created_at),
-    updatedAt: convertStringToDate(data.updated_at)
-  };
-};
-
-// Vehicle transformer
-export const transformVehicleData = (data: any): any => {
-  if (!data) return null;
-  
-  const camelCaseData = convertToCamelCase(data);
-  
-  return {
-    id: camelCaseData.id || "",
-    name: camelCaseData.name || "",
-    type: camelCaseData.type || "car",
-    licensePlate: camelCaseData.licensePlate || "",
-    model: camelCaseData.model || "",
-    capacity: camelCaseData.capacity || 0,
-    active: camelCaseData.active !== undefined ? camelCaseData.active : true,
-    status: camelCaseData.status || "",
-    notes: camelCaseData.notes || "",
-    driverName: camelCaseData.driverName || "",
-    createdAt: convertStringToDate(data.created_at),
-    updatedAt: convertStringToDate(data.updated_at)
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
   };
 };
 
@@ -197,29 +213,11 @@ export function prepareForSupabase(data: Record<string, any>): Record<string, an
     delete processedData.zipCode;
   }
   
-  // Handle date fields to ensure they are properly formatted as ISO strings
-  if (processedData.createdAt instanceof Date) {
-    processedData.created_at = processedData.createdAt.toISOString();
-    delete processedData.createdAt;
-  }
-  
-  if (processedData.updatedAt instanceof Date) {
-    processedData.updated_at = processedData.updatedAt.toISOString();
-    delete processedData.updatedAt;
-  }
-  
-  if (processedData.date instanceof Date) {
-    processedData.date = processedData.date.toISOString();
-  }
-  
-  if (processedData.dueDate instanceof Date) {
-    processedData.due_date = processedData.dueDate.toISOString();
-    delete processedData.dueDate;
-  }
-  
   // Ensure code is always a number
-  if (processedData.code !== undefined && typeof processedData.code !== 'number') {
-    processedData.code = parseInt(processedData.code, 10);
+  if (processedData.code !== undefined) {
+    processedData.code = typeof processedData.code === 'string' ? 
+                         parseInt(processedData.code, 10) : 
+                         processedData.code;
   }
   
   // Convert all other fields to snake_case for Supabase
@@ -231,5 +229,3 @@ export const transformArray = <T>(data: any[], transformer: (item: any) => T): T
   if (!data || !Array.isArray(data)) return [] as T[];
   return data.map(item => transformer(item));
 };
-
-// Note: The exported functions are now only exported once

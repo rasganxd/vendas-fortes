@@ -1,6 +1,7 @@
 
 import { useState, KeyboardEvent, useEffect } from 'react';
 import { Customer } from '@/types';
+import { getCustomerByCode } from '@/services/supabase/customerService';
 
 interface UseCustomerSearchProps {
   customers: Customer[];
@@ -9,6 +10,9 @@ interface UseCustomerSearchProps {
   initialInputValue?: string;
   onEnterPress?: () => void;
 }
+
+// Cache for customer search results
+const customerSearchCache = new Map<string, Customer[]>();
 
 export function useCustomerSearch({
   customers,
@@ -28,27 +32,61 @@ export function useCustomerSearch({
     }
   }, [initialInputValue]);
 
-  // Filter customers by name or code
-  const filteredCustomers = customers.filter(customer => 
-    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    (customer.code !== undefined && customer.code.toString().includes(customerSearch))
-  );
+  // Enhanced customer filtering with caching
+  const getFilteredCustomers = () => {
+    if (!customerSearch) return customers;
+    
+    // Check cache first
+    const cacheKey = customerSearch.toLowerCase();
+    if (customerSearchCache.has(cacheKey)) {
+      return customerSearchCache.get(cacheKey) || [];
+    }
+    
+    // Filter customers by name or code
+    const filtered = customers.filter(customer => 
+      customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+      (customer.code !== undefined && customer.code.toString().includes(customerSearch))
+    );
+    
+    // Store in cache (limit cache size)
+    if (customerSearchCache.size > 50) {
+      const firstKey = customerSearchCache.keys().next().value;
+      customerSearchCache.delete(firstKey);
+    }
+    customerSearchCache.set(cacheKey, filtered);
+    
+    return filtered;
+  };
 
-  // Find a customer by exact code match
-  const findCustomerByCode = (codeStr: string) => {
+  const filteredCustomers = getFilteredCustomers();
+
+  // Find a customer by exact code match with optimized logic
+  const findCustomerByCode = async (codeStr: string) => {
     // Convert input to number for comparison
     const codeNum = parseInt(codeStr, 10);
     
     // Check for NaN after parseInt
     if (isNaN(codeNum)) return false;
     
-    // Find customer with matching code
+    // First check local customer list
     const foundCustomer = customers.find(c => c.code === codeNum);
     
     if (foundCustomer) {
       setSelectedCustomer(foundCustomer);
       setCustomerInput(`${foundCustomer.code} - ${foundCustomer.name}`);
       return true;
+    } else {
+      // If not found locally, try fetching from API
+      try {
+        const apiCustomer = await getCustomerByCode(codeNum);
+        if (apiCustomer) {
+          setSelectedCustomer(apiCustomer);
+          setCustomerInput(`${apiCustomer.code} - ${apiCustomer.name}`);
+          return true;
+        }
+      } catch (error) {
+        // Handle silently, will return false below
+      }
     }
     return false;
   };
@@ -73,14 +111,15 @@ export function useCustomerSearch({
       // If we have a valid number but haven't selected a customer yet, try to find one
       const codeMatch = customerInput.match(/^(\d+)$/);
       if (codeMatch && !selectedCustomer) {
-        const found = findCustomerByCode(codeMatch[1]);
-        if (found) {
-          // Give it a moment to set the state before moving to the next field
-          setTimeout(() => {
+        findCustomerByCode(codeMatch[1]).then(found => {
+          if (found && onEnterPress) {
+            // Move to next field if customer found
             onEnterPress();
-          }, 50);
-          return;
-        }
+          } else if (!found) {
+            setIsCustomerSearchOpen(true);
+          }
+        });
+        return;
       }
       
       if (selectedCustomer) {
@@ -99,7 +138,7 @@ export function useCustomerSearch({
     
     // Navigate to next field on selection
     if (onEnterPress) {
-      setTimeout(onEnterPress, 50);
+      onEnterPress();
     }
   };
 

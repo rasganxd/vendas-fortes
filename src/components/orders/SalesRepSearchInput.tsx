@@ -14,6 +14,7 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command";
+import { getSalesRepByCode } from '@/services/supabase/salesRepService';
 
 interface SalesRepSearchInputProps {
   salesReps: SalesRep[];
@@ -24,6 +25,9 @@ interface SalesRepSearchInputProps {
   compact?: boolean;
   initialInputValue?: string;
 }
+
+// Cache for filtered sales reps results
+const filteredSalesRepsCache = new Map<string, SalesRep[]>();
 
 export default function SalesRepSearchInput({
   salesReps,
@@ -47,27 +51,61 @@ export default function SalesRepSearchInput({
     }
   }, [selectedSalesRep, initialInputValue]);
 
-  // Filter sales reps by name or code
-  const filteredSalesReps = salesReps.filter(rep => 
-    rep.name.toLowerCase().includes(salesRepSearch.toLowerCase()) ||
-    (rep.code !== undefined && rep.code.toString().includes(salesRepSearch))
-  );
+  // Optimized sales rep filtering with caching
+  const getFilteredSalesReps = () => {
+    if (!salesRepSearch) return salesReps;
+    
+    // Check cache first
+    const cacheKey = salesRepSearch.toLowerCase();
+    if (filteredSalesRepsCache.has(cacheKey)) {
+      return filteredSalesRepsCache.get(cacheKey) || [];
+    }
+    
+    // Filter sales reps by name or code
+    const filtered = salesReps.filter(rep => 
+      rep.name.toLowerCase().includes(salesRepSearch.toLowerCase()) ||
+      (rep.code !== undefined && rep.code.toString().includes(salesRepSearch))
+    );
+    
+    // Store in cache (limit cache size)
+    if (filteredSalesRepsCache.size > 50) {
+      const firstKey = filteredSalesRepsCache.keys().next().value;
+      filteredSalesRepsCache.delete(firstKey);
+    }
+    filteredSalesRepsCache.set(cacheKey, filtered);
+    
+    return filtered;
+  };
 
-  // Find a sales rep by exact code match
-  const findSalesRepByCode = (codeStr: string) => {
+  const filteredSalesReps = getFilteredSalesReps();
+
+  // Find a sales rep by exact code match with optimized logic
+  const findSalesRepByCode = async (codeStr: string) => {
     // Convert input to number for comparison
     const codeNum = parseInt(codeStr, 10);
     
     // Check for NaN after parseInt
     if (isNaN(codeNum)) return false;
     
-    // Find sales rep with matching code
+    // First check local list
     const foundSalesRep = salesReps.find(r => r.code === codeNum);
     
     if (foundSalesRep) {
       setSelectedSalesRep(foundSalesRep);
       setSalesRepInput(`${foundSalesRep.code} - ${foundSalesRep.name}`);
       return true;
+    } else {
+      // If not found locally, try fetching from API
+      try {
+        const apiSalesRep = await getSalesRepByCode(codeNum);
+        if (apiSalesRep) {
+          setSelectedSalesRep(apiSalesRep);
+          setSalesRepInput(`${apiSalesRep.code} - ${apiSalesRep.name}`);
+          return true;
+        }
+      } catch (error) {
+        // Handle silently, will return false below
+      }
     }
     return false;
   };
@@ -92,14 +130,15 @@ export default function SalesRepSearchInput({
       // If we have a valid number but haven't selected a sales rep yet, try to find one
       const codeMatch = salesRepInput.match(/^(\d+)$/);
       if (codeMatch && !selectedSalesRep) {
-        const found = findSalesRepByCode(codeMatch[1]);
-        if (found) {
-          // Give it a moment to set the state before moving to the next field
-          setTimeout(() => {
+        findSalesRepByCode(codeMatch[1]).then(found => {
+          if (found && onEnterPress) {
+            // Move to next field if found
             onEnterPress();
-          }, 50);
-          return;
-        }
+          } else if (!found) {
+            setIsSalesRepSearchOpen(true);
+          }
+        });
+        return;
       }
       
       if (selectedSalesRep) {
@@ -178,7 +217,7 @@ export default function SalesRepSearchInput({
                       setSalesRepSearch('');
                       // Navigate to next field on selection
                       if (onEnterPress) {
-                        setTimeout(onEnterPress, 50);
+                        onEnterPress();
                       }
                     }}
                     className="cursor-pointer"

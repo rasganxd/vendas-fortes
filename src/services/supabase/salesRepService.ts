@@ -9,12 +9,20 @@ import { SalesRep } from '@/types';
  */
 export const salesRepService = createStandardService('sales_reps');
 
+// Cache for sales rep lookups by code
+const salesRepCodeCache = new Map<number, SalesRep | null>();
+
 /**
  * Get sales rep by code
  * @param code - Sales rep code
  * @returns SalesRep or null if not found
  */
 export const getSalesRepByCode = async (code: number): Promise<SalesRep | null> => {
+  // Check cache first
+  if (salesRepCodeCache.has(code)) {
+    return salesRepCodeCache.get(code) || null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('sales_reps')
@@ -23,11 +31,16 @@ export const getSalesRepByCode = async (code: number): Promise<SalesRep | null> 
       .single();
       
     if (error) {
-      console.error("Error fetching sales rep by code:", error);
+      if (error.code !== 'PGRST116') { // Not found error
+        console.error("Error fetching sales rep by code:", error);
+      }
+      salesRepCodeCache.set(code, null);
       return null;
     }
     
-    return transformSalesRepData(data);
+    const salesRep = transformSalesRepData(data);
+    salesRepCodeCache.set(code, salesRep);
+    return salesRep;
   } catch (error) {
     console.error("Error in getSalesRepByCode:", error);
     return null;
@@ -56,6 +69,16 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
       salesRepData.code = (lastSalesRep?.code || 0) + 1;
     }
     
+    // Ensure code is a number
+    if (typeof salesRepData.code === 'string') {
+      salesRepData.code = parseInt(salesRepData.code, 10);
+    }
+    
+    // Ensure sales rep has required fields
+    if (!salesRepData.name) {
+      throw new Error("Sales rep name is required");
+    }
+    
     // Convert to snake_case and prepare for Supabase
     const supabaseData = prepareForSupabase(salesRepData);
     
@@ -68,6 +91,11 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     if (error) {
       console.error("Error creating sales rep:", error);
       throw error;
+    }
+    
+    // Clear cache for this code
+    if (salesRepData.code) {
+      salesRepCodeCache.delete(salesRepData.code);
     }
     
     return data.id;
