@@ -1,52 +1,134 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { ProductCategory } from '@/types';
 import { toast } from '@/components/ui/use-toast';
+import { productCategoryService } from '@/services/supabase/productService';
+import { transformArray, transformProductCategoryData } from '@/utils/dataTransformers';
 
 export const useProductCategories = () => {
-  const currentDate = new Date();
-  
-  const [productCategories, setProductCategories] = useState<ProductCategory[]>([
-    { 
-      id: '1', 
-      name: 'Refrigerantes', 
-      description: 'Refrigerantes em lata e garrafa',
-      notes: '',
-      createdAt: currentDate,
-      updatedAt: currentDate
-    },
-    { 
-      id: '2', 
-      name: 'Cervejas', 
-      description: 'Cervejas em lata e garrafa',
-      notes: '',
-      createdAt: currentDate,
-      updatedAt: currentDate
-    },
-    { 
-      id: '3', 
-      name: 'Biscoitos', 
-      description: 'Biscoitos e bolachas',
-      notes: '',
-      createdAt: currentDate,
-      updatedAt: currentDate
-    },
-    { 
-      id: '4', 
-      name: 'Detergentes', 
-      description: 'Detergentes líquidos e em pó',
-      notes: '',
-      createdAt: currentDate,
-      updatedAt: currentDate
-    }
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load categories from Supabase when component mounts
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setIsLoading(true);
+        const data = await productCategoryService.getAll();
+        const transformedCategories = transformArray(data, transformProductCategoryData) as ProductCategory[];
+        
+        // If we got categories from Supabase, use them
+        if (transformedCategories && transformedCategories.length > 0) {
+          setProductCategories(transformedCategories);
+          console.log(`Loaded ${transformedCategories.length} product categories from Supabase`);
+        } else {
+          // If no categories in Supabase, use default ones
+          console.log("No product categories found in Supabase, using defaults");
+          const currentDate = new Date();
+          const defaultCategories = [
+            { 
+              id: '1', 
+              name: 'Refrigerantes', 
+              description: 'Refrigerantes em lata e garrafa',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: '2', 
+              name: 'Cervejas', 
+              description: 'Cervejas em lata e garrafa',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: '3', 
+              name: 'Biscoitos', 
+              description: 'Biscoitos e bolachas',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: '4', 
+              name: 'Detergentes', 
+              description: 'Detergentes líquidos e em pó',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            }
+          ];
+          setProductCategories(defaultCategories);
+          
+          // Add the default categories to Supabase
+          defaultCategories.forEach(async (category) => {
+            try {
+              await addProductCategory(category);
+            } catch (error) {
+              console.error("Error adding default category:", error);
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error loading product categories:", error);
+        // Fallback to default categories if there's an error
+        const currentDate = new Date();
+        setProductCategories([
+          { 
+            id: '1', 
+            name: 'Refrigerantes', 
+            description: 'Refrigerantes em lata e garrafa',
+            notes: '',
+            createdAt: currentDate,
+            updatedAt: currentDate
+          },
+          { 
+            id: '2', 
+            name: 'Cervejas', 
+            description: 'Cervejas em lata e garrafa',
+            notes: '',
+            createdAt: currentDate,
+            updatedAt: currentDate
+          },
+          { 
+            id: '3', 
+            name: 'Biscoitos', 
+            description: 'Biscoitos e bolachas',
+            notes: '',
+            createdAt: currentDate,
+            updatedAt: currentDate
+          },
+          { 
+            id: '4', 
+            name: 'Detergentes', 
+            description: 'Detergentes líquidos e em pó',
+            notes: '',
+            createdAt: currentDate,
+            updatedAt: currentDate
+          }
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const addProductCategory = async (category: Omit<ProductCategory, 'id'>) => {
     try {
-      const newId = Math.random().toString(36).substring(2, 9);
+      // Prepare data for Supabase
+      const supabaseData = {
+        name: category.name,
+        description: category.description || '',
+        notes: category.notes || '',
+      };
+
+      const id = await productCategoryService.add(supabaseData);
       const newCategory: ProductCategory = { 
         ...category, 
-        id: newId,
+        id,
         notes: category.notes || '',
         createdAt: new Date(),
         updatedAt: new Date()
@@ -56,7 +138,7 @@ export const useProductCategories = () => {
         title: "Categoria adicionada",
         description: "Categoria de produto adicionada com sucesso!"
       });
-      return newId;
+      return id;
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
       toast({
@@ -70,6 +152,14 @@ export const useProductCategories = () => {
 
   const updateProductCategory = async (id: string, category: Partial<ProductCategory>) => {
     try {
+      // Prepare data for Supabase
+      const supabaseData = {
+        name: category.name,
+        description: category.description,
+        notes: category.notes,
+      };
+
+      await productCategoryService.update(id, supabaseData);
       setProductCategories(
         productCategories.map(pc => (pc.id === id ? { 
           ...pc, 
@@ -93,6 +183,7 @@ export const useProductCategories = () => {
 
   const deleteProductCategory = async (id: string) => {
     try {
+      await productCategoryService.delete(id);
       setProductCategories(productCategories.filter(pc => pc.id !== id));
       toast({
         title: "Categoria excluída",

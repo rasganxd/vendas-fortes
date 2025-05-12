@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -56,6 +57,20 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import BulkProductUpload from '@/components/products/BulkProductUpload';
 
+// Common units for products
+const PRODUCT_UNITS = [
+  { value: 'UN', label: 'Unidade (UN)' },
+  { value: 'KG', label: 'Quilograma (KG)' },
+  { value: 'L', label: 'Litro (L)' },
+  { value: 'ML', label: 'Mililitro (ML)' },
+  { value: 'CX', label: 'Caixa (CX)' },
+  { value: 'PCT', label: 'Pacote (PCT)' },
+  { value: 'PAR', label: 'Par (PAR)' },
+  { value: 'DUZIA', label: 'Dúzia (DZ)' },
+  { value: 'ROLO', label: 'Rolo (RL)' },
+  { value: 'METRO', label: 'Metro (M)' }
+];
+
 interface FormErrors {
   code?: string;
   name?: string;
@@ -89,9 +104,8 @@ export default function Products() {
     code: 0,
     name: '',
     description: '',
-    unit: '',
+    unit: 'UN',
     stock: 0,
-    minStock: 0,
     category: '',
     costPrice: 0,
   });
@@ -138,6 +152,22 @@ export default function Products() {
     return Object.keys(errors).length === 0;
   };
 
+  // Helper function to format currency input
+  const formatCurrencyInput = (value: string): number => {
+    // Remove all non-numeric characters
+    const numericValue = value.replace(/[^\d]/g, '');
+    // Convert to number and divide by 100 to get decimal value
+    return parseFloat(numericValue) / 100;
+  };
+
+  // Helper function to display currency value in input
+  const displayCurrencyValue = (value: number): string => {
+    return value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   const handleAddProduct = async () => {
     if (validateForm()) {
       try {
@@ -148,7 +178,6 @@ export default function Products() {
           price: 0, // Price will be set in pricing tab
           unit: formData.unit,
           stock: Number(formData.stock),
-          minStock: Number(formData.minStock || 0),
           categoryId: formData.category,
           cost: Number(formData.costPrice || 0),
           maxDiscountPercentage: 0, // Will be set in pricing tab
@@ -173,7 +202,6 @@ export default function Products() {
           description: formData.description,
           unit: formData.unit,
           stock: Number(formData.stock),
-          minStock: Number(formData.minStock || 0),
           categoryId: formData.category,
           cost: Number(formData.costPrice || 0),
           updatedAt: new Date()
@@ -196,12 +224,11 @@ export default function Products() {
 
   const handleOpenAddDialog = () => {
     setFormData({
-      code: 0,
+      code: getNextProductCode(),
       name: '',
       description: '',
-      unit: '',
+      unit: 'UN',
       stock: 0,
-      minStock: 0,
       category: '',
       costPrice: 0,
     });
@@ -215,9 +242,8 @@ export default function Products() {
       code: product.code,
       name: product.name,
       description: product.description,
-      unit: product.unit || '',
+      unit: product.unit || 'UN',
       stock: product.stock,
-      minStock: product.minStock || 0,
       category: product.categoryId || '',
       costPrice: product.cost || 0,
     });
@@ -381,7 +407,7 @@ export default function Products() {
                         <SelectValue placeholder="Todas as Categorias" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todas as Categorias</SelectItem>
+                        <SelectItem value="">Todas as Categorias</SelectItem>
                         {productCategories.map(category => (
                           <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                         ))}
@@ -430,22 +456,33 @@ export default function Products() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="new-costPrice">Preço de Custo</Label>
+                          <Label htmlFor="new-costPrice">Preço de Custo (R$)</Label>
                           <Input
                             id="new-costPrice"
-                            type="number"
-                            value={formData.costPrice}
-                            onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
+                            mask="price"
+                            value={displayCurrencyValue(formData.costPrice)}
+                            onChange={(e) => setFormData({ 
+                              ...formData, 
+                              costPrice: formatCurrencyInput(e.target.value) 
+                            })}
                           />
                           {formErrors.costPrice && <p className="text-red-500 text-sm">{formErrors.costPrice}</p>}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="new-unit">Unidade</Label>
-                          <Input
-                            id="new-unit"
-                            value={formData.unit}
-                            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                          />
+                          <Select 
+                            value={formData.unit} 
+                            onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma unidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PRODUCT_UNITS.map(unit => (
+                                <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="new-stock">Estoque</Label>
@@ -456,15 +493,6 @@ export default function Products() {
                             onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
                           />
                           {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
-                        </div>
-                         <div className="space-y-2">
-                          <Label htmlFor="new-minStock">Estoque Mínimo</Label>
-                          <Input
-                            id="new-minStock"
-                            type="number"
-                            value={formData.minStock}
-                            onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
-                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="new-category">Categoria</Label>
@@ -709,22 +737,33 @@ export default function Products() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-costPrice">Preço de Custo</Label>
+              <Label htmlFor="edit-costPrice">Preço de Custo (R$)</Label>
               <Input
                 id="edit-costPrice"
-                type="number"
-                value={formData.costPrice}
-                onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
+                mask="price"
+                value={displayCurrencyValue(formData.costPrice)}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  costPrice: formatCurrencyInput(e.target.value) 
+                })}
               />
               {formErrors.costPrice && <p className="text-red-500 text-sm">{formErrors.costPrice}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-unit">Unidade</Label>
-              <Input
-                id="edit-unit"
-                value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-              />
+              <Select 
+                value={formData.unit} 
+                onValueChange={(value) => setFormData({ ...formData, unit: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma unidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRODUCT_UNITS.map(unit => (
+                    <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-stock">Estoque</Label>
@@ -735,15 +774,6 @@ export default function Products() {
                 onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
               />
               {formErrors.stock && <p className="text-red-500 text-sm">{formErrors.stock}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-minStock">Estoque Mínimo</Label>
-              <Input
-                id="edit-minStock"
-                type="number"
-                value={formData.minStock}
-                onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
-              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-category">Categoria</Label>

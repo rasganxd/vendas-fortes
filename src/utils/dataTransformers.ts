@@ -1,4 +1,3 @@
-
 // Utilities for converting data between Supabase format (snake_case) and app format (camelCase)
 
 // Helper function to convert snake_case strings to camelCase
@@ -160,6 +159,22 @@ export const transformProductData = (data: any): any => {
     categoryId: camelCaseData.categoryId,
     brandId: camelCaseData.brandId,
     unit: camelCaseData.unit || "",
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
+  };
+};
+
+// Product Category transformer
+export const transformProductCategoryData = (data: any): any => {
+  if (!data) return null;
+  
+  const camelCaseData = convertToCamelCase(data);
+  
+  return {
+    id: camelCaseData.id || "",
+    name: camelCaseData.name || "",
+    description: camelCaseData.description || "",
+    notes: camelCaseData.notes || "",
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
   };

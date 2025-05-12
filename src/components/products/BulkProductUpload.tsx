@@ -21,6 +21,20 @@ import { toast } from '@/components/ui/use-toast';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { CustomScrollArea } from '@/components/ui/custom-scroll-area';
 
+// Common units for products
+const PRODUCT_UNITS = [
+  { value: 'UN', label: 'Unidade (UN)' },
+  { value: 'KG', label: 'Quilograma (KG)' },
+  { value: 'L', label: 'Litro (L)' },
+  { value: 'ML', label: 'Mililitro (ML)' },
+  { value: 'CX', label: 'Caixa (CX)' },
+  { value: 'PCT', label: 'Pacote (PCT)' },
+  { value: 'PAR', label: 'Par (PAR)' },
+  { value: 'DUZIA', label: 'Dúzia (DZ)' },
+  { value: 'ROLO', label: 'Rolo (RL)' },
+  { value: 'METRO', label: 'Metro (M)' }
+];
+
 interface BulkProductUploadProps {
   isOpen: boolean;
   onClose: () => void;
@@ -44,16 +58,45 @@ const BulkProductUpload = ({
   const [baseName, setBaseName] = useState<string>('');
   const [baseDescription, setBaseDescription] = useState<string>('');
   const [costPrice, setCostPrice] = useState<number>(0);
+  const [displayCost, setDisplayCost] = useState<string>('0,00');
   const [salePrice, setSalePrice] = useState<number>(0);
+  const [displayPrice, setDisplayPrice] = useState<string>('0,00');
   const [stock, setStock] = useState<number>(0);
-  const [minStock, setMinStock] = useState<number>(0);
-  const [unit, setUnit] = useState<string>('');
+  const [unit, setUnit] = useState<string>('UN');
   const [category, setCategory] = useState<string>('');
   const [group, setGroup] = useState<string>('');
   const [brand, setBrand] = useState<string>('');
   const [maxDiscount, setMaxDiscount] = useState<number>(0);
   const [variants, setVariants] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
+  // Helper function to format currency input
+  const formatCurrencyInput = (value: string): number => {
+    // Remove all non-numeric characters
+    const numericValue = value.replace(/[^\d]/g, '');
+    // Convert to number and divide by 100 to get decimal value
+    return parseFloat(numericValue || '0') / 100;
+  };
+
+  // Handle cost price change
+  const handleCostPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCostPrice = formatCurrencyInput(e.target.value);
+    setCostPrice(newCostPrice);
+    setDisplayCost(newCostPrice.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }));
+  };
+
+  // Handle sale price change
+  const handleSalePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSalePrice = formatCurrencyInput(e.target.value);
+    setSalePrice(newSalePrice);
+    setDisplayPrice(newSalePrice.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }));
+  };
 
   const handleSubmit = async () => {
     // Validação básica
@@ -90,7 +133,6 @@ const BulkProductUpload = ({
           price: salePrice,
           cost: costPrice,
           stock: stock,
-          minStock: minStock,
           unit: unit,
           categoryId: category || undefined,
           groupId: group || undefined,
@@ -158,21 +200,21 @@ const BulkProductUpload = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="costPrice">Preço de Custo</Label>
+              <Label htmlFor="costPrice">Preço de Custo (R$)</Label>
               <Input
                 id="costPrice"
-                type="number"
-                value={costPrice}
-                onChange={(e) => setCostPrice(Number(e.target.value))}
+                mask="price"
+                value={displayCost}
+                onChange={handleCostPriceChange}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="salePrice">Preço de Venda</Label>
+              <Label htmlFor="salePrice">Preço de Venda (R$)</Label>
               <Input
                 id="salePrice"
-                type="number"
-                value={salePrice}
-                onChange={(e) => setSalePrice(Number(e.target.value))}
+                mask="price"
+                value={displayPrice}
+                onChange={handleSalePriceChange}
               />
             </div>
             <div className="space-y-2">
@@ -185,22 +227,20 @@ const BulkProductUpload = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="minStock">Estoque Mínimo</Label>
-              <Input
-                id="minStock"
-                type="number"
-                value={minStock}
-                onChange={(e) => setMinStock(Number(e.target.value))}
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="unit">Unidade</Label>
-              <Input
-                id="unit"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                placeholder="Ex: UN, KG, L"
-              />
+              <Select value={unit} onValueChange={setUnit}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma unidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRODUCT_UNITS.map(unit => (
+                    <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Unidade de medida do produto (UN, KG, L, etc.)
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="maxDiscount">Desconto Máximo (%)</Label>
