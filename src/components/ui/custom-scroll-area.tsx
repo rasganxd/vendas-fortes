@@ -10,7 +10,7 @@ interface CustomScrollAreaProps extends React.ComponentPropsWithoutRef<typeof Sh
 export const CustomScrollArea = React.forwardRef<
   React.ElementRef<typeof ShadcnScrollArea>,
   CustomScrollAreaProps
->(({ className, hideScrollbar = false, children, ...props }, ref) => {
+>(({ className, hideScrollbar = true, children, ...props }, ref) => {
   return (
     <ShadcnScrollArea ref={ref} className={cn(className)} {...props}>
       {children}
