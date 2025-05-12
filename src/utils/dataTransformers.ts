@@ -253,16 +253,17 @@ export function prepareForSupabase(data: Record<string, any>): Record<string, an
   }
   
   // Handle foreign keys with proper snake_case conversion
+  // Explicitly check for "none" and undefined/null values
   if (data.categoryId !== undefined) {
-    result.category_id = data.categoryId === "" ? null : data.categoryId;
+    result.category_id = data.categoryId === "none" || data.categoryId === "" ? null : data.categoryId;
   }
   
   if (data.groupId !== undefined) {
-    result.group_id = data.groupId === "" ? null : data.groupId;
+    result.group_id = data.groupId === "none" || data.groupId === "" ? null : data.groupId;
   }
   
   if (data.brandId !== undefined) {
-    result.brand_id = data.brandId === "" ? null : data.brandId;
+    result.brand_id = data.brandId === "none" || data.brandId === "" ? null : data.brandId;
   }
   
   if (data.minStock !== undefined) {

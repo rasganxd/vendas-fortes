@@ -175,12 +175,16 @@ export default function Products() {
         // Set initial price equal to cost (it will be updated in pricing page)
         price: data.cost,
         unit: data.unit,
+        // Make sure to handle "none" values properly
         categoryId: data.categoryId && data.categoryId !== "none" ? data.categoryId : undefined,
         groupId: data.groupId && data.groupId !== "none" ? data.groupId : undefined,
         brandId: data.brandId && data.brandId !== "none" ? data.brandId : undefined,
         stock: data.stock || 0,
         minStock: 0 // Default value for minStock
       };
+      
+      console.log("Form data submitted:", data);
+      console.log("Product data being sent:", productData);
       
       if (isEditing && selectedProduct) {
         await updateProduct(selectedProduct.id, productData);

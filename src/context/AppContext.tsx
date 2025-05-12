@@ -291,10 +291,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         price: product.price !== undefined ? product.price : product.cost
       };
       
-      console.log("Adding product to Supabase:", productWithCode);
+      console.log("Product data before preparation:", productWithCode);
       
-      // Adicionar ao Supabase usando o serviço que agora usa prepareForSupabase
-      const id = await productService.add(productWithCode);
+      // Preparar dados para o formato do Supabase
+      const supabaseData = prepareForSupabase(productWithCode);
+      console.log("Sending product to Supabase:", supabaseData);
+      
+      // Adicionar ao Supabase usando o serviço
+      const id = await productService.add(supabaseData);
       const newProduct = { ...productWithCode, id };
       
       console.log("Product added with ID:", id);

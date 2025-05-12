@@ -1,169 +1,109 @@
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from '@/components/ui/use-toast';
-import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
-import { CustomScrollArea } from '@/components/ui/custom-scroll-area';
+import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/hooks/useAppContext';
-import { Checkbox } from '@/components/ui/checkbox';
-
-// Common units for products
-const PRODUCT_UNITS = [
-  { value: 'UN', label: 'Unidade (UN)' },
-  { value: 'KG', label: 'Quilograma (KG)' },
-  { value: 'L', label: 'Litro (L)' },
-  { value: 'ML', label: 'Mililitro (ML)' },
-  { value: 'CX', label: 'Caixa (CX)' },
-  { value: 'PCT', label: 'Pacote (PCT)' },
-  { value: 'PAR', label: 'Par (PAR)' },
-  { value: 'DUZIA', label: 'Dúzia (DZ)' },
-  { value: 'ROLO', label: 'Rolo (RL)' },
-  { value: 'METRO', label: 'Metro (M)' }
-];
+import { formatCurrency } from '@/lib/utils';
+import { prepareForSupabase } from '@/utils/dataTransformers';
+import { Loader2 } from 'lucide-react';
+import { Product } from '@/types';
 
 interface BulkProductUploadProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const BulkProductUpload = ({
-  open,
-  onOpenChange
-}: BulkProductUploadProps) => {
-  const { productCategories, productGroups, productBrands, products, addProduct } = useAppContext();
-  
-  // Calculate next available product code
-  const nextProductCode = products.length > 0 
-    ? Math.max(...products.map(product => product.code || 0)) + 1 
-    : 1;
-  
-  const [baseCode, setBaseCode] = useState<number>(nextProductCode);
-  const [baseName, setBaseName] = useState<string>('');
-  const [costPrice, setCostPrice] = useState<number>(0);
-  const [displayCost, setDisplayCost] = useState<string>('0,00');
-  const [sellingPrice, setSellingPrice] = useState<number>(0);
-  const [displayPrice, setDisplayPrice] = useState<string>('0,00');
-  const [stock, setStock] = useState<number>(0);
-  const [unit, setUnit] = useState<string>('UN');
-  const [category, setCategory] = useState<string>('none');
-  const [group, setGroup] = useState<string>('none');
-  const [brand, setBrand] = useState<string>('none');
-  const [variants, setVariants] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [definePrice, setDefinePrice] = useState<boolean>(false);
+const SAMPLE_DATA = `Código;Nome;Custo;Preço;Unidade
+1;Refrigerante Cola 2L;4.50;8.99;UN
+2;Biscoito Cream Cracker 400g;2.30;4.50;PCT
+3;Detergente Líquido 500ml;1.75;3.99;UN`;
 
-  // Helper function to format currency input
-  const formatCurrencyInput = (value: string): number => {
-    // Remove all non-numeric characters
-    const numericValue = value.replace(/[^\d]/g, '');
-    // Convert to number and divide by 100 to get decimal value
-    return parseFloat(numericValue || '0') / 100;
-  };
+const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChange }) => {
+  const { addBulkProducts } = useAppContext();
+  const [csvData, setCsvData] = useState(SAMPLE_DATA);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [preview, setPreview] = useState<any[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
-  // Helper function to format currency display
-  const formatCurrency = (value: number): string => {
-    return value.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  };
-
-  // Handle cost price change
-  const handleCostPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newCostPrice = formatCurrencyInput(e.target.value);
-    setCostPrice(newCostPrice);
-    setDisplayCost(formatCurrency(newCostPrice));
-  };
-  
-  // Handle selling price change
-  const handleSellingPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSellingPrice = formatCurrencyInput(e.target.value);
-    setSellingPrice(newSellingPrice);
-    setDisplayPrice(formatCurrency(newSellingPrice));
-  };
-
-  const handleSubmit = async () => {
-    // Validação básica
-    if (!baseName || !costPrice) {
-      toast({
-        title: "Campos incompletos",
-        description: "Preencha pelo menos o nome base e preço de custo.",
-        variant: "destructive"
-      });
-      return;
+  // Reset state when dialog opens or closes
+  React.useEffect(() => {
+    if (!open) {
+      setPreview([]);
+      setShowPreview(false);
     }
+  }, [open]);
 
+  const processCSV = () => {
+    setIsProcessing(true);
+    
     try {
-      setIsProcessing(true);
-      const variantLines = variants.trim().split('\n').filter(line => line.trim() !== '');
-      
-      if (variantLines.length === 0) {
-        toast({
-          title: "Sem variantes",
-          description: "Adicione pelo menos uma variante de produto.",
-          variant: "destructive"
-        });
+      // Split by lines
+      const lines = csvData.trim().split('\n');
+      if (lines.length < 2) {
+        toast.error("Dados insuficientes. Verifique o formato CSV.");
         setIsProcessing(false);
         return;
       }
 
-      // Criar produtos com base nas variantes
-      const productsToCreate = variantLines.map((variant, index) => {
-        const productName = `${baseName} ${variant.trim()}`;
-        return {
-          code: baseCode + index,
-          name: productName,
-          description: '',
-          price: definePrice ? sellingPrice : costPrice, // Usar preço de venda apenas se definido manualmente
-          cost: costPrice,
-          stock: stock,
+      // Parse header
+      const headers = lines[0].split(';');
+      
+      // Process data rows
+      const products: any[] = [];
+      const dataRows = lines.slice(1);
+      
+      for (const row of dataRows) {
+        const values = row.split(';');
+        
+        // Create product object
+        const product: Partial<Product> = {
+          code: parseInt(values[0]) || 0,
+          name: values[1] || '',
+          cost: parseFloat(values[2].replace(',', '.')) || 0,
+          price: parseFloat(values[3].replace(',', '.')) || 0,
+          unit: values[4] || 'UN',
+          stock: 0,
           minStock: 0,
-          unit: unit,
-          categoryId: category === "none" ? undefined : category,
-          groupId: group === "none" ? undefined : group,
-          brandId: brand === "none" ? undefined : brand,
-          maxDiscountPercentage: 0, // Valor padrão
-          createdAt: new Date(),
-          updatedAt: new Date()
         };
-      });
-
-      // Add products one by one
-      for (const product of productsToCreate) {
-        await addProduct(product);
+        
+        // Validate required fields
+        if (!product.code || !product.name) {
+          continue;
+        }
+        
+        products.push(product);
       }
       
-      toast({
-        title: "Produtos cadastrados",
-        description: `${productsToCreate.length} produtos foram cadastrados com sucesso.`,
-      });
+      // Show preview
+      setPreview(products);
+      setShowPreview(true);
       
-      // Resetar formulário
-      setVariants('');
+    } catch (error) {
+      console.error("Error processing CSV data:", error);
+      toast.error("Erro ao processar dados CSV. Verifique o formato.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    setIsProcessing(true);
+    
+    try {
+      console.log("Products being prepared for upload:", preview);
+      const ids = await addBulkProducts(preview);
+      console.log("Product IDs after upload:", ids);
+      
+      toast.success(`${ids.length} produtos importados com sucesso!`);
       onOpenChange(false);
     } catch (error) {
-      console.error("Erro ao processar produtos em massa:", error);
-      toast({
-        title: "Erro no processamento",
-        description: "Ocorreu um erro ao cadastrar os produtos em massa.",
-        variant: "destructive"
-      });
+      console.error("Error uploading bulk products:", error);
+      toast.error("Erro ao importar produtos em massa.");
     } finally {
       setIsProcessing(false);
     }
@@ -171,159 +111,86 @@ const BulkProductUpload = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
-        <CustomScrollArea className="h-full">
-          <DialogHeader>
-            <DialogTitle>Cadastro em Massa de Produtos</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="baseCode">Código Base</Label>
-              <Input
-                id="baseCode"
-                type="number"
-                value={baseCode}
-                onChange={(e) => setBaseCode(Number(e.target.value))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="baseName">Nome Base do Produto</Label>
-              <Input
-                id="baseName"
-                value={baseName}
-                onChange={(e) => setBaseName(e.target.value)}
-                placeholder="Ex: Sorvete"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="costPrice">Preço de Custo (R$)</Label>
-              <Input
-                id="costPrice"
-                value={displayCost}
-                onChange={handleCostPriceChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2 mb-2">
-                <Checkbox
-                  id="definePrice"
-                  checked={definePrice}
-                  onCheckedChange={(checked) => {
-                    setDefinePrice(checked === true);
-                  }}
-                />
-                <label
-                  htmlFor="definePrice"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Definir preço de venda agora
-                </label>
-              </div>
-              {definePrice && (
-                <Input
-                  id="sellingPrice"
-                  value={displayPrice}
-                  onChange={handleSellingPriceChange}
-                  placeholder="Preço de Venda (R$)"
-                />
-              )}
-              {!definePrice && (
-                <p className="text-xs text-muted-foreground">
-                  Defina o preço de venda mais tarde na tela de precificação
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock">Estoque</Label>
-              <Input
-                id="stock"
-                type="number"
-                value={stock}
-                onChange={(e) => setStock(Number(e.target.value))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="unit">Unidade</Label>
-              <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma unidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRODUCT_UNITS.map(unit => (
-                    <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Unidade de medida do produto (UN, KG, L, etc.)
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {productCategories.map(category => (
-                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="group">Grupo</Label>
-              <Select value={group} onValueChange={setGroup}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um grupo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {productGroups.map(group => (
-                    <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="brand">Marca</Label>
-              <Select value={brand} onValueChange={setBrand}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma marca" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {productBrands.map(brand => (
-                    <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 col-span-2">
-              <Label htmlFor="variants">Variantes (uma por linha)</Label>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Importação em Massa de Produtos</DialogTitle>
+          <DialogDescription>
+            Cole os dados dos produtos no formato CSV (separado por ponto-e-vírgula).
+          </DialogDescription>
+        </DialogHeader>
+        
+        {!showPreview ? (
+          <div className="space-y-4">
+            <div className="grid w-full gap-1.5">
+              <Label htmlFor="csv-data">Dados CSV (separado por ponto-e-vírgula)</Label>
               <Textarea
-                id="variants"
-                value={variants}
-                onChange={(e) => setVariants(e.target.value)}
-                rows={5}
-                placeholder="Ex: Chocolate&#10;Morango&#10;Baunilha"
+                id="csv-data"
+                value={csvData}
+                onChange={(e) => setCsvData(e.target.value)}
+                placeholder="Cole os dados aqui..."
+                rows={10}
+                className="font-mono"
               />
-              <p className="text-sm text-muted-foreground">
-                Digite cada variante (sabor, cor, etc.) em uma linha. Será combinado com o nome base.
+              <p className="text-sm text-muted-foreground mt-1">
+                Formato: Código;Nome;Custo;Preço;Unidade
               </p>
             </div>
-          </div>
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing}>Cancelar</Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={isProcessing}
-            >
-              {isProcessing ? 'Processando...' : 'Cadastrar Produtos'}
+            
+            <Button onClick={processCSV} disabled={isProcessing} className="w-full">
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : "Previsualizar Dados"}
             </Button>
           </div>
-        </CustomScrollArea>
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-2 px-1 text-left">Código</th>
+                    <th className="py-2 px-1 text-left">Nome</th>
+                    <th className="py-2 px-1 text-right">Custo</th>
+                    <th className="py-2 px-1 text-right">Preço</th>
+                    <th className="py-2 px-1 text-center">Unidade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.map((product, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="py-2 px-1">{product.code}</td>
+                      <td className="py-2 px-1">{product.name}</td>
+                      <td className="py-2 px-1 text-right">{formatCurrency(product.cost)}</td>
+                      <td className="py-2 px-1 text-right">{formatCurrency(product.price)}</td>
+                      <td className="py-2 px-1 text-center">{product.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              {preview.length} produtos encontrados
+            </p>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowPreview(false)} disabled={isProcessing}>
+                Voltar
+              </Button>
+              <Button onClick={handleUpload} disabled={isProcessing || preview.length === 0} className="ml-auto">
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Importando...
+                  </>
+                ) : `Importar ${preview.length} Produtos`}
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
