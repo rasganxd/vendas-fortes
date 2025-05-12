@@ -27,6 +27,7 @@ import { mockProducts } from '@/data/mock/products';
 import { mockCustomers } from '@/data/mock/customers';
 import { salesRepService, orderService, customerService, productService } from '@/services/supabaseService';
 import { createBulkProducts } from '@/services/supabase/productService';
+import { prepareForSupabase } from '@/utils/dataTransformers';
 
 export const AppContext = createContext<AppContextType>(defaultContextValues);
 
