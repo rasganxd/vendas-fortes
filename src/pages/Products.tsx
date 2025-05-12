@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -419,7 +418,7 @@ export default function Products() {
                             <SelectValue placeholder="Categoria" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhuma</SelectItem>
+                            <SelectItem value="none">Nenhuma</SelectItem>
                             {productCategories.map(category => (
                               <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                             ))}
@@ -442,7 +441,7 @@ export default function Products() {
                             <SelectValue placeholder="Grupo" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum</SelectItem>
                             {productGroups.map(group => (
                               <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                             ))}
@@ -465,7 +464,7 @@ export default function Products() {
                             <SelectValue placeholder="Marca" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhuma</SelectItem>
+                            <SelectItem value="none">Nenhuma</SelectItem>
                             {productBrands.map(brand => (
                               <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                             ))}

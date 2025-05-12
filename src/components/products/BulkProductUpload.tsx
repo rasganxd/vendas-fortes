@@ -61,9 +61,9 @@ const BulkProductUpload = ({
   const [displayPrice, setDisplayPrice] = useState<string>('0,00');
   const [stock, setStock] = useState<number>(0);
   const [unit, setUnit] = useState<string>('UN');
-  const [category, setCategory] = useState<string>('');
-  const [group, setGroup] = useState<string>('');
-  const [brand, setBrand] = useState<string>('');
+  const [category, setCategory] = useState<string>('none');
+  const [group, setGroup] = useState<string>('none');
+  const [brand, setBrand] = useState<string>('none');
   const [variants, setVariants] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [definePrice, setDefinePrice] = useState<boolean>(false);
@@ -135,9 +135,9 @@ const BulkProductUpload = ({
           stock: stock,
           minStock: 0,
           unit: unit,
-          categoryId: category === "" ? undefined : category,
-          groupId: group === "" ? undefined : group,
-          brandId: brand === "" ? undefined : brand,
+          categoryId: category === "none" ? undefined : category,
+          groupId: group === "none" ? undefined : group,
+          brandId: brand === "none" ? undefined : brand,
           maxDiscountPercentage: 0, // Valor padrão
           createdAt: new Date(),
           updatedAt: new Date()
@@ -265,7 +265,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
+                  <SelectItem value="none">Nenhuma</SelectItem>
                   {productCategories.map(category => (
                     <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                   ))}
@@ -279,7 +279,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione um grupo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {productGroups.map(group => (
                     <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                   ))}
@@ -293,7 +293,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione uma marca" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
+                  <SelectItem value="none">Nenhuma</SelectItem>
                   {productBrands.map(brand => (
                     <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                   ))}
