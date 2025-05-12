@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from '@/components/ui/use-toast';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { CustomScrollArea } from '@/components/ui/custom-scroll-area';
+import { useAppContext } from '@/hooks/useAppContext';
 
 // Common units for products
 const PRODUCT_UNITS = [
@@ -36,24 +37,21 @@ const PRODUCT_UNITS = [
 ];
 
 interface BulkProductUploadProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (products: any[]) => Promise<void>;
-  productCategories: ProductCategory[];
-  productGroups: ProductGroup[];
-  productBrands: ProductBrand[];
-  nextProductCode: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const BulkProductUpload = ({
-  isOpen,
-  onClose,
-  onSave,
-  productCategories,
-  productGroups,
-  productBrands,
-  nextProductCode
+  open,
+  onOpenChange
 }: BulkProductUploadProps) => {
+  const { productCategories, productGroups, productBrands, products, addProduct } = useAppContext();
+  
+  // Calculate next available product code
+  const nextProductCode = products.length > 0 
+    ? Math.max(...products.map(product => product.code || 0)) + 1 
+    : 1;
+  
   const [baseCode, setBaseCode] = useState<number>(nextProductCode);
   const [baseName, setBaseName] = useState<string>('');
   const [baseDescription, setBaseDescription] = useState<string>('');
@@ -133,6 +131,7 @@ const BulkProductUpload = ({
           price: salePrice,
           cost: costPrice,
           stock: stock,
+          minStock: 0,
           unit: unit,
           categoryId: category || undefined,
           groupId: group || undefined,
@@ -143,7 +142,11 @@ const BulkProductUpload = ({
         };
       });
 
-      await onSave(productsToCreate);
+      // Add products one by one
+      for (const product of productsToCreate) {
+        await addProduct(product);
+      }
+      
       toast({
         title: "Produtos cadastrados",
         description: `${productsToCreate.length} produtos foram cadastrados com sucesso.`,
@@ -151,7 +154,7 @@ const BulkProductUpload = ({
       
       // Resetar formulário
       setVariants('');
-      onClose();
+      onOpenChange(false);
     } catch (error) {
       console.error("Erro ao processar produtos em massa:", error);
       toast({
@@ -165,7 +168,7 @@ const BulkProductUpload = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh]">
         <CustomScrollArea className="h-full">
           <DialogHeader>
@@ -203,7 +206,6 @@ const BulkProductUpload = ({
               <Label htmlFor="costPrice">Preço de Custo (R$)</Label>
               <Input
                 id="costPrice"
-                mask="price"
                 value={displayCost}
                 onChange={handleCostPriceChange}
               />
@@ -212,7 +214,6 @@ const BulkProductUpload = ({
               <Label htmlFor="salePrice">Preço de Venda (R$)</Label>
               <Input
                 id="salePrice"
-                mask="price"
                 value={displayPrice}
                 onChange={handleSalePriceChange}
               />
@@ -305,11 +306,10 @@ const BulkProductUpload = ({
             </div>
           </div>
           <div className="flex justify-end space-x-2 mt-4">
-            <Button variant="outline" onClick={onClose} disabled={isProcessing}>Cancelar</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing}>Cancelar</Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isProcessing} 
-              className="bg-sales-800 hover:bg-sales-700"
+              disabled={isProcessing}
             >
               {isProcessing ? 'Processando...' : 'Cadastrar Produtos'}
             </Button>
