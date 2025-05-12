@@ -283,11 +283,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       const productCode = product.code || (products.length > 0 
         ? Math.max(...products.map(p => p.code || 0)) + 1 
         : 1);
-      const productWithCode = { ...product, code: productCode };
+      
+      const productWithCode = { 
+        ...product, 
+        code: productCode,
+        // Ensure we have a price value (default to cost if not provided)
+        price: product.price !== undefined ? product.price : product.cost
+      };
       
       console.log("Adding product to Supabase:", productWithCode);
       
-      // Adicionar ao Supabase
+      // Adicionar ao Supabase usando o serviço que agora usa prepareForSupabase
       const id = await productService.add(productWithCode);
       const newProduct = { ...productWithCode, id };
       

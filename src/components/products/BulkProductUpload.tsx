@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -134,9 +135,9 @@ const BulkProductUpload = ({
           stock: stock,
           minStock: 0,
           unit: unit,
-          categoryId: category === "none" ? undefined : category,
-          groupId: group === "none" ? undefined : group,
-          brandId: brand === "none" ? undefined : brand,
+          categoryId: category === "" ? undefined : category,
+          groupId: group === "" ? undefined : group,
+          brandId: brand === "" ? undefined : brand,
           maxDiscountPercentage: 0, // Valor padrão
           createdAt: new Date(),
           updatedAt: new Date()
@@ -264,7 +265,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
+                  <SelectItem value="">Nenhuma</SelectItem>
                   {productCategories.map(category => (
                     <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                   ))}
@@ -278,7 +279,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione um grupo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
+                  <SelectItem value="">Nenhum</SelectItem>
                   {productGroups.map(group => (
                     <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                   ))}
@@ -292,7 +293,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione uma marca" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
+                  <SelectItem value="">Nenhuma</SelectItem>
                   {productBrands.map(brand => (
                     <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                   ))}

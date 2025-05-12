@@ -1,6 +1,7 @@
 
 import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareForSupabase } from '@/utils/dataTransformers';
 
 /**
  * Services for product-related operations
@@ -31,7 +32,7 @@ export const createBulkProducts = async (products: any[]): Promise<string[]> => 
       product.price = 0;
     }
     return true;
-  });
+  }).map(product => prepareForSupabase(product));
 
   if (validProducts.length === 0) {
     throw new Error("No valid products to insert");

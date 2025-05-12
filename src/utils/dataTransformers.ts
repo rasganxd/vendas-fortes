@@ -218,72 +218,71 @@ export const transformOrderData = (data: any): any => {
 
 // Function to prepare data for sending to Supabase (convert to snake_case)
 export function prepareForSupabase(data: Record<string, any>): Record<string, any> {
+  if (!data) return {};
+  
   // Create a copy to avoid mutating the original
-  const processedData = { ...data };
+  const result: Record<string, any> = {};
   
-  // Handle special fields before conversion
-  // Remove zipCode field if present to avoid duplication (we just use zip)
-  if (processedData.zipCode !== undefined) {
-    processedData.zip = processedData.zipCode;
-    delete processedData.zipCode;
+  // Handle special fields
+  if (data.code !== undefined) {
+    result.code = typeof data.code === 'string' ? parseInt(data.code, 10) : data.code;
   }
   
-  // Ensure code is always a number
-  if (processedData.code !== undefined) {
-    processedData.code = typeof processedData.code === 'string' ? 
-                         parseInt(processedData.code, 10) : 
-                         processedData.code;
+  if (data.price !== undefined) {
+    result.price = data.price;
   }
   
-  // Special field mapping for products
-  // Map categoryId to category_id
-  if (processedData.categoryId !== undefined) {
-    processedData.category_id = processedData.categoryId;
-    delete processedData.categoryId;
+  if (data.cost !== undefined) {
+    result.cost = data.cost;
   }
   
-  // Map groupId to group_id
-  if (processedData.groupId !== undefined) {
-    processedData.group_id = processedData.groupId;
-    delete processedData.groupId;
+  if (data.name !== undefined) {
+    result.name = data.name;
   }
   
-  // Map brandId to brand_id
-  if (processedData.brandId !== undefined) {
-    processedData.brand_id = processedData.brandId;
-    delete processedData.brandId;
+  if (data.description !== undefined) {
+    result.description = data.description;
   }
   
-  // Map minStock to min_stock
-  if (processedData.minStock !== undefined) {
-    processedData.min_stock = processedData.minStock;
-    delete processedData.minStock;
+  if (data.stock !== undefined) {
+    result.stock = data.stock;
   }
   
-  // Map maxDiscountPercentage to max_discount_percentage
-  if (processedData.maxDiscountPercentage !== undefined) {
-    processedData.max_discount_percentage = processedData.maxDiscountPercentage;
-    delete processedData.maxDiscountPercentage;
+  if (data.unit !== undefined) {
+    result.unit = data.unit;
   }
   
-  // Ensure price is set
-  if (processedData.price === undefined || processedData.price === null) {
-    processedData.price = 0;
+  // Handle foreign keys with proper snake_case conversion
+  if (data.categoryId !== undefined) {
+    result.category_id = data.categoryId === "" ? null : data.categoryId;
   }
   
-  // Convert all remaining fields to snake_case for Supabase
-  const snakeCaseData = convertToSnakeCase(processedData);
-  
-  // Validate required fields are present
-  if (!snakeCaseData.name || snakeCaseData.name.trim() === '') {
-    throw new Error("Name is required");
+  if (data.groupId !== undefined) {
+    result.group_id = data.groupId === "" ? null : data.groupId;
   }
   
-  if (snakeCaseData.code === undefined || snakeCaseData.code === null) {
-    throw new Error("Code is required");
+  if (data.brandId !== undefined) {
+    result.brand_id = data.brandId === "" ? null : data.brandId;
   }
   
-  return snakeCaseData;
+  if (data.minStock !== undefined) {
+    result.min_stock = data.minStock;
+  }
+  
+  if (data.maxDiscountPercentage !== undefined) {
+    result.max_discount_percentage = data.maxDiscountPercentage;
+  }
+  
+  // Add createdAt and updatedAt in snake_case if present
+  if (data.createdAt !== undefined) {
+    result.created_at = data.createdAt;
+  }
+  
+  if (data.updatedAt !== undefined) {
+    result.updated_at = data.updatedAt;
+  }
+  
+  return result;
 }
 
 // Generic function to transform arrays of data
