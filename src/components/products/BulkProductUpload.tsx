@@ -56,6 +56,8 @@ const BulkProductUpload = ({
   const [baseName, setBaseName] = useState<string>('');
   const [costPrice, setCostPrice] = useState<number>(0);
   const [displayCost, setDisplayCost] = useState<string>('0,00');
+  const [sellingPrice, setSellingPrice] = useState<number>(0);
+  const [displayPrice, setDisplayPrice] = useState<string>('0,00');
   const [stock, setStock] = useState<number>(0);
   const [unit, setUnit] = useState<string>('UN');
   const [category, setCategory] = useState<string>('');
@@ -86,13 +88,20 @@ const BulkProductUpload = ({
     setCostPrice(newCostPrice);
     setDisplayCost(formatCurrency(newCostPrice));
   };
+  
+  // Handle selling price change
+  const handleSellingPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSellingPrice = formatCurrencyInput(e.target.value);
+    setSellingPrice(newSellingPrice);
+    setDisplayPrice(formatCurrency(newSellingPrice));
+  };
 
   const handleSubmit = async () => {
     // Validação básica
-    if (!baseName || !costPrice) {
+    if (!baseName || !costPrice || !sellingPrice) {
       toast({
         title: "Campos incompletos",
-        description: "Preencha pelo menos o nome base e preço de custo.",
+        description: "Preencha pelo menos o nome base, preço de custo e preço de venda.",
         variant: "destructive"
       });
       return;
@@ -119,7 +128,7 @@ const BulkProductUpload = ({
           code: baseCode + index,
           name: productName,
           description: '',
-          price: costPrice * 1.5, // Definir preço de venda com markup padrão
+          price: sellingPrice, // Usar preço de venda definido manualmente
           cost: costPrice,
           stock: stock,
           minStock: 0,
@@ -193,6 +202,14 @@ const BulkProductUpload = ({
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="sellingPrice">Preço de Venda (R$)</Label>
+              <Input
+                id="sellingPrice"
+                value={displayPrice}
+                onChange={handleSellingPriceChange}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="stock">Estoque</Label>
               <Input
                 id="stock"
@@ -224,6 +241,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
                   {productCategories.map(category => (
                     <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                   ))}
@@ -237,6 +255,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione um grupo" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {productGroups.map(group => (
                     <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                   ))}
@@ -250,6 +269,7 @@ const BulkProductUpload = ({
                   <SelectValue placeholder="Selecione uma marca" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
                   {productBrands.map(brand => (
                     <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                   ))}

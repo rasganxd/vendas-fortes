@@ -75,6 +75,7 @@ const productFormSchema = z.object({
     message: "Nome deve ter pelo menos 2 caracteres.",
   }),
   cost: z.number(),
+  price: z.number(), // Added price field
   unit: z.string(),
   stock: z.number().optional(),
   minStock: z.number().optional(),
@@ -113,6 +114,7 @@ export default function Products() {
       code: 0,
       name: "",
       cost: 0,
+      price: 0, // Added price field with default
       unit: "UN",
       stock: 0,
       minStock: 0,
@@ -130,6 +132,7 @@ export default function Products() {
       code: product.code,
       name: product.name,
       cost: product.cost,
+      price: product.price, // Added price field
       unit: product.unit,
       stock: product.stock,
       minStock: product.minStock,
@@ -171,6 +174,7 @@ export default function Products() {
         code: data.code,
         name: data.name,
         cost: data.cost,
+        price: data.price, // Use price from form instead of calculating
         unit: data.unit,
         categoryId: data.categoryId || undefined,
         groupId: data.groupId || undefined,
@@ -178,9 +182,6 @@ export default function Products() {
         stock: data.stock || 0,
         minStock: data.minStock || 0
       };
-      
-      // Calculate price as cost + 50%
-      productData.price = data.cost * 1.5;
       
       if (isEditing && selectedProduct) {
         await updateProduct(selectedProduct.id, productData);
@@ -351,6 +352,30 @@ export default function Products() {
                 />
                 <FormField
                   control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preço de Venda</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Preço de venda" 
+                          value={formatCurrency(field.value)} 
+                          onChange={(e) => {
+                            // Remove all non-numeric characters
+                            const numericValue = e.target.value.replace(/\D/g, '');
+                            // Convert to number and divide by 100 to get decimal value
+                            field.onChange(parseFloat(numericValue) / 100 || 0);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="unit"
                   render={({ field }) => (
                     <FormItem>
@@ -371,8 +396,6 @@ export default function Products() {
                     </FormItem>
                   )}
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="stock"
@@ -415,7 +438,7 @@ export default function Products() {
                             <SelectValue placeholder="Categoria" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhuma</SelectItem>
+                            <SelectItem value="none">Nenhuma</SelectItem>
                             {productCategories.map(category => (
                               <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                             ))}
@@ -438,7 +461,7 @@ export default function Products() {
                             <SelectValue placeholder="Grupo" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum</SelectItem>
                             {productGroups.map(group => (
                               <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                             ))}
@@ -461,7 +484,7 @@ export default function Products() {
                             <SelectValue placeholder="Marca" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhuma</SelectItem>
+                            <SelectItem value="none">Nenhuma</SelectItem>
                             {productBrands.map(brand => (
                               <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
                             ))}
