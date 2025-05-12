@@ -82,9 +82,14 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     // Convert to snake_case and prepare for Supabase
     const supabaseData = prepareForSupabase(salesRepData);
     
+    // Ensure the required fields are present in the data
+    if (!supabaseData.name) {
+      throw new Error("Sales rep name is required after transformation");
+    }
+    
     const { data, error } = await supabase
       .from('sales_reps')
-      .insert(supabaseData)
+      .insert(supabaseData as any)
       .select()
       .single();
       

@@ -1,7 +1,7 @@
 
 import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
-import { transformCustomerData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
+import { transformCustomerData, prepareForSupabase } from '@/utils/dataTransformers';
 import { Customer } from '@/types';
 
 /**
@@ -88,9 +88,18 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
     // Convert to snake_case and prepare for Supabase
     const supabaseData = prepareForSupabase(customerData);
     
+    // Ensure the required fields are present in the data
+    if (!supabaseData.name) {
+      throw new Error("Customer name is required after transformation");
+    }
+    
+    if (supabaseData.code === undefined) {
+      throw new Error("Customer code is required after transformation");
+    }
+    
     const { data, error } = await supabase
       .from('customers')
-      .insert(supabaseData)
+      .insert(supabaseData as any)
       .select()
       .single();
       

@@ -220,8 +220,25 @@ export function prepareForSupabase(data: Record<string, any>): Record<string, an
                          processedData.code;
   }
   
-  // Convert all other fields to snake_case for Supabase
-  return convertToSnakeCase(processedData);
+  // Preserve required fields explicitly to ensure they're not lost in the conversion
+  const requiredFields = {
+    name: processedData.name,
+    code: processedData.code
+  };
+  
+  // Convert all fields to snake_case for Supabase
+  const snakeCaseData = convertToSnakeCase(processedData);
+  
+  // Ensure required fields are present in the final data
+  if (requiredFields.name !== undefined) {
+    snakeCaseData.name = requiredFields.name;
+  }
+  
+  if (requiredFields.code !== undefined) {
+    snakeCaseData.code = requiredFields.code;
+  }
+  
+  return snakeCaseData;
 }
 
 // Generic function to transform arrays of data
