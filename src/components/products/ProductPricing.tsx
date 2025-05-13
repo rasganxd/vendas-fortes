@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -21,7 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { useAppContext } from '@/hooks/useAppContext';
-import { Loader2, Save, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Search } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/select";
 
 const ProductPricing = () => {
+  const navigate = useNavigate();
   const { products, productCategories, productGroups, updateProduct } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
@@ -200,6 +202,17 @@ const ProductPricing = () => {
   return (
     <Card className="w-full">
       <CardHeader>
+        <div className="flex justify-between items-center">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mb-2"
+            onClick={() => navigate('/produtos')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar para Produtos
+          </Button>
+        </div>
         <CardTitle>Precificação de Produtos</CardTitle>
         <CardDescription>
           Configure os preços de venda dos seus produtos

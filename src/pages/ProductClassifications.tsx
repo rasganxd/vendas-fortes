@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -40,12 +40,13 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip';
 import { toast } from '@/components/ui/use-toast';
-import { Pencil, Trash, Plus } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash, Plus } from 'lucide-react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import PageLayout from '@/components/layout/PageLayout';
 
 export default function ProductClassifications() {
+  const navigate = useNavigate();
   const {
     productCategories,
     productGroups,
@@ -299,6 +300,16 @@ export default function ProductClassifications() {
 
   return (
     <PageLayout title="Classificações de Produtos">
+      <div className="mb-4">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => navigate('/produtos')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar para Produtos
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Classificações de Produtos</CardTitle>
