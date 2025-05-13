@@ -1,3 +1,4 @@
+
 import { toast } from '@/components/ui/use-toast';
 import { loadCustomers } from '@/hooks/useCustomers';
 import { loadProducts } from '@/hooks/useProducts';
@@ -49,14 +50,14 @@ export const loadCoreData = async (
     try {
       console.log("About to load products...");
       const loadedProducts = await loadProducts();
-      console.log(`Loaded ${loadedProducts.length} products from API`);
+      console.log(`Loaded ${loadedProducts.length} products from Supabase`);
       
       // Always make sure we update the state even if empty array
-      setProducts(loadedProducts);
-      
-      // Check if we're using mock data
-      if (loadedProducts.length === 0) {
-        console.log("No products loaded from API, using mock data");
+      if (loadedProducts && loadedProducts.length > 0) {
+        setProducts(loadedProducts);
+        console.log("Set products from Supabase:", loadedProducts.length);
+      } else {
+        console.log("No products loaded from Supabase, using mock data");
         setProducts(mockProducts);
         setIsUsingMockData(true);
       }

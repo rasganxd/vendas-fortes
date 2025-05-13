@@ -3,7 +3,12 @@ import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { transformProductData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
+import { 
+  transformProductData, 
+  transformArray, 
+  prepareForSupabase,
+  isValidUuid 
+} from '@/utils/dataTransformers';
 import { createBulkProducts } from '@/services/supabase/productService';
 
 export const loadProducts = async (): Promise<Product[]> => {
@@ -73,6 +78,22 @@ export const useProducts = () => {
         product.price = 0;
       }
       
+      // Validate foreign key UUIDs
+      if (product.categoryId && !isValidUuid(product.categoryId)) {
+        console.warn("Invalid categoryId format, setting to null:", product.categoryId);
+        product.categoryId = undefined;
+      }
+      
+      if (product.groupId && !isValidUuid(product.groupId)) {
+        console.warn("Invalid groupId format, setting to null:", product.groupId);
+        product.groupId = undefined;
+      }
+      
+      if (product.brandId && !isValidUuid(product.brandId)) {
+        console.warn("Invalid brandId format, setting to null:", product.brandId);
+        product.brandId = undefined;
+      }
+      
       // Convert product to snake_case format for Supabase
       const supabaseData = prepareForSupabase(product);
       
@@ -99,6 +120,22 @@ export const useProducts = () => {
 
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
+      // Validate foreign key UUIDs
+      if (product.categoryId && !isValidUuid(product.categoryId)) {
+        console.warn("Invalid categoryId format, setting to null:", product.categoryId);
+        product.categoryId = undefined;
+      }
+      
+      if (product.groupId && !isValidUuid(product.groupId)) {
+        console.warn("Invalid groupId format, setting to null:", product.groupId);
+        product.groupId = undefined;
+      }
+      
+      if (product.brandId && !isValidUuid(product.brandId)) {
+        console.warn("Invalid brandId format, setting to null:", product.brandId);
+        product.brandId = undefined;
+      }
+      
       // Convert product to snake_case format for Supabase
       const supabaseData = prepareForSupabase(product);
       

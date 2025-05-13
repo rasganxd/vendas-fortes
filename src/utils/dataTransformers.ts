@@ -1,3 +1,4 @@
+
 // Utilities for converting data between Supabase format (snake_case) and app format (camelCase)
 
 // Helper function to convert snake_case strings to camelCase
@@ -8,6 +9,14 @@ export const snakeToCamel = (str: string): string => {
 // Helper function to convert camelCase strings to snake_case
 export const camelToSnake = (str: string): string => {
   return str.replace(/([A-Z])/g, (_, letter) => `_${letter.toLowerCase()}`);
+};
+
+// Validate if a string is a valid UUID
+export const isValidUuid = (str: string): boolean => {
+  if (!str) return false;
+  // UUID v4 regex pattern
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidPattern.test(str);
 };
 
 // Cache for converted objects to avoid repeated transformations
@@ -252,18 +261,38 @@ export function prepareForSupabase(data: Record<string, any>): Record<string, an
     result.unit = data.unit;
   }
   
-  // Handle foreign keys with proper snake_case conversion
-  // Explicitly check for "none" and undefined/null values
+  // Handle foreign keys with proper UUID validation
   if (data.categoryId !== undefined) {
-    result.category_id = data.categoryId === "none" || data.categoryId === "" ? null : data.categoryId;
+    if (data.categoryId === "none" || data.categoryId === "") {
+      result.category_id = null;
+    } else if (isValidUuid(data.categoryId)) {
+      result.category_id = data.categoryId;
+    } else {
+      console.warn("Invalid UUID format for categoryId:", data.categoryId);
+      result.category_id = null;
+    }
   }
   
   if (data.groupId !== undefined) {
-    result.group_id = data.groupId === "none" || data.groupId === "" ? null : data.groupId;
+    if (data.groupId === "none" || data.groupId === "") {
+      result.group_id = null;
+    } else if (isValidUuid(data.groupId)) {
+      result.group_id = data.groupId;
+    } else {
+      console.warn("Invalid UUID format for groupId:", data.groupId);
+      result.group_id = null;
+    }
   }
   
   if (data.brandId !== undefined) {
-    result.brand_id = data.brandId === "none" || data.brandId === "" ? null : data.brandId;
+    if (data.brandId === "none" || data.brandId === "") {
+      result.brand_id = null;
+    } else if (isValidUuid(data.brandId)) {
+      result.brand_id = data.brandId;
+    } else {
+      console.warn("Invalid UUID format for brandId:", data.brandId);
+      result.brand_id = null;
+    }
   }
   
   if (data.minStock !== undefined) {
