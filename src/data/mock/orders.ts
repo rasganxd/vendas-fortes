@@ -42,6 +42,7 @@ export const mockOrders: Order[] = mockCustomers.flatMap((customer) => {
       notes: Math.random() > 0.7 ? 'Observações especiais para este pedido' : "",
       createdAt: orderDate,
       updatedAt: orderDate,
+      archived: false, // Add the required archived property
       deliveryZip: customer.zip,
       deliveryAddress: customer.address,
       deliveryCity: customer.city,

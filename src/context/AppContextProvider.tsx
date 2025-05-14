@@ -350,10 +350,20 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     
     createBackup,
     restoreBackup: async (id: string): Promise<boolean> => {
-      return await restoreBackup(id);
+      try {
+        return await restoreBackup(id);
+      } catch (error) {
+        console.error("Error in restoreBackup wrapper:", error);
+        return false;  // Return false instead of void
+      }
     },
     deleteBackup: async (id: string): Promise<boolean> => {
-      return await deleteBackup(id);
+      try {
+        return await deleteBackup(id);
+      } catch (error) {
+        console.error("Error in deleteBackup wrapper:", error);
+        return false;  // Return false instead of void
+      }
     },
     
     settings,
