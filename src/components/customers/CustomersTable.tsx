@@ -1,24 +1,23 @@
 
-import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Eye, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
-import { Customer } from '@/types';
-import { formatVisitFrequency } from './constants';
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Eye, MoreHorizontal, PenSquare, Trash2 } from "lucide-react";
+import { Customer } from "@/types";
 
 interface CustomersTableProps {
   customers: Customer[];
@@ -31,75 +30,75 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
   customers,
   onView,
   onEdit,
-  onDelete
+  onDelete,
 }) => {
+  if (customers.length === 0) {
+    return (
+      <div className="text-center py-10 text-gray-500">
+        Nenhum cliente encontrado
+      </div>
+    );
+  }
+
   return (
-    <ScrollArea className="h-[calc(100vh-250px)]">
+    <div className="overflow-x-auto">
       <Table>
-        <TableHeader className="sticky top-0 bg-white z-10">
+        <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">Código</TableHead>
+            <TableHead className="w-16">Código</TableHead>
             <TableHead>Nome</TableHead>
-            <TableHead className="hidden md:table-cell">Telefone</TableHead>
-            <TableHead className="hidden lg:table-cell">Cidade</TableHead>
-            <TableHead className="hidden lg:table-cell">Frequência</TableHead>
-            <TableHead className="hidden md:table-cell">Seq. Visita</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
+            <TableHead>Telefone</TableHead>
+            <TableHead>Cidade</TableHead>
+            <TableHead>Vendedor</TableHead>
+            <TableHead className="w-24 text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {customers.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                Nenhum cliente encontrado
+          {customers.map((customer) => (
+            <TableRow key={customer.id}>
+              <TableCell className="font-medium">
+                {customer.code || "—"}
+              </TableCell>
+              <TableCell>{customer.name}</TableCell>
+              <TableCell>{customer.phone || "—"}</TableCell>
+              <TableCell>
+                {customer.city}
+                {customer.state ? `, ${customer.state}` : ""}
+              </TableCell>
+              <TableCell>{customer.sales_rep_name || "—"}</TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Abrir menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onView(customer)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      <span>Visualizar</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit(customer)}>
+                      <PenSquare className="mr-2 h-4 w-4" />
+                      <span>Editar</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete(customer.id)}
+                      className="text-red-500 focus:bg-red-50 focus:text-red-500"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Excluir</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
-          ) : (
-            customers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell className="font-medium">{customer.code}</TableCell>
-                <TableCell>{customer.name}</TableCell>
-                <TableCell className="hidden md:table-cell">{customer.phone}</TableCell>
-                <TableCell className="hidden lg:table-cell">{customer.city}</TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  {customer.visitFrequency ? formatVisitFrequency(customer.visitFrequency) : '—'}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {customer.visitSequence || '—'}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Abrir menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onView(customer)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        Visualizar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEdit(customer)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => onDelete(customer.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
+          ))}
         </TableBody>
       </Table>
-    </ScrollArea>
+    </div>
   );
 };
 

@@ -2,15 +2,14 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { 
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormControl, 
+  FormMessage 
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select, 
   SelectContent, 
@@ -18,17 +17,25 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { VISIT_DAYS_OPTIONS } from './constants';
+import { 
+  VisitFrequencyOptions,
+  DaysOfWeekOptions
+} from './constants';
 import { CustomerFormValues } from '@/types/customer';
+import { Checkbox } from '@/components/ui/checkbox';
+import { SalesRep } from '@/types';
+import { useSalesReps } from '@/hooks/useSalesReps';
 
 interface CustomerFormFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
 }
 
 const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
+  const { salesReps } = useSalesReps();
+  
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="code"
@@ -36,19 +43,7 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
             <FormItem>
               <FormLabel>Código</FormLabel>
               <FormControl>
-                <Input 
-                  {...field} 
-                  type="number" 
-                  onChange={(e) => {
-                    // Ensure code is always a number
-                    const value = parseInt(e.target.value, 10);
-                    if (!isNaN(value)) {
-                      field.onChange(value);
-                    } else {
-                      field.onChange('');
-                    }
-                  }}
-                />
+                <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -57,67 +52,32 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         
         <FormField
           control={form.control}
-          name="visitSequence"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Sequência de Visita (1-1000)</FormLabel>
+              <FormLabel>Nome</FormLabel>
               <FormControl>
-                <Input 
-                  {...field} 
-                  type="number"
-                  min={1}
-                  max={1000}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value, 10);
-                    if (value >= 1 && value <= 1000) {
-                      field.onChange(value);
-                    } else if (value < 1) {
-                      field.onChange(1);
-                    } else if (value > 1000) {
-                      field.onChange(1000);
-                    } else {
-                      field.onChange('');
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-      </div>
-      
-      <FormField
-        control={form.control}
-        name="name"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Nome</FormLabel>
-            <FormControl>
-              <Input {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
         <FormField
           control={form.control}
           name="document"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>CPF/CNPJ</FormLabel>
+              <FormLabel>CNPJ/CPF</FormLabel>
               <FormControl>
-                <Input 
-                  {...field} 
-                  // Remove mask attribute to prevent formatting issues
-                />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="phone"
@@ -131,23 +91,35 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
             </FormItem>
           )}
         />
-      </div>
+        
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>E-mail</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <FormField
-        control={form.control}
-        name="address"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Endereço</FormLabel>
-            <FormControl>
-              <Input {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Endereço</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <FormField
           control={form.control}
           name="city"
@@ -161,6 +133,7 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="state"
@@ -174,52 +147,43 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="zip"
           render={({ field }) => (
-            <FormItem className="sm:col-span-1 col-span-2">
+            <FormItem>
               <FormLabel>CEP</FormLabel>
               <FormControl>
-                <Input 
-                  {...field} 
-                  // Set both zipCode and zip at the same time
-                  onChange={(e) => {
-                    field.onChange(e.target.value);
-                    // Also update zipCode field for backward compatibility
-                    if (form.getValues) {
-                      form.setValue('zipCode', e.target.value);
-                    }
-                  }}
-                />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
+        {/* Novo campo para Vendedor */}
         <FormField
           control={form.control}
-          name="visitFrequency"
+          name="sales_rep_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Frequência de Visitas</FormLabel>
+              <FormLabel>Vendedor</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
-                defaultValue={field.value}
+                value={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a frequência" />
+                    <SelectValue placeholder="Selecione um vendedor" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="weekly">Semanal</SelectItem>
-                  <SelectItem value="biweekly">Quinzenal</SelectItem>
-                  <SelectItem value="monthly">Mensal</SelectItem>
-                  <SelectItem value="quarterly">Trimestral</SelectItem>
+                  {salesReps.map((salesRep) => (
+                    <SelectItem key={salesRep.id} value={salesRep.id}>
+                      {salesRep.name} {salesRep.code ? `(${salesRep.code})` : ''}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -228,68 +192,110 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         />
       </div>
 
-      <FormField
-        control={form.control}
-        name="visitDays"
-        render={() => (
-          <FormItem>
-            <div className="mb-2">
-              <FormLabel>Dias de Visita</FormLabel>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {VISIT_DAYS_OPTIONS.map((day) => (
-                <FormField
-                  key={day.id}
-                  control={form.control}
-                  name="visitDays"
-                  render={({ field }) => {
-                    // Ensure field.value is always an array
-                    const value = Array.isArray(field.value) ? field.value : [];
-                    
-                    return (
-                      <FormItem
-                        key={day.id}
-                        className="flex flex-row items-start space-x-3 space-y-0"
-                      >
-                        <FormControl>
-                          <Checkbox
-                            checked={value.includes(day.id)}
-                            onCheckedChange={(checked) => {
-                              return checked
-                                ? field.onChange([...value, day.id])
-                                : field.onChange(
-                                    value.filter((val) => val !== day.id)
-                                  )
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">
-                          {day.label}
-                        </FormLabel>
-                      </FormItem>
-                    )
-                  }}
-                />
-              ))}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="mt-4">
+        <FormField
+          control={form.control}
+          name="visitFrequency"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Frequência de Visita</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a frequência" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {VisitFrequencyOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
 
-      <FormField
-        control={form.control}
-        name="notes"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Observações</FormLabel>
-            <FormControl>
-              <Textarea {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="mt-4">
+        <FormField
+          control={form.control}
+          name="visitSequence"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sequência de Visita</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  {...field} 
+                  onChange={e => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <div className="mt-4">
+        <FormLabel>Dias de Visita</FormLabel>
+        <div className="grid grid-cols-2 sm:grid-cols-4 mt-2 gap-2">
+          {DaysOfWeekOptions.map((option) => (
+            <FormField
+              key={option.value}
+              control={form.control}
+              name="visitDays"
+              render={({ field }) => {
+                return (
+                  <FormItem
+                    key={option.value}
+                    className="flex flex-row items-start space-x-3 space-y-0"
+                  >
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value?.includes(option.value)}
+                        onCheckedChange={(checked) => {
+                          const currentValue = [...(field.value || [])];
+                          
+                          if (checked) {
+                            if (!currentValue.includes(option.value)) {
+                              field.onChange([...currentValue, option.value]);
+                            }
+                          } else {
+                            field.onChange(currentValue.filter(day => day !== option.value));
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">{option.label}</FormLabel>
+                  </FormItem>
+                );
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea {...field} rows={3} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     </>
   );
 };

@@ -43,6 +43,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       visitFrequency: standardizedCustomer.visitFrequency || 'weekly',
       visitSequence: standardizedCustomer.visitSequence || 1,
       email: standardizedCustomer.email || '',
+      sales_rep_id: standardizedCustomer.sales_rep_id || '',
       createdAt: standardizedCustomer.createdAt,
       updatedAt: standardizedCustomer.updatedAt || new Date()
     }

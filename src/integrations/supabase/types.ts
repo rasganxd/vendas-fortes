@@ -66,6 +66,8 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          sales_rep_id: string | null
+          sales_rep_name: string | null
           state: string | null
           updated_at: string | null
           version: number | null
@@ -85,6 +87,8 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          sales_rep_id?: string | null
+          sales_rep_name?: string | null
           state?: string | null
           updated_at?: string | null
           version?: number | null
@@ -104,6 +108,8 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          sales_rep_id?: string | null
+          sales_rep_name?: string | null
           state?: string | null
           updated_at?: string | null
           version?: number | null
@@ -112,7 +118,15 @@ export type Database = {
           visit_sequence?: number | null
           zip?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_sales_rep_id_fkey"
+            columns: ["sales_rep_id"]
+            isOneToOne: false
+            referencedRelation: "sales_reps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delivery_routes: {
         Row: {
