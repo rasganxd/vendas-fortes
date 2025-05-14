@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -32,92 +31,132 @@ export default function OrderFormContainer() {
   const [salesRepInputValue, setSalesRepInputValue] = useState('');
   const [isRecentPurchasesDialogOpen, setIsRecentPurchasesDialogOpen] = useState(false);
   const [originalOrder, setOriginalOrder] = useState<Order | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     console.log("Available payment tables:", paymentTables);
   }, [paymentTables]);
 
   useEffect(() => {
-    const orderId = searchParams.get('id');
-    
-    if (orderId) {
-      console.log("Getting order with ID:", orderId);
-      const orderToEdit = getOrderById(orderId);
-      
-      if (orderToEdit) {
-        console.log("Loading order for editing:", orderToEdit);
-        setIsEditMode(true);
-        setCurrentOrderId(orderId);
-        setOriginalOrder(orderToEdit); // Store the original order
+    const loadOrder = async (orderId: string) => {
+      try {
+        setIsLoading(true);
+        console.log("Loading order for editing:", orderId);
         
-        // Find and set customer
-        const customer = customers.find(c => c.id === orderToEdit.customerId);
-        if (customer) {
-          console.log("Setting customer:", customer);
-          setSelectedCustomer(customer);
+        const orderToEdit = await getOrderById(orderId);
+        
+        if (orderToEdit) {
+          console.log("Order loaded successfully:", orderToEdit);
+          setIsEditMode(true);
+          setCurrentOrderId(orderId);
+          setOriginalOrder(orderToEdit);
           
-          // Set the customer input value for display
-          const displayValue = customer.code ? `${customer.code} - ${customer.name}` : customer.name;
-          setCustomerInputValue(displayValue);
-        } else {
-          console.warn("Customer not found for ID:", orderToEdit.customerId);
-        }
-        
-        // Find and set sales rep
-        const salesRep = salesReps.find(s => s.id === orderToEdit.salesRepId);
-        if (salesRep) {
-          console.log("Setting sales rep:", salesRep);
-          setSelectedSalesRep(salesRep);
+          // Find and set customer
+          const customer = customers.find(c => c.id === orderToEdit.customerId);
+          if (customer) {
+            console.log("Setting customer:", customer);
+            setSelectedCustomer(customer);
+            
+            // Set the customer input value for display
+            const displayValue = customer.code ? `${customer.code} - ${customer.name}` : customer.name;
+            setCustomerInputValue(displayValue);
+          } else {
+            console.warn("Customer not found for ID:", orderToEdit.customerId);
+            toast({
+              title: "Cliente não encontrado",
+              description: "O cliente associado a este pedido não foi encontrado.",
+              variant: "warning"
+            });
+          }
           
-          // Set the sales rep input value for display
-          const displayValue = salesRep.code ? `${salesRep.code} - ${salesRep.name}` : salesRep.name;
-          setSalesRepInputValue(displayValue);
+          // Find and set sales rep
+          const salesRep = salesReps.find(s => s.id === orderToEdit.salesRepId);
+          if (salesRep) {
+            console.log("Setting sales rep:", salesRep);
+            setSelectedSalesRep(salesRep);
+            
+            // Set the sales rep input value for display
+            const displayValue = salesRep.code ? `${salesRep.code} - ${salesRep.name}` : salesRep.name;
+            setSalesRepInputValue(displayValue);
+          } else {
+            console.warn("Sales rep not found for ID:", orderToEdit.salesRepId);
+          }
+          
+          // Validate order items before setting them
+          if (orderToEdit.items && Array.isArray(orderToEdit.items)) {
+            console.log("Order has items:", orderToEdit.items.length);
+            
+            if (orderToEdit.items.length === 0) {
+              console.warn("Order has no items! This might indicate a loading issue.");
+              toast({
+                title: "Aviso",
+                description: "Este pedido não tem itens. Isso pode indicar um problema no carregamento.",
+                variant: "warning"
+              });
+            }
+            
+            // IMPROVED: Better item normalization to preserve IDs and ensure data consistency
+            const updatedItems: OrderItem[] = orderToEdit.items.map(item => ({
+              id: item.id || uuidv4(),  // Ensure every item has an ID
+              productId: item.productId,
+              productName: item.productName,
+              productCode: item.productCode || 0,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice || item.price || 0,
+              price: item.price || item.unitPrice || 0,
+              discount: item.discount || 0,
+              total: (item.unitPrice || item.price || 0) * item.quantity
+            }));
+            setOrderItems(updatedItems);
+            console.log("Normalized order items with preserved IDs:", updatedItems);
+          } else {
+            console.warn("Order items are missing or not in expected format");
+            setOrderItems([]);
+            toast({
+              title: "Itens não encontrados",
+              description: "Os itens deste pedido não puderam ser carregados corretamente.",
+              variant: "warning"
+            });
+          }
+          
+          // Set payment table
+          if (orderToEdit.paymentTableId) {
+            setSelectedPaymentTable(orderToEdit.paymentTableId);
+          }
+          
+          toast({
+            title: "Pedido carregado",
+            description: `Editando pedido ${orderId.substring(0, 6)}`
+          });
         } else {
-          console.warn("Sales rep not found for ID:", orderToEdit.salesRepId);
+          console.error("Order not found for ID:", orderId);
+          toast({
+            title: "Pedido não encontrado",
+            description: "O pedido solicitado não foi encontrado.",
+            variant: "destructive"
+          });
+          // Navigate back to orders page after delay
+          setTimeout(() => {
+            navigate('/pedidos');
+          }, 2000);
         }
-        
-        // Set order items, normalizing properties for consistency and ensuring IDs are preserved
-        console.log("Setting order items:", orderToEdit.items);
-        
-        // IMPROVED: Better item normalization to preserve IDs and ensure data consistency
-        if (orderToEdit.items && Array.isArray(orderToEdit.items)) {
-          const updatedItems: OrderItem[] = orderToEdit.items.map(item => ({
-            id: item.id || uuidv4(),  // Ensure every item has an ID
-            productId: item.productId,
-            productName: item.productName,
-            productCode: item.productCode || 0,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice || item.price || 0,
-            price: item.price || item.unitPrice || 0,
-            discount: item.discount || 0,
-            total: (item.unitPrice || item.price || 0) * item.quantity
-          }));
-          setOrderItems(updatedItems);
-          console.log("Normalized order items with preserved IDs:", updatedItems);
-        } else {
-          console.warn("Order items are missing or not in expected format");
-          setOrderItems([]);
-        }
-        
-        // Set payment table
-        if (orderToEdit.paymentTableId) {
-          setSelectedPaymentTable(orderToEdit.paymentTableId);
-        }
-        
+      } catch (error) {
+        console.error("Error loading order:", error);
         toast({
-          title: "Pedido carregado",
-          description: `Editando pedido ${orderId.substring(0, 6)}`
-        });
-      } else {
-        console.error("Order not found for ID:", orderId);
-        toast({
-          title: "Pedido não encontrado",
-          description: "O pedido solicitado não foi encontrado.",
+          title: "Erro ao carregar pedido",
+          description: "Ocorreu um erro ao carregar o pedido.",
           variant: "destructive"
         });
+      } finally {
+        setIsLoading(false);
       }
+    };
+    
+    const orderId = searchParams.get('id');
+    if (orderId) {
+      loadOrder(orderId);
     }
-  }, [searchParams, getOrderById, customers, salesReps, orders]);
+  }, [searchParams, getOrderById, customers, salesReps, navigate]);
 
   const resetForm = () => {
     setSelectedCustomer(null);
@@ -238,6 +277,12 @@ export default function OrderFormContainer() {
       
       console.log("Normalized order items for submission with preserved IDs:", normalizedItems);
       
+      // Calculate total based on the normalized items
+      const calculatedTotal = normalizedItems.reduce((sum, item) => 
+        sum + (item.quantity * (item.unitPrice || item.price || 0)), 0);
+      
+      console.log("Calculated total:", calculatedTotal);
+      
       // Get the selected payment table
       const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
       
@@ -247,9 +292,10 @@ export default function OrderFormContainer() {
         salesRepId: selectedSalesRep!.id,
         salesRepName: selectedSalesRep!.name,
         items: normalizedItems,
-        total: calculateTotal(),
+        total: calculatedTotal,
         paymentStatus: "pending" as Order["paymentStatus"],
         paymentMethod: selectedTable?.name || "Padrão", // Use payment table name as payment method
+        paymentMethodId: "", // This will be set properly in the future
         paymentTableId: selectedPaymentTable,
         code: isEditMode && originalOrder ? originalOrder.code : Math.floor(Math.random() * 10000), // Keep original code if editing
         date: isEditMode && originalOrder ? originalOrder.date : new Date(),
@@ -269,20 +315,23 @@ export default function OrderFormContainer() {
       if (isEditMode && currentOrderId) {
         console.log("Updating existing order:", currentOrderId);
         // IMPROVED: Pass a clear reference to items array to ensure correct handling
-        await updateOrder(currentOrderId, {
+        orderId = await updateOrder(currentOrderId, {
           ...orderData,
           items: normalizedItems // Ensure we're passing the normalized items with IDs
         });
-        orderId = currentOrderId;
         
-        toast({
-          title: "Pedido Atualizado",
-          description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
-        });
+        if (orderId) {
+          toast({
+            title: "Pedido Atualizado",
+            description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
+          });
+        } else {
+          throw new Error("Falha ao atualizar pedido: ID não retornado");
+        }
 
         // Create automatic payment record if needed (for promissory note tables)
         const isPromissoryNote = selectedTable?.name?.toLowerCase().includes('promissoria');
-        if (isPromissoryNote) {
+        if (isPromissoryNote && orderId) {
           await createAutomaticPaymentRecord({
             ...orderData,
             id: orderId,
@@ -324,7 +373,7 @@ export default function OrderFormContainer() {
       console.error("Erro ao processar pedido:", error);
       toast({
         title: isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido",
-        description: "Ocorreu um erro ao processar o pedido. Tente novamente.",
+        description: `Ocorreu um erro ao processar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive"
       });
     } finally {
@@ -354,28 +403,37 @@ export default function OrderFormContainer() {
 
   return (
     <>
-      <OrderForm 
-        customers={customers}
-        salesReps={salesReps}
-        paymentTables={paymentTables}
-        products={products}
-        selectedCustomer={selectedCustomer}
-        setSelectedCustomer={setSelectedCustomer}
-        selectedSalesRep={selectedSalesRep}
-        setSelectedSalesRep={setSelectedSalesRep}
-        orderItems={orderItems}
-        setOrderItems={setOrderItems}
-        selectedPaymentTable={selectedPaymentTable}
-        setSelectedPaymentTable={setSelectedPaymentTable}
-        isSubmitting={isSubmitting}
-        handleCreateOrder={handleCreateOrder}
-        isEditMode={isEditMode}
-        handleViewRecentPurchases={handleViewRecentPurchases}
-        customerInputValue={customerInputValue}
-        salesRepInputValue={salesRepInputValue}
-        handleAddItem={handleAddItem}
-        handleRemoveItem={handleRemoveItem}
-      />
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
+            <p className="text-lg text-gray-700">Carregando pedido...</p>
+          </div>
+        </div>
+      ) : (
+        <OrderForm 
+          customers={customers}
+          salesReps={salesReps}
+          paymentTables={paymentTables}
+          products={products}
+          selectedCustomer={selectedCustomer}
+          setSelectedCustomer={setSelectedCustomer}
+          selectedSalesRep={selectedSalesRep}
+          setSelectedSalesRep={setSelectedSalesRep}
+          orderItems={orderItems}
+          setOrderItems={setOrderItems}
+          selectedPaymentTable={selectedPaymentTable}
+          setSelectedPaymentTable={setSelectedPaymentTable}
+          isSubmitting={isSubmitting}
+          handleCreateOrder={handleCreateOrder}
+          isEditMode={isEditMode}
+          handleViewRecentPurchases={handleViewRecentPurchases}
+          customerInputValue={customerInputValue}
+          salesRepInputValue={salesRepInputValue}
+          handleAddItem={handleAddItem}
+          handleRemoveItem={handleRemoveItem}
+        />
+      )}
 
       <RecentPurchasesDialog
         open={isRecentPurchasesDialogOpen}

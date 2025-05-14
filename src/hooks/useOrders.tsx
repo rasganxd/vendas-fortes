@@ -3,20 +3,34 @@ import { useState, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { orderService } from '@/services/supabase';
-import { addOrderItems, updateOrderItems } from '@/services/supabase/orderItemService';
-import { loadOrderItems } from '@/services/supabase/loadOrderService';
+import { orderService, getOrderWithItems } from '@/services/supabase/orderService';
+import { addOrderItems, updateOrderItems, getOrderItems } from '@/services/supabase/orderItemService';
 
 export const loadOrders = async (): Promise<Order[]> => {
   try {
+    console.log('Loading all orders...');
+    
     const { data, error } = await supabase
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false });
       
     if (error) {
+      console.error("Error loading orders:", error);
+      toast({
+        title: "Erro ao carregar pedidos",
+        description: `${error.message}`,
+        variant: "destructive"
+      });
       throw error;
     }
+    
+    if (!data || data.length === 0) {
+      console.log('No orders found');
+      return [];
+    }
+    
+    console.log(`Found ${data.length} orders`);
     
     // Transform data to match Order type
     const transformedOrders = data.map(order => ({
@@ -50,8 +64,10 @@ export const loadOrders = async (): Promise<Order[]> => {
     // Load order items for each order
     for (const order of transformedOrders) {
       try {
-        const items = await loadOrderItems(order.id);
+        console.log(`Loading items for order ${order.id}`);
+        const items = await getOrderItems(order.id);
         order.items = items;
+        console.log(`Loaded ${items.length} items for order ${order.id}`);
       } catch (itemError) {
         console.error(`Error loading items for order ${order.id}:`, itemError);
         // Continue with empty items array rather than failing completely
@@ -60,7 +76,7 @@ export const loadOrders = async (): Promise<Order[]> => {
     
     return transformedOrders;
   } catch (error) {
-    console.error("Error loading orders:", error);
+    console.error("Error in loadOrders:", error);
     return [];
   }
 };
@@ -90,12 +106,53 @@ export const useOrders = () => {
     fetchOrders();
   }, []);
 
-  const getOrderById = useCallback((id: string) => {
-    return orders.find(order => order.id === id);
+  const getOrderById = useCallback(async (id: string): Promise<Order | null> => {
+    console.log(`Getting order by ID: ${id}`);
+    
+    // First check if it's in the local state
+    const cachedOrder = orders.find(order => order.id === id);
+    if (cachedOrder && cachedOrder.items && cachedOrder.items.length > 0) {
+      console.log('Found order in local cache:', cachedOrder);
+      return cachedOrder;
+    }
+    
+    // If not in local state or items are missing, fetch from API
+    try {
+      console.log('Fetching order from database...');
+      const order = await getOrderWithItems(id);
+      
+      if (!order) {
+        console.warn(`Order with ID ${id} not found`);
+        return null;
+      }
+      
+      console.log('Order fetched successfully:', order);
+      
+      // Update the local cache with the fetched order
+      setOrders(prevOrders => {
+        const orderIndex = prevOrders.findIndex(o => o.id === id);
+        if (orderIndex >= 0) {
+          // Replace the existing order
+          const updatedOrders = [...prevOrders];
+          updatedOrders[orderIndex] = order;
+          return updatedOrders;
+        } else {
+          // Add the new order to the array
+          return [...prevOrders, order];
+        }
+      });
+      
+      return order;
+    } catch (error) {
+      console.error(`Error fetching order with ID ${id}:`, error);
+      return null;
+    }
   }, [orders]);
 
-  const addOrder = async (order: Omit<Order, 'id'>) => {
+  const addOrder = async (order: Omit<Order, 'id'>): Promise<string> => {
     try {
+      console.log('Adding new order:', order);
+      
       // Transform Order to match Supabase schema
       const supabaseOrder = {
         code: order.code,
@@ -127,15 +184,30 @@ export const useOrders = () => {
         .select();
 
       if (error) {
+        console.error('Error adding order to database:', error);
+        toast({
+          title: "Erro ao adicionar pedido",
+          description: `${error.message}`,
+          variant: "destructive"
+        });
         throw error;
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('No data returned from database after adding order');
       }
 
       const newOrderFromDb = data[0];
       const newOrderId = newOrderFromDb.id;
+      
+      console.log('Order added with ID:', newOrderId);
 
       // Save order items
       if (order.items && order.items.length > 0) {
+        console.log(`Adding ${order.items.length} items to new order ${newOrderId}`);
         await addOrderItems(newOrderId, order.items);
+      } else {
+        console.warn('No items to add to the new order');
       }
 
       // Transform back to Order type
@@ -187,6 +259,8 @@ export const useOrders = () => {
 
   const updateOrder = async (id: string, orderUpdate: Partial<Order>): Promise<string> => {
     try {
+      console.log(`Updating order ${id}:`, orderUpdate);
+      
       // Transform Order to match Supabase schema
       const supabaseOrderUpdate: Record<string, any> = {};
 
@@ -211,6 +285,8 @@ export const useOrders = () => {
       if (orderUpdate.notes !== undefined) supabaseOrderUpdate.notes = orderUpdate.notes;
       if (orderUpdate.archived !== undefined) supabaseOrderUpdate.archived = orderUpdate.archived;
 
+      console.log('Updating order in database with data:', supabaseOrderUpdate);
+      
       // Update in Supabase
       const { error } = await supabase
         .from('orders')
@@ -218,18 +294,31 @@ export const useOrders = () => {
         .eq('id', id);
 
       if (error) {
+        console.error('Error updating order in database:', error);
+        toast({
+          title: "Erro ao atualizar pedido",
+          description: `${error.message}`,
+          variant: "destructive"
+        });
         throw error;
       }
 
       // Update order items if they are included in the update
       if (orderUpdate.items) {
+        console.log(`Updating ${orderUpdate.items.length} items for order ${id}`);
         await updateOrderItems(id, orderUpdate.items);
       }
 
       // Update local state
-      setOrders(orders.map(o =>
-        o.id === id ? { ...o, ...orderUpdate } : o
-      ));
+      setOrders(prevOrders => {
+        return prevOrders.map(o => {
+          if (o.id === id) {
+            return { ...o, ...orderUpdate };
+          }
+          return o;
+        });
+      });
+      
       toast({
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
@@ -240,7 +329,7 @@ export const useOrders = () => {
       console.error("Erro ao atualizar pedido:", error);
       toast({
         title: "Erro ao atualizar pedido",
-        description: "Houve um problema ao atualizar o pedido.",
+        description: `Houve um problema ao atualizar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive"
       });
       return "";
@@ -249,13 +338,32 @@ export const useOrders = () => {
 
   const deleteOrder = async (id: string): Promise<void> => {
     try {
-      // Delete from Supabase
+      console.log(`Deleting order ${id}`);
+      
+      // First delete order items
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', id);
+        
+      if (itemsError) {
+        console.error('Error deleting order items:', itemsError);
+        // Continue with order deletion even if items deletion fails
+      }
+      
+      // Then delete the order
       const { error } = await supabase
         .from('orders')
         .delete()
         .eq('id', id);
 
       if (error) {
+        console.error('Error deleting order:', error);
+        toast({
+          title: "Erro ao excluir pedido",
+          description: `${error.message}`,
+          variant: "destructive"
+        });
         throw error;
       }
 
@@ -275,6 +383,25 @@ export const useOrders = () => {
     }
   };
 
+  const refreshOrders = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      console.log('Refreshing orders list...');
+      const loadedOrders = await loadOrders();
+      setOrders(loadedOrders);
+      console.log(`Refreshed orders list, found ${loadedOrders.length} orders`);
+    } catch (error) {
+      console.error("Error refreshing orders:", error);
+      toast({
+        title: "Erro ao atualizar pedidos",
+        description: "Houve um problema ao carregar os pedidos atualizados.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     orders,
     isLoading,
@@ -282,6 +409,7 @@ export const useOrders = () => {
     addOrder,
     updateOrder,
     deleteOrder,
-    setOrders
+    setOrders,
+    refreshOrders
   };
 };

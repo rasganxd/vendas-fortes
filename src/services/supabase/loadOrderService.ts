@@ -10,15 +10,24 @@ import { transformOrderData } from '@/utils/dataTransformers';
  */
 export const loadOrderItems = async (orderId: string): Promise<OrderItem[]> => {
   try {
+    console.log(`Loading items for order ${orderId} from database...`);
+    
     const { data, error } = await supabase
       .from('order_items')
       .select('*')
       .eq('order_id', orderId);
       
     if (error) {
-      console.error("Error loading order items:", error);
+      console.error(`Error loading order items for order ${orderId}:`, error);
       throw error;
     }
+    
+    if (!data || data.length === 0) {
+      console.log(`No items found for order ${orderId}`);
+      return [];
+    }
+    
+    console.log(`Found ${data.length} items for order ${orderId}:`, data);
     
     // Transform data to match OrderItem type
     return data.map(item => ({
@@ -33,7 +42,7 @@ export const loadOrderItems = async (orderId: string): Promise<OrderItem[]> => {
       total: item.total || (item.unit_price * item.quantity)
     }));
   } catch (error) {
-    console.error("Error in loadOrderItems:", error);
+    console.error(`Error in loadOrderItems for order ${orderId}:`, error);
     return [];
   }
 };
@@ -45,6 +54,8 @@ export const loadOrderItems = async (orderId: string): Promise<OrderItem[]> => {
  */
 export const loadOrderWithItems = async (orderId: string): Promise<Order | null> => {
   try {
+    console.log(`Loading full order with ID: ${orderId}`);
+    
     // Load the order
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
@@ -53,22 +64,32 @@ export const loadOrderWithItems = async (orderId: string): Promise<Order | null>
       .single();
       
     if (orderError) {
-      console.error("Error loading order:", orderError);
+      console.error(`Error loading order ${orderId}:`, orderError);
       return null;
     }
     
+    if (!orderData) {
+      console.warn(`No order found with ID: ${orderId}`);
+      return null;
+    }
+    
+    console.log(`Order found:`, orderData);
+    
     // Load the order items
     const items = await loadOrderItems(orderId);
+    console.log(`Loaded ${items.length} items for order ${orderId}`);
     
     // Transform the order data and add the items
     const order = transformOrderData(orderData);
     if (order) {
       order.items = items;
+    } else {
+      console.warn(`Failed to transform order data for order ${orderId}`);
     }
     
     return order;
   } catch (error) {
-    console.error("Error in loadOrderWithItems:", error);
+    console.error(`Error in loadOrderWithItems for order ${orderId}:`, error);
     return null;
   }
 };
