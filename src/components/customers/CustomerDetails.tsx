@@ -10,7 +10,7 @@ import {
   TableCell, 
   TableRow 
 } from '@/components/ui/table';
-import { formatDate } from '@/lib/date-utils';
+import { formatDateToBR } from '@/lib/date-utils';
 import { Badge } from '@/components/ui/badge';
 import { VisitFrequencyOptions, DaysOfWeekOptions } from './constants';
 
@@ -82,11 +82,11 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Criado em</TableCell>
-                  <TableCell>{customer.createdAt ? formatDate(customer.createdAt) : '—'}</TableCell>
+                  <TableCell>{customer.createdAt ? formatDateToBR(customer.createdAt) : '—'}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Atualizado em</TableCell>
-                  <TableCell>{customer.updatedAt ? formatDate(customer.updatedAt) : '—'}</TableCell>
+                  <TableCell>{customer.updatedAt ? formatDateToBR(customer.updatedAt) : '—'}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
