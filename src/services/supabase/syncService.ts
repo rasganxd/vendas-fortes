@@ -194,10 +194,18 @@ export const syncService = {
             processedOrderIds.push(order.id);
           }
         } else {
-          // New order, insert it
+          // New order, insert it - ensure all required fields are included
+          const orderInsertData = {
+            ...orderData,
+            code: orderData.code || 0,
+            customer_name: orderData.customer_name || 'Unknown Customer',
+            sales_rep_name: orderData.sales_rep_name || 'Unknown Rep',
+            total: orderData.total || 0
+          };
+          
           const { data: newOrder, error: insertError } = await supabase
             .from('orders')
-            .insert(orderData)
+            .insert(orderInsertData)
             .select('id')
             .single();
 
@@ -306,7 +314,17 @@ export const syncService = {
         throw error;
       }
       
-      return data || [];
+      // Ensure the data conforms to SyncLogEntry type
+      const typedData: SyncLogEntry[] = data ? data.map((log: any) => ({
+        id: log.id,
+        event_type: log.event_type as 'upload' | 'download' | 'error', 
+        device_id: log.device_id,
+        sales_rep_id: log.sales_rep_id,
+        created_at: log.created_at,
+        details: log.details
+      })) : [];
+      
+      return typedData;
     } catch (error) {
       console.error("Error in getSyncLogs:", error);
       return [];

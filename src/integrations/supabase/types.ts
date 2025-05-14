@@ -1116,7 +1116,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_sync_logs: {
+        Args: { p_sales_rep_id: string }
+        Returns: {
+          id: string
+          event_type: string
+          device_id: string
+          sales_rep_id: string
+          details: Json
+          created_at: string
+        }[]
+      }
+      insert_sync_log: {
+        Args: {
+          p_event_type: string
+          p_device_id: string
+          p_sales_rep_id: string
+          p_details?: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

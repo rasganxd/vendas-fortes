@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { SyncLogEntry } from "@/services/supabase/syncService";
+import { SyncLogEntry, syncService } from "@/services/supabase/syncService";
 
 interface MobileSyncStatusProps {
   salesRepId: string;
@@ -37,13 +37,9 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_sync_logs', {
-        p_sales_rep_id: salesRepId
-      });
-        
-      if (error) throw error;
+      const data = await syncService.getSyncLogs(salesRepId);
       
-      setSyncLogs(data || []);
+      setSyncLogs(data);
       
       if (data && data.length > 0) {
         setLastSynced(new Date(data[0].created_at).toLocaleString());
@@ -67,10 +63,20 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           
         if (fallbackError) throw fallbackError;
         
-        setSyncLogs(fallbackData || []);
+        // Transform the data to match the SyncLogEntry type
+        const typedData: SyncLogEntry[] = fallbackData ? fallbackData.map((log: any) => ({
+          id: log.id,
+          event_type: log.event_type as 'upload' | 'download' | 'error', 
+          device_id: log.device_id,
+          sales_rep_id: log.sales_rep_id,
+          created_at: log.created_at,
+          details: log.details
+        })) : [];
         
-        if (fallbackData && fallbackData.length > 0) {
-          setLastSynced(new Date(fallbackData[0].created_at).toLocaleString());
+        setSyncLogs(typedData);
+        
+        if (typedData && typedData.length > 0) {
+          setLastSynced(new Date(typedData[0].created_at).toLocaleString());
         }
       } catch (fallbackError) {
         console.error("Fallback method also failed:", fallbackError);
@@ -96,7 +102,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     }
   }, [salesRepId]);
 
-  const getStatusIcon = (eventType: string) => {
+  const getStatusIcon = (eventType: 'upload' | 'download' | 'error') => {
     switch (eventType) {
       case 'upload':
         return <CheckCircle className="text-green-500 h-5 w-5" />;
