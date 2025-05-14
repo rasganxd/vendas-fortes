@@ -4,6 +4,7 @@ import { Customer } from '@/types';
 import { customerService } from '@/services/supabase/customerService';
 import { toast } from '@/components/ui/use-toast';
 import { transformCustomerData, transformArray } from '@/utils/dataTransformers';
+import { supabase } from '@/integrations/supabase/client';
 
 // Cache key for localStorage
 const CUSTOMERS_CACHE_KEY = 'app_customers_cache';
@@ -13,6 +14,8 @@ const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes in milliseconds
 // Load customers with improved caching strategy
 export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> => {
   try {
+    console.log("Attempting to load customers with forceRefresh =", forceRefresh);
+    
     // Try to get from cache if not forcing refresh
     if (!forceRefresh) {
       const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
@@ -24,12 +27,14 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
         
         // If cache is still fresh, use it
         if (now - timestamp < CACHE_MAX_AGE) {
+          console.log("Using cached customer data");
           return JSON.parse(cachedData) as Customer[];
         }
       }
     }
     
     // If not in cache or cache is stale, fetch from API
+    console.log("Fetching customer data from Supabase");
     const data = await customerService.getAll();
     const customers = transformArray(data, transformCustomerData) as Customer[];
     
@@ -37,6 +42,7 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
     localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
     localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
     
+    console.log(`Loaded ${customers.length} customers from Supabase`);
     return customers;
   } catch (error) {
     console.error("Error loading customers:", error);
@@ -44,6 +50,7 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
     // Try to use cached data even if expired as fallback
     const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
     if (cachedData) {
+      console.log("Using expired cache as fallback due to error");
       return JSON.parse(cachedData) as Customer[];
     }
     
@@ -54,6 +61,59 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnlineStatus = () => {
+      const online = navigator.onLine;
+      console.log("Connection status changed:", online ? "ONLINE" : "OFFLINE");
+      setIsOnline(online);
+      
+      if (online) {
+        // Refresh data when coming back online
+        console.log("Coming back online - refreshing customer data");
+        refreshCustomers();
+      }
+    };
+    
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOnlineStatus);
+    
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOnlineStatus);
+    };
+  }, []);
+  
+  // Set up Realtime subscription
+  useEffect(() => {
+    console.log("Setting up Realtime subscription for customers table");
+    
+    const channel = supabase
+      .channel('customer-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customers'
+        },
+        (payload) => {
+          console.log("Realtime customer change detected:", payload);
+          // Refresh customers when changes are detected
+          refreshCustomers();
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime subscription status for customers:", status);
+      });
+      
+    return () => {
+      console.log("Cleaning up Realtime subscription for customers");
+      supabase.removeChannel(channel);
+    };
+  }, []);
   
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -86,6 +146,9 @@ export const useCustomers = () => {
     
     return highestCode + 1;
   };
+  
+  // Aliased function name to match AppContextTypes
+  const generateNextCustomerCode = generateNextCode;
   
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
@@ -189,24 +252,30 @@ export const useCustomers = () => {
     }
   };
 
+  const refreshCustomers = async () => {
+    setIsLoading(true);
+    try {
+      console.log("Refreshing customers data from server");
+      const refreshedCustomers = await loadCustomers(true);
+      setCustomers(refreshedCustomers);
+      console.log(`Refreshed ${refreshedCustomers.length} customers`);
+    } catch (error) {
+      console.error("Error refreshing customers:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     customers,
     addCustomer,
     updateCustomer,
     deleteCustomer,
     generateNextCode,
+    generateNextCustomerCode,
     isLoading,
     setCustomers,
-    refreshCustomers: async () => {
-      setIsLoading(true);
-      try {
-        const refreshedCustomers = await loadCustomers(true);
-        setCustomers(refreshedCustomers);
-      } catch (error) {
-        console.error("Error refreshing customers:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    refreshCustomers,
+    isOnline
   };
 };

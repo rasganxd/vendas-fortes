@@ -1,14 +1,14 @@
 
-import { Customer, Product, Order, Payment, Load, SalesRep, Vehicle, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
+// Adicionar connectionStatus ao tipo AppContextType
+import { Customer, Product, Order, Payment, LoadItem, SalesRep, Vehicle, Route, Load, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 
-export interface AppContextType {
-  // Data arrays
+export type AppContextType = {
   customers: Customer[];
   products: Product[];
   orders: Order[];
   payments: Payment[];
-  routes: DeliveryRoute[];
-  loads: Load[];
+  routes: Route[];
+  loads: LoadItem[];
   salesReps: SalesRep[];
   vehicles: Vehicle[];
   paymentMethods: PaymentMethod[];
@@ -18,8 +18,8 @@ export interface AppContextType {
   productBrands: ProductBrand[];
   deliveryRoutes: DeliveryRoute[];
   backups: Backup[];
+  connectionStatus: 'online' | 'offline';  // Adicionado status de conexão
   
-  // Loading states
   isLoadingCustomers: boolean;
   isLoadingProducts: boolean;
   isLoadingOrders: boolean;
@@ -35,15 +35,14 @@ export interface AppContextType {
   isLoadingProductBrands: boolean;
   isLoadingDeliveryRoutes: boolean;
   isLoadingBackups: boolean;
-  isUsingMockData: boolean; // New field to track if using mock data
+  isUsingMockData: boolean;
   
-  // State setters
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
-  setRoutes: React.Dispatch<React.SetStateAction<DeliveryRoute[]>>;
-  setLoads: React.Dispatch<React.SetStateAction<Load[]>>;
+  setRoutes: React.Dispatch<React.SetStateAction<Route[]>>;
+  setLoads: React.Dispatch<React.SetStateAction<LoadItem[]>>;
   setSalesReps: React.Dispatch<React.SetStateAction<SalesRep[]>>;
   setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
   setPaymentMethods: React.Dispatch<React.SetStateAction<PaymentMethod[]>>;
@@ -53,12 +52,6 @@ export interface AppContextType {
   setProductBrands: React.Dispatch<React.SetStateAction<ProductBrand[]>>;
   setDeliveryRoutes: React.Dispatch<React.SetStateAction<DeliveryRoute[]>>;
   setBackups: React.Dispatch<React.SetStateAction<Backup[]>>;
-  
-  // Methods from hooks
-  // Route operations
-  addRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
-  updateRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
-  deleteRoute: (id: string) => Promise<void>;
   
   // Customer operations
   addCustomer: (customer: Omit<Customer, 'id'>) => Promise<string>;
@@ -70,7 +63,7 @@ export interface AppContextType {
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
-  validateProductDiscount: (productId: string, discountedPrice: number) => boolean;
+  validateProductDiscount: (productId: string, discountedPrice: number) => string | boolean;
   getMinimumPrice: (productId: string) => number;
   addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>; // New function for bulk product creation
   
@@ -79,6 +72,21 @@ export interface AppContextType {
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<string>;
   deleteOrder: (id: string) => Promise<void>;
+  
+  // Route operations
+  addRoute: (route: Omit<Route, 'id'>) => Promise<string>;
+  updateRoute: (id: string, route: Partial<Route>) => Promise<void>;
+  deleteRoute: (id: string) => Promise<void>;
+  
+  // Load operations
+  addLoad: (load: Omit<Load, 'id'>) => Promise<string>;
+  updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
+  deleteLoad: (id: string) => Promise<void>;
+  
+  // Sales rep operations
+  addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
+  updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => Promise<void>;
+  deleteSalesRep: (id: string) => Promise<void>;
   
   // Vehicle operations
   addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
@@ -89,58 +97,49 @@ export interface AppContextType {
   addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
   updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
+  createAutomaticPaymentRecord: (order: Order) => Promise<string | undefined>;
   
-  // PaymentMethod operations
+  // Payment method operations
   addPaymentMethod: (method: Omit<PaymentMethod, 'id'>) => Promise<string>;
   updatePaymentMethod: (id: string, method: Partial<PaymentMethod>) => Promise<void>;
   deletePaymentMethod: (id: string) => Promise<void>;
   
-  // Load operations
-  addLoad: (load: Omit<Load, 'id'>) => Promise<string>;
-  updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
-  deleteLoad: (id: string) => Promise<void>;
-  
-  // SalesRep operations
-  addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
-  updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => Promise<void>;
-  deleteSalesRep: (id: string) => Promise<void>;
-  
-  // PaymentTable operations
-  addPaymentTable: (paymentTable: Omit<PaymentTable, 'id'>) => Promise<string>;
-  updatePaymentTable: (id: string, paymentTable: Partial<PaymentTable>) => Promise<void>;
+  // Payment table operations
+  addPaymentTable: (table: Omit<PaymentTable, 'id'>) => Promise<string>;
+  updatePaymentTable: (id: string, table: Partial<PaymentTable>) => Promise<void>;
   deletePaymentTable: (id: string) => Promise<void>;
   
-  // ProductGroup operations
+  // Product group operations
   addProductGroup: (group: Omit<ProductGroup, 'id'>) => Promise<string>;
   updateProductGroup: (id: string, group: Partial<ProductGroup>) => Promise<void>;
   deleteProductGroup: (id: string) => Promise<void>;
   
-  // ProductCategory operations
+  // Product category operations
   addProductCategory: (category: Omit<ProductCategory, 'id'>) => Promise<string>;
   updateProductCategory: (id: string, category: Partial<ProductCategory>) => Promise<void>;
   deleteProductCategory: (id: string) => Promise<void>;
   
-  // ProductBrand operations
+  // Product brand operations
   addProductBrand: (brand: Omit<ProductBrand, 'id'>) => Promise<string>;
   updateProductBrand: (id: string, brand: Partial<ProductBrand>) => Promise<void>;
   deleteProductBrand: (id: string) => Promise<void>;
   
-  // DeliveryRoute operations
+  // Delivery route operations
   addDeliveryRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
   updateDeliveryRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
   deleteDeliveryRoute: (id: string) => Promise<void>;
   
   // Backup operations
-  createBackup: (name: string, description?: string) => string;
+  createBackup: (name?: string) => Promise<string>;
   restoreBackup: (id: string) => boolean;
   deleteBackup: (id: string) => boolean;
   
-  // App Settings
-  settings: AppSettings | null;
-  updateSettings: (newSettings: Partial<AppSettings>) => Promise<boolean>;
+  // Settings
+  settings: AppSettings;
+  updateSettings: (settings: Partial<AppSettings>) => Promise<void>;
   
   // System operations
-  startNewMonth: () => void;
+  startNewMonth: () => Promise<boolean>;
   clearCache: () => Promise<void>;
-  createAutomaticPaymentRecord: (order: Order) => Promise<void>;
-}
+  refreshData: () => Promise<boolean>; // Nova função para forçar atualização de todos os dados
+};

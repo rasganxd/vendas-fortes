@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,9 +5,33 @@ import { toast } from '@/components/ui/use-toast';
 import { orderService, getOrderWithItems } from '@/services/supabase/orderService';
 import { addOrderItems, updateOrderItems, getOrderItems } from '@/services/supabase/orderItemService';
 
-export const loadOrders = async (): Promise<Order[]> => {
+// Cache keys for localStorage
+const ORDERS_CACHE_KEY = 'app_orders_cache';
+const ORDERS_CACHE_TIMESTAMP_KEY = 'app_orders_cache_timestamp';
+const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {
   try {
-    console.log('Loading all orders...');
+    console.log('Loading all orders with forceRefresh =', forceRefresh);
+    
+    // Try to get from cache if not forcing refresh
+    if (!forceRefresh) {
+      const cachedData = localStorage.getItem(ORDERS_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(ORDERS_CACHE_TIMESTAMP_KEY);
+      
+      if (cachedData && cachedTimestamp) {
+        const timestamp = parseInt(cachedTimestamp, 10);
+        const now = Date.now();
+        
+        // If cache is still fresh, use it
+        if (now - timestamp < CACHE_MAX_AGE) {
+          console.log("Using cached order data");
+          return JSON.parse(cachedData) as Order[];
+        }
+      }
+    }
+    
+    console.log('Fetching orders data from Supabase');
     
     const { data, error } = await supabase
       .from('orders')
@@ -74,9 +97,21 @@ export const loadOrders = async (): Promise<Order[]> => {
       }
     }
     
+    // Store in localStorage cache
+    localStorage.setItem(ORDERS_CACHE_KEY, JSON.stringify(transformedOrders));
+    localStorage.setItem(ORDERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+    
     return transformedOrders;
   } catch (error) {
     console.error("Error in loadOrders:", error);
+    
+    // Try to use cached data even if expired as fallback
+    const cachedData = localStorage.getItem(ORDERS_CACHE_KEY);
+    if (cachedData) {
+      console.log("Using expired cache as fallback due to error");
+      return JSON.parse(cachedData) as Order[];
+    }
+    
     return [];
   }
 };
@@ -84,7 +119,81 @@ export const loadOrders = async (): Promise<Order[]> => {
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnlineStatus = () => {
+      const online = navigator.onLine;
+      console.log("Connection status changed:", online ? "ONLINE" : "OFFLINE");
+      setIsOnline(online);
+      
+      if (online) {
+        // Refresh data when coming back online
+        console.log("Coming back online - refreshing orders data");
+        refreshOrders();
+      }
+    };
+    
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOnlineStatus);
+    
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOnlineStatus);
+    };
+  }, []);
+  
+  // Set up Realtime subscription
+  useEffect(() => {
+    console.log("Setting up Realtime subscription for orders table");
+    
+    const channel = supabase
+      .channel('order-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log("Realtime order change detected:", payload);
+          // Refresh orders when changes are detected
+          refreshOrders();
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime subscription status for orders:", status);
+      });
+      
+    // Set up Realtime subscription for order items
+    const itemsChannel = supabase
+      .channel('order-items-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', 
+          schema: 'public',
+          table: 'order_items'
+        },
+        (payload) => {
+          console.log("Realtime order items change detected:", payload);
+          // Refresh orders when changes are detected
+          refreshOrders();
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime subscription status for order items:", status);
+      });
+      
+    return () => {
+      console.log("Cleaning up Realtime subscriptions");
+      supabase.removeChannel(channel);
+      supabase.removeChannel(itemsChannel);
+    };
+  }, []);
+  
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -109,16 +218,16 @@ export const useOrders = () => {
   const getOrderById = useCallback(async (id: string): Promise<Order | null> => {
     console.log(`Getting order by ID: ${id}`);
     
-    // First check if it's in the local state
+    // First check if it's in the local state with items
     const cachedOrder = orders.find(order => order.id === id);
     if (cachedOrder && cachedOrder.items && cachedOrder.items.length > 0) {
-      console.log('Found order in local cache:', cachedOrder);
+      console.log('Found order in local cache with items:', cachedOrder);
       return cachedOrder;
     }
     
     // If not in local state or items are missing, fetch from API
     try {
-      console.log('Fetching order from database...');
+      console.log('Fetching order with items from database...');
       const order = await getOrderWithItems(id);
       
       if (!order) {
@@ -387,7 +496,7 @@ export const useOrders = () => {
     try {
       setIsLoading(true);
       console.log('Refreshing orders list...');
-      const loadedOrders = await loadOrders();
+      const loadedOrders = await loadOrders(true);
       setOrders(loadedOrders);
       console.log(`Refreshed orders list, found ${loadedOrders.length} orders`);
     } catch (error) {
@@ -405,6 +514,7 @@ export const useOrders = () => {
   return {
     orders,
     isLoading,
+    isOnline,
     getOrderById,
     addOrder,
     updateOrder,
