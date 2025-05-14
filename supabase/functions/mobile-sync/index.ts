@@ -1,238 +1,189 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
-// Set up CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
-// Create Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-/**
- * Helper function to transform from snake_case to camelCase
- */
-const snakeToCamel = (str: string): string => {
-  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-};
-
-/**
- * Convert data from DB to camelCase format
- */
-const transformData = (data: any[]): any[] => {
-  return data.map(item => {
-    const result: Record<string, any> = {};
-    
-    for (const key in item) {
-      if (Object.prototype.hasOwnProperty.call(item, key)) {
-        const camelKey = snakeToCamel(key);
-        result[camelKey] = item[key];
-      }
-    }
-    
-    return result;
-  });
-};
-
-serve(async (req: Request) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    // Parse the URL to extract the action
-    const url = new URL(req.url);
-    const action = url.pathname.split('/').pop();
+  // Get the authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Authorization header is required' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
-    // Get auth token from request
-    const authHeader = req.headers.get('Authorization') || '';
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Verify auth token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', status: 401 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      );
+  // Initialize Supabase client
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    {
+      global: { headers: { Authorization: authHeader } }
     }
+  );
 
+  try {
+    const url = new URL(req.url);
+    const path = url.pathname.split('/').pop();
+
+    // Logging sync request for debugging
+    console.log(`Mobile sync request: ${path}`);
+
+    // Extract parameters from URL and body
+    const salesRepId = url.searchParams.get('salesRepId');
+    const deviceId = url.searchParams.get('deviceId') || 'unknown';
+
+    // GET endpoints
     if (req.method === 'GET') {
-      switch (action) {
+      switch (path) {
         case 'get-sales-reps': {
-          const { data, error } = await supabase
+          const { data, error } = await supabaseClient
             .from('sales_reps')
             .select('*')
             .eq('active', true);
-            
+
           if (error) throw error;
           
           return new Response(
-            JSON.stringify({ 
-              data: transformData(data), 
-              timestamp: Date.now() 
-            }),
+            JSON.stringify({ data, timestamp: Date.now() }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
+
         case 'get-customers': {
-          const { data, error } = await supabase
+          const { data, error } = await supabaseClient
             .from('customers')
             .select('*');
-            
+
           if (error) throw error;
           
           return new Response(
-            JSON.stringify({ 
-              data: transformData(data), 
-              timestamp: Date.now() 
-            }),
+            JSON.stringify({ data, timestamp: Date.now() }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
+
         case 'get-products': {
-          const { data, error } = await supabase
+          const { data, error } = await supabaseClient
             .from('products')
             .select('*');
-            
+
           if (error) throw error;
           
           return new Response(
-            JSON.stringify({ 
-              data: transformData(data), 
-              timestamp: Date.now() 
-            }),
+            JSON.stringify({ data, timestamp: Date.now() }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
+
         case 'get-orders': {
-          const salesRepId = url.searchParams.get('sales_rep_id');
-          let query = supabase.from('orders').select('*, order_items(*)');
-          
-          if (salesRepId) {
-            query = query.eq('sales_rep_id', salesRepId);
+          if (!salesRepId) {
+            return new Response(
+              JSON.stringify({ error: 'salesRepId parameter is required' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
-            
-          const { data, error } = await query;
-            
+
+          const { data, error } = await supabaseClient
+            .from('orders')
+            .select('*, order_items(*)')
+            .eq('sales_rep_id', salesRepId);
+
           if (error) throw error;
           
+          // Log download event
+          if (deviceId && salesRepId) {
+            await logSyncEvent(supabaseClient, 'download', deviceId, salesRepId, {
+              count: data?.length || 0,
+              type: 'orders'
+            });
+          }
+          
           return new Response(
-            JSON.stringify({ 
-              data: transformData(data), 
-              timestamp: Date.now() 
-            }),
+            JSON.stringify({ data, timestamp: Date.now() }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
+
         default:
           return new Response(
-            JSON.stringify({ error: 'Unknown action', status: 400 }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            JSON.stringify({ error: 'Unsupported endpoint' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
       }
-    } 
-    else if (req.method === 'POST') {
-      // Parse request body
-      const requestData = await req.json();
+    }
+
+    // POST endpoints
+    if (req.method === 'POST') {
+      const body = await req.json();
       
-      switch (action) {
+      switch (path) {
         case 'sync-orders': {
-          const { orders = [], deviceId, salesRepId } = requestData;
-          
-          if (!Array.isArray(orders) || orders.length === 0) {
+          if (!body.salesRepId || !body.deviceId || !body.orders) {
             return new Response(
-              JSON.stringify({ error: 'Invalid orders data', status: 400 }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+              JSON.stringify({ error: 'salesRepId, deviceId, and orders are required' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
 
-          if (!deviceId || !salesRepId) {
-            return new Response(
-              JSON.stringify({ error: 'Missing device ID or sales rep ID', status: 400 }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-            );
-          }
-
-          const processedOrderIds: string[] = [];
+          const { salesRepId, deviceId, orders } = body;
           
           // Process each order
+          const processedOrderIds = [];
           for (const order of orders) {
-            // Transform camelCase to snake_case for DB
-            const dbOrder: Record<string, any> = {};
-            for (const key in order) {
-              if (key === 'items') continue; // Handle items separately
-              if (Object.prototype.hasOwnProperty.call(order, key)) {
-                const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-                dbOrder[snakeKey] = order[key];
-              }
-            }
+            const orderData = {
+              ...order,
+              synced_from_mobile: true,
+              device_id: deviceId,
+              sync_timestamp: new Date().toISOString()
+            };
             
-            // Check if order already exists
-            const { data: existingOrder } = await supabase
+            // Check if order exists
+            const { data: existingOrder } = await supabaseClient
               .from('orders')
               .select('id')
               .eq('id', order.id)
               .maybeSingle();
-
+            
             if (existingOrder) {
-              // Order exists, update it
-              const { error: updateError } = await supabase
+              // Update existing order
+              const { error: updateError } = await supabaseClient
                 .from('orders')
-                .update({
-                  ...dbOrder,
-                  updated_at: new Date().toISOString(),
-                  synced_from_mobile: true,
-                  device_id: deviceId
-                })
+                .update(orderData)
                 .eq('id', order.id);
-
-              if (!updateError) {
-                processedOrderIds.push(order.id);
-              }
+              
+              if (updateError) throw updateError;
+              processedOrderIds.push(order.id);
             } else {
-              // New order, insert it
-              const { data: newOrder, error: insertError } = await supabase
+              // Insert new order
+              const { data: newOrder, error: insertError } = await supabaseClient
                 .from('orders')
-                .insert({
-                  ...dbOrder,
-                  synced_from_mobile: true,
-                  device_id: deviceId,
-                  sales_rep_id: salesRepId
-                })
+                .insert(orderData)
                 .select('id')
                 .single();
-
-              if (!insertError && newOrder) {
+              
+              if (insertError) throw insertError;
+              
+              if (newOrder) {
                 processedOrderIds.push(newOrder.id);
-
+                
                 // Process order items
                 if (order.items && Array.isArray(order.items)) {
                   for (const item of order.items) {
-                    // Transform camelCase to snake_case for items
-                    const dbItem: Record<string, any> = {};
-                    for (const key in item) {
-                      if (Object.prototype.hasOwnProperty.call(item, key)) {
-                        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-                        dbItem[snakeKey] = item[key];
-                      }
-                    }
-                    
-                    await supabase
+                    await supabaseClient
                       .from('order_items')
                       .insert({
-                        ...dbItem,
+                        ...item,
                         order_id: newOrder.id
                       });
                   }
@@ -240,22 +191,17 @@ serve(async (req: Request) => {
               }
             }
           }
-
-          // Log sync event
-          await supabase
-            .from('sync_logs')
-            .insert({
-              event_type: 'upload',
-              device_id: deviceId,
-              sales_rep_id: salesRepId,
-              details: { order_count: orders.length },
-              created_at: new Date().toISOString()
-            });
-
+          
+          // Log upload event
+          await logSyncEvent(supabaseClient, 'upload', deviceId, salesRepId, {
+            count: processedOrderIds.length,
+            order_ids: processedOrderIds
+          });
+          
           return new Response(
-            JSON.stringify({
-              success: true,
-              processedOrderIds,
+            JSON.stringify({ 
+              success: true, 
+              orderIds: processedOrderIds,
               timestamp: Date.now()
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -263,42 +209,69 @@ serve(async (req: Request) => {
         }
         
         case 'log-sync': {
-          const { eventType, deviceId, salesRepId, details } = requestData;
+          if (!body.eventType || !body.deviceId || !body.salesRepId) {
+            return new Response(
+              JSON.stringify({ error: 'eventType, deviceId, and salesRepId are required' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
           
-          await supabase
-            .from('sync_logs')
-            .insert({
-              event_type: eventType,
-              device_id: deviceId,
-              sales_rep_id: salesRepId,
-              details,
-              created_at: new Date().toISOString()
-            });
-            
+          const { eventType, deviceId, salesRepId, details } = body;
+          
+          // Log sync event
+          await logSyncEvent(supabaseClient, eventType, deviceId, salesRepId, details);
+          
           return new Response(
-            JSON.stringify({ success: true }),
+            JSON.stringify({ success: true, timestamp: Date.now() }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
+
         default:
           return new Response(
-            JSON.stringify({ error: 'Unknown action', status: 400 }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            JSON.stringify({ error: 'Unsupported endpoint' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
       }
     }
-    
+
+    // If none of the routes matched
     return new Response(
-      JSON.stringify({ error: 'Method not allowed', status: 405 }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 405 }
+      JSON.stringify({ error: 'Route not found' }),
+      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('Error in mobile-sync function:', error);
     
     return new Response(
-      JSON.stringify({ error: 'Internal server error', message: error.message, status: 500 }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: error instanceof Error ? error.stack : null
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
+
+// Helper function to log sync events
+async function logSyncEvent(
+  supabaseClient: any,
+  eventType: 'upload' | 'download' | 'error',
+  deviceId: string,
+  salesRepId: string,
+  details?: any
+) {
+  try {
+    await supabaseClient
+      .from('sync_logs')
+      .insert({
+        event_type: eventType,
+        device_id: deviceId,
+        sales_rep_id: salesRepId,
+        details: details || {},
+        created_at: new Date().toISOString()
+      });
+  } catch (error) {
+    console.error("Error logging sync event:", error);
+  }
+}

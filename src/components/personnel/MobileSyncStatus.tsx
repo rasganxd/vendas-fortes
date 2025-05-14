@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -20,15 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-interface SyncLogEntry {
-  id: string;
-  event_type: string;
-  device_id: string;
-  sales_rep_id: string;
-  created_at: string;
-  details: any;
-}
+import { SyncLogEntry } from "@/services/supabase/syncService";
 
 interface MobileSyncStatusProps {
   salesRepId: string;
@@ -45,12 +37,9 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('sync_logs')
-        .select('*')
-        .eq('sales_rep_id', salesRepId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const { data, error } = await supabase.rpc('get_sync_logs', {
+        p_sales_rep_id: salesRepId
+      });
         
       if (error) throw error;
       
@@ -66,6 +55,26 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
         description: "Não foi possível carregar os logs de sincronização.",
         variant: "destructive"
       });
+      
+      // Método alternativo caso o RPC falhe
+      try {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('sync_logs')
+          .select('*')
+          .eq('sales_rep_id', salesRepId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+          
+        if (fallbackError) throw fallbackError;
+        
+        setSyncLogs(fallbackData || []);
+        
+        if (fallbackData && fallbackData.length > 0) {
+          setLastSynced(new Date(fallbackData[0].created_at).toLocaleString());
+        }
+      } catch (fallbackError) {
+        console.error("Fallback method also failed:", fallbackError);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +90,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     });
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (salesRepId) {
       loadSyncLogs();
     }

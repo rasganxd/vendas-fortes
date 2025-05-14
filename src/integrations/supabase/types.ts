@@ -68,6 +68,7 @@ export type Database = {
           phone: string | null
           state: string | null
           updated_at: string | null
+          version: number | null
           visit_days: string[] | null
           visit_frequency: string | null
           visit_sequence: number | null
@@ -86,6 +87,7 @@ export type Database = {
           phone?: string | null
           state?: string | null
           updated_at?: string | null
+          version?: number | null
           visit_days?: string[] | null
           visit_frequency?: string | null
           visit_sequence?: number | null
@@ -104,6 +106,7 @@ export type Database = {
           phone?: string | null
           state?: string | null
           updated_at?: string | null
+          version?: number | null
           visit_days?: string[] | null
           visit_frequency?: string | null
           visit_sequence?: number | null
@@ -389,6 +392,7 @@ export type Database = {
           delivery_city: string | null
           delivery_state: string | null
           delivery_zip: string | null
+          device_id: string | null
           discount: number | null
           due_date: string | null
           id: string
@@ -400,8 +404,11 @@ export type Database = {
           sales_rep_id: string | null
           sales_rep_name: string
           status: string | null
+          sync_timestamp: string | null
+          synced_from_mobile: boolean | null
           total: number
           updated_at: string | null
+          version: number | null
         }
         Insert: {
           archived?: boolean | null
@@ -414,6 +421,7 @@ export type Database = {
           delivery_city?: string | null
           delivery_state?: string | null
           delivery_zip?: string | null
+          device_id?: string | null
           discount?: number | null
           due_date?: string | null
           id?: string
@@ -425,8 +433,11 @@ export type Database = {
           sales_rep_id?: string | null
           sales_rep_name: string
           status?: string | null
+          sync_timestamp?: string | null
+          synced_from_mobile?: boolean | null
           total: number
           updated_at?: string | null
+          version?: number | null
         }
         Update: {
           archived?: boolean | null
@@ -439,6 +450,7 @@ export type Database = {
           delivery_city?: string | null
           delivery_state?: string | null
           delivery_zip?: string | null
+          device_id?: string | null
           discount?: number | null
           due_date?: string | null
           id?: string
@@ -450,8 +462,11 @@ export type Database = {
           sales_rep_id?: string | null
           sales_rep_name?: string
           status?: string | null
+          sync_timestamp?: string | null
+          synced_from_mobile?: boolean | null
           total?: number
           updated_at?: string | null
+          version?: number | null
         }
         Relationships: [
           {
@@ -821,6 +836,7 @@ export type Database = {
           stock: number | null
           unit: string | null
           updated_at: string | null
+          version: number | null
         }
         Insert: {
           brand_id?: string | null
@@ -838,6 +854,7 @@ export type Database = {
           stock?: number | null
           unit?: string | null
           updated_at?: string | null
+          version?: number | null
         }
         Update: {
           brand_id?: string | null
@@ -855,6 +872,7 @@ export type Database = {
           stock?: number | null
           unit?: string | null
           updated_at?: string | null
+          version?: number | null
         }
         Relationships: [
           {
@@ -970,6 +988,7 @@ export type Database = {
           role: string | null
           state: string | null
           updated_at: string | null
+          version: number | null
           zip: string | null
         }
         Insert: {
@@ -988,6 +1007,7 @@ export type Database = {
           role?: string | null
           state?: string | null
           updated_at?: string | null
+          version?: number | null
           zip?: string | null
         }
         Update: {
@@ -1006,9 +1026,45 @@ export type Database = {
           role?: string | null
           state?: string | null
           updated_at?: string | null
+          version?: number | null
           zip?: string | null
         }
         Relationships: []
+      }
+      sync_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          device_id: string
+          event_type: string
+          id: string
+          sales_rep_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          device_id: string
+          event_type: string
+          id?: string
+          sales_rep_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          device_id?: string
+          event_type?: string
+          id?: string
+          sales_rep_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_logs_sales_rep_id_fkey"
+            columns: ["sales_rep_id"]
+            isOneToOne: false
+            referencedRelation: "sales_reps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicles: {
         Row: {

@@ -3,6 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { transformSalesRepData, prepareForSupabase } from '@/utils/dataTransformers';
 import { SalesRep, Customer, Product, Order } from '@/types';
 
+// Interface para as entradas de log de sincronização
+export interface SyncLogEntry {
+  id: string;
+  event_type: 'upload' | 'download' | 'error';
+  device_id: string;
+  sales_rep_id: string;
+  created_at: string;
+  details?: any;
+}
+
 /**
  * Service for handling data synchronization with mobile devices
  */
@@ -152,6 +162,15 @@ export const syncService = {
 
       // Process each order
       for (const order of orders) {
+        // Prepare order data with mobile sync fields
+        const orderData = {
+          ...prepareForSupabase(order),
+          synced_from_mobile: true,
+          device_id: deviceId,
+          sales_rep_id: salesRepId,
+          sync_timestamp: new Date().toISOString()
+        };
+        
         // Check if order already exists (by client-generated UUID)
         const { data: existingOrder } = await supabase
           .from('orders')
@@ -164,10 +183,8 @@ export const syncService = {
           const { error: updateError } = await supabase
             .from('orders')
             .update({
-              ...prepareForSupabase(order),
-              updated_at: new Date().toISOString(),
-              synced_from_mobile: true,
-              device_id: deviceId
+              ...orderData,
+              updated_at: new Date().toISOString()
             })
             .eq('id', order.id);
 
@@ -180,12 +197,7 @@ export const syncService = {
           // New order, insert it
           const { data: newOrder, error: insertError } = await supabase
             .from('orders')
-            .insert({
-              ...prepareForSupabase(order),
-              synced_from_mobile: true,
-              device_id: deviceId,
-              sales_rep_id: salesRepId
-            })
+            .insert(orderData)
             .select('id')
             .single();
 
@@ -197,11 +209,18 @@ export const syncService = {
             // Process order items
             if (order.items && Array.isArray(order.items)) {
               for (const item of order.items) {
+                const itemData = prepareForSupabase(item);
                 await supabase
                   .from('order_items')
                   .insert({
-                    ...prepareForSupabase(item),
-                    order_id: newOrder.id
+                    ...itemData,
+                    order_id: newOrder.id,
+                    product_code: itemData.product_code || 0,
+                    product_name: itemData.product_name || '',
+                    quantity: itemData.quantity || 0,
+                    price: itemData.price || 0,
+                    unit_price: itemData.unit_price || 0,
+                    total: itemData.total || 0
                   });
               }
             }
@@ -209,12 +228,25 @@ export const syncService = {
         }
       }
 
+      // Log successful sync
+      await syncService.logSyncEvent('upload', deviceId, salesRepId, {
+        count: processedOrderIds.length,
+        order_ids: processedOrderIds
+      });
+
       return {
         success: true,
         orderIds: processedOrderIds
       };
     } catch (error) {
       console.error("Error in receiveOrdersFromMobile:", error);
+      
+      // Log sync error
+      await syncService.logSyncEvent('error', deviceId, salesRepId, {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : null
+      });
+      
       return { success: false, orderIds: [] };
     }
   },
@@ -233,17 +265,51 @@ export const syncService = {
     details?: Record<string, any>
   ): Promise<void> => {
     try {
-      await supabase
-        .from('sync_logs')
-        .insert({
+      // Usando rpc porque sync_logs ainda não está nos tipos do Supabase
+      await supabase.rpc('insert_sync_log', {
+        p_event_type: eventType,
+        p_device_id: deviceId,
+        p_sales_rep_id: salesRepId,
+        p_details: details || {}
+      }).throwOnError();
+    } catch (error) {
+      console.error("Error logging sync event:", error);
+      
+      // Método alternativo caso o rpc falhe
+      try {
+        await supabase.from('sync_logs').insert({
           event_type: eventType,
           device_id: deviceId,
           sales_rep_id: salesRepId,
-          details,
+          details: details || {},
           created_at: new Date().toISOString()
         });
+      } catch (innerError) {
+        console.error("Failed to log sync event using alternative method:", innerError);
+      }
+    }
+  },
+  
+  /**
+   * Get sync logs for a specific sales rep
+   * @param salesRepId - ID of the sales rep
+   * @returns Array of sync log entries
+   */
+  getSyncLogs: async (salesRepId: string): Promise<SyncLogEntry[]> => {
+    try {
+      const { data, error } = await supabase.rpc('get_sync_logs', {
+        p_sales_rep_id: salesRepId
+      });
+      
+      if (error) {
+        console.error("Error fetching sync logs:", error);
+        throw error;
+      }
+      
+      return data || [];
     } catch (error) {
-      console.error("Error logging sync event:", error);
+      console.error("Error in getSyncLogs:", error);
+      return [];
     }
   }
 };
