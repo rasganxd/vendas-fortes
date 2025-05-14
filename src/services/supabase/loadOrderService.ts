@@ -1,88 +1,74 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Order, OrderItem } from '@/types';
+import { transformOrderData } from '@/utils/dataTransformers';
 
 /**
- * Creates a specialized service for the load_orders table which doesn't have an ID field
+ * Load order items for a specific order
+ * @param orderId The ID of the order to load items for
+ * @returns A promise that resolves to an array of order items
  */
-export function createLoadOrdersService() {
-  return {
-    // Add a new load-order relationship
-    add: async (loadId: string, orderId: string): Promise<void> => {
-      try {
-        const { error } = await supabase
-          .from('load_orders')
-          .insert({
-            load_id: loadId,
-            order_id: orderId
-          });
-          
-        if (error) {
-          console.error('Error adding load order:', error);
-          throw error;
-        }
-      } catch (error) {
-        console.error('Error in load orders add:', error);
-        throw error;
-      }
-    },
-    
-    // Delete a load-order relationship
-    delete: async (loadId: string, orderId: string): Promise<void> => {
-      try {
-        const { error } = await supabase
-          .from('load_orders')
-          .delete()
-          .eq('load_id', loadId)
-          .eq('order_id', orderId);
-          
-        if (error) {
-          console.error('Error deleting load order:', error);
-          throw error;
-        }
-      } catch (error) {
-        console.error('Error in load orders delete:', error);
-        throw error;
-      }
-    },
-    
-    // Get all orders for a given load
-    getOrdersForLoad: async (loadId: string): Promise<string[]> => {
-      try {
-        const { data, error } = await supabase
-          .from('load_orders')
-          .select('order_id')
-          .eq('load_id', loadId);
-          
-        if (error) {
-          console.error('Error getting orders for load:', error);
-          throw error;
-        }
-        
-        return data.map(item => item.order_id);
-      } catch (error) {
-        console.error('Error in getOrdersForLoad:', error);
-        throw error;
-      }
-    },
-    
-    // Get all loads for a given order
-    getLoadsForOrder: async (orderId: string): Promise<string[]> => {
-      try {
-        const { data, error } = await supabase
-          .from('load_orders')
-          .select('load_id')
-          .eq('order_id', orderId);
-          
-        if (error) {
-          console.error('Error getting loads for order:', error);
-          throw error;
-        }
-        
-        return data.map(item => item.load_id);
-      } catch (error) {
-        console.error('Error in getLoadsForOrder:', error);
-        throw error;
-      }
+export const loadOrderItems = async (orderId: string): Promise<OrderItem[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', orderId);
+      
+    if (error) {
+      console.error("Error loading order items:", error);
+      throw error;
     }
-  };
-}
+    
+    // Transform data to match OrderItem type
+    return data.map(item => ({
+      id: item.id,
+      productId: item.product_id || '',
+      productName: item.product_name,
+      productCode: item.product_code,
+      quantity: item.quantity,
+      price: item.price,
+      unitPrice: item.unit_price,
+      discount: item.discount || 0,
+      total: item.total || (item.unit_price * item.quantity)
+    }));
+  } catch (error) {
+    console.error("Error in loadOrderItems:", error);
+    return [];
+  }
+};
+
+/**
+ * Load a specific order with its items
+ * @param orderId The ID of the order to load
+ * @returns A promise that resolves to the order with items included
+ */
+export const loadOrderWithItems = async (orderId: string): Promise<Order | null> => {
+  try {
+    // Load the order
+    const { data: orderData, error: orderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+      
+    if (orderError) {
+      console.error("Error loading order:", orderError);
+      return null;
+    }
+    
+    // Load the order items
+    const items = await loadOrderItems(orderId);
+    
+    // Transform the order data and add the items
+    const order = transformOrderData(orderData);
+    if (order) {
+      order.items = items;
+    }
+    
+    return order;
+  } catch (error) {
+    console.error("Error in loadOrderWithItems:", error);
+    return null;
+  }
+};

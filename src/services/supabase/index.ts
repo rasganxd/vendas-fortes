@@ -5,6 +5,7 @@ export * from './customerService';
 export * from './loadOrderService';
 export * from './loadService';
 export * from './orderService';
+export * from './orderItemService';
 export * from './paymentService';
 export * from './productService';
 export * from './salesRepService';

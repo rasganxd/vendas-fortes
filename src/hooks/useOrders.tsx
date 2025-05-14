@@ -1,8 +1,11 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { orderService } from '@/services/supabase';
+import { addOrderItems, updateOrderItems } from '@/services/supabase/orderItemService';
+import { loadOrderItems } from '@/services/supabase/loadOrderService';
 
 export const loadOrders = async (): Promise<Order[]> => {
   try {
@@ -16,7 +19,7 @@ export const loadOrders = async (): Promise<Order[]> => {
     }
     
     // Transform data to match Order type
-    return data.map(order => ({
+    const transformedOrders = data.map(order => ({
       id: order.id,
       code: order.code,
       customerId: order.customer_id || '',
@@ -40,9 +43,22 @@ export const loadOrders = async (): Promise<Order[]> => {
       createdAt: new Date(order.created_at || new Date()),
       updatedAt: new Date(order.updated_at || new Date()),
       archived: order.archived || false,
-      items: [], // Items will be loaded separately if needed
+      items: [], // Items will be loaded separately
       payments: [], // Initialize with empty payments array
     }));
+
+    // Load order items for each order
+    for (const order of transformedOrders) {
+      try {
+        const items = await loadOrderItems(order.id);
+        order.items = items;
+      } catch (itemError) {
+        console.error(`Error loading items for order ${order.id}:`, itemError);
+        // Continue with empty items array rather than failing completely
+      }
+    }
+    
+    return transformedOrders;
   } catch (error) {
     console.error("Error loading orders:", error);
     return [];
@@ -115,6 +131,12 @@ export const useOrders = () => {
       }
 
       const newOrderFromDb = data[0];
+      const newOrderId = newOrderFromDb.id;
+
+      // Save order items
+      if (order.items && order.items.length > 0) {
+        await addOrderItems(newOrderId, order.items);
+      }
 
       // Transform back to Order type
       const newOrder: Order = {
@@ -141,7 +163,7 @@ export const useOrders = () => {
         createdAt: new Date(newOrderFromDb.created_at || new Date()),
         updatedAt: new Date(newOrderFromDb.updated_at || new Date()),
         archived: newOrderFromDb.archived || false,
-        items: [], // Items will be loaded separately if needed
+        items: order.items || [], // Store the items in memory
         payments: []
       };
 
@@ -197,6 +219,11 @@ export const useOrders = () => {
 
       if (error) {
         throw error;
+      }
+
+      // Update order items if they are included in the update
+      if (orderUpdate.items) {
+        await updateOrderItems(id, orderUpdate.items);
       }
 
       // Update local state

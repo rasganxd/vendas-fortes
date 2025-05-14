@@ -1,4 +1,3 @@
-
 // Utilities for converting data between Supabase format (snake_case) and app format (camelCase)
 
 // Helper function to convert snake_case strings to camelCase
@@ -261,37 +260,43 @@ export function prepareForSupabase(data: Record<string, any>): Record<string, an
     result.unit = data.unit;
   }
   
-  // Handle foreign keys with proper UUID validation
+  // Improved handling of foreign keys - don't automatically set to null
   if (data.categoryId !== undefined) {
     if (data.categoryId === "none" || data.categoryId === "") {
       result.category_id = null;
-    } else if (isValidUuid(data.categoryId)) {
-      result.category_id = data.categoryId;
     } else {
-      console.warn("Invalid UUID format for categoryId:", data.categoryId);
-      result.category_id = null;
+      // Still store the ID even if it doesn't match UUID format
+      // This allows for legacy IDs or non-standard IDs
+      result.category_id = data.categoryId;
+      
+      // Log a warning but don't nullify if it doesn't match UUID format
+      if (!isValidUuid(data.categoryId)) {
+        console.warn("Non-standard UUID format for categoryId:", data.categoryId);
+      }
     }
   }
   
   if (data.groupId !== undefined) {
     if (data.groupId === "none" || data.groupId === "") {
       result.group_id = null;
-    } else if (isValidUuid(data.groupId)) {
-      result.group_id = data.groupId;
     } else {
-      console.warn("Invalid UUID format for groupId:", data.groupId);
-      result.group_id = null;
+      result.group_id = data.groupId;
+      
+      if (!isValidUuid(data.groupId)) {
+        console.warn("Non-standard UUID format for groupId:", data.groupId);
+      }
     }
   }
   
   if (data.brandId !== undefined) {
     if (data.brandId === "none" || data.brandId === "") {
       result.brand_id = null;
-    } else if (isValidUuid(data.brandId)) {
-      result.brand_id = data.brandId;
     } else {
-      console.warn("Invalid UUID format for brandId:", data.brandId);
-      result.brand_id = null;
+      result.brand_id = data.brandId;
+      
+      if (!isValidUuid(data.brandId)) {
+        console.warn("Non-standard UUID format for brandId:", data.brandId);
+      }
     }
   }
   
