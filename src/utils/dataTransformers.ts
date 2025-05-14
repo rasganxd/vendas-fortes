@@ -1,327 +1,154 @@
-// Utilities for converting data between Supabase format (snake_case) and app format (camelCase)
 
-// Helper function to convert snake_case strings to camelCase
-export const snakeToCamel = (str: string): string => {
-  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+/**
+ * Transforms data from snake_case to camelCase or vice versa
+ */
+
+type CamelCase<T extends string> = T extends `${infer First}_${infer Rest}`
+  ? `${First}${Capitalize<CamelCase<Rest>>}`
+  : T;
+
+type CamelCaseObject<T> = {
+  [K in keyof T as CamelCase<K & string>]: T[K] extends object ? CamelCaseObject<T[K]> : T[K]
 };
 
-// Helper function to convert camelCase strings to snake_case
-export const camelToSnake = (str: string): string => {
-  return str.replace(/([A-Z])/g, (_, letter) => `_${letter.toLowerCase()}`);
-};
+/**
+ * Convert snake_case keys to camelCase
+ * @param obj - Object with snake_case keys
+ * @returns Object with camelCase keys
+ */
+export function toCamelCase<T extends object>(obj: T): CamelCaseObject<T> {
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+    return obj as unknown as CamelCaseObject<T>;
+  }
 
-// Validate if a string is a valid UUID
-export const isValidUuid = (str: string): boolean => {
-  if (!str) return false;
-  // UUID v4 regex pattern
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidPattern.test(str);
-};
+  return Object.keys(obj).reduce((result, key) => {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()) as keyof T;
+    const value = obj[key as keyof T];
+    const camelValue = value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? toCamelCase(value as object)
+      : value;
 
-// Cache for converted objects to avoid repeated transformations
-const transformCache = new Map<string, any>();
-const CACHE_SIZE_LIMIT = 100;
-
-// Convert a Supabase record to camelCase format with caching
-export const convertToCamelCase = (data: Record<string, any>): Record<string, any> => {
-  if (!data) return {};
-  
-  // Generate a cache key based on the data
-  const cacheKey = `camel_${JSON.stringify(data)}`;
-  
-  // Check if we have a cached version
-  if (transformCache.has(cacheKey)) {
-    return transformCache.get(cacheKey);
-  }
-  
-  const result: Record<string, any> = {};
-  
-  for (const key in data) {
-    if (Object.prototype.hasOwnProperty.call(data, key)) {
-      const camelKey = snakeToCamel(key);
-      result[camelKey] = data[key];
-    }
-  }
-  
-  // Store in cache (with size limit)
-  if (transformCache.size >= CACHE_SIZE_LIMIT) {
-    // Remove oldest entry
-    const firstKey = transformCache.keys().next().value;
-    transformCache.delete(firstKey);
-  }
-  transformCache.set(cacheKey, result);
-  
-  return result;
-};
-
-// Convert a camelCase record to snake_case format for Supabase with caching
-export const convertToSnakeCase = (data: Record<string, any>): Record<string, any> => {
-  if (!data) return {};
-  
-  // Generate a cache key based on the data
-  const cacheKey = `snake_${JSON.stringify(data)}`;
-  
-  // Check if we have a cached version
-  if (transformCache.has(cacheKey)) {
-    return transformCache.get(cacheKey);
-  }
-  
-  const result: Record<string, any> = {};
-  
-  for (const key in data) {
-    if (Object.prototype.hasOwnProperty.call(data, key)) {
-      const snakeKey = camelToSnake(key);
-      result[snakeKey] = data[key];
-    }
-  }
-  
-  // Store in cache (with size limit)
-  if (transformCache.size >= CACHE_SIZE_LIMIT) {
-    // Remove oldest entry
-    const firstKey = transformCache.keys().next().value;
-    transformCache.delete(firstKey);
-  }
-  transformCache.set(cacheKey, result);
-  
-  return result;
-};
-
-// Function to safely convert string dates to Date objects
-export const convertStringToDate = (dateString: string | null | undefined): Date => {
-  if (!dateString) return new Date();
-  return new Date(dateString);
-};
-
-// Customer transformer with consistent zip/zipCode handling and reduced transformations
-export const transformCustomerData = (data: any): any => {
-  if (!data) return null;
-  
-  const camelCaseData = convertToCamelCase(data);
-  
-  return {
-    id: camelCaseData.id || "",
-    code: typeof camelCaseData.code === 'number' ? camelCaseData.code : 
-          typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : 0,
-    name: camelCaseData.name || "",
-    phone: camelCaseData.phone || "",
-    email: camelCaseData.email || "",
-    address: camelCaseData.address || "",
-    city: camelCaseData.city || "",
-    state: camelCaseData.state || "",
-    zip: camelCaseData.zip || "",
-    document: camelCaseData.document || "",
-    notes: camelCaseData.notes || "",
-    visitDays: Array.isArray(camelCaseData.visitDays) ? camelCaseData.visitDays : [],
-    visitFrequency: camelCaseData.visitFrequency || "",
-    visitSequence: camelCaseData.visitSequence || 0,
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-  };
-};
-
-// SalesRep transformer with optimized transformation
-export const transformSalesRepData = (data: any): any => {
-  if (!data) return null;
-
-  const camelCaseData = convertToCamelCase(data);
-  
-  return {
-    id: camelCaseData.id || "",
-    code: typeof camelCaseData.code === 'number' ? camelCaseData.code : 
-          typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : 0,
-    name: camelCaseData.name || "",
-    phone: camelCaseData.phone || "",
-    email: camelCaseData.email || "",
-    address: camelCaseData.address || "",
-    city: camelCaseData.city || "",
-    state: camelCaseData.state || "",
-    zip: camelCaseData.zip || "",
-    region: camelCaseData.region || "",
-    document: camelCaseData.document || "",
-    role: camelCaseData.role || "",
-    active: camelCaseData.active !== undefined ? camelCaseData.active : true,
-    notes: camelCaseData.notes || "",
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-  };
-};
-
-// Product transformer with optimized transformation
-export const transformProductData = (data: any): any => {
-  if (!data) return null;
-  
-  const camelCaseData = convertToCamelCase(data);
-  
-  return {
-    id: camelCaseData.id || "",
-    code: typeof camelCaseData.code === 'number' ? camelCaseData.code : 
-          typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : 0,
-    name: camelCaseData.name || "",
-    description: camelCaseData.description || "",
-    price: camelCaseData.price || 0,
-    cost: camelCaseData.cost || 0,
-    stock: camelCaseData.stock || 0,
-    minStock: camelCaseData.minStock || 0,
-    maxDiscountPercentage: camelCaseData.maxDiscountPercentage,
-    groupId: camelCaseData.groupId,
-    categoryId: camelCaseData.categoryId,
-    brandId: camelCaseData.brandId,
-    unit: camelCaseData.unit || "",
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-  };
-};
-
-// Product Category transformer
-export const transformProductCategoryData = (data: any): any => {
-  if (!data) return null;
-  
-  const camelCaseData = convertToCamelCase(data);
-  
-  return {
-    id: camelCaseData.id || "",
-    name: camelCaseData.name || "",
-    description: camelCaseData.description || "",
-    notes: camelCaseData.notes || "",
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-  };
-};
-
-// Order transformer with optimized transformation
-export const transformOrderData = (data: any): any => {
-  if (!data) return null;
-  
-  const camelCaseData = convertToCamelCase(data);
-  
-  return {
-    id: camelCaseData.id || "",
-    code: typeof camelCaseData.code === 'number' ? camelCaseData.code : 
-          typeof camelCaseData.code === 'string' ? parseInt(camelCaseData.code, 10) : 0,
-    customerId: camelCaseData.customerId || "",
-    customerName: camelCaseData.customerName || "",
-    salesRepId: camelCaseData.salesRepId || "",
-    salesRepName: camelCaseData.salesRepName || "",
-    date: data.date ? new Date(data.date) : new Date(),
-    dueDate: data.due_date ? new Date(data.due_date) : new Date(),
-    items: camelCaseData.items || [],
-    total: camelCaseData.total || 0,
-    discount: camelCaseData.discount || 0,
-    status: camelCaseData.status || 'pending',
-    paymentStatus: camelCaseData.paymentStatus || 'pending',
-    paymentMethodId: camelCaseData.paymentMethodId || "",
-    paymentMethod: camelCaseData.paymentMethod || "",
-    paymentTableId: camelCaseData.paymentTableId || "",
-    payments: camelCaseData.payments || [],
-    notes: camelCaseData.notes || "",
-    archived: camelCaseData.archived || false,
-    deliveryZip: camelCaseData.deliveryZip || "",
-    deliveryAddress: camelCaseData.deliveryAddress || "",
-    deliveryCity: camelCaseData.deliveryCity || "",
-    deliveryState: camelCaseData.deliveryState || "",
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-  };
-};
-
-// Function to prepare data for sending to Supabase (convert to snake_case)
-export function prepareForSupabase(data: Record<string, any>): Record<string, any> {
-  if (!data) return {};
-  
-  // Create a copy to avoid mutating the original
-  const result: Record<string, any> = {};
-  
-  // Handle special fields
-  if (data.code !== undefined) {
-    result.code = typeof data.code === 'string' ? parseInt(data.code, 10) : data.code;
-  }
-  
-  if (data.price !== undefined) {
-    result.price = data.price;
-  }
-  
-  if (data.cost !== undefined) {
-    result.cost = data.cost;
-  }
-  
-  if (data.name !== undefined) {
-    result.name = data.name;
-  }
-  
-  if (data.description !== undefined) {
-    result.description = data.description;
-  }
-  
-  if (data.stock !== undefined) {
-    result.stock = data.stock;
-  }
-  
-  if (data.unit !== undefined) {
-    result.unit = data.unit;
-  }
-  
-  // Improved handling of foreign keys - don't automatically set to null
-  if (data.categoryId !== undefined) {
-    if (data.categoryId === "none" || data.categoryId === "") {
-      result.category_id = null;
-    } else {
-      // Still store the ID even if it doesn't match UUID format
-      // This allows for legacy IDs or non-standard IDs
-      result.category_id = data.categoryId;
-      
-      // Log a warning but don't nullify if it doesn't match UUID format
-      if (!isValidUuid(data.categoryId)) {
-        console.warn("Non-standard UUID format for categoryId:", data.categoryId);
-      }
-    }
-  }
-  
-  if (data.groupId !== undefined) {
-    if (data.groupId === "none" || data.groupId === "") {
-      result.group_id = null;
-    } else {
-      result.group_id = data.groupId;
-      
-      if (!isValidUuid(data.groupId)) {
-        console.warn("Non-standard UUID format for groupId:", data.groupId);
-      }
-    }
-  }
-  
-  if (data.brandId !== undefined) {
-    if (data.brandId === "none" || data.brandId === "") {
-      result.brand_id = null;
-    } else {
-      result.brand_id = data.brandId;
-      
-      if (!isValidUuid(data.brandId)) {
-        console.warn("Non-standard UUID format for brandId:", data.brandId);
-      }
-    }
-  }
-  
-  if (data.minStock !== undefined) {
-    result.min_stock = data.minStock;
-  }
-  
-  if (data.maxDiscountPercentage !== undefined) {
-    result.max_discount_percentage = data.maxDiscountPercentage;
-  }
-  
-  // Add createdAt and updatedAt in snake_case if present
-  if (data.createdAt !== undefined) {
-    result.created_at = data.createdAt;
-  }
-  
-  if (data.updatedAt !== undefined) {
-    result.updated_at = data.updatedAt;
-  }
-  
-  return result;
+    return {
+      ...result,
+      [camelKey]: camelValue
+    };
+  }, {} as CamelCaseObject<T>);
 }
 
-// Generic function to transform arrays of data
-export const transformArray = <T>(data: any[], transformer: (item: any) => T): T[] => {
-  if (!data || !Array.isArray(data)) return [] as T[];
-  return data.map(item => transformer(item));
+/**
+ * Convert camelCase keys to snake_case
+ * @param obj - Object with camelCase keys
+ * @returns Object with snake_case keys
+ */
+export function toSnakeCase<T extends object>(obj: T): Record<string, unknown> {
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+    return obj as unknown as Record<string, unknown>;
+  }
+
+  return Object.keys(obj).reduce((result, key) => {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    const value = obj[key as keyof T];
+    const snakeValue = value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? toSnakeCase(value as object)
+      : value;
+
+    return {
+      ...result,
+      [snakeKey]: snakeValue
+    };
+  }, {} as Record<string, unknown>);
+}
+
+/**
+ * Transforms an object to prepare it for Supabase insert/update
+ * Converts dates to ISO strings and camelCase to snake_case
+ */
+export const prepareForSupabase = (data: any): Record<string, unknown> => {
+  // First, handle Date objects
+  const processedData = Object.entries(data).reduce((acc, [key, value]) => {
+    // Convert Date objects to ISO strings
+    if (value instanceof Date) {
+      acc[key] = value.toISOString();
+    } else if (value !== undefined) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {} as Record<string, unknown>);
+  
+  // Then convert to snake_case
+  return toSnakeCase(processedData);
+};
+
+/**
+ * Transform a Supabase product record to our internal Product type
+ */
+export const transformProductData = (data: any) => {
+  const transformed = toCamelCase(data);
+  return {
+    ...transformed,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+  };
+};
+
+/**
+ * Transform a Supabase customer record to our internal Customer type
+ */
+export const transformCustomerData = (data: any) => {
+  const transformed = toCamelCase(data);
+  return {
+    ...transformed,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+  };
+};
+
+/**
+ * Transform a Supabase sales rep record to our internal SalesRep type
+ */
+export const transformSalesRepData = (data: any) => {
+  const transformed = toCamelCase(data);
+  return {
+    ...transformed,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+    visitDay: data.visit_day || '', // Add support for visit day
+  };
+};
+
+/**
+ * Transform generic data from Supabase
+ */
+export const transformData = (data: any) => {
+  const transformed = toCamelCase(data);
+  
+  // Handle standard timestamp fields if present
+  const result = {
+    ...transformed,
+  };
+  
+  if (data.created_at) {
+    result.createdAt = new Date(data.created_at);
+  }
+  
+  if (data.updated_at) {
+    result.updatedAt = new Date(data.updated_at);
+  }
+  
+  if (data.date) {
+    result.date = new Date(data.date);
+  }
+  
+  return result;
+};
+
+/**
+ * Transform an array of data using the provided transformer
+ */
+export const transformArray = (data: any[], transformer: (item: any) => any) => {
+  if (!Array.isArray(data)) {
+    console.error('transformArray received non-array input:', data);
+    return [];
+  }
+  return data.map(transformer);
 };

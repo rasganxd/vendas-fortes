@@ -13,6 +13,14 @@ import { SalesRep } from '@/types';
 import { DialogFooter } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DaysOfWeekOptions } from '../customers/constants';
 
 interface EditSalesRepDialogProps {
   open: boolean;
@@ -38,6 +46,10 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
 
   const handleSwitchChange = (checked: boolean) => {
     setSalesRep({ ...salesRep, active: checked });
+  };
+
+  const handleVisitDayChange = (value: string) => {
+    setSalesRep({ ...salesRep, visitDay: value });
   };
 
   return (
@@ -148,6 +160,26 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
               value={salesRep.zip || ''}
               onChange={handleChange}
             />
+          </div>
+
+          {/* Novo campo para Dia de Visita */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="visitDay">Dia de Visita</Label>
+            <Select 
+              value={salesRep.visitDay || ''}
+              onValueChange={handleVisitDayChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um dia" />
+              </SelectTrigger>
+              <SelectContent>
+                {DaysOfWeekOptions.map((day) => (
+                  <SelectItem key={day.value} value={day.value}>
+                    {day.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-2 md:col-span-2">

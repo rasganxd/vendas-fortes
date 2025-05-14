@@ -1,6 +1,6 @@
 import React, { createContext } from 'react';
 import { AppContextType } from './AppContextTypes';
-import { defaultContextValues } from './defaultContextValues';
+import defaultContextValues from './defaultContextValues';
 import { useOrders } from '@/hooks/useOrders';
 import { usePayments } from '@/hooks/usePayments';
 import { useRoutes } from '@/hooks/useRoutes';
@@ -147,7 +147,7 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     isLoading: isLoadingProductCategories,
     addProductCategory,
     updateProductCategory,
-    deleteProductCategory
+    deleteProductCategory: deleteProductCategoryHook
   } = useProductCategories();
   
   const {
@@ -155,7 +155,7 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     isLoading: isLoadingProductBrands,
     addProductBrand,
     updateProductBrand,
-    deleteProductBrand
+    deleteProductBrand: deleteProductBrandHook
   } = useProductBrands();
   
   const {
@@ -199,6 +199,7 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
   // Fix the deleteCategory and deleteBrand functions to return a boolean Promise
   const deleteProductCategory = async (id: string): Promise<boolean> => {
     try {
+      await deleteProductCategoryHook(id);
       return true; // Return true on success
     } catch (error) {
       console.error("Error deleting product category:", error);
@@ -208,6 +209,7 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
 
   const deleteProductBrand = async (id: string): Promise<boolean> => {
     try {
+      await deleteProductBrandHook(id);
       return true; // Return true on success
     } catch (error) {
       console.error("Error deleting product brand:", error);

@@ -109,3 +109,33 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     throw error;
   }
 };
+
+/**
+ * Update an existing sales rep with visit day
+ * @param id - Sales rep ID
+ * @param salesRep - Updated sales rep data
+ */
+export const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): Promise<void> => {
+  try {
+    // Prepare data for Supabase
+    const supabaseData = prepareForSupabase(salesRep);
+    
+    const { error } = await supabase
+      .from('sales_reps')
+      .update(supabaseData)
+      .eq('id', id);
+      
+    if (error) {
+      console.error("Error updating sales rep:", error);
+      throw error;
+    }
+    
+    // Clear cache for this code if the code is included
+    if (salesRep.code) {
+      salesRepCodeCache.delete(salesRep.code);
+    }
+  } catch (error) {
+    console.error("Error in updateSalesRep:", error);
+    throw error;
+  }
+};
