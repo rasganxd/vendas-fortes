@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect } from 'react';
 import { AppContextType } from './AppContextTypes';
 import { defaultContextValues } from './defaultContextValues';
@@ -72,7 +73,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       if (usingMock) {
         toast({
           title: "Modo offline ativado",
-          description: "O sistema está usando dados locais devido a problemas de conexão com o Firebase.",
+          description: "O sistema está usando dados locais devido a problemas de conexão com o Supabase.",
           variant: "default"  // Changed from "warning" to "default"
         });
       }
