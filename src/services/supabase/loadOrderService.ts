@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { Order, OrderItem } from '@/types';
 import { transformOrderData } from '@/utils/dataTransformers';
+import { Order } from '@/types';
 
 /**
  * Load order items for a specific order

@@ -1,7 +1,6 @@
-
 import { toast } from '@/components/ui/use-toast';
 import { loadCustomers } from '@/hooks/useCustomers';
-import { loadProducts } from '@/hooks/useProducts';
+import { fetchProducts } from '@/hooks/useProducts';
 import { loadOrders } from '@/hooks/useOrders';
 import { Customer, Product, Order } from '@/types';
 import { mockProducts } from '@/data/mock/products';
@@ -49,7 +48,7 @@ export const loadCoreData = async (
     setIsLoadingProducts(true);
     try {
       console.log("About to load products...");
-      const loadedProducts = await loadProducts();
+      const loadedProducts = await fetchProducts();
       console.log(`Loaded ${loadedProducts.length} products from Supabase`);
       
       // Always make sure we update the state even if empty array

@@ -1,9 +1,8 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Customer, Product, Order } from '@/types';
 import { loadCustomers } from '@/hooks/useCustomers';
-import { loadProducts } from '@/hooks/useProducts';
+import { fetchProducts } from '@/hooks/useProducts';
 import { loadOrders } from '@/hooks/useOrders';
 import { mockProducts } from '@/data/mock/products';
 import { mockCustomers } from '@/data/mock/customers';
@@ -82,7 +81,7 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
     });
     
     try {
-      await clearCache(loadCustomers, loadProducts, loadOrders, setCustomers, setProducts);
+      await clearCache(loadCustomers, fetchProducts, loadOrders, setCustomers, setProducts);
       toast({
         title: "Dados atualizados",
         description: "Sincronização concluída com sucesso!"
@@ -157,7 +156,7 @@ export const loadCoreData = async (
     setIsLoadingProducts(true);
     try {
       console.log("About to load products...");
-      const loadedProducts = await loadProducts();
+      const loadedProducts = await fetchProducts();
       console.log(`Loaded ${loadedProducts.length} products from Supabase`);
       
       // Always make sure we update the state even if empty array
@@ -242,7 +241,7 @@ export const loadFromLocalStorage = (
  */
 export const clearCache = async (
   loadCustomers: () => Promise<any[]>,
-  loadProducts: () => Promise<any[]>,
+  fetchProducts: () => Promise<any[]>,
   loadOrders: () => Promise<any[]>,
   setCustomers: React.Dispatch<React.SetStateAction<any[]>>,
   setProducts: React.Dispatch<React.SetStateAction<any[]>>,
@@ -256,7 +255,7 @@ export const clearCache = async (
     const loadedCustomers = await loadCustomers();
     setCustomers(loadedCustomers);
     
-    const loadedProducts = await loadProducts();
+    const loadedProducts = await fetchProducts();
     setProducts(loadedProducts);
     
     toast({

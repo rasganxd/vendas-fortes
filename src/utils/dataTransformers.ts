@@ -1,4 +1,3 @@
-
 /**
  * Transforms data from snake_case to camelCase or vice versa
  */
@@ -119,12 +118,32 @@ export const transformCustomerData = (data: any) => {
  * Transform a Supabase sales rep record to our internal SalesRep type
  */
 export const transformSalesRepData = (data: any) => {
+  if (!data) return null;
+  
   const transformed = toCamelCase(data);
+  
+  // Ensure all required properties are present
+  if (!transformed.name) {
+    console.error('Sales rep data missing required name:', data);
+  }
+  
   return {
-    ...transformed,
+    id: data.id || '',
+    name: transformed.name || '',
+    email: transformed.email || '',
+    phone: transformed.phone || '',
+    document: transformed.document || '',
+    address: transformed.address || '',
+    city: transformed.city || '',
+    state: transformed.state || '',
+    zip: transformed.zip || '',
+    notes: transformed.notes || '',
+    role: transformed.role || 'sales',
+    active: transformed.active !== false, // Default to true if not explicitly false
+    region: transformed.region || '',
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-    visitDay: data.visit_day || '', // Add support for visit day
+    visitDay: data.visit_day || '',
   };
 };
 
@@ -136,12 +155,31 @@ export const transformOrderData = (data: any) => {
   
   const transformed = toCamelCase(data);
   return {
-    ...transformed,
+    id: data.id || '',
+    code: transformed.code || 0,
+    customerId: transformed.customerId || '',
+    customerName: transformed.customerName || '',
+    salesRepId: transformed.salesRepId || '',
+    salesRepName: transformed.salesRepName || '',
     date: data.date ? new Date(data.date) : new Date(),
-    dueDate: data.due_date ? new Date(data.due_date) : null,
+    dueDate: data.due_date ? new Date(data.due_date) : new Date(),
+    items: transformed.items || [],
+    total: transformed.total || 0,
+    discount: transformed.discount || 0,
+    status: transformed.status || 'pending',
+    paymentStatus: transformed.paymentStatus || 'pending',
+    paymentMethod: transformed.paymentMethod || '',
+    paymentMethodId: transformed.paymentMethodId || '',
+    paymentTableId: transformed.paymentTableId || '',
+    payments: transformed.payments || [],
+    notes: transformed.notes || '',
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-    items: [],  // By default, items will be empty array
+    archived: transformed.archived || false,
+    deliveryAddress: transformed.deliveryAddress || '',
+    deliveryCity: transformed.deliveryCity || '',
+    deliveryState: transformed.deliveryState || '',
+    deliveryZip: transformed.deliveryZip || '',
   };
 };
 
@@ -181,4 +219,3 @@ export const transformArray = (data: any[], transformer: (item: any) => any) => 
   }
   return data.map(transformer);
 };
-

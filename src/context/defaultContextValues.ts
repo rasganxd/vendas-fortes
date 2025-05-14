@@ -117,12 +117,12 @@ const defaultContextValues: AppContextType = {
   // Product category operations
   addProductCategory: async () => '',
   updateProductCategory: async () => {},
-  deleteProductCategory: async () => true, // Return boolean instead of void
+  deleteProductCategory: async () => {}, // Changed from boolean to void
   
   // Product brand operations
   addProductBrand: async () => '',
   updateProductBrand: async () => {},
-  deleteProductBrand: async () => true, // Return boolean instead of void
+  deleteProductBrand: async () => {}, // Changed from boolean to void
   
   // Delivery route operations
   addDeliveryRoute: async () => '',
@@ -131,21 +131,25 @@ const defaultContextValues: AppContextType = {
   
   // Backup operations
   createBackup: async () => '',
-  restoreBackup: async () => true, // Return boolean instead of void
-  deleteBackup: async () => true, // Return boolean instead of void
+  restoreBackup: async () => true,
+  deleteBackup: async () => true,
   
   // Settings
   settings: {
     id: '',
-    companyName: '',
-    companyDocument: '',
-    companyAddress: '',
-    companyPhone: '',
-    companyEmail: '',
-    companyFooter: '',
-    primaryColor: '',
-    secondaryColor: '',
-    accentColor: '',
+    company: {
+      name: '',
+      address: '',
+      phone: '',
+      email: '',
+      document: '',
+      footer: ''
+    },
+    theme: {
+      primaryColor: '',
+      secondaryColor: '',
+      accentColor: ''
+    }
   },
   updateSettings: async () => {},
   

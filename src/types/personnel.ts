@@ -1,5 +1,5 @@
 
-export type SalesRepRole = 'sales' | 'manager' | 'admin';
+export type SalesRepRole = 'sales' | 'manager' | 'admin' | 'driver';
 
 export interface SalesRep {
   id: string;

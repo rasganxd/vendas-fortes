@@ -197,23 +197,23 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
   };
 
   // Fix the deleteCategory and deleteBrand functions to return a boolean Promise
-  const deleteProductCategory = async (id: string): Promise<boolean> => {
+  const deleteProductCategory = async (id: string): Promise<void> => {
     try {
       await deleteProductCategoryHook(id);
-      return true; // Return true on success
+      return;
     } catch (error) {
       console.error("Error deleting product category:", error);
-      return false; // Return false on failure
+      return;
     }
   };
 
-  const deleteProductBrand = async (id: string): Promise<boolean> => {
+  const deleteProductBrand = async (id: string): Promise<void> => {
     try {
       await deleteProductBrandHook(id);
-      return true; // Return true on success
+      return;
     } catch (error) {
       console.error("Error deleting product brand:", error);
-      return false; // Return false on failure
+      return;
     }
   };
 

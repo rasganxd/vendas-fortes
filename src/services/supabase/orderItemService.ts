@@ -1,76 +1,100 @@
 
+import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareForSupabase } from '@/utils/dataTransformers';
 import { OrderItem } from '@/types';
-import { toSnakeCase } from '@/utils/dataTransformers';
 
 /**
- * Create a new order item in the database
+ * Service for order item operations
  */
-export const createOrderItem = async (orderItem: OrderItem) => {
-  // Use toSnakeCase instead of the missing convertToSnakeCase
-  const item = toSnakeCase(orderItem);
+export const orderItemService = createStandardService('order_items');
+
+/**
+ * Add multiple order items at once
+ * @param items - Array of order items to add
+ * @returns Array of inserted order items
+ */
+export const addOrderItems = async (items: Partial<OrderItem>[]): Promise<OrderItem[]> => {
+  if (!items || items.length === 0) return [];
   
-  const { data, error } = await supabase
-    .from('order_items')
-    .insert([item])
-    .select()
-    .single();
+  try {
+    const preparedItems = items.map(item => prepareForSupabase(item));
     
-  if (error) {
-    console.error('Error creating order item:', error);
-    return null;
+    const { data, error } = await supabase
+      .from('order_items')
+      .insert(preparedItems)
+      .select();
+      
+    if (error) {
+      console.error("Error adding order items:", error);
+      throw error;
+    }
+    
+    return data as unknown as OrderItem[];
+  } catch (error) {
+    console.error("Error in addOrderItems:", error);
+    throw error;
   }
-  
-  return data;
 };
 
 /**
- * Update an existing order item in the database
+ * Update multiple order items at once
+ * @param items - Array of order items to update
+ * @returns Boolean indicating success
  */
-export const updateOrderItem = async (orderItem: OrderItem) => {
-  if (!orderItem.id) {
-    console.error('Cannot update order item without ID');
-    return null;
-  }
+export const updateOrderItems = async (items: Partial<OrderItem>[]): Promise<boolean> => {
+  if (!items || items.length === 0) return true;
   
-  // Use toSnakeCase instead of the missing convertToSnakeCase
-  const item = toSnakeCase(orderItem);
-  
-  const { data, error } = await supabase
-    .from('order_items')
-    .update(item)
-    .eq('id', orderItem.id)
-    .select()
-    .single();
+  try {
+    // Process each item separately
+    await Promise.all(items.map(async (item) => {
+      if (!item.id) {
+        throw new Error("Cannot update order item without ID");
+      }
+      
+      const preparedItem = prepareForSupabase(item);
+      
+      const { error } = await supabase
+        .from('order_items')
+        .update(preparedItem)
+        .eq('id', item.id);
+        
+      if (error) {
+        console.error(`Error updating order item ${item.id}:`, error);
+        throw error;
+      }
+    }));
     
-  if (error) {
-    console.error('Error updating order item:', error);
-    return null;
-  }
-  
-  return data;
-};
-
-/**
- * Delete an order item from the database
- */
-export const deleteOrderItem = async (id: string) => {
-  const { error } = await supabase
-    .from('order_items')
-    .delete()
-    .eq('id', id);
-    
-  if (error) {
-    console.error('Error deleting order item:', error);
+    return true;
+  } catch (error) {
+    console.error("Error in updateOrderItems:", error);
     return false;
   }
-  
-  return true;
 };
 
-// Export all functions as a service object
-export const orderItemService = {
-  createOrderItem,
-  updateOrderItem,
-  deleteOrderItem
+/**
+ * Get all order items for a specific order
+ * @param orderId - ID of the order
+ * @returns Array of order items
+ */
+export const getOrderItems = async (orderId: string): Promise<OrderItem[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', orderId);
+      
+    if (error) {
+      console.error("Error fetching order items:", error);
+      throw error;
+    }
+    
+    return data as unknown as OrderItem[];
+  } catch (error) {
+    console.error("Error in getOrderItems:", error);
+    return [];
+  }
 };
+
+// Re-export existing functions for backward compatibility
+export const updateOrderItem = orderItemService.update;

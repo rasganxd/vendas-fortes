@@ -1,51 +1,114 @@
-import { useQuery } from "@tanstack/react-query";
-import { productService } from "@/services/supabase";
-import { Product } from "@/types";
-import { transformProductData } from "@/utils/dataTransformers";
+import { useState, useEffect } from 'react';
+import { Product } from '@/types';
+import { productService } from '@/services/supabase/productService';
+import { toast } from '@/components/ui/use-toast';
+import { transformProductData, transformArray } from '@/utils/dataTransformers';
 
-// Simple UUID validation function
-const isValidUuid = (id: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(id);
+// Export this for compatibility with existing code
+export const fetchProducts = async (): Promise<Product[]> => {
+  try {
+    const result = await productService.getAll();
+    if (Array.isArray(result)) {
+      return transformArray(result, transformProductData) as Product[];
+    }
+    console.error('Product fetch did not return an array:', result);
+    return [];
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    throw error;
+  }
 };
-
-const staleTime = 5 * 60 * 1000; // 5 minutes
 
 export const useProducts = () => {
-  return useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const { data, error } = await productService.getAll();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-      if (error) {
-        console.error("Error fetching products:", error);
-        throw new Error(`Failed to fetch products: ${error.message}`);
+  useEffect(() => {
+    const loadProducts = async () => {
+      setIsLoading(true);
+      try {
+        const productsData = await fetchProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Error loading products:", error);
+        toast({
+          title: "Erro ao carregar produtos",
+          description: "Houve um problema ao carregar os produtos.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      return data.map(transformProductData) as Product[];
-    },
-    staleTime: staleTime,
-  });
-};
+    loadProducts();
+  }, []);
 
-export const useProduct = (id: string) => {
-  return useQuery({
-    queryKey: ['products', id],
-    queryFn: async () => {
-      if (!isValidUuid(id)) {
-        throw new Error("Invalid Product ID");
-      }
+  const addProduct = async (product: Omit<Product, 'id'>): Promise<string> => {
+    try {
+      const id = await productService.add(product);
+      const newProduct = { ...product, id } as Product;
+      setProducts(prev => [...prev, newProduct]);
+      toast({
+        title: "Produto adicionado",
+        description: "Produto adicionado com sucesso!"
+      });
+      return id;
+    } catch (error) {
+      console.error("Error adding product:", error);
+      toast({
+        title: "Erro ao adicionar produto",
+        description: "Houve um problema ao adicionar o produto.",
+        variant: "destructive"
+      });
+      return "";
+    }
+  };
 
-      const { data, error } = await productService.getById(id);
+  const updateProduct = async (id: string, product: Partial<Product>) => {
+    try {
+      await productService.update(id, product);
+      setProducts(prev =>
+        prev.map(p => (p.id === id ? { ...p, ...product } : p))
+      );
+      toast({
+        title: "Produto atualizado",
+        description: "Produto atualizado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Error updating product:", error);
+      toast({
+        title: "Erro ao atualizar produto",
+        description: "Houve um problema ao atualizar o produto.",
+        variant: "destructive"
+      });
+    }
+  };
 
-      if (error) {
-        console.error(`Error fetching product with ID ${id}:`, error);
-        throw new Error(`Failed to fetch product with ID ${id}: ${error.message}`);
-      }
-
-      return transformProductData(data) as Product;
-    },
-    staleTime: staleTime,
-    enabled: !!id, // only run query if ID is set
-  });
+  const deleteProduct = async (id: string) => {
+    try {
+      await productService.delete(id);
+      setProducts(prev => prev.filter(p => p.id !== id));
+      toast({
+        title: "Produto excluído",
+        description: "Produto excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast({
+        title: "Erro ao excluir produto",
+        description: "Houve um problema ao excluir o produto.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  return {
+    products,
+    isLoading,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    setProducts
+  };
 };
