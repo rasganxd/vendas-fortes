@@ -14,6 +14,9 @@ interface RawCustomerData {
   visitFrequency: string;
   customerCode: number;
   notes: string;
+  tradingName: string; // Added for fancy name
+  priceTable: string;  // Added for price table
+  contactName: string; // Added for contact name
 }
 
 /**
@@ -24,16 +27,17 @@ interface RawCustomerData {
  * ENDERECO                        BAIRRO              CEP         EXCL ESP
  * CIDADE                      UF  COMPRADOR           FONE        ANIVER.
  * CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.
+ * TRADING_NAME                   TAB:  PRICE_TABLE
  * ```
  */
 export function parseCustomerReportText(text: string): Omit<Customer, 'id'>[] {
   const customers: Omit<Customer, 'id'>[] = [];
   const lines = text.split('\n');
   
-  // Process the input in blocks of 4 lines (each customer record)
-  for (let i = 0; i < lines.length; i += 4) {
+  // Process the input in blocks of 5 lines (each customer record)
+  for (let i = 0; i < lines.length; i += 5) {
     // Skip if we don't have enough lines for a complete customer record
-    if (i + 4 > lines.length) break;
+    if (i + 5 > lines.length) break;
     
     // Skip if this appears to be a header block
     if (lines[i].includes('CLIEN') && lines[i+1].includes('ENDERECO')) {
@@ -44,7 +48,7 @@ export function parseCustomerReportText(text: string): Omit<Customer, 'id'>[] {
     if (!lines[i].trim()) continue;
 
     try {
-      const customerData = extractCustomerDataFromBlock(lines.slice(i, i + 4));
+      const customerData = extractCustomerDataFromBlock(lines.slice(i, i + 5));
       if (customerData) {
         customers.push(mapToCustomer(customerData));
       }
@@ -57,56 +61,91 @@ export function parseCustomerReportText(text: string): Omit<Customer, 'id'>[] {
 }
 
 /**
- * Extract customer data from a 4-line block in the report
+ * Extract customer data from a 5-line block in the report
  */
 function extractCustomerDataFromBlock(block: string[]): RawCustomerData | null {
-  if (block.length < 4 || !block[0].trim()) {
+  if (block.length < 5 || !block[0].trim()) {
     return null;
   }
   
-  // Line 1: Contains customer name and channel
+  // Line 1: Contains customer code, name and channel
   // Line 2: Contains address, neighborhood, zip code
   // Line 3: Contains city, state, buyer name, phone, birth date
   // Line 4: Contains document, sales rep, route, visit sequence, etc.
+  // Line 5: Contains trading name and price table
   
   const line1 = block[0].padEnd(80); // Ensure line has enough characters
   const line2 = block[1].padEnd(80);
   const line3 = block[2].padEnd(80);
   const line4 = block[3].padEnd(80);
+  const line5 = block.length > 4 ? block[4].padEnd(80) : '';
   
-  const customerName = line1.substring(6, 40).trim();
+  // Extract customer code (appears at the beginning of line 1)
+  let customerCode = 0;
+  const codeMatch = line1.trim().match(/^\s*(\d+)\s+/);
+  if (codeMatch && codeMatch[1]) {
+    customerCode = parseInt(codeMatch[1], 10);
+  }
+  
+  // Extract customer name - after the code at the beginning
+  const customerName = line1.substring(line1.indexOf(' ') + 1, 40).trim();
+  
+  // Extract address from line 2
   const address = line2.substring(0, 34).trim();
+  
+  // Extract neighborhood from line 2
+  const neighborhood = line2.substring(34, 50).trim();
+  
+  // Extract zip code from line 2
   const zip = line2.substring(50, 58).trim().replace(/[^0-9]/g, '');
+  
+  // Extract city from line 3
   const city = line3.substring(0, 26).trim();
+  
+  // Extract state from line 3
   const state = line3.substring(26, 28).trim();
-  const phone = line3.substring(50, 62).trim();
+  
+  // Extract contact/buyer name from line 3
+  const contactName = line3.substring(28, 45).trim();
+  
+  // Extract phone from line 3
+  const phone = line3.substring(45, 60).trim();
+  
+  // Extract document from line 4
   const document = line4.substring(0, 18).trim().replace(/[^0-9]/g, '');
+  
+  // Extract sales rep code from line 4
   const salesRepCode = line4.substring(43, 46).trim();
   
-  // Parse visit sequence and frequency
+  // Extract visit sequence from line 4
   let visitSequence = 0;
   try {
-    const seqStr = line4.substring(53, 59).trim();
-    visitSequence = seqStr ? parseInt(seqStr, 10) : 0;
+    const seqStr = line4.substring(46, 60).trim();
+    const seqMatch = seqStr.match(/(\d+)/);
+    if (seqMatch && seqMatch[1]) {
+      visitSequence = parseInt(seqMatch[1], 10);
+    }
     if (isNaN(visitSequence)) visitSequence = 0;
   } catch (e) {
     visitSequence = 0;
   }
   
-  // Parse customer code
-  let customerCode = 0;
-  try {
-    // Try to find a numeric code pattern in the text (often at the beginning of line 1)
-    const codeMatch = line1.match(/^\s*(\d+)\s+/);
-    if (codeMatch && codeMatch[1]) {
-      customerCode = parseInt(codeMatch[1], 10);
+  // Extract trading name and price table from line 5
+  let tradingName = '';
+  let priceTable = '';
+  
+  if (line5) {
+    tradingName = line5.substring(0, 35).trim();
+    
+    // Look for "TAB:" followed by the price table
+    const tabMatch = line5.match(/TAB:\s*(\d+)\s+([^\n]+)/);
+    if (tabMatch) {
+      priceTable = tabMatch[2] ? tabMatch[2].trim() : '';
     }
-  } catch (e) {
-    customerCode = 0;
   }
   
   // Map frequency code to system values
-  const rawFreq = line4.substring(68, 70).trim();
+  const rawFreq = line4.substring(60, 70).trim().split(/\s+/).pop() || '';
   let visitFrequency = 'weekly'; // Default
   
   // Convert numerical frequency to string values used in the system
@@ -124,6 +163,7 @@ function extractCustomerDataFromBlock(block: string[]): RawCustomerData | null {
       visitFrequency = 'monthly';
       break;
     case '4':
+    case '67': // Added this based on your data
       visitFrequency = 'quarterly';
       break;
     default:
@@ -131,6 +171,7 @@ function extractCustomerDataFromBlock(block: string[]): RawCustomerData | null {
   }
   
   return {
+    customerCode,
     name: customerName,
     address,
     city,
@@ -141,8 +182,10 @@ function extractCustomerDataFromBlock(block: string[]): RawCustomerData | null {
     salesRepCode,
     visitSequence,
     visitFrequency,
-    customerCode,
-    notes: ''
+    notes: '',
+    tradingName,
+    priceTable,
+    contactName
   };
 }
 
@@ -167,8 +210,17 @@ function mapToCustomer(data: RawCustomerData): Omit<Customer, 'id'> {
       break;
   }
   
+  // Use trading name if available, otherwise use the regular name
+  const displayName = data.tradingName ? data.tradingName : data.name;
+  
+  // Prepare notes with additional information
+  const notes = [
+    data.contactName ? `Contato: ${data.contactName}` : '',
+    data.priceTable ? `Tabela de Preços: ${data.priceTable}` : '',
+  ].filter(note => note).join('\n');
+  
   return {
-    name: data.name,
+    name: displayName,
     code: data.customerCode || 0,
     phone: data.phone,
     address: data.address,
@@ -178,7 +230,7 @@ function mapToCustomer(data: RawCustomerData): Omit<Customer, 'id'> {
     zipCode: data.zip,
     document: data.document,
     email: '',
-    notes: data.notes,
+    notes: notes,
     visitDays,
     visitFrequency: data.visitFrequency,
     visitSequence: data.visitSequence,
