@@ -18,6 +18,7 @@ export const defaultContextValues: AppContextType = {
   productBrands: [],
   deliveryRoutes: [],
   backups: [],
+  connectionStatus: 'online',
   
   // Default loading states
   isLoadingCustomers: true,
@@ -54,7 +55,7 @@ export const defaultContextValues: AppContextType = {
   setDeliveryRoutes: () => {},
   setBackups: () => {},
   
-  // Empty method implementations
+  // Empty method implementations with fixed return types
   addRoute: async () => "",
   updateRoute: async () => {},
   deleteRoute: async () => {},
@@ -67,7 +68,7 @@ export const defaultContextValues: AppContextType = {
   deleteProduct: async () => {},
   validateProductDiscount: () => true,
   getMinimumPrice: () => 0,
-  getOrderById: () => undefined,
+  getOrderById: async () => null,
   addOrder: async () => "",
   updateOrder: async () => "",
   deleteOrder: async () => {},
@@ -101,13 +102,14 @@ export const defaultContextValues: AppContextType = {
   addDeliveryRoute: async () => "",
   updateDeliveryRoute: async () => {},
   deleteDeliveryRoute: async () => {},
-  createBackup: () => "",
+  createBackup: async () => "",
   restoreBackup: () => false,
   deleteBackup: () => false,
   settings: null,
-  updateSettings: async () => false,
-  startNewMonth: () => {},
-  createAutomaticPaymentRecord: async () => {},
+  updateSettings: async () => {},
+  startNewMonth: async () => false,
+  createAutomaticPaymentRecord: async () => undefined,
   clearCache: async () => {},
-  addBulkProducts: async () => [] // Add the missing method
+  refreshData: async () => false,
+  addBulkProducts: async () => []
 };

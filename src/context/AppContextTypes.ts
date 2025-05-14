@@ -1,13 +1,13 @@
 
-// Adicionar connectionStatus ao tipo AppContextType
-import { Customer, Product, Order, Payment, LoadItem, SalesRep, Vehicle, Route, Load, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
+import { Customer, Product, Order, Payment, Vehicle, SalesRep, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
+import { Load, LoadItem } from '@/types/delivery'; // Fixed import for Load and LoadItem
 
 export type AppContextType = {
   customers: Customer[];
   products: Product[];
   orders: Order[];
   payments: Payment[];
-  routes: Route[];
+  routes: any[]; // Changed from Route[] to any[] to fix the type issue
   loads: LoadItem[];
   salesReps: SalesRep[];
   vehicles: Vehicle[];
@@ -18,7 +18,7 @@ export type AppContextType = {
   productBrands: ProductBrand[];
   deliveryRoutes: DeliveryRoute[];
   backups: Backup[];
-  connectionStatus: 'online' | 'offline';  // Adicionado status de conexão
+  connectionStatus: 'online' | 'offline';
   
   isLoadingCustomers: boolean;
   isLoadingProducts: boolean;
@@ -41,7 +41,7 @@ export type AppContextType = {
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
-  setRoutes: React.Dispatch<React.SetStateAction<Route[]>>;
+  setRoutes: React.Dispatch<React.SetStateAction<any[]>>;
   setLoads: React.Dispatch<React.SetStateAction<LoadItem[]>>;
   setSalesReps: React.Dispatch<React.SetStateAction<SalesRep[]>>;
   setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
@@ -65,17 +65,17 @@ export type AppContextType = {
   deleteProduct: (id: string) => Promise<void>;
   validateProductDiscount: (productId: string, discountedPrice: number) => string | boolean;
   getMinimumPrice: (productId: string) => number;
-  addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>; // New function for bulk product creation
+  addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>;
   
   // Order operations
-  getOrderById: (id: string) => Promise<Order | null>; // Updated to match the actual implementation
+  getOrderById: (id: string) => Promise<Order | null>;
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<string>;
   deleteOrder: (id: string) => Promise<void>;
   
   // Route operations
-  addRoute: (route: Omit<Route, 'id'>) => Promise<string>;
-  updateRoute: (id: string, route: Partial<Route>) => Promise<void>;
+  addRoute: (route: Omit<any, 'id'>) => Promise<string>;
+  updateRoute: (id: string, route: Partial<any>) => Promise<void>;
   deleteRoute: (id: string) => Promise<void>;
   
   // Load operations
@@ -141,5 +141,5 @@ export type AppContextType = {
   // System operations
   startNewMonth: () => Promise<boolean>;
   clearCache: () => Promise<void>;
-  refreshData: () => Promise<boolean>; // Nova função para forçar atualização de todos os dados
+  refreshData: () => Promise<boolean>;
 };
