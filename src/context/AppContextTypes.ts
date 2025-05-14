@@ -75,7 +75,7 @@ export interface AppContextType {
   addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>; // New function for bulk product creation
   
   // Order operations
-  getOrderById: (id: string) => Order | undefined;
+  getOrderById: (id: string) => Promise<Order | null>; // Updated to match the actual implementation
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<string>;
   deleteOrder: (id: string) => Promise<void>;

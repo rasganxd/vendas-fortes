@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { AppContextType } from './AppContextTypes';
 import { defaultContextValues } from './defaultContextValues';
@@ -90,7 +89,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     addCustomer,
     updateCustomer,
     deleteCustomer,
-    generateNextCode: generateNextCustomerCode
+    generateNextCustomerCode
   } = useCustomers();
   
   const { 
