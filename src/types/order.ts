@@ -1,5 +1,6 @@
-export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
-export type PaymentStatus = 'pending' | 'paid' | 'refunded';
+
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'canceled';
+export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'partial';
 
 /**
  * Order
@@ -45,5 +46,14 @@ export interface OrderItem {
   unitPrice: number;
   price: number;
   discount?: number;
+  total: number;
+}
+
+/**
+ * Payment Summary
+ */
+export interface PaymentSummary {
+  paid: number;
+  pending: number;
   total: number;
 }

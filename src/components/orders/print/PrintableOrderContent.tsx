@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Order, Customer } from '@/types';
+import { Order, Customer, PaymentStatus } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
 import { useAppContext } from '@/hooks/useAppContext';
 

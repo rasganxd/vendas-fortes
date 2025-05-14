@@ -61,14 +61,7 @@ export interface LoadItem {
   customerId?: string; // Add customerId property
 }
 
-export interface OrderItem {
-  id?: string;
-  productId: string;
-  productName: string;
-  productCode: number;
-  quantity: number;
-  price: number;
-  unitPrice: number;
-  discount: number;
-  total: number;
-}
+// Import OrderItem from order.ts to make sure we're using the same type
+import { OrderItem as OriginalOrderItem } from './order';
+// Re-export the OrderItem type so components using this file can import it
+export type OrderItem = OriginalOrderItem;

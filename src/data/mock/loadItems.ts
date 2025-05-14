@@ -8,7 +8,7 @@ export const mockLoadItems: LoadItem[] = mockOrders
   .flatMap(order => {
     return order.items.map(item => ({
       id: `load-item-${order.id}-${item.productId}`,
-      productId: item.productId,
+      productId: item.productId || '',
       productName: item.productName,
       quantity: item.quantity,
       price: item.price,

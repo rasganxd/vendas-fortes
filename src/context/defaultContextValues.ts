@@ -117,12 +117,12 @@ const defaultContextValues: AppContextType = {
   // Product category operations
   addProductCategory: async () => '',
   updateProductCategory: async () => {},
-  deleteProductCategory: async () => {}, // Changed from boolean to void
+  deleteProductCategory: async () => {},
   
   // Product brand operations
   addProductBrand: async () => '',
   updateProductBrand: async () => {},
-  deleteProductBrand: async () => {}, // Changed from boolean to void
+  deleteProductBrand: async () => {},
   
   // Delivery route operations
   addDeliveryRoute: async () => '',

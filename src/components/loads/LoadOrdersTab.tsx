@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
-import { Load, LoadItem, Order, OrderItem } from '@/types';
+import { Load, LoadItem, Order } from '@/types';
+import { OrderItem } from '@/types/order';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -75,12 +76,12 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
         newLoadItems.push({
           id: uuid(),
           orderId: order.id,
-          productId: item.productId,
+          productId: item.productId || '',
           productName: item.productName,
           quantity: item.quantity,
           orderItems: [item],
-          price: item.price, // Add price property
-          customerId: order.customerId // Add customerId for consistency
+          price: item.price,
+          customerId: order.customerId
         });
       });
     });

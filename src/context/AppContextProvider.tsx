@@ -196,24 +196,20 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     return ''; // Return empty string to match expected return type
   };
 
-  // Fix the deleteCategory and deleteBrand functions to return a boolean Promise
-  const deleteProductCategory = async (id: string): Promise<boolean> => {
+  // Fix the deleteCategory and deleteBrand functions to return a void Promise
+  const deleteProductCategory = async (id: string): Promise<void> => {
     try {
       await deleteProductCategoryHook(id);
-      return true;
     } catch (error) {
       console.error("Error deleting product category:", error);
-      return false;
     }
   };
 
-  const deleteProductBrand = async (id: string): Promise<boolean> => {
+  const deleteProductBrand = async (id: string): Promise<void> => {
     try {
       await deleteProductBrandHook(id);
-      return true;
     } catch (error) {
       console.error("Error deleting product brand:", error);
-      return false;
     }
   };
 
@@ -338,11 +334,9 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     addProductGroup,
     updateProductGroup: async (id: string, data: Partial<ProductGroup>): Promise<void> => {
       await updateProductGroup(id, data);
-      return Promise.resolve();
     },
     deleteProductGroup: async (id: string): Promise<void> => {
       await deleteProductGroup(id);
-      return Promise.resolve();
     },
     addProductCategory,
     updateProductCategory,

@@ -1,9 +1,11 @@
+
 import { loadCustomers } from "@/hooks/useCustomers";
 import { fetchProducts } from "@/hooks/useProducts";
 import { loadOrders } from "@/hooks/useOrders";
 import { Customer, Product, Order } from '@/types';
 import { mockProducts } from '@/data/mock/products';
 import { mockCustomers } from '@/data/mock/customers';
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * Loads core application data (customers and products)
