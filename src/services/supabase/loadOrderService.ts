@@ -72,3 +72,9 @@ export const loadOrderWithItems = async (orderId: string): Promise<Order | null>
     return null;
   }
 };
+
+// Export all functions as a service object
+export const loadOrderService = {
+  loadOrderItems,
+  loadOrderWithItems
+};
