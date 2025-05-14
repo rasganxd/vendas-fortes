@@ -1,5 +1,5 @@
 
-export function formatDateToBR(date?: Date): string {
+export function formatDateToBR(date?: Date | string): string {
   if (!date) return '';
   
   const parsedDate = typeof date === 'string' ? new Date(date) : date;
@@ -37,4 +37,9 @@ export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
+}
+
+// Helper to ensure a value is a Date object
+export function ensureDate(date: Date | string): Date {
+  return typeof date === 'string' ? new Date(date) : date;
 }

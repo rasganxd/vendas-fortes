@@ -1,3 +1,4 @@
+
 import { DeliveryRoute, Order } from '@/types';
 import {
   Dialog,
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { MapPin, Plus, Save, X } from 'lucide-react';
-import { formatDateToBR } from '@/lib/date-utils';
+import { formatDateToBR, ensureDate } from '@/lib/date-utils';
 import { RouteStopsTable } from './RouteStopsTable';
 import { RouteProductsList } from './RouteProductsList';
 import RouteFinancialReport from './RouteFinancialReport';
@@ -103,7 +104,7 @@ export const RouteDetailDialog = ({
             <div className="mt-4 flex justify-between items-center">
               <div className="text-sm">
                 <p><span className="font-medium">Status da Rota:</span> {route.status}</p>
-                <p><span className="font-medium">Data:</span> {formatDateToBR(route.date)}</p>
+                <p><span className="font-medium">Data:</span> {formatDateToBR(ensureDate(route.date))}</p>
               </div>
               <Button className="bg-teal-600 hover:bg-teal-700" onClick={handleSaveRoute}>
                 <Save size={16} className="mr-2" /> Salvar Rota

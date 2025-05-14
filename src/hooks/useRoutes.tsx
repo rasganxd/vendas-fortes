@@ -3,6 +3,7 @@ import { DeliveryRoute } from '@/types';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { ensureDate } from '@/lib/date-utils';
 
 export const loadRoutes = async (): Promise<DeliveryRoute[]> => {
   try {
@@ -60,7 +61,7 @@ export const useRoutes = () => {
       // Transform DeliveryRoute to match Supabase schema
       const supabaseRoute = {
         name: route.name,
-        date: route.date.toISOString(),
+        date: ensureDate(route.date).toISOString(),
         driver_id: route.driverId,
         driver_name: route.driverName,
         vehicle_id: route.vehicleId,
@@ -119,7 +120,7 @@ export const useRoutes = () => {
       const supabaseRouteUpdate: Record<string, any> = {};
       
       if (routeUpdate.name !== undefined) supabaseRouteUpdate.name = routeUpdate.name;
-      if (routeUpdate.date !== undefined) supabaseRouteUpdate.date = routeUpdate.date.toISOString();
+      if (routeUpdate.date !== undefined) supabaseRouteUpdate.date = ensureDate(routeUpdate.date).toISOString();
       if (routeUpdate.driverId !== undefined) supabaseRouteUpdate.driver_id = routeUpdate.driverId;
       if (routeUpdate.driverName !== undefined) supabaseRouteUpdate.driver_name = routeUpdate.driverName;
       if (routeUpdate.vehicleId !== undefined) supabaseRouteUpdate.vehicle_id = routeUpdate.vehicleId;

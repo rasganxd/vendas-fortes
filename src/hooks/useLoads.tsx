@@ -5,6 +5,7 @@ import { Load, LoadItem, Order } from '@/types';
 import { useOrders } from './useOrders';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
+import { ensureDate } from '@/lib/date-utils';
 
 export const useLoads = () => {
   const [loads, setLoads] = useState<Load[]>([]);
@@ -30,15 +31,15 @@ export const useLoads = () => {
           const formattedLoads: Load[] = data.map(item => ({
             id: item.id,
             name: item.name || '',
-            date: item.date,
+            date: new Date(item.date),
             vehicleId: item.vehicle_id || '',
             vehicleName: item.vehicle_name,
             salesRepId: item.sales_rep_id,
             status: (item.status as Load['status']) || 'planning',
             total: item.total || 0,
             notes: item.notes || '',
-            createdAt: item.created_at,
-            updatedAt: item.updated_at,
+            createdAt: new Date(item.created_at),
+            updatedAt: new Date(item.updated_at),
             locked: item.locked || false,
             items: [], // Will be populated from load_items if needed
             orderIds: [], // Will be populated from load_orders if needed
@@ -65,7 +66,7 @@ export const useLoads = () => {
     const dbLoad = {
       id,
       name: load.name,
-      date: load.date,
+      date: load.date ? ensureDate(load.date).toISOString() : now,
       vehicle_id: load.vehicleId,
       vehicle_name: load.vehicleName,
       sales_rep_id: load.salesRepId,
@@ -88,7 +89,7 @@ export const useLoads = () => {
       const newLoad: Load = {
         id,
         name: load.name || '',
-        date: load.date || new Date(),
+        date: load.date ? ensureDate(load.date) : new Date(),
         vehicleId: load.vehicleId || '',
         vehicleName: load.vehicleName,
         salesRepId: load.salesRepId,
@@ -96,8 +97,8 @@ export const useLoads = () => {
         status: load.status || 'planning',
         total: load.total || 0,
         notes: load.notes || '',
-        createdAt: now,
-        updatedAt: now,
+        createdAt: new Date(now),
+        updatedAt: new Date(now),
         orderIds: load.orderIds || [],
         locked: load.locked || false
       };
@@ -116,18 +117,19 @@ export const useLoads = () => {
       const now = new Date().toISOString();
       
       // Map our app model to the database model
-      const dbLoad = {
-        name: updatedLoad.name,
-        date: updatedLoad.date,
-        vehicle_id: updatedLoad.vehicleId,
-        vehicle_name: updatedLoad.vehicleName,
-        sales_rep_id: updatedLoad.salesRepId,
-        status: updatedLoad.status,
-        total: updatedLoad.total,
-        notes: updatedLoad.notes,
-        updated_at: now,
-        locked: updatedLoad.locked,
+      const dbLoad: Record<string, any> = {
+        updated_at: now
       };
+      
+      if (updatedLoad.name !== undefined) dbLoad.name = updatedLoad.name;
+      if (updatedLoad.date !== undefined) dbLoad.date = ensureDate(updatedLoad.date).toISOString();
+      if (updatedLoad.vehicleId !== undefined) dbLoad.vehicle_id = updatedLoad.vehicleId;
+      if (updatedLoad.vehicleName !== undefined) dbLoad.vehicle_name = updatedLoad.vehicleName;
+      if (updatedLoad.salesRepId !== undefined) dbLoad.sales_rep_id = updatedLoad.salesRepId;
+      if (updatedLoad.status !== undefined) dbLoad.status = updatedLoad.status;
+      if (updatedLoad.total !== undefined) dbLoad.total = updatedLoad.total;
+      if (updatedLoad.notes !== undefined) dbLoad.notes = updatedLoad.notes;
+      if (updatedLoad.locked !== undefined) dbLoad.locked = updatedLoad.locked;
 
       const { error } = await supabase
         .from('loads')
@@ -140,7 +142,7 @@ export const useLoads = () => {
 
       setLoads((prevLoads) => 
         prevLoads.map((load) => 
-          load.id === id ? { ...load, ...updatedLoad, updatedAt: now } : load
+          load.id === id ? { ...load, ...updatedLoad, updatedAt: new Date(now) } : load
         )
       );
     } catch (error) {
@@ -195,7 +197,7 @@ export const useLoads = () => {
 
       setLoads((prevLoads) => 
         prevLoads.map((load) => 
-          load.id === id ? { ...load, locked: newLockedStatus, updatedAt: now } : load
+          load.id === id ? { ...load, locked: newLockedStatus, updatedAt: new Date(now) } : load
         )
       );
 

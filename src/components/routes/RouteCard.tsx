@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Route, Truck, Edit, Trash2 } from 'lucide-react';
-import { formatDateToBR } from '@/lib/date-utils';
+import { formatDateToBR, ensureDate } from '@/lib/date-utils';
 
 interface RouteCardProps {
   route: DeliveryRoute;
@@ -41,7 +41,7 @@ export const RouteCard = ({ route, onViewRoute, onEditRoute, onDeleteRoute }: Ro
             <Calendar size={18} className="text-gray-500 mt-0.5" />
             <div>
               <p className="text-sm font-medium">Data de Entrega</p>
-              <p className="text-sm text-gray-600">{formatDateToBR(route.date)}</p>
+              <p className="text-sm text-gray-600">{formatDateToBR(ensureDate(route.date))}</p>
             </div>
           </div>
           

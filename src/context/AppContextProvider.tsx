@@ -17,7 +17,7 @@ import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
 import { useCustomers } from '@/hooks/useCustomers';
-import { Customer, Product, Order, Load } from '@/types';
+import { Customer, Product, Order, Load, ProductGroup } from '@/types';
 
 // Providers
 import { ConnectionProvider, useConnection } from './providers/ConnectionProvider';
@@ -191,6 +191,12 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     await updateSettingsFunc(settings);
   };
 
+  // Create a wrapper for createAutomaticPaymentRecord that returns a string
+  const createAutoPaymentWrapper = async (order: Order): Promise<string> => {
+    await createAutomaticPaymentRecord(order);
+    return ''; // Return empty string to match expected return type
+  };
+
   // Build context value with connection status
   const contextValue: AppContextType = {
     customers,
@@ -274,10 +280,7 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     },
     
     getOrderById,
-    addOrder: async (order: Order): Promise<string> => {
-      const result = await addOrder(order);
-      return result;
-    },
+    addOrder,
     updateOrder: updateOrderHook,
     deleteOrder,
     addVehicle,
@@ -286,7 +289,7 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     addPayment,
     updatePayment,
     deletePayment,
-    createAutomaticPaymentRecord,
+    createAutomaticPaymentRecord: createAutoPaymentWrapper,
     
     addPaymentMethod,
     updatePaymentMethod,
@@ -303,11 +306,11 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     deletePaymentTable,
     addProductGroup,
     updateProductGroup: async (id: string, data: Partial<ProductGroup>): Promise<void> => {
-      updateProductGroup(id, data);
+      await updateProductGroup(id, data);
       return Promise.resolve();
     },
     deleteProductGroup: async (id: string): Promise<void> => {
-      deleteProductGroup(id);
+      await deleteProductGroup(id);
       return Promise.resolve();
     },
     addProductCategory,
@@ -321,13 +324,11 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     deleteDeliveryRoute,
     
     createBackup,
-    restoreBackup: async (id: string) => {
-      const result = restoreBackup(id);
-      return Promise.resolve(result);
+    restoreBackup: async (id: string): Promise<boolean> => {
+      return await restoreBackup(id);
     },
-    deleteBackup: async (id: string) => {
-      const result = deleteBackup(id);
-      return Promise.resolve(result);
+    deleteBackup: async (id: string): Promise<boolean> => {
+      return await deleteBackup(id);
     },
     
     settings,

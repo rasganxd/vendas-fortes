@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { DeliveryRoute } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { createStandardService } from '@/services/supabase';
+import { ensureDate } from '@/lib/date-utils';
 
 export const useDeliveryRoutes = () => {
   const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
@@ -51,7 +53,7 @@ export const useDeliveryRoutes = () => {
         .from('delivery_routes')
         .insert({
           name: route.name,
-          date: route.date.toISOString(),
+          date: ensureDate(route.date).toISOString(),
           driver_id: route.driverId,
           driver_name: route.driverName,
           vehicle_id: route.vehicleId,
@@ -100,7 +102,7 @@ export const useDeliveryRoutes = () => {
       const supabaseUpdate: Record<string, any> = {};
       
       if (route.name !== undefined) supabaseUpdate.name = route.name;
-      if (route.date !== undefined) supabaseUpdate.date = route.date.toISOString();
+      if (route.date !== undefined) supabaseUpdate.date = ensureDate(route.date).toISOString();
       if (route.driverId !== undefined) supabaseUpdate.driver_id = route.driverId;
       if (route.driverName !== undefined) supabaseUpdate.driver_name = route.driverName;
       if (route.vehicleId !== undefined) supabaseUpdate.vehicle_id = route.vehicleId;

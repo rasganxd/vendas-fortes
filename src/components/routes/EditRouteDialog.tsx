@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -26,6 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from '@/lib/utils';
+import { ensureDate } from '@/lib/date-utils';
 
 type RouteStatus = 'planning' | 'assigned' | 'in-progress' | 'completed';
 
@@ -51,7 +53,7 @@ export const EditRouteDialog = ({ open, onOpenChange, route, vehicles, onSave }:
       // Map any route status to one of our acceptable values
       const mappedStatus = mapRouteStatus(route.status);
       setStatus(mappedStatus);
-      setDate(route.date);
+      setDate(route.date ? ensureDate(route.date) : undefined);
       setVehicleId(route.vehicleId || '');
     }
   }, [route, open]);
@@ -83,7 +85,7 @@ export const EditRouteDialog = ({ open, onOpenChange, route, vehicles, onSave }:
     const updatedRoute: Partial<DeliveryRoute> = {
       name,
       status: status as 'pending' | 'in-progress' | 'completed' | 'planning' | 'assigned',
-      date,
+      date: date,
       vehicleId: vehicleId || undefined,
       vehicleName: selectedVehicle ? selectedVehicle.name : undefined,
     };

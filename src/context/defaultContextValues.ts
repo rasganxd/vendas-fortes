@@ -2,7 +2,6 @@
 import { AppContextType } from './AppContextTypes';
 
 export const defaultContextValues: AppContextType = {
-  // Default empty values for data arrays
   customers: [],
   products: [],
   orders: [],
@@ -18,9 +17,8 @@ export const defaultContextValues: AppContextType = {
   productBrands: [],
   deliveryRoutes: [],
   backups: [],
-  connectionStatus: 'online',
+  connectionStatus: 'offline',
   
-  // Default loading states
   isLoadingCustomers: true,
   isLoadingProducts: true,
   isLoadingOrders: true,
@@ -38,7 +36,6 @@ export const defaultContextValues: AppContextType = {
   isLoadingBackups: true,
   isUsingMockData: false,
   
-  // Empty setters
   setCustomers: () => {},
   setProducts: () => {},
   setOrders: () => {},
@@ -55,61 +52,86 @@ export const defaultContextValues: AppContextType = {
   setDeliveryRoutes: () => {},
   setBackups: () => {},
   
-  // Empty method implementations with fixed return types
-  addRoute: async () => "",
-  updateRoute: async () => {},
-  deleteRoute: async () => {},
   addCustomer: async () => "",
   updateCustomer: async () => {},
   deleteCustomer: async () => {},
-  generateNextCustomerCode: () => 1,
+  generateNextCustomerCode: () => 0,
+  
   addProduct: async () => "",
   updateProduct: async () => {},
   deleteProduct: async () => {},
-  validateProductDiscount: () => true,
+  validateProductDiscount: () => false,
   getMinimumPrice: () => 0,
+  addBulkProducts: async () => [],
+  
   getOrderById: async () => null,
   addOrder: async () => "",
   updateOrder: async () => "",
   deleteOrder: async () => {},
-  addVehicle: async () => "",
-  updateVehicle: async () => {},
-  deleteVehicle: async () => {},
-  addPayment: async () => "",
-  updatePayment: async () => {},
-  deletePayment: async () => {},
-  addPaymentMethod: async () => "",
-  updatePaymentMethod: async () => {},
-  deletePaymentMethod: async () => {},
+  
+  addRoute: async () => "",
+  updateRoute: async () => {},
+  deleteRoute: async () => {},
+  
   addLoad: async () => "",
   updateLoad: async () => {},
   deleteLoad: async () => {},
+  
   addSalesRep: async () => "",
   updateSalesRep: async () => {},
   deleteSalesRep: async () => {},
+  
+  addVehicle: async () => "",
+  updateVehicle: async () => {},
+  deleteVehicle: async () => {},
+  
+  addPayment: async () => "",
+  updatePayment: async () => {},
+  deletePayment: async () => {},
+  createAutomaticPaymentRecord: async () => "",
+  
+  addPaymentMethod: async () => "",
+  updatePaymentMethod: async () => {},
+  deletePaymentMethod: async () => {},
+  
   addPaymentTable: async () => "",
   updatePaymentTable: async () => {},
   deletePaymentTable: async () => {},
+  
   addProductGroup: async () => "",
   updateProductGroup: async () => {},
   deleteProductGroup: async () => {},
+  
   addProductCategory: async () => "",
   updateProductCategory: async () => {},
   deleteProductCategory: async () => {},
+  
   addProductBrand: async () => "",
   updateProductBrand: async () => {},
   deleteProductBrand: async () => {},
+  
   addDeliveryRoute: async () => "",
   updateDeliveryRoute: async () => {},
   deleteDeliveryRoute: async () => {},
+  
   createBackup: async () => "",
-  restoreBackup: () => false,
-  deleteBackup: () => false,
-  settings: null,
+  restoreBackup: async () => Promise.resolve(false),
+  deleteBackup: async () => Promise.resolve(false),
+  
+  settings: {
+    companyName: "",
+    companyDocument: "",
+    companyAddress: "",
+    companyPhone: "",
+    companyEmail: "",
+    companyFooter: "",
+    primaryColor: "#1C64F2",
+    secondaryColor: "#047481",
+    accentColor: "#0694A2"
+  },
   updateSettings: async () => {},
-  startNewMonth: async () => false,
-  createAutomaticPaymentRecord: async () => undefined,
+  
+  startNewMonth: async () => Promise.resolve(true),
   clearCache: async () => {},
-  refreshData: async () => false,
-  addBulkProducts: async () => []
+  refreshData: async () => Promise.resolve(true)
 };

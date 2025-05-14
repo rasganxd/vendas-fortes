@@ -21,7 +21,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { formatDateToBR } from '@/lib/date-utils';
+import { formatDateToBR, ensureDate } from '@/lib/date-utils';
 import { FileCheck, Weight, Calendar, Truck, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -193,7 +193,7 @@ export default function Loads() {
                 <Calendar size={14} />
                 <span>Data</span>
               </div>
-              <p>{selectedLoad ? formatDateToBR(selectedLoad.date) : ''}</p>
+              <p>{selectedLoad ? formatDateToBR(ensureDate(selectedLoad.date)) : ''}</p>
             </div>
             
             <div className="bg-gray-50 p-2 rounded-md">

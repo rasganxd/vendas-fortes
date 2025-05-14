@@ -4,7 +4,7 @@ import { useReactToPrint } from 'react-to-print';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { DeliveryRoute, Order } from '@/types';
-import { formatDateToBR } from '@/lib/date-utils';
+import { formatDateToBR, ensureDate } from '@/lib/date-utils';
 import { Printer, CreditCard, Receipt, DollarSign, FileText } from 'lucide-react';
 
 interface RouteFinancialReportProps {
@@ -69,7 +69,7 @@ const RouteFinancialReport = ({ route, orders, onClose }: RouteFinancialReportPr
       <div ref={componentRef} className="p-6">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold">Relatório Financeiro de Rota</h1>
-          <p className="text-gray-500">{route.name} - Data: {formatDateToBR(route.date)}</p>
+          <p className="text-gray-500">{route.name} - Data: {formatDateToBR(ensureDate(route.date))}</p>
         </div>
         
         {/* Resumo financeiro da rota */}
