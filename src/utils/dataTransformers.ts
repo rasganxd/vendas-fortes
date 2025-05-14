@@ -92,6 +92,18 @@ export const transformProductData = (data: any) => {
 };
 
 /**
+ * Transform a Supabase product category record to our internal ProductCategory type
+ */
+export const transformProductCategoryData = (data: any) => {
+  const transformed = toCamelCase(data);
+  return {
+    ...transformed,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+  };
+};
+
+/**
  * Transform a Supabase customer record to our internal Customer type
  */
 export const transformCustomerData = (data: any) => {
