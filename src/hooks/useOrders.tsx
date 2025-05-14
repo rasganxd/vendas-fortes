@@ -1,9 +1,22 @@
+
 import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { orderService } from '@/services/supabase/orderService';
 import { toast } from '@/components/ui/use-toast';
-import { transformOrderData, transformArray } from '@/utils/dataTransformers';
-import { orderItemService } from '@/services/supabase/orderItemService';
+import { transformOrderData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
+import { addOrderItems, updateOrderItems, getOrderItems } from '@/services/supabase/orderItemService';
+
+// Function for loading orders, exported for use in other files
+export const loadOrders = async (): Promise<Order[]> => {
+  try {
+    const data = await orderService.getAll();
+    const transformedOrders = transformArray(data, transformOrderData) as Order[];
+    return transformedOrders;
+  } catch (error) {
+    console.error("Error loading orders:", error);
+    return [];
+  }
+};
 
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -13,9 +26,8 @@ export const useOrders = () => {
     const fetchOrders = async () => {
       try {
         setIsLoading(true);
-        const data = await orderService.getAll();
-        const transformedOrders = transformArray(data, transformOrderData) as Order[];
-        setOrders(transformedOrders);
+        const loadedOrders = await loadOrders();
+        setOrders(loadedOrders);
       } catch (error) {
         console.error("Error loading orders:", error);
         toast({
@@ -51,13 +63,21 @@ export const useOrders = () => {
 
   const addOrder = async (order: Omit<Order, 'id'>): Promise<string> => {
     try {
-      const id = await orderService.add(order);
+      // Convert Date objects to strings for Supabase
+      const orderForDb = prepareForSupabase(order);
+      
+      // Add the order
+      const id = await orderService.add(orderForDb);
+      
+      // Get the saved order and add it to state
       const newOrder = { ...order, id } as Order;
       setOrders(prev => [...prev, newOrder]);
+      
       toast({
         title: "Pedido adicionado",
         description: "Pedido adicionado com sucesso!"
       });
+      
       return id;
     } catch (error) {
       console.error("Error adding order:", error);
@@ -70,9 +90,12 @@ export const useOrders = () => {
     }
   };
 
-  const updateOrder = async (id: string, order: Partial<Order>): Promise<void> => {
+  const updateOrder = async (id: string, order: Partial<Order>): Promise<string> => {
     try {
-      await orderService.update(id, order);
+      // Convert Date objects to strings for Supabase
+      const orderForDb = prepareForSupabase(order);
+      
+      await orderService.update(id, orderForDb);
       setOrders(prev =>
         prev.map(o => (o.id === id ? { ...o, ...order } : o))
       );
@@ -80,6 +103,7 @@ export const useOrders = () => {
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
       });
+      return id;
     } catch (error) {
       console.error("Error updating order:", error);
       toast({
@@ -87,6 +111,7 @@ export const useOrders = () => {
         description: "Houve um problema ao atualizar o pedido.",
         variant: "destructive"
       });
+      return "";
     }
   };
 

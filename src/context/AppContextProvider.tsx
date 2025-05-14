@@ -1,7 +1,7 @@
 import React, { createContext } from 'react';
 import { AppContextType } from './AppContextTypes';
 import defaultContextValues from './defaultContextValues';
-import { useOrders } from '@/hooks/useOrders';
+import { useOrders, loadOrders } from '@/hooks/useOrders';
 import { usePayments } from '@/hooks/usePayments';
 import { useRoutes } from '@/hooks/useRoutes';
 import { useLoads } from '@/hooks/useLoads';
@@ -197,23 +197,34 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
   };
 
   // Fix the deleteCategory and deleteBrand functions to return a boolean Promise
-  const deleteProductCategory = async (id: string): Promise<void> => {
+  const deleteProductCategory = async (id: string): Promise<boolean> => {
     try {
       await deleteProductCategoryHook(id);
-      return;
+      return true;
     } catch (error) {
       console.error("Error deleting product category:", error);
-      return;
+      return false;
     }
   };
 
-  const deleteProductBrand = async (id: string): Promise<void> => {
+  const deleteProductBrand = async (id: string): Promise<boolean> => {
     try {
       await deleteProductBrandHook(id);
-      return;
+      return true;
     } catch (error) {
       console.error("Error deleting product brand:", error);
-      return;
+      return false;
+    }
+  };
+
+  // Fix for updateOrder to return string
+  const updateOrder = async (id: string, orderData: Partial<Order>): Promise<string> => {
+    try {
+      await updateOrderHook(id, orderData);
+      return id;
+    } catch (error) {
+      console.error("Error in updateOrder wrapper:", error);
+      return "";
     }
   };
 
@@ -301,7 +312,7 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     
     getOrderById,
     addOrder,
-    updateOrder: updateOrderHook,
+    updateOrder,
     deleteOrder,
     addVehicle,
     updateVehicle,

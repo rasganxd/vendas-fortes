@@ -18,11 +18,23 @@ export const addOrderItems = async (items: Partial<OrderItem>[]): Promise<OrderI
   if (!items || items.length === 0) return [];
   
   try {
-    const preparedItems = items.map(item => prepareForSupabase(item));
+    // Convert camelCase to snake_case and ensure all required fields are present
+    const preparedItems = items.map(item => {
+      const prepared = prepareForSupabase(item);
+      
+      // Ensure required fields for Supabase schema are present
+      if (!prepared.product_name || prepared.product_code === undefined || 
+          prepared.quantity === undefined || prepared.unit_price === undefined || 
+          prepared.price === undefined || prepared.total === undefined) {
+        throw new Error("Missing required fields for order item");
+      }
+      
+      return prepared;
+    });
     
     const { data, error } = await supabase
       .from('order_items')
-      .insert(preparedItems)
+      .insert(preparedItems as any[])
       .select();
       
     if (error) {
@@ -89,7 +101,18 @@ export const getOrderItems = async (orderId: string): Promise<OrderItem[]> => {
       throw error;
     }
     
-    return data as unknown as OrderItem[];
+    return data.map(item => ({
+      id: item.id,
+      productId: item.product_id || '',
+      productName: item.product_name,
+      productCode: item.product_code,
+      quantity: item.quantity,
+      price: item.price,
+      unitPrice: item.unit_price,
+      discount: item.discount || 0,
+      total: item.total || (item.unit_price * item.quantity),
+      orderId: item.order_id,
+    })) as OrderItem[];
   } catch (error) {
     console.error("Error in getOrderItems:", error);
     return [];

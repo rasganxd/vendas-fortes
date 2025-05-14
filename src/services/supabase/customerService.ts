@@ -1,17 +1,12 @@
-
 import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
-import { transformCustomerData, prepareForSupabase } from '@/utils/dataTransformers';
+import { prepareForSupabase } from '@/utils/dataTransformers';
 import { Customer } from '@/types';
 
 /**
  * Service for customer-related operations
- * This is a standardized service that handles the CRUD operations for customers
  */
 export const customerService = createStandardService('customers');
-
-// Cache for customer lookups by code
-const customerCodeCache = new Map<number, Customer | null>();
 
 /**
  * Get customer by code
@@ -19,11 +14,6 @@ const customerCodeCache = new Map<number, Customer | null>();
  * @returns Customer or null if not found
  */
 export const getCustomerByCode = async (code: number): Promise<Customer | null> => {
-  // Check cache first
-  if (customerCodeCache.has(code)) {
-    return customerCodeCache.get(code) || null;
-  }
-
   try {
     const { data, error } = await supabase
       .from('customers')
@@ -32,20 +22,48 @@ export const getCustomerByCode = async (code: number): Promise<Customer | null> 
       .single();
       
     if (error) {
-      if (error.code !== 'PGRST116') { // Not found error
-        console.error("Error fetching customer by code:", error);
-      }
-      customerCodeCache.set(code, null);
+      console.error("Error fetching customer by code:", error);
       return null;
     }
     
-    const customer = transformCustomerData(data);
-    customerCodeCache.set(code, customer);
-    return customer;
+    return transformCustomer(data);
   } catch (error) {
     console.error("Error in getCustomerByCode:", error);
     return null;
   }
+};
+
+/**
+ * Transform customer from Supabase format to application format
+ * @param data - Customer data from Supabase
+ * @returns Customer object
+ */
+export const transformCustomer = (data: any): Customer => {
+  if (!data) return null;
+
+  const customer: Customer = {
+    id: data.id,
+    code: data.code,
+    name: data.name,
+    email: data.email || '',
+    phone: data.phone || '',
+    document: data.document || '',
+    salesRepId: data.sales_rep_id,
+    salesRepName: data.sales_rep_name || '',
+    notes: data.notes || '',
+    address: data.address || '',
+    city: data.city || '',
+    state: data.state || '',
+    zip: data.zip || '',
+    visitDays: data.visit_days || [],
+    visitFrequency: data.visit_frequency || '',
+    visitSequence: data.visit_sequence,
+    version: data.version || 1,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
+  };
+
+  return customer;
 };
 
 /**
@@ -80,21 +98,12 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
       throw new Error("Customer name is required");
     }
     
-    // Ensure visitDays is an array
-    if (!Array.isArray(customerData.visitDays)) {
-      customerData.visitDays = customerData.visitDays ? [customerData.visitDays] : [];
-    }
-    
     // Convert to snake_case and prepare for Supabase
     const supabaseData = prepareForSupabase(customerData);
     
     // Ensure the required fields are present in the data
     if (!supabaseData.name) {
       throw new Error("Customer name is required after transformation");
-    }
-    
-    if (supabaseData.code === undefined) {
-      throw new Error("Customer code is required after transformation");
     }
     
     const { data, error } = await supabase
@@ -108,14 +117,34 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
       throw error;
     }
     
-    // Clear cache for this code
-    if (customerData.code) {
-      customerCodeCache.delete(customerData.code);
-    }
-    
     return data.id;
   } catch (error) {
     console.error("Error in createCustomer:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update an existing customer
+ * @param id - Customer ID
+ * @param customer - Updated customer data
+ */
+export const updateCustomer = async (id: string, customer: Partial<Customer>): Promise<void> => {
+  try {
+    // Prepare data for Supabase
+    const supabaseData = prepareForSupabase(customer);
+    
+    const { error } = await supabase
+      .from('customers')
+      .update(supabaseData)
+      .eq('id', id);
+      
+    if (error) {
+      console.error("Error updating customer:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error in updateCustomer:", error);
     throw error;
   }
 };

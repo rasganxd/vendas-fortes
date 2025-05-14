@@ -1,6 +1,19 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { transformSalesRepData } from '@/utils/dataTransformers';
 import type { SalesRep } from '@/types';
+
+/**
+ * Definition of the SyncLogEntry type
+ */
+export interface SyncLogEntry {
+  id: string;
+  event_type: 'upload' | 'download' | 'error';
+  device_id: string;
+  sales_rep_id: string;
+  created_at: string;
+  details?: any;
+}
 
 /**
  * Sync service for sales reps
@@ -70,6 +83,40 @@ export const syncService = {
       }
     } catch (error) {
       console.error("Error in syncSalesReps:", error);
+    }
+  },
+
+  /**
+   * Get sync logs for a sales rep
+   * @param salesRepId - Sales rep ID
+   * @returns Array of SyncLogEntry
+   */
+  getSyncLogs: async (salesRepId: string): Promise<SyncLogEntry[]> => {
+    try {
+      // Try to use the Supabase RPC function first
+      const { data, error } = await supabase
+        .rpc('get_sync_logs', { p_sales_rep_id: salesRepId });
+      
+      if (error) {
+        console.error("Error fetching sync logs:", error);
+        
+        // Fallback to direct query
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('sync_logs')
+          .select('*')
+          .eq('sales_rep_id', salesRepId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+          
+        if (fallbackError) throw fallbackError;
+        
+        return fallbackData as SyncLogEntry[];
+      }
+      
+      return data as SyncLogEntry[];
+    } catch (error) {
+      console.error("Error in getSyncLogs:", error);
+      return [];
     }
   }
 };

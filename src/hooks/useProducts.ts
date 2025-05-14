@@ -19,6 +19,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
   }
 };
 
+// Export the fetchProducts function as loadProducts for backward compatibility
+export const loadProducts = fetchProducts;
+
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);

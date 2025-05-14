@@ -1,7 +1,6 @@
-import { toast } from '@/components/ui/use-toast';
-import { loadCustomers } from '@/hooks/useCustomers';
-import { fetchProducts } from '@/hooks/useProducts';
-import { loadOrders } from '@/hooks/useOrders';
+import { loadCustomers } from "@/hooks/useCustomers";
+import { fetchProducts } from "@/hooks/useProducts";
+import { loadOrders } from "@/hooks/useOrders";
 import { Customer, Product, Order } from '@/types';
 import { mockProducts } from '@/data/mock/products';
 import { mockCustomers } from '@/data/mock/customers';

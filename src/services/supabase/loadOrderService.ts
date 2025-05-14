@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { transformOrderData } from '@/utils/dataTransformers';
-import { Order } from '@/types';
+import { Order, OrderItem } from '@/types';
 
 /**
  * Load order items for a specific order
@@ -38,7 +39,8 @@ export const loadOrderItems = async (orderId: string): Promise<OrderItem[]> => {
       price: item.price,
       unitPrice: item.unit_price,
       discount: item.discount || 0,
-      total: item.total || (item.unit_price * item.quantity)
+      total: item.total || (item.unit_price * item.quantity),
+      orderId: item.order_id,
     }));
   } catch (error) {
     console.error(`Error in loadOrderItems for order ${orderId}:`, error);

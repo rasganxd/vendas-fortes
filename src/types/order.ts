@@ -1,4 +1,9 @@
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
+export type PaymentStatus = 'pending' | 'paid' | 'refunded';
 
+/**
+ * Order
+ */
 export interface Order {
   id: string;
   code: number;
@@ -12,37 +17,33 @@ export interface Order {
   total: number;
   discount: number;
   status: OrderStatus;
-  paymentStatus: 'pending' | 'partial' | 'paid';
+  paymentStatus: PaymentStatus;
+  paymentMethod: string;
   paymentMethodId: string;
-  paymentMethod: string; // For compatibility
   paymentTableId: string;
-  payments: string[];
+  payments: any[];
   notes: string;
   createdAt: Date;
   updatedAt: Date;
-  archived?: boolean;
-  deliveryZip?: string;
-  deliveryAddress?: string;
-  deliveryCity?: string;
-  deliveryState?: string;
+  archived: boolean;
+  deliveryAddress: string;
+  deliveryCity: string;
+  deliveryState: string;
+  deliveryZip: string;
 }
 
-export type OrderStatus = 'pending' | 'processing' | 'completed' | 'canceled' | 'confirmed' | 'draft';
-
+/**
+ * Order Item
+ */
 export interface OrderItem {
-  id?: string;
-  productId: string;
+  id: string;
+  orderId?: string;
+  productId?: string;
   productName: string;
   productCode: number;
   quantity: number;
+  unitPrice: number;
   price: number;
-  unitPrice: number; // For compatibility
-  discount: number;
+  discount?: number;
   total: number;
-}
-
-export interface PaymentSummary {
-  total: number;
-  paid: number;
-  pending: number;
 }
