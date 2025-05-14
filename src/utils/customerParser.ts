@@ -1,4 +1,3 @@
-
 import { Customer } from '@/types/customer';
 
 interface RawCustomerData {
@@ -31,6 +30,138 @@ interface RawCustomerData {
  * ```
  */
 export function parseCustomerReportText(text: string): Omit<Customer, 'id'>[] {
+  // First try to detect if this is the new single-line format
+  const lines = text.split('\n');
+  
+  // Check if the first line contains the headers for the new format
+  if (lines[0].includes('CLIEN RAZAO SOCIAL') && 
+      lines[0].includes('NOME FANTASIA') && 
+      lines[0].includes('COMPRADOR') && 
+      lines[0].includes('ENDERECO')) {
+    return parseCustomerSimpleFormat(text);
+  }
+  
+  // Otherwise use the original multi-line format parser
+  return parseCustomerMultilineFormat(text);
+}
+
+/**
+ * Parse the single-line format report and extract customer information
+ * Format example:
+ * ```
+ * CLIEN RAZAO SOCIAL                   NOME FANTASIA        COMPRADOR        ENDERECO                       BAIRRO       CIDADE
+ *         3 JOSE MARIA RODRIGUES DOS SANTO CATADOR INDIVIDUAL                    RUA ALBINO CAMPOS COLETTI318D  SANTO ANTONIOCHAPECO
+ * ```
+ */
+function parseCustomerSimpleFormat(text: string): Omit<Customer, 'id'>[] {
+  const customers: Omit<Customer, 'id'>[] = [];
+  const lines = text.split('\n');
+  
+  // Skip empty lines
+  if (lines.length < 2) return customers;
+  
+  const headerLine = lines[0].trim();
+  
+  // Try to identify column positions from the header
+  const columnPositions = {
+    codeStart: headerLine.indexOf('CLIEN') >= 0 ? headerLine.indexOf('CLIEN') : 0,
+    nameStart: headerLine.indexOf('RAZAO SOCIAL') >= 0 ? headerLine.indexOf('RAZAO SOCIAL') : 10,
+    tradingNameStart: headerLine.indexOf('NOME FANTASIA') >= 0 ? headerLine.indexOf('NOME FANTASIA') : 40,
+    contactNameStart: headerLine.indexOf('COMPRADOR') >= 0 ? headerLine.indexOf('COMPRADOR') : 60,
+    addressStart: headerLine.indexOf('ENDERECO') >= 0 ? headerLine.indexOf('ENDERECO') : 80,
+    neighborhoodStart: headerLine.indexOf('BAIRRO') >= 0 ? headerLine.indexOf('BAIRRO') : 110,
+    cityStart: headerLine.indexOf('CIDADE') >= 0 ? headerLine.indexOf('CIDADE') : 125
+  };
+  
+  // Process each line (skip the header)
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue; // Skip empty lines
+    
+    // Ensure the line is long enough by padding it
+    const paddedLine = line.padEnd(150);
+    
+    try {
+      // Extract customer code - usually appears at the beginning of the line after some spaces
+      const codeMatch = paddedLine.trim().match(/^\s*(\d+)\s+/);
+      let customerCode = 0;
+      if (codeMatch && codeMatch[1]) {
+        customerCode = parseInt(codeMatch[1], 10);
+      }
+      
+      // Extract customer data based on identified column positions
+      const name = paddedLine.substring(
+        paddedLine.indexOf(' ') + 1, 
+        columnPositions.tradingNameStart
+      ).trim();
+      
+      const tradingName = paddedLine.substring(
+        columnPositions.tradingNameStart, 
+        columnPositions.contactNameStart
+      ).trim();
+      
+      const contactName = paddedLine.substring(
+        columnPositions.contactNameStart, 
+        columnPositions.addressStart
+      ).trim();
+      
+      const address = paddedLine.substring(
+        columnPositions.addressStart, 
+        columnPositions.neighborhoodStart
+      ).trim();
+      
+      const neighborhood = paddedLine.substring(
+        columnPositions.neighborhoodStart, 
+        columnPositions.cityStart
+      ).trim();
+      
+      const cityStateMatch = paddedLine.substring(columnPositions.cityStart).match(/([A-Za-zÀ-ÿ\s.-]+)([A-Z]{2})?/);
+      let city = '';
+      let state = '';
+      
+      if (cityStateMatch) {
+        city = cityStateMatch[1].trim();
+        state = cityStateMatch[2] ? cityStateMatch[2].trim() : '';
+      }
+      
+      // Build customer object
+      const customer: Omit<Customer, 'id'> = {
+        name: name || tradingName || "Cliente sem nome",
+        code: customerCode || 0,
+        phone: "",
+        address: address || "",
+        city: city || "",
+        state: state || "",
+        zip: "",
+        zipCode: "",
+        document: "",
+        email: "",
+        notes: tradingName ? `Nome Fantasia: ${tradingName}\nBairro: ${neighborhood}` : `Bairro: ${neighborhood}`,
+        visitDays: ['monday'], // Default to Monday
+        visitFrequency: 'weekly', // Default to weekly
+        visitSequence: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Add contact name to notes if present
+      if (contactName) {
+        customer.notes = `${customer.notes}\nContato: ${contactName}`.trim();
+      }
+      
+      customers.push(customer);
+    } catch (error) {
+      console.error(`Error parsing customer at line ${i}:`, error);
+    }
+  }
+  
+  return customers;
+}
+
+/**
+ * Parse the multi-line format report and extract customer information (original parser)
+ */
+function parseCustomerMultilineFormat(text: string): Omit<Customer, 'id'>[] {
   const customers: Omit<Customer, 'id'>[] = [];
   const lines = text.split('\n');
   

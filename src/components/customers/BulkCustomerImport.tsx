@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Customer } from '@/types/customer';
 import { useToast } from '@/components/ui/use-toast';
-import { Check, X, Upload } from 'lucide-react';
+import { Upload, AlertCircle } from 'lucide-react';
 import { parseCustomerReportText } from '@/utils/customerParser';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { SalesRep } from '@/types/personnel';
@@ -24,7 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  RadioGroup,
+  RadioGroupItem
+} from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface BulkCustomerImportProps {
   onImportCustomers: (customers: Omit<Customer, 'id'>[]) => Promise<string[]>;
@@ -39,6 +44,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   const [rawText, setRawText] = useState<string>('');
   const [parsedCustomers, setParsedCustomers] = useState<Omit<Customer, 'id'>[]>([]);
   const [selectedSalesRepId, setSelectedSalesRepId] = useState<string>('');
+  const [formatType, setFormatType] = useState<string>('simple'); // 'simple' or 'multiline'
   const { salesReps } = useSalesReps();
   
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -140,12 +146,53 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
     }
   };
 
+  const handleFormatChange = (value: string) => {
+    setFormatType(value);
+    // Clear any previously parsed customers when changing format
+    setParsedCustomers([]);
+  };
+
+  const getFormatPlaceholder = () => {
+    if (formatType === 'simple') {
+      return `CLIEN RAZAO SOCIAL                   NOME FANTASIA        COMPRADOR        ENDERECO                       BAIRRO       CIDADE
+        3 JOSE MARIA RODRIGUES DOS SANTO CATADOR INDIVIDUAL                    RUA ALBINO CAMPOS COLETTI318D  SANTO ANTONIOCHAPECO`;
+    } else {
+      return `CLIEN RAZAO SOCIAL                CANAL                          EMP
+ENDERECO                        BAIRRO              CEP         EXCL ESP
+CIDADE                      UF  COMPRADOR           FONE        ANIVER.
+CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-4">Importação de Clientes</h3>
         
         <div className="space-y-4">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Formato de importação</AlertTitle>
+            <AlertDescription>
+              Selecione o formato do relatório que você deseja importar.
+            </AlertDescription>
+          </Alert>
+
+          <RadioGroup 
+            value={formatType} 
+            onValueChange={handleFormatChange}
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="simple" id="simple" />
+              <Label htmlFor="simple">Formato Simplificado (Uma linha por cliente)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="multiline" id="multiline" />
+              <Label htmlFor="multiline">Formato Original (Várias linhas por cliente)</Label>
+            </div>
+          </RadioGroup>
+          
           <div className="space-y-2">
             <Label>Vendedor (aplicado a todos os clientes importados)</Label>
             <Select
@@ -166,17 +213,16 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
           </div>
           
           <div>
-            <Label htmlFor="importText">Cole aqui o conteúdo do relatório de clientes</Label>
+            <Label htmlFor="importText">
+              Cole aqui o conteúdo do relatório de clientes ({formatType === 'simple' ? 'uma linha por cliente' : 'múltiplas linhas por cliente'})
+            </Label>
             <Textarea
               id="importText"
               value={rawText}
               onChange={handleTextChange}
               rows={10}
               className="font-mono text-sm"
-              placeholder="CLIEN RAZAO SOCIAL                CANAL                          EMP
-          ENDERECO                        BAIRRO              CEP         EXCL ESP
-          CIDADE                      UF  COMPRADOR           FONE        ANIVER.
-          CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ."
+              placeholder={getFormatPlaceholder()}
             />
           </div>
           
