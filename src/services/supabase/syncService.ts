@@ -163,12 +163,17 @@ export const syncService = {
       // Process each order
       for (const order of orders) {
         // Prepare order data with mobile sync fields
-        const orderData = {
-          ...prepareForSupabase(order),
+        const mobileFields = {
           synced_from_mobile: true,
           device_id: deviceId,
           sales_rep_id: salesRepId,
           sync_timestamp: new Date().toISOString()
+        };
+        
+        // Prepare the full order data by merging the original order with mobile sync fields
+        const orderData = {
+          ...prepareForSupabase(order),
+          ...mobileFields
         };
         
         // Check if order already exists (by client-generated UUID)
@@ -195,17 +200,18 @@ export const syncService = {
           }
         } else {
           // New order, insert it - ensure all required fields are included
-          const orderInsertData = {
+          // Type assertion to ensure TypeScript knows these properties exist on the order
+          const orderWithRequiredFields = {
             ...orderData,
-            code: orderData.code || 0,
-            customer_name: orderData.customer_name || 'Unknown Customer',
-            sales_rep_name: orderData.sales_rep_name || 'Unknown Rep',
-            total: orderData.total || 0
+            code: order.code || 0,
+            customer_name: order.customer_name || 'Unknown Customer',
+            sales_rep_name: order.sales_rep_name || 'Unknown Rep',
+            total: order.total || 0
           };
           
           const { data: newOrder, error: insertError } = await supabase
             .from('orders')
-            .insert(orderInsertData)
+            .insert(orderWithRequiredFields)
             .select('id')
             .single();
 
