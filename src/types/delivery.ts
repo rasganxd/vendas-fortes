@@ -2,15 +2,15 @@
 export interface DeliveryRoute {
   id: string;
   name: string;
-  date: Date;
+  date: Date | string;
   driverId: string;
   driverName: string; // For compatibility
   vehicleId: string;
   vehicleName: string; // For compatibility
   stops: RouteStop[];
   status: 'pending' | 'in-progress' | 'completed' | 'planning' | 'assigned';
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 export interface RouteStop {
@@ -34,7 +34,7 @@ export interface RouteStop {
 export interface Load {
   id: string;
   name: string;
-  date: Date;
+  date: Date | string;
   vehicleId: string;
   vehicleName?: string; // For compatibility
   salesRepId?: string; // Add salesRepId property
@@ -42,8 +42,8 @@ export interface Load {
   status: 'pending' | 'in-progress' | 'completed' | 'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered';
   total: number;
   notes: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
   orderIds?: string[];
   locked?: boolean;
 }

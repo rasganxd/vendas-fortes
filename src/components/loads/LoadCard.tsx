@@ -67,7 +67,7 @@ export const LoadCard: React.FC<LoadCardProps> = ({
   };
   
   const handleLockToggle = async () => {
-    await toggleLoadLock(load.id, !load.locked);
+    await toggleLoadLock(load.id);
   };
 
   return (

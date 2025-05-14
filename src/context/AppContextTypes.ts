@@ -1,6 +1,6 @@
 
 import { Customer, Product, Order, Payment, Vehicle, SalesRep, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
-import { Load, LoadItem } from '@/types/delivery'; // Fixed import for Load and LoadItem
+import { Load } from '@/types';
 
 export type AppContextType = {
   customers: Customer[];
@@ -8,7 +8,7 @@ export type AppContextType = {
   orders: Order[];
   payments: Payment[];
   routes: any[]; // Changed from Route[] to any[] to fix the type issue
-  loads: LoadItem[];
+  loads: Load[];
   salesReps: SalesRep[];
   vehicles: Vehicle[];
   paymentMethods: PaymentMethod[];
@@ -42,7 +42,7 @@ export type AppContextType = {
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
   setRoutes: React.Dispatch<React.SetStateAction<any[]>>;
-  setLoads: React.Dispatch<React.SetStateAction<LoadItem[]>>;
+  setLoads: React.Dispatch<React.SetStateAction<Load[]>>;
   setSalesReps: React.Dispatch<React.SetStateAction<SalesRep[]>>;
   setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
   setPaymentMethods: React.Dispatch<React.SetStateAction<PaymentMethod[]>>;
@@ -131,8 +131,8 @@ export type AppContextType = {
   
   // Backup operations
   createBackup: (name?: string) => Promise<string>;
-  restoreBackup: (id: string) => boolean;
-  deleteBackup: (id: string) => boolean;
+  restoreBackup: (id: string) => Promise<boolean>;
+  deleteBackup: (id: string) => Promise<boolean>;
   
   // Settings
   settings: AppSettings;

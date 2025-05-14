@@ -26,7 +26,24 @@ export const useLoads = () => {
         }
 
         if (data) {
-          setLoads(data as Load[]);
+          // Convert database format to our app format
+          const formattedLoads: Load[] = data.map(item => ({
+            id: item.id,
+            name: item.name || '',
+            date: item.date,
+            vehicleId: item.vehicle_id || '',
+            vehicleName: item.vehicle_name,
+            salesRepId: item.sales_rep_id,
+            status: (item.status as Load['status']) || 'planning',
+            total: item.total || 0,
+            notes: item.notes || '',
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
+            locked: item.locked || false,
+            items: [], // Will be populated from load_items if needed
+            orderIds: [], // Will be populated from load_orders if needed
+          }));
+          setLoads(formattedLoads);
         }
       } catch (error) {
         console.error('Error fetching loads:', error);
@@ -42,19 +59,48 @@ export const useLoads = () => {
   // Add a new load
   const addLoad = async (load: Partial<Load>): Promise<string> => {
     const id = uuidv4();
-    const newLoad = {
-      ...load,
+    const now = new Date().toISOString();
+    
+    // Map our app model to the database model
+    const dbLoad = {
       id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as Load;
+      name: load.name,
+      date: load.date,
+      vehicle_id: load.vehicleId,
+      vehicle_name: load.vehicleName,
+      sales_rep_id: load.salesRepId,
+      status: load.status,
+      total: load.total || 0,
+      notes: load.notes || '',
+      created_at: now,
+      updated_at: now,
+      locked: load.locked || false,
+    };
 
     try {
-      const { error } = await supabase.from('loads').insert([newLoad]);
+      const { error } = await supabase.from('loads').insert([dbLoad]);
       
       if (error) {
         throw error;
       }
+
+      // Create new load with our app format
+      const newLoad: Load = {
+        id,
+        name: load.name || '',
+        date: load.date || new Date(),
+        vehicleId: load.vehicleId || '',
+        vehicleName: load.vehicleName,
+        salesRepId: load.salesRepId,
+        items: load.items || [],
+        status: load.status || 'planning',
+        total: load.total || 0,
+        notes: load.notes || '',
+        createdAt: now,
+        updatedAt: now,
+        orderIds: load.orderIds || [],
+        locked: load.locked || false
+      };
 
       setLoads((prevLoads) => [newLoad, ...prevLoads]);
       return id;
@@ -67,9 +113,25 @@ export const useLoads = () => {
   // Update an existing load
   const updateLoad = async (id: string, updatedLoad: Partial<Load>): Promise<void> => {
     try {
+      const now = new Date().toISOString();
+      
+      // Map our app model to the database model
+      const dbLoad = {
+        name: updatedLoad.name,
+        date: updatedLoad.date,
+        vehicle_id: updatedLoad.vehicleId,
+        vehicle_name: updatedLoad.vehicleName,
+        sales_rep_id: updatedLoad.salesRepId,
+        status: updatedLoad.status,
+        total: updatedLoad.total,
+        notes: updatedLoad.notes,
+        updated_at: now,
+        locked: updatedLoad.locked,
+      };
+
       const { error } = await supabase
         .from('loads')
-        .update({ ...updatedLoad, updatedAt: new Date().toISOString() })
+        .update(dbLoad)
         .eq('id', id);
       
       if (error) {
@@ -78,7 +140,7 @@ export const useLoads = () => {
 
       setLoads((prevLoads) => 
         prevLoads.map((load) => 
-          load.id === id ? { ...load, ...updatedLoad, updatedAt: new Date().toISOString() } : load
+          load.id === id ? { ...load, ...updatedLoad, updatedAt: now } : load
         )
       );
     } catch (error) {
@@ -117,9 +179,14 @@ export const useLoads = () => {
     const newLockedStatus = !load.locked;
     
     try {
+      const now = new Date().toISOString();
+      
       const { error } = await supabase
         .from('loads')
-        .update({ locked: newLockedStatus, updatedAt: new Date().toISOString() })
+        .update({ 
+          locked: newLockedStatus, 
+          updated_at: now 
+        })
         .eq('id', id);
       
       if (error) {
@@ -128,7 +195,7 @@ export const useLoads = () => {
 
       setLoads((prevLoads) => 
         prevLoads.map((load) => 
-          load.id === id ? { ...load, locked: newLockedStatus, updatedAt: new Date().toISOString() } : load
+          load.id === id ? { ...load, locked: newLockedStatus, updatedAt: now } : load
         )
       );
 

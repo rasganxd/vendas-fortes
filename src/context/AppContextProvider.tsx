@@ -1,5 +1,5 @@
 
-import React, { createContext, useState } from 'react';
+import React, { createContext } from 'react';
 import { AppContextType } from './AppContextTypes';
 import { defaultContextValues } from './defaultContextValues';
 import { useOrders } from '@/hooks/useOrders';
@@ -302,13 +302,13 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     updatePaymentTable,
     deletePaymentTable,
     addProductGroup,
-    updateProductGroup: (id: string, data: any): boolean => {
+    updateProductGroup: async (id: string, data: Partial<ProductGroup>): Promise<void> => {
       updateProductGroup(id, data);
-      return true;
+      return Promise.resolve();
     },
-    deleteProductGroup: (id: string): boolean => {
+    deleteProductGroup: async (id: string): Promise<void> => {
       deleteProductGroup(id);
-      return true;
+      return Promise.resolve();
     },
     addProductCategory,
     updateProductCategory,
@@ -321,8 +321,14 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     deleteDeliveryRoute,
     
     createBackup,
-    restoreBackup,
-    deleteBackup,
+    restoreBackup: async (id: string) => {
+      const result = restoreBackup(id);
+      return Promise.resolve(result);
+    },
+    deleteBackup: async (id: string) => {
+      const result = deleteBackup(id);
+      return Promise.resolve(result);
+    },
     
     settings,
     updateSettings,
