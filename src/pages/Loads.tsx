@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -22,7 +23,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { formatDateToBR } from '@/lib/date-utils';
 import { FileCheck, Weight, Calendar, Truck, Package } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export default function Loads() {
   const navigate = useNavigate();

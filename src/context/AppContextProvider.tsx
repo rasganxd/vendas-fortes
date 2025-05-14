@@ -17,7 +17,7 @@ import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
 import { useCustomers } from '@/hooks/useCustomers';
-import { Customer, Product, Order } from '@/types';
+import { Customer, Product, Order, Load } from '@/types';
 
 // Providers
 import { ConnectionProvider, useConnection } from './providers/ConnectionProvider';
@@ -274,7 +274,10 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     },
     
     getOrderById,
-    addOrder,
+    addOrder: async (order: Order): Promise<string> => {
+      const result = await addOrder(order);
+      return result;
+    },
     updateOrder: updateOrderHook,
     deleteOrder,
     addVehicle,
@@ -299,8 +302,14 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     updatePaymentTable,
     deletePaymentTable,
     addProductGroup,
-    updateProductGroup,
-    deleteProductGroup,
+    updateProductGroup: (id: string, data: any): boolean => {
+      updateProductGroup(id, data);
+      return true;
+    },
+    deleteProductGroup: (id: string): boolean => {
+      deleteProductGroup(id);
+      return true;
+    },
     addProductCategory,
     updateProductCategory,
     deleteProductCategory,
@@ -345,4 +354,3 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     </ConnectionProvider>
   );
 };
-
