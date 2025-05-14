@@ -129,6 +129,23 @@ export const transformSalesRepData = (data: any) => {
 };
 
 /**
+ * Transform a Supabase order record to our internal Order type
+ */
+export const transformOrderData = (data: any) => {
+  if (!data) return null;
+  
+  const transformed = toCamelCase(data);
+  return {
+    ...transformed,
+    date: data.date ? new Date(data.date) : new Date(),
+    dueDate: data.due_date ? new Date(data.due_date) : null,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+    items: [],  // By default, items will be empty array
+  };
+};
+
+/**
  * Transform generic data from Supabase
  */
 export const transformData = (data: any) => {
@@ -164,3 +181,4 @@ export const transformArray = (data: any[], transformer: (item: any) => any) => 
   }
   return data.map(transformer);
 };
+
