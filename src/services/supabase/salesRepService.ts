@@ -3,7 +3,7 @@ import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
 import { transformSalesRepData, prepareForSupabase } from '@/utils/dataTransformers';
 import { SalesRep } from '@/types';
-import { Tables } from '@/integrations/supabase/types';
+import { TableInsert, TableUpdate } from './types';
 
 /**
  * Service for sales rep-related operations
@@ -86,7 +86,7 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     const supabaseData = prepareForSupabase(salesRepData);
     
     // Type cast to expected Supabase type, ensuring required fields are present
-    const insertData: Tables<"sales_reps">["Insert"] = {
+    const insertData: TableInsert<"sales_reps"> = {
       ...supabaseData as any,
       name: salesRepData.name
     };
@@ -134,7 +134,7 @@ export const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): P
     const supabaseData = prepareForSupabase(salesRep);
     
     // Type cast to expected Supabase type
-    const updateData: Tables<"sales_reps">["Update"] = {
+    const updateData: TableUpdate<"sales_reps"> = {
       ...supabaseData as any
     };
     
