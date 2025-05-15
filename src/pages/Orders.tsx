@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -26,7 +25,7 @@ import DeleteOrderDialog from '@/components/orders/DeleteOrderDialog';
 const printStyles = `
 @media print {
   @page {
-    margin: 1.5cm;
+    margin: 1cm;
     size: portrait;
   }
   
@@ -42,21 +41,23 @@ const printStyles = `
   .print-orders-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1cm;
+    gap: 0.5cm;
     width: 100%;
   }
   
-  /* Cada pedido ocupa seu próprio espaço com margens adequadas */
+  /* Cada pedido ocupa seu próprio espaço com tamanho fixo */
   .print-order {
     width: 100%;
     page-break-inside: avoid;
     box-sizing: border-box;
-    padding: 0.5cm;
-    border: 1px solid #eee;
+    padding: 0.3cm;
+    border: 1px solid #ddd;
     font-size: 10pt;
-    height: 100%;
-    max-height: 27cm; /* Altura para garantir que caiba na página */
+    height: 13cm;
+    max-height: 13cm;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   
   /* Forçar quebra de página a cada dois pedidos */
@@ -68,29 +69,29 @@ const printStyles = `
   .print-order table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9pt;
+    font-size: 8pt;
   }
   
   .print-order table th,
   .print-order table td {
-    padding: 3px;
+    padding: 2px;
     border: 1px solid #ddd;
     text-align: left;
   }
   
   .print-order h1 {
-    font-size: 14pt;
-    margin: 0 0 5px 0;
+    font-size: 12pt;
+    margin: 0 0 4px 0;
   }
   
   .print-order h2 {
-    font-size: 11pt;
-    margin: 0 0 5px 0;
+    font-size: 10pt;
+    margin: 0 0 3px 0;
   }
   
   .print-order p {
-    margin: 3px 0;
-    font-size: 9pt;
+    margin: 2px 0;
+    font-size: 8pt;
   }
   
   /* Esconder elementos não imprimíveis */
