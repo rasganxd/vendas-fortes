@@ -79,7 +79,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           display: flex;
           flex-direction: column;
           width: 100%;
-          gap: 0.3cm;
+          gap: 0.5cm;
         }
         
         /* Cada pedido ocupa seu próprio espaço, sem altura fixa para evitar cortes */
@@ -87,10 +87,10 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           width: 100%;
           page-break-inside: avoid;
           box-sizing: border-box;
-          padding: 0.2cm;
+          padding: 0.3cm;
           border: 1px solid #ddd;
-          font-size: 9pt;
-          margin-bottom: 0.2cm;
+          font-size: 11pt;
+          margin-bottom: 0.3cm;
           display: flex;
           flex-direction: column;
         }
@@ -104,36 +104,36 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .print-order table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 8pt;
-          margin: 0.1cm 0;
+          font-size: 10pt;
+          margin: 0.15cm 0;
         }
         
         .print-order table th,
         .print-order table td {
-          padding: 1px;
+          padding: 3px;
           border: 1px solid #ddd;
           text-align: left;
         }
         
         .print-order h1 {
-          font-size: 10pt;
-          margin: 0 0 2px 0;
+          font-size: 12pt;
+          margin: 0 0 4px 0;
         }
         
         .print-order h2 {
-          font-size: 9pt;
-          margin: 0 0 1px 0;
+          font-size: 11pt;
+          margin: 0 0 2px 0;
         }
         
         .print-order p {
-          margin: 1px 0;
-          font-size: 8pt;
-          line-height: 1.2;
+          margin: 2px 0;
+          font-size: 10pt;
+          line-height: 1.3;
         }
         
         /* Reduzir espaçamento entre seções */
         .print-order .section {
-          margin-bottom: 0.1cm;
+          margin-bottom: 0.15cm;
         }
         
         /* Esconder elementos não imprimíveis */
@@ -162,21 +162,21 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
               const orderCustomer = customers.find(c => c.id === order.customerId);
               return `
                 <div class="print-order">
-                  <div style="text-align: center; margin-bottom: 0.1cm;">
+                  <div style="text-align: center; margin-bottom: 0.15cm;">
                     <h1>${order.customerName || 'Empresa'}</h1>
                     <p>Data: ${new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
                   </div>
                   
-                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.1cm; padding: 0.1cm;" class="section">
-                    <h2 style="margin-bottom: 0.05cm;">Cliente</h2>
+                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.15cm; padding: 0.15cm;" class="section">
+                    <h2 style="margin-bottom: 0.1cm;">Cliente</h2>
                     <p><span style="font-weight: 600;">Nome:</span> ${orderCustomer?.name || ''}</p>
                     <p><span style="font-weight: 600;">Tel:</span> ${orderCustomer?.phone || ''}</p>
                     ${orderCustomer?.document ? `<p><span style="font-weight: 600;">CPF/CNPJ:</span> ${orderCustomer.document}</p>` : ''}
                   </div>
                   
                   ${(orderCustomer?.address || order.deliveryAddress) ? `
-                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.1cm; padding: 0.1cm;" class="section">
-                    <h2 style="margin-bottom: 0.05cm;">Endereço de Entrega</h2>
+                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.15cm; padding: 0.15cm;" class="section">
+                    <h2 style="margin-bottom: 0.1cm;">Endereço de Entrega</h2>
                     <p>
                       ${order.deliveryAddress || orderCustomer?.address || ''}
                       ${(order.deliveryCity || orderCustomer?.city) ? `, ${order.deliveryCity || orderCustomer?.city}` : ''}
@@ -185,44 +185,44 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
                   </div>
                   ` : ''}
                   
-                  <div style="margin-bottom: 0.1cm;" class="section">
-                    <h2 style="margin-bottom: 0.05cm;">Itens do Pedido</h2>
+                  <div style="margin-bottom: 0.15cm;" class="section">
+                    <h2 style="margin-bottom: 0.1cm;">Itens do Pedido</h2>
                     <table style="width: 100%; border-collapse: collapse;">
                       <thead>
                         <tr style="background-color: #f3f4f6;">
-                          <th style="border: 1px solid #ddd; padding: 1px; text-align: left;">Produto</th>
-                          <th style="border: 1px solid #ddd; padding: 1px; text-align: center;">Qtd</th>
-                          <th style="border: 1px solid #ddd; padding: 1px; text-align: right;">Preço</th>
-                          <th style="border: 1px solid #ddd; padding: 1px; text-align: right;">Total</th>
+                          <th style="border: 1px solid #ddd; padding: 3px; text-align: left;">Produto</th>
+                          <th style="border: 1px solid #ddd; padding: 3px; text-align: center;">Qtd</th>
+                          <th style="border: 1px solid #ddd; padding: 3px; text-align: right;">Preço</th>
+                          <th style="border: 1px solid #ddd; padding: 3px; text-align: right;">Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${order.items.map(item => `
                           <tr>
-                            <td style="border: 1px solid #ddd; padding: 1px;">${item.productName}</td>
-                            <td style="border: 1px solid #ddd; padding: 1px; text-align: center;">${item.quantity}</td>
-                            <td style="border: 1px solid #ddd; padding: 1px; text-align: right;">${formatCurrency(item.unitPrice)}</td>
-                            <td style="border: 1px solid #ddd; padding: 1px; text-align: right;">${formatCurrency(item.total)}</td>
+                            <td style="border: 1px solid #ddd; padding: 3px;">${item.productName}</td>
+                            <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${item.quantity}</td>
+                            <td style="border: 1px solid #ddd; padding: 3px; text-align: right;">${formatCurrency(item.unitPrice)}</td>
+                            <td style="border: 1px solid #ddd; padding: 3px; text-align: right;">${formatCurrency(item.total)}</td>
                           </tr>
                         `).join('')}
                       </tbody>
                     </table>
                   </div>
                   
-                  <div style="display: flex; justify-content: flex-end; margin-bottom: 0.1cm;" class="section">
+                  <div style="display: flex; justify-content: flex-end; margin-bottom: 0.15cm;" class="section">
                     <div style="text-align: right;">
-                      <p style="font-weight: 700; font-size: 9pt;">Total: ${formatCurrency(order.total)}</p>
+                      <p style="font-weight: 700; font-size: 11pt;">Total: ${formatCurrency(order.total)}</p>
                     </div>
                   </div>
                   
                   ${order.notes ? `
-                  <div style="margin-bottom: 0.1cm;" class="section">
+                  <div style="margin-bottom: 0.15cm;" class="section">
                     <p style="font-weight: 500;">Obs:</p>
                     <p>${order.notes}</p>
                   </div>
                   ` : ''}
                   
-                  <div style="text-align: center; margin-top: auto; padding-top: 0.05cm; border-top: 1px solid #ddd;" class="section">
+                  <div style="text-align: center; margin-top: auto; padding-top: 0.1cm; border-top: 1px solid #ddd;" class="section">
                     <p>Sistema de Gestão de Vendas</p>
                   </div>
                 </div>
