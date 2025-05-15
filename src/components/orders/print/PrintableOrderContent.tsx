@@ -35,12 +35,9 @@ const PrintableOrderContent: React.FC<PrintableOrderContentProps> = ({
 
   return (
     <div className="hidden print:block">
-      <div className="p-4">
+      <div className="p-4 print-orders-container">
         {orders.map((order, orderIndex) => {
           const orderCustomer = customers.find(c => c.id === order.customerId);
-          
-          // Insert page break after every second order (except last page)
-          const needsPageBreak = (orderIndex + 1) % 2 === 0 && orderIndex < orders.length - 1;
           
           return (
             <div key={order.id} className="print-order">
@@ -141,9 +138,6 @@ const PrintableOrderContent: React.FC<PrintableOrderContentProps> = ({
                   <p className="text-gray-700 text-sm">{order.notes}</p>
                 </div>
               )}
-              
-              {/* Add page break after every second order */}
-              {needsPageBreak && <div className="page-break"></div>}
             </div>
           );
         })}

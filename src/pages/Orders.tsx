@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -25,22 +26,36 @@ import DeleteOrderDialog from '@/components/orders/DeleteOrderDialog';
 const printStyles = `
 @media print {
   @page {
-    margin: 0.5cm;
+    margin: 1cm;
+    size: portrait;
   }
   
   body {
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
   }
   
+  /* Create a grid layout for the orders */
+  .print-orders-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5cm;
+    width: 100%;
+  }
+  
+  /* Each print-order takes up its own space with proper margins */
   .print-order {
     width: 100%;
     page-break-inside: avoid;
     box-sizing: border-box;
-    font-size: 0.9rem;
-    margin-bottom: 20px;
-    max-height: 45vh; /* Limit height to fit 2 per page */
+    padding: 0.5cm;
+    margin-bottom: 0.5cm;
+    border-bottom: 1px dashed #ccc;
+    max-height: none;
   }
   
+  /* Ensure content is properly sized */
   .print-order table {
     width: 100%;
     font-size: 0.85rem;
@@ -63,18 +78,17 @@ const printStyles = `
     font-size: 0.85rem;
   }
   
+  /* Force a page break after every second order */
+  .print-order:nth-child(2n) {
+    page-break-after: always;
+  }
+  
   .print-footer {
     text-align: center;
     font-size: 0.8rem;
     padding-top: 10px;
     border-top: 1px solid #ddd;
     margin-top: 10px;
-  }
-  
-  .page-break {
-    page-break-after: always;
-    height: 0;
-    display: block;
   }
   
   .no-print, button, .no-print {
