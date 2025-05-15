@@ -73,11 +73,36 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
     
     console.log("Data prepared for Supabase:", supabaseData);
     
-    // Manually ensure the required fields are correctly named for the database
-    const sanitizedData = {
-      ...supabaseData,
-      name: supabaseData.name || customerData.name, // Fallback to original data if transformed data is missing
-      code: supabaseData.code || customerData.code
+    // Validate required fields are present with correct types
+    if (typeof supabaseData.name !== 'string' || !supabaseData.name) {
+      throw new Error("Customer name is missing or invalid after transformation");
+    }
+    
+    if (typeof supabaseData.code !== 'number') {
+      if (typeof supabaseData.code === 'string' && !isNaN(parseInt(supabaseData.code as string, 10))) {
+        supabaseData.code = parseInt(supabaseData.code as string, 10);
+      } else {
+        throw new Error("Customer code must be a number");
+      }
+    }
+    
+    // Ensure the object has the required structure for Supabase
+    const sanitizedData: Record<string, any> = {
+      name: supabaseData.name,
+      code: supabaseData.code,
+      // Include other essential fields
+      phone: supabaseData.phone || null,
+      email: supabaseData.email || null,
+      address: supabaseData.address || null,
+      city: supabaseData.city || null,
+      state: supabaseData.state || null,
+      zip: supabaseData.zip || null,
+      notes: supabaseData.notes || null,
+      document: supabaseData.document || null,
+      sales_rep_id: supabaseData.sales_rep_id || null,
+      sales_rep_name: supabaseData.sales_rep_name || null,
+      created_at: supabaseData.created_at || new Date().toISOString(),
+      updated_at: supabaseData.updated_at || new Date().toISOString()
     };
     
     console.log("Sanitized data for insert:", sanitizedData);

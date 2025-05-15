@@ -84,18 +84,39 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     // Prepare for Supabase - convert to snake_case and handle dates
     const supabaseData = prepareForSupabase(salesRepData);
     
-    // Ensure required fields are present
-    if (!supabaseData.name) {
-      throw new Error("Sales rep name is required after transformation");
-    }
-    
     console.log("Data prepared for Supabase:", supabaseData);
     
-    // Manually ensure the required fields are correctly named for the database
-    const sanitizedData = {
-      ...supabaseData,
-      name: supabaseData.name || salesRepData.name, // Fallback to original data if transformed data is missing
-      code: supabaseData.code || salesRepData.code
+    // Validate required fields after transformation
+    if (typeof supabaseData.name !== 'string' || !supabaseData.name) {
+      throw new Error("Sales rep name is missing or invalid after transformation");
+    }
+    
+    if (typeof supabaseData.code !== 'number') {
+      if (typeof supabaseData.code === 'string' && !isNaN(parseInt(supabaseData.code as string, 10))) {
+        supabaseData.code = parseInt(supabaseData.code as string, 10);
+      } else {
+        throw new Error("Sales rep code must be a number");
+      }
+    }
+    
+    // Create a properly structured object for Supabase insert
+    const sanitizedData: Record<string, any> = {
+      name: supabaseData.name,
+      code: supabaseData.code,
+      // Include other fields with appropriate defaults
+      email: supabaseData.email || null,
+      phone: supabaseData.phone || null,
+      document: supabaseData.document || null,
+      address: supabaseData.address || null,
+      city: supabaseData.city || null,
+      state: supabaseData.state || null,
+      zip: supabaseData.zip || null,
+      notes: supabaseData.notes || null,
+      role: supabaseData.role || 'sales',
+      active: supabaseData.active !== false, // Default to true if not explicitly false
+      region: supabaseData.region || null,
+      created_at: supabaseData.created_at || new Date().toISOString(),
+      updated_at: supabaseData.updated_at || new Date().toISOString()
     };
     
     console.log("Sanitized data for insert:", sanitizedData);

@@ -137,8 +137,24 @@ export const transformCustomerData = (data: any) => {
   
   const transformed = toCamelCase(data);
   
+  // Ensure we return a complete Customer object with required fields
   return {
-    ...transformed,
+    id: data.id || '',
+    code: data.code || 0,
+    name: transformed.name || '',
+    phone: transformed.phone || '',
+    email: transformed.email || '',
+    address: transformed.address || '',
+    city: transformed.city || '',
+    state: transformed.state || '',
+    zip: transformed.zip || '',
+    document: transformed.document || '',
+    notes: transformed.notes || '',
+    visitDays: transformed.visitDays || [],
+    visitFrequency: transformed.visitFrequency || '',
+    visitSequence: transformed.visitSequence || 0,
+    sales_rep_id: transformed.salesRepId || undefined,
+    sales_rep_name: transformed.salesRepName || undefined,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
   };
