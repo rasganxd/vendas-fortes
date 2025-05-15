@@ -21,7 +21,6 @@ import { Plus, Edit, Trash, Smartphone } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getDayLabel } from '@/components/customers/constants';
 
 const SalesRepsPage = () => {
   const { salesReps, addSalesRep, updateSalesRep, generateNextCode, isLoading, setSalesReps } = useSalesReps();
@@ -44,8 +43,7 @@ const SalesRepsPage = () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     role: 'sales',
-    active: true,
-    visitDay: ''
+    active: true
   });
   
   // Initialize new sales rep with default values
@@ -63,8 +61,7 @@ const SalesRepsPage = () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     role: 'sales',
-    active: true,
-    visitDay: ''
+    active: true
   };
   
   const handleCreate = async () => {
@@ -159,7 +156,6 @@ const SalesRepsPage = () => {
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Telefone</TableHead>
-                <TableHead>Dia de Visita</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -170,7 +166,6 @@ const SalesRepsPage = () => {
                   <TableCell>{salesRep.name}</TableCell>
                   <TableCell>{salesRep.email}</TableCell>
                   <TableCell>{salesRep.phone}</TableCell>
-                  <TableCell>{salesRep.visitDay ? getDayLabel(salesRep.visitDay) : '-'}</TableCell>
                   <TableCell className="text-right">
                     <Button 
                       variant="ghost"
@@ -210,7 +205,7 @@ const SalesRepsPage = () => {
               ))}
               {filteredSalesReps.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={5} className="text-center">
                     {searchTerm ? "Nenhum representante encontrado para essa busca." : "Nenhum representante de vendas encontrado."}
                   </TableCell>
                 </TableRow>

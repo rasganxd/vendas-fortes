@@ -115,7 +115,7 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
 };
 
 /**
- * Update an existing sales rep with visit day
+ * Update an existing sales rep
  * @param id - Sales rep ID
  * @param salesRep - Updated sales rep data
  */

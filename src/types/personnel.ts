@@ -18,5 +18,4 @@ export interface SalesRep {
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
-  visitDay?: string; // Day of the week for visits
 }
