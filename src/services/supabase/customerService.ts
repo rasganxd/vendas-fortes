@@ -1,7 +1,7 @@
 
 import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
-import { prepareForSupabase } from '@/utils/dataTransformers';
+import { prepareForSupabase, transformCustomerData } from '@/utils/dataTransformers';
 import { Customer } from '@/types';
 
 /**
@@ -27,7 +27,7 @@ export const getCustomerByCode = async (code: number): Promise<Customer | null> 
       return null;
     }
     
-    return transformCustomer(data);
+    return transformCustomerData(data);
   } catch (error) {
     console.error("Error in getCustomerByCode:", error);
     return null;
@@ -42,28 +42,7 @@ export const getCustomerByCode = async (code: number): Promise<Customer | null> 
 export const transformCustomer = (data: any): Customer => {
   if (!data) return null;
 
-  const customer: Customer = {
-    id: data.id,
-    code: data.code,
-    name: data.name,
-    email: data.email || '',
-    phone: data.phone || '',
-    document: data.document || '',
-    sales_rep_id: data.sales_rep_id,
-    sales_rep_name: data.sales_rep_name || '',
-    notes: data.notes || '',
-    address: data.address || '',
-    city: data.city || '',
-    state: data.state || '',
-    zip: data.zip || '',
-    visitDays: data.visit_days || [],
-    visitFrequency: data.visit_frequency || '',
-    visitSequence: data.visit_sequence,
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-  };
-
-  return customer;
+  return transformCustomerData(data);
 };
 
 /**
@@ -98,8 +77,12 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
       throw new Error("Customer name is required");
     }
     
+    console.log("Creating customer with data:", customerData);
+    
     // Convert to snake_case and prepare for Supabase
     const supabaseData = prepareForSupabase(customerData);
+    
+    console.log("Data prepared for Supabase:", supabaseData);
     
     // Ensure the required fields are present in the data
     if (!supabaseData.name) {
@@ -108,7 +91,7 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
     
     const { data, error } = await supabase
       .from('customers')
-      .insert(supabaseData as any)
+      .insert(supabaseData)
       .select()
       .single();
       
@@ -131,8 +114,12 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
  */
 export const updateCustomer = async (id: string, customer: Partial<Customer>): Promise<void> => {
   try {
+    console.log("Updating customer with data:", customer);
+    
     // Prepare data for Supabase
     const supabaseData = prepareForSupabase(customer);
+    
+    console.log("Data prepared for Supabase update:", supabaseData);
     
     const { error } = await supabase
       .from('customers')

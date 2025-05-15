@@ -162,7 +162,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
             />
           </div>
 
-          {/* Novo campo para Dia de Visita */}
+          {/* Dia de Visita */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="visitDay">Dia de Visita</Label>
             <Select 

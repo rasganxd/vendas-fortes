@@ -45,7 +45,8 @@ export function toSnakeCase<T extends object>(obj: T): Record<string, unknown> {
   }
 
   return Object.keys(obj).reduce((result, key) => {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    // Fix: Properly convert camelCase to snake_case (e.g. createdAt -> created_at)
+    const snakeKey = key.replace(/([A-Z])/g, letter => `_${letter.toLowerCase()}`);
     const value = obj[key as keyof T];
     const snakeValue = value !== null && typeof value === 'object' && !Array.isArray(value)
       ? toSnakeCase(value as object)
@@ -74,8 +75,12 @@ export const prepareForSupabase = (data: any): Record<string, unknown> => {
     return acc;
   }, {} as Record<string, unknown>);
   
-  // Then convert to snake_case
-  return toSnakeCase(processedData);
+  // Log the data before and after snake_case conversion for debugging
+  console.log("Before snake_case conversion:", processedData);
+  const snakeCaseData = toSnakeCase(processedData);
+  console.log("After snake_case conversion:", snakeCaseData);
+  
+  return snakeCaseData;
 };
 
 /**
@@ -106,7 +111,10 @@ export const transformProductCategoryData = (data: any) => {
  * Transform a Supabase customer record to our internal Customer type
  */
 export const transformCustomerData = (data: any) => {
+  if (!data) return null;
+  
   const transformed = toCamelCase(data);
+  
   return {
     ...transformed,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
@@ -144,6 +152,7 @@ export const transformSalesRepData = (data: any) => {
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
     visitDay: data.visit_day || '',
+    code: data.code || 0,
   };
 };
 

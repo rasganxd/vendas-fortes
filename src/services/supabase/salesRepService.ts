@@ -1,3 +1,4 @@
+
 import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
 import { transformSalesRepData, prepareForSupabase } from '@/utils/dataTransformers';
@@ -78,8 +79,12 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
       throw new Error("Sales rep name is required");
     }
     
+    console.log("Creating sales rep with data:", salesRepData);
+    
     // Convert to snake_case and prepare for Supabase
     const supabaseData = prepareForSupabase(salesRepData);
+    
+    console.log("Data prepared for Supabase:", supabaseData);
     
     // Ensure the required fields are present in the data
     if (!supabaseData.name) {
@@ -88,7 +93,7 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     
     const { data, error } = await supabase
       .from('sales_reps')
-      .insert(supabaseData as any)
+      .insert(supabaseData)
       .select()
       .single();
       
@@ -116,8 +121,12 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
  */
 export const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): Promise<void> => {
   try {
+    console.log("Updating sales rep with data:", salesRep);
+    
     // Prepare data for Supabase
     const supabaseData = prepareForSupabase(salesRep);
+    
+    console.log("Data prepared for Supabase update:", supabaseData);
     
     const { error } = await supabase
       .from('sales_reps')
