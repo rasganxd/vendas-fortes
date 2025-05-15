@@ -52,7 +52,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     }
   }, [selectedOrderIds, selectedCustomerId, orders, filteredOrders]);
   
-  // Nova função para imprimir em uma janela separada
+  // Função para imprimir em uma janela separada
   const handlePrintInNewWindow = () => {
     // Cria uma nova janela
     const printWindow = window.open('', '_blank', 'width=800,height=600');
@@ -78,67 +78,72 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .print-orders-container {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 1cm;
+          gap: 0.5cm;
           width: 100%;
         }
         
-        /* Cada pedido ocupa seu próprio espaço com tamanho adequado para uma página */
+        /* Cada pedido ocupa seu próprio espaço */
         .print-order {
           width: 100%;
           page-break-inside: avoid;
           box-sizing: border-box;
-          padding: 0.5cm;
+          padding: 0.3cm;
           border: 1px solid #ddd;
-          font-size: 12pt;
-          margin-bottom: 0.5cm;
+          font-size: 10pt;
+          /* Altura reduzida para caber 2 por página */
+          height: 48%;
+          max-height: 48%;
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          margin-bottom: 0.3cm;
         }
         
-        /* Força quebra de página após cada pedido */
-        .print-order {
+        /* Forçar quebra de página a cada 2 pedidos */
+        .print-order:nth-child(2n) {
           page-break-after: always;
         }
         
-        /* Estilos para tabelas */
+        /* Estilos para tabelas mais compactos */
         .print-order table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 10pt;
-          margin: 0.3cm 0;
+          font-size: 8pt;
+          margin: 0.2cm 0;
         }
         
         .print-order table th,
         .print-order table td {
-          padding: 4px;
+          padding: 2px;
           border: 1px solid #ddd;
           text-align: left;
         }
         
         .print-order h1 {
-          font-size: 14pt;
-          margin: 0 0 0.3cm 0;
+          font-size: 11pt;
+          margin: 0 0 3px 0;
         }
         
         .print-order h2 {
-          font-size: 12pt;
-          margin: 0.2cm 0;
+          font-size: 9pt;
+          margin: 0 0 2px 0;
         }
         
         .print-order p {
-          margin: 0.1cm 0;
-          font-size: 10pt;
+          margin: 1px 0;
+          font-size: 8pt;
         }
-      }
-      
-      /* Estilos para visualização na tela (não para impressão) */
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 1cm;
-      }
-    `;
+        
+        /* Esconder elementos não imprimíveis */
+        .no-print, button, .no-print {
+          display: none !important;
+        }
+        
+        /* Garantir que o conteúdo fique visível durante a impressão */
+        .hidden.print\\:block {
+          display: block !important;
+        }
+      }`;
 
     // Escreve o conteúdo HTML na nova janela
     printWindow.document.write(`
@@ -155,21 +160,21 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
               const orderCustomer = customers.find(c => c.id === order.customerId);
               return `
                 <div class="print-order">
-                  <div style="text-align: center; margin-bottom: 0.5cm;">
+                  <div style="text-align: center; margin-bottom: 0.2cm;">
                     <h1>${order.customerName || 'Empresa'}</h1>
                     <p>Data: ${new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
                   </div>
                   
-                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.3cm; padding: 0.3cm;">
-                    <h2 style="margin-bottom: 0.2cm;">Cliente</h2>
+                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.2cm; padding: 0.2cm;">
+                    <h2 style="margin-bottom: 0.1cm;">Cliente</h2>
                     <p><span style="font-weight: 600;">Nome:</span> ${orderCustomer?.name || ''}</p>
                     <p><span style="font-weight: 600;">Tel:</span> ${orderCustomer?.phone || ''}</p>
                     ${orderCustomer?.document ? `<p><span style="font-weight: 600;">CPF/CNPJ:</span> ${orderCustomer.document}</p>` : ''}
                   </div>
                   
                   ${(orderCustomer?.address || order.deliveryAddress) ? `
-                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.3cm; padding: 0.3cm;">
-                    <h2 style="margin-bottom: 0.2cm;">Endereço de Entrega</h2>
+                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.2cm; padding: 0.2cm;">
+                    <h2 style="margin-bottom: 0.1cm;">Endereço de Entrega</h2>
                     <p>
                       ${order.deliveryAddress || orderCustomer?.address || ''}
                       ${(order.deliveryCity || orderCustomer?.city) ? `, ${order.deliveryCity || orderCustomer?.city}` : ''}
@@ -178,44 +183,44 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
                   </div>
                   ` : ''}
                   
-                  <div style="margin-bottom: 0.3cm;">
-                    <h2 style="margin-bottom: 0.2cm;">Itens do Pedido</h2>
+                  <div style="margin-bottom: 0.2cm;">
+                    <h2 style="margin-bottom: 0.1cm;">Itens do Pedido</h2>
                     <table style="width: 100%; border-collapse: collapse;">
                       <thead>
                         <tr style="background-color: #f3f4f6;">
-                          <th style="border: 1px solid #ddd; padding: 0.2cm; text-align: left;">Produto</th>
-                          <th style="border: 1px solid #ddd; padding: 0.2cm; text-align: center;">Qtd</th>
-                          <th style="border: 1px solid #ddd; padding: 0.2cm; text-align: right;">Preço</th>
-                          <th style="border: 1px solid #ddd; padding: 0.2cm; text-align: right;">Total</th>
+                          <th style="border: 1px solid #ddd; padding: 0.1cm; text-align: left;">Produto</th>
+                          <th style="border: 1px solid #ddd; padding: 0.1cm; text-align: center;">Qtd</th>
+                          <th style="border: 1px solid #ddd; padding: 0.1cm; text-align: right;">Preço</th>
+                          <th style="border: 1px solid #ddd; padding: 0.1cm; text-align: right;">Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${order.items.map(item => `
                           <tr>
-                            <td style="border: 1px solid #ddd; padding: 0.2cm;">${item.productName}</td>
-                            <td style="border: 1px solid #ddd; padding: 0.2cm; text-align: center;">${item.quantity}</td>
-                            <td style="border: 1px solid #ddd; padding: 0.2cm; text-align: right;">${formatCurrency(item.unitPrice)}</td>
-                            <td style="border: 1px solid #ddd; padding: 0.2cm; text-align: right;">${formatCurrency(item.total)}</td>
+                            <td style="border: 1px solid #ddd; padding: 0.1cm;">${item.productName}</td>
+                            <td style="border: 1px solid #ddd; padding: 0.1cm; text-align: center;">${item.quantity}</td>
+                            <td style="border: 1px solid #ddd; padding: 0.1cm; text-align: right;">${formatCurrency(item.unitPrice)}</td>
+                            <td style="border: 1px solid #ddd; padding: 0.1cm; text-align: right;">${formatCurrency(item.total)}</td>
                           </tr>
                         `).join('')}
                       </tbody>
                     </table>
                   </div>
                   
-                  <div style="display: flex; justify-content: flex-end; margin-bottom: 0.3cm;">
+                  <div style="display: flex; justify-content: flex-end; margin-bottom: 0.2cm;">
                     <div style="text-align: right;">
-                      <p style="font-weight: 700; font-size: 12pt;">Total: ${formatCurrency(order.total)}</p>
+                      <p style="font-weight: 700; font-size: 10pt;">Total: ${formatCurrency(order.total)}</p>
                     </div>
                   </div>
                   
                   ${order.notes ? `
-                  <div style="margin-bottom: 0.3cm;">
+                  <div style="margin-bottom: 0.2cm;">
                     <p style="font-weight: 500;">Obs:</p>
                     <p>${order.notes}</p>
                   </div>
                   ` : ''}
                   
-                  <div style="text-align: center; margin-top: auto; padding-top: 0.2cm; border-top: 1px solid #ddd;">
+                  <div style="text-align: center; margin-top: auto; padding-top: 0.1cm; border-top: 1px solid #ddd;">
                     <p>Sistema de Gestão de Vendas</p>
                   </div>
                 </div>
