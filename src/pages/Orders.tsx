@@ -26,7 +26,7 @@ import DeleteOrderDialog from '@/components/orders/DeleteOrderDialog';
 const printStyles = `
 @media print {
   @page {
-    margin: 1cm;
+    margin: 1.5cm;
     size: portrait;
   }
   
@@ -34,69 +34,71 @@ const printStyles = `
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   
-  /* Create a grid layout for the orders */
+  /* Layout de grade para dois pedidos por página */
   .print-orders-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.5cm;
+    gap: 1cm;
     width: 100%;
   }
   
-  /* Each print-order takes up its own space with proper margins */
+  /* Cada pedido ocupa seu próprio espaço com margens adequadas */
   .print-order {
     width: 100%;
     page-break-inside: avoid;
     box-sizing: border-box;
-    padding: 0.3cm;
+    padding: 0.5cm;
     border: 1px solid #eee;
-    font-size: 0.85rem;
+    font-size: 10pt;
     height: 100%;
+    max-height: 27cm; /* Altura para garantir que caiba na página */
+    overflow: hidden;
   }
   
-  /* Ensure content is properly sized */
+  /* Forçar quebra de página a cada dois pedidos */
+  .print-order:nth-child(2n) {
+    page-break-after: always;
+  }
+  
+  /* Estilos para tabelas */
   .print-order table {
     width: 100%;
-    font-size: 0.8rem;
     border-collapse: collapse;
+    font-size: 9pt;
   }
   
   .print-order table th,
   .print-order table td {
     padding: 3px;
     border: 1px solid #ddd;
+    text-align: left;
   }
   
-  .print-order h3 {
-    font-size: 0.9rem;
-    margin: 6px 0;
+  .print-order h1 {
+    font-size: 14pt;
+    margin: 0 0 5px 0;
+  }
+  
+  .print-order h2 {
+    font-size: 11pt;
+    margin: 0 0 5px 0;
   }
   
   .print-order p {
-    margin: 0.15rem 0;
-    font-size: 0.8rem;
+    margin: 3px 0;
+    font-size: 9pt;
   }
   
-  /* Force a page break after every two orders */
-  .print-order:nth-child(2n) {
-    page-break-after: always;
-  }
-  
-  .print-footer {
-    text-align: center;
-    font-size: 0.7rem;
-    padding-top: 8px;
-    border-top: 1px solid #ddd;
-    margin-top: 8px;
-    grid-column: span 2;
-  }
-  
+  /* Esconder elementos não imprimíveis */
   .no-print, button, .no-print {
     display: none !important;
   }
   
-  /* Ensure content is visible during print */
+  /* Garantir que o conteúdo fique visível durante a impressão */
   .hidden.print\\:block {
     display: block !important;
   }
