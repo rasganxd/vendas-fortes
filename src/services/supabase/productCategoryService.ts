@@ -1,18 +1,6 @@
 
 import { ProductCategory } from '@/types';
-import { LocalStorageService } from '../local/localStorageService';
-
-/**
- * LocalStorage service for product categories
- */
-class ProductCategoryLocalService extends LocalStorageService<ProductCategory> {
-  constructor() {
-    super('product_categories');
-  }
-}
-
-// Create a singleton instance
-export const productCategoryLocalService = new ProductCategoryLocalService();
+import { productCategoryLocalService } from '../local/productCategoryLocalService';
 
 /**
  * Service for product category operations
@@ -31,12 +19,7 @@ export const productCategoryService = {
   
   // Add product category
   add: async (category: Omit<ProductCategory, 'id'>): Promise<string> => {
-    const categoryWithDates = {
-      ...category,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    return productCategoryLocalService.add(categoryWithDates);
+    return productCategoryLocalService.add(category);
   },
   
   // Update product category

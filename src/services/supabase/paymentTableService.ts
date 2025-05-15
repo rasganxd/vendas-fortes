@@ -17,20 +17,25 @@ export const paymentTableService = {
     return paymentTableLocalService.getById(id);
   },
   
+  // Get payment table by name
+  getByName: async (name: string): Promise<PaymentTable | null> => {
+    return paymentTableLocalService.getByName(name);
+  },
+  
   // Add payment table
-  add: async (paymentTable: Omit<PaymentTable, 'id'>): Promise<string> => {
-    const paymentTableWithDates = {
-      ...paymentTable,
+  add: async (table: Omit<PaymentTable, 'id'>): Promise<string> => {
+    const tableWithDates = {
+      ...table,
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    return paymentTableLocalService.add(paymentTableWithDates);
+    return paymentTableLocalService.add(tableWithDates);
   },
   
   // Update payment table
-  update: async (id: string, paymentTable: Partial<PaymentTable>): Promise<void> => {
+  update: async (id: string, table: Partial<PaymentTable>): Promise<void> => {
     const updateData = {
-      ...paymentTable,
+      ...table,
       updatedAt: new Date()
     };
     return paymentTableLocalService.update(id, updateData);
@@ -39,10 +44,5 @@ export const paymentTableService = {
   // Delete payment table
   delete: async (id: string): Promise<void> => {
     return paymentTableLocalService.delete(id);
-  },
-
-  // Get payment table by name
-  getByName: async (name: string): Promise<PaymentTable | null> => {
-    return paymentTableLocalService.getByName(name);
   }
 };

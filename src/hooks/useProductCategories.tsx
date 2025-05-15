@@ -118,11 +118,13 @@ export const useProductCategories = () => {
 
   const addProductCategory = async (category: Omit<ProductCategory, 'id'>) => {
     try {
-      // Prepare data for Supabase
+      // Prepare data for Supabase - FIXED: Added createdAt and updatedAt
       const supabaseData = {
         name: category.name,
         description: category.description || '',
         notes: category.notes || '',
+        createdAt: category.createdAt || new Date(),
+        updatedAt: category.updatedAt || new Date()
       };
 
       const id = await productCategoryService.add(supabaseData);
@@ -130,8 +132,8 @@ export const useProductCategories = () => {
         ...category, 
         id,
         notes: category.notes || '',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: category.createdAt || new Date(),
+        updatedAt: category.updatedAt || new Date()
       };
       setProductCategories([...productCategories, newCategory]);
       toast({

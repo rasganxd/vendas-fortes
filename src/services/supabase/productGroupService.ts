@@ -1,72 +1,38 @@
 
 import { ProductGroup } from '@/types';
+import { productGroupLocalService } from '../local/productGroupLocalService';
 
 /**
- * Service for product groups
- * Using local storage
+ * Service for product group operations
+ * Using local storage instead of Supabase
  */
-class ProductGroupService {
-  private storageKey = 'app_product_groups';
-
-  async getAll(): Promise<ProductGroup[]> {
-    try {
-      const data = localStorage.getItem(this.storageKey);
-      if (!data) return [];
-      return JSON.parse(data);
-    } catch (error) {
-      console.error("Error getting product groups:", error);
-      return [];
-    }
+export const productGroupService = {
+  // Get all product groups
+  getAll: async (): Promise<ProductGroup[]> => {
+    return productGroupLocalService.getAll();
+  },
+  
+  // Get product group by ID
+  getById: async (id: string): Promise<ProductGroup | null> => {
+    return productGroupLocalService.getById(id);
+  },
+  
+  // Add product group
+  add: async (group: Omit<ProductGroup, 'id'>): Promise<string> => {
+    return productGroupLocalService.add(group);
+  },
+  
+  // Update product group
+  update: async (id: string, group: Partial<ProductGroup>): Promise<void> => {
+    const updateData = {
+      ...group,
+      updatedAt: new Date()
+    };
+    return productGroupLocalService.update(id, updateData);
+  },
+  
+  // Delete product group
+  delete: async (id: string): Promise<void> => {
+    return productGroupLocalService.delete(id);
   }
-
-  async getById(id: string): Promise<ProductGroup | null> {
-    try {
-      const groups = await this.getAll();
-      return groups.find(group => group.id === id) || null;
-    } catch (error) {
-      console.error("Error getting product group by id:", error);
-      return null;
-    }
-  }
-
-  async add(group: Omit<ProductGroup, 'id'>): Promise<string> {
-    try {
-      const groups = await this.getAll();
-      const id = `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-      const newGroup = { ...group, id };
-      
-      localStorage.setItem(this.storageKey, JSON.stringify([...groups, newGroup]));
-      return id;
-    } catch (error) {
-      console.error("Error adding product group:", error);
-      throw error;
-    }
-  }
-
-  async update(id: string, group: Partial<ProductGroup>): Promise<void> {
-    try {
-      const groups = await this.getAll();
-      const index = groups.findIndex(g => g.id === id);
-      if (index === -1) throw new Error(`Group with ID ${id} not found`);
-      
-      groups[index] = { ...groups[index], ...group };
-      localStorage.setItem(this.storageKey, JSON.stringify(groups));
-    } catch (error) {
-      console.error("Error updating product group:", error);
-      throw error;
-    }
-  }
-
-  async delete(id: string): Promise<void> {
-    try {
-      const groups = await this.getAll();
-      const filtered = groups.filter(g => g.id !== id);
-      localStorage.setItem(this.storageKey, JSON.stringify(filtered));
-    } catch (error) {
-      console.error("Error deleting product group:", error);
-      throw error;
-    }
-  }
-}
-
-export const productGroupService = new ProductGroupService();
+};
