@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { ProductCategory } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-import { productCategoryService } from '@/services/supabase/productService';
+import { productCategoryService } from '@/services/supabase';
 import { transformArray, transformProductCategoryData } from '@/utils/dataTransformers';
 
 export const useProductCategories = () => {

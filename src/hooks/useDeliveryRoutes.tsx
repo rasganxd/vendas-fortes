@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { DeliveryRoute } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { createStandardService } from '@/services/supabase';
+import { deliveryRouteService } from '@/services/supabase';
 import { ensureDate } from '@/lib/date-utils';
 
 export const useDeliveryRoutes = () => {
@@ -15,28 +14,9 @@ export const useDeliveryRoutes = () => {
       try {
         setIsLoading(true);
         
-        const { data, error } = await supabase
-          .from('delivery_routes')
-          .select('*')
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        
-        const routes: DeliveryRoute[] = data.map(route => ({
-          id: route.id,
-          name: route.name,
-          date: new Date(route.date),
-          driverId: route.driver_id || '',
-          driverName: route.driver_name || '',
-          vehicleId: route.vehicle_id || '',
-          vehicleName: route.vehicle_name || '',
-          status: route.status as "completed" | "pending" | "in-progress" | "planning" | "assigned" || 'pending',
-          stops: [],
-          createdAt: new Date(route.created_at),
-          updatedAt: new Date(route.updated_at)
-        }));
-        
+        const routes = await deliveryRouteService.getAll();
         setDeliveryRoutes(routes);
+        
       } catch (error) {
         console.error("Error loading delivery routes:", error);
       } finally {
@@ -49,33 +29,13 @@ export const useDeliveryRoutes = () => {
   
   const addDeliveryRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
     try {
-      const { data, error } = await supabase
-        .from('delivery_routes')
-        .insert({
-          name: route.name,
-          date: ensureDate(route.date).toISOString(),
-          driver_id: route.driverId,
-          driver_name: route.driverName,
-          vehicle_id: route.vehicleId,
-          vehicle_name: route.vehicleName,
-          status: route.status
-        })
-        .select();
-        
-      if (error) throw error;
+      const id = await deliveryRouteService.add(route);
       
       const newRoute: DeliveryRoute = {
-        id: data[0].id,
-        name: data[0].name,
-        date: new Date(data[0].date),
-        driverId: data[0].driver_id || '',
-        driverName: data[0].driver_name || '',
-        vehicleId: data[0].vehicle_id || '',
-        vehicleName: data[0].vehicle_name || '',
-        status: data[0].status as "completed" | "pending" | "in-progress" | "planning" | "assigned" || 'pending',
-        stops: [],
-        createdAt: new Date(data[0].created_at),
-        updatedAt: new Date(data[0].updated_at)
+        ...route,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
       setDeliveryRoutes([...deliveryRoutes, newRoute]);
@@ -99,25 +59,10 @@ export const useDeliveryRoutes = () => {
   
   const updateDeliveryRoute = async (id: string, route: Partial<DeliveryRoute>): Promise<void> => {
     try {
-      const supabaseUpdate: Record<string, any> = {};
-      
-      if (route.name !== undefined) supabaseUpdate.name = route.name;
-      if (route.date !== undefined) supabaseUpdate.date = ensureDate(route.date).toISOString();
-      if (route.driverId !== undefined) supabaseUpdate.driver_id = route.driverId;
-      if (route.driverName !== undefined) supabaseUpdate.driver_name = route.driverName;
-      if (route.vehicleId !== undefined) supabaseUpdate.vehicle_id = route.vehicleId;
-      if (route.vehicleName !== undefined) supabaseUpdate.vehicle_name = route.vehicleName;
-      if (route.status !== undefined) supabaseUpdate.status = route.status;
-      
-      const { error } = await supabase
-        .from('delivery_routes')
-        .update(supabaseUpdate)
-        .eq('id', id);
-        
-      if (error) throw error;
+      await deliveryRouteService.update(id, route);
       
       setDeliveryRoutes(deliveryRoutes.map(r => 
-        r.id === id ? { ...r, ...route } : r
+        r.id === id ? { ...r, ...route, updatedAt: new Date() } : r
       ));
       
       toast({
@@ -136,12 +81,7 @@ export const useDeliveryRoutes = () => {
   
   const deleteDeliveryRoute = async (id: string): Promise<void> => {
     try {
-      const { error } = await supabase
-        .from('delivery_routes')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
+      await deliveryRouteService.delete(id);
       
       setDeliveryRoutes(deliveryRoutes.filter(r => r.id !== id));
       
