@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Order } from '@/types';
 import {
   Table,
@@ -37,6 +38,8 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   handleDeleteOrder,
   formatCurrency,
 }) => {
+  const navigate = useNavigate();
+  
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -48,6 +51,13 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+  
+  // Optimized edit handler
+  const handleEdit = (order: Order, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/pedidos/novo?id=${order.id}`);
   };
 
   return (
@@ -110,7 +120,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => handleEditOrder(order)}
+                        onClick={(e) => handleEdit(order, e)}
                       >
                         <FilePenLine size={16} />
                       </Button>

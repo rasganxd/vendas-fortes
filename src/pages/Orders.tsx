@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
@@ -86,21 +86,21 @@ export default function Orders() {
       order.id.toLowerCase().includes(search.toLowerCase());
   });
 
-  const handleViewOrder = (order: Order) => {
+  const handleViewOrder = useCallback((order: Order) => {
     setSelectedOrder(order);
     const customer = customers.find(c => c.id === order.customerId);
     setSelectedCustomer(customer || null);
     setIsViewDialogOpen(true);
-  };
+  }, [customers]);
   
-  const handleDeleteOrder = (order: Order) => {
+  const handleDeleteOrder = useCallback((order: Order) => {
     setSelectedOrder(order);
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
   
-  const handleEditOrder = (order: Order) => {
+  const handleEditOrder = useCallback((order: Order) => {
     navigate(`/pedidos/novo?id=${order.id}`);
-  };
+  }, [navigate]);
   
   const confirmDeleteOrder = async () => {
     if (selectedOrder) {
@@ -109,21 +109,29 @@ export default function Orders() {
     }
   };
   
-  const handleToggleOrderSelection = (orderId: string) => {
-    if (selectedOrderIds.includes(orderId)) {
-      setSelectedOrderIds(selectedOrderIds.filter(id => id !== orderId));
-    } else {
-      setSelectedOrderIds([...selectedOrderIds, orderId]);
-    }
-  };
+  const handleToggleOrderSelection = useCallback((orderId: string) => {
+    setSelectedOrderIds(prev => {
+      if (prev.includes(orderId)) {
+        return prev.filter(id => id !== orderId);
+      } else {
+        return [...prev, orderId];
+      }
+    });
+  }, []);
   
-  const handleSelectAllOrders = () => {
-    if (selectedOrderIds.length === filteredOrders.length) {
-      setSelectedOrderIds([]);
-    } else {
-      setSelectedOrderIds(filteredOrders.map(order => order.id));
-    }
-  };
+  const handleSelectAllOrders = useCallback(() => {
+    setSelectedOrderIds(prev => {
+      if (prev.length === filteredOrders.length) {
+        return [];
+      } else {
+        return filteredOrders.map(order => order.id);
+      }
+    });
+  }, [filteredOrders]);
+
+  const handleCreateNewOrder = useCallback(() => {
+    navigate('/pedidos/novo');
+  }, [navigate]);
 
   return (
     <PageLayout title="Pedidos">
@@ -145,7 +153,10 @@ export default function Orders() {
               >
                 <Printer size={16} className="mr-2" /> Imprimir Pedidos
               </Button>
-              <Button className="bg-sales-800 hover:bg-sales-700" onClick={() => navigate('/pedidos/novo')}>
+              <Button 
+                className="bg-sales-800 hover:bg-sales-700" 
+                onClick={handleCreateNewOrder}
+              >
                 <Plus size={16} className="mr-2" /> Novo Pedido
               </Button>
             </div>

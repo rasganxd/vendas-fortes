@@ -22,6 +22,7 @@ export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -46,15 +47,26 @@ export const useOrders = () => {
 
   const getOrderById = async (id: string): Promise<Order | null> => {
     try {
-      return await orderLocalService.getById(id);
+      console.log(`Getting order by ID: ${id}`);
+      const order = await orderLocalService.getById(id);
+      if (!order) {
+        console.warn(`Order with ID ${id} not found`);
+      }
+      return order;
     } catch (error) {
       console.error(`Error getting order by ID ${id}:`, error);
+      toast({
+        title: "Erro ao carregar pedido",
+        description: `Não foi possível carregar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        variant: "destructive"
+      });
       return null;
     }
   };
 
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
+      setIsProcessing(true);
       const id = await orderService.add(order);
       const newOrder = { ...order, id } as Order;
       setOrders(prev => [...prev, newOrder]);
@@ -71,11 +83,14 @@ export const useOrders = () => {
         variant: "destructive"
       });
       return "";
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const updateOrder = async (id: string, order: Partial<Order>) => {
     try {
+      setIsProcessing(true);
       await orderService.update(id, order);
       const updatedOrders = orders.map(o =>
         o.id === id ? { ...o, ...order } : o
@@ -85,6 +100,7 @@ export const useOrders = () => {
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
       });
+      return id;
     } catch (error) {
       console.error("Error updating order:", error);
       toast({
@@ -92,11 +108,14 @@ export const useOrders = () => {
         description: "Houve um problema ao atualizar o pedido.",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const deleteOrder = async (id: string) => {
     try {
+      setIsProcessing(true);
       await orderService.delete(id);
       const updatedOrders = orders.filter(o => o.id !== id);
       setOrders(updatedOrders);
@@ -111,6 +130,8 @@ export const useOrders = () => {
         description: "Houve um problema ao excluir o pedido.",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -120,6 +141,7 @@ export const useOrders = () => {
     updateOrder,
     deleteOrder,
     isLoading,
+    isProcessing,
     setOrders,
     getOrderById
   };

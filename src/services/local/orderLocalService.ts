@@ -83,6 +83,23 @@ class OrderLocalService extends LocalStorageService<Order> {
       return [];
     }
   }
+  
+  /**
+   * Optimized getById method with better error handling and logging
+   */
+  async getById(id: string): Promise<Order | null> {
+    console.log(`Fetching order with ID: ${id}`);
+    try {
+      const result = await super.getById(id);
+      if (!result) {
+        console.warn(`Order with ID ${id} not found`);
+      }
+      return result;
+    } catch (error) {
+      console.error(`Error retrieving order by ID ${id}:`, error);
+      throw new Error(`Failed to retrieve order: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }
 
 // Create a singleton instance
