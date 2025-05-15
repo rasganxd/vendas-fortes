@@ -1,7 +1,7 @@
 import React, { createContext } from 'react';
 import { AppContextType } from './AppContextTypes';
 import defaultContextValues from './defaultContextValues';
-import { useOrders, loadOrders } from '@/hooks/useOrders';
+import { useOrders } from '@/hooks/useOrders';
 import { usePayments } from '@/hooks/usePayments';
 import { useRoutes } from '@/hooks/useRoutes';
 import { useLoads } from '@/hooks/useLoads';
@@ -351,18 +351,20 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     createBackup,
     restoreBackup: async (id: string): Promise<boolean> => {
       try {
-        return await restoreBackup(id);
+        const result = await restoreBackup(id);
+        return result === true; // Ensure we return a boolean
       } catch (error) {
         console.error("Error in restoreBackup wrapper:", error);
-        return false;  // Return false instead of void
+        return false;
       }
     },
     deleteBackup: async (id: string): Promise<boolean> => {
       try {
-        return await deleteBackup(id);
+        const result = await deleteBackup(id);
+        return result === true; // Ensure we return a boolean
       } catch (error) {
         console.error("Error in deleteBackup wrapper:", error);
-        return false;  // Return false instead of void
+        return false;
       }
     },
     

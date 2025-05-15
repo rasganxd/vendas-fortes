@@ -1,3 +1,4 @@
+
 import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareForSupabase } from '@/utils/dataTransformers';
@@ -58,7 +59,6 @@ export const transformCustomer = (data: any): Customer => {
     visitDays: data.visit_days || [],
     visitFrequency: data.visit_frequency || '',
     visitSequence: data.visit_sequence,
-    version: data.version || 1,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
   };
