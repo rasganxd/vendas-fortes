@@ -35,17 +35,6 @@ export const getCustomerByCode = async (code: number): Promise<Customer | null> 
 };
 
 /**
- * Transform customer from Supabase format to application format
- * @param data - Customer data from Supabase
- * @returns Customer object
- */
-export const transformCustomer = (data: any): Customer => {
-  if (!data) return null;
-
-  return transformCustomerData(data);
-};
-
-/**
  * Create a new customer with automatic code generation if not provided
  * @param customer - Customer data (without id)
  * @returns ID of the created customer
@@ -84,14 +73,18 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
     
     console.log("Data prepared for Supabase:", supabaseData);
     
-    // Ensure the required fields are present in the data
-    if (!supabaseData.name) {
-      throw new Error("Customer name is required after transformation");
-    }
+    // Manually ensure the required fields are correctly named for the database
+    const sanitizedData = {
+      ...supabaseData,
+      name: supabaseData.name || customerData.name, // Fallback to original data if transformed data is missing
+      code: supabaseData.code || customerData.code
+    };
+    
+    console.log("Sanitized data for insert:", sanitizedData);
     
     const { data, error } = await supabase
       .from('customers')
-      .insert(supabaseData)
+      .insert(sanitizedData)
       .select()
       .single();
       

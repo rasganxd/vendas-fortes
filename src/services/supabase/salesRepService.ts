@@ -81,19 +81,28 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     
     console.log("Creating sales rep with data:", salesRepData);
     
-    // Convert to snake_case and prepare for Supabase
+    // Prepare for Supabase - convert to snake_case and handle dates
     const supabaseData = prepareForSupabase(salesRepData);
     
-    console.log("Data prepared for Supabase:", supabaseData);
-    
-    // Ensure the required fields are present in the data
+    // Ensure required fields are present
     if (!supabaseData.name) {
       throw new Error("Sales rep name is required after transformation");
     }
     
+    console.log("Data prepared for Supabase:", supabaseData);
+    
+    // Manually ensure the required fields are correctly named for the database
+    const sanitizedData = {
+      ...supabaseData,
+      name: supabaseData.name || salesRepData.name, // Fallback to original data if transformed data is missing
+      code: supabaseData.code || salesRepData.code
+    };
+    
+    console.log("Sanitized data for insert:", sanitizedData);
+    
     const { data, error } = await supabase
       .from('sales_reps')
-      .insert(supabaseData)
+      .insert(sanitizedData)
       .select()
       .single();
       

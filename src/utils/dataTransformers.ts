@@ -45,7 +45,7 @@ export function toSnakeCase<T extends object>(obj: T): Record<string, unknown> {
   }
 
   return Object.keys(obj).reduce((result, key) => {
-    // Fix: Properly convert camelCase to snake_case (e.g. createdAt -> created_at)
+    // Correctly convert camelCase to snake_case (e.g. createdAt -> created_at)
     const snakeKey = key.replace(/([A-Z])/g, letter => `_${letter.toLowerCase()}`);
     const value = obj[key as keyof T];
     const snakeValue = value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -64,21 +64,43 @@ export function toSnakeCase<T extends object>(obj: T): Record<string, unknown> {
  * Converts dates to ISO strings and camelCase to snake_case
  */
 export const prepareForSupabase = (data: any): Record<string, unknown> => {
-  // First, handle Date objects
-  const processedData = Object.entries(data).reduce((acc, [key, value]) => {
-    // Convert Date objects to ISO strings
-    if (value instanceof Date) {
+  // First, make a shallow copy to avoid modifying the original data
+  const cleanData = { ...data };
+  
+  // Remove undefined values
+  Object.keys(cleanData).forEach(key => {
+    if (cleanData[key] === undefined) {
+      delete cleanData[key];
+    }
+  });
+  
+  // Process the data: Convert Date objects to ISO strings
+  const processedData = Object.entries(cleanData).reduce((acc, [key, value]) => {
+    // Explicitly handle createdAt and updatedAt conversions
+    if (key === 'createdAt' && value instanceof Date) {
+      acc['createdAt'] = value.toISOString();
+    } 
+    else if (key === 'updatedAt' && value instanceof Date) {
+      acc['updatedAt'] = value.toISOString();
+    }
+    // Convert other Date objects to ISO strings
+    else if (value instanceof Date) {
       acc[key] = value.toISOString();
-    } else if (value !== undefined) {
+    } 
+    // Keep other values as is
+    else {
       acc[key] = value;
     }
     return acc;
-  }, {} as Record<string, unknown>);
+  }, {} as Record<string, any>);
   
-  // Log the data before and after snake_case conversion for debugging
-  console.log("Before snake_case conversion:", processedData);
+  // Now convert all keys to snake_case
   const snakeCaseData = toSnakeCase(processedData);
-  console.log("After snake_case conversion:", snakeCaseData);
+  
+  // Debug logs
+  console.log("Original data:", data);
+  console.log("Processed data (before snake_case conversion):", processedData);
+  console.log("Final snake_case data:", snakeCaseData);
   
   return snakeCaseData;
 };
