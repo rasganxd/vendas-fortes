@@ -1,3 +1,4 @@
+
 import React, { createContext } from 'react';
 import { AppContextType } from './AppContextTypes';
 import defaultContextValues from './defaultContextValues';
@@ -351,8 +352,8 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     createBackup,
     restoreBackup: async (id: string): Promise<boolean> => {
       try {
-        const result = await restoreBackup(id);
-        return result === true; // Ensure we return a boolean
+        await restoreBackup(id);
+        return true; // Always return true since the original function doesn't return a value
       } catch (error) {
         console.error("Error in restoreBackup wrapper:", error);
         return false;
@@ -360,8 +361,8 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     },
     deleteBackup: async (id: string): Promise<boolean> => {
       try {
-        const result = await deleteBackup(id);
-        return result === true; // Ensure we return a boolean
+        await deleteBackup(id);
+        return true; // Always return true since the original function doesn't return a value
       } catch (error) {
         console.error("Error in deleteBackup wrapper:", error);
         return false;
