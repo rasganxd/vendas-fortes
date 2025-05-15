@@ -213,7 +213,7 @@ const Customers = () => {
 
       {/* Dialog para editar cliente */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg md:max-w-xl">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
             <DialogDescription>
@@ -233,7 +233,7 @@ const Customers = () => {
 
       {/* Dialog para adicionar novo cliente */}
       <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg md:max-w-xl">
           <DialogHeader>
             <DialogTitle>Adicionar Novo Cliente</DialogTitle>
             <DialogDescription>

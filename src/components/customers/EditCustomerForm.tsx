@@ -69,13 +69,17 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <CustomerFormFields form={form} />
+        <div className="max-h-[60vh] overflow-y-auto pr-2 pb-4">
+          <CustomerFormFields form={form} />
+        </div>
         
-        <DialogFooter className="mt-6">
+        <DialogFooter className="mt-6 sticky bottom-0 bg-background pt-2 pb-1">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit">Salvar Alterações</Button>
+          <Button type="submit" variant="sales">
+            Salvar Alterações
+          </Button>
         </DialogFooter>
       </form>
     </Form>
