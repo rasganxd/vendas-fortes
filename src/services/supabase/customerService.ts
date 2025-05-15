@@ -73,43 +73,9 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
     
     console.log("Data prepared for Supabase:", supabaseData);
     
-    // Validate required fields are present with correct types
-    if (typeof supabaseData.name !== 'string' || !supabaseData.name) {
-      throw new Error("Customer name is missing or invalid after transformation");
-    }
-    
-    if (typeof supabaseData.code !== 'number') {
-      if (typeof supabaseData.code === 'string' && !isNaN(parseInt(supabaseData.code as string, 10))) {
-        supabaseData.code = parseInt(supabaseData.code as string, 10);
-      } else {
-        throw new Error("Customer code must be a number");
-      }
-    }
-    
-    // Create a properly typed object for Supabase insert
-    // This ensures we match the exact type expected by Supabase
-    const insertData = {
-      name: supabaseData.name as string,
-      code: supabaseData.code as number,
-      phone: supabaseData.phone as string | null,
-      email: supabaseData.email as string | null,
-      address: supabaseData.address as string | null,
-      city: supabaseData.city as string | null,
-      state: supabaseData.state as string | null,
-      zip: supabaseData.zip as string | null,
-      notes: supabaseData.notes as string | null,
-      document: supabaseData.document as string | null,
-      sales_rep_id: supabaseData.sales_rep_id as string | null,
-      sales_rep_name: supabaseData.sales_rep_name as string | null,
-      created_at: supabaseData.created_at as string | null || new Date().toISOString(),
-      updated_at: supabaseData.updated_at as string | null || new Date().toISOString()
-    };
-    
-    console.log("Typed data for insert:", insertData);
-    
     const { data, error } = await supabase
       .from('customers')
-      .insert(insertData)
+      .insert(supabaseData)
       .select()
       .single();
       

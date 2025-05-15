@@ -76,15 +76,8 @@ export const prepareForSupabase = (data: any): Record<string, unknown> => {
   
   // Process the data: Convert Date objects to ISO strings
   const processedData = Object.entries(cleanData).reduce((acc, [key, value]) => {
-    // Explicitly handle createdAt and updatedAt conversions
-    if (key === 'createdAt' && value instanceof Date) {
-      acc['createdAt'] = value.toISOString();
-    } 
-    else if (key === 'updatedAt' && value instanceof Date) {
-      acc['updatedAt'] = value.toISOString();
-    }
-    // Convert other Date objects to ISO strings
-    else if (value instanceof Date) {
+    // Convert Date objects to ISO strings
+    if (value instanceof Date) {
       acc[key] = value.toISOString();
     } 
     // Keep other values as is

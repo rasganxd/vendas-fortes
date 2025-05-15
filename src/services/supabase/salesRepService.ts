@@ -86,44 +86,9 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     
     console.log("Data prepared for Supabase:", supabaseData);
     
-    // Validate required fields after transformation
-    if (typeof supabaseData.name !== 'string' || !supabaseData.name) {
-      throw new Error("Sales rep name is missing or invalid after transformation");
-    }
-    
-    if (supabaseData.code !== undefined && typeof supabaseData.code !== 'number') {
-      if (typeof supabaseData.code === 'string' && !isNaN(parseInt(supabaseData.code as string, 10))) {
-        supabaseData.code = parseInt(supabaseData.code as string, 10);
-      } else {
-        throw new Error("Sales rep code must be a number");
-      }
-    }
-    
-    // Create a properly typed object for Supabase insert
-    // This ensures we match the exact type expected by Supabase
-    const insertData = {
-      name: supabaseData.name as string,
-      code: supabaseData.code as number,
-      email: supabaseData.email as string | null,
-      phone: supabaseData.phone as string | null,
-      document: supabaseData.document as string | null,
-      address: supabaseData.address as string | null,
-      city: supabaseData.city as string | null,
-      state: supabaseData.state as string | null,
-      zip: supabaseData.zip as string | null,
-      notes: supabaseData.notes as string | null,
-      role: supabaseData.role as string | null || 'sales',
-      active: supabaseData.active !== false, // Default to true if not explicitly false
-      region: supabaseData.region as string | null,
-      created_at: supabaseData.created_at as string | null || new Date().toISOString(),
-      updated_at: supabaseData.updated_at as string | null || new Date().toISOString()
-    };
-    
-    console.log("Typed data for insert:", insertData);
-    
     const { data, error } = await supabase
       .from('sales_reps')
-      .insert(insertData)
+      .insert(supabaseData)
       .select()
       .single();
       

@@ -36,7 +36,12 @@ export const createBulkProducts = async (products: any[]): Promise<string[]> => 
       product.price = 0;
     }
     return true;
-  }).map(product => prepareForSupabase(product) as ProductInsert);
+  }).map(product => {
+    // Convert dates and camelCase to snake_case
+    const prepared = prepareForSupabase(product);
+    console.log("Prepared product:", prepared);
+    return prepared as ProductInsert;
+  });
 
   if (validProducts.length === 0) {
     throw new Error("No valid products to insert");
