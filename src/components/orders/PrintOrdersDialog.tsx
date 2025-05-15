@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import CustomerSelect from './print/CustomerSelect';
 import PrintDialogActions from './print/PrintDialogActions';
+import PrintableOrderContent from './print/PrintableOrderContent';
 
 interface PrintOrdersDialogProps {
   isOpen: boolean;
@@ -78,50 +79,12 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           />
         </DialogFooter>
         
-        <div className="hidden print:block">
-          {ordersToPrint.map((order, index) => (
-            <div key={order.id} className="print-order">
-              <h3 className="text-lg font-bold">Pedido #{order.code}</h3>
-              <p><strong>Cliente:</strong> {order.customerName}</p>
-              <p><strong>Data:</strong> {order.date instanceof Date 
-                ? order.date.toLocaleDateString('pt-BR') 
-                : new Date(order.date).toLocaleDateString('pt-BR')}
-              </p>
-              
-              <table className="w-full mt-2 border-collapse">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left">Produto</th>
-                    <th className="text-right">Qtd</th>
-                    <th className="text-right">Preço</th>
-                    <th className="text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((item) => (
-                    <tr key={item.productId} className="border-b">
-                      <td>{item.productName}</td>
-                      <td className="text-right">{item.quantity}</td>
-                      <td className="text-right">{formatCurrency(item.price || item.unitPrice)}</td>
-                      <td className="text-right">{formatCurrency(item.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={3} className="text-right font-bold">Total:</td>
-                    <td className="text-right font-bold">{formatCurrency(order.total)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-              
-              {index < ordersToPrint.length - 1 && <div className="print-page-break"></div>}
-            </div>
-          ))}
-          <div className="print-footer">
-            <p>Impresso em: {new Date().toLocaleString('pt-BR')}</p>
-          </div>
-        </div>
+        {/* Printable content using dedicated component */}
+        <PrintableOrderContent 
+          orders={ordersToPrint}
+          customers={customers}
+          formatCurrency={formatCurrency}
+        />
       </DialogContent>
     </Dialog>
   );
