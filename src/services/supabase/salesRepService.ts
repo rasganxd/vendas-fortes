@@ -4,11 +4,38 @@ import { supabase } from '@/integrations/supabase/client';
 import { transformSalesRepData, prepareForSupabase } from '@/utils/dataTransformers';
 import { SalesRep } from '@/types';
 import { TableInsert, TableUpdate } from './types';
+import { salesRepLocalService } from '../local/salesRepLocalService';
 
 /**
  * Service for sales rep-related operations
+ * Now using local storage instead of Supabase
  */
-export const salesRepService = createStandardService('sales_reps');
+export const salesRepService = {
+  // Get all sales reps
+  getAll: async (): Promise<SalesRep[]> => {
+    return salesRepLocalService.getAll();
+  },
+  
+  // Get sales rep by ID
+  getById: async (id: string): Promise<SalesRep | null> => {
+    return salesRepLocalService.getById(id);
+  },
+  
+  // Add sales rep
+  add: async (salesRep: Omit<SalesRep, 'id'>): Promise<string> => {
+    return createSalesRep(salesRep);
+  },
+  
+  // Update sales rep
+  update: async (id: string, salesRep: Partial<SalesRep>): Promise<void> => {
+    return updateSalesRep(id, salesRep);
+  },
+  
+  // Delete sales rep
+  delete: async (id: string): Promise<void> => {
+    return salesRepLocalService.delete(id);
+  }
+};
 
 // Cache for sales rep lookups by code
 const salesRepCodeCache = new Map<number, SalesRep | null>();
@@ -25,21 +52,9 @@ export const getSalesRepByCode = async (code: number): Promise<SalesRep | null> 
   }
 
   try {
-    const { data, error } = await supabase
-      .from('sales_reps')
-      .select('*')
-      .eq('code', code)
-      .single();
-      
-    if (error) {
-      if (error.code !== 'PGRST116') { // Not found error
-        console.error("Error fetching sales rep by code:", error);
-      }
-      salesRepCodeCache.set(code, null);
-      return null;
-    }
+    // Use local storage service instead of Supabase
+    const salesRep = await salesRepLocalService.getByCode(code);
     
-    const salesRep = transformSalesRepData(data);
     salesRepCodeCache.set(code, salesRep);
     return salesRep;
   } catch (error) {
@@ -60,14 +75,8 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     
     // If no code provided, get the next available one
     if (!salesRepData.code) {
-      const { data: lastSalesRep } = await supabase
-        .from('sales_reps')
-        .select('code')
-        .order('code', { ascending: false })
-        .limit(1)
-        .single();
-      
-      salesRepData.code = (lastSalesRep?.code || 0) + 1;
+      const highestCode = await salesRepLocalService.getHighestCode();
+      salesRepData.code = highestCode + 1;
     }
     
     // Ensure code is a number
@@ -82,27 +91,19 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     
     console.log("Creating sales rep with data:", salesRepData);
     
-    // Prepare for Supabase - convert to snake_case and handle dates
-    const supabaseData = prepareForSupabase(salesRepData);
-    
-    // Type safe for Supabase insert
-    const { data, error } = await supabase
-      .from('sales_reps')
-      .insert(supabaseData)
-      .select()
-      .single();
-      
-    if (error) {
-      console.error("Error creating sales rep:", error);
-      throw error;
-    }
+    // Use local storage instead of Supabase
+    const id = await salesRepLocalService.add({
+      ...salesRepData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
     
     // Clear cache for this code
     if (salesRepData.code) {
       salesRepCodeCache.delete(salesRepData.code);
     }
     
-    return data.id;
+    return id;
   } catch (error) {
     console.error("Error in createSalesRep:", error);
     throw error;
@@ -118,18 +119,11 @@ export const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): P
   try {
     console.log("Updating sales rep with data:", salesRep);
     
-    // Prepare data for Supabase
-    const supabaseData = prepareForSupabase(salesRep);
-    
-    const { error } = await supabase
-      .from('sales_reps')
-      .update(supabaseData)
-      .eq('id', id);
-      
-    if (error) {
-      console.error("Error updating sales rep:", error);
-      throw error;
-    }
+    // Use local storage instead of Supabase
+    await salesRepLocalService.update(id, {
+      ...salesRep,
+      updatedAt: new Date()
+    });
     
     // Clear cache for this code if the code is included
     if (salesRep.code) {

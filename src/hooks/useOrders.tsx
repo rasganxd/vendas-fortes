@@ -1,20 +1,20 @@
-
 import { useState, useEffect } from 'react';
 import { Order } from '@/types';
-import { orderService } from '@/services/supabase/orderService';
 import { toast } from '@/components/ui/use-toast';
-import { transformOrderData, transformArray, prepareForSupabase } from '@/utils/dataTransformers';
-import { addOrderItems, updateOrderItems, getOrderItems } from '@/services/supabase/orderItemService';
+import { orderService } from '@/services/supabase/orderService';
+import { transformOrderData, transformArray } from '@/utils/dataTransformers';
+import { orderLocalService } from '@/services/local/orderLocalService';
 
-// Function for loading orders, exported for use in other files
-export const loadOrders = async (): Promise<Order[]> => {
+// Load orders with improved caching strategy
+export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {
   try {
-    const data = await orderService.getAll();
-    const transformedOrders = transformArray(data, transformOrderData) as Order[];
-    return transformedOrders;
+    console.log("Loading orders from local storage");
+    const orders = await orderLocalService.getAll();
+    console.log(`Loaded ${orders.length} orders from local storage`);
+    return orders;
   } catch (error) {
     console.error("Error loading orders:", error);
-    return [];
+    throw error;
   }
 };
 
@@ -43,41 +43,15 @@ export const useOrders = () => {
     fetchOrders();
   }, []);
 
-  const getOrderById = async (id: string): Promise<Order | null> => {
+  const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
-      const orderData = await orderService.getById(id);
-      if (orderData) {
-        return transformOrderData(orderData);
-      }
-      return null;
-    } catch (error) {
-      console.error("Error fetching order by ID:", error);
-      toast({
-        title: "Erro ao carregar pedido",
-        description: "Houve um problema ao carregar o pedido.",
-        variant: "destructive"
-      });
-      return null;
-    }
-  };
-
-  const addOrder = async (order: Omit<Order, 'id'>): Promise<string> => {
-    try {
-      // Convert Date objects to strings for Supabase
-      const orderForDb = prepareForSupabase(order);
-      
-      // Add the order
-      const id = await orderService.add(orderForDb);
-      
-      // Get the saved order and add it to state
+      const id = await orderService.add(order);
       const newOrder = { ...order, id } as Order;
       setOrders(prev => [...prev, newOrder]);
-      
       toast({
         title: "Pedido adicionado",
         description: "Pedido adicionado com sucesso!"
       });
-      
       return id;
     } catch (error) {
       console.error("Error adding order:", error);
@@ -90,20 +64,17 @@ export const useOrders = () => {
     }
   };
 
-  const updateOrder = async (id: string, order: Partial<Order>): Promise<string> => {
+  const updateOrder = async (id: string, order: Partial<Order>) => {
     try {
-      // Convert Date objects to strings for Supabase
-      const orderForDb = prepareForSupabase(order);
-      
-      await orderService.update(id, orderForDb);
-      setOrders(prev =>
-        prev.map(o => (o.id === id ? { ...o, ...order } : o))
+      await orderService.update(id, order);
+      const updatedOrders = orders.map(o =>
+        o.id === id ? { ...o, ...order } : o
       );
+      setOrders(updatedOrders);
       toast({
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
       });
-      return id;
     } catch (error) {
       console.error("Error updating order:", error);
       toast({
@@ -111,14 +82,14 @@ export const useOrders = () => {
         description: "Houve um problema ao atualizar o pedido.",
         variant: "destructive"
       });
-      return "";
     }
   };
 
-  const deleteOrder = async (id: string): Promise<void> => {
+  const deleteOrder = async (id: string) => {
     try {
       await orderService.delete(id);
-      setOrders(prev => prev.filter(o => o.id !== id));
+      const updatedOrders = orders.filter(o => o.id !== id);
+      setOrders(updatedOrders);
       toast({
         title: "Pedido excluído",
         description: "Pedido excluído com sucesso!"
@@ -135,11 +106,10 @@ export const useOrders = () => {
 
   return {
     orders,
-    isLoading,
-    getOrderById,
     addOrder,
     updateOrder,
     deleteOrder,
+    isLoading,
     setOrders
   };
 };

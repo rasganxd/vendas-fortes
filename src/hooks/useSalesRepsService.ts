@@ -3,6 +3,7 @@ import { SalesRep } from '@/types';
 import { salesRepService } from '@/services/supabase/salesRepService';
 import { transformSalesRepData, transformArray } from '@/utils/dataTransformers';
 import { useSalesRepsCache } from './useSalesRepsCache';
+import { salesRepLocalService } from '@/services/local/salesRepLocalService';
 
 /**
  * Service hook for sales rep data operations
@@ -12,7 +13,7 @@ export const useSalesRepsService = () => {
 
   /**
    * Load sales reps with caching
-   * @param forceRefresh - Force refresh from API
+   * @param forceRefresh - Force refresh from storage
    * @returns Promise with sales reps array
    */
   const loadSalesReps = async (forceRefresh = false): Promise<SalesRep[]> => {
@@ -23,14 +24,11 @@ export const useSalesRepsService = () => {
         if (cachedData) return cachedData;
       }
       
-      console.log("Cache miss or force refresh, loading from API");
+      console.log("Cache miss or force refresh, loading from local storage");
       
-      // If not in cache or cache is stale, fetch from API
-      const data = await salesRepService.getAll();
-      console.log("Raw sales rep data from API:", data);
-      
-      const salesReps = transformArray(data, transformSalesRepData) as SalesRep[];
-      console.log("Transformed sales reps:", salesReps);
+      // If not in cache or cache is stale, fetch from local storage
+      const salesReps = await salesRepLocalService.getAll();
+      console.log("Loaded sales reps:", salesReps);
       
       // Store in localStorage cache
       saveToCache(salesReps);

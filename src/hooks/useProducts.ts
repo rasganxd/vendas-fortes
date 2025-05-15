@@ -1,20 +1,53 @@
-import { useState, useEffect } from 'react';
-import { Product } from '@/types';
-import { productService } from '@/services/supabase/productService';
-import { toast } from '@/components/ui/use-toast';
-import { transformProductData, transformArray } from '@/utils/dataTransformers';
 
-// Export this for compatibility with existing code
-export const fetchProducts = async (): Promise<Product[]> => {
+import { productLocalService } from '@/services/local/productLocalService';
+import { Product } from '@/types';
+
+// Cache key for localStorage
+const PRODUCTS_CACHE_KEY = 'app_products_cache';
+const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_cache_timestamp';
+const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+export const fetchProducts = async (forceRefresh = false): Promise<Product[]> => {
   try {
-    const result = await productService.getAll();
-    if (Array.isArray(result)) {
-      return transformArray(result, transformProductData) as Product[];
+    console.log("Attempting to load products with forceRefresh =", forceRefresh);
+    
+    // Try to get from cache if not forcing refresh
+    if (!forceRefresh) {
+      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
+      
+      if (cachedData && cachedTimestamp) {
+        const timestamp = parseInt(cachedTimestamp, 10);
+        const now = Date.now();
+        
+        // If cache is still fresh, use it
+        if (now - timestamp < CACHE_MAX_AGE) {
+          console.log("Using cached product data");
+          return JSON.parse(cachedData) as Product[];
+        }
+      }
     }
-    console.error('Product fetch did not return an array:', result);
-    return [];
+    
+    // If not in cache or cache is stale, fetch from local storage
+    console.log("Fetching product data from local storage");
+    const products = await productLocalService.getAll();
+    
+    // Store in localStorage cache
+    localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(products));
+    localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+    
+    console.log(`Loaded ${products.length} products from local storage`);
+    return products;
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error("Error loading products:", error);
+    
+    // Try to use cached data even if expired as fallback
+    const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
+    if (cachedData) {
+      console.log("Using expired cache as fallback due to error");
+      return JSON.parse(cachedData) as Product[];
+    }
+    
     throw error;
   }
 };

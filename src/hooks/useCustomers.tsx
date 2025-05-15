@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabase/customerService';
 import { toast } from '@/components/ui/use-toast';
-import { transformCustomerData, transformArray } from '@/utils/dataTransformers';
-import { supabase } from '@/integrations/supabase/client';
+import { customerLocalService } from '@/services/local/customerLocalService';
 
 // Cache key for localStorage
 const CUSTOMERS_CACHE_KEY = 'app_customers_cache';
@@ -33,16 +32,15 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
       }
     }
     
-    // If not in cache or cache is stale, fetch from API
-    console.log("Fetching customer data from Supabase");
-    const data = await customerService.getAll();
-    const customers = transformArray(data, transformCustomerData) as Customer[];
+    // If not in cache or cache is stale, fetch from local storage
+    console.log("Fetching customer data from local storage");
+    const customers = await customerLocalService.getAll();
     
     // Store in localStorage cache
     localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
     localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
     
-    console.log(`Loaded ${customers.length} customers from Supabase`);
+    console.log(`Loaded ${customers.length} customers from local storage`);
     return customers;
   } catch (error) {
     console.error("Error loading customers:", error);
@@ -162,7 +160,12 @@ export const useCustomers = () => {
         customer.code = parseInt(customer.code as string, 10);
       }
       
-      const id = await customerService.add(customer);
+      const id = await customerLocalService.add({
+        ...customer,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
       const newCustomer = { ...customer, id } as Customer;
       
       // Update local state
@@ -200,7 +203,10 @@ export const useCustomers = () => {
         customer.code = parseInt(customer.code as string, 10);
       }
       
-      await customerService.update(id, customer);
+      await customerLocalService.update(id, {
+        ...customer,
+        updatedAt: new Date()
+      });
       
       // Update local state
       const updatedCustomers = customers.map(c => 
@@ -228,7 +234,7 @@ export const useCustomers = () => {
 
   const deleteCustomer = async (id: string) => {
     try {
-      await customerService.delete(id);
+      await customerLocalService.delete(id);
       
       // Update local state
       const updatedCustomers = customers.filter(c => c.id !== id);
@@ -255,8 +261,8 @@ export const useCustomers = () => {
   const refreshCustomers = async () => {
     setIsLoading(true);
     try {
-      console.log("Refreshing customers data from server");
-      const refreshedCustomers = await loadCustomers(true);
+      console.log("Refreshing customers data from local storage");
+      const refreshedCustomers = await customerLocalService.getAll();
       setCustomers(refreshedCustomers);
       console.log(`Refreshed ${refreshedCustomers.length} customers`);
     } catch (error) {
@@ -266,6 +272,7 @@ export const useCustomers = () => {
     }
   };
 
+  // Return the hook methods
   return {
     customers,
     addCustomer,

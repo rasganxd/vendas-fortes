@@ -7,6 +7,9 @@ import { loadOrders } from '@/hooks/useOrders';
 import { mockProducts } from '@/data/mock/products';
 import { mockCustomers } from '@/data/mock/customers';
 import { useConnection } from './ConnectionProvider';
+import { customerLocalService } from '@/services/local/customerLocalService';
+import { productLocalService } from '@/services/local/productLocalService';
+import { orderLocalService } from '@/services/local/orderLocalService';
 
 interface DataLoadingContextType {
   customers: Customer[];
@@ -61,7 +64,7 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
       if (usingMock) {
         toast({
           title: "Modo offline ativado",
-          description: "O sistema está usando dados locais devido a problemas de conexão com o Supabase.",
+          description: "O sistema está usando dados locais.",
           variant: "default"
         });
       }
@@ -77,23 +80,36 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
   const refreshData = async (): Promise<boolean> => {
     toast({
       title: "Atualizando dados",
-      description: "Sincronizando dados com o servidor..."
+      description: "Atualizando dados do armazenamento local..."
     });
     
     try {
-      await clearCache(loadCustomers, fetchProducts, loadOrders, setCustomers, setProducts);
+      setIsLoadingCustomers(true);
+      setIsLoadingProducts(true);
+      
+      const refreshedCustomers = await customerLocalService.getAll();
+      setCustomers(refreshedCustomers);
+      
+      const refreshedProducts = await productLocalService.getAll();
+      setProducts(refreshedProducts);
+      
+      setIsLoadingCustomers(false);
+      setIsLoadingProducts(false);
+      
       toast({
         title: "Dados atualizados",
-        description: "Sincronização concluída com sucesso!"
+        description: "Dados atualizados com sucesso!"
       });
       return true;
     } catch (error) {
       console.error("Error refreshing data:", error);
       toast({
-        title: "Erro na sincronização",
-        description: "Houve um problema ao sincronizar os dados.",
+        title: "Erro na atualização",
+        description: "Houve um problema ao atualizar os dados.",
         variant: "destructive"
       });
+      setIsLoadingCustomers(false);
+      setIsLoadingProducts(false);
       return false;
     }
   };
@@ -131,21 +147,17 @@ export const loadCoreData = async (
     setIsLoadingCustomers(true);
     let loadedCustomers: Customer[] = [];
     try {
-      loadedCustomers = await loadCustomers();
+      loadedCustomers = await customerLocalService.getAll();
       console.log(`Loaded ${loadedCustomers.length} customers`);
       setCustomers(loadedCustomers);
-      
-      // Check if we're using mock data
-      if (loadedCustomers.length > 0 && loadedCustomers[0].id.startsWith('local-')) {
-        setIsUsingMockData(true);
-      }
     } catch (error) {
       console.error("Failed to load customers:", error);
-      setCustomers(mockCustomers);
-      setIsUsingMockData(true);
+      await customerLocalService.initializeWithDefault(mockCustomers);
+      loadedCustomers = await customerLocalService.getAll();
+      setCustomers(loadedCustomers);
       toast({
         title: "Erro ao carregar clientes",
-        description: "Usando dados locais temporariamente.",
+        description: "Usando dados iniciais.",
         variant: "destructive"
       });
     } finally {
@@ -156,25 +168,17 @@ export const loadCoreData = async (
     setIsLoadingProducts(true);
     try {
       console.log("About to load products...");
-      const loadedProducts = await fetchProducts();
-      console.log(`Loaded ${loadedProducts.length} products from Supabase`);
-      
-      // Always make sure we update the state even if empty array
-      if (loadedProducts && loadedProducts.length > 0) {
-        setProducts(loadedProducts);
-        console.log("Set products from Supabase:", loadedProducts.length);
-      } else {
-        console.log("No products loaded from Supabase, using mock data");
-        setProducts(mockProducts);
-        setIsUsingMockData(true);
-      }
+      const loadedProducts = await productLocalService.getAll();
+      console.log(`Loaded ${loadedProducts.length} products`);
+      setProducts(loadedProducts);
     } catch (error) {
       console.error("Failed to load products:", error);
-      setProducts(mockProducts);
-      setIsUsingMockData(true);
+      await productLocalService.initializeWithDefault(mockProducts);
+      const loadedProducts = await productLocalService.getAll();
+      setProducts(loadedProducts);
       toast({
         title: "Erro ao carregar produtos",
-        description: "Usando dados locais temporariamente.",
+        description: "Usando dados iniciais.",
         variant: "destructive"
       });
     } finally {
@@ -182,8 +186,8 @@ export const loadCoreData = async (
       setIsLoadingProducts(false);
     }
     
-    // Return flag indicating if using mock data
-    return setIsUsingMockData;
+    // Return flag indicating if using mock data (false since we're using local storage)
+    return false;
   } catch (error) {
     console.error("Error loading core data:", error);
     toast({

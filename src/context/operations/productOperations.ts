@@ -1,9 +1,9 @@
-
 import { Product } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabaseService';
 import { createBulkProducts } from '@/services/supabase/productService';
 import { prepareForSupabase } from '@/utils/dataTransformers';
+import { productLocalService } from '@/services/local/productLocalService';
 
 /**
  * Adds a new product to the database
@@ -23,21 +23,19 @@ export const addProduct = async (
       ...product, 
       code: productCode,
       // Ensure we have a price value (default to cost if not provided)
-      price: product.price !== undefined ? product.price : product.cost
+      price: product.price !== undefined ? product.price : product.cost,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     
-    console.log("Product data before preparation:", productWithCode);
+    console.log("Adding product:", productWithCode);
     
-    // Preparar dados para o formato do Supabase
-    const supabaseData = prepareForSupabase(productWithCode);
-    console.log("Sending product to Supabase:", supabaseData);
-    
-    // Adicionar ao Supabase usando o serviço
-    const id = await productService.add(supabaseData);
+    // Add to local storage
+    const id = await productLocalService.add(productWithCode);
     console.log("Product added with ID:", id);
     
     if (!id) {
-      throw new Error("Failed to get product ID from Supabase");
+      throw new Error("Failed to get product ID");
     }
     
     const newProduct = { ...productWithCode, id };
@@ -73,7 +71,7 @@ export const updateProduct = async (
 ) => {
   try {
     // Nunca permitir que o código seja indefinido ou nulo ao atualizar
-    const updateData = { ...product };
+    const updateData = { ...product, updatedAt: new Date() };
     if (updateData.code === undefined || updateData.code === null) {
       const existingProduct = products.find(p => p.id === id);
       if (existingProduct && existingProduct.code) {
@@ -81,9 +79,9 @@ export const updateProduct = async (
       }
     }
     
-    // Atualizar no Supabase
-    await productService.update(id, updateData);
-    console.log("Product updated in Supabase, ID:", id, "Data:", updateData);
+    // Update in local storage
+    await productLocalService.update(id, updateData);
+    console.log("Product updated, ID:", id, "Data:", updateData);
     
     // Atualizar o estado local usando a função de atualização correta
     setProducts(currentProducts => 
@@ -113,8 +111,9 @@ export const deleteProduct = async (
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
   try {
-    // Excluir do Supabase
-    await productService.delete(id);
+    // Delete from local storage
+    await productLocalService.delete(id);
+    
     // Atualizar o estado local
     setProducts(products.filter(p => p.id !== id));
     toast({
@@ -174,47 +173,32 @@ export const addBulkProducts = async (
   setIsUsingMockData: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
   try {
-    // Preparar dados para o Supabase
-    const supabaseData = productsArray.map(product => {
+    // Preparar dados para armazenamento local
+    const productsWithData = productsArray.map(product => {
       // Garantir que o produto tenha um código
       const productCode = product.code || (products.length > 0 
         ? Math.max(...products.map(p => p.code || 0)) + 1 
         : 1);
-      return { ...product, code: productCode };
+      return { 
+        ...product, 
+        code: productCode,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
     });
     
-    let ids: string[] = [];
+    // Add to local storage
+    console.log("Adding bulk products:", productsWithData);
+    const ids = await productLocalService.createBulk(productsWithData);
+    console.log("Products added with IDs:", ids);
     
-    // Adicionar ao Supabase
-    try {
-      ids = await createBulkProducts(supabaseData);
-      console.log("Products added to Supabase with IDs:", ids);
-    } catch (error) {
-      console.error("Failed to add products to Supabase:", error);
-      
-      // Se falhar no Supabase, gerar IDs locais
-      ids = supabaseData.map(() => `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
-      setIsUsingMockData(true);
-      
-      // Armazenar dados mock atualizados no localStorage
-      const newMockProducts = supabaseData.map((product, index) => ({
-        ...product,
-        id: ids[index]
-      }));
-      const mockProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
-      const updatedMockProducts = [...mockProducts, ...newMockProducts];
-      localStorage.setItem('mockProducts', JSON.stringify(updatedMockProducts));
-    }
-    
-    // Criar produtos completos com IDs
-    const newProducts = supabaseData.map((product, index) => ({
+    // Create products with IDs
+    const newProducts = productsWithData.map((product, index) => ({
       ...product,
       id: ids[index]
-    })) as Product[];
+    }));
     
-    console.log("New products to add to state:", newProducts);
-    
-    // Atualizar estado local usando a função de atualização correta
+    // Update state
     setProducts(currentProducts => [...currentProducts, ...newProducts]);
     
     toast({
