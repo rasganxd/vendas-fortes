@@ -1,9 +1,6 @@
 
 import React from 'react';
 import { Order, Customer, PaymentStatus } from '@/types';
-import { formatDateToBR } from '@/lib/date-utils';
-import { useAppContext } from '@/hooks/useAppContext';
-import { formatCurrency } from '@/lib/format-utils';
 
 interface PrintableOrderContentProps {
   orders: Order[];
@@ -18,9 +15,6 @@ const PrintableOrderContent: React.FC<PrintableOrderContentProps> = ({
   customers,
   formatCurrency
 }) => {
-  const { settings } = useAppContext();
-  const companyData = settings?.company;
-
   // Como agora usamos uma janela separada para impressão,
   // este componente não precisa renderizar o conteúdo para impressão
   return null;
