@@ -73,7 +73,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
           <CustomerFormFields form={form} />
         </div>
         
-        <DialogFooter className="mt-6 sticky bottom-0 bg-background pt-2 pb-1">
+        <DialogFooter className="mt-6 bg-background pt-2 pb-1">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>

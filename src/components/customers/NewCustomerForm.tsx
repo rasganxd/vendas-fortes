@@ -56,9 +56,11 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <CustomerFormFields form={form} />
+        <div className="max-h-[60vh] overflow-y-auto pr-2 pb-4">
+          <CustomerFormFields form={form} />
+        </div>
         
-        <DialogFooter className="mt-6">
+        <DialogFooter className="mt-6 bg-background pt-2 pb-1">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
@@ -67,6 +69,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       </form>
     </Form>
   );
+
 };
 
 export default NewCustomerForm;
