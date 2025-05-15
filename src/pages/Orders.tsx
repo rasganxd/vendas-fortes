@@ -39,7 +39,7 @@ const printStyles = `
   /* Create a grid layout for the orders */
   .print-orders-container {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 0.5cm;
     width: 100%;
   }
@@ -49,46 +49,47 @@ const printStyles = `
     width: 100%;
     page-break-inside: avoid;
     box-sizing: border-box;
-    padding: 0.5cm;
-    margin-bottom: 0.5cm;
-    border-bottom: 1px dashed #ccc;
-    max-height: none;
+    padding: 0.3cm;
+    border: 1px solid #eee;
+    font-size: 0.85rem;
+    height: 100%;
   }
   
   /* Ensure content is properly sized */
   .print-order table {
     width: 100%;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     border-collapse: collapse;
   }
   
   .print-order table th,
   .print-order table td {
-    padding: 4px;
+    padding: 3px;
     border: 1px solid #ddd;
   }
   
   .print-order h3 {
-    font-size: 1rem;
-    margin: 8px 0;
+    font-size: 0.9rem;
+    margin: 6px 0;
   }
   
   .print-order p {
-    margin: 0.2rem 0;
-    font-size: 0.85rem;
+    margin: 0.15rem 0;
+    font-size: 0.8rem;
   }
   
-  /* Force a page break after every second order */
+  /* Force a page break after every two orders */
   .print-order:nth-child(2n) {
     page-break-after: always;
   }
   
   .print-footer {
     text-align: center;
-    font-size: 0.8rem;
-    padding-top: 10px;
+    font-size: 0.7rem;
+    padding-top: 8px;
     border-top: 1px solid #ddd;
-    margin-top: 10px;
+    margin-top: 8px;
+    grid-column: span 2;
   }
   
   .no-print, button, .no-print {
