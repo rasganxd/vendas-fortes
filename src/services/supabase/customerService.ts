@@ -3,6 +3,7 @@ import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareForSupabase, transformCustomerData } from '@/utils/dataTransformers';
 import { Customer } from '@/types';
+import { Tables } from '@/integrations/supabase/types';
 
 /**
  * Service for customer-related operations
@@ -71,11 +72,23 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
     // Convert to snake_case and prepare for Supabase
     const supabaseData = prepareForSupabase(customerData);
     
-    console.log("Data prepared for Supabase:", supabaseData);
+    // Make sure code and name are included for TypeScript validation
+    if (!('code' in supabaseData) || !('name' in supabaseData)) {
+      throw new Error("Required fields missing after data transformation");
+    }
+    
+    // Type cast to the Supabase expected type
+    const insertData: Tables["customers"]["Insert"] = {
+      ...supabaseData as any,
+      code: customerData.code,
+      name: customerData.name
+    };
+    
+    console.log("Data prepared for Supabase:", insertData);
     
     const { data, error } = await supabase
       .from('customers')
-      .insert(supabaseData)
+      .insert(insertData)
       .select()
       .single();
       
@@ -103,11 +116,28 @@ export const updateCustomer = async (id: string, customer: Partial<Customer>): P
     // Prepare data for Supabase
     const supabaseData = prepareForSupabase(customer);
     
-    console.log("Data prepared for Supabase update:", supabaseData);
+    // Ensure we explicitly include any required fields for TypeScript validation
+    const updateData: Tables["customers"]["Update"] = {
+      ...supabaseData as any,
+    };
+    
+    // If code is provided, ensure it's properly typed
+    if (customer.code !== undefined) {
+      updateData.code = typeof customer.code === 'string' 
+        ? parseInt(customer.code, 10) 
+        : customer.code;
+    }
+    
+    // If name is provided, include it explicitly
+    if (customer.name !== undefined) {
+      updateData.name = customer.name;
+    }
+    
+    console.log("Data prepared for Supabase update:", updateData);
     
     const { error } = await supabase
       .from('customers')
-      .update(supabaseData)
+      .update(updateData)
       .eq('id', id);
       
     if (error) {

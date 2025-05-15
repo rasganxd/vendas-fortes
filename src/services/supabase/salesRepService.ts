@@ -3,6 +3,7 @@ import { createStandardService } from './core';
 import { supabase } from '@/integrations/supabase/client';
 import { transformSalesRepData, prepareForSupabase } from '@/utils/dataTransformers';
 import { SalesRep } from '@/types';
+import { Tables } from '@/integrations/supabase/types';
 
 /**
  * Service for sales rep-related operations
@@ -84,11 +85,22 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     // Prepare for Supabase - convert to snake_case and handle dates
     const supabaseData = prepareForSupabase(salesRepData);
     
-    console.log("Data prepared for Supabase:", supabaseData);
+    // Type cast to expected Supabase type, ensuring required fields are present
+    const insertData: Tables["sales_reps"]["Insert"] = {
+      ...supabaseData as any,
+      name: salesRepData.name
+    };
+    
+    // If we have code, include it explicitly for typing
+    if (salesRepData.code) {
+      insertData.code = salesRepData.code;
+    }
+    
+    console.log("Data prepared for Supabase:", insertData);
     
     const { data, error } = await supabase
       .from('sales_reps')
-      .insert(supabaseData)
+      .insert(insertData)
       .select()
       .single();
       
@@ -121,11 +133,28 @@ export const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): P
     // Prepare data for Supabase
     const supabaseData = prepareForSupabase(salesRep);
     
-    console.log("Data prepared for Supabase update:", supabaseData);
+    // Type cast to expected Supabase type
+    const updateData: Tables["sales_reps"]["Update"] = {
+      ...supabaseData as any
+    };
+    
+    // If name is provided, include it explicitly for typing
+    if (salesRep.name !== undefined) {
+      updateData.name = salesRep.name;
+    }
+    
+    // If code is provided, ensure it's properly typed
+    if (salesRep.code !== undefined) {
+      updateData.code = typeof salesRep.code === 'string' 
+        ? parseInt(salesRep.code, 10) 
+        : salesRep.code;
+    }
+    
+    console.log("Data prepared for Supabase update:", updateData);
     
     const { error } = await supabase
       .from('sales_reps')
-      .update(supabaseData)
+      .update(updateData)
       .eq('id', id);
       
     if (error) {
