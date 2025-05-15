@@ -85,22 +85,10 @@ export const createSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<st
     // Prepare for Supabase - convert to snake_case and handle dates
     const supabaseData = prepareForSupabase(salesRepData);
     
-    // Type cast to expected Supabase type, ensuring required fields are present
-    const insertData: TableInsert<"sales_reps"> = {
-      ...supabaseData as any,
-      name: salesRepData.name
-    };
-    
-    // If we have code, include it explicitly for typing
-    if (salesRepData.code) {
-      insertData.code = salesRepData.code;
-    }
-    
-    console.log("Data prepared for Supabase:", insertData);
-    
+    // Type safe for Supabase insert
     const { data, error } = await supabase
       .from('sales_reps')
-      .insert(insertData)
+      .insert(supabaseData)
       .select()
       .single();
       
@@ -133,28 +121,9 @@ export const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): P
     // Prepare data for Supabase
     const supabaseData = prepareForSupabase(salesRep);
     
-    // Type cast to expected Supabase type
-    const updateData: TableUpdate<"sales_reps"> = {
-      ...supabaseData as any
-    };
-    
-    // If name is provided, include it explicitly for typing
-    if (salesRep.name !== undefined) {
-      updateData.name = salesRep.name;
-    }
-    
-    // If code is provided, ensure it's properly typed
-    if (salesRep.code !== undefined) {
-      updateData.code = typeof salesRep.code === 'string' 
-        ? parseInt(salesRep.code, 10) 
-        : salesRep.code;
-    }
-    
-    console.log("Data prepared for Supabase update:", updateData);
-    
     const { error } = await supabase
       .from('sales_reps')
-      .update(updateData)
+      .update(supabaseData)
       .eq('id', id);
       
     if (error) {

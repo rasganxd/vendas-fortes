@@ -177,9 +177,7 @@ export const transformSalesRepData = (data: any) => {
     state: transformed.state || '',
     zip: transformed.zip || '',
     notes: transformed.notes || '',
-    role: transformed.role || 'sales',
     active: transformed.active !== false, // Default to true if not explicitly false
-    region: transformed.region || '',
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
     visitDay: data.visit_day || '',

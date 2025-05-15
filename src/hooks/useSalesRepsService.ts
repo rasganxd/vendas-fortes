@@ -23,9 +23,14 @@ export const useSalesRepsService = () => {
         if (cachedData) return cachedData;
       }
       
+      console.log("Cache miss or force refresh, loading from API");
+      
       // If not in cache or cache is stale, fetch from API
       const data = await salesRepService.getAll();
+      console.log("Raw sales rep data from API:", data);
+      
       const salesReps = transformArray(data, transformSalesRepData) as SalesRep[];
+      console.log("Transformed sales reps:", salesReps);
       
       // Store in localStorage cache
       saveToCache(salesReps);
@@ -37,6 +42,7 @@ export const useSalesRepsService = () => {
       // Try to use cached data even if expired as fallback
       const fallbackData = getFallbackFromCache();
       if (fallbackData) {
+        console.log("Using expired cache as fallback");
         return fallbackData;
       }
       

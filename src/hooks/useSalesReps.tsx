@@ -19,15 +19,32 @@ export const useSalesReps = () => {
     const fetchSalesReps = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching sales reps...");
         const data = await loadSalesReps();
+        console.log("Loaded sales reps:", data);
         setSalesReps(data);
       } catch (error) {
         console.error("Error loading sales reps:", error);
         toast({
           title: "Erro ao carregar vendedores",
-          description: "Houve um problema ao carregar os vendedores.",
+          description: "Houve um problema ao carregar os vendedores. Usando dados em cache ou mock se disponível.",
           variant: "destructive"
         });
+        
+        // Try to load mock data if available
+        try {
+          const mockModule = await import('@/data/mock/salesReps');
+          if (mockModule.mockSalesReps) {
+            console.log("Using mock sales rep data as fallback");
+            setSalesReps(mockModule.mockSalesReps);
+            toast({
+              title: "Usando dados de exemplo",
+              description: "Não foi possível conectar ao banco de dados. Usando dados de exemplo temporariamente."
+            });
+          }
+        } catch (mockError) {
+          console.error("Failed to load mock data:", mockError);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -50,6 +67,7 @@ export const useSalesReps = () => {
         code: typeof salesRepCode === 'string' ? parseInt(salesRepCode, 10) : salesRepCode
       };
       
+      console.log("Adding new sales rep with data:", salesRepWithCode);
       const id = await salesRepService.add(salesRepWithCode);
       const newSalesRep = { ...salesRepWithCode, id } as SalesRep;
       
@@ -69,7 +87,7 @@ export const useSalesReps = () => {
       console.error("Error adding sales rep:", error);
       toast({
         title: "Erro ao adicionar vendedor",
-        description: "Houve um problema ao adicionar o vendedor.",
+        description: "Houve um problema ao adicionar o vendedor. Verifique os logs para mais informações.",
         variant: "destructive"
       });
       return "";
@@ -84,6 +102,7 @@ export const useSalesReps = () => {
         salesRep.code = parseInt(salesRep.code, 10);
       }
       
+      console.log("Updating sales rep:", id, salesRep);
       await salesRepService.update(id, salesRep);
       
       // Update local state
@@ -103,7 +122,7 @@ export const useSalesReps = () => {
       console.error("Error updating sales rep:", error);
       toast({
         title: "Erro ao atualizar vendedor",
-        description: "Houve um problema ao atualizar o vendedor.",
+        description: "Houve um problema ao atualizar o vendedor. Verifique os logs para mais informações.",
         variant: "destructive"
       });
     }
@@ -112,6 +131,7 @@ export const useSalesReps = () => {
   // Delete a sales rep
   const deleteSalesRep = async (id: string) => {
     try {
+      console.log("Deleting sales rep:", id);
       await salesRepService.delete(id);
       
       // Update local state
@@ -129,7 +149,7 @@ export const useSalesReps = () => {
       console.error("Error deleting sales rep:", error);
       toast({
         title: "Erro ao excluir vendedor",
-        description: "Houve um problema ao excluir o vendedor.",
+        description: "Houve um problema ao excluir o vendedor. Verifique os logs para mais informações.",
         variant: "destructive"
       });
     }
@@ -139,10 +159,20 @@ export const useSalesReps = () => {
   const refreshSalesReps = async () => {
     setIsLoading(true);
     try {
+      console.log("Refreshing sales reps data...");
       const refreshedSalesReps = await loadSalesReps(true);
       setSalesReps(refreshedSalesReps);
+      toast({
+        title: "Dados atualizados",
+        description: "Os dados dos vendedores foram atualizados com sucesso!"
+      });
     } catch (error) {
       console.error("Error refreshing sales reps:", error);
+      toast({
+        title: "Erro ao atualizar dados",
+        description: "Houve um problema ao atualizar os dados. Verifique os logs para mais informações.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
