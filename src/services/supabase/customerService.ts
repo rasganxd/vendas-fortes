@@ -86,30 +86,30 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<st
       }
     }
     
-    // Ensure the object has the required structure for Supabase
-    const sanitizedData: Record<string, any> = {
-      name: supabaseData.name,
-      code: supabaseData.code,
-      // Include other essential fields
-      phone: supabaseData.phone || null,
-      email: supabaseData.email || null,
-      address: supabaseData.address || null,
-      city: supabaseData.city || null,
-      state: supabaseData.state || null,
-      zip: supabaseData.zip || null,
-      notes: supabaseData.notes || null,
-      document: supabaseData.document || null,
-      sales_rep_id: supabaseData.sales_rep_id || null,
-      sales_rep_name: supabaseData.sales_rep_name || null,
-      created_at: supabaseData.created_at || new Date().toISOString(),
-      updated_at: supabaseData.updated_at || new Date().toISOString()
+    // Create a properly typed object for Supabase insert
+    // This ensures we match the exact type expected by Supabase
+    const insertData = {
+      name: supabaseData.name as string,
+      code: supabaseData.code as number,
+      phone: supabaseData.phone as string | null,
+      email: supabaseData.email as string | null,
+      address: supabaseData.address as string | null,
+      city: supabaseData.city as string | null,
+      state: supabaseData.state as string | null,
+      zip: supabaseData.zip as string | null,
+      notes: supabaseData.notes as string | null,
+      document: supabaseData.document as string | null,
+      sales_rep_id: supabaseData.sales_rep_id as string | null,
+      sales_rep_name: supabaseData.sales_rep_name as string | null,
+      created_at: supabaseData.created_at as string | null || new Date().toISOString(),
+      updated_at: supabaseData.updated_at as string | null || new Date().toISOString()
     };
     
-    console.log("Sanitized data for insert:", sanitizedData);
+    console.log("Typed data for insert:", insertData);
     
     const { data, error } = await supabase
       .from('customers')
-      .insert(sanitizedData)
+      .insert(insertData)
       .select()
       .single();
       
