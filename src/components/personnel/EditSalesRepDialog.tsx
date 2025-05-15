@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { SalesRep } from '@/types';
 import { DialogFooter } from '../ui/dialog';
-import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
 
 interface EditSalesRepDialogProps {
@@ -31,7 +30,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
   onSave,
   title
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setSalesRep({ ...salesRep, [name]: value });
   };
@@ -42,12 +41,12 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+        <div className="grid grid-cols-1 gap-4 py-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="code">Código</Label>
             <Input
@@ -70,17 +69,6 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={salesRep.email || ''}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
             <Label htmlFor="phone">Telefone</Label>
             <Input
               id="phone"
@@ -91,11 +79,11 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="document">Documento</Label>
+            <Label htmlFor="region">Região</Label>
             <Input
-              id="document"
-              name="document"
-              value={salesRep.document || ''}
+              id="region"
+              name="region"
+              value={salesRep.region || ''}
               onChange={handleChange}
             />
           </div>
@@ -107,57 +95,6 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
               name="role"
               value={salesRep.role || 'sales'}
               onChange={handleChange}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="address">Endereço</Label>
-            <Input
-              id="address"
-              name="address"
-              value={salesRep.address || ''}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="city">Cidade</Label>
-            <Input
-              id="city"
-              name="city"
-              value={salesRep.city || ''}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="state">Estado</Label>
-            <Input
-              id="state"
-              name="state"
-              value={salesRep.state || ''}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="zip">CEP</Label>
-            <Input
-              id="zip"
-              name="zip"
-              value={salesRep.zip || ''}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2 md:col-span-2">
-            <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              value={salesRep.notes || ''}
-              onChange={handleChange}
-              rows={3}
             />
           </div>
 

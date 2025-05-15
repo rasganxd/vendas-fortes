@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   Table,
@@ -32,14 +31,8 @@ const SalesRepsPage = () => {
   const [newSalesRep, setNewSalesRep] = useState<Omit<SalesRep, 'id'>>({
     code: generateNextCode(),
     name: '',
-    email: '',
     phone: '',
-    document: '',
-    notes: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
+    region: '',
     createdAt: new Date(),
     updatedAt: new Date(),
     role: 'sales',
@@ -50,14 +43,8 @@ const SalesRepsPage = () => {
   const initialSalesRep: Omit<SalesRep, 'id'> = {
     code: salesReps.length > 0 ? salesReps.reduce((max, sr) => Math.max(max, sr.code || 0), 0) + 1 : 1,
     name: '',
-    email: '',
     phone: '',
-    document: '',
-    notes: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
+    region: '',
     createdAt: new Date(),
     updatedAt: new Date(),
     role: 'sales',
@@ -105,7 +92,7 @@ const SalesRepsPage = () => {
 
   const filteredSalesReps = salesReps.filter(rep => 
     rep.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    rep.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    rep.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
     rep.code?.toString().includes(searchTerm)
   );
 
@@ -154,8 +141,8 @@ const SalesRepsPage = () => {
               <TableRow>
                 <TableHead className="w-[100px]">Código</TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Telefone</TableHead>
+                <TableHead>Região</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -164,8 +151,8 @@ const SalesRepsPage = () => {
                 <TableRow key={salesRep.id}>
                   <TableCell className="font-medium">{salesRep.code}</TableCell>
                   <TableCell>{salesRep.name}</TableCell>
-                  <TableCell>{salesRep.email}</TableCell>
                   <TableCell>{salesRep.phone}</TableCell>
+                  <TableCell>{salesRep.region}</TableCell>
                   <TableCell className="text-right">
                     <Button 
                       variant="ghost"
