@@ -78,26 +78,6 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="region">Região</Label>
-            <Input
-              id="region"
-              name="region"
-              value={salesRep.region || ''}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="role">Função</Label>
-            <Input
-              id="role"
-              name="role"
-              value={salesRep.role || 'sales'}
-              onChange={handleChange}
-            />
-          </div>
-
           <div className="flex items-center space-x-2">
             <Switch 
               checked={salesRep.active ?? true} 

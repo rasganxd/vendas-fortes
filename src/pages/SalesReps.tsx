@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import {
   Table,
@@ -32,10 +33,8 @@ const SalesRepsPage = () => {
     code: generateNextCode(),
     name: '',
     phone: '',
-    region: '',
     createdAt: new Date(),
     updatedAt: new Date(),
-    role: 'sales',
     active: true
   });
   
@@ -44,10 +43,8 @@ const SalesRepsPage = () => {
     code: salesReps.length > 0 ? salesReps.reduce((max, sr) => Math.max(max, sr.code || 0), 0) + 1 : 1,
     name: '',
     phone: '',
-    region: '',
     createdAt: new Date(),
     updatedAt: new Date(),
-    role: 'sales',
     active: true
   };
   
@@ -142,7 +139,6 @@ const SalesRepsPage = () => {
                 <TableHead className="w-[100px]">Código</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Telefone</TableHead>
-                <TableHead>Região</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -152,7 +148,6 @@ const SalesRepsPage = () => {
                   <TableCell className="font-medium">{salesRep.code}</TableCell>
                   <TableCell>{salesRep.name}</TableCell>
                   <TableCell>{salesRep.phone}</TableCell>
-                  <TableCell>{salesRep.region}</TableCell>
                   <TableCell className="text-right">
                     <Button 
                       variant="ghost"
@@ -192,7 +187,7 @@ const SalesRepsPage = () => {
               ))}
               {filteredSalesReps.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={4} className="text-center">
                     {searchTerm ? "Nenhum representante encontrado para essa busca." : "Nenhum representante de vendas encontrado."}
                   </TableCell>
                 </TableRow>

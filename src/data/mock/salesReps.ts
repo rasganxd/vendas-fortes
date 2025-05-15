@@ -11,8 +11,6 @@ export const mockSalesReps: SalesRep[] = [
     phone: '(11) 98765-4321',
     createdAt: currentDate,
     updatedAt: currentDate,
-    role: 'admin',
-    region: 'Zona Sul',
     active: true
   },
   {
@@ -22,8 +20,6 @@ export const mockSalesReps: SalesRep[] = [
     phone: '(11) 98765-4322',
     createdAt: currentDate,
     updatedAt: currentDate,
-    role: 'sales',
-    region: 'Zona Norte',
     active: true
   },
   {
@@ -33,8 +29,6 @@ export const mockSalesReps: SalesRep[] = [
     phone: '(11) 98765-4323',
     createdAt: currentDate,
     updatedAt: currentDate,
-    role: 'manager',
-    region: 'Zona Leste',
     active: true
   },
   {
@@ -44,8 +38,6 @@ export const mockSalesReps: SalesRep[] = [
     phone: '(11) 98765-4324',
     createdAt: currentDate,
     updatedAt: currentDate,
-    role: 'driver',
-    region: 'Zona Oeste',
     active: true
   }
 ];

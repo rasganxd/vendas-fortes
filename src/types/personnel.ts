@@ -4,8 +4,6 @@ export interface SalesRep {
   code: number;
   name: string;
   phone: string;
-  region: string;
-  role: string;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -15,8 +13,6 @@ export type SalesRepFormValues = {
   code: number;
   name: string;
   phone: string;
-  region: string;
-  role: string;
   active: boolean;
 };
 
