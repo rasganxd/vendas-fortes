@@ -46,3 +46,10 @@ export const customerService = {
     return customerLocalService.getByCode(code);
   }
 };
+
+/**
+ * Export getCustomerByCode function for backward compatibility
+ */
+export const getCustomerByCode = async (code: number): Promise<Customer | null> => {
+  return customerLocalService.getByCode(code);
+};

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
@@ -42,6 +43,15 @@ export const useOrders = () => {
 
     fetchOrders();
   }, []);
+
+  const getOrderById = async (id: string): Promise<Order | null> => {
+    try {
+      return await orderLocalService.getById(id);
+    } catch (error) {
+      console.error(`Error getting order by ID ${id}:`, error);
+      return null;
+    }
+  };
 
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
@@ -110,6 +120,7 @@ export const useOrders = () => {
     updateOrder,
     deleteOrder,
     isLoading,
-    setOrders
+    setOrders,
+    getOrderById
   };
 };

@@ -84,34 +84,7 @@ export const useCustomers = () => {
     };
   }, []);
   
-  // Set up Realtime subscription
-  useEffect(() => {
-    console.log("Setting up Realtime subscription for customers table");
-    
-    const channel = supabase
-      .channel('customer-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'customers'
-        },
-        (payload) => {
-          console.log("Realtime customer change detected:", payload);
-          // Refresh customers when changes are detected
-          refreshCustomers();
-        }
-      )
-      .subscribe((status) => {
-        console.log("Realtime subscription status for customers:", status);
-      });
-      
-    return () => {
-      console.log("Cleaning up Realtime subscription for customers");
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  // No more Supabase realtime subscription as we're using local storage
   
   useEffect(() => {
     const fetchCustomers = async () => {

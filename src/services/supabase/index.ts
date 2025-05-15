@@ -1,16 +1,11 @@
 
-// Core services
-export * from './core';
-
-// Individual services
 export * from './customerService';
-export * from './loadService';
 export * from './orderService';
 export * from './productService';
 export * from './salesRepService';
-export * from './syncService';
-export * from './paymentService';
-export * from './orderItemService';
+export * from './productBrandService';
+export * from './productCategoryService';
+export * from './productGroupService';
 
-// Special export for loadOrderService
-export { loadOrderService } from './loadOrderService';
+// Re-export services from the local storage
+export * from '../local/index';

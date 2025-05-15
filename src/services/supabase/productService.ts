@@ -11,12 +11,12 @@ export const productService = {
   getAll: async (): Promise<Product[]> => {
     return productLocalService.getAll();
   },
-  
+
   // Get product by ID
   getById: async (id: string): Promise<Product | null> => {
     return productLocalService.getById(id);
   },
-  
+
   // Add product
   add: async (product: Omit<Product, 'id'>): Promise<string> => {
     const productWithDates = {
@@ -26,7 +26,7 @@ export const productService = {
     };
     return productLocalService.add(productWithDates);
   },
-  
+
   // Update product
   update: async (id: string, product: Partial<Product>): Promise<void> => {
     const updateData = {
@@ -35,10 +35,15 @@ export const productService = {
     };
     return productLocalService.update(id, updateData);
   },
-  
+
   // Delete product
   delete: async (id: string): Promise<void> => {
     return productLocalService.delete(id);
+  },
+
+  // Get product by code
+  getByCode: async (code: number): Promise<Product | null> => {
+    return productLocalService.getByCode(code);
   }
 };
 
@@ -49,14 +54,14 @@ export const productService = {
  */
 export const createBulkProducts = async (products: Omit<Product, 'id'>[]): Promise<string[]> => {
   try {
-    console.log(`Creating ${products.length} products in bulk`);
-    const productsWithDates = products.map(product => ({
-      ...product,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }));
+    const results: string[] = [];
     
-    return productLocalService.createBulk(productsWithDates);
+    for (const product of products) {
+      const id = await productService.add(product);
+      results.push(id);
+    }
+    
+    return results;
   } catch (error) {
     console.error("Error creating bulk products:", error);
     throw error;

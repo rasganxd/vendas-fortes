@@ -1,6 +1,9 @@
 
+import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/use-toast';
 import { productLocalService } from '@/services/local/productLocalService';
 import { Product } from '@/types';
+import { productService } from '@/services/supabase/productService';
 
 // Cache key for localStorage
 const PRODUCTS_CACHE_KEY = 'app_products_cache';
