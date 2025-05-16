@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Plus, ClockIcon } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { useCustomers } from '@/hooks/useCustomers';
 import { Customer } from '@/types';
@@ -21,19 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 
 // Componentes importados
 import CustomersTable from '@/components/customers/CustomersTable';
 import EditCustomerForm from '@/components/customers/EditCustomerForm';
 import NewCustomerForm from '@/components/customers/NewCustomerForm';
 import CustomerDetails from '@/components/customers/CustomerDetails';
-import BulkCustomerImport from '@/components/customers/BulkCustomerImport';
 
 const Customers = () => {
   const { customers, addCustomer, updateCustomer, deleteCustomer, generateNextCode } = useCustomers();
@@ -44,8 +37,6 @@ const Customers = () => {
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string>('name');
-  const [isImporting, setIsImporting] = useState(false);
-  const [activeTab, setActiveTab] = useState("list");
   
   const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
@@ -86,29 +77,6 @@ const Customers = () => {
     setIsNewCustomerDialogOpen(true);
   };
 
-  const handleBulkImport = async (customersData: Omit<Customer, 'id'>[]) => {
-    setIsImporting(true);
-    try {
-      const results: string[] = [];
-      
-      // Import customers one by one to ensure proper error handling
-      for (const customerData of customersData) {
-        try {
-          const id = await addCustomer(customerData);
-          if (id) {
-            results.push(id);
-          }
-        } catch (error) {
-          console.error("Error importing customer:", customerData, error);
-        }
-      }
-      
-      return results;
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
   // Filter customers based on search term
   const filteredCustomers = customers.filter(customer => 
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,70 +114,49 @@ const Customers = () => {
       title="Clientes" 
       subtitle="Gerencie seus clientes e suas informações"
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList>
-          <TabsTrigger value="list">Lista de Clientes</TabsTrigger>
-          <TabsTrigger value="import">Importação</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="list">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-            <div className="relative w-full sm:w-64 md:w-80">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                type="text"
-                placeholder="Buscar clientes..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Select onValueChange={setSortBy} defaultValue={sortBy}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Ordenar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Nome</SelectItem>
-                  <SelectItem value="code">Código</SelectItem>
-                  <SelectItem value="salesRep">Vendedor</SelectItem>
-                  <SelectItem value="visitFrequency">
-                    <div className="flex items-center">
-                      <ClockIcon className="mr-2 h-4 w-4" />
-                      Frequência de Visita
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button 
-                className="bg-sales-800 hover:bg-sales-700"
-                onClick={handleNewCustomer}
-              >
-                <Plus size={16} className="mr-2" />
-                Adicionar Cliente
-              </Button>
-            </div>
-          </div>
-
-          <Card className="overflow-hidden">
-            <CustomersTable 
-              customers={sortedCustomers}
-              onView={handleViewCustomerDetails}
-              onEdit={handleEditCustomer}
-              onDelete={handleDeleteCustomer}
-            />
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="import">
-          <BulkCustomerImport 
-            onImportCustomers={handleBulkImport}
-            isImporting={isImporting}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <div className="relative w-full sm:w-64 md:w-80">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="text"
+            placeholder="Buscar clientes..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </TabsContent>
-      </Tabs>
+        </div>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Select onValueChange={setSortBy} defaultValue={sortBy}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Nome</SelectItem>
+              <SelectItem value="code">Código</SelectItem>
+              <SelectItem value="salesRep">Vendedor</SelectItem>
+              <SelectItem value="visitFrequency">Frequência de Visita</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button 
+            className="bg-sales-800 hover:bg-sales-700"
+            onClick={handleNewCustomer}
+          >
+            <Plus size={16} className="mr-2" />
+            Adicionar Cliente
+          </Button>
+        </div>
+      </div>
+
+      <Card className="overflow-hidden">
+        <CustomersTable 
+          customers={sortedCustomers}
+          onView={handleViewCustomerDetails}
+          onEdit={handleEditCustomer}
+          onDelete={handleDeleteCustomer}
+        />
+      </Card>
 
       {/* Dialog para editar cliente */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
