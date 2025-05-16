@@ -28,30 +28,34 @@ interface PrintOrdersDialogProps {
 const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
   isOpen,
   onOpenChange,
-  orders,
+  orders = [], // Default to empty array
   customers = [], // Default to empty array
-  selectedOrderIds,
+  selectedOrderIds = [], // Default to empty array
   setSelectedOrderIds = () => {}, // Default no-op function
   filteredOrders = [], // Default to empty array
-  formatCurrency = (value) => `R$ ${value?.toFixed(2) || '0.00'}` // Default formatter
+  formatCurrency = (value) => `R$ ${value?.toFixed(2) || '0.00'}`, // Default formatter
+  clearSelection = () => {} // Default no-op function
 }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [ordersToPrint, setOrdersToPrint] = useState<Order[]>([]);
   
-  // Ensure customers array is valid
-  const validCustomers = customers.filter(customer => customer && customer.id);
+  // Ensure arrays are valid
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const safeFilteredOrders = Array.isArray(filteredOrders) ? filteredOrders : [];
+  const safeCustomers = Array.isArray(customers) ? customers : [];
+  const validCustomers = safeCustomers.filter(customer => customer && customer.id);
 
   useEffect(() => {
     if (selectedOrderIds.length > 0) {
-      setOrdersToPrint(orders.filter(order => selectedOrderIds.includes(order.id)));
+      setOrdersToPrint(safeOrders.filter(order => selectedOrderIds.includes(order.id)));
     } else {
       // Use the filteredOrders safely here
       const filtered = selectedCustomerId === "all" 
-        ? filteredOrders 
-        : filteredOrders.filter(order => order.customerId === selectedCustomerId);
+        ? safeFilteredOrders 
+        : safeFilteredOrders.filter(order => order.customerId === selectedCustomerId);
       setOrdersToPrint(filtered);
     }
-  }, [selectedOrderIds, selectedCustomerId, orders, filteredOrders]);
+  }, [selectedOrderIds, selectedCustomerId, safeOrders, safeFilteredOrders]);
   
   // Function to print in a new window
   const handlePrintInNewWindow = () => {
@@ -160,7 +164,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           <div id="print-content">
             <div class="print-orders-container">
             ${ordersToPrint.map((order, index) => {
-              const orderCustomer = customers.find(c => c.id === order.customerId);
+              const orderCustomer = validCustomers.find(c => c.id === order.customerId);
               return `
                 <div class="print-order">
                   <div style="text-align: center; margin-bottom: 0.15cm;">
@@ -198,14 +202,14 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
                         </tr>
                       </thead>
                       <tbody>
-                        ${order.items.map(item => `
+                        ${order.items && Array.isArray(order.items) ? order.items.map(item => `
                           <tr>
                             <td style="border: 1px solid #ddd; padding: 3px;">${item.productName}</td>
                             <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${item.quantity}</td>
                             <td style="border: 1px solid #ddd; padding: 3px; text-align: right;">${formatCurrency(item.unitPrice)}</td>
                             <td style="border: 1px solid #ddd; padding: 3px; text-align: right;">${formatCurrency(item.total)}</td>
                           </tr>
-                        `).join('')}
+                        `).join('') : ''}
                       </tbody>
                     </table>
                   </div>

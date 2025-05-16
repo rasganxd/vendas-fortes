@@ -29,14 +29,14 @@ interface OrdersTableProps {
 }
 
 const OrdersTable: React.FC<OrdersTableProps> = ({
-  filteredOrders,
-  selectedOrderIds,
-  handleToggleOrderSelection,
-  handleSelectAllOrders,
-  handleViewOrder,
-  handleEditOrder,
-  handleDeleteOrder,
-  formatCurrency,
+  filteredOrders = [],  // Provide default empty array
+  selectedOrderIds = [],  // Provide default empty array
+  handleToggleOrderSelection = () => {},  // Default no-op function
+  handleSelectAllOrders = () => {},  // Default no-op function
+  handleViewOrder = () => {},  // Default no-op function
+  handleEditOrder = () => {},  // Default no-op function
+  handleDeleteOrder = () => {},  // Default no-op function
+  formatCurrency = (value) => `R$ ${value?.toFixed(2) || '0.00'}`,  // Default formatter
 }) => {
   const navigate = useNavigate();
   
@@ -57,8 +57,21 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   const handleEdit = (order: Order, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/pedidos/novo?id=${order.id}`);
+    handleEditOrder(order);
   };
+
+  // Guard against undefined array
+  if (!filteredOrders || !Array.isArray(filteredOrders)) {
+    return (
+      <div className="relative border rounded-md">
+        <TableRow>
+          <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+            Nenhum pedido encontrado
+          </TableCell>
+        </TableRow>
+      </div>
+    );
+  }
 
   return (
     <div className="relative border rounded-md">

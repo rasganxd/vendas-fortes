@@ -56,6 +56,12 @@ const Orders = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  // Handle edit order
+  const handleEditOrder = (order: Order) => {
+    console.log("Orders Page: Editing order:", order.id);
+    navigate(`/pedidos/novo?id=${order.id}`);
+  };
+
   // Handle print orders
   const handlePrintOrders = () => {
     console.log("Orders Page: Opening print dialog for", selectedOrderIds.length, "orders");
@@ -63,12 +69,22 @@ const Orders = () => {
   };
 
   // Handle order selection for printing
-  const handleSelectOrder = (orderId: string, isSelected: boolean) => {
-    console.log("Orders Page: Order selection changed:", orderId, isSelected);
-    if (isSelected) {
-      setSelectedOrderIds(prev => [...prev, orderId]);
+  const handleToggleOrderSelection = (orderId: string) => {
+    console.log("Orders Page: Order selection changed:", orderId);
+    setSelectedOrderIds(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId) 
+        : [...prev, orderId]
+    );
+  };
+
+  // Handle select/deselect all orders
+  const handleSelectAllOrders = () => {
+    console.log("Orders Page: Select/deselect all orders");
+    if (filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length) {
+      setSelectedOrderIds([]);
     } else {
-      setSelectedOrderIds(prev => prev.filter(id => id !== orderId));
+      setSelectedOrderIds(filteredOrders.map(order => order.id));
     }
   };
 
@@ -215,16 +231,14 @@ const Orders = () => {
             </div>
           ) : orders && orders.length > 0 ? (
             <OrdersTable 
-              orders={sortedOrders}
-              onViewOrder={handleViewOrder}
-              onDeleteOrder={handleDeleteOrder}
-              onCopyCode={handleCopyOrderCode}
-              onSortChange={handleSortChange}
-              sortField={sortField}
-              sortDirection={sortDirection}
-              getSortIcon={getSortIcon}
+              filteredOrders={sortedOrders}
               selectedOrderIds={selectedOrderIds}
-              onSelectOrder={handleSelectOrder}
+              handleToggleOrderSelection={handleToggleOrderSelection}
+              handleSelectAllOrders={handleSelectAllOrders}
+              handleViewOrder={handleViewOrder}
+              handleEditOrder={handleEditOrder}
+              handleDeleteOrder={handleDeleteOrder}
+              formatCurrency={formatCurrency}
             />
           ) : (
             <div className="p-8 text-center">
@@ -275,7 +289,6 @@ const Orders = () => {
         filteredOrders={filteredOrders}
         formatCurrency={formatCurrency}
         setSelectedOrderIds={setSelectedOrderIds}
-        clearSelection={() => setSelectedOrderIds([])}
       />
     </PageLayout>
   );
