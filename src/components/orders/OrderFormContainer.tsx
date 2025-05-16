@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -11,7 +12,7 @@ import RecentPurchasesDialog from './RecentPurchasesDialog';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function OrderFormContainer() {
-  const { customers, salesReps, products, orders } = useAppContext();
+  const { customers, salesReps, products, orders, connectionStatus } = useAppContext();
   const { addOrder, getOrderById, updateOrder } = useOrders();
   const { paymentTables } = usePaymentTables();
   const { createAutomaticPaymentRecord } = usePayments();
@@ -36,6 +37,10 @@ export default function OrderFormContainer() {
   useEffect(() => {
     console.log("Available payment tables:", paymentTables);
   }, [paymentTables]);
+
+  useEffect(() => {
+    console.log("Current connection status:", connectionStatus);
+  }, [connectionStatus]);
 
   useEffect(() => {
     const loadOrder = async (orderId: string) => {
@@ -260,6 +265,7 @@ export default function OrderFormContainer() {
     try {
       setIsSubmitting(true);
       console.log("Starting order submission process...");
+      console.log("Current connection status:", connectionStatus);
       console.log("Current order items:", orderItems);
       
       // Ensure all order items have consistent fields and preserved IDs before submission
@@ -306,11 +312,16 @@ export default function OrderFormContainer() {
         createdAt: isEditMode && originalOrder ? originalOrder.createdAt : new Date(),
         updatedAt: new Date(),
         status: isEditMode && originalOrder ? originalOrder.status : "draft" as Order["status"],
+        deliveryAddress: isEditMode && originalOrder ? originalOrder.deliveryAddress : "",
+        deliveryCity: isEditMode && originalOrder ? originalOrder.deliveryCity : "",
+        deliveryState: isEditMode && originalOrder ? originalOrder.deliveryState : "",
+        deliveryZip: isEditMode && originalOrder ? originalOrder.deliveryZip : "",
+        archived: isEditMode && originalOrder ? originalOrder.archived : false,
       };
       
       console.log("Saving order with data:", orderData);
       
-      let orderId;
+      let orderId = "";
       
       if (isEditMode && currentOrderId) {
         console.log("Updating existing order:", currentOrderId);
@@ -330,8 +341,9 @@ export default function OrderFormContainer() {
         }
 
         // Create automatic payment record if needed (for promissory note tables)
-        const isPromissoryNote = selectedTable?.name?.toLowerCase().includes('promissoria');
+        const isPromissoryNote = selectedTable?.type === 'promissoria';
         if (isPromissoryNote && orderId) {
+          console.log("Creating automatic payment record for promissory note");
           await createAutomaticPaymentRecord({
             ...orderData,
             id: orderId,
@@ -350,8 +362,9 @@ export default function OrderFormContainer() {
           });
           
           // Create automatic payment record if needed (for promissory note tables)
-          const isPromissoryNote = selectedTable?.name?.toLowerCase().includes('promissoria');
+          const isPromissoryNote = selectedTable?.type === 'promissoria';
           if (isPromissoryNote) {
+            console.log("Creating automatic payment record for promissory note");
             await createAutomaticPaymentRecord({
               ...orderData,
               id: orderId,
@@ -379,6 +392,77 @@ export default function OrderFormContainer() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    setSelectedCustomer(null);
+    setSelectedSalesRep(null);
+    setOrderItems([]);
+    setSelectedPaymentTable('default-table');
+    setIsEditMode(false);
+    setCurrentOrderId(null);
+    setCustomerInputValue('');
+    setSalesRepInputValue('');
+    setOriginalOrder(null);
+  };
+
+  const calculateTotal = () => {
+    return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
+  };
+
+  const handleAddItem = (product: Product, quantity: number, price: number) => {
+    console.log("Adding item to order:", product, quantity, price);
+    
+    // Check if product already exists in order
+    const existingItem = orderItems.find(item => item.productId === product.id);
+    
+    if (existingItem) {
+      console.log("Updating existing item:", existingItem);
+      const updatedItems = orderItems.map(item =>
+        item.productId === product.id ? 
+          { 
+            ...item, 
+            quantity: (item.quantity || 0) + quantity,
+            unitPrice: price,  // Update the unit price to the new one
+            price: price,      // Ensure price field is also set for consistency
+            total: price * ((item.quantity || 0) + quantity)
+          } : item
+      );
+      setOrderItems(updatedItems);
+      console.log("Updated order items:", updatedItems);
+    } else {
+      // IMPROVED: Create new item with unique identifier
+      const newItem: OrderItem = {
+        id: uuidv4(), // Generate a unique ID for each new item
+        productId: product.id,
+        productName: product.name,
+        productCode: product.code || 0,
+        quantity: quantity,
+        price: price,
+        unitPrice: price,
+        discount: 0,
+        total: price * quantity
+      };
+      
+      console.log("Adding new item with generated ID:", newItem);
+      setOrderItems(prevItems => [...prevItems, newItem]);
+    }
+    
+    toast({
+      title: "Item adicionado",
+      description: `${quantity}x ${product.name} adicionado ao pedido`
+    });
+  };
+
+  const handleRemoveItem = (productId: string) => {
+    console.log("Removing item with productId:", productId);
+    setOrderItems(items => items.filter(item => item.productId !== productId));
+    console.log("Items after removal:", orderItems.filter(item => item.productId !== productId));
+    
+    toast({
+      title: "Item removido",
+      description: "Item removido do pedido"
+    });
   };
 
   const getRecentCustomerOrders = () => {
@@ -432,6 +516,7 @@ export default function OrderFormContainer() {
           salesRepInputValue={salesRepInputValue}
           handleAddItem={handleAddItem}
           handleRemoveItem={handleRemoveItem}
+          connectionStatus={connectionStatus}
         />
       )}
 

@@ -2,13 +2,15 @@
 import React, { useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Customer, SalesRep, PaymentTable, Product, OrderItem } from '@/types';
+import { ConnectionStatus } from '@/context/AppContextTypes';
 import CustomerSearchInput from './CustomerSearchInput';
 import SalesRepSearchInput from './SalesRepSearchInput';
 import PaymentOptionsInput from './PaymentOptionsInput';
 import ProductSearchInput from './ProductSearchInput';
 import OrderItemsTable from './OrderItemsTable';
 import { Button } from "@/components/ui/button";
-import { Save, FileText, ClipboardList } from "lucide-react";
+import { Save, FileText, ClipboardList, Wifi, WifiOff } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface OrderFormProps {
   customers: Customer[];
@@ -31,6 +33,7 @@ interface OrderFormProps {
   salesRepInputValue?: string;
   handleAddItem: (product: Product, quantity: number, price: number) => void;
   handleRemoveItem: (productId: string) => void;
+  connectionStatus?: ConnectionStatus;
 }
 
 export default function OrderForm({
@@ -53,7 +56,8 @@ export default function OrderForm({
   customerInputValue,
   salesRepInputValue = '',
   handleAddItem,
-  handleRemoveItem
+  handleRemoveItem,
+  connectionStatus = 'online'
 }: OrderFormProps) {
   const salesRepInputRef = useRef<HTMLInputElement>(null);
   const customerInputRef = useRef<HTMLInputElement>(null);
@@ -64,11 +68,44 @@ export default function OrderForm({
     return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
   };
 
+  // Helper function to get color class based on connection status
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case 'online': return 'bg-green-500 hover:bg-green-600';
+      case 'offline': return 'bg-amber-500 hover:bg-amber-600';
+      case 'connecting': return 'bg-blue-500 hover:bg-blue-600';
+      case 'error': return 'bg-red-500 hover:bg-red-600';
+      default: return 'bg-gray-500 hover:bg-gray-600';
+    }
+  };
+
+  const getConnectionStatusBadge = () => {
+    const icon = connectionStatus === 'online' ? <Wifi size={14} /> : <WifiOff size={14} />;
+    const variant = connectionStatus === 'online' ? 'success' : 'warning';
+    const text = connectionStatus === 'online' ? 'Online' : 
+                 connectionStatus === 'offline' ? 'Offline' : 
+                 connectionStatus === 'connecting' ? 'Conectando' : 'Erro';
+    
+    return (
+      <Badge variant={variant as any} className="ml-2 flex items-center gap-1">
+        {icon}
+        <span>{text}</span>
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <Card className="shadow-md border-gray-200">
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 gap-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium flex items-center">
+                {isEditMode ? 'Editar Pedido' : 'Novo Pedido'}
+                {getConnectionStatusBadge()}
+              </h3>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               <div className="relative">
                 <SalesRepSearchInput
@@ -124,7 +161,7 @@ export default function OrderForm({
                 <Button 
                   onClick={handleCreateOrder} 
                   disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
-                  className="w-48 h-11 bg-sales-800 hover:bg-sales-700 text-white"
+                  className={`w-48 h-11 text-white ${getConnectionStatusColor()}`}
                 >
                   <Save size={18} className="mr-2" />
                   {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}

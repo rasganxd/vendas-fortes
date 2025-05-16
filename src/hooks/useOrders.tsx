@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { orderService } from '@/services/firebase/orderService';
+import { useConnection } from '@/context/providers/ConnectionProvider';
 
 // Load orders directly from Firebase
 export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {
@@ -21,6 +22,7 @@ export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { connectionStatus } = useConnection();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -65,6 +67,16 @@ export const useOrders = () => {
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
       setIsProcessing(true);
+      console.log("Connection status when adding order:", connectionStatus);
+      
+      // Show warning if offline but proceed with adding order to local storage
+      if (connectionStatus === 'offline') {
+        toast({
+          title: "Modo offline",
+          description: "O pedido será sincronizado quando estiver online",
+          variant: "warning"
+        });
+      }
       
       // Generate a new order code if not provided
       if (!order.code) {
@@ -75,6 +87,7 @@ export const useOrders = () => {
       const id = await orderService.add(order);
       const newOrder = { ...order, id } as Order;
       setOrders(prev => [...prev, newOrder]);
+      
       toast({
         title: "Pedido adicionado",
         description: "Pedido adicionado com sucesso!"
@@ -84,7 +97,7 @@ export const useOrders = () => {
       console.error("Error adding order:", error);
       toast({
         title: "Erro ao adicionar pedido",
-        description: "Houve um problema ao adicionar o pedido.",
+        description: `Houve um problema ao adicionar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive"
       });
       return "";
@@ -96,11 +109,23 @@ export const useOrders = () => {
   const updateOrder = async (id: string, order: Partial<Order>) => {
     try {
       setIsProcessing(true);
+      console.log("Connection status when updating order:", connectionStatus);
+      
+      // Show warning if offline but proceed with updating order in local storage
+      if (connectionStatus === 'offline') {
+        toast({
+          title: "Modo offline",
+          description: "As alterações serão sincronizadas quando estiver online",
+          variant: "warning"
+        });
+      }
+      
       await orderService.update(id, order);
       const updatedOrders = orders.map(o =>
         o.id === id ? { ...o, ...order } : o
       );
       setOrders(updatedOrders);
+      
       toast({
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
@@ -110,9 +135,10 @@ export const useOrders = () => {
       console.error("Error updating order:", error);
       toast({
         title: "Erro ao atualizar pedido",
-        description: "Houve um problema ao atualizar o pedido.",
+        description: `Houve um problema ao atualizar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive"
       });
+      return "";
     } finally {
       setIsProcessing(false);
     }
