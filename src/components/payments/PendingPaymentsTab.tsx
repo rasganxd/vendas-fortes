@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Order, PaymentTable } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -124,10 +125,7 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
       });
 
       handleClosePaymentDialog(orderId);
-
-      toast("Pagamento registrado", {
-        description: "O pagamento foi registrado com sucesso!"
-      });
+      // Toast notification removed from here as it's already in usePayments.tsx
     } catch (error) {
       console.error("Erro ao registrar pagamento:", error);
       toast.error("Erro", {
