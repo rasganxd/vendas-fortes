@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { usePayments } from '@/hooks/usePayments';
 import { useNavigate } from 'react-router-dom';
 
@@ -96,8 +96,7 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
     const { amount, method } = paymentValue;
     
     if (!amount || amount <= 0) {
-      toast({
-        title: "Erro de validação",
+      toast("Erro de validação", {
         description: "O valor do pagamento deve ser maior que zero.",
         variant: "destructive"
       });
@@ -106,8 +105,7 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
 
     const pendingAmount = order.total - order.paid;
     if (amount > pendingAmount) {
-      toast({
-        title: "Erro de validação",
+      toast("Erro de validação", {
         description: "O valor do pagamento não pode exceder o valor pendente.",
         variant: "destructive"
       });
@@ -130,14 +128,12 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
 
       handleClosePaymentDialog(orderId);
 
-      toast({
-        title: "Pagamento registrado",
+      toast("Pagamento registrado", {
         description: "O pagamento foi registrado com sucesso!"
       });
     } catch (error) {
       console.error("Erro ao registrar pagamento:", error);
-      toast({
-        title: "Erro",
+      toast("Erro", {
         description: "Houve um problema ao registrar o pagamento.",
         variant: "destructive"
       });

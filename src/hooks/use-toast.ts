@@ -12,14 +12,41 @@ export interface ToastProps {
 
 export type ToastActionElement = React.ReactElement;
 
-// Create a wrapper function that matches Sonner's API
-export const toast = (message: string, options?: { description?: React.ReactNode }) => {
-  return sonnerToast(message, options);
+// Create a wrapper function that handles both formats
+// It can accept either a string or the legacy object format
+export const toast = (
+  messageOrProps: string | ToastProps, 
+  options?: { description?: React.ReactNode }
+) => {
+  // If it's a string, use it directly with sonner
+  if (typeof messageOrProps === 'string') {
+    return sonnerToast(messageOrProps, options);
+  }
+  
+  // If it's an object with the old format, extract title and description
+  const { title, description, variant } = messageOrProps;
+  
+  // Use the appropriate sonner method based on variant
+  if (variant === "destructive") {
+    return sonnerToast.error(title as string, { description });
+  }
+  
+  return sonnerToast(title as string, { description });
 };
 
 // Add error shorthand for destructive variant
-toast.error = (message: string, options?: { description?: React.ReactNode }) => {
-  return sonnerToast.error(message, options);
+toast.error = (
+  messageOrProps: string | ToastProps, 
+  options?: { description?: React.ReactNode }
+) => {
+  // If it's a string, use it directly with sonner's error method
+  if (typeof messageOrProps === 'string') {
+    return sonnerToast.error(messageOrProps, options);
+  }
+  
+  // If it's an object with the old format, extract title and description
+  const { title, description } = messageOrProps;
+  return sonnerToast.error(title as string, { description });
 };
 
 // Simple function to match the original toast API, but using Sonner

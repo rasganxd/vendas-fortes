@@ -1,5 +1,5 @@
 
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Starts a new month process in the application
@@ -14,8 +14,7 @@ export const startNewMonth = (createBackup: (name: string, description?: string)
     );
     
     if (!backupId) {
-      toast({
-        title: "Erro",
+      toast("Erro", {
         description: "Não foi possível criar backup antes de iniciar novo mês",
         variant: "destructive"
       });
@@ -25,14 +24,12 @@ export const startNewMonth = (createBackup: (name: string, description?: string)
     // Here would be code to reset monthly data, finalize reports, etc.
     // For now we just show a success message
     
-    toast({
-      title: "Novo mês iniciado",
+    toast("Novo mês iniciado", {
       description: "O sistema foi preparado para o novo mês"
     });
   } catch (error) {
     console.error("Error starting new month:", error);
-    toast({
-      title: "Erro",
+    toast("Erro", {
       description: "Houve um problema ao iniciar novo mês",
       variant: "destructive"
     });
