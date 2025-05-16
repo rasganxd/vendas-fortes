@@ -14,10 +14,12 @@ import PrintOrdersDialog from '@/components/orders/PrintOrdersDialog';
 import { toast } from 'sonner';
 import { useOrders } from '@/hooks/useOrders';
 import { useConnection } from '@/context/providers/ConnectionProvider';
+import { useCustomers } from '@/hooks/useCustomers';
 
 const Orders = () => {
   const navigate = useNavigate();
   const { orders, deleteOrder, isLoading } = useOrders();
+  const { customers } = useCustomers();
   const { connectionStatus } = useConnection();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -91,13 +93,18 @@ const Orders = () => {
     toast.success("Código copiado para a área de transferência");
   };
 
+  // Format currency helper function
+  const formatCurrency = (value: number | undefined) => {
+    return `R$ ${value?.toFixed(2) || '0.00'}`;
+  };
+
   // Filter orders based on search term and sort
   const filteredOrders = orders
     ? orders.filter(order => {
         const searchFields = [
           order.code?.toString() || '',
           order.customerName || '',
-          order.customerCode?.toString() || '',
+          order.customerId?.toString() || '',
           order.salesRepName || '',
           order.paymentMethod || '',
           order.status || ''
@@ -158,30 +165,29 @@ const Orders = () => {
     <PageLayout 
       title="Pedidos" 
       subtitle="Gerencie seus pedidos"
-      headerContent={
-        <div className="flex gap-2">
-          <Button 
-            onClick={handleNewOrder} 
-            variant="default" 
-            className="bg-sales-800 hover:bg-sales-700"
-          >
-            <Plus className="h-4 w-4 mr-2" /> Novo Pedido
-          </Button>
-          <Button
-            onClick={handlePrintOrders}
-            variant="outline"
-            disabled={selectedOrderIds.length === 0}
-          >
-            <Clipboard className="h-4 w-4 mr-2" /> Imprimir
-            {selectedOrderIds.length > 0 && (
-              <span className="ml-2 bg-sales-100 text-sales-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                {selectedOrderIds.length}
-              </span>
-            )}
-          </Button>
-        </div>
-      }
     >
+      <div className="flex gap-2 mb-4">
+        <Button 
+          onClick={handleNewOrder} 
+          variant="default" 
+          className="bg-sales-800 hover:bg-sales-700"
+        >
+          <Plus className="h-4 w-4 mr-2" /> Novo Pedido
+        </Button>
+        <Button
+          onClick={handlePrintOrders}
+          variant="outline"
+          disabled={selectedOrderIds.length === 0}
+        >
+          <Clipboard className="h-4 w-4 mr-2" /> Imprimir
+          {selectedOrderIds.length > 0 && (
+            <span className="ml-2 bg-sales-100 text-sales-700 rounded-full px-2 py-0.5 text-xs font-medium">
+              {selectedOrderIds.length}
+            </span>
+          )}
+        </Button>
+      </div>
+      
       <div className="flex flex-col sm:flex-row items-center mb-4 gap-2">
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -245,13 +251,13 @@ const Orders = () => {
         <>
           <OrderDetailDialog 
             order={selectedOrder}
-            open={isDetailDialogOpen}
+            isOpen={isDetailDialogOpen}
             onOpenChange={setIsDetailDialogOpen}
           />
           
           <DeleteOrderDialog
             order={selectedOrder}
-            open={isDeleteDialogOpen}
+            isOpen={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
             onConfirmDelete={() => {
               deleteOrder(selectedOrder.id);
@@ -261,10 +267,14 @@ const Orders = () => {
       )}
       
       <PrintOrdersDialog 
-        open={isPrintDialogOpen}
+        isOpen={isPrintDialogOpen}
         onOpenChange={setIsPrintDialogOpen}
         selectedOrderIds={selectedOrderIds}
         orders={orders || []}
+        customers={customers}
+        filteredOrders={filteredOrders}
+        formatCurrency={formatCurrency}
+        setSelectedOrderIds={setSelectedOrderIds}
         clearSelection={() => setSelectedOrderIds([])}
       />
     </PageLayout>

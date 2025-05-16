@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import CustomerSelect from './print/CustomerSelect';
 import PrintDialogActions from './print/PrintDialogActions';
@@ -18,22 +17,23 @@ interface PrintOrdersDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   orders: Order[];
-  customers: Customer[];
+  customers?: Customer[]; // Make optional
   selectedOrderIds: string[];
-  setSelectedOrderIds: (ids: string[]) => void;
-  filteredOrders: Order[];
-  formatCurrency: (value: number | undefined) => string;
+  setSelectedOrderIds?: (ids: string[]) => void; // Make optional
+  filteredOrders?: Order[]; // Make optional
+  formatCurrency?: (value: number | undefined) => string; // Make optional
+  clearSelection?: () => void; // Added optional clearSelection prop
 }
 
 const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
   isOpen,
   onOpenChange,
   orders,
-  customers,
+  customers = [], // Default to empty array
   selectedOrderIds,
-  setSelectedOrderIds,
-  filteredOrders,
-  formatCurrency
+  setSelectedOrderIds = () => {}, // Default no-op function
+  filteredOrders = [], // Default to empty array
+  formatCurrency = (value) => `R$ ${value?.toFixed(2) || '0.00'}` // Default formatter
 }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [ordersToPrint, setOrdersToPrint] = useState<Order[]>([]);
@@ -45,6 +45,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     if (selectedOrderIds.length > 0) {
       setOrdersToPrint(orders.filter(order => selectedOrderIds.includes(order.id)));
     } else {
+      // Use the filteredOrders safely here
       const filtered = selectedCustomerId === "all" 
         ? filteredOrders 
         : filteredOrders.filter(order => order.customerId === selectedCustomerId);
@@ -52,13 +53,13 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     }
   }, [selectedOrderIds, selectedCustomerId, orders, filteredOrders]);
   
-  // Função para imprimir em uma janela separada
+  // Function to print in a new window
   const handlePrintInNewWindow = () => {
-    // Cria uma nova janela
+    // Create a new window
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) return;
 
-    // Estilos CSS específicos para impressão
+    // CSS styles specific for printing
     const printStyles = `
       @media print {
         @page {
@@ -74,7 +75,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           print-color-adjust: exact;
         }
         
-        /* Layout vertical para pedidos um em cima do outro */
+        /* Vertical layout for orders one above the other */
         .print-orders-container {
           display: flex;
           flex-direction: column;
@@ -82,7 +83,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           gap: 0.5cm;
         }
         
-        /* Cada pedido ocupa seu próprio espaço, sem altura fixa para evitar cortes */
+        /* Each order takes its own space, no fixed height to avoid cuts */
         .print-order {
           width: 100%;
           page-break-inside: avoid;
@@ -95,12 +96,12 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           flex-direction: column;
         }
         
-        /* Forçar quebra de página a cada 2 pedidos */
+        /* Force page break every 2 orders */
         .print-order:nth-child(2n) {
           page-break-after: always;
         }
         
-        /* Estilos para tabelas mais compactos */
+        /* More compact styles for tables */
         .print-order table {
           width: 100%;
           border-collapse: collapse;
@@ -131,23 +132,23 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           line-height: 1.3;
         }
         
-        /* Reduzir espaçamento entre seções */
+        /* Reduce spacing between sections */
         .print-order .section {
           margin-bottom: 0.15cm;
         }
         
-        /* Esconder elementos não imprimíveis */
+        /* Hide non-printable elements */
         .no-print, button, .no-print {
           display: none !important;
         }
         
-        /* Garantir que o conteúdo fique visível durante a impressão */
+        /* Ensure content is visible during printing */
         .hidden.print\\:block {
           display: block !important;
         }
       }`;
 
-    // Escreve o conteúdo HTML na nova janela
+    // Write HTML content to the new window
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -231,12 +232,12 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             </div>
           </div>
           <script>
-            // Aciona a impressão quando o conteúdo estiver carregado
+            // Trigger printing when content is loaded
             window.onload = function() {
-              // Adiciona um pequeno delay para garantir que o conteúdo seja renderizado
+              // Add a small delay to ensure content is rendered
               setTimeout(() => {
                 window.print();
-                // Fecha a janela quando a impressão for cancelada ou finalizada
+                // Close the window when printing is canceled or finished
                 setTimeout(() => {
                   window.close();
                 }, 2000);
