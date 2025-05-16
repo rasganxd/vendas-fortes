@@ -14,9 +14,8 @@ export const startNewMonth = (createBackup: (name: string, description?: string)
     );
     
     if (!backupId) {
-      toast("Erro", {
-        description: "Não foi possível criar backup antes de iniciar novo mês",
-        variant: "destructive"
+      toast.error("Erro", {
+        description: "Não foi possível criar backup antes de iniciar novo mês"
       });
       return;
     }
@@ -29,9 +28,8 @@ export const startNewMonth = (createBackup: (name: string, description?: string)
     });
   } catch (error) {
     console.error("Error starting new month:", error);
-    toast("Erro", {
-      description: "Houve um problema ao iniciar novo mês",
-      variant: "destructive"
+    toast.error("Erro", {
+      description: "Houve um problema ao iniciar novo mês"
     });
   }
 };

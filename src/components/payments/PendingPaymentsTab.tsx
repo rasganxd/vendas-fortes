@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Order, PaymentTable } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -96,18 +95,16 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
     const { amount, method } = paymentValue;
     
     if (!amount || amount <= 0) {
-      toast("Erro de validação", {
-        description: "O valor do pagamento deve ser maior que zero.",
-        variant: "destructive"
+      toast.error("Erro de validação", {
+        description: "O valor do pagamento deve ser maior que zero."
       });
       return;
     }
 
     const pendingAmount = order.total - order.paid;
     if (amount > pendingAmount) {
-      toast("Erro de validação", {
-        description: "O valor do pagamento não pode exceder o valor pendente.",
-        variant: "destructive"
+      toast.error("Erro de validação", {
+        description: "O valor do pagamento não pode exceder o valor pendente."
       });
       return;
     }
@@ -133,9 +130,8 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
       });
     } catch (error) {
       console.error("Erro ao registrar pagamento:", error);
-      toast("Erro", {
-        description: "Houve um problema ao registrar o pagamento.",
-        variant: "destructive"
+      toast.error("Erro", {
+        description: "Houve um problema ao registrar o pagamento."
       });
     }
   };

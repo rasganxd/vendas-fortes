@@ -7,7 +7,7 @@ export interface ToastProps {
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactElement;
-  variant?: "default" | "destructive";
+  variant?: "default" | "destructive" | "warning";
 }
 
 export type ToastActionElement = React.ReactElement;
@@ -16,11 +16,16 @@ export type ToastActionElement = React.ReactElement;
 // It can accept either a string or the legacy object format
 export const toast = (
   messageOrProps: string | ToastProps, 
-  options?: { description?: React.ReactNode }
+  options?: { description?: React.ReactNode; variant?: "default" | "destructive" | "warning" }
 ) => {
   // If it's a string, use it directly with sonner
   if (typeof messageOrProps === 'string') {
-    return sonnerToast(messageOrProps, options);
+    if (options?.variant === "destructive") {
+      return sonnerToast.error(messageOrProps, { description: options?.description });
+    } else if (options?.variant === "warning") {
+      return sonnerToast.warning(messageOrProps, { description: options?.description });
+    }
+    return sonnerToast(messageOrProps, { description: options?.description });
   }
   
   // If it's an object with the old format, extract title and description
@@ -29,6 +34,8 @@ export const toast = (
   // Use the appropriate sonner method based on variant
   if (variant === "destructive") {
     return sonnerToast.error(title as string, { description });
+  } else if (variant === "warning") {
+    return sonnerToast.warning(title as string, { description });
   }
   
   return sonnerToast(title as string, { description });
@@ -49,6 +56,21 @@ toast.error = (
   return sonnerToast.error(title as string, { description });
 };
 
+// Add warning shorthand
+toast.warning = (
+  messageOrProps: string | ToastProps, 
+  options?: { description?: React.ReactNode }
+) => {
+  // If it's a string, use it directly with sonner's warning method
+  if (typeof messageOrProps === 'string') {
+    return sonnerToast.warning(messageOrProps, options);
+  }
+  
+  // If it's an object with the old format, extract title and description
+  const { title, description } = messageOrProps;
+  return sonnerToast.warning(title as string, { description });
+};
+
 // Simple function to match the original toast API, but using Sonner
 export function useToast() {
   return {
@@ -57,6 +79,8 @@ export function useToast() {
       
       if (variant === "destructive") {
         return sonnerToast.error(title as string, { description });
+      } else if (variant === "warning") {
+        return sonnerToast.warning(title as string, { description });
       }
       
       return sonnerToast(title as string, { description });
