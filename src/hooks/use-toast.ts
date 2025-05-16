@@ -1,6 +1,6 @@
 
 // We're standardizing on using Sonner for toasts
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 
 // Type definitions to maintain compatibility with existing code
 export interface ToastProps {
@@ -12,6 +12,9 @@ export interface ToastProps {
 
 export type ToastActionElement = React.ReactElement;
 
+// Export the original Sonner toast function
+export const toast = sonnerToast;
+
 // Simple function to match the original toast API, but using Sonner
 export function useToast() {
   return {
@@ -19,10 +22,10 @@ export function useToast() {
       const { title, description, variant } = props;
       
       if (variant === "destructive") {
-        return toast.error(title, { description });
+        return sonnerToast.error(title, { description });
       }
       
-      return toast(title, { description });
+      return sonnerToast(title, { description });
     },
     // These exist in the original API but will be no-ops
     dismiss: () => {},

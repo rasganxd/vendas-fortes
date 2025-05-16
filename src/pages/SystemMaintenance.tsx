@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layout/PageLayout';
@@ -19,14 +18,12 @@ const SystemMaintenance = () => {
     try {
       const backupName = `Manual backup ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
       await createBackup(backupName);
-      toast({
-        title: "Backup criado",
+      toast("Backup criado", {
         description: "Backup manual criado com sucesso"
       });
     } catch (error) {
       console.error("Error creating backup:", error);
-      toast({
-        title: "Erro",
+      toast.error("Erro", {
         description: "Houve um erro ao criar o backup"
       });
     }
@@ -35,14 +32,12 @@ const SystemMaintenance = () => {
   const handleStartNewMonth = async () => {
     try {
       await startNewMonth();
-      toast({
-        title: "Fechamento mensal iniciado",
+      toast("Fechamento mensal iniciado", {
         description: "O processo de fechamento mensal foi iniciado com sucesso"
       });
     } catch (error) {
       console.error("Error starting new month:", error);
-      toast({
-        title: "Erro",
+      toast.error("Erro", {
         description: "Houve um erro ao iniciar o fechamento mensal"
       });
     }
@@ -51,14 +46,12 @@ const SystemMaintenance = () => {
   const handleClearCache = async () => {
     try {
       await clearCache();
-      toast({
-        title: "Cache limpo",
+      toast("Cache limpo", {
         description: "O cache foi limpo com sucesso"
       });
     } catch (error) {
       console.error("Error clearing cache:", error);
-      toast({
-        title: "Erro",
+      toast.error("Erro", {
         description: "Houve um erro ao limpar o cache"
       });
     }
