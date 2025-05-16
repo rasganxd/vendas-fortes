@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Order, Customer } from '@/types';
@@ -58,7 +57,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
             <Button 
               variant="outline" 
               onClick={() => handlePrint()} 
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 mr-8"
             >
               <Printer size={16} /> Imprimir
             </Button>
