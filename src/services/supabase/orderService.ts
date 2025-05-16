@@ -4,7 +4,7 @@ import { orderFirestoreService } from '../firebase/OrderFirestoreService';
 
 /**
  * Service for order operations
- * Now using Firebase instead of LocalStorage
+ * Using Firebase exclusively
  */
 export const orderService = {
   // Get all orders
@@ -19,6 +19,7 @@ export const orderService = {
   
   // Add order
   add: async (order: Omit<Order, 'id'>): Promise<string> => {
+    // Ensure date fields are properly set
     const orderWithDates = {
       ...order,
       createdAt: new Date(),
@@ -49,5 +50,15 @@ export const orderService = {
   // Get orders by sales rep ID
   getBySalesRepId: async (salesRepId: string): Promise<Order[]> => {
     return orderFirestoreService.getBySalesRepId(salesRepId);
+  },
+
+  // Get order by code
+  getByCode: async (code: number): Promise<Order | null> => {
+    return orderFirestoreService.getByCode(code);
+  },
+
+  // Generate next order code
+  generateNextOrderCode: async (): Promise<number> => {
+    return orderFirestoreService.generateNextOrderCode();
   }
 };

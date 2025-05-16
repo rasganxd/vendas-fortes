@@ -17,7 +17,14 @@ import {
 import { db } from './config';
 import { v4 as uuidv4 } from 'uuid';
 
-export class FirestoreService<T extends { id: string }> {
+// Define a base interface for all Firestore entities
+export interface FirestoreEntity {
+  id: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class FirestoreService<T extends FirestoreEntity> {
   protected collectionName: string;
   
   constructor(entityName: string) {
@@ -83,8 +90,8 @@ export class FirestoreService<T extends { id: string }> {
       // Add timestamps
       const dataWithTimestamps = {
         ...entity,
-        createdAt: entity.createdAt || serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: entity.createdAt || new Date(),
+        updatedAt: new Date()
       };
       
       const docRef = await addDoc(collection(db, this.collectionName), dataWithTimestamps);
@@ -109,7 +116,7 @@ export class FirestoreService<T extends { id: string }> {
       // Add timestamp
       const dataWithTimestamp = {
         ...entity,
-        updatedAt: serverTimestamp()
+        updatedAt: new Date()
       };
       
       const docRef = doc(db, this.collectionName, id);
@@ -166,8 +173,9 @@ export class FirestoreService<T extends { id: string }> {
   
   /**
    * Helper method to convert Firestore Timestamps to JavaScript Date objects
+   * Changed from private to protected to allow subclasses to use it
    */
-  private convertTimestamps(data: DocumentData): DocumentData {
+  protected convertTimestamps(data: DocumentData): DocumentData {
     const result = { ...data };
     
     for (const [key, value] of Object.entries(result)) {
@@ -191,45 +199,5 @@ export class FirestoreService<T extends { id: string }> {
     }
     
     return result;
-  }
-  
-  /**
-   * Migrate data from LocalStorage to Firestore
-   * @param localData Array of entities from LocalStorage
-   * @returns Number of migrated entities
-   */
-  async migrateFromLocalStorage(localData: T[]): Promise<number> {
-    try {
-      console.log(`Migrating ${localData.length} ${this.collectionName} from LocalStorage to Firestore`);
-      
-      let migratedCount = 0;
-      
-      for (const entity of localData) {
-        const { id, ...data } = entity;
-        
-        // Add the document with the same ID as in LocalStorage
-        const docRef = doc(db, this.collectionName, id);
-        await updateDoc(docRef, {
-          ...data,
-          createdAt: entity.createdAt || new Date(),
-          updatedAt: new Date()
-        }).catch(async () => {
-          // If document doesn't exist, create it
-          await addDoc(collection(db, this.collectionName), {
-            ...data,
-            createdAt: entity.createdAt || new Date(),
-            updatedAt: new Date()
-          });
-        });
-        
-        migratedCount++;
-      }
-      
-      console.log(`Successfully migrated ${migratedCount} ${this.collectionName} to Firestore`);
-      return migratedCount;
-    } catch (error) {
-      console.error(`Error migrating ${this.collectionName} to Firestore:`, error);
-      throw error;
-    }
   }
 }

@@ -3,10 +3,8 @@ import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { orderService } from '@/services/supabase/orderService';
-import { transformOrderData, transformArray } from '@/utils/dataTransformers';
-import { orderFirestoreService } from '@/services/firebase/OrderFirestoreService';
 
-// Load orders with improved caching strategy
+// Load orders directly from Firebase
 export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {
   try {
     console.log("Loading orders from Firebase");
@@ -67,6 +65,13 @@ export const useOrders = () => {
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
       setIsProcessing(true);
+      
+      // Generate a new order code if not provided
+      if (!order.code) {
+        const nextCode = await orderService.generateNextOrderCode();
+        order = { ...order, code: nextCode };
+      }
+      
       const id = await orderService.add(order);
       const newOrder = { ...order, id } as Order;
       setOrders(prev => [...prev, newOrder]);

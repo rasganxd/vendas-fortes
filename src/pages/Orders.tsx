@@ -5,7 +5,7 @@ import { useOrders } from '@/hooks/useOrders';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Printer, Archive, Database } from 'lucide-react';
+import { Search, Plus, Printer, Archive } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
@@ -22,8 +22,6 @@ import OrdersTable from '@/components/orders/OrdersTable';
 import OrderDetailDialog from '@/components/orders/OrderDetailDialog';
 import PrintOrdersDialog from '@/components/orders/PrintOrdersDialog';
 import DeleteOrderDialog from '@/components/orders/DeleteOrderDialog';
-import MigrationDialog from '@/components/MigrationDialog';
-import { migrateOrdersToFirebase } from '@/utils/migrationUtils';
 
 const printStyles = `
 @media print {
@@ -120,7 +118,6 @@ export default function Orders() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-  const [isMigrationDialogOpen, setIsMigrationDialogOpen] = useState(false);
   
   const filteredOrders = orders.filter(order => {
     if (!showArchived && order.archived) return false;
@@ -159,10 +156,6 @@ export default function Orders() {
     }
   };
   
-  const handleMigrateData = () => {
-    setIsMigrationDialogOpen(true);
-  };
-  
   const handleToggleOrderSelection = useCallback((orderId: string) => {
     setSelectedOrderIds(prev => {
       if (prev.includes(orderId)) {
@@ -199,13 +192,6 @@ export default function Orders() {
               <CardDescription>Visualize e gerencie os pedidos</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline"
-                onClick={handleMigrateData}
-                className="flex items-center"
-              >
-                <Database size={16} className="mr-2" /> Migrar para Firebase
-              </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setIsPrintDialogOpen(true)}
@@ -283,11 +269,6 @@ export default function Orders() {
         setSelectedOrderIds={setSelectedOrderIds}
         filteredOrders={filteredOrders}
         formatCurrency={formatCurrency}
-      />
-      
-      <MigrationDialog
-        isOpen={isMigrationDialogOpen}
-        onOpenChange={setIsMigrationDialogOpen}
       />
     </PageLayout>
   );

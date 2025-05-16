@@ -1,9 +1,10 @@
 
-import { FirestoreService } from './FirestoreService';
+import { FirestoreService, FirestoreEntity } from './FirestoreService';
 import { Order } from '@/types';
 import { where, query, getDocs, collection } from 'firebase/firestore';
 import { db } from './config';
 
+// Ensure Order implements FirestoreEntity
 class OrderFirestoreService extends FirestoreService<Order> {
   constructor() {
     super('orders');
@@ -88,6 +89,15 @@ class OrderFirestoreService extends FirestoreService<Order> {
       console.error(`Error retrieving orders for sales rep ${salesRepId}:`, error);
       return [];
     }
+  }
+
+  /**
+   * Generate next available order code
+   * @returns Next available order code
+   */
+  async generateNextOrderCode(): Promise<number> {
+    const highestCode = await this.getHighestCode();
+    return highestCode + 1;
   }
 }
 
