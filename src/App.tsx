@@ -1,7 +1,7 @@
 
 import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
-import { Toaster } from '@/components/ui/sonner'; 
+import { useEffect, useState } from 'react';
+import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/theme-provider';
 import SideNav from '@/components/layout/SideNav';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -30,6 +30,9 @@ import './App.css';
 import { initializeFirestore } from './services/firebase/initializeFirestore';
 
 function App() {
+  const [firestoreInitialized, setFirestoreInitialized] = useState(false);
+  const [initializationAttempted, setInitializationAttempted] = useState(false);
+  
   // Check if running on mobile device
   useEffect(() => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -40,9 +43,13 @@ function App() {
     // Initialize Firestore collections
     const setupFirestore = async () => {
       try {
-        await initializeFirestore();
+        const success = await initializeFirestore(false); // Don't show toasts during initial load
+        setFirestoreInitialized(success);
       } catch (error) {
         console.error('Failed to initialize Firestore:', error);
+        setFirestoreInitialized(false);
+      } finally {
+        setInitializationAttempted(true);
       }
     };
     
@@ -81,7 +88,7 @@ function App() {
                 </RouterRoutes>
               </div>
             </div>
-            <Toaster />
+            <Toaster richColors />
           </SidebarProvider>
         </Router>
       </AppProvider>

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-import { orderService } from '@/services/supabase/orderService';
+import { orderService } from '@/services/firebase/orderService';
 
 // Load orders directly from Firebase
 export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {

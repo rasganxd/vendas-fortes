@@ -1,94 +1,86 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { toast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useFirebaseConnection } from '@/hooks/useFirebaseConnection';
 
-type ConnectionStatus = 'online' | 'offline';
+type ConnectionStatus = 'online' | 'offline' | 'connecting' | 'error';
 
 interface ConnectionContextType {
-  connectionStatus: ConnectionStatus;
   isOnline: boolean;
+  connectionStatus: ConnectionStatus;
+  reconnect: () => Promise<void>;
 }
 
 const ConnectionContext = createContext<ConnectionContextType>({
+  isOnline: true,
   connectionStatus: 'online',
-  isOnline: true
+  reconnect: async () => {}
 });
 
 export const useConnection = () => useContext(ConnectionContext);
 
 export const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
-    navigator.onLine ? 'online' : 'offline'
-  );
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(navigator.onLine ? 'online' : 'offline');
   
-  const isOnline = connectionStatus === 'online';
-
-  // Monitor Supabase connection status
+  const {
+    connectionStatus: firebaseStatus,
+    reconnectToFirebase
+  } = useFirebaseConnection();
+  
+  // Monitor online/offline status
   useEffect(() => {
-    const handleConnectionChange = () => {
-      const isOnline = navigator.onLine;
-      setConnectionStatus(isOnline ? 'online' : 'offline');
+    const handleOnlineStatus = () => {
+      const online = navigator.onLine;
+      console.log("Connection status changed:", online ? "ONLINE" : "OFFLINE");
+      setIsOnline(online);
       
-      if (isOnline) {
-        toast({
-          title: "Conexão restaurada",
-          description: "Sua conexão com o servidor foi restaurada.",
-          variant: "default"
-        });
+      if (online) {
+        setConnectionStatus('connecting');
       } else {
-        toast({
-          title: "Modo offline ativado",
-          description: "Você está trabalhando no modo offline. Algumas funcionalidades podem estar limitadas.",
-          variant: "destructive"
-        });
+        setConnectionStatus('offline');
       }
     };
     
-    window.addEventListener('online', handleConnectionChange);
-    window.addEventListener('offline', handleConnectionChange);
-    
-    // Setup Supabase health check
-    const healthCheck = setInterval(async () => {
-      if (navigator.onLine) {
-        try {
-          const { error } = await supabase.from('customers').select('count').limit(1).single();
-          if (error) {
-            console.error("Supabase connection check failed:", error);
-            setConnectionStatus('offline');
-          } else {
-            setConnectionStatus('online');
-          }
-        } catch (e) {
-          console.error("Error checking Supabase connection:", e);
-          setConnectionStatus('offline');
-        }
-      }
-    }, 30000); // Check every 30 seconds
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOnlineStatus);
     
     return () => {
-      window.removeEventListener('online', handleConnectionChange);
-      window.removeEventListener('offline', handleConnectionChange);
-      clearInterval(healthCheck);
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOnlineStatus);
     };
   }, []);
-
+  
+  // Update connection status based on Firebase connection
+  useEffect(() => {
+    if (firebaseStatus === 'connected') {
+      setConnectionStatus('online');
+    } else if (firebaseStatus === 'disconnected') {
+      setConnectionStatus(navigator.onLine ? 'connecting' : 'offline');
+    } else if (firebaseStatus === 'error') {
+      setConnectionStatus('error');
+    } else if (firebaseStatus === 'connecting') {
+      setConnectionStatus('connecting');
+    }
+  }, [firebaseStatus]);
+  
+  // Function to attempt reconnection
+  const reconnect = async () => {
+    setConnectionStatus('connecting');
+    try {
+      await reconnectToFirebase();
+    } catch (error) {
+      console.error("Error reconnecting:", error);
+      setConnectionStatus('error');
+    }
+  };
+  
   return (
-    <ConnectionContext.Provider value={{ 
+    <ConnectionContext.Provider value={{
+      isOnline,
       connectionStatus,
-      isOnline
+      reconnect
     }}>
       {children}
-      
-      {/* Indicador de status de conexão */}
-      {connectionStatus === 'offline' && (
-        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50 flex items-center space-x-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
-          <span>Modo Offline - Usando dados locais</span>
-        </div>
-      )}
     </ConnectionContext.Provider>
   );
 };
