@@ -55,12 +55,12 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
-        <div className="max-h-[65vh] overflow-y-auto pr-2 pb-2">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
+        <div className="max-h-[70vh] overflow-y-auto pr-2 pb-2">
           <CustomerFormFields form={form} />
         </div>
         
-        <DialogFooter className="mt-4 bg-background pt-2 pb-1">
+        <DialogFooter className="mt-3 bg-background pt-2 pb-1">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>

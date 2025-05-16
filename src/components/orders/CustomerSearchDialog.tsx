@@ -33,7 +33,7 @@ export default function CustomerSearchDialog({
 }: CustomerSearchDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0">
+      <DialogContent className="sm:max-w-3xl p-0">
         <Command className="rounded-lg border shadow-md">
           <CommandInput 
             placeholder="Buscar cliente por código ou nome..." 

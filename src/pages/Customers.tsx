@@ -114,7 +114,7 @@ const Customers = () => {
       title="Clientes" 
       subtitle="Gerencie seus clientes e suas informações"
     >
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
         <div className="relative w-full sm:w-64 md:w-80">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
@@ -160,7 +160,7 @@ const Customers = () => {
 
       {/* Dialog para editar cliente */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
             <DialogDescription>
@@ -180,7 +180,7 @@ const Customers = () => {
 
       {/* Dialog para adicionar novo cliente */}
       <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Adicionar Novo Cliente</DialogTitle>
             <DialogDescription>
