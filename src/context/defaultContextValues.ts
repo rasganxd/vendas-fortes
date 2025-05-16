@@ -1,3 +1,4 @@
+
 import { AppContextType } from './AppContextTypes';
 
 // This file will only contain part of the defaultContextValues to add the connectionStatus
@@ -111,16 +112,19 @@ const defaultContextValues: AppContextType = {
   deleteBackup: async () => true,
   
   settings: {
-    companyName: '',
-    companyDocument: '',
-    companyAddress: '',
-    companyCity: '',
-    companyState: '',
-    companyZipCode: '',
-    companyPhone: '',
-    theme: 'light',
-    currency: 'R$',
-    automaticPaymentCreation: false
+    company: {
+      name: '',
+      address: '',
+      phone: '',
+      email: '',
+      document: '',
+      footer: ''
+    },
+    theme: {
+      primaryColor: '#1C64F2',
+      secondaryColor: '#047481',
+      accentColor: '#0694A2'
+    }
   },
   updateSettings: async () => {},
   
