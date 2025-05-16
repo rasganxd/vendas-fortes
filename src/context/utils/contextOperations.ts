@@ -1,6 +1,6 @@
 
 // General utility functions for context operations
-import { toast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 
 /**
  * Starts a new month process
@@ -14,28 +14,17 @@ export const startNewMonth = async (createBackup: (name: string, description?: s
     );
     
     if (!backupId) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar backup antes de iniciar novo mês",
-        variant: "destructive"
-      });
+      toast.error("Erro", { description: "Não foi possível criar backup antes de iniciar novo mês" });
       return false;
     }
     
     // Here would be code to reset monthly data, finalize reports, etc.
-    toast({
-      title: "Novo mês iniciado",
-      description: "O sistema foi preparado para o novo mês"
-    });
+    toast("Novo mês iniciado", { description: "O sistema foi preparado para o novo mês" });
     
     return true;
   } catch (error) {
     console.error("Error starting new month:", error);
-    toast({
-      title: "Erro",
-      description: "Houve um problema ao iniciar novo mês",
-      variant: "destructive"
-    });
+    toast.error("Erro", { description: "Houve um problema ao iniciar novo mês" });
     return false;
   }
 };
@@ -62,17 +51,10 @@ export const clearCache = async (
     const loadedProducts = await loadProducts();
     setProducts(loadedProducts);
     
-    toast({
-      title: "Cache limpo",
-      description: "Cache do aplicativo limpo com sucesso!"
-    });
+    toast("Cache limpo", { description: "Cache do aplicativo limpo com sucesso!" });
   } catch (error) {
     console.error("Erro ao limpar cache:", error);
-    toast({
-      title: "Erro",
-      description: "Houve um erro ao limpar o cache do aplicativo.",
-      variant: "destructive"
-    });
+    toast.error("Erro", { description: "Houve um erro ao limpar o cache do aplicativo." });
     throw error;
   }
 };

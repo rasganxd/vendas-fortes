@@ -1,5 +1,5 @@
 
-// We'll standardize on using the Sonner toast instead
+// We're standardizing on using the Sonner toast instead
 import { toast as sonnerToast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 
@@ -9,7 +9,7 @@ export { useToast };
 // Export a modified toast function that uses Sonner under the hood
 export const toast = (props: any) => {
   // Map the props from our custom toast to Sonner's toast format
-  const { title, description, variant, ...rest } = props;
+  const { title, description, variant } = props;
   
   if (variant === "destructive") {
     return sonnerToast.error(title, { description });

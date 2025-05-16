@@ -1,3 +1,7 @@
+
+// This file is being kept for reference but is no longer used
+// We've standardized on using the Sonner toast library instead
+
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -9,6 +13,11 @@ import {
 } from "@/components/ui/toast"
 
 export function Toaster() {
+  // This component is no longer being used
+  // We're using Sonner's Toaster component from src/components/ui/sonner.tsx instead
+  return null;
+  
+  /*
   const { toasts } = useToast()
 
   return (
@@ -30,4 +39,5 @@ export function Toaster() {
       <ToastViewport />
     </ToastProvider>
   )
+  */
 }
