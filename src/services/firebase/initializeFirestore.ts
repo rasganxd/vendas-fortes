@@ -33,11 +33,13 @@ const RETRY_DELAY = 2000; // milliseconds
  */
 const collectionExists = async (collectionName: string): Promise<boolean> => {
   try {
+    console.log(`initializeFirestore: Checking if collection ${collectionName} exists`);
     const querySnapshot = await getDocs(collection(db, collectionName));
+    console.log(`initializeFirestore: Collection ${collectionName} exists with ${querySnapshot.size} docs`);
     // If we can query it, it exists (or will be created by this query)
     return true;
   } catch (error) {
-    console.error(`Error checking if collection ${collectionName} exists:`, error);
+    console.error(`initializeFirestore: Error checking if collection ${collectionName} exists:`, error);
     return false;
   }
 };
@@ -50,11 +52,12 @@ const collectionExists = async (collectionName: string): Promise<boolean> => {
  */
 const initializeCollection = async (collectionName: string, attempt = 1): Promise<boolean> => {
   try {
+    console.log(`initializeFirestore: Initializing collection: ${collectionName} (attempt ${attempt})`);
     // Check if collection already has documents
     const querySnapshot = await getDocs(collection(db, collectionName));
     
     if (querySnapshot.empty) {
-      console.log(`Initializing collection: ${collectionName}`);
+      console.log(`initializeFirestore: Collection ${collectionName} is empty, adding init document`);
       
       // Add a temporary initialization document
       const tempDoc = {
@@ -64,18 +67,24 @@ const initializeCollection = async (collectionName: string, attempt = 1): Promis
       };
       
       await addDoc(collection(db, collectionName), tempDoc);
-      console.log(`Collection ${collectionName} initialized with temporary document`);
+      console.log(`initializeFirestore: Collection ${collectionName} initialized with temporary document`);
     } else {
-      console.log(`Collection ${collectionName} already has documents, no initialization needed`);
+      console.log(`initializeFirestore: Collection ${collectionName} already has ${querySnapshot.size} documents`);
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data._temp) {
+          console.log(`initializeFirestore: Found initialization document in ${collectionName}`);
+        }
+      });
     }
     
     return true;
   } catch (error) {
-    console.error(`Error initializing collection ${collectionName} (attempt ${attempt}):`, error);
+    console.error(`initializeFirestore: Error initializing collection ${collectionName} (attempt ${attempt}):`, error);
     
     // Implement retry mechanism
     if (attempt < MAX_RETRIES) {
-      console.log(`Retrying initialization of ${collectionName} in ${RETRY_DELAY}ms...`);
+      console.log(`initializeFirestore: Retrying initialization of ${collectionName} in ${RETRY_DELAY}ms...`);
       
       // Wait before retry
       await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
@@ -131,15 +140,17 @@ const attemptNetworkRecovery = async (): Promise<void> => {
  * Main function to initialize all Firestore collections with better error handling
  */
 export const initializeFirestore = async (showToasts = false): Promise<boolean> => {
-  console.log('Starting Firestore initialization...');
+  console.log('initializeFirestore: Starting Firestore initialization...');
   let overallSuccess = true;
   
   try {
+    console.log('initializeFirestore: Firebase config:', db ? 'Firebase initialized' : 'Firebase NOT initialized');
+    
     // Enable offline persistence first - this must happen before any other Firestore operations
     const persistenceEnabled = await setupOfflinePersistence();
     
     if (!persistenceEnabled) {
-      console.warn('Offline persistence could not be enabled, but continuing with initialization');
+      console.warn('initializeFirestore: Offline persistence could not be enabled, but continuing');
       // Don't return early, still try to initialize collections
     }
     
@@ -148,7 +159,7 @@ export const initializeFirestore = async (showToasts = false): Promise<boolean> 
       requiredCollections.map(async (collectionName) => {
         const success = await initializeCollection(collectionName);
         if (!success) {
-          console.error(`Failed to initialize collection: ${collectionName}`);
+          console.error(`initializeFirestore: Failed to initialize collection: ${collectionName}`);
           overallSuccess = false;
         }
         return { collectionName, success };
@@ -159,10 +170,10 @@ export const initializeFirestore = async (showToasts = false): Promise<boolean> 
     const successful = results.filter(r => r.success).length;
     const failed = results.length - successful;
     
-    console.log(`Firestore initialization completed: ${successful}/${results.length} collections initialized successfully`);
+    console.log(`initializeFirestore: Completed: ${successful}/${results.length} collections initialized successfully`);
     
     if (failed > 0) {
-      console.warn(`${failed} collections could not be initialized`);
+      console.warn(`initializeFirestore: ${failed} collections could not be initialized`);
       
       // Try network recovery if some collections failed
       await attemptNetworkRecovery();
@@ -180,7 +191,7 @@ export const initializeFirestore = async (showToasts = false): Promise<boolean> 
     
     return overallSuccess;
   } catch (error) {
-    console.error('Error during Firestore initialization:', error);
+    console.error('initializeFirestore: Error during Firestore initialization:', error);
     
     if (showToasts) {
       toast.error('Erro na inicialização do Firestore. Verifique a conexão com a internet.', {

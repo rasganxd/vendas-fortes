@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Order, Customer } from '@/types';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 // Import the extracted components
 import OrdersTable from '@/components/orders/OrdersTable';
@@ -107,9 +107,26 @@ const printStyles = `
 }`;
 
 export default function Orders() {
+  console.log("Orders page: Rendering");
   const navigate = useNavigate();
-  const { orders, customers } = useAppContext();
-  const { deleteOrder } = useOrders();
+  const appContext = useAppContext();
+  const { orders, customers } = appContext;
+  console.log("Orders page: Got from AppContext:", { 
+    orderCount: orders?.length || 0,
+    customerCount: customers?.length || 0,
+    orderData: orders?.slice(0, 3) || []
+  });
+  
+  // Get orders directly from the useOrders hook for comparison
+  const ordersHook = useOrders();
+  console.log("Orders page: Got from useOrders hook:", { 
+    orderCount: ordersHook.orders?.length || 0,
+    isLoading: ordersHook.isLoading,
+    orderData: ordersHook.orders?.slice(0, 3) || []
+  });
+  
+  const { deleteOrder } = ordersHook;
+  
   const [search, setSearch] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -124,14 +141,16 @@ export default function Orders() {
     return order.customerName.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
   });
+  
+  console.log("Orders page: Filtered orders:", filteredOrders.length);
 
   useEffect(() => {
-    // Check if orders are loaded
-    if (orders.length === 0) {
-      // Show migration dialog automatically on first load
-      // Don't show the migration dialog here, let user trigger it manually
+    // Log out the order state whenever it changes
+    console.log(`Orders page: Orders state updated, now have ${orders.length} orders`);
+    if (orders.length === 0 && !ordersHook.isLoading) {
+      console.log("Orders page: No orders and not loading - might be an issue");
     }
-  }, [orders]);
+  }, [orders, ordersHook.isLoading]);
 
   const handleViewOrder = useCallback((order: Order) => {
     setSelectedOrder(order);

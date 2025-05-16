@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { toast } from '@/hooks/use-toast';
@@ -9,7 +10,7 @@ export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {
   try {
     console.log("Loading orders from Firebase");
     const orders = await orderService.getAll();
-    console.log(`Loaded ${orders.length} orders from Firebase`);
+    console.log(`Loaded ${orders.length} orders from Firebase:`, orders);
     return orders;
   } catch (error) {
     console.error("Error loading orders:", error);
@@ -23,24 +24,36 @@ export const useOrders = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { connectionStatus } = useConnection();
 
+  // Enhanced logging for order loading process
   useEffect(() => {
     const fetchOrders = async () => {
+      console.log("useOrders: Fetching orders - starting");
       try {
         setIsLoading(true);
+        console.log("useOrders: Connection status when loading orders:", connectionStatus);
+        
         const loadedOrders = await loadOrders();
+        console.log("useOrders: Orders fetched successfully", loadedOrders);
+        
+        if (loadedOrders.length === 0) {
+          console.log("useOrders: No orders returned from Firebase - this could be normal if no orders exist");
+        }
+        
         setOrders(loadedOrders);
+        console.log("useOrders: Orders state updated with", loadedOrders.length, "orders");
       } catch (error) {
-        console.error("Error loading orders:", error);
+        console.error("useOrders: Error loading orders:", error);
         toast.error("Erro ao carregar pedidos", {
           description: "Houve um problema ao carregar os pedidos."
         });
       } finally {
         setIsLoading(false);
+        console.log("useOrders: Fetching orders - completed");
       }
     };
 
     fetchOrders();
-  }, []);
+  }, [connectionStatus]); // Added connectionStatus as dependency to re-fetch when connection changes
 
   const getOrderById = async (id: string): Promise<Order | null> => {
     try {
@@ -63,6 +76,7 @@ export const useOrders = () => {
     try {
       setIsProcessing(true);
       console.log("Connection status when adding order:", connectionStatus);
+      console.log("Adding order:", order);
       
       // Show warning if offline but proceed with adding order to local storage
       if (connectionStatus === 'offline') {
@@ -78,8 +92,14 @@ export const useOrders = () => {
       }
       
       const id = await orderService.add(order);
+      console.log("Order added successfully with ID:", id);
+      
       const newOrder = { ...order, id } as Order;
-      setOrders(prev => [...prev, newOrder]);
+      setOrders(prev => {
+        const updated = [...prev, newOrder];
+        console.log("Updated orders state after adding:", updated.length, "orders");
+        return updated;
+      });
       
       toast("Pedido adicionado", {
         description: "Pedido adicionado com sucesso!"
@@ -100,6 +120,7 @@ export const useOrders = () => {
     try {
       setIsProcessing(true);
       console.log("Connection status when updating order:", connectionStatus);
+      console.log("Updating order:", id, order);
       
       // Show warning if offline but proceed with updating order in local storage
       if (connectionStatus === 'offline') {
@@ -109,10 +130,15 @@ export const useOrders = () => {
       }
       
       await orderService.update(id, order);
-      const updatedOrders = orders.map(o =>
-        o.id === id ? { ...o, ...order } : o
-      );
-      setOrders(updatedOrders);
+      console.log("Order updated successfully");
+      
+      setOrders(prev => {
+        const updatedOrders = prev.map(o =>
+          o.id === id ? { ...o, ...order } : o
+        );
+        console.log("Updated orders state after updating:", updatedOrders.length, "orders");
+        return updatedOrders;
+      });
       
       toast("Pedido atualizado", {
         description: "Pedido atualizado com sucesso!"
@@ -132,9 +158,17 @@ export const useOrders = () => {
   const deleteOrder = async (id: string) => {
     try {
       setIsProcessing(true);
+      console.log("Deleting order:", id);
+      
       await orderService.delete(id);
-      const updatedOrders = orders.filter(o => o.id !== id);
-      setOrders(updatedOrders);
+      console.log("Order deleted successfully");
+      
+      setOrders(prev => {
+        const updatedOrders = prev.filter(o => o.id !== id);
+        console.log("Updated orders state after deletion:", updatedOrders.length, "orders");
+        return updatedOrders;
+      });
+      
       toast("Pedido excluído", {
         description: "Pedido excluído com sucesso!"
       });
