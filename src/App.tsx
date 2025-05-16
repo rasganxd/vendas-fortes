@@ -27,6 +27,7 @@ import Settings from '@/pages/Settings';
 import SystemMaintenance from '@/pages/SystemMaintenance';
 import NotFound from '@/pages/NotFound';
 import './App.css';
+import { initializeFirestore } from './services/firebase/initializeFirestore';
 
 function App() {
   // Check if running on mobile device
@@ -35,6 +36,17 @@ function App() {
     if (isMobile) {
       document.body.classList.add('mobile-device');
     }
+    
+    // Initialize Firestore collections
+    const setupFirestore = async () => {
+      try {
+        await initializeFirestore();
+      } catch (error) {
+        console.error('Failed to initialize Firestore:', error);
+      }
+    };
+    
+    setupFirestore();
   }, []);
 
   return (
