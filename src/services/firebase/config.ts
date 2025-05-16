@@ -4,12 +4,12 @@ import { getFirestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDCnNFzlW8J-XD-nIbj67fJ7-gLZFKk8sk",
-  authDomain: "app-vendas-5f84d.firebaseapp.com",
-  projectId: "app-vendas-5f84d",
-  storageBucket: "app-vendas-5f84d.appspot.com",
-  messagingSenderId: "107546646976",
-  appId: "1:107546646976:web:c64123c3b5b93d79d49e1a"
+  apiKey: "AIzaSyCXOTxAAHHBEO00KmpKMego6Hje4YRBug4",
+  authDomain: "salestrack-679ef.firebaseapp.com",
+  projectId: "salestrack-679ef",
+  storageBucket: "salestrack-679ef.firebasestorage.app",
+  messagingSenderId: "50223623576",
+  appId: "1:50223623576:web:186cffc7afe676c428cfed"
 };
 
 // Initialize Firebase
