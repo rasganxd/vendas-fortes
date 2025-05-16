@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clipboard, CheckCircle2, Plus, Filter, Search, ArrowDown, ArrowUp } from 'lucide-react';
@@ -264,13 +263,15 @@ const Orders = () => {
       {selectedOrder && (
         <>
           <OrderDetailDialog 
-            order={selectedOrder}
+            selectedOrder={selectedOrder}
             isOpen={isDetailDialogOpen}
             onOpenChange={setIsDetailDialogOpen}
+            selectedCustomer={customers?.find(c => c.id === selectedOrder.customerId) || null}
+            formatCurrency={formatCurrency}
           />
           
           <DeleteOrderDialog
-            order={selectedOrder}
+            selectedOrder={selectedOrder}
             isOpen={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
             onConfirmDelete={() => {
