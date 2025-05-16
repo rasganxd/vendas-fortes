@@ -18,7 +18,11 @@ export default function ProductSearchResults({
   return (
     <div 
       ref={resultsRef}
-      className="absolute z-50 mt-1 w-full max-h-60 overflow-auto bg-white border rounded-md shadow-lg"
+      className="fixed z-[100] mt-1 w-full max-h-80 overflow-auto bg-white border rounded-md shadow-lg"
+      style={{
+        top: 'auto',
+        width: resultsRef.current?.parentElement?.offsetWidth + 'px' || '100%'
+      }}
     >
       {products.map(product => (
         <div
