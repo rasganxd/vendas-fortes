@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -64,12 +65,12 @@ export default function Loads() {
       await deleteLoad(selectedLoad.id);
       setIsDeleteDialogOpen(false);
       toast("Carga excluída", {
-        description: "A carga foi excluída com sucesso.",
+        description: "A carga foi excluída com sucesso."
       });
     } catch (error) {
       console.error("Erro ao excluir carga:", error);
       toast.error("Erro ao excluir", {
-        description: "Não foi possível excluir a carga.",
+        description: "Não foi possível excluir a carga."
       });
     }
   };
@@ -77,7 +78,7 @@ export default function Loads() {
   const handleUpdateLoad = async (id: string, updatedLoad: Partial<Load>) => {
     await updateLoad(id, updatedLoad);
     toast("Carga atualizada", {
-      description: "As alterações foram salvas com sucesso.",
+      description: "As alterações foram salvas com sucesso."
     });
   };
 

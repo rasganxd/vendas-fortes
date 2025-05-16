@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Load, LoadItem, Order } from '@/types';
@@ -201,12 +202,12 @@ export const useLoads = () => {
       );
 
       toast(newLockedStatus ? "Carga bloqueada" : "Carga desbloqueada", { 
-        description: `A carga foi ${newLockedStatus ? "bloqueada" : "desbloqueada"} com sucesso.`,
+        description: `A carga foi ${newLockedStatus ? "bloqueada" : "desbloqueada"} com sucesso.`
       });
     } catch (error) {
       console.error("Error toggling load lock:", error);
       toast.error("Erro", {
-        description: "Não foi possível alterar o status de bloqueio da carga.",
+        description: "Não foi possível alterar o status de bloqueio da carga."
       });
     }
   };

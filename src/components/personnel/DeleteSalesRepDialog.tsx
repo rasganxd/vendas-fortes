@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SalesRep } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface DeleteSalesRepDialogProps {
   open: boolean;
@@ -40,16 +40,13 @@ export const DeleteSalesRepDialog: React.FC<DeleteSalesRepDialogProps> = ({
         currentSalesReps.filter(sr => sr.id !== salesRep.id)
       );
       onOpenChange(false);
-      toast({
-        title: "Representante excluído",
+      toast("Representante excluído", {
         description: "Representante excluído com sucesso!"
       });
     } catch (error) {
       console.error("Error deleting sales rep:", error);
-      toast({
-        title: "Erro ao excluir representante",
-        description: "Houve um problema ao excluir o representante.",
-        variant: "destructive"
+      toast.error("Erro ao excluir representante", {
+        description: "Houve um problema ao excluir o representante."
       });
     }
   };

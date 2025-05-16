@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Plus, Trash } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { useAppContext } from '@/hooks/useAppContext';
 import { v4 as uuid } from 'uuid';
 
@@ -60,10 +60,8 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
 
   const handleAddSelectedOrders = () => {
     if (selectedOrderIds.length === 0) {
-      toast({
-        title: "Nenhum pedido selecionado",
-        description: "Selecione pelo menos um pedido para adicionar à carga.",
-        variant: "destructive"
+      toast("Nenhum pedido selecionado", {
+        description: "Selecione pelo menos um pedido para adicionar à carga."
       });
       return;
     }
@@ -90,8 +88,7 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
     setSelectedOrderIds([]);
     setSearch('');
     
-    toast({
-      title: "Pedidos adicionados",
+    toast("Pedidos adicionados", {
       description: `${ordersToAdd.length} pedido(s) adicionado(s) à carga.`
     });
   };
@@ -99,8 +96,7 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
   const handleRemoveOrder = (orderId: string) => {
     setCurrentItems(currentItems.filter(item => item.orderId !== orderId));
     
-    toast({
-      title: "Pedido removido",
+    toast("Pedido removido", {
       description: "O pedido foi removido da carga."
     });
   };

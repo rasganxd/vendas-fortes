@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { PaymentTable } from '@/types';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { Loader2 } from 'lucide-react';
@@ -63,10 +63,8 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
 
   const handleAddPaymentTable = async (newTableName: string) => {
     if (!newTableName) {
-      toast({
-        title: "Erro",
-        description: "O nome da tabela de pagamento não pode estar vazio.",
-        variant: "destructive"
+      toast("Erro", {
+        description: "O nome da tabela de pagamento não pode estar vazio."
       });
       return;
     }
@@ -85,8 +83,7 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
       });
 
       setSelectedPaymentTable(newTableId);
-      toast({
-        title: "Tabela de pagamento criada",
+      toast("Tabela de pagamento criada", {
         description: `Tabela "${newTableName}" criada com sucesso! Agora você pode adicionar condições de pagamento na seção de Tabelas de Pagamento.`
       });
       
@@ -95,10 +92,8 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
       }
     } catch (error) {
       console.error("Erro ao adicionar tabela de pagamento:", error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao criar a tabela de pagamento.",
-        variant: "destructive"
+      toast.error("Erro", {
+        description: "Ocorreu um erro ao criar a tabela de pagamento."
       });
     } finally {
       setIsLoading(false);

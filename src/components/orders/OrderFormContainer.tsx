@@ -6,7 +6,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { usePayments } from '@/hooks/usePayments';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import OrderForm from './OrderForm';
 import RecentPurchasesDialog from './RecentPurchasesDialog';
 import { v4 as uuidv4 } from 'uuid';
@@ -67,10 +67,8 @@ export default function OrderFormContainer() {
             setCustomerInputValue(displayValue);
           } else {
             console.warn("Customer not found for ID:", orderToEdit.customerId);
-            toast({
-              title: "Cliente não encontrado",
-              description: "O cliente associado a este pedido não foi encontrado.",
-              variant: "warning"
+            toast("Cliente não encontrado", {
+              description: "O cliente associado a este pedido não foi encontrado."
             });
           }
           
@@ -93,10 +91,8 @@ export default function OrderFormContainer() {
             
             if (orderToEdit.items.length === 0) {
               console.warn("Order has no items! This might indicate a loading issue.");
-              toast({
-                title: "Aviso",
-                description: "Este pedido não tem itens. Isso pode indicar um problema no carregamento.",
-                variant: "warning"
+              toast("Aviso", {
+                description: "Este pedido não tem itens. Isso pode indicar um problema no carregamento."
               });
             }
             
@@ -117,10 +113,8 @@ export default function OrderFormContainer() {
           } else {
             console.warn("Order items are missing or not in expected format");
             setOrderItems([]);
-            toast({
-              title: "Itens não encontrados",
-              description: "Os itens deste pedido não puderam ser carregados corretamente.",
-              variant: "warning"
+            toast("Itens não encontrados", {
+              description: "Os itens deste pedido não puderam ser carregados corretamente."
             });
           }
           
@@ -129,16 +123,13 @@ export default function OrderFormContainer() {
             setSelectedPaymentTable(orderToEdit.paymentTableId);
           }
           
-          toast({
-            title: "Pedido carregado",
+          toast("Pedido carregado", {
             description: `Editando pedido ${orderId.substring(0, 6)}`
           });
         } else {
           console.error("Order not found for ID:", orderId);
-          toast({
-            title: "Pedido não encontrado",
-            description: "O pedido solicitado não foi encontrado.",
-            variant: "destructive"
+          toast.error("Pedido não encontrado", {
+            description: "O pedido solicitado não foi encontrado."
           });
           // Navigate back to orders page after delay
           setTimeout(() => {
@@ -147,10 +138,8 @@ export default function OrderFormContainer() {
         }
       } catch (error) {
         console.error("Error loading order:", error);
-        toast({
-          title: "Erro ao carregar pedido",
-          description: "Ocorreu um erro ao carregar o pedido.",
-          variant: "destructive"
+        toast.error("Erro ao carregar pedido", {
+          description: "Ocorreu um erro ao carregar o pedido."
         });
       } finally {
         setIsLoading(false);
@@ -217,8 +206,7 @@ export default function OrderFormContainer() {
       setOrderItems(prevItems => [...prevItems, newItem]);
     }
     
-    toast({
-      title: "Item adicionado",
+    toast("Item adicionado", {
       description: `${quantity}x ${product.name} adicionado ao pedido`
     });
   };
@@ -228,36 +216,29 @@ export default function OrderFormContainer() {
     setOrderItems(items => items.filter(item => item.productId !== productId));
     console.log("Items after removal:", orderItems.filter(item => item.productId !== productId));
     
-    toast({
-      title: "Item removido",
+    toast("Item removido", {
       description: "Item removido do pedido"
     });
   };
 
   const handleCreateOrder = async () => {
     if (!selectedCustomer) {
-      toast({
-        title: "Erro",
-        description: "Selecione um cliente para o pedido.",
-        variant: "destructive"
+      toast.error("Erro", {
+        description: "Selecione um cliente para o pedido."
       });
       return;
     }
     
     if (!selectedSalesRep) {
-      toast({
-        title: "Erro",
-        description: "Selecione um vendedor para o pedido.",
-        variant: "destructive"
+      toast.error("Erro", {
+        description: "Selecione um vendedor para o pedido."
       });
       return;
     }
     
     if (orderItems.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Adicione pelo menos um item ao pedido.",
-        variant: "destructive"
+      toast.error("Erro", {
+        description: "Adicione pelo menos um item ao pedido."
       });
       return;
     }
@@ -332,8 +313,7 @@ export default function OrderFormContainer() {
         });
         
         if (orderId) {
-          toast({
-            title: "Pedido Atualizado",
+          toast("Pedido Atualizado", {
             description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
           });
         } else {
@@ -356,8 +336,7 @@ export default function OrderFormContainer() {
         console.log("Order created with ID:", orderId);
         
         if (orderId) {
-          toast({
-            title: "Pedido Criado",
+          toast("Pedido Criado", {
             description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
           });
           
@@ -384,10 +363,8 @@ export default function OrderFormContainer() {
       }, 1500);
     } catch (error) {
       console.error("Erro ao processar pedido:", error);
-      toast({
-        title: isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido",
-        description: `Ocorreu um erro ao processar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-        variant: "destructive"
+      toast.error(isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido", {
+        description: `Ocorreu um erro ao processar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
       });
     } finally {
       setIsSubmitting(false);
@@ -407,9 +384,8 @@ export default function OrderFormContainer() {
     if (selectedCustomer) {
       setIsRecentPurchasesDialogOpen(true);
     } else {
-      toast({
-        title: "Atenção",
-        description: "Selecione um cliente primeiro para ver compras recentes.",
+      toast("Atenção", {
+        description: "Selecione um cliente primeiro para ver compras recentes."
       });
     }
   };
