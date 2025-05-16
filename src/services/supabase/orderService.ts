@@ -1,20 +1,20 @@
 
 import { Order } from '@/types';
-import { orderLocalService } from '../local/orderLocalService';
+import { orderFirestoreService } from '../firebase/OrderFirestoreService';
 
 /**
  * Service for order operations
- * Now using local storage instead of Supabase
+ * Now using Firebase instead of LocalStorage
  */
 export const orderService = {
   // Get all orders
   getAll: async (): Promise<Order[]> => {
-    return orderLocalService.getAll();
+    return orderFirestoreService.getAll();
   },
   
   // Get order by ID
   getById: async (id: string): Promise<Order | null> => {
-    return orderLocalService.getById(id);
+    return orderFirestoreService.getById(id);
   },
   
   // Add order
@@ -24,7 +24,7 @@ export const orderService = {
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    return orderLocalService.add(orderWithDates);
+    return orderFirestoreService.add(orderWithDates);
   },
   
   // Update order
@@ -33,21 +33,21 @@ export const orderService = {
       ...order,
       updatedAt: new Date()
     };
-    return orderLocalService.update(id, updateData);
+    return orderFirestoreService.update(id, updateData);
   },
   
   // Delete order
   delete: async (id: string): Promise<void> => {
-    return orderLocalService.delete(id);
+    return orderFirestoreService.delete(id);
   },
 
   // Get orders by customer ID
   getByCustomerId: async (customerId: string): Promise<Order[]> => {
-    return orderLocalService.getByCustomerId(customerId);
+    return orderFirestoreService.getByCustomerId(customerId);
   },
 
   // Get orders by sales rep ID
   getBySalesRepId: async (salesRepId: string): Promise<Order[]> => {
-    return orderLocalService.getBySalesRepId(salesRepId);
+    return orderFirestoreService.getBySalesRepId(salesRepId);
   }
 };

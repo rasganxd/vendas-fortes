@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Printer, Archive } from 'lucide-react';
+import { Search, Plus, Printer, Archive, Database } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
@@ -15,12 +15,15 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Order, Customer } from '@/types';
+import { toast } from '@/components/ui/use-toast';
 
 // Import the extracted components
 import OrdersTable from '@/components/orders/OrdersTable';
 import OrderDetailDialog from '@/components/orders/OrderDetailDialog';
 import PrintOrdersDialog from '@/components/orders/PrintOrdersDialog';
 import DeleteOrderDialog from '@/components/orders/DeleteOrderDialog';
+import MigrationDialog from '@/components/MigrationDialog';
+import { migrateOrdersToFirebase } from '@/utils/migrationUtils';
 
 const printStyles = `
 @media print {
@@ -117,12 +120,21 @@ export default function Orders() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [isMigrationDialogOpen, setIsMigrationDialogOpen] = useState(false);
   
   const filteredOrders = orders.filter(order => {
     if (!showArchived && order.archived) return false;
     return order.customerName.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
   });
+
+  useEffect(() => {
+    // Check if orders are loaded
+    if (orders.length === 0) {
+      // Show migration dialog automatically on first load
+      // Don't show the migration dialog here, let user trigger it manually
+    }
+  }, [orders]);
 
   const handleViewOrder = useCallback((order: Order) => {
     setSelectedOrder(order);
@@ -145,6 +157,10 @@ export default function Orders() {
       await deleteOrder(selectedOrder.id);
       setIsDeleteDialogOpen(false);
     }
+  };
+  
+  const handleMigrateData = () => {
+    setIsMigrationDialogOpen(true);
   };
   
   const handleToggleOrderSelection = useCallback((orderId: string) => {
@@ -183,6 +199,13 @@ export default function Orders() {
               <CardDescription>Visualize e gerencie os pedidos</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              <Button 
+                variant="outline"
+                onClick={handleMigrateData}
+                className="flex items-center"
+              >
+                <Database size={16} className="mr-2" /> Migrar para Firebase
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setIsPrintDialogOpen(true)}
@@ -260,6 +283,11 @@ export default function Orders() {
         setSelectedOrderIds={setSelectedOrderIds}
         filteredOrders={filteredOrders}
         formatCurrency={formatCurrency}
+      />
+      
+      <MigrationDialog
+        isOpen={isMigrationDialogOpen}
+        onOpenChange={setIsMigrationDialogOpen}
       />
     </PageLayout>
   );

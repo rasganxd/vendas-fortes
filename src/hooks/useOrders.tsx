@@ -4,14 +4,14 @@ import { Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { orderService } from '@/services/supabase/orderService';
 import { transformOrderData, transformArray } from '@/utils/dataTransformers';
-import { orderLocalService } from '@/services/local/orderLocalService';
+import { orderFirestoreService } from '@/services/firebase/OrderFirestoreService';
 
 // Load orders with improved caching strategy
 export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {
   try {
-    console.log("Loading orders from local storage");
-    const orders = await orderLocalService.getAll();
-    console.log(`Loaded ${orders.length} orders from local storage`);
+    console.log("Loading orders from Firebase");
+    const orders = await orderService.getAll();
+    console.log(`Loaded ${orders.length} orders from Firebase`);
     return orders;
   } catch (error) {
     console.error("Error loading orders:", error);
@@ -48,7 +48,7 @@ export const useOrders = () => {
   const getOrderById = async (id: string): Promise<Order | null> => {
     try {
       console.log(`Getting order by ID: ${id}`);
-      const order = await orderLocalService.getById(id);
+      const order = await orderService.getById(id);
       if (!order) {
         console.warn(`Order with ID ${id} not found`);
       }
