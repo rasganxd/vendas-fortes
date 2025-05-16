@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Database, RefreshCw } from "lucide-react";
 import { useAppContext } from '@/hooks/useAppContext';
 import { toast } from "@/components/ui/use-toast";
+import MobileSyncPanel from './MobileSyncPanel';
 
 export default function SystemSettings() {
   const { clearCache } = useAppContext();
@@ -31,35 +32,39 @@ export default function SystemSettings() {
   };
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl flex items-center gap-2">
-          <Database className="text-primary" size={20} />
-          Configurações do Sistema
-        </CardTitle>
-        <CardDescription>
-          Gerencie configurações técnicas do sistema.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <h3 className="text-md font-medium mb-4">Cache e Armazenamento</h3>
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600 mb-2">
-              Limpar o cache pode resolver problemas de desempenho ou exibição incorreta de dados.
-            </p>
-            <Button 
-              variant="outline"
-              onClick={handleClearCache}
-              disabled={isClearing}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw size={16} className={isClearing ? "animate-spin" : ""} />
-              {isClearing ? "Limpando..." : "Limpar Cache"}
-            </Button>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Database className="text-primary" size={20} />
+            Configurações do Sistema
+          </CardTitle>
+          <CardDescription>
+            Gerencie configurações técnicas do sistema.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="text-md font-medium mb-4">Cache e Armazenamento</h3>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 mb-2">
+                Limpar o cache pode resolver problemas de desempenho ou exibição incorreta de dados.
+              </p>
+              <Button 
+                variant="outline"
+                onClick={handleClearCache}
+                disabled={isClearing}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw size={16} className={isClearing ? "animate-spin" : ""} />
+                {isClearing ? "Limpando..." : "Limpar Cache"}
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      
+      <MobileSyncPanel />
+    </div>
   );
 }

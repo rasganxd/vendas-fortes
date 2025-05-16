@@ -20,6 +20,11 @@ export interface Payment {
   customerAddress?: string;
   installments?: PaymentInstallment[];
   paymentDate?: Date;
+  
+  // Mobile sync properties
+  salesRepId?: string;
+  syncedToMobile?: boolean;
+  lastSyncDate?: Date;
 }
 
 export interface PaymentInstallment {
