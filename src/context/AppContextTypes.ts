@@ -1,6 +1,8 @@
-
 import { Customer, Product, Order, Payment, Vehicle, SalesRep, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 import { Load } from '@/types';
+
+// Define the ConnectionStatus type to match what's in the ConnectionProvider
+export type ConnectionStatus = 'online' | 'offline' | 'connecting' | 'error';
 
 export type AppContextType = {
   customers: Customer[];
@@ -18,7 +20,7 @@ export type AppContextType = {
   productBrands: ProductBrand[];
   deliveryRoutes: DeliveryRoute[];
   backups: Backup[];
-  connectionStatus: 'online' | 'offline';
+  connectionStatus: ConnectionStatus;
   
   isLoadingCustomers: boolean;
   isLoadingProducts: boolean;

@@ -1,6 +1,5 @@
-
 import React, { createContext } from 'react';
-import { AppContextType } from './AppContextTypes';
+import { AppContextType, ConnectionStatus } from './AppContextTypes';
 import defaultContextValues from './defaultContextValues';
 import { useOrders } from '@/hooks/useOrders';
 import { usePayments } from '@/hooks/usePayments';
