@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Product } from '@/types';
 
 interface ProductSearchResultsProps {
@@ -15,13 +15,31 @@ export default function ProductSearchResults({
 }: ProductSearchResultsProps) {
   if (products.length === 0) return null;
   
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  
+  // Calculate the position of the dropdown relative to the input field
+  useEffect(() => {
+    if (resultsRef.current && resultsRef.current.parentElement) {
+      const parentRect = resultsRef.current.parentElement.getBoundingClientRect();
+      
+      setPosition({
+        top: parentRect.bottom,
+        left: parentRect.left,
+        width: parentRect.width
+      });
+    }
+  }, [products]);
+  
   return (
     <div 
       ref={resultsRef}
-      className="fixed z-[100] mt-1 w-full max-h-80 overflow-auto bg-white border rounded-md shadow-lg"
+      className="fixed z-[100] overflow-auto bg-white border rounded-md shadow-lg"
       style={{
-        top: 'auto',
-        width: resultsRef.current?.parentElement?.offsetWidth + 'px' || '100%'
+        top: `${position.top}px`,
+        left: `${position.left}px`,
+        width: `${position.width}px`,
+        maxHeight: '40vh', // Limit to 40% of viewport height
+        maxWidth: '100%'
       }}
     >
       {products.map(product => (
