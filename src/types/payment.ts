@@ -19,7 +19,7 @@ export interface Payment {
   customerDocument?: string;
   customerAddress?: string;
   installments?: PaymentInstallment[];
-  paymentDate?: Date; // Added payment date field to match database column
+  paymentDate?: Date;
 }
 
 export interface PaymentInstallment {
@@ -34,8 +34,8 @@ export interface PaymentMethod {
   notes: string;
   createdAt: Date;
   updatedAt: Date;
-  type?: string; // Added type property
-  active?: boolean; // Added active property
+  type?: string;
+  active?: boolean;
 }
 
 export interface PaymentTable {
@@ -47,25 +47,24 @@ export interface PaymentTable {
   createdAt: Date;
   updatedAt: Date;
   type?: string;
-  terms?: PaymentTableTerm[]; // Use PaymentTableTerm type
+  terms?: PaymentTableTerm[];
   payableTo?: string;
   paymentLocation?: string;
-  active?: boolean; // Added active property
+  active?: boolean;
 }
 
 export interface PaymentTableInstallment {
   installment: number;
   percentage: number;
   days: number;
-  id?: string; // Make id optional here
+  id?: string;
   description?: string;
 }
 
-// Make PaymentTableTerm and PaymentTableInstallment interface compatible
 export interface PaymentTableTerm {
   id: string;
   days: number;
   percentage: number;
   description?: string;
-  installment: number; // This property is required
+  installment: number;
 }

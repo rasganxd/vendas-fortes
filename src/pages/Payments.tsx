@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,13 +12,33 @@ import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { toast } from '@/components/ui/use-toast';
 import { usePayments } from '@/hooks/usePayments';
+import { loadOrders } from '@/hooks/useOrders';
 
 export default function Payments() {
   const [activeTab, setActiveTab] = useState<string>('pending');
-  const { orders, customers, payments } = useAppContext();
+  const { customers } = useAppContext();
   const { paymentMethods } = usePaymentMethods();
   const { paymentTables } = usePaymentTables();
-  const { addPayment } = usePayments();
+  const { payments, addPayment, isLoading } = usePayments();
+  const [orders, setOrders] = useState([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+
+  // Load orders
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setIsLoadingOrders(true);
+        const loadedOrders = await loadOrders();
+        setOrders(loadedOrders);
+      } catch (error) {
+        console.error("Error loading orders:", error);
+      } finally {
+        setIsLoadingOrders(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   // Get pending payment orders (orders that have a balance due)
   const pendingPaymentOrders = orders
@@ -71,6 +91,17 @@ export default function Payments() {
       });
     }
   };
+
+  // Show loading state
+  if (isLoading || isLoadingOrders) {
+    return (
+      <PageLayout title="Pagamentos">
+        <div className="flex justify-center items-center h-96">
+          <p>Carregando dados...</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout title="Pagamentos">
