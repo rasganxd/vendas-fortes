@@ -1,49 +1,40 @@
 
 import { Product } from '@/types';
-import { productLocalService } from '../local/productLocalService';
+import { productService as firebaseProductService, createBulkProducts as firebaseCreateBulkProducts } from '../firebase/productService';
 
 /**
  * Service for product operations
- * Now using local storage instead of Supabase
+ * Now using Firebase instead of local storage
  */
 export const productService = {
   // Get all products
   getAll: async (): Promise<Product[]> => {
-    return productLocalService.getAll();
+    return firebaseProductService.getAll();
   },
 
   // Get product by ID
   getById: async (id: string): Promise<Product | null> => {
-    return productLocalService.getById(id);
+    return firebaseProductService.getById(id);
   },
 
   // Add product
   add: async (product: Omit<Product, 'id'>): Promise<string> => {
-    const productWithDates = {
-      ...product,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    return productLocalService.add(productWithDates);
+    return firebaseProductService.add(product);
   },
 
   // Update product
   update: async (id: string, product: Partial<Product>): Promise<void> => {
-    const updateData = {
-      ...product,
-      updatedAt: new Date()
-    };
-    return productLocalService.update(id, updateData);
+    return firebaseProductService.update(id, product);
   },
 
   // Delete product
   delete: async (id: string): Promise<void> => {
-    return productLocalService.delete(id);
+    return firebaseProductService.delete(id);
   },
 
   // Get product by code
   getByCode: async (code: number): Promise<Product | null> => {
-    return productLocalService.getByCode(code);
+    return firebaseProductService.getByCode(code);
   }
 };
 
@@ -53,17 +44,5 @@ export const productService = {
  * @returns Array of generated IDs
  */
 export const createBulkProducts = async (products: Omit<Product, 'id'>[]): Promise<string[]> => {
-  try {
-    const results: string[] = [];
-    
-    for (const product of products) {
-      const id = await productService.add(product);
-      results.push(id);
-    }
-    
-    return results;
-  } catch (error) {
-    console.error("Error creating bulk products:", error);
-    throw error;
-  }
+  return firebaseCreateBulkProducts(products);
 };

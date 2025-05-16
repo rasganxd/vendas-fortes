@@ -1,49 +1,45 @@
 
 import { Customer } from '@/types';
-import { customerLocalService } from '../local/customerLocalService';
+import { customerService as firebaseCustomerService } from '../firebase/customerService';
 
 /**
  * Service for customer operations
- * Now using local storage instead of Supabase
+ * Now using Firebase instead of local storage
  */
 export const customerService = {
   // Get all customers
   getAll: async (): Promise<Customer[]> => {
-    return customerLocalService.getAll();
+    return firebaseCustomerService.getAll();
   },
   
   // Get customer by ID
   getById: async (id: string): Promise<Customer | null> => {
-    return customerLocalService.getById(id);
+    return firebaseCustomerService.getById(id);
   },
   
   // Add customer
   add: async (customer: Omit<Customer, 'id'>): Promise<string> => {
-    const customerWithDates = {
-      ...customer,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    return customerLocalService.add(customerWithDates);
+    return firebaseCustomerService.add(customer);
   },
   
   // Update customer
   update: async (id: string, customer: Partial<Customer>): Promise<void> => {
-    const updateData = {
-      ...customer,
-      updatedAt: new Date()
-    };
-    return customerLocalService.update(id, updateData);
+    return firebaseCustomerService.update(id, customer);
   },
   
   // Delete customer
   delete: async (id: string): Promise<void> => {
-    return customerLocalService.delete(id);
+    return firebaseCustomerService.delete(id);
   },
 
   // Get customer by code
   getByCode: async (code: number): Promise<Customer | null> => {
-    return customerLocalService.getByCode(code);
+    return firebaseCustomerService.getByCode(code);
+  },
+
+  // Generate next customer code
+  generateNextCustomerCode: async (): Promise<number> => {
+    return firebaseCustomerService.generateNextCustomerCode();
   }
 };
 
@@ -51,5 +47,5 @@ export const customerService = {
  * Export getCustomerByCode function for backward compatibility
  */
 export const getCustomerByCode = async (code: number): Promise<Customer | null> => {
-  return customerLocalService.getByCode(code);
+  return firebaseCustomerService.getByCode(code);
 };
