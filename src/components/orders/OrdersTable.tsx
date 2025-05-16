@@ -61,17 +61,8 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   };
 
   // Guard against undefined array
-  if (!filteredOrders || !Array.isArray(filteredOrders)) {
-    return (
-      <div className="relative border rounded-md">
-        <TableRow>
-          <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-            Nenhum pedido encontrado
-          </TableCell>
-        </TableRow>
-      </div>
-    );
-  }
+  const safeFilteredOrders = Array.isArray(filteredOrders) ? filteredOrders : [];
+  const safeSelectedOrderIds = Array.isArray(selectedOrderIds) ? selectedOrderIds : [];
 
   return (
     <div className="relative border rounded-md">
@@ -81,7 +72,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
             <TableRow>
               <TableHead className="w-[50px] px-2">
                 <Checkbox 
-                  checked={filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length} 
+                  checked={safeFilteredOrders.length > 0 && safeSelectedOrderIds.length === safeFilteredOrders.length} 
                   onCheckedChange={handleSelectAllOrders}
                 />
               </TableHead>
@@ -93,18 +84,18 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.length === 0 ? (
+            {safeFilteredOrders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
                   Nenhum pedido encontrado
                 </TableCell>
               </TableRow>
             ) : (
-              filteredOrders.map((order) => (
+              safeFilteredOrders.map((order) => (
                 <TableRow key={order.id} className={order.archived ? "bg-gray-50" : ""}>
                   <TableCell className="px-2">
                     <Checkbox 
-                      checked={selectedOrderIds.includes(order.id)} 
+                      checked={safeSelectedOrderIds.includes(order.id)} 
                       onCheckedChange={() => handleToggleOrderSelection(order.id)}
                     />
                   </TableCell>

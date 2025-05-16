@@ -1,10 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clipboard, CheckCircle2, Plus, Filter, Search, ArrowDown, ArrowUp } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Order } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import OrdersTable from '@/components/orders/OrdersTable';
 import OrderDetailDialog from '@/components/orders/OrderDetailDialog';
@@ -14,6 +12,9 @@ import { toast } from 'sonner';
 import { useOrders } from '@/hooks/useOrders';
 import { useConnection } from '@/context/providers/ConnectionProvider';
 import { useCustomers } from '@/hooks/useCustomers';
+import OrdersActionButtons from '@/components/orders/OrdersActionButtons';
+import OrdersSearchBar from '@/components/orders/OrdersSearchBar';
+import EmptyOrdersState from '@/components/orders/EmptyOrdersState';
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -167,11 +168,6 @@ const Orders = () => {
       
     return sortDirection === 'asc' ? comparison : -comparison;
   });
-  
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) return null;
-    return sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
-  };
 
   // Log filtered and sorted orders
   console.log(`Orders Page: Displaying ${sortedOrders.length} orders (filtered from ${orders?.length || 0})`);
@@ -181,46 +177,16 @@ const Orders = () => {
       title="Pedidos" 
       subtitle="Gerencie seus pedidos"
     >
-      <div className="flex gap-2 mb-4">
-        <Button 
-          onClick={handleNewOrder} 
-          variant="default" 
-          className="bg-sales-800 hover:bg-sales-700"
-        >
-          <Plus className="h-4 w-4 mr-2" /> Novo Pedido
-        </Button>
-        <Button
-          onClick={handlePrintOrders}
-          variant="outline"
-          disabled={selectedOrderIds.length === 0}
-        >
-          <Clipboard className="h-4 w-4 mr-2" /> Imprimir
-          {selectedOrderIds.length > 0 && (
-            <span className="ml-2 bg-sales-100 text-sales-700 rounded-full px-2 py-0.5 text-xs font-medium">
-              {selectedOrderIds.length}
-            </span>
-          )}
-        </Button>
-      </div>
+      <OrdersActionButtons 
+        handleNewOrder={handleNewOrder}
+        handlePrintOrders={handlePrintOrders}
+        selectedOrderCount={selectedOrderIds.length}
+      />
       
-      <div className="flex flex-col sm:flex-row items-center mb-4 gap-2">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="text"
-            placeholder="Buscar pedidos..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" className="flex gap-1 items-center">
-            <Filter className="h-4 w-4" /> Filtrar
-          </Button>
-        </div>
-      </div>
+      <OrdersSearchBar 
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+      />
 
       <Card className="my-2 overflow-hidden">
         <CardContent className="p-0">
@@ -240,22 +206,7 @@ const Orders = () => {
               formatCurrency={formatCurrency}
             />
           ) : (
-            <div className="p-8 text-center">
-              <CheckCircle2 className="mx-auto h-12 w-12 text-gray-300" />
-              <h3 className="mt-2 font-medium text-gray-900">Sem pedidos</h3>
-              <p className="mt-1 text-gray-500">
-                Nenhum pedido encontrado. Crie seu primeiro pedido para começar.
-              </p>
-              <div className="mt-6">
-                <Button 
-                  onClick={handleNewOrder}
-                  className="bg-sales-800 hover:bg-sales-700"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Criar Pedido
-                </Button>
-              </div>
-            </div>
+            <EmptyOrdersState handleNewOrder={handleNewOrder} />
           )}
         </CardContent>
       </Card>
