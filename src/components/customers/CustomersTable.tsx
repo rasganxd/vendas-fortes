@@ -27,7 +27,7 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
 }) => {
   if (customers.length === 0) {
     return (
-      <div className="text-center py-10 text-gray-500">
+      <div className="text-center py-6 text-gray-500">
         Nenhum cliente encontrado
       </div>
     );
@@ -38,10 +38,9 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-16">Código</TableHead>
+            <TableHead className="w-14">Código</TableHead>
             <TableHead>Nome</TableHead>
             <TableHead>Telefone</TableHead>
-            <TableHead>Cidade</TableHead>
             <TableHead className="w-24 text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -53,10 +52,6 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
               </TableCell>
               <TableCell>{customer.name}</TableCell>
               <TableCell>{customer.phone || "—"}</TableCell>
-              <TableCell>
-                {customer.city}
-                {customer.state ? `, ${customer.state}` : ""}
-              </TableCell>
               <TableCell className="text-right">
                 <Button 
                   variant="ghost"
