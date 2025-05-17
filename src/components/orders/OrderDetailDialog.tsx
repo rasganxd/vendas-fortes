@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Order, Customer } from '@/types';
@@ -107,18 +108,26 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedOrder?.items.map((item, index) => (
-                    <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="py-2 px-4">{item.productName}</td>
-                      <td className="py-2 px-4 text-center">{item.quantity}</td>
-                      <td className="py-2 px-4 text-right">
-                        {formatCurrency(item.unitPrice)}
-                      </td>
-                      <td className="py-2 px-4 text-right font-medium">
-                        {formatCurrency(item.total)}
+                  {selectedOrder?.items && selectedOrder.items.length > 0 ? (
+                    selectedOrder.items.map((item, index) => (
+                      <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="py-2 px-4">{item.productName}</td>
+                        <td className="py-2 px-4 text-center">{item.quantity}</td>
+                        <td className="py-2 px-4 text-right">
+                          {formatCurrency(item.unitPrice)}
+                        </td>
+                        <td className="py-2 px-4 text-right font-medium">
+                          {formatCurrency(item.total)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-2 px-4 text-center text-gray-500">
+                        Nenhum item encontrado
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
