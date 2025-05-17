@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   Table,
@@ -17,7 +16,7 @@ import { useSalesReps } from '@/hooks/useSalesReps';
 import { EditSalesRepDialog } from '@/components/personnel/EditSalesRepDialog';
 import { DeleteSalesRepDialog } from '@/components/personnel/DeleteSalesRepDialog';
 import MobileSyncStatus from '@/components/personnel/MobileSyncStatus';
-import { Plus, Edit, Trash, Smartphone } from 'lucide-react';
+import { Plus, ExternalLink, Trash2, Smartphone } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -167,8 +166,7 @@ const SalesRepsPage = () => {
                         setOpenEdit(true);
                       }}
                     >
-                      <Edit size={16} className="mr-2" />
-                      Editar
+                      <ExternalLink size={16} />
                     </Button>
                     <Button 
                       variant="ghost"
@@ -179,8 +177,7 @@ const SalesRepsPage = () => {
                       }}
                       className="text-red-500 hover:text-red-700"
                     >
-                      <Trash size={16} className="mr-2" />
-                      Excluir
+                      <Trash2 size={16} />
                     </Button>
                   </TableCell>
                 </TableRow>
