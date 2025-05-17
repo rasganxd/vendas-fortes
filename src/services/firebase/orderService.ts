@@ -7,7 +7,7 @@ import { orderFirestoreService } from './OrderFirestoreService';
  * Using Firebase exclusively
  */
 export const orderService = {
-  // Get all orders
+  // Get all orders with enhanced logging and error handling
   getAll: async (): Promise<Order[]> => {
     try {
       console.log("orderService: Starting getAll orders request");
@@ -22,14 +22,37 @@ export const orderService = {
             code: order.code,
             customerName: order.customerName,
             total: order.total,
-            createdAt: order.createdAt
+            createdAt: order.createdAt,
+            hasItems: Boolean(order.items && order.items.length > 0),
+            itemCount: order.items?.length || 0
           }))
         );
       } else {
         console.log("orderService: No orders returned from Firestore");
       }
       
-      return result;
+      // Normalize orders data to ensure consistent structure
+      const normalizedOrders = result.map(order => {
+        // Ensure items is always an array
+        if (!order.items || !Array.isArray(order.items)) {
+          console.warn(`Order ${order.id} has missing or invalid items array, setting to empty array`);
+          order.items = [];
+        }
+        
+        // Ensure dates are properly set
+        if (!order.createdAt) {
+          console.warn(`Order ${order.id} has missing createdAt, setting to current date`);
+          order.createdAt = new Date();
+        }
+        
+        if (!order.updatedAt) {
+          order.updatedAt = new Date();
+        }
+        
+        return order;
+      });
+      
+      return normalizedOrders;
     } catch (error) {
       console.error("Error in orderService.getAll:", error);
       // Return empty array on error to prevent app from crashing
@@ -37,21 +60,37 @@ export const orderService = {
     }
   },
   
-  // Get order by ID
+  // Get order by ID with enhanced validation and error handling
   getById: async (id: string): Promise<Order | null> => {
     try {
+      if (!id || typeof id !== 'string') {
+        console.error("Invalid order ID provided:", id);
+        return null;
+      }
+      
       console.log(`orderService: Getting order by ID: ${id}`);
       const order = await orderFirestoreService.getById(id);
-      if (order) {
-        console.log(`orderService: Found order with ID ${id}:`, {
-          id: order.id,
-          code: order.code,
-          customerName: order.customerName,
-          total: order.total
-        });
-      } else {
+      
+      if (!order) {
         console.log(`orderService: No order found with ID ${id}`);
+        return null;
       }
+      
+      console.log(`orderService: Found order with ID ${id}:`, {
+        id: order.id,
+        code: order.code,
+        customerName: order.customerName,
+        total: order.total,
+        hasItems: Boolean(order.items && order.items.length > 0),
+        itemCount: order.items?.length || 0
+      });
+      
+      // Normalize order data
+      if (!order.items || !Array.isArray(order.items)) {
+        console.warn(`Order ${id} has missing or invalid items array, setting to empty array`);
+        order.items = [];
+      }
+      
       return order;
     } catch (error) {
       console.error(`Error in orderService.getById(${id}):`, error);
@@ -59,7 +98,7 @@ export const orderService = {
     }
   },
   
-  // Add order
+  // Add order with enhanced validation and data normalization
   add: async (order: Omit<Order, 'id'>): Promise<string> => {
     try {
       console.log("orderService: Adding new order:", {
@@ -67,6 +106,23 @@ export const orderService = {
         total: order.total,
         items: order.items?.length
       });
+      
+      // Validate and normalize order data
+      if (!order.items || !Array.isArray(order.items)) {
+        console.warn("Order has missing or invalid items array, setting to empty array");
+        order.items = [];
+      }
+      
+      // Ensure each item has consistent data
+      if (order.items.length > 0) {
+        order.items = order.items.map(item => ({
+          ...item,
+          unitPrice: item.unitPrice || item.price || 0,
+          price: item.price || item.unitPrice || 0,
+          quantity: item.quantity || 1,
+          total: (item.unitPrice || item.price || 0) * (item.quantity || 1)
+        }));
+      }
       
       // Ensure date fields are properly set
       const orderWithDates = {
@@ -84,17 +140,38 @@ export const orderService = {
     }
   },
   
-  // Update order
+  // Update order with enhanced validation
   update: async (id: string, order: Partial<Order>): Promise<void> => {
     try {
-      console.log(`orderService: Updating order ${id} with:`, order);
+      console.log(`orderService: Updating order ${id} with:`, {
+        ...order,
+        items: order.items ? `${order.items.length} items` : 'unchanged'
+      });
+      
+      // Normalize items if present
+      if (order.items) {
+        if (!Array.isArray(order.items)) {
+          console.warn("Update data contains non-array items, fixing");
+          order.items = [];
+        } else if (order.items.length > 0) {
+          // Ensure each item has consistent data
+          order.items = order.items.map(item => ({
+            ...item,
+            unitPrice: item.unitPrice || item.price || 0,
+            price: item.price || item.unitPrice || 0,
+            quantity: item.quantity || 1,
+            total: (item.unitPrice || item.price || 0) * (item.quantity || 1)
+          }));
+        }
+      }
+      
       const updateData = {
         ...order,
         updatedAt: new Date()
       };
+      
       await orderFirestoreService.update(id, updateData);
       console.log(`orderService: Order ${id} updated successfully`);
-      return;
     } catch (error) {
       console.error(`Error in orderService.update(${id}):`, error);
       throw error; // Re-throw to be handled by the caller
@@ -144,7 +221,7 @@ export const orderService = {
     }
   },
 
-  // Generate next order code
+  // Generate next order code with improved reliability
   generateNextOrderCode: async (): Promise<number> => {
     try {
       console.log("orderService: Generating next order code");
