@@ -42,7 +42,6 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
             <TableHead>Nome</TableHead>
             <TableHead>Telefone</TableHead>
             <TableHead>Cidade</TableHead>
-            <TableHead>Vendedor</TableHead>
             <TableHead className="w-24 text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -58,7 +57,6 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
                 {customer.city}
                 {customer.state ? `, ${customer.state}` : ""}
               </TableCell>
-              <TableCell>{customer.sales_rep_name || "—"}</TableCell>
               <TableCell className="text-right">
                 <Button 
                   variant="ghost"
