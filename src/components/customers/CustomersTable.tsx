@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Eye, MoreHorizontal, PenSquare, Trash2 } from "lucide-react";
+import { Eye, MoreHorizontal, ExternalLink, Trash2 } from "lucide-react";
 import { Customer } from "@/types";
 
 interface CustomersTableProps {
@@ -67,32 +67,28 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
               </TableCell>
               <TableCell>{customer.sales_rep_name || "—"}</TableCell>
               <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Abrir menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onView(customer)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      <span>Visualizar</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEdit(customer)}>
-                      <PenSquare className="mr-2 h-4 w-4" />
-                      <span>Editar</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onDelete(customer.id)}
-                      className="text-red-500 focus:bg-red-50 focus:text-red-500"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Excluir</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onView(customer)}
+                >
+                  <Eye size={16} />
+                </Button>
+                <Button 
+                  variant="ghost"
+                  size="sm" 
+                  onClick={() => onEdit(customer)}
+                >
+                  <ExternalLink size={16} />
+                </Button>
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(customer.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 size={16} />
+                </Button>
               </TableCell>
             </TableRow>
           ))}
