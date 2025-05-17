@@ -8,15 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Eye, MoreHorizontal, ExternalLink, Trash2 } from "lucide-react";
+import { Eye, ExternalLink, Trash2 } from "lucide-react";
 import { Customer } from "@/types";
 
 interface CustomersTableProps {
