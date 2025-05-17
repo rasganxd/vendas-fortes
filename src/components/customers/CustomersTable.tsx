@@ -27,7 +27,7 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
 }) => {
   if (customers.length === 0) {
     return (
-      <div className="text-center py-6 text-gray-500">
+      <div className="text-center py-4 text-gray-500">
         Nenhum cliente encontrado
       </div>
     );
@@ -37,43 +37,45 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-14">Código</TableHead>
-            <TableHead>Nome</TableHead>
-            <TableHead>Telefone</TableHead>
-            <TableHead className="w-24 text-right">Ações</TableHead>
+          <TableRow className="h-8">
+            <TableHead className="w-14 py-2">Código</TableHead>
+            <TableHead className="py-2">Nome</TableHead>
+            <TableHead className="py-2">Telefone</TableHead>
+            <TableHead className="w-24 text-right py-2">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {customers.map((customer) => (
-            <TableRow key={customer.id}>
-              <TableCell className="font-medium">
+            <TableRow key={customer.id} className="h-10">
+              <TableCell className="font-medium py-1.5">
                 {customer.code || "—"}
               </TableCell>
-              <TableCell>{customer.name}</TableCell>
-              <TableCell>{customer.phone || "—"}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="py-1.5">{customer.name}</TableCell>
+              <TableCell className="py-1.5">{customer.phone || "—"}</TableCell>
+              <TableCell className="text-right py-1.5">
                 <Button 
                   variant="ghost"
                   size="sm"
+                  className="h-7 px-2"
                   onClick={() => onView(customer)}
                 >
-                  <Eye size={16} />
-                </Button>
-                <Button 
-                  variant="ghost"
-                  size="sm" 
-                  onClick={() => onEdit(customer)}
-                >
-                  <ExternalLink size={16} />
+                  <Eye size={15} />
                 </Button>
                 <Button 
                   variant="ghost"
                   size="sm"
-                  onClick={() => onDelete(customer.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="h-7 px-2"
+                  onClick={() => onEdit(customer)}
                 >
-                  <Trash2 size={16} />
+                  <ExternalLink size={15} />
+                </Button>
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-red-500 hover:text-red-700"
+                  onClick={() => onDelete(customer.id)}
+                >
+                  <Trash2 size={15} />
                 </Button>
               </TableCell>
             </TableRow>
