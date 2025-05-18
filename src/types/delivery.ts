@@ -1,67 +1,58 @@
 
+import { OrderItem } from './order';
+
 export interface DeliveryRoute {
   id: string;
   name: string;
-  date: Date | string;
-  driverId: string;
-  driverName: string; // For compatibility
-  vehicleId: string;
-  vehicleName: string; // For compatibility
-  stops: RouteStop[];
-  status: 'pending' | 'in-progress' | 'completed' | 'planning' | 'assigned';
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  description?: string;
+  active?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export interface RouteStop {
+export interface Vehicle {
   id: string;
-  customerId: string;
-  customerName: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  zipCode?: string; // For compatibility
-  lat: number;
-  lng: number;
-  sequence: number;
-  position: number; // For compatibility
-  status: 'pending' | 'completed';
-  completed: boolean;
-  orderId?: string;
+  name: string;
+  plateNumber: string;
+  type: string;
+  capacity?: number;
+  notes?: string;
+  active?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Load {
   id: string;
-  name: string;
-  date: Date | string;
-  vehicleId: string;
-  vehicleName?: string; // For compatibility
-  salesRepId?: string; // Add salesRepId property
-  items: LoadItem[];
-  status: 'pending' | 'in-progress' | 'completed' | 'planning' | 'loading' | 'loaded' | 'in-transit' | 'delivered';
-  total: number;
-  notes: string;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  orderIds?: string[];
-  locked?: boolean;
+  code: number;
+  description?: string;
+  vehicleId?: string;
+  vehicleName?: string;
+  driverId?: string;
+  driverName?: string;
+  salesRepId?: string;
+  salesRepName?: string;
+  routeId?: string;
+  routeName?: string;
+  status: 'pending' | 'loading' | 'in_transit' | 'delivered' | 'completed';
+  departureDate?: Date;
+  deliveryDate?: Date;
+  returnDate?: Date;
+  notes?: string;
+  items?: LoadItem[];
+  orders?: string[]; // Order IDs
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface LoadItem {
-  id?: string;
+  id: string;
+  loadId: string;
   productId: string;
   productName: string;
+  productCode: number;
   quantity: number;
-  price: number; // Add price property
-  total?: number;
   orderId?: string;
-  orderItems?: OrderItem[];
-  productCode?: number; // For compatibility
-  customerId?: string; // Add customerId property
+  orderItemId?: string;
+  status: 'pending' | 'loaded' | 'delivered' | 'returned';
 }
-
-// Import OrderItem from order.ts to make sure we're using the same type
-import { OrderItem as OriginalOrderItem } from './order';
-// Re-export the OrderItem type so components using this file can import it
-export type OrderItem = OriginalOrderItem;

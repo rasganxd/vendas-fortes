@@ -1,38 +1,34 @@
 
 import { ProductBrand } from '@/types';
-import { productBrandLocalService } from '../local/productBrandLocalService';
+import { productBrandService as firebaseProductBrandService } from '../firebase/productBrandService';
 
 /**
  * Service for product brand operations
- * Using local storage instead of Supabase
+ * Using Firebase instead of local storage
  */
 export const productBrandService = {
   // Get all product brands
   getAll: async (): Promise<ProductBrand[]> => {
-    return productBrandLocalService.getAll();
+    return firebaseProductBrandService.getAll();
   },
   
   // Get product brand by ID
   getById: async (id: string): Promise<ProductBrand | null> => {
-    return productBrandLocalService.getById(id);
+    return firebaseProductBrandService.getById(id);
   },
   
   // Add product brand
   add: async (brand: Omit<ProductBrand, 'id'>): Promise<string> => {
-    return productBrandLocalService.add(brand);
+    return firebaseProductBrandService.add(brand);
   },
   
   // Update product brand
   update: async (id: string, brand: Partial<ProductBrand>): Promise<void> => {
-    const updateData = {
-      ...brand,
-      updatedAt: new Date()
-    };
-    return productBrandLocalService.update(id, updateData);
+    return firebaseProductBrandService.update(id, brand);
   },
   
   // Delete product brand
   delete: async (id: string): Promise<void> => {
-    return productBrandLocalService.delete(id);
+    return firebaseProductBrandService.delete(id);
   }
 };

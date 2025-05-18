@@ -1,39 +1,47 @@
 
 import { PaymentTable } from '@/types';
-import { paymentTableService as firebasePaymentTableService } from '../firebase/paymentTableService';
+import { paymentTableFirestoreService } from './PaymentTableFirestoreService';
 
 /**
- * Service for payment table operations
- * Using Firebase instead of local storage
+ * Service for payment table operations using Firebase
  */
 export const paymentTableService = {
   // Get all payment tables
   getAll: async (): Promise<PaymentTable[]> => {
-    return firebasePaymentTableService.getAll();
+    return paymentTableFirestoreService.getAll();
   },
   
   // Get payment table by ID
   getById: async (id: string): Promise<PaymentTable | null> => {
-    return firebasePaymentTableService.getById(id);
+    return paymentTableFirestoreService.getById(id);
   },
   
   // Get payment table by name
   getByName: async (name: string): Promise<PaymentTable | null> => {
-    return firebasePaymentTableService.getByName(name);
+    return paymentTableFirestoreService.getByName(name);
   },
   
   // Add payment table
   add: async (table: Omit<PaymentTable, 'id'>): Promise<string> => {
-    return firebasePaymentTableService.add(table);
+    const tableWithDates = {
+      ...table,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    return paymentTableFirestoreService.add(tableWithDates);
   },
   
   // Update payment table
   update: async (id: string, table: Partial<PaymentTable>): Promise<void> => {
-    return firebasePaymentTableService.update(id, table);
+    const updateData = {
+      ...table,
+      updatedAt: new Date()
+    };
+    return paymentTableFirestoreService.update(id, updateData);
   },
   
   // Delete payment table
   delete: async (id: string): Promise<void> => {
-    return firebasePaymentTableService.delete(id);
+    return paymentTableFirestoreService.delete(id);
   }
 };
