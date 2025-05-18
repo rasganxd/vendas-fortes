@@ -24,7 +24,8 @@ export const mockStops: RouteStop[] = mockOrders
       lng: 0,
       sequence: index + 1,
       position: index + 1, // For compatibility
-      status: 'pending' as const,
-      completed: false
+      status: 'pending' as 'pending',
+      completed: false,
+      notes: ""
     };
   });

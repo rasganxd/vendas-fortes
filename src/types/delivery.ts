@@ -6,26 +6,58 @@ export interface DeliveryRoute {
   name: string;
   description?: string;
   active?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  status: "completed" | "pending" | "in-progress" | "planning" | "assigned";
+  date: Date;
+  driverId: string;
+  driverName: string;
+  vehicleId: string;
+  vehicleName: string;
+  stops: RouteStop[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RouteStop {
+  id: string;
+  orderId: string;
+  customerId: string;
+  customerName: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  zipCode?: string;
+  sequence: number;
+  position: number;
+  status: 'pending' | 'completed' | 'in-progress';
+  completed: boolean;
+  lat: number;
+  lng: number;
+  notes?: string;
 }
 
 export interface Vehicle {
   id: string;
   name: string;
   plateNumber: string;
+  licensePlate: string;
   type: string;
   capacity?: number;
-  notes?: string;
+  model?: string;
+  driverName?: string;
   active?: boolean;
+  status?: string;
+  notes?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface Load {
   id: string;
-  code: number;
+  name: string;
+  code?: number;
   description?: string;
+  date: Date;
   vehicleId?: string;
   vehicleName?: string;
   driverId?: string;
@@ -34,13 +66,16 @@ export interface Load {
   salesRepName?: string;
   routeId?: string;
   routeName?: string;
-  status: 'pending' | 'loading' | 'in_transit' | 'delivered' | 'completed';
+  status: 'pending' | 'loading' | 'loaded' | 'in_transit' | 'delivered' | 'completed';
   departureDate?: Date;
   deliveryDate?: Date;
   returnDate?: Date;
   notes?: string;
   items?: LoadItem[];
-  orders?: string[]; // Order IDs
+  orders?: string[];
+  orderIds?: string[];
+  total?: number;
+  locked?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,7 +87,10 @@ export interface LoadItem {
   productName: string;
   productCode: number;
   quantity: number;
+  price: number;
+  total?: number;
   orderId?: string;
   orderItemId?: string;
+  customerId?: string;
   status: 'pending' | 'loaded' | 'delivered' | 'returned';
 }

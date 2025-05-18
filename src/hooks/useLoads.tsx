@@ -138,13 +138,42 @@ export const useLoads = () => {
     }
   };
 
+  // Toggle lock status of a load
+  const toggleLoadLock = async (id: string): Promise<void> => {
+    try {
+      const load = loads.find(l => l.id === id);
+      if (!load) {
+        throw new Error("Carga não encontrada");
+      }
+
+      const newLockedStatus = !load.locked;
+      await updateLoad(id, { locked: newLockedStatus });
+      
+      toast({
+        title: newLockedStatus ? "Carga bloqueada" : "Carga desbloqueada",
+        description: newLockedStatus 
+          ? "A carga foi bloqueada para edição" 
+          : "A carga foi desbloqueada para edição"
+      });
+    } catch (error) {
+      console.error(`Error toggling lock status for load ${id}:`, error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao alterar bloqueio",
+        description: "Não foi possível alterar o status de bloqueio da carga."
+      });
+    }
+  };
+
   return {
     loads,
+    setLoads,
     isLoading,
     isProcessing,
     getLoadById,
     addLoad,
     updateLoad,
-    deleteLoad
+    deleteLoad,
+    toggleLoadLock
   };
 };
