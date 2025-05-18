@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -148,7 +147,6 @@ export default function FirebaseDataTester() {
         city: 'Cidade Teste',
         state: 'ST',
         zipCode: '12345-678',
-        active: true,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -241,7 +239,6 @@ export default function FirebaseDataTester() {
         description: 'Produto para testes',
         price: 99.99,
         cost: 50.00,
-        minimumPrice: 70.00,
         unit: 'un',
         stock: 100,
         createdAt: new Date(),
@@ -324,6 +321,7 @@ export default function FirebaseDataTester() {
       const testCategory: Omit<ProductCategory, 'id'> = {
         name: `Categoria Teste ${new Date().getTime()}`,
         description: 'Categoria para testes',
+        notes: '',
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -344,6 +342,7 @@ export default function FirebaseDataTester() {
       const testGroup: Omit<ProductGroup, 'id'> = {
         name: `Grupo Teste ${new Date().getTime()}`,
         description: 'Grupo para testes',
+        notes: '',
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -364,6 +363,7 @@ export default function FirebaseDataTester() {
       const testBrand: Omit<ProductBrand, 'id'> = {
         name: `Marca Teste ${new Date().getTime()}`,
         description: 'Marca para testes',
+        notes: '',
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -399,7 +399,6 @@ export default function FirebaseDataTester() {
       const testSalesRep: Omit<SalesRep, 'id'> = {
         name: `Vendedor Teste ${new Date().getTime()}`,
         code: Math.floor(Math.random() * 10000),
-        email: 'vendedor@exemplo.com',
         phone: '(99) 99999-9999',
         active: true,
         createdAt: new Date(),
@@ -445,6 +444,7 @@ export default function FirebaseDataTester() {
         name: `Veículo Teste ${new Date().getTime()}`,
         type: "van",
         plateNumber: "ABC-1234",
+        licensePlate: "ABC-1234",
         model: "Modelo Teste",
         capacity: 1000,
         active: true,
@@ -491,6 +491,12 @@ export default function FirebaseDataTester() {
         name: `Rota Teste ${new Date().getTime()}`,
         description: 'Rota para testes',
         status: "planning",
+        date: new Date(),
+        driverName: "Motorista de Teste",
+        driverId: "",
+        vehicleId: "",
+        stops: [],
+        notes: "",
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -535,7 +541,7 @@ export default function FirebaseDataTester() {
         code: Math.floor(Math.random() * 10000),
         description: 'Carga para testes',
         date: new Date(),
-        status: "planning",
+        status: "pending",
         createdAt: new Date(),
         updatedAt: new Date()
       };

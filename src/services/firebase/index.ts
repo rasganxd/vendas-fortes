@@ -2,7 +2,7 @@
 // Export all Firebase services from a single file for easier imports
 
 // Firebase config
-export { db, auth } from './config';
+export { db } from './config';
 
 // Firestore services
 export { customerService } from './customerService';
