@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -146,7 +147,9 @@ export default function FirebaseDataTester() {
         address: 'Rua de Teste, 123',
         city: 'Cidade Teste',
         state: 'ST',
+        zip: '12345-678',
         zipCode: '12345-678',
+        notes: 'Cliente para testes',
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -241,6 +244,7 @@ export default function FirebaseDataTester() {
         cost: 50.00,
         unit: 'un',
         stock: 100,
+        minStock: 10,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -400,6 +404,15 @@ export default function FirebaseDataTester() {
         name: `Vendedor Teste ${new Date().getTime()}`,
         code: Math.floor(Math.random() * 10000),
         phone: '(99) 99999-9999',
+        email: '', // Added missing property
+        address: '', // Added missing property
+        city: '', // Added missing property
+        state: '', // Added missing property
+        zip: '', // Added missing property
+        region: '', // Added missing property
+        document: '', // Added missing property
+        role: '', // Added missing property
+        notes: '', // Added missing property
         active: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -447,6 +460,9 @@ export default function FirebaseDataTester() {
         licensePlate: "ABC-1234",
         model: "Modelo Teste",
         capacity: 1000,
+        driverName: "", // Added missing property
+        status: "", // Added missing property
+        notes: "", // Added missing property
         active: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -495,8 +511,8 @@ export default function FirebaseDataTester() {
         driverName: "Motorista de Teste",
         driverId: "",
         vehicleId: "",
+        vehicleName: "", // Added missing property
         stops: [],
-        notes: "",
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -542,6 +558,9 @@ export default function FirebaseDataTester() {
         description: 'Carga para testes',
         date: new Date(),
         status: "pending",
+        items: [], // Added missing property
+        orders: [], // Added missing property
+        total: 0, // Added missing property
         createdAt: new Date(),
         updatedAt: new Date()
       };
