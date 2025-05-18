@@ -7,6 +7,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { toast } from "sonner";
 import MobileSyncPanel from './MobileSyncPanel';
 import { initializeFirestore } from '@/services/firebase/initializeFirestore';
+import FirebaseDataTester from './FirebaseDataTester';
 
 export default function SystemSettings() {
   const { clearCache } = useAppContext();
@@ -121,6 +122,8 @@ export default function SystemSettings() {
           </div>
         </CardContent>
       </Card>
+      
+      <FirebaseDataTester />
       
       <MobileSyncPanel />
     </div>
