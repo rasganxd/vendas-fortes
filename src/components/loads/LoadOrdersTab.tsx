@@ -73,13 +73,15 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
       order.items.forEach(item => {
         newLoadItems.push({
           id: uuid(),
+          loadId: '',  // This will be set when the load is created
           orderId: order.id,
           productId: item.productId || '',
           productName: item.productName,
           quantity: item.quantity,
-          orderItems: [item],
           price: item.price,
-          customerId: order.customerId
+          productCode: item.productCode,
+          customerId: order.customerId,
+          status: 'pending'
         });
       });
     });

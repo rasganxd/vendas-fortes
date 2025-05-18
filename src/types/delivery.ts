@@ -66,7 +66,7 @@ export interface Load {
   salesRepName?: string;
   routeId?: string;
   routeName?: string;
-  status: 'pending' | 'loading' | 'loaded' | 'in_transit' | 'delivered' | 'completed';
+  status: 'pending' | 'loading' | 'loaded' | 'in_transit' | 'delivered' | 'completed' | 'planning';
   departureDate?: Date;
   deliveryDate?: Date;
   returnDate?: Date;

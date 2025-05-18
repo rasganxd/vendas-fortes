@@ -18,6 +18,6 @@ export const mockLoadItems: LoadItem[] = mockOrders
       orderItemId: item.id,
       productCode: item.productCode,
       customerId: order.customerId,
-      status: 'pending'
+      status: 'pending' as const
     }));
   });

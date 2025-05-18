@@ -11,4 +11,6 @@ export * from './delivery';
 export * from './personnel';
 export * from './system';
 export * from './ui';
-export * from './vehicle';
+
+// Export the Vehicle type explicitly from vehicle.ts to avoid ambiguity with delivery.ts
+export type { Vehicle } from './vehicle';

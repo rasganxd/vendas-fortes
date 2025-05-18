@@ -4,6 +4,7 @@ export interface Vehicle {
   name: string;
   type: "car" | "van" | "truck" | "motorcycle";
   licensePlate: string;
+  plateNumber: string;
   model: string;
   capacity: number;
   active: boolean;

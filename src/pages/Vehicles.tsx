@@ -108,7 +108,7 @@ export default function Vehicles() {
     form.reset({
       name: "",
       licensePlate: "",
-      type: "car",
+      type: "van", // Changed from "car" to "van" which is a valid value
       model: "",
       capacity: 0,
       driverName: "",
@@ -143,6 +143,7 @@ export default function Vehicles() {
       updateVehicle(editingVehicle.id, {
         name: data.name,
         licensePlate: data.licensePlate,
+        plateNumber: data.licensePlate, // Add plateNumber
         type: data.type,
         model: data.model,
         capacity: data.capacity,
@@ -153,6 +154,7 @@ export default function Vehicles() {
       addVehicle({
         name: data.name,
         licensePlate: data.licensePlate,
+        plateNumber: data.licensePlate, // Add plateNumber
         type: data.type,
         model: data.model,
         capacity: data.capacity,

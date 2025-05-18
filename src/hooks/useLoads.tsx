@@ -1,8 +1,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { Load } from '@/types';
+import { Load, Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { loadService } from '@/services/firebase/loadService';
+import { orderService } from '@/services/firebase/orderService';
 
 export const useLoads = () => {
   const [loads, setLoads] = useState<Load[]>([]);
@@ -165,6 +166,23 @@ export const useLoads = () => {
     }
   };
 
+  // Get orders from a load
+  const getOrdersFromLoad = (load: Load): Order[] => {
+    try {
+      if (!load.orderIds || load.orderIds.length === 0) {
+        return [];
+      }
+      
+      // In a real implementation, we would fetch the orders from the database
+      // For now, we'll return an empty array since we don't have access to the orders
+      // This is a placeholder function that would need to be implemented properly
+      return [];
+    } catch (error) {
+      console.error("Error getting orders from load:", error);
+      return [];
+    }
+  };
+
   return {
     loads,
     setLoads,
@@ -174,6 +192,7 @@ export const useLoads = () => {
     addLoad,
     updateLoad,
     deleteLoad,
-    toggleLoadLock
+    toggleLoadLock,
+    getOrdersFromLoad
   };
 };

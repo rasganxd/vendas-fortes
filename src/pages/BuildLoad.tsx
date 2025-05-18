@@ -93,14 +93,14 @@ export default function BuildLoad() {
         vehicleId: selectedVehicleId,
         date: loadDate,
         items: orderItems,
-        status: "planning" as const,
+        status: "pending" as const,
         notes: loadNotes,
         salesRepId: selectedSalesRepId,
         orderIds: Array.from(new Set(orderItems.map(item => item.orderId || ''))),
         locked: false,
-        createdAt: new Date(), // Add missing property
-        updatedAt: new Date(), // Add missing property
-        total: calculateLoadTotal() // Add missing property
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        total: calculateLoadTotal()
       };
     
       const loadId = await addLoad(loadData);
@@ -153,10 +153,13 @@ export default function BuildLoad() {
 
     const newLoadItem: LoadItem = {
       id: uuid(),
+      loadId: '', // Will be set when load is created
       productId: selectedProduct.id,
       productName: selectedProduct.name,
+      productCode: selectedProduct.code,
       quantity: quantity,
-      price: selectedProduct.price, // Add price property
+      price: selectedProduct.price,
+      status: 'pending'
     };
 
     setOrderItems([...orderItems, newLoadItem]);
