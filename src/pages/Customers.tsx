@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
@@ -198,24 +197,26 @@ const Customers = () => {
 
       {/* Dialog para visualizar detalhes do cliente */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-4xl">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Detalhes do Cliente</DialogTitle>
           </DialogHeader>
           
-          {selectedCustomer && (
-            <CustomerDetails 
-              customer={selectedCustomer}
-              onEdit={() => {
-                setIsDetailsDialogOpen(false);
-                handleEditCustomer(selectedCustomer);
-              }}
-              onDelete={() => {
-                setIsDetailsDialogOpen(false);
-                handleDeleteCustomer(selectedCustomer.id);
-              }}
-            />
-          )}
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)] pr-2">
+            {selectedCustomer && (
+              <CustomerDetails 
+                customer={selectedCustomer}
+                onEdit={() => {
+                  setIsDetailsDialogOpen(false);
+                  handleEditCustomer(selectedCustomer);
+                }}
+                onDelete={() => {
+                  setIsDetailsDialogOpen(false);
+                  handleDeleteCustomer(selectedCustomer.id);
+                }}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </PageLayout>

@@ -39,9 +39,9 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{customer.name}</h2>
+        <h2 className="text-xl font-bold">{customer.name}</h2>
         <div className="flex space-x-2">
           <Button variant="outline" size="icon" onClick={onEdit}>
             <Edit className="h-4 w-4" />
@@ -52,7 +52,7 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <h3 className="text-lg font-medium">Informações Básicas</h3>
@@ -120,50 +120,50 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
             </Table>
           </CardContent>
         </Card>
-      </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <h3 className="text-lg font-medium">Programação de Visitas</h3>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
-              <div>
-                <div className="text-sm font-medium text-gray-500">Frequência</div>
-                <div>{getFrequencyLabel(customer.visitFrequency)}</div>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Sequência</div>
-                <div>{customer.visitSequence || '—'}</div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm font-medium text-gray-500 mb-2">Dias de Visita</div>
-              <div className="flex flex-wrap gap-2">
-                {customer.visitDays && customer.visitDays.length > 0 
-                  ? customer.visitDays.map(day => (
-                      <Badge key={day} variant="outline" className="bg-slate-100">{getDayLabel(day)}</Badge>
-                    ))
-                  : <span className="text-gray-500">Nenhum dia definido</span>
-                }
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {customer.notes && (
         <Card>
           <CardHeader className="pb-2">
-            <h3 className="text-lg font-medium">Observações</h3>
+            <h3 className="text-lg font-medium">Programação de Visitas</h3>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-line">{customer.notes}</p>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
+                <div>
+                  <div className="text-sm font-medium text-gray-500">Frequência</div>
+                  <div>{getFrequencyLabel(customer.visitFrequency)}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-500">Sequência</div>
+                  <div>{customer.visitSequence || '—'}</div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm font-medium text-gray-500 mb-2">Dias de Visita</div>
+                <div className="flex flex-wrap gap-2">
+                  {customer.visitDays && customer.visitDays.length > 0 
+                    ? customer.visitDays.map(day => (
+                        <Badge key={day} variant="outline" className="bg-slate-100">{getDayLabel(day)}</Badge>
+                      ))
+                    : <span className="text-gray-500">Nenhum dia definido</span>
+                  }
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      )}
+
+        {customer.notes && (
+          <Card>
+            <CardHeader className="pb-2">
+              <h3 className="text-lg font-medium">Observações</h3>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-line">{customer.notes}</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
