@@ -1,9 +1,12 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Order } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import { orderService } from '@/services/firebase/orderService';
 import { useConnection } from '@/context/providers/ConnectionProvider';
+
+// Simple cache for orders to prevent duplicate requests
+const orderCache = new Map<string, { order: Order, timestamp: number }>();
+const CACHE_EXPIRY = 30000; // 30 seconds
 
 // Load orders directly from Firebase with enhanced error handling
 export const loadOrders = async (forceRefresh = false): Promise<Order[]> => {
@@ -57,8 +60,8 @@ export const useOrders = () => {
     fetchOrders();
   }, [connectionStatus]);
 
-  // Improved getOrderById with better error handling and data validation
-  const getOrderById = async (id: string): Promise<Order | null> => {
+  // Improved getOrderById with caching to prevent duplicate requests
+  const getOrderById = useCallback(async (id: string): Promise<Order | null> => {
     if (!id || id.trim() === "") {
       console.error("Invalid order ID provided:", id);
       return null;
@@ -66,6 +69,14 @@ export const useOrders = () => {
     
     try {
       console.log(`Getting order by ID: ${id}`);
+      
+      // Check the cache first
+      const now = Date.now();
+      const cachedData = orderCache.get(id);
+      if (cachedData && (now - cachedData.timestamp) < CACHE_EXPIRY) {
+        console.log(`Using cached order data for ${id}, age: ${(now - cachedData.timestamp)/1000}s`);
+        return cachedData.order;
+      }
       
       // Validate connection status
       if (connectionStatus === 'offline') {
@@ -99,7 +110,10 @@ export const useOrders = () => {
         order.items = [];
       }
       
-      console.log(`Successfully retrieved order ${id} with ${order.items.length} items`);
+      // Store in cache
+      orderCache.set(id, { order, timestamp: now });
+      
+      console.log(`Successfully retrieved and cached order ${id} with ${order.items.length} items`);
       return order;
     } catch (error) {
       console.error(`Error getting order by ID ${id}:`, error);
@@ -109,6 +123,14 @@ export const useOrders = () => {
         description: `Não foi possível carregar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
       });
       return null;
+    }
+  }, [connectionStatus]);
+
+  // Clear cache entry when an order is updated or deleted
+  const invalidateOrderCache = (id: string) => {
+    if (orderCache.has(id)) {
+      console.log(`Invalidating cache for order ${id}`);
+      orderCache.delete(id);
     }
   };
 
@@ -168,7 +190,7 @@ export const useOrders = () => {
     }
   };
 
-  // Update order function with enhanced validation
+  // Update order function with enhanced validation and cache invalidation
   const updateOrder = async (id: string, order: Partial<Order>) => {
     if (!id || id.trim() === "") {
       console.error("Invalid order ID for update:", id);
@@ -217,6 +239,9 @@ export const useOrders = () => {
         return updatedOrders;
       });
       
+      // Invalidate cache for this order
+      invalidateOrderCache(id);
+      
       toast({
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
@@ -235,7 +260,7 @@ export const useOrders = () => {
     }
   };
 
-  // Delete order function
+  // Delete order function with cache invalidation
   const deleteOrder = async (id: string) => {
     try {
       setIsProcessing(true);
@@ -245,6 +270,9 @@ export const useOrders = () => {
       console.log("Order deleted successfully");
       
       setOrders(prev => prev.filter(o => o.id !== id));
+      
+      // Invalidate cache for this order
+      invalidateOrderCache(id);
       
       toast({
         title: "Pedido excluído",
@@ -262,6 +290,22 @@ export const useOrders = () => {
     }
   };
 
+  // Add a new method to refresh specific order data in the cache
+  const refreshOrderData = async (id: string): Promise<Order | null> => {
+    try {
+      console.log(`Force refreshing order data for ID: ${id}`);
+      
+      // Remove from cache first
+      invalidateOrderCache(id);
+      
+      // Then fetch fresh data
+      return await getOrderById(id);
+    } catch (error) {
+      console.error(`Error refreshing order data for ID ${id}:`, error);
+      return null;
+    }
+  };
+
   return {
     orders,
     addOrder,
@@ -270,6 +314,7 @@ export const useOrders = () => {
     isLoading,
     isProcessing,
     setOrders,
-    getOrderById
+    getOrderById,
+    refreshOrderData
   };
 };

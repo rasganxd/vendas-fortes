@@ -10,7 +10,12 @@ import OrderForm from './OrderForm';
 import RecentPurchasesDialog from './RecentPurchasesDialog';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function OrderFormContainer() {
+interface OrderFormContainerProps {
+  preloadedOrder?: Order | null;
+  orderId?: string | null;
+}
+
+export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFormContainerProps) {
   const { customers, salesReps, products, orders, connectionStatus } = useAppContext();
   const { addOrder, getOrderById, updateOrder } = useOrders();
   const { paymentTables } = usePaymentTables();
@@ -42,19 +47,29 @@ export default function OrderFormContainer() {
     console.log("Current connection status:", connectionStatus);
   }, [connectionStatus]);
 
-  // Improved load order function with better error handling and validation
+  // Improved load order function that uses preloaded data when available
   useEffect(() => {
-    const loadOrder = async (orderId: string) => {
+    const loadOrder = async (orderToLoad: string) => {
       try {
         setIsLoading(true);
         setLoadError(null);
-        console.log("Loading order for editing:", orderId);
+        console.log("Loading order for editing:", orderToLoad);
         
-        if (!orderId) {
+        if (!orderToLoad) {
           throw new Error("ID do pedido não fornecido");
         }
         
-        const orderToEdit = await getOrderById(orderId);
+        // Check if we already have the preloaded order data
+        let orderToEdit: Order | null = null;
+        
+        if (preloadedOrder && preloadedOrder.id === orderToLoad) {
+          console.log("Using preloaded order data:", preloadedOrder.id);
+          orderToEdit = preloadedOrder;
+        } else {
+          console.log("Fetching order data from service:", orderToLoad);
+          orderToEdit = await getOrderById(orderToLoad);
+        }
+        
         console.log("Order data received:", orderToEdit);
         
         if (!orderToEdit) {
@@ -63,11 +78,11 @@ export default function OrderFormContainer() {
         
         console.log("Order loaded successfully:", orderToEdit);
         setIsEditMode(true);
-        setCurrentOrderId(orderId);
+        setCurrentOrderId(orderToLoad);
         setOriginalOrder(orderToEdit);
         
         // Find and set customer with error handling
-        const customer = customers.find(c => c.id === orderToEdit.customerId);
+        const customer = customers.find(c => c.id === orderToEdit?.customerId);
         if (customer) {
           console.log("Setting customer:", customer.name);
           setSelectedCustomer(customer);
@@ -76,7 +91,7 @@ export default function OrderFormContainer() {
           const displayValue = customer.code ? `${customer.code} - ${customer.name}` : customer.name;
           setCustomerInputValue(displayValue);
         } else {
-          console.warn("Customer not found for ID:", orderToEdit.customerId);
+          console.warn("Customer not found for ID:", orderToEdit?.customerId);
           toast({
             title: "Cliente não encontrado",
             description: "O cliente associado a este pedido não foi encontrado."
@@ -84,7 +99,7 @@ export default function OrderFormContainer() {
         }
         
         // Find and set sales rep with error handling
-        const salesRep = salesReps.find(s => s.id === orderToEdit.salesRepId);
+        const salesRep = salesReps.find(s => s.id === orderToEdit?.salesRepId);
         if (salesRep) {
           console.log("Setting sales rep:", salesRep.name);
           setSelectedSalesRep(salesRep);
@@ -93,7 +108,7 @@ export default function OrderFormContainer() {
           const displayValue = salesRep.code ? `${salesRep.code} - ${salesRep.name}` : salesRep.name;
           setSalesRepInputValue(displayValue);
         } else {
-          console.warn("Sales rep not found for ID:", orderToEdit.salesRepId);
+          console.warn("Sales rep not found for ID:", orderToEdit?.salesRepId);
           toast({
             title: "Vendedor não encontrado",
             description: "O vendedor associado a este pedido não foi encontrado."
@@ -101,7 +116,7 @@ export default function OrderFormContainer() {
         }
         
         // Enhanced validation and processing of order items
-        if (orderToEdit.items && Array.isArray(orderToEdit.items)) {
+        if (orderToEdit?.items && Array.isArray(orderToEdit.items)) {
           console.log("Processing order items:", orderToEdit.items.length);
           
           if (orderToEdit.items.length === 0) {
@@ -142,7 +157,7 @@ export default function OrderFormContainer() {
           console.log("Normalized order items:", updatedItems);
           setOrderItems(updatedItems);
         } else {
-          console.warn("Order items are missing or not in expected format", orderToEdit.items);
+          console.warn("Order items are missing or not in expected format", orderToEdit?.items);
           setOrderItems([]);
           toast({
             title: "Erro nos itens",
@@ -151,7 +166,7 @@ export default function OrderFormContainer() {
         }
         
         // Set payment table with validation
-        if (orderToEdit.paymentTableId) {
+        if (orderToEdit?.paymentTableId) {
           console.log("Setting payment table ID:", orderToEdit.paymentTableId);
           const tableExists = paymentTables.some(pt => pt.id === orderToEdit.paymentTableId);
           
@@ -164,10 +179,13 @@ export default function OrderFormContainer() {
           }
         }
         
-        toast({
-          title: "Pedido carregado",
-          description: `Editando pedido ${orderId.substring(0, 6)}`
-        });
+        // Remove duplicate toast messages since parent component already validated the order
+        if (!preloadedOrder) {
+          toast({
+            title: "Pedido carregado",
+            description: `Editando pedido ${orderToLoad.substring(0, 6)}`
+          });
+        }
       } catch (error) {
         console.error("Error loading order:", error);
         const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -188,11 +206,13 @@ export default function OrderFormContainer() {
       }
     };
     
-    const orderId = searchParams.get('id');
-    if (orderId) {
-      loadOrder(orderId);
+    // Get orderId either from props or from URL params as fallback
+    const orderIdToLoad = orderId || searchParams.get('id');
+    
+    if (orderIdToLoad) {
+      loadOrder(orderIdToLoad);
     }
-  }, [searchParams, getOrderById, customers, salesReps, paymentTables, navigate]);
+  }, [preloadedOrder, orderId, searchParams, getOrderById, customers, salesReps, paymentTables, navigate]);
 
   // Reset form function
   const resetForm = () => {

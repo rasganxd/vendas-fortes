@@ -4,6 +4,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import OrderFormContainer from '@/components/orders/OrderFormContainer';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useOrders } from '@/hooks/useOrders';
+import { Order } from '@/types';
 
 export default function NewOrder() {
   const [searchParams] = useSearchParams();
@@ -13,6 +14,8 @@ export default function NewOrder() {
   
   const [isValidating, setIsValidating] = useState(false);
   const [isValid, setIsValid] = useState(true);
+  const [orderData, setOrderData] = useState<Order | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   
   // Validate order ID to prevent navigation to invalid orders
   useEffect(() => {
@@ -20,13 +23,17 @@ export default function NewOrder() {
       if (orderId) {
         try {
           setIsValidating(true);
+          setValidationError(null);
           console.log("Validating order ID:", orderId);
           
+          // Get order data - will be passed to OrderFormContainer to prevent duplicate requests
           const order = await getOrderById(orderId);
           
           if (!order) {
             console.error("Order not found with ID:", orderId);
             setIsValid(false);
+            setValidationError(`Pedido com ID ${orderId} não encontrado`);
+            
             // Navigate back to orders after delay
             setTimeout(() => {
               navigate('/pedidos', { 
@@ -34,11 +41,14 @@ export default function NewOrder() {
               });
             }, 3000);
           } else {
+            console.log("Order validated successfully:", order.id);
+            setOrderData(order);
             setIsValid(true);
           }
         } catch (error) {
           console.error("Error validating order ID:", error);
           setIsValid(false);
+          setValidationError(error instanceof Error ? error.message : "Erro ao validar pedido");
         } finally {
           setIsValidating(false);
         }
@@ -75,7 +85,7 @@ export default function NewOrder() {
                 <span className="text-red-500 text-xl">!</span>
               </div>
               <p className="text-lg text-gray-700 mb-2">Pedido não encontrado</p>
-              <p className="text-sm text-gray-500">O pedido solicitado não está disponível ou foi excluído.</p>
+              <p className="text-sm text-gray-500">{validationError || "O pedido solicitado não está disponível ou foi excluído."}</p>
               <button 
                 onClick={() => navigate('/pedidos')} 
                 className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded"
@@ -92,7 +102,7 @@ export default function NewOrder() {
   return (
     <PageLayout title={pageTitle}>
       <div className="max-w-7xl mx-auto">
-        <OrderFormContainer />
+        <OrderFormContainer preloadedOrder={orderData} orderId={orderId} />
       </div>
     </PageLayout>
   );
