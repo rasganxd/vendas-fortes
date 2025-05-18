@@ -27,7 +27,7 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
 }) => {
   if (customers.length === 0) {
     return (
-      <div className="text-center py-4 text-gray-500">
+      <div className="text-center py-4 text-gray-500 h-[600px] flex items-center justify-center">
         Nenhum cliente encontrado
       </div>
     );
@@ -44,7 +44,7 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
             <TableHead className="w-20 text-right py-2">Ações</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="max-h-[600px]">
           {customers.map((customer) => (
             <TableRow key={customer.id} className="h-10">
               <TableCell className="font-medium py-1.5">
