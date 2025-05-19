@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -6,7 +5,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { usePayments } from '@/hooks/usePayments';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import OrderForm from './OrderForm';
 import RecentPurchasesDialog from './RecentPurchasesDialog';
 import { v4 as uuidv4 } from 'uuid';
@@ -291,27 +290,21 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
   const handleCreateOrder = async () => {
     // Form validation
     if (!selectedCustomer) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
+      toast.error("Erro", {
         description: "Selecione um cliente para o pedido."
       });
       return;
     }
     
     if (!selectedSalesRep) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
+      toast.error("Erro", {
         description: "Selecione um vendedor para o pedido."
       });
       return;
     }
     
     if (orderItems.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
+      toast.error("Erro", {
         description: "Adicione pelo menos um item ao pedido."
       });
       return;
@@ -384,8 +377,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         });
         
         orderId = currentOrderId;
-        toast({
-          title: "Pedido Atualizado",
+        toast.success("Pedido Atualizado", {
           description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
         });
 
@@ -400,6 +392,11 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
             id: orderId,
             code: orderData.code || 0
           } as Order);
+          
+          // Inform the user that a promissory note was generated
+          toast.success("Nota Promissória Gerada", {
+            description: "A nota promissória foi gerada e pode ser acessada na aba de Pagamentos."
+          });
         }
       } else {
         console.log("Creating new order");
@@ -407,8 +404,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         console.log("Order created with ID:", orderId);
         
         if (orderId) {
-          toast({
-            title: "Pedido Criado",
+          toast.success("Pedido Criado", {
             description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
           });
           
@@ -423,6 +419,11 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
               id: orderId,
               code: orderData.code || 0
             } as Order);
+            
+            // Inform the user that a promissory note was generated
+            toast.success("Nota Promissória Gerada", {
+              description: "A nota promissória foi gerada e pode ser acessada na aba de Pagamentos."
+            });
           }
         } else {
           throw new Error("Falha ao criar pedido: ID não retornado");
@@ -431,21 +432,13 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       
       resetForm();
       
-      // If it's a promissory note payment type, navigate to the payments page
-      if (isPromissoryNote && orderId) {
-        console.log("Navigating to promissory notes tab with orderId:", orderId);
-        navigate(`/pagamentos?tab=promissory&orderId=${orderId}`);
-      } else {
-        // Navigate back to orders list
-        setTimeout(() => {
-          navigate('/pedidos');
-        }, 1500);
-      }
+      // Always navigate back to orders list after creating/updating an order
+      setTimeout(() => {
+        navigate('/pedidos');
+      }, 1500);
     } catch (error) {
       console.error("Erro ao processar pedido:", error);
-      toast({
-        variant: "destructive",
-        title: isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido",
+      toast.error(isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido", {
         description: `Ocorreu um erro ao processar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
       });
     } finally {
