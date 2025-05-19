@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Toaster } from '@/components/ui/sonner';
@@ -113,6 +112,7 @@ function App() {
                 </RouterRoutes>
               </div>
             </div>
+            {/* Only one Toaster component in the entire app */}
             <Toaster richColors />
           </SidebarProvider>
         </Router>

@@ -1,5 +1,5 @@
 
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { syncService } from '@/services/supabase/syncService';
 
 /**

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Customer } from '@/types/customer';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Upload, AlertCircle } from 'lucide-react';
 import { parseCustomerReportText } from '@/utils/customerParser';
 import { useSalesReps } from '@/hooks/useSalesReps';
@@ -40,7 +39,6 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   onImportCustomers,
   isImporting = false,
 }) => {
-  const { toast } = useToast();
   const [rawText, setRawText] = useState<string>('');
   const [parsedCustomers, setParsedCustomers] = useState<Omit<Customer, 'id'>[]>([]);
   const [selectedSalesRepId, setSelectedSalesRepId] = useState<string>('');
@@ -54,10 +52,8 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   const handleParseCustomers = () => {
     try {
       if (!rawText.trim()) {
-        toast({
-          variant: "destructive",
-          title: "Texto vazio",
-          description: "Por favor, insira o relatório de clientes.",
+        toast.error("Texto vazio", { 
+          description: "Por favor, insira o relatório de clientes." 
         });
         return;
       }
@@ -65,10 +61,8 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       const customers = parseCustomerReportText(rawText);
       
       if (customers.length === 0) {
-        toast({
-          variant: "destructive",
-          title: "Nenhum cliente encontrado",
-          description: "Não foi possível encontrar clientes no texto fornecido. Verifique o formato do relatório.",
+        toast.error("Nenhum cliente encontrado", { 
+          description: "Não foi possível encontrar clientes no texto fornecido. Verifique o formato do relatório." 
         });
         return;
       }
@@ -86,45 +80,37 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       
       setParsedCustomers(customers);
       
-      toast({
-        title: "Análise concluída",
-        description: `${customers.length} clientes encontrados no relatório.`,
+      toast("Análise concluída", {
+        description: `${customers.length} clientes encontrados no relatório.`
       });
     } catch (error) {
       console.error("Erro ao analisar clientes:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao analisar relatório",
-        description: "Ocorreu um erro ao processar o texto. Verifique o formato e tente novamente.",
+      toast.error("Erro ao analisar relatório", {
+        description: "Ocorreu um erro ao processar o texto. Verifique o formato e tente novamente."
       });
     }
   };
 
   const handleImportCustomers = async () => {
     if (parsedCustomers.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Nenhum cliente para importar",
-        description: "Analise o relatório antes de importar os clientes.",
+      toast.error("Nenhum cliente para importar", {
+        description: "Analise o relatório antes de importar os clientes."
       });
       return;
     }
 
     try {
       const results = await onImportCustomers(parsedCustomers);
-      toast({
-        title: "Importação concluída",
-        description: `${results.length} clientes importados com sucesso.`,
+      toast("Importação concluída", {
+        description: `${results.length} clientes importados com sucesso.`
       });
       // Clear the form after successful import
       setRawText('');
       setParsedCustomers([]);
     } catch (error) {
       console.error("Erro ao importar clientes:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro na importação",
-        description: "Ocorreu um erro ao importar os clientes. Verifique o console para mais detalhes.",
+      toast.error("Erro na importação", {
+        description: "Ocorreu um erro ao importar os clientes. Verifique o console para mais detalhes."
       });
     }
   };

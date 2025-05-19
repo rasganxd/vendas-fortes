@@ -8,5 +8,6 @@ import React from 'react';
 export function Toaster() {
   // This is an empty component that does nothing
   // It's kept for backward compatibility only
+  console.log('Warning: Legacy Toaster component called. Use Sonner Toaster from App.tsx instead.');
   return null;
 }
