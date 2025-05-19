@@ -1,7 +1,7 @@
 
 import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Toaster } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/theme-provider';
 import SideNav from '@/components/layout/SideNav';
 import { SidebarProvider } from '@/components/ui/sidebar';

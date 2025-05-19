@@ -1,43 +1,12 @@
 
-// This file is being kept for reference but is no longer used
+// This file is maintained for compatibility but the Toaster component is not used
 // We've standardized on using the Sonner toast library instead
+// The actual Toaster is now imported from src/components/ui/sonner.tsx
 
-import { useToast } from "@/hooks/use-toast"
-import {
-  Toast,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast"
+import React from 'react';
 
 export function Toaster() {
-  // This component is no longer being used
-  // We're using Sonner's Toaster component from src/components/ui/sonner.tsx instead
+  // This is an empty component that does nothing
+  // It's kept for backward compatibility only
   return null;
-  
-  /*
-  const { toasts } = useToast()
-
-  return (
-    <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
-        return (
-          <Toast key={id} {...props}>
-            <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
-              )}
-            </div>
-            {action}
-            <ToastClose />
-          </Toast>
-        )
-      })}
-      <ToastViewport />
-    </ToastProvider>
-  )
-  */
 }

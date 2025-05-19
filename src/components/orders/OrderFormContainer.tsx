@@ -5,7 +5,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { useOrders } from '@/hooks/useOrders';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { usePayments } from '@/hooks/usePayments';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import OrderForm from './OrderForm';
 import RecentPurchasesDialog from './RecentPurchasesDialog';
 import { v4 as uuidv4 } from 'uuid';
@@ -92,8 +92,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
           setCustomerInputValue(displayValue);
         } else {
           console.warn("Customer not found for ID:", orderToEdit?.customerId);
-          toast({
-            title: "Cliente não encontrado",
+          toast("Cliente não encontrado", {
             description: "O cliente associado a este pedido não foi encontrado."
           });
         }
@@ -109,8 +108,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
           setSalesRepInputValue(displayValue);
         } else {
           console.warn("Sales rep not found for ID:", orderToEdit?.salesRepId);
-          toast({
-            title: "Vendedor não encontrado",
+          toast("Vendedor não encontrado", {
             description: "O vendedor associado a este pedido não foi encontrado."
           });
         }
@@ -181,8 +179,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         
         // Remove duplicate toast messages since parent component already validated the order
         if (!preloadedOrder) {
-          toast({
-            title: "Pedido carregado",
+          toast("Pedido carregado", {
             description: `Editando pedido ${orderToLoad.substring(0, 6)}`
           });
         }
@@ -191,9 +188,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
         setLoadError(errorMsg);
         
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar pedido",
+        toast.error("Erro ao carregar pedido", {
           description: `Ocorreu um erro ao carregar o pedido: ${errorMsg}`
         });
         
@@ -270,9 +265,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       setOrderItems(prevItems => [...prevItems, newItem]);
     }
     
-    toast("Item adicionado", {
-      description: `${quantity}x ${product.name} adicionado ao pedido`
-    });
+    toast(`${quantity}x ${product.name} adicionado ao pedido`);
   };
 
   // Remove item function
@@ -281,32 +274,24 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     setOrderItems(items => items.filter(item => item.productId !== productId));
     console.log("Items after removal:", orderItems.filter(item => item.productId !== productId));
     
-    toast("Item removido", {
-      description: "Item removido do pedido"
-    });
+    toast("Item removido do pedido");
   };
 
   // Order creation/update function with improved error handling
   const handleCreateOrder = async () => {
     // Form validation
     if (!selectedCustomer) {
-      toast({
-        description: "Selecione um cliente para o pedido."
-      });
+      toast("Selecione um cliente para o pedido.");
       return;
     }
     
     if (!selectedSalesRep) {
-      toast({
-        description: "Selecione um vendedor para o pedido."
-      });
+      toast("Selecione um vendedor para o pedido.");
       return;
     }
     
     if (orderItems.length === 0) {
-      toast({
-        description: "Adicione pelo menos um item ao pedido."
-      });
+      toast("Adicione pelo menos um item ao pedido.");
       return;
     }
     
@@ -438,8 +423,8 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       }, 1500);
     } catch (error) {
       console.error("Erro ao processar pedido:", error);
-      toast({
-        description: `Ocorreu um erro ao processar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      toast.error("Erro ao processar pedido", {
+        description: `${error instanceof Error ? error.message : 'Erro desconhecido'}`
       });
     } finally {
       setIsSubmitting(false);

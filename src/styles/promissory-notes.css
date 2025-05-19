@@ -1,18 +1,56 @@
 
-/* Highlight animation for promissory notes */
-@keyframes highlight-pulse {
+/* Promissory Notes Styles */
+
+.highlight-note {
+  border-color: #3b82f6;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
   }
 }
 
-.highlight-note {
-  animation: highlight-pulse 1.5s infinite;
-  border-color: #4f46e5;
+@media print {
+  body {
+    font-size: 12pt;
+    color: #000;
+    background-color: #fff;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .highlight-note {
+    animation: none;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  
+  /* Page break adjustments */
+  .page-break-before {
+    page-break-before: always;
+  }
+  
+  .page-break-after {
+    page-break-after: always;
+  }
+  
+  /* Ensure margins and borders display correctly when printing */
+  .p-4 {
+    padding: 1cm;
+  }
+  
+  .max-w-2xl {
+    max-width: none;
+    width: 100%;
+  }
 }
