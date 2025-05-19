@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Database, Smartphone } from "lucide-react";
+import { Smartphone } from "lucide-react";
 import MobileSyncPanel from './MobileSyncPanel';
 
 export default function SystemSettings() {
@@ -34,21 +34,6 @@ export default function SystemSettings() {
         </CardHeader>
         <CardContent className="p-0">
           <MobileSyncPanel />
-        </CardContent>
-      </Card>
-      
-      {/* Card informativo com dicas */}
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-none shadow-md">
-        <CardContent className="p-6 flex items-start gap-4">
-          <div className="rounded-full bg-blue-100 p-2.5 flex-shrink-0">
-            <Database className="text-blue-600 h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-medium text-blue-800 mb-1">Dica de desempenho</h3>
-            <p className="text-sm text-blue-700">
-              Para garantir melhor desempenho, mantenha seus dispositivos móveis atualizados com a versão mais recente do aplicativo e sincronize regularmente os dados.
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
