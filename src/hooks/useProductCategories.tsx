@@ -1,14 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { ProductCategory } from '@/types';
-import { toast } from 'sonner';
 import { productCategoryService } from '@/services/firebase/productCategoryService';
 import { transformArray, transformProductCategoryData } from '@/utils/dataTransformers';
+import { useNotification } from '@/hooks/useNotification';
 
 export const useProductCategories = () => {
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+  const { notification } = useNotification();
 
   // Load categories from Firebase when component mounts
   useEffect(() => {
@@ -82,8 +83,8 @@ export const useProductCategories = () => {
       } catch (error) {
         console.error("Error loading product categories:", error);
         
-        // Show error toast only once
-        toast.error("Erro ao carregar categorias", {
+        // Show error toast only once with new notification system
+        notification.error("Erro ao carregar categorias", {
           description: "Não foi possível carregar as categorias de produtos. Usando padrões."
         });
         
@@ -129,7 +130,7 @@ export const useProductCategories = () => {
     };
 
     loadCategories();
-  }, [hasAttemptedLoad]);
+  }, [hasAttemptedLoad, notification]);
 
   // Internal helper to add category without toast notifications
   const addProductCategoryWithoutToast = async (category: Omit<ProductCategory, 'id'>) => {
@@ -162,7 +163,7 @@ export const useProductCategories = () => {
 
   const addProductCategory = async (category: Omit<ProductCategory, 'id'>) => {
     try {
-      // Prepare data for Supabase - FIXED: Added createdAt and updatedAt
+      // Prepare data for Supabase
       const supabaseData = {
         name: category.name,
         description: category.description || '',
@@ -181,8 +182,8 @@ export const useProductCategories = () => {
       };
       setProductCategories(prev => [...prev, newCategory]);
       
-      // Show a single toast notification
-      toast.success("Categoria adicionada", {
+      // Show a single notification with our new system
+      notification.success("Categoria adicionada", {
         description: "Categoria de produto adicionada com sucesso!"
       });
       
@@ -190,7 +191,7 @@ export const useProductCategories = () => {
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
       
-      toast.error("Erro ao adicionar", {
+      notification.error("Erro ao adicionar", {
         description: "Não foi possível adicionar a categoria de produtos."
       });
       
@@ -216,14 +217,14 @@ export const useProductCategories = () => {
         } : pc))
       );
       
-      // Show a single toast notification
-      toast.success("Categoria atualizada", {
+      // Show a single notification with our new system
+      notification.success("Categoria atualizada", {
         description: "Categoria de produto atualizada com sucesso!"
       });
     } catch (error) {
       console.error("Erro ao atualizar categoria:", error);
       
-      toast.error("Erro ao atualizar", {
+      notification.error("Erro ao atualizar", {
         description: "Não foi possível atualizar a categoria de produtos."
       });
     }
@@ -234,13 +235,13 @@ export const useProductCategories = () => {
       await productCategoryService.delete(id);
       setProductCategories(productCategories.filter(pc => pc.id !== id));
       
-      toast.success("Categoria excluída", {
+      notification.success("Categoria excluída", {
         description: "Categoria de produto excluída com sucesso!"
       });
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
       
-      toast.error("Erro ao excluir", {
+      notification.error("Erro ao excluir", {
         description: "Não foi possível excluir a categoria de produtos."
       });
     }

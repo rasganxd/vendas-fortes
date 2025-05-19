@@ -5,6 +5,7 @@ import { productCategoryService as firebaseProductCategoryService } from '../fir
 /**
  * Service for product category operations
  * Using Firebase implementation for all operations
+ * Now using the centralized notification system
  */
 export const productCategoryService = {
   // Get all product categories
@@ -34,7 +35,6 @@ export const productCategoryService = {
   // Delete product category
   delete: async (id: string): Promise<void> => {
     console.log(`Supabase productCategoryService.delete: Delegating to Firebase for id ${id}`);
-    // Call Firebase service without re-throwing errors that might trigger duplicate notifications
     try {
       await firebaseProductCategoryService.delete(id);
     } catch (error) {

@@ -4,7 +4,7 @@ import { LocalStorageService } from './localStorageService';
 
 /**
  * LocalStorage service for product categories
- * No toast notifications at this level to avoid duplication
+ * Uses the centralized notification system via its parent methods
  */
 class ProductCategoryLocalService extends LocalStorageService<ProductCategory> {
   constructor() {

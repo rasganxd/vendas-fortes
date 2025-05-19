@@ -1,5 +1,6 @@
 
-import { toast as sonnerToast } from "sonner";
+import { useNotification } from './useNotification';
+import notificationService, { NotificationOptions } from '@/services/notificationService';
 
 // Type definitions to maintain compatibility with existing code
 export interface ToastProps {
@@ -12,7 +13,8 @@ export interface ToastProps {
 export type ToastActionElement = React.ReactElement;
 
 /**
- * Standard toast function that wraps Sonner
+ * Enhanced toast function that uses our notification system
+ * with duplicate prevention and theme support
  * 
  * Basic usage:
  * toast("Message")                 - Simple toast with just a message
@@ -33,42 +35,44 @@ export function toast(
     const { title, description, variant } = titleOrOptions;
     
     if (variant === "destructive") {
-      return sonnerToast.error(title as string, { description });
+      return notificationService.error(title as string, { description } as NotificationOptions);
     } else if (variant === "warning") {
-      return sonnerToast.warning(title as string, { description });
+      return notificationService.warning(title as string, { description } as NotificationOptions);
     }
     
-    return sonnerToast(title as string, { description });
+    return notificationService.show(title as string, { description } as NotificationOptions);
   }
   
   // Handle string-style calls: toast("Title", { description })
   if (options?.variant === "destructive") {
-    return sonnerToast.error(titleOrOptions, { description: options?.description });
+    return notificationService.error(titleOrOptions, { description: options?.description } as NotificationOptions);
   } else if (options?.variant === "warning") {
-    return sonnerToast.warning(titleOrOptions, { description: options?.description });
+    return notificationService.warning(titleOrOptions, { description: options?.description } as NotificationOptions);
   }
   
-  return sonnerToast(titleOrOptions, { description: options?.description });
+  return notificationService.show(titleOrOptions, { description: options?.description } as NotificationOptions);
 }
 
 // Add success shorthand 
 toast.success = (message: string, options?: { description?: React.ReactNode }) => {
-  return sonnerToast.success(message, options);
+  return notificationService.success(message, options as NotificationOptions);
 };
 
 // Add error shorthand for destructive variant
 toast.error = (message: string, options?: { description?: React.ReactNode }) => {
-  return sonnerToast.error(message, options);
+  return notificationService.error(message, options as NotificationOptions);
 };
 
 // Add warning shorthand
 toast.warning = (message: string, options?: { description?: React.ReactNode }) => {
-  return sonnerToast.warning(message, options);
+  return notificationService.warning(message, options as NotificationOptions);
 };
 
-// Simple hook function that returns the toast function
+// Simple hook function that returns the notification API
 export function useToast() {
+  const { notification } = useNotification();
+  
   return {
-    toast
+    toast: notification
   };
 }

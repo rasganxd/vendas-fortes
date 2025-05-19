@@ -112,8 +112,8 @@ function App() {
                 </RouterRoutes>
               </div>
             </div>
-            {/* Only one Toaster component in the entire app */}
-            <Toaster richColors />
+            {/* Enhanced Toaster with theme awareness and duplicate prevention */}
+            <Toaster />
           </SidebarProvider>
         </Router>
       </AppProvider>
