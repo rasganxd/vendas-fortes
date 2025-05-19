@@ -11,7 +11,6 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Customer } from '@/types';
-import { toast } from 'sonner';
 
 interface DeleteCustomerDialogProps {
   open: boolean;
@@ -31,13 +30,10 @@ const DeleteCustomerDialog: React.FC<DeleteCustomerDialogProps> = ({
     
     try {
       await onDelete(customer.id);
-      toast.success("Cliente excluído com sucesso!");
-      onOpenChange(false);
+      onOpenChange(false); // Just close the dialog, the parent will show the toast
     } catch (error) {
       console.error("Error deleting customer:", error);
-      toast.error("Erro ao excluir cliente", {
-        description: "Houve um problema ao excluir o cliente."
-      });
+      // We'll let the parent component handle the error toast
     }
   };
 

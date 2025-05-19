@@ -16,7 +16,7 @@ interface CustomersTableProps {
   customers: Customer[];
   onView: (customer: Customer) => void;
   onEdit: (customer: Customer) => void;
-  onDelete: (id: string, customer: Customer) => void; // Updated signature
+  onDelete: (id: string, customer: Customer) => void; 
 }
 
 const CustomersTable: React.FC<CustomersTableProps> = ({
