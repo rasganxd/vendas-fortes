@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ProductCategory } from '@/types';
 import { toast } from 'sonner';
@@ -149,18 +150,21 @@ export const useProductCategories = () => {
         updatedAt: category.updatedAt || new Date()
       };
       setProductCategories([...productCategories, newCategory]);
-      toast({
-        title: "Categoria adicionada",
+      
+      // Updated to use sonner toast
+      toast.success("Categoria adicionada", {
         description: "Categoria de produto adicionada com sucesso!"
       });
+      
       return id;
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
-      toast({
-        title: "Erro ao adicionar",
-        description: "Não foi possível adicionar a categoria de produtos.",
-        variant: "destructive"
+      
+      // Updated to use sonner toast
+      toast.error("Erro ao adicionar", {
+        description: "Não foi possível adicionar a categoria de produtos."
       });
+      
       return "";
     }
   };
@@ -182,16 +186,17 @@ export const useProductCategories = () => {
           updatedAt: new Date()
         } : pc))
       );
-      toast({
-        title: "Categoria atualizada",
+      
+      // Updated to use sonner toast
+      toast.success("Categoria atualizada", {
         description: "Categoria de produto atualizada com sucesso!"
       });
     } catch (error) {
       console.error("Erro ao atualizar categoria:", error);
-      toast({
-        title: "Erro ao atualizar",
-        description: "Não foi possível atualizar a categoria de produtos.",
-        variant: "destructive"
+      
+      // Updated to use sonner toast
+      toast.error("Erro ao atualizar", {
+        description: "Não foi possível atualizar a categoria de produtos."
       });
     }
   };
