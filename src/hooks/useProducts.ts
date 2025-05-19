@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/firebase/productService'; 
@@ -10,7 +9,8 @@ const PRODUCTS_CACHE_KEY = 'app_products_cache';
 const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_timestamp';
 const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 
-export const fetchProducts = async (forceRefresh = false): Promise<Product[]> => {
+// Exporting this function so it can be imported directly
+export const loadProducts = async (forceRefresh = true): Promise<Product[]> => {
   try {
     if (forceRefresh) {
       console.log("Force refreshing products from Firebase");
@@ -68,7 +68,7 @@ export const fetchProducts = async (forceRefresh = false): Promise<Product[]> =>
       return localProducts;
     }
   } catch (error) {
-    console.error("Error in fetchProducts:", error);
+    console.error("Error in loadProducts:", error);
     
     // Try to use local storage service as fallback
     try {
@@ -87,6 +87,9 @@ export const fetchProducts = async (forceRefresh = false): Promise<Product[]> =>
     }
   }
 };
+
+// For backward compatibility, we keep the old name as well
+export const fetchProducts = loadProducts;
 
 // Context operations can now leverage these improvements
 export const useProductOperations = () => {

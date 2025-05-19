@@ -153,18 +153,21 @@ export const validateProductDiscount = (
   productId: string,
   discountedPrice: number,
   products: Product[]
-): {isValid: boolean; message?: string} => {
+): string | boolean => {
   const product = products.find(p => p.id === productId);
-  if (!product) return { isValid: true };
+  if (!product) return true;
   
-  if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) return { isValid: true };
-  if (product.price <= 0) return { isValid: false };
+  if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) return true;
+  if (product.price <= 0) return false;
   
   const discountPercentage = ((product.price - discountedPrice) / product.price) * 100;
-  return {
-    isValid: parseFloat(discountPercentage.toFixed(2)) <= parseFloat(product.maxDiscountPercentage.toFixed(2)),
-    message: `O desconto é maior que o máximo permitido (${product.maxDiscountPercentage}%)`
-  };
+  
+  // Return string message if invalid, otherwise true
+  if (parseFloat(discountPercentage.toFixed(2)) <= parseFloat(product.maxDiscountPercentage.toFixed(2))) {
+    return true;
+  } else {
+    return `O desconto é maior que o máximo permitido (${product.maxDiscountPercentage}%)`;
+  }
 };
 
 /**

@@ -57,7 +57,12 @@ export const useProductOperations = (
   const addBulkProducts = async (productsArray: Omit<Product, 'id'>[]): Promise<string[]> => {
     setIsProcessing(true);
     try {
-      return await addBulkProductsOp(productsArray, products, setProducts, setIsUsingMockData);
+      // Create a dummy progress updater function that matches the expected type
+      const progressUpdater = (_progress: number) => {
+        // We don't actually use this value, but it satisfies the type requirements
+      };
+      
+      return await addBulkProductsOp(productsArray, products, setProducts, progressUpdater);
     } finally {
       setIsProcessing(false);
     }

@@ -241,10 +241,10 @@ export default function Products() {
   const refreshProductsList = async () => {
     setIsRefreshing(true);
     try {
-      // Import and use the loadProducts function directly
+      // Import the loadProducts function directly
       const { loadProducts } = await import('@/hooks/useProducts');
       console.log("Manually refreshing products...");
-      const refreshedProducts = await loadProducts();
+      const refreshedProducts = await loadProducts(true);
       
       // Update the context with the refreshed products
       // We're directly updating the state in this component
