@@ -39,11 +39,14 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from '@/components/ui/tooltip';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, Pencil, Trash, Plus } from 'lucide-react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import PageLayout from '@/components/layout/PageLayout';
+import { DeleteCategoryDialog } from '@/components/products/DeleteCategoryDialog';
+import { DeleteGroupDialog } from '@/components/products/DeleteGroupDialog';
+import { DeleteBrandDialog } from '@/components/products/DeleteBrandDialog';
 
 export default function ProductClassifications() {
   const navigate = useNavigate();
@@ -69,18 +72,24 @@ export default function ProductClassifications() {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
+  const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null);
+  const [deleteCategoryDialogOpen, setDeleteCategoryDialogOpen] = useState(false);
   
   // State for groups
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<ProductGroup | null>(null);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
+  const [groupToDelete, setGroupToDelete] = useState<ProductGroup | null>(null);
+  const [deleteGroupDialogOpen, setDeleteGroupDialogOpen] = useState(false);
   
   // State for brands
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<ProductBrand | null>(null);
   const [brandName, setBrandName] = useState('');
   const [brandDescription, setBrandDescription] = useState('');
+  const [brandToDelete, setBrandToDelete] = useState<ProductBrand | null>(null);
+  const [deleteBrandDialogOpen, setDeleteBrandDialogOpen] = useState(false);
 
   // Category handlers
   const openAddCategoryDialog = () => {
@@ -95,6 +104,11 @@ export default function ProductClassifications() {
     setCategoryName(category.name);
     setCategoryDescription(category.description);
     setCategoryDialogOpen(true);
+  };
+
+  const openDeleteCategoryDialog = (category: ProductCategory) => {
+    setCategoryToDelete(category);
+    setDeleteCategoryDialogOpen(true);
   };
 
   const handleSaveCategory = async () => {
@@ -139,18 +153,16 @@ export default function ProductClassifications() {
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (confirm("Tem certeza que deseja excluir esta categoria?")) {
-      try {
-        await deleteProductCategory(categoryId);
-        toast({ title: "Categoria excluída com sucesso" });
-      } catch (error) {
-        console.error("Erro ao excluir categoria:", error);
-        toast({
-          title: "Erro",
-          description: "Ocorreu um erro ao excluir a categoria",
-          variant: "destructive"
-        });
-      }
+    try {
+      await deleteProductCategory(categoryId);
+      toast({ title: "Categoria excluída com sucesso" });
+    } catch (error) {
+      console.error("Erro ao excluir categoria:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir a categoria",
+        variant: "destructive"
+      });
     }
   };
 
@@ -167,6 +179,11 @@ export default function ProductClassifications() {
     setGroupName(group.name);
     setGroupDescription(group.description);
     setGroupDialogOpen(true);
+  };
+
+  const openDeleteGroupDialog = (group: ProductGroup) => {
+    setGroupToDelete(group);
+    setDeleteGroupDialogOpen(true);
   };
 
   const handleSaveGroup = async () => {
@@ -211,18 +228,16 @@ export default function ProductClassifications() {
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (confirm("Tem certeza que deseja excluir este grupo?")) {
-      try {
-        await deleteProductGroup(groupId);
-        toast({ title: "Grupo excluído com sucesso" });
-      } catch (error) {
-        console.error("Erro ao excluir grupo:", error);
-        toast({
-          title: "Erro",
-          description: "Ocorreu um erro ao excluir o grupo",
-          variant: "destructive"
-        });
-      }
+    try {
+      await deleteProductGroup(groupId);
+      toast({ title: "Grupo excluído com sucesso" });
+    } catch (error) {
+      console.error("Erro ao excluir grupo:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir o grupo",
+        variant: "destructive"
+      });
     }
   };
 
@@ -239,6 +254,11 @@ export default function ProductClassifications() {
     setBrandName(brand.name);
     setBrandDescription(brand.description);
     setBrandDialogOpen(true);
+  };
+
+  const openDeleteBrandDialog = (brand: ProductBrand) => {
+    setBrandToDelete(brand);
+    setDeleteBrandDialogOpen(true);
   };
 
   const handleSaveBrand = async () => {
@@ -283,18 +303,16 @@ export default function ProductClassifications() {
   };
 
   const handleDeleteBrand = async (brandId: string) => {
-    if (confirm("Tem certeza que deseja excluir esta marca?")) {
-      try {
-        await deleteProductBrand(brandId);
-        toast({ title: "Marca excluída com sucesso" });
-      } catch (error) {
-        console.error("Erro ao excluir marca:", error);
-        toast({
-          title: "Erro",
-          description: "Ocorreu um erro ao excluir a marca",
-          variant: "destructive"
-        });
-      }
+    try {
+      await deleteProductBrand(brandId);
+      toast({ title: "Marca excluída com sucesso" });
+    } catch (error) {
+      console.error("Erro ao excluir marca:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir a marca",
+        variant: "destructive"
+      });
     }
   };
 
@@ -370,7 +388,7 @@ export default function ProductClassifications() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeleteCategory(category.id)}
+                                onClick={() => openDeleteCategoryDialog(category)}
                               >
                                 <Trash className="h-4 w-4" />
                               </Button>
@@ -432,7 +450,7 @@ export default function ProductClassifications() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeleteGroup(group.id)}
+                                onClick={() => openDeleteGroupDialog(group)}
                               >
                                 <Trash className="h-4 w-4" />
                               </Button>
@@ -494,7 +512,7 @@ export default function ProductClassifications() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeleteBrand(brand.id)}
+                                onClick={() => openDeleteBrandDialog(brand)}
                               >
                                 <Trash className="h-4 w-4" />
                               </Button>
@@ -645,6 +663,28 @@ export default function ProductClassifications() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Delete Dialogs */}
+      <DeleteCategoryDialog
+        category={categoryToDelete}
+        open={deleteCategoryDialogOpen}
+        onOpenChange={setDeleteCategoryDialogOpen}
+        onConfirm={handleDeleteCategory}
+      />
+      
+      <DeleteGroupDialog
+        group={groupToDelete}
+        open={deleteGroupDialogOpen}
+        onOpenChange={setDeleteGroupDialogOpen}
+        onConfirm={handleDeleteGroup}
+      />
+      
+      <DeleteBrandDialog
+        brand={brandToDelete}
+        open={deleteBrandDialogOpen}
+        onOpenChange={setDeleteBrandDialogOpen}
+        onConfirm={handleDeleteBrand}
+      />
     </PageLayout>
   );
 }
