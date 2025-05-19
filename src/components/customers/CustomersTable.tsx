@@ -16,7 +16,7 @@ interface CustomersTableProps {
   customers: Customer[];
   onView: (customer: Customer) => void;
   onEdit: (customer: Customer) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, customer: Customer) => void; // Updated signature
 }
 
 const CustomersTable: React.FC<CustomersTableProps> = ({
@@ -73,8 +73,8 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-2 text-red-500 hover:text-red-700"
-                    onClick={() => onDelete(customer.id)}
+                    className="h-8 px-2 text-destructive hover:text-destructive/90" 
+                    onClick={() => onDelete(customer.id, customer)}
                   >
                     <Trash2 size={16} />
                   </Button>

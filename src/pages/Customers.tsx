@@ -26,15 +26,18 @@ import CustomersTable from '@/components/customers/CustomersTable';
 import EditCustomerForm from '@/components/customers/EditCustomerForm';
 import NewCustomerForm from '@/components/customers/NewCustomerForm';
 import CustomerDetails from '@/components/customers/CustomerDetails';
+import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
 
 const Customers = () => {
   const { customers, addCustomer, updateCustomer, deleteCustomer, generateNextCode } = useCustomers();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCustomer, setEditingCustomer] = useState<null | Customer>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<null | Customer>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<null | Customer>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string>('name');
   
   const handleEditCustomer = (customer: Customer) => {
@@ -47,10 +50,13 @@ const Customers = () => {
     setIsDetailsDialogOpen(true);
   };
 
-  const handleDeleteCustomer = (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
-      deleteCustomer(id);
-    }
+  const handleDeleteCustomer = (id: string, customer: Customer) => {
+    setCustomerToDelete(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const onDeleteCustomer = async (id: string) => {
+    await deleteCustomer(id);
   };
 
   const onSubmit = (data: any) => {
@@ -212,13 +218,21 @@ const Customers = () => {
                 }}
                 onDelete={() => {
                   setIsDetailsDialogOpen(false);
-                  handleDeleteCustomer(selectedCustomer.id);
+                  handleDeleteCustomer(selectedCustomer.id, selectedCustomer);
                 }}
               />
             )}
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog para confirmar exclusão de cliente */}
+      <DeleteCustomerDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        customer={customerToDelete}
+        onDelete={onDeleteCustomer}
+      />
     </PageLayout>
   );
 };
