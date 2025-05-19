@@ -1,98 +1,92 @@
 
 import { useState, useEffect } from 'react';
 import { ProductBrand } from '@/types';
+import { productBrandService } from '@/services/firebase/productBrandService';
+import { productBrandLocalService } from '@/services/local/productBrandLocalService';
 import { toast } from '@/components/ui/use-toast';
-import { productBrandService } from '@/services/supabase';
-import { transformArray } from '@/utils/dataTransformers';
-import { supabase } from '@/integrations/supabase/client';
+import { useDataLoading } from '@/context/providers/DataLoadingProvider';
 
-// Helper function to transform product brand data
-const transformProductBrandData = (data: any): ProductBrand => {
-  if (!data) return null;
-  
-  return {
-    id: data.id || "",
-    name: data.name || "",
-    description: data.description || "",
-    notes: data.notes || "",
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-  };
-};
+// Cache keys
+const BRANDS_CACHE_KEY = 'app_product_brands_cache';
+const BRANDS_CACHE_TIMESTAMP_KEY = 'app_product_brands_timestamp';
+const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 
 export const useProductBrands = () => {
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { clearItemCache } = useDataLoading();
 
-  // Load product brands from Supabase
   useEffect(() => {
-    const fetchProductBrands = async () => {
-      setIsLoading(true);
+    const fetchBrands = async () => {
       try {
-        const { data, error } = await supabase
-          .from('product_brands')
-          .select('*')
-          .order('name');
+        setIsLoading(true);
+        // Always try Firebase first
+        const brands = await productBrandService.getAll();
+        setProductBrands(brands);
         
-        if (error) {
-          console.error('Error fetching product brands:', error);
-          toast({
-            title: "Erro ao carregar marcas",
-            description: "Não foi possível carregar as marcas de produtos.",
-            variant: "destructive"
-          });
-        } else if (data) {
-          const transformedBrands = data.map(brand => transformProductBrandData(brand));
-          setProductBrands(transformedBrands);
-          console.log(`Loaded ${transformedBrands.length} product brands from Supabase`);
-        }
+        // Update local storage service
+        await productBrandLocalService.setAll(brands);
+        
+        // Update cache
+        localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(brands));
+        localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       } catch (error) {
-        console.error('Error in fetchProductBrands:', error);
+        console.error('Error fetching product brands:', error);
+        
+        // Try local storage service as fallback
+        try {
+          const localBrands = await productBrandLocalService.getAll();
+          setProductBrands(localBrands);
+        } catch (localError) {
+          console.error('Error fetching brands from local storage:', localError);
+          
+          // Try to use cached data as last resort
+          const cachedData = localStorage.getItem(BRANDS_CACHE_KEY);
+          if (cachedData) {
+            setProductBrands(JSON.parse(cachedData));
+          } else {
+            toast({
+              title: 'Erro',
+              description: 'Não foi possível carregar as marcas de produtos.',
+              variant: 'destructive',
+            });
+          }
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProductBrands();
+    fetchBrands();
   }, []);
 
   const addProductBrand = async (brand: Omit<ProductBrand, 'id'>) => {
     try {
-      const { data, error } = await supabase
-        .from('product_brands')
-        .insert([{
-          name: brand.name,
-          description: brand.description || '',
-          notes: brand.notes || ''
-        }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Erro ao adicionar marca:", error);
-        toast({
-          title: "Erro ao adicionar",
-          description: "Não foi possível adicionar a marca de produtos.",
-          variant: "destructive"
-        });
-        return "";
-      }
-
-      const newBrand = transformProductBrandData(data);
-      setProductBrands([...productBrands, newBrand]);
+      const id = await productBrandService.add(brand);
+      
+      const newBrand = { ...brand, id } as ProductBrand;
+      setProductBrands((prev) => [...prev, newBrand]);
+      
+      // Update local storage service
+      await productBrandLocalService.add(newBrand);
+      
+      // Update cache
+      const updatedBrands = [...productBrands, newBrand];
+      localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(updatedBrands));
+      localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       toast({
-        title: "Marca adicionada",
-        description: "Marca de produto adicionada com sucesso!"
+        title: 'Marca adicionada',
+        description: 'Marca adicionada com sucesso!',
       });
       
-      return newBrand.id;
+      return id;
     } catch (error) {
-      console.error("Erro ao adicionar marca:", error);
+      console.error('Error adding product brand:', error);
       toast({
-        title: "Erro ao adicionar",
-        description: "Não foi possível adicionar a marca de produtos.",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível adicionar a marca.',
+        variant: 'destructive',
       });
       return "";
     }
@@ -100,77 +94,67 @@ export const useProductBrands = () => {
 
   const updateProductBrand = async (id: string, brand: Partial<ProductBrand>) => {
     try {
-      const { error } = await supabase
-        .from('product_brands')
-        .update({
-          name: brand.name,
-          description: brand.description,
-          notes: brand.notes,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error("Erro ao atualizar marca:", error);
-        toast({
-          title: "Erro ao atualizar",
-          description: "Não foi possível atualizar a marca de produtos.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setProductBrands(
-        productBrands.map(pb => (pb.id === id ? { 
-          ...pb, 
-          ...brand,
-          updatedAt: new Date()
-        } : pb))
+      await productBrandService.update(id, brand);
+      
+      setProductBrands((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...brand } : item))
       );
       
+      // Update local storage service
+      await productBrandLocalService.update(id, brand);
+      
+      // Update cache
+      const updatedBrands = productBrands.map((item) => 
+        item.id === id ? { ...item, ...brand } : item
+      );
+      localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(updatedBrands));
+      localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
       toast({
-        title: "Marca atualizada",
-        description: "Marca de produto atualizada com sucesso!"
+        title: 'Marca atualizada',
+        description: 'Marca atualizada com sucesso!',
       });
     } catch (error) {
-      console.error("Erro ao atualizar marca:", error);
+      console.error('Error updating product brand:', error);
       toast({
-        title: "Erro ao atualizar",
-        description: "Não foi possível atualizar a marca de produtos.",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível atualizar a marca.',
+        variant: 'destructive',
       });
     }
   };
 
   const deleteProductBrand = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('product_brands')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error("Erro ao excluir marca:", error);
-        toast({
-          title: "Erro ao excluir",
-          description: "Não foi possível excluir a marca de produtos.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setProductBrands(productBrands.filter(pb => pb.id !== id));
+      console.log(`Deleting brand ${id}`);
+      
+      // Delete from Firebase first
+      await productBrandService.delete(id);
+      
+      // Update local state
+      setProductBrands((prev) => prev.filter((item) => item.id !== id));
+      
+      // Update local storage service
+      await productBrandLocalService.delete(id);
+      
+      // Update cache
+      const updatedBrands = productBrands.filter((item) => item.id !== id);
+      localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(updatedBrands));
+      localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      // Ensure cache consistency
+      await clearItemCache('products');
       
       toast({
-        title: "Marca excluída",
-        description: "Marca de produto excluída com sucesso!"
+        title: 'Marca excluída',
+        description: 'Marca excluída com sucesso!',
       });
     } catch (error) {
-      console.error("Erro ao excluir marca:", error);
+      console.error('Error deleting product brand:', error);
       toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir a marca de produtos.",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível excluir a marca.',
+        variant: 'destructive',
       });
     }
   };
@@ -181,6 +165,5 @@ export const useProductBrands = () => {
     addProductBrand,
     updateProductBrand,
     deleteProductBrand,
-    setProductBrands
   };
 };

@@ -20,6 +20,7 @@ interface DataLoadingContextType {
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   refreshData: () => Promise<boolean>;
+  clearItemCache: (itemType: 'customers' | 'products' | 'orders' | 'all') => Promise<void>;
 }
 
 const DataLoadingContext = createContext<DataLoadingContextType>({
@@ -30,7 +31,8 @@ const DataLoadingContext = createContext<DataLoadingContextType>({
   isUsingMockData: false,
   setCustomers: () => {},
   setProducts: () => {},
-  refreshData: async () => false
+  refreshData: async () => false,
+  clearItemCache: async () => {}
 });
 
 export const useDataLoading = () => useContext(DataLoadingContext);
@@ -41,34 +43,13 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
+  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(0);
   const { isOnline } = useConnection();
 
-  // Try to load data from localStorage first if available
+  // Load core data on app initialization with priority to Firebase
   useEffect(() => {
-    console.log("DataLoadingProvider: Loading from localStorage");
-    loadFromLocalStorage(setCustomers, setProducts);
-  }, []);
-
-  // Load core data on app initialization
-  useEffect(() => {
-    console.log("DataLoadingProvider: Loading core data");
-    loadCoreData(
-      setIsLoadingCustomers,
-      setCustomers,
-      setIsUsingMockData,
-      setIsLoadingProducts,
-      setProducts
-    ).then(usingMock => {
-      console.log("DataLoadingProvider: Core data loaded, using mock:", usingMock);
-      // If using mock data, show a notification
-      if (usingMock) {
-        toast({
-          title: "Modo offline ativado",
-          description: "O sistema está usando dados locais.",
-          variant: "default"
-        });
-      }
-    });
+    console.log("DataLoadingProvider: Loading core data from Firebase first");
+    loadCoreDataFromFirebase();
   }, []);
 
   // Debug products changes
@@ -76,31 +57,136 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
     console.log("DataLoadingProvider: Products updated, count:", products.length);
   }, [products]);
 
+  // Function to load data from Firebase first
+  const loadCoreDataFromFirebase = async () => {
+    try {
+      console.log("Loading data from Firebase directly");
+      
+      // Start loading customers from Firebase
+      setIsLoadingCustomers(true);
+      try {
+        // Try to get from Firebase first
+        const loadedCustomers = await loadCustomers(true); // force refresh from Firebase
+        console.log(`Loaded ${loadedCustomers.length} customers from Firebase`);
+        setCustomers(loadedCustomers);
+        
+        // Update local cache with latest data
+        await customerLocalService.setAll(loadedCustomers);
+        
+        // Update sync timestamp
+        setLastSyncTimestamp(Date.now());
+      } catch (error) {
+        console.error("Failed to load customers from Firebase:", error);
+        
+        // Fall back to local storage only if Firebase failed
+        const localCustomers = await customerLocalService.getAll();
+        setCustomers(localCustomers);
+        
+        toast({
+          title: "Erro ao carregar clientes",
+          description: "Usando dados locais temporariamente.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingCustomers(false);
+      }
+      
+      // Start loading products from Firebase
+      setIsLoadingProducts(true);
+      try {
+        // Try to get from Firebase first
+        const loadedProducts = await fetchProducts(true); // force refresh from Firebase
+        console.log(`Loaded ${loadedProducts.length} products from Firebase`);
+        setProducts(loadedProducts);
+        
+        // Update local cache with latest data
+        await productLocalService.setAll(loadedProducts);
+      } catch (error) {
+        console.error("Failed to load products from Firebase:", error);
+        
+        // Fall back to local storage only if Firebase failed
+        const localProducts = await productLocalService.getAll();
+        setProducts(localProducts);
+        
+        toast({
+          title: "Erro ao carregar produtos",
+          description: "Usando dados locais temporariamente.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    } catch (error) {
+      console.error("Error loading core data from Firebase:", error);
+      
+      // If Firebase completely fails, try to load from local storage as fallback
+      console.log("Falling back to local storage entirely");
+      loadFromLocalStorage(setCustomers, setProducts);
+      
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Houve um problema ao carregar os dados do sistema.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  /**
+   * Clear cache for specific item types
+   */
+  const clearItemCache = async (itemType: 'customers' | 'products' | 'orders' | 'all'): Promise<void> => {
+    console.log(`Clearing cache for: ${itemType}`);
+    
+    try {
+      if (itemType === 'customers' || itemType === 'all') {
+        // Force refresh from Firebase
+        const refreshedCustomers = await loadCustomers(true);
+        setCustomers(refreshedCustomers);
+        await customerLocalService.setAll(refreshedCustomers);
+        console.log("Customer cache refreshed from Firebase");
+      }
+      
+      if (itemType === 'products' || itemType === 'all') {
+        // Force refresh from Firebase
+        const refreshedProducts = await fetchProducts(true);
+        setProducts(refreshedProducts);
+        await productLocalService.setAll(refreshedProducts);
+        console.log("Product cache refreshed from Firebase");
+      }
+      
+      if (itemType === 'orders' || itemType === 'all') {
+        // Force refresh from Firebase
+        const refreshedOrders = await loadOrders(true);
+        await orderLocalService.setAll(refreshedOrders);
+        console.log("Order cache refreshed from Firebase");
+      }
+      
+      setLastSyncTimestamp(Date.now());
+      
+      toast({
+        title: "Cache atualizado",
+        description: "Os dados foram sincronizados com sucesso.",
+      });
+    } catch (error) {
+      console.error(`Error clearing cache for ${itemType}:`, error);
+      toast({
+        title: "Erro na sincronização",
+        description: "Falha ao atualizar o cache. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Function to refresh data from the server
   const refreshData = async (): Promise<boolean> => {
     toast({
-      title: "Atualizando dados",
-      description: "Atualizando dados do armazenamento local..."
+      title: "Sincronizando dados",
+      description: "Buscando dados mais recentes..."
     });
     
     try {
-      setIsLoadingCustomers(true);
-      setIsLoadingProducts(true);
-      
-      const refreshedCustomers = await customerLocalService.getAll();
-      setCustomers(refreshedCustomers);
-      
-      const refreshedProducts = await productLocalService.getAll();
-      setProducts(refreshedProducts);
-      
-      setIsLoadingCustomers(false);
-      setIsLoadingProducts(false);
-      
-      toast({
-        title: "Dados atualizados",
-        description: "Dados atualizados com sucesso!"
-      });
-      return true;
+      // Force refresh from Firebase instead of local
+      return await clearItemCache('all').then(() => true);
     } catch (error) {
       console.error("Error refreshing data:", error);
       toast({
@@ -108,8 +194,6 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
         description: "Houve um problema ao atualizar os dados.",
         variant: "destructive"
       });
-      setIsLoadingCustomers(false);
-      setIsLoadingProducts(false);
       return false;
     }
   };
@@ -123,7 +207,8 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
       isUsingMockData,
       setCustomers,
       setProducts,
-      refreshData
+      refreshData,
+      clearItemCache
     }}>
       {children}
     </DataLoadingContext.Provider>

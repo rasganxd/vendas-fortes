@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabase/customerService';
 import { toast } from '@/components/ui/use-toast';
 import { customerLocalService } from '@/services/local/customerLocalService';
+import { useDataLoading } from '@/context/providers/DataLoadingProvider';
 
 // Cache key for localStorage
 const CUSTOMERS_CACHE_KEY = 'app_customers_cache';
@@ -15,35 +15,61 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
   try {
     console.log("Attempting to load customers with forceRefresh =", forceRefresh);
     
-    // Try to get from cache if not forcing refresh
-    if (!forceRefresh) {
-      const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
-      const cachedTimestamp = localStorage.getItem(CUSTOMERS_CACHE_TIMESTAMP_KEY);
-      
-      if (cachedData && cachedTimestamp) {
-        const timestamp = parseInt(cachedTimestamp, 10);
-        const now = Date.now();
+    // Try to get from Firebase if forcing refresh
+    if (forceRefresh) {
+      console.log("Force refreshing customer data from Firebase");
+      try {
+        const customers = await customerService.getAll();
         
-        // If cache is still fresh, use it
-        if (now - timestamp < CACHE_MAX_AGE) {
-          console.log("Using cached customer data");
-          return JSON.parse(cachedData) as Customer[];
-        }
+        // Update localStorage cache with fresh data from Firebase
+        localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
+        localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        
+        console.log(`Loaded ${customers.length} customers from Firebase`);
+        return customers;
+      } catch (error) {
+        console.error("Error loading customers from Firebase:", error);
+        throw error; // Let the caller handle the fallback
       }
     }
     
-    // If not in cache or cache is stale, fetch from local storage
-    console.log("Fetching customer data from local storage");
-    const customers = await customerLocalService.getAll();
+    // If not force refreshing, try to get from cache
+    const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
+    const cachedTimestamp = localStorage.getItem(CUSTOMERS_CACHE_TIMESTAMP_KEY);
     
-    // Store in localStorage cache
-    localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
-    localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+    if (cachedData && cachedTimestamp) {
+      const timestamp = parseInt(cachedTimestamp, 10);
+      const now = Date.now();
+      
+      // If cache is still fresh, use it
+      if (now - timestamp < CACHE_MAX_AGE) {
+        console.log("Using cached customer data");
+        return JSON.parse(cachedData) as Customer[];
+      }
+    }
     
-    console.log(`Loaded ${customers.length} customers from local storage`);
-    return customers;
+    // If cache is stale or missing, try Firebase
+    try {
+      console.log("Getting customer data from Firebase");
+      const customers = await customerService.getAll();
+      
+      // Store in localStorage cache
+      localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
+      localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      console.log(`Loaded ${customers.length} customers from Firebase`);
+      return customers;
+    } catch (firebaseError) {
+      console.error("Error loading customers from Firebase:", firebaseError);
+      
+      // If Firebase fails, try local storage
+      console.log("Falling back to local storage");
+      const localCustomers = await customerLocalService.getAll();
+      console.log(`Loaded ${localCustomers.length} customers from local storage`);
+      return localCustomers;
+    }
   } catch (error) {
-    console.error("Error loading customers:", error);
+    console.error("Error in loadCustomers:", error);
     
     // Try to use cached data even if expired as fallback
     const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
@@ -60,6 +86,7 @@ export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const { clearItemCache } = useDataLoading();
   
   // Monitor online/offline status
   useEffect(() => {
@@ -84,13 +111,11 @@ export const useCustomers = () => {
     };
   }, []);
   
-  // No more Supabase realtime subscription as we're using local storage
-  
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
         setIsLoading(true);
-        const loadedCustomers = await loadCustomers();
+        const loadedCustomers = await loadCustomers(true); // Force refresh from Firebase first
         setCustomers(loadedCustomers);
       } catch (error) {
         console.error("Error loading customers:", error);
@@ -207,15 +232,24 @@ export const useCustomers = () => {
 
   const deleteCustomer = async (id: string) => {
     try {
-      await customerLocalService.delete(id);
+      console.log(`Deleting customer ${id}`);
+      
+      // Delete from Firebase first
+      await customerService.delete(id);
       
       // Update local state
       const updatedCustomers = customers.filter(c => c.id !== id);
       setCustomers(updatedCustomers);
       
-      // Update cache
+      // Update localStorage cache
       localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(updatedCustomers));
       localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      // Update local storage service
+      await customerLocalService.delete(id);
+      
+      // Refresh cache to ensure consistency
+      await clearItemCache('customers');
       
       toast({
         title: "Cliente excluído",
@@ -234,10 +268,13 @@ export const useCustomers = () => {
   const refreshCustomers = async () => {
     setIsLoading(true);
     try {
-      console.log("Refreshing customers data from local storage");
-      const refreshedCustomers = await customerLocalService.getAll();
+      console.log("Refreshing customers data from Firebase");
+      const refreshedCustomers = await loadCustomers(true); // Force refresh from Firebase
       setCustomers(refreshedCustomers);
       console.log(`Refreshed ${refreshedCustomers.length} customers`);
+      
+      // Update local storage
+      await customerLocalService.setAll(refreshedCustomers);
     } catch (error) {
       console.error("Error refreshing customers:", error);
     } finally {

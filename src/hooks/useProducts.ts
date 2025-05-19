@@ -1,153 +1,130 @@
 
 import { useState, useEffect } from 'react';
-import { toast } from '@/components/ui/use-toast';
-import { productLocalService } from '@/services/local/productLocalService';
 import { Product } from '@/types';
-import { productService } from '@/services/supabase/productService';
+import { productService } from '@/services/firebase/productService'; 
+import { productLocalService } from '@/services/local/productLocalService';
+import { useDataLoading } from '@/context/providers/DataLoadingProvider';
 
-// Cache key for localStorage
+// Cache keys
 const PRODUCTS_CACHE_KEY = 'app_products_cache';
-const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_cache_timestamp';
-const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes in milliseconds
+const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_timestamp';
+const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 
 export const fetchProducts = async (forceRefresh = false): Promise<Product[]> => {
   try {
-    console.log("Attempting to load products with forceRefresh =", forceRefresh);
-    
-    // Try to get from cache if not forcing refresh
-    if (!forceRefresh) {
-      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
-      const cachedTimestamp = localStorage.getItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
-      
-      if (cachedData && cachedTimestamp) {
-        const timestamp = parseInt(cachedTimestamp, 10);
-        const now = Date.now();
+    if (forceRefresh) {
+      console.log("Force refreshing products from Firebase");
+      try {
+        const products = await productService.getAll();
         
-        // If cache is still fresh, use it
-        if (now - timestamp < CACHE_MAX_AGE) {
-          console.log("Using cached product data");
-          return JSON.parse(cachedData) as Product[];
-        }
+        // Store in localStorage cache
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(products));
+        localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        
+        // Update local storage service cache
+        await productLocalService.setAll(products);
+        
+        console.log(`Loaded ${products.length} products from Firebase`);
+        return products;
+      } catch (error) {
+        console.error("Error fetching products from Firebase:", error);
+        throw error;
       }
     }
     
-    // If not in cache or cache is stale, fetch from local storage
-    console.log("Fetching product data from local storage");
-    const products = await productLocalService.getAll();
-    
-    // Store in localStorage cache
-    localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(products));
-    localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-    
-    console.log(`Loaded ${products.length} products from local storage`);
-    return products;
-  } catch (error) {
-    console.error("Error loading products:", error);
-    
-    // Try to use cached data even if expired as fallback
+    // Try to get from cache if not forcing refresh
     const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
-    if (cachedData) {
-      console.log("Using expired cache as fallback due to error");
-      return JSON.parse(cachedData) as Product[];
+    const cachedTimestamp = localStorage.getItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
+    
+    if (cachedData && cachedTimestamp) {
+      const timestamp = parseInt(cachedTimestamp, 10);
+      const now = Date.now();
+      
+      // If cache is still fresh, use it
+      if (now - timestamp < CACHE_MAX_AGE) {
+        console.log("Using cached product data");
+        return JSON.parse(cachedData) as Product[];
+      }
     }
     
-    throw error;
+    // If cache is stale or missing, try Firebase
+    try {
+      console.log("Getting product data from Firebase");
+      const products = await productService.getAll();
+      
+      // Store in localStorage cache
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(products));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      console.log(`Loaded ${products.length} products from Firebase`);
+      return products;
+    } catch (firebaseError) {
+      console.error("Error loading products from Firebase:", firebaseError);
+      
+      // If Firebase fails, try local storage
+      console.log("Falling back to local storage");
+      const localProducts = await productLocalService.getAll();
+      console.log(`Loaded ${localProducts.length} products from local storage`);
+      return localProducts;
+    }
+  } catch (error) {
+    console.error("Error in fetchProducts:", error);
+    
+    // Try to use local storage service as fallback
+    try {
+      const localProducts = await productLocalService.getAll();
+      return localProducts;
+    } catch (localError) {
+      console.error("Error loading products from local storage:", localError);
+      
+      // As a last resort, try the cache even if expired
+      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
+      if (cachedData) {
+        return JSON.parse(cachedData) as Product[];
+      }
+      
+      throw error;
+    }
   }
 };
 
-// Export the fetchProducts function as loadProducts for backward compatibility
-export const loadProducts = fetchProducts;
-
-export const useProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      setIsLoading(true);
-      try {
-        const productsData = await fetchProducts();
-        setProducts(productsData);
-      } catch (error) {
-        console.error("Error loading products:", error);
-        toast({
-          title: "Erro ao carregar produtos",
-          description: "Houve um problema ao carregar os produtos.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadProducts();
-  }, []);
-
-  const addProduct = async (product: Omit<Product, 'id'>): Promise<string> => {
+// Context operations can now leverage these improvements
+export const useProductOperations = () => {
+  const { clearItemCache } = useDataLoading();
+  
+  const deleteProductAndSync = async (
+    id: string, 
+    products: Product[], 
+    setProducts: React.Dispatch<React.SetStateAction<Product[]>>
+  ): Promise<void> => {
     try {
-      const id = await productService.add(product);
-      const newProduct = { ...product, id } as Product;
-      setProducts(prev => [...prev, newProduct]);
-      toast({
-        title: "Produto adicionado",
-        description: "Produto adicionado com sucesso!"
-      });
-      return id;
-    } catch (error) {
-      console.error("Error adding product:", error);
-      toast({
-        title: "Erro ao adicionar produto",
-        description: "Houve um problema ao adicionar o produto.",
-        variant: "destructive"
-      });
-      return "";
-    }
-  };
-
-  const updateProduct = async (id: string, product: Partial<Product>) => {
-    try {
-      await productService.update(id, product);
-      setProducts(prev =>
-        prev.map(p => (p.id === id ? { ...p, ...product } : p))
-      );
-      toast({
-        title: "Produto atualizado",
-        description: "Produto atualizado com sucesso!"
-      });
-    } catch (error) {
-      console.error("Error updating product:", error);
-      toast({
-        title: "Erro ao atualizar produto",
-        description: "Houve um problema ao atualizar o produto.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const deleteProduct = async (id: string) => {
-    try {
+      console.log(`Deleting product ${id}`);
+      
+      // Delete from Firebase first
       await productService.delete(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
-      toast({
-        title: "Produto excluído",
-        description: "Produto excluído com sucesso!"
-      });
+      
+      // Update local state
+      const updatedProducts = products.filter(p => p.id !== id);
+      setProducts(updatedProducts);
+      
+      // Update localStorage cache
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      // Update local storage service
+      await productLocalService.delete(id);
+      
+      // Refresh product cache to ensure consistency
+      await clearItemCache('products');
+      
+      return;
     } catch (error) {
-      console.error("Error deleting product:", error);
-      toast({
-        title: "Erro ao excluir produto",
-        description: "Houve um problema ao excluir o produto.",
-        variant: "destructive"
-      });
+      console.error(`Error deleting product ${id}:`, error);
+      throw error;
     }
   };
   
-  return {
-    products,
-    isLoading,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    setProducts
+  return { 
+    deleteProductAndSync
   };
 };
