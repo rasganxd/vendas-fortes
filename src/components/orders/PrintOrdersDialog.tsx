@@ -11,7 +11,7 @@ import {
 import { Printer } from "lucide-react";
 import CustomerSelect from './print/CustomerSelect';
 import PrintDialogActions from './print/PrintDialogActions';
-import PrintableOrderContent from './print/PrintableOrderContent';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface PrintOrdersDialogProps {
   isOpen: boolean;
@@ -38,6 +38,8 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
 }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [ordersToPrint, setOrdersToPrint] = useState<Order[]>([]);
+  const { settings } = useAppContext();
+  const companyData = settings?.company;
   
   // Ensure arrays are valid
   const safeOrders = Array.isArray(orders) ? orders : [];
@@ -57,13 +59,13 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     }
   }, [selectedOrderIds, selectedCustomerId, safeOrders, safeFilteredOrders]);
   
-  // Function to print in a new window
+  // Function to print in a new window with the improved layout
   const handlePrintInNewWindow = () => {
     // Create a new window
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) return;
 
-    // CSS styles specific for printing
+    // CSS styles specific for printing - updated to match OrderDetailDialog style
     const printStyles = `
       @media print {
         @page {
@@ -79,76 +81,124 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           print-color-adjust: exact;
         }
         
-        /* Vertical layout for orders one above the other */
-        .print-orders-container {
+        /* Improved layout styles similar to OrderDetailDialog */
+        .print-page {
+          page-break-after: always;
+          padding-bottom: 1cm;
+        }
+        
+        .company-header {
+          text-align: center;
+          margin-bottom: 1cm;
+        }
+        
+        .company-header h2 {
+          font-weight: bold;
+          font-size: 16pt;
+          margin: 0;
+        }
+        
+        .company-header p {
+          font-size: 10pt;
+          color: #666;
+          margin: 5px 0;
+        }
+        
+        .order-date {
+          text-align: center;
+          margin-bottom: 1cm;
+        }
+        
+        .info-container {
           display: flex;
-          flex-direction: column;
-          width: 100%;
+          margin-bottom: 1cm;
           gap: 0.5cm;
         }
         
-        /* Each order takes its own space, no fixed height to avoid cuts */
-        .print-order {
-          width: 100%;
-          page-break-inside: avoid;
-          box-sizing: border-box;
-          padding: 0.3cm;
+        .info-box {
           border: 1px solid #ddd;
-          font-size: 11pt;
+          border-radius: 4px;
+          padding: 0.5cm;
+          flex: 1;
+        }
+        
+        .info-box h3 {
+          font-weight: 600;
+          margin-top: 0;
           margin-bottom: 0.3cm;
-          display: flex;
-          flex-direction: column;
+          font-size: 12pt;
         }
         
-        /* Force page break every 2 orders */
-        .print-order:nth-child(2n) {
-          page-break-after: always;
+        .order-items {
+          margin-bottom: 1cm;
         }
         
-        /* More compact styles for tables */
-        .print-order table {
+        .order-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 10pt;
-          margin: 0.15cm 0;
         }
         
-        .print-order table th,
-        .print-order table td {
-          padding: 3px;
+        .order-table th {
+          background-color: #f3f4f6;
+          padding: 8px;
+          text-align: left;
+          font-size: 10pt;
           border: 1px solid #ddd;
+        }
+        
+        .order-table td {
+          padding: 8px;
+          border: 1px solid #ddd;
+          font-size: 10pt;
+        }
+        
+        .order-table .text-right {
+          text-align: right;
+        }
+        
+        .order-table .text-center {
+          text-align: center;
+        }
+        
+        .order-totals {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 0.5cm;
+        }
+        
+        .payment-info {
           text-align: left;
         }
         
-        .print-order h1 {
+        .total-info {
+          text-align: right;
+        }
+        
+        .total-value {
+          font-weight: bold;
           font-size: 12pt;
-          margin: 0 0 4px 0;
         }
         
-        .print-order h2 {
+        .order-notes {
+          margin-top: 0.5cm;
+        }
+        
+        .order-notes h3 {
+          font-weight: 600;
+          margin-bottom: 5px;
           font-size: 11pt;
-          margin: 0 0 2px 0;
         }
         
-        .print-order p {
-          margin: 2px 0;
-          font-size: 10pt;
-          line-height: 1.3;
-        }
-        
-        /* Reduce spacing between sections */
-        .print-order .section {
-          margin-bottom: 0.15cm;
+        .footer {
+          margin-top: 1cm;
+          text-align: center;
+          font-size: 9pt;
+          color: #666;
         }
         
         /* Hide non-printable elements */
-        .no-print, button, .no-print {
+        .no-print {
           display: none !important;
-        }
-        
-        /* Ensure content is visible during printing */
-        .hidden.print\\:block {
-          display: block !important;
         }
       }`;
 
@@ -162,78 +212,99 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         </head>
         <body>
           <div id="print-content">
-            <div class="print-orders-container">
-            ${ordersToPrint.map((order, index) => {
+            ${ordersToPrint.map((order) => {
               const orderCustomer = validCustomers.find(c => c.id === order.customerId);
               return `
-                <div class="print-order">
-                  <div style="text-align: center; margin-bottom: 0.15cm;">
-                    <h1>${order.customerName || 'Empresa'}</h1>
-                    <p>Data: ${new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
-                  </div>
-                  
-                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.15cm; padding: 0.15cm;" class="section">
-                    <h2 style="margin-bottom: 0.1cm;">Cliente</h2>
-                    <p><span style="font-weight: 600;">Nome:</span> ${orderCustomer?.name || ''}</p>
-                    <p><span style="font-weight: 600;">Tel:</span> ${orderCustomer?.phone || ''}</p>
-                    ${orderCustomer?.document ? `<p><span style="font-weight: 600;">CPF/CNPJ:</span> ${orderCustomer.document}</p>` : ''}
-                  </div>
-                  
-                  ${(orderCustomer?.address || order.deliveryAddress) ? `
-                  <div style="border: 1px solid #ddd; border-radius: 3px; margin-bottom: 0.15cm; padding: 0.15cm;" class="section">
-                    <h2 style="margin-bottom: 0.1cm;">Endereço de Entrega</h2>
-                    <p>
-                      ${order.deliveryAddress || orderCustomer?.address || ''}
-                      ${(order.deliveryCity || orderCustomer?.city) ? `, ${order.deliveryCity || orderCustomer?.city}` : ''}
-                      ${(order.deliveryState || orderCustomer?.state) ? ` - ${order.deliveryState || orderCustomer?.state}` : ''}
-                    </p>
+                <div class="print-page">
+                  ${companyData?.name ? `
+                  <div class="company-header">
+                    <h2>${companyData.name}</h2>
+                    ${companyData.document ? `<p>CNPJ: ${companyData.document}</p>` : ''}
                   </div>
                   ` : ''}
                   
-                  <div style="margin-bottom: 0.15cm;" class="section">
-                    <h2 style="margin-bottom: 0.1cm;">Itens do Pedido</h2>
-                    <table style="width: 100%; border-collapse: collapse;">
+                  <div class="order-date">
+                    <p>Data: ${new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  
+                  <div class="info-container">
+                    <div class="info-box">
+                      <h3>Dados do Cliente</h3>
+                      <p><span style="font-weight: 600;">Nome:</span> ${orderCustomer?.name || ''}</p>
+                      <p><span style="font-weight: 600;">Telefone:</span> ${orderCustomer?.phone || ''}</p>
+                      ${orderCustomer?.document ? `<p><span style="font-weight: 600;">CPF/CNPJ:</span> ${orderCustomer.document}</p>` : ''}
+                    </div>
+                    
+                    ${(orderCustomer?.address || order.deliveryAddress) ? `
+                    <div class="info-box">
+                      <h3>Endereço de Entrega</h3>
+                      <p>${order.deliveryAddress || orderCustomer?.address || ''}
+                      ${(order.deliveryCity || orderCustomer?.city) ? `, ${order.deliveryCity || orderCustomer?.city}` : ''}
+                      ${(order.deliveryState || orderCustomer?.state) ? ` - ${order.deliveryState || orderCustomer?.state}` : ''}
+                      ${(orderCustomer?.zipCode) ? `, ${orderCustomer.zipCode}` : ''}</p>
+                    </div>
+                    ` : ''}
+                  </div>
+                  
+                  <div class="order-items">
+                    <h3>Itens do Pedido</h3>
+                    <table class="order-table">
                       <thead>
-                        <tr style="background-color: #f3f4f6;">
-                          <th style="border: 1px solid #ddd; padding: 3px; text-align: left;">Produto</th>
-                          <th style="border: 1px solid #ddd; padding: 3px; text-align: center;">Qtd</th>
-                          <th style="border: 1px solid #ddd; padding: 3px; text-align: right;">Preço</th>
-                          <th style="border: 1px solid #ddd; padding: 3px; text-align: right;">Total</th>
+                        <tr>
+                          <th>Produto</th>
+                          <th class="text-center">Quantidade</th>
+                          <th class="text-right">Preço Unit.</th>
+                          <th class="text-right">Total</th>
                         </tr>
                       </thead>
                       <tbody>
-                        ${order.items && Array.isArray(order.items) ? order.items.map(item => `
+                        ${order.items && Array.isArray(order.items) && order.items.length > 0 ? order.items.map(item => `
                           <tr>
-                            <td style="border: 1px solid #ddd; padding: 3px;">${item.productName}</td>
-                            <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${item.quantity}</td>
-                            <td style="border: 1px solid #ddd; padding: 3px; text-align: right;">${formatCurrency(item.unitPrice)}</td>
-                            <td style="border: 1px solid #ddd; padding: 3px; text-align: right;">${formatCurrency(item.total)}</td>
+                            <td>${item.productName}</td>
+                            <td class="text-center">${item.quantity}</td>
+                            <td class="text-right">${formatCurrency(item.unitPrice)}</td>
+                            <td class="text-right">${formatCurrency(item.total)}</td>
                           </tr>
-                        `).join('') : ''}
+                        `).join('') : `
+                          <tr>
+                            <td colspan="4" style="text-align: center; color: #666;">
+                              Nenhum item encontrado
+                            </td>
+                          </tr>
+                        `}
                       </tbody>
                     </table>
                   </div>
                   
-                  <div style="display: flex; justify-content: flex-end; margin-bottom: 0.15cm;" class="section">
-                    <div style="text-align: right;">
-                      <p style="font-weight: 700; font-size: 11pt;">Total: ${formatCurrency(order.total)}</p>
+                  <div class="order-totals">
+                    <div class="payment-info">
+                      ${order.paymentStatus !== 'pending' ? `<p class="font-semibold">${order.paymentStatus}</p>` : ''}
+                      ${order.paymentMethod ? `<p>${order.paymentMethod}</p>` : ''}
+                    </div>
+                    <div class="total-info">
+                      <p>Subtotal: ${formatCurrency(order.total)}</p>
+                      <p class="total-value">Total: ${formatCurrency(order.total)}</p>
                     </div>
                   </div>
                   
                   ${order.notes ? `
-                  <div style="margin-bottom: 0.15cm;" class="section">
-                    <p style="font-weight: 500;">Obs:</p>
+                  <div class="order-notes">
+                    <h3>Observações:</h3>
                     <p>${order.notes}</p>
                   </div>
                   ` : ''}
                   
-                  <div style="text-align: center; margin-top: auto; padding-top: 0.1cm; border-top: 1px solid #ddd;" class="section">
-                    <p>Sistema de Gestão de Vendas</p>
+                  <div class="footer">
+                    ${companyData?.footer ? `
+                      <p>${companyData.footer}</p>
+                    ` : `
+                      <p>${companyData?.name || 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
+                      <p>Para qualquer suporte: ${companyData?.phone || '(11) 9999-8888'}</p>
+                    `}
                   </div>
                 </div>
               `;
             }).join('')}
-            </div>
           </div>
           <script>
             // Trigger printing when content is loaded
