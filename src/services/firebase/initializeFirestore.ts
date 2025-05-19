@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   getDocs, 
@@ -19,7 +18,10 @@ const requiredCollections = [
   'orders',
   'customers',
   'products',
-  'sales_reps'
+  'sales_reps',
+  'product_categories',
+  'product_brands',
+  'product_groups'
 ];
 
 // Maximum retry attempts for initialization

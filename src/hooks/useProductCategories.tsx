@@ -1,29 +1,35 @@
-
 import { useState, useEffect } from 'react';
 import { ProductCategory } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-import { productCategoryService } from '@/services/supabase';
+import { productCategoryService } from '@/services/firebase/productCategoryService';
 import { transformArray, transformProductCategoryData } from '@/utils/dataTransformers';
 
 export const useProductCategories = () => {
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
-  // Load categories from Supabase when component mounts
+  // Load categories from Firebase when component mounts
   useEffect(() => {
+    // Prevent multiple load attempts in rapid succession
+    if (hasAttemptedLoad) return;
+    
     const loadCategories = async () => {
       try {
         setIsLoading(true);
+        setHasAttemptedLoad(true);
+        
+        console.log('Attempting to load product categories from Firebase');
         const data = await productCategoryService.getAll();
         const transformedCategories = transformArray(data, transformProductCategoryData) as ProductCategory[];
         
-        // If we got categories from Supabase, use them
+        // If we got categories from Firebase, use them
         if (transformedCategories && transformedCategories.length > 0) {
           setProductCategories(transformedCategories);
-          console.log(`Loaded ${transformedCategories.length} product categories from Supabase`);
+          console.log(`Loaded ${transformedCategories.length} product categories from Firebase`);
         } else {
-          // If no categories in Supabase, use default ones
-          console.log("No product categories found in Supabase, using defaults");
+          // If no categories in Firebase, use default ones
+          console.log("No product categories found in Firebase, using defaults");
           const currentDate = new Date();
           const defaultCategories = [
             { 
@@ -61,17 +67,26 @@ export const useProductCategories = () => {
           ];
           setProductCategories(defaultCategories);
           
-          // Add the default categories to Supabase
-          defaultCategories.forEach(async (category) => {
+          // Add the default categories to Firebase
+          for (const category of defaultCategories) {
             try {
               await addProductCategory(category);
             } catch (error) {
               console.error("Error adding default category:", error);
+              // Continue with next category even if one fails
             }
-          });
+          }
         }
       } catch (error) {
         console.error("Error loading product categories:", error);
+        
+        // Show error toast only once
+        toast({
+          title: "Erro ao carregar categorias",
+          description: "Não foi possível carregar as categorias de produtos. Usando padrões.",
+          variant: "destructive"
+        });
+        
         // Fallback to default categories if there's an error
         const currentDate = new Date();
         setProductCategories([
@@ -114,7 +129,7 @@ export const useProductCategories = () => {
     };
 
     loadCategories();
-  }, []);
+  }, [hasAttemptedLoad]);
 
   const addProductCategory = async (category: Omit<ProductCategory, 'id'>) => {
     try {
