@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ProductCategory } from '@/types';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { productCategoryService } from '@/services/firebase/productCategoryService';
 import { transformArray, transformProductCategoryData } from '@/utils/dataTransformers';
 
@@ -81,10 +81,8 @@ export const useProductCategories = () => {
         console.error("Error loading product categories:", error);
         
         // Show error toast only once
-        toast({
-          title: "Erro ao carregar categorias",
-          description: "Não foi possível carregar as categorias de produtos. Usando padrões.",
-          variant: "destructive"
+        toast.error("Erro ao carregar categorias", {
+          description: "Não foi possível carregar as categorias de produtos. Usando padrões."
         });
         
         // Fallback to default categories if there's an error
@@ -200,18 +198,25 @@ export const useProductCategories = () => {
 
   const deleteProductCategory = async (id: string) => {
     try {
+      // Keep track of whether we've already shown a toast
+      let toastShown = false;
+      
       await productCategoryService.delete(id);
       setProductCategories(productCategories.filter(pc => pc.id !== id));
-      toast({
-        title: "Categoria excluída",
-        description: "Categoria de produto excluída com sucesso!"
-      });
+      
+      // Only show success toast if we haven't shown one yet
+      if (!toastShown) {
+        toast.success("Categoria excluída", {
+          description: "Categoria de produto excluída com sucesso!"
+        });
+        toastShown = true;
+      }
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
-      toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir a categoria de produtos.",
-        variant: "destructive"
+      
+      // Only show error toast if we haven't shown one yet
+      toast.error("Erro ao excluir", {
+        description: "Não foi possível excluir a categoria de produtos."
       });
     }
   };
