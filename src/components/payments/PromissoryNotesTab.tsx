@@ -1,206 +1,121 @@
 
 import React, { useState, useEffect } from 'react';
-import { Customer, Order, PaymentTable, Payment } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Search, FileText } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useAppContext } from '@/hooks/useAppContext';
-import PromissoryNoteView from '@/components/payments/PromissoryNoteView';
-import { formatDateToBR } from '@/lib/date-utils';
-import { useSearchParams } from 'react-router-dom';
+import { Customer, PaymentTable } from '@/types';
+import PromissoryNoteView from './PromissoryNoteView';
 
 interface PromissoryNotesTabProps {
-  pendingPaymentOrders: Array<{
-    id: string;
-    customerName: string;
-    customerId: string;
-    total: number;
-    paymentTableId: string | undefined;
-    paid: number;
-    paymentMethod?: string;
-  }>;
+  pendingPaymentOrders: any[];
   paymentTables: PaymentTable[];
   customers: Customer[];
-  orders: Order[];
-  payments: Payment[];
+  orders: any[];
+  payments: any[];
+  highlightedOrderId?: string | null;
 }
 
-const PromissoryNotesTab: React.FC<PromissoryNotesTabProps> = ({
-  pendingPaymentOrders,
-  paymentTables,
-  customers,
-  orders,
-  payments
-}) => {
-  const { paymentTables: allPaymentTables } = useAppContext();
-  const [showPromissoryNote, setShowPromissoryNote] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
-  const [search, setSearch] = useState('');
-  const [promissoryNotePayment, setPromissoryNotePayment] = useState<Payment | null>(null);
+export default function PromissoryNotesTab({ 
+  pendingPaymentOrders, 
+  paymentTables, 
+  customers, 
+  orders, 
+  payments, 
+  highlightedOrderId 
+}: PromissoryNotesTabProps) {
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   
-  // Get orderId from URL query params to auto-highlight order
-  const [searchParams] = useSearchParams();
-  const orderIdFromParams = searchParams.get('orderId');
-  
-  // Auto-open the promissory note view if orderId is in the URL
-  useEffect(() => {
-    if (orderIdFromParams) {
-      handleViewPromissoryNote(orderIdFromParams);
-    }
-  }, [orderIdFromParams]);
-  
-  const handleViewPromissoryNote = (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-      setSelectedOrderId(orderId);
-      
-      // Create or find a payment object for the promissory note
-      const existingPayment = payments.find(p => p.orderId === orderId && p.method === 'promissoria');
-      
-      if (existingPayment) {
-        setPromissoryNotePayment(existingPayment);
-      } else {
-        // Create a temporary payment object
-        const customer = customers.find(c => c.id === order.customerId);
-        const newPayment: Payment = {
-          id: 'temp-' + Date.now(),
-          orderId: order.id,
-          date: new Date(),
-          dueDate: order.dueDate || new Date(),
-          amount: order.total,
-          method: 'promissoria',
-          notes: '',
-          customerName: customer?.name || order.customerName,
-          customerDocument: customer?.document || '',
-          customerAddress: customer?.address || '',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        setPromissoryNotePayment(newPayment);
-      }
-      
-      setShowPromissoryNote(true);
-    }
-  };
-  
-  // Get all orders that use promissory notes OR have promissory payments
-  const getPromissoryNoteOrders = () => {
-    // Get orders with promissory notes payment method
-    const promissoryOrders = orders.filter(order => {
-      // Check if payment method is promissory note
-      if (order.paymentMethod === 'promissoria') return true;
-      
-      return false;
-    });
-    
-    // Get orders that have promissory note payments
-    const ordersWithPromissoryPayments = orders.filter(order => 
-      payments.some(p => p.orderId === order.id && p.method === 'promissoria')
-    );
-    
-    // Combine both lists and remove duplicates
-    const combinedOrders = [...promissoryOrders, ...ordersWithPromissoryPayments];
-    const uniqueOrders = Array.from(new Map(combinedOrders.map(order => [order.id, order])).values());
-    
-    return uniqueOrders;
-  };
-
-  // Filter orders by search term
-  const filteredOrders = getPromissoryNoteOrders().filter(order => {
-    return search === '' || 
-      order.customerName?.toLowerCase().includes(search.toLowerCase()) ||
-      order.id.toLowerCase().includes(search.toLowerCase());
+  // Get only orders that use promissory note payment tables
+  const promissoryOrders = orders.filter(order => {
+    const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
+    return paymentTable?.type === 'promissoria';
   });
-
+  
+  // Handle highlighted order from URL parameter
+  useEffect(() => {
+    if (highlightedOrderId) {
+      setSelectedOrderId(highlightedOrderId);
+      
+      // Scroll the promissory note into view if it exists
+      setTimeout(() => {
+        const noteElement = document.getElementById(`promissory-note-${highlightedOrderId}`);
+        if (noteElement) {
+          noteElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add a temporary highlight class
+          noteElement.classList.add('highlight-note');
+          
+          // Remove the highlight class after animation
+          setTimeout(() => {
+            noteElement.classList.remove('highlight-note');
+          }, 3000);
+        }
+      }, 300);
+    }
+  }, [highlightedOrderId, promissoryOrders]);
+  
+  // If no orders found
+  if (promissoryOrders.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-500">Nenhuma nota promissória encontrada.</p>
+        <p className="text-sm text-gray-400 mt-2">
+          Notas promissórias são geradas automaticamente quando pedidos são criados
+          com tabelas de pagamento do tipo "Promissória".
+        </p>
+      </div>
+    );
+  }
+  
   return (
-    <>
-      {showPromissoryNote && promissoryNotePayment ? (
-        <div className="mt-4">
-          <div className="mb-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowPromissoryNote(false)}
-              className="mb-4"
-            >
-              Voltar para lista
-            </Button>
-          </div>
-          
-          <PromissoryNoteView payment={promissoryNotePayment} />
-        </div>
-      ) : (
-        <div>
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
-              <Input
-                placeholder="Buscar por cliente ou pedido..."
-                className="pl-10"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            {filteredOrders.length > 0 ? (
-              filteredOrders.map(order => {
-                // Highlight the card if it matches the orderId from URL
-                const isHighlighted = order.id === orderIdFromParams;
-                
-                return (
-                  <Card 
-                    key={order.id} 
-                    className={`border shadow-sm transition-all ${isHighlighted ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200' : ''}`}
-                  >
-                    <CardContent className="p-6">
-                      <div className="font-medium text-lg mb-1">{order.customerName}</div>
-                      <div className="text-sm text-gray-600 mb-3">
-                        Pedido: {order.id}
-                        {order.createdAt && (
-                          <span className="ml-2">
-                            ({formatDateToBR(order.createdAt)})
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="text-sm text-gray-700">
-                            Total: {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                          </div>
-                          {order.paymentMethod && (
-                            <div className="text-sm font-semibold text-blue-600 mt-1">
-                              Método: {order.paymentMethod}
-                            </div>
-                          )}
-                          {payments.some(p => p.orderId === order.id && p.method === 'promissoria') && (
-                            <div className="text-sm text-green-600 mt-1">
-                              Nota Promissória Registrada
-                            </div>
-                          )}
-                        </div>
-                        <Button 
-                          className={`${isHighlighted ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} flex gap-1`}
-                          onClick={() => handleViewPromissoryNote(order.id)}
-                        >
-                          <FileText size={16} className="mr-1" /> {isHighlighted ? 'Visualizar Agora' : 'Visualizar Promissória'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                Não há pedidos com notas promissórias
+    <div>
+      <div className="mb-6">
+        <label className="block text-sm font-medium mb-2">Selecionar Pedido</label>
+        <Select
+          value={selectedOrderId || ''}
+          onValueChange={setSelectedOrderId}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Selecione um pedido para ver a nota promissória" />
+          </SelectTrigger>
+          <SelectContent>
+            {promissoryOrders.map(order => (
+              <SelectItem key={order.id} value={order.id}>
+                #{order.code || '---'} - {order.customerName} 
+                ({new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-10">
+        {promissoryOrders
+          .filter(order => !selectedOrderId || order.id === selectedOrderId)
+          .map(order => {
+            const customer = customers.find(c => c.id === order.customerId) || null;
+            const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
+            
+            return (
+              <div 
+                key={order.id} 
+                id={`promissory-note-${order.id}`} 
+                className="bg-white p-4 border rounded-md shadow transition-all"
+              >
+                <PromissoryNoteView
+                  order={order}
+                  customer={customer}
+                  paymentTable={paymentTable}
+                  payments={payments.filter(p => p.orderId === order.id)}
+                />
               </div>
-            )}
-          </div>
-        </div>
-      )}
-    </>
+            );
+          })}
+      </div>
+    </div>
   );
-};
-
-export default PromissoryNotesTab;
+}

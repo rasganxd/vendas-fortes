@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -372,6 +373,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       console.log("Saving order with data:", orderData);
       
       let orderId = "";
+      let isPromissoryNote = false;
       
       if (isEditMode && currentOrderId) {
         console.log("Updating existing order:", currentOrderId);
@@ -387,8 +389,10 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
           description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
         });
 
+        // Check if this is a promissory note payment table
+        isPromissoryNote = selectedTable?.type === 'promissoria';
+        
         // Create automatic payment record if needed
-        const isPromissoryNote = selectedTable?.type === 'promissoria';
         if (isPromissoryNote && orderId) {
           console.log("Creating automatic payment record for promissory note");
           await createAutomaticPaymentRecord({
@@ -408,8 +412,10 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
             description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
           });
           
+          // Check if this is a promissory note payment table
+          isPromissoryNote = selectedTable?.type === 'promissoria';
+          
           // Create automatic payment record if needed
-          const isPromissoryNote = selectedTable?.type === 'promissoria';
           if (isPromissoryNote) {
             console.log("Creating automatic payment record for promissory note");
             await createAutomaticPaymentRecord({
@@ -425,10 +431,16 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       
       resetForm();
       
-      // Navigate back to orders list
-      setTimeout(() => {
-        navigate('/pedidos');
-      }, 1500);
+      // If it's a promissory note payment type, navigate to the payments page
+      if (isPromissoryNote && orderId) {
+        console.log("Navigating to promissory notes tab with orderId:", orderId);
+        navigate(`/pagamentos?tab=promissory&orderId=${orderId}`);
+      } else {
+        // Navigate back to orders list
+        setTimeout(() => {
+          navigate('/pedidos');
+        }, 1500);
+      }
     } catch (error) {
       console.error("Erro ao processar pedido:", error);
       toast({

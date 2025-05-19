@@ -1,0 +1,18 @@
+
+/* Highlight animation for promissory notes */
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+  }
+}
+
+.highlight-note {
+  animation: highlight-pulse 1.5s infinite;
+  border-color: #4f46e5;
+}

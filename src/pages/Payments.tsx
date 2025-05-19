@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useSearchParams } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,13 +16,32 @@ import { usePayments } from '@/hooks/usePayments';
 import { loadOrders } from '@/hooks/useOrders';
 
 export default function Payments() {
-  const [activeTab, setActiveTab] = useState<string>('pending');
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const orderIdFromUrl = searchParams.get('orderId');
+  
+  const [activeTab, setActiveTab] = useState<string>(tabFromUrl === 'promissory' ? 'promissory' : 'pending');
+  
   const { customers } = useAppContext();
   const { paymentMethods } = usePaymentMethods();
   const { paymentTables } = usePaymentTables();
   const { payments, addPayment, isLoading } = usePayments();
   const [orders, setOrders] = useState([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+
+  // Handle URL parameters for tab selection
+  useEffect(() => {
+    if (tabFromUrl) {
+      // Map URL parameter values to tab values
+      const tabValue = tabFromUrl === 'promissory' 
+        ? 'promissory' 
+        : tabFromUrl === 'history' 
+          ? 'history' 
+          : 'pending';
+      
+      setActiveTab(tabValue);
+    }
+  }, [tabFromUrl]);
 
   // Load orders
   useEffect(() => {
@@ -113,7 +133,7 @@ export default function Payments() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-3 mb-8">
               <TabsTrigger value="pending">
                 <Wallet className="mr-2 h-4 w-4" /> Pagamentos Pendentes
@@ -152,6 +172,7 @@ export default function Payments() {
                 customers={customers}
                 orders={orders}
                 payments={payments}
+                highlightedOrderId={orderIdFromUrl}
               />
             </TabsContent>
           </Tabs>
