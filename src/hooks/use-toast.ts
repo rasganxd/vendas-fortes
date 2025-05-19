@@ -68,14 +68,10 @@ toast.warning = (message: string, options?: { description?: React.ReactNode }) =
   return notificationService.warning(message, options as NotificationOptions);
 };
 
-// Simple hook function that returns the notification API
+/**
+ * Hook that returns the toast function
+ * This makes the hook usage consistent with how most expect it to work
+ */
 export function useToast() {
-  const { notification } = useNotification();
-  
-  return {
-    toast: (
-      titleOrOptions: string | ToastProps,
-      options?: { description?: React.ReactNode; variant?: "default" | "destructive" | "warning" }
-    ) => toast(titleOrOptions, options)
-  };
+  return { toast };
 }

@@ -32,6 +32,36 @@ export const startNewMonth = async (createBackup: (name: string, description?: s
 };
 
 /**
+ * Clears application cache and refreshes data from server
+ */
+export const clearCache = async (
+  loadCustomers: () => Promise<any[]>,
+  loadProducts: () => Promise<any[]>,
+  loadOrders: () => Promise<any[]>,
+  setCustomers: React.Dispatch<React.SetStateAction<any[]>>,
+  setProducts: React.Dispatch<React.SetStateAction<any[]>>,
+): Promise<void> => {
+  try {
+    console.log("Clearing application cache...");
+    // Clear local storage
+    localStorage.clear();
+    
+    // Refresh data from server/database
+    const loadedCustomers = await loadCustomers();
+    setCustomers(loadedCustomers);
+    
+    const loadedProducts = await loadProducts();
+    setProducts(loadedProducts);
+    
+    toast("Cache limpo", { description: "Cache do aplicativo limpo com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao limpar cache:", error);
+    toast.error("Erro", { description: "Houve um erro ao limpar o cache do aplicativo." });
+    throw error;
+  }
+};
+
+/**
  * Generates and syncs data for mobile sales force
  * @param salesReps Array of sales rep IDs to sync data for, empty for all
  * @returns True if sync was successful

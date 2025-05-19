@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -17,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SyncLogEntry, syncService } from "@/services/supabase/syncService";
@@ -91,8 +90,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     // For now we'll just show a toast
     toast({
       title: "QR Code para sincronização",
-      description: "Funcionalidade será implementada em breve.",
-      variant: "default"
+      description: "Funcionalidade será implementada em breve."
     });
   };
 

@@ -54,13 +54,13 @@ export default function CompanySettings() {
       await updateSettings({ company: companyData });
       toast({
         title: "Dados salvos com sucesso",
-        description: "Os dados da empresa foram atualizados.",
+        description: "Os dados da empresa foram atualizados."
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro ao salvar dados",
-        description: "Ocorreu um erro ao salvar os dados da empresa.",
+        description: "Ocorreu um erro ao salvar os dados da empresa."
       });
       console.error(error);
     } finally {

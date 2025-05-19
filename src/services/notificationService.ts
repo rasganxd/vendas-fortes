@@ -1,3 +1,4 @@
+
 import { nanoid } from 'nanoid';
 
 // Type definitions for our notification system
@@ -26,7 +27,7 @@ export interface Notification {
 }
 
 const DEFAULT_DURATION = 5000; // 5 seconds
-const DUPLICATE_WINDOW = 3000; // 3 seconds window to consider as duplicate
+const DUPLICATE_WINDOW = 5000; // 5 seconds window to consider as duplicate
 
 // Internal store of recent notifications to prevent duplicates
 const recentNotifications: Notification[] = [];
@@ -45,23 +46,35 @@ const cleanupOldNotifications = () => {
 };
 
 /**
+ * Generate a simple hash for notification content to help with duplicate detection
+ * @param title The notification title
+ * @param description The notification description
+ * @returns A string hash representing the content
+ */
+const generateContentHash = (title: React.ReactNode, description?: React.ReactNode): string => {
+  const titleStr = typeof title === 'string' ? title : JSON.stringify(title);
+  const descStr = description ? 
+    (typeof description === 'string' ? description : JSON.stringify(description)) 
+    : '';
+  
+  // Simple string concatenation hash
+  return `${titleStr}::${descStr}`;
+};
+
+/**
  * Check if a notification is a duplicate of a recent one
  */
 const isDuplicate = (title: React.ReactNode, type: NotificationType, description?: React.ReactNode): boolean => {
   cleanupOldNotifications();
   
-  // For string content, we can do a direct comparison
-  if (typeof title === 'string') {
-    return recentNotifications.some(notification => 
-      notification.title === title && 
-      notification.type === type &&
-      notification.description === description
-    );
-  }
+  // Generate content hash
+  const contentHash = generateContentHash(title, description);
   
-  // For complex content (React nodes), we can't easily compare
-  // So we'll just use type and timestamp as a simple heuristic
-  return false;
+  // Check for similar content in recent notifications
+  return recentNotifications.some(notification => 
+    generateContentHash(notification.title, notification.description) === contentHash &&
+    notification.type === type
+  );
 }
 
 /**
