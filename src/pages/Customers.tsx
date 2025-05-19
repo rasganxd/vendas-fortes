@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
@@ -82,19 +83,25 @@ const Customers = () => {
     setIsNewCustomerDialogOpen(true);
   };
 
-  // Filter customers based on search term
-  const filteredCustomers = customers.filter(customer => 
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.document || '').includes(searchTerm) ||
-    customer.phone.includes(searchTerm) ||
-    (customer.code?.toString() || '').includes(searchTerm)
-  );
+  // Filter customers based on search term - adding null checks to prevent toLowerCase error
+  const filteredCustomers = customers.filter(customer => {
+    // Only filter if searchTerm is not empty
+    if (!searchTerm) return true;
+    
+    // Add null checks for each property before calling toLowerCase()
+    return (
+      (customer.name && customer.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (customer.document && customer.document.includes(searchTerm)) ||
+      (customer.phone && customer.phone.includes(searchTerm)) ||
+      (customer.code !== undefined && customer.code !== null && customer.code.toString().includes(searchTerm))
+    );
+  });
 
   // Sort customers based on selected sort option
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
     switch (sortBy) {
       case 'name':
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
       case 'code':
         return (a.code || 0) - (b.code || 0);
       case 'visitFrequency':
@@ -110,7 +117,7 @@ const Customers = () => {
       case 'salesRep':
         return (a.sales_rep_name || '').localeCompare(b.sales_rep_name || '');
       default:
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
     }
   });
 
