@@ -73,6 +73,9 @@ export function useToast() {
   const { notification } = useNotification();
   
   return {
-    toast: notification
+    toast: (
+      titleOrOptions: string | ToastProps,
+      options?: { description?: React.ReactNode; variant?: "default" | "destructive" | "warning" }
+    ) => toast(titleOrOptions, options)
   };
 }

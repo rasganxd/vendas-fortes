@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CloudUpload, Users, Calendar } from "lucide-react";
 import { useAppContext } from '@/hooks/useAppContext';
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { syncService, SyncLogEntry } from '@/services/supabase/syncService';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
 export default function MobileSyncPanel() {
   const { salesReps } = useAppContext();
+  const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncLogs, setSyncLogs] = useState<SyncLogEntry[]>([]);
   const [selectedSalesRep, setSelectedSalesRep] = useState<string>('');
