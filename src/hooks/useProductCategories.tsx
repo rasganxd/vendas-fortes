@@ -71,7 +71,8 @@ export const useProductCategories = () => {
           // Add the default categories to Firebase
           for (const category of defaultCategories) {
             try {
-              await addProductCategory(category);
+              // Don't show toast notifications for default categories
+              await addProductCategoryWithoutToast(category);
             } catch (error) {
               console.error("Error adding default category:", error);
               // Continue with next category even if one fails
@@ -130,6 +131,35 @@ export const useProductCategories = () => {
     loadCategories();
   }, [hasAttemptedLoad]);
 
+  // Internal helper to add category without toast notifications
+  const addProductCategoryWithoutToast = async (category: Omit<ProductCategory, 'id'>) => {
+    try {
+      // Prepare data for Supabase
+      const supabaseData = {
+        name: category.name,
+        description: category.description || '',
+        notes: category.notes || '',
+        createdAt: category.createdAt || new Date(),
+        updatedAt: category.updatedAt || new Date()
+      };
+
+      const id = await productCategoryService.add(supabaseData);
+      const newCategory: ProductCategory = { 
+        ...category, 
+        id,
+        notes: category.notes || '',
+        createdAt: category.createdAt || new Date(),
+        updatedAt: category.updatedAt || new Date()
+      };
+      setProductCategories(prev => [...prev, newCategory]);
+      
+      return id;
+    } catch (error) {
+      console.error("Erro ao adicionar categoria sem notificação:", error);
+      return "";
+    }
+  };
+
   const addProductCategory = async (category: Omit<ProductCategory, 'id'>) => {
     try {
       // Prepare data for Supabase - FIXED: Added createdAt and updatedAt
@@ -149,9 +179,9 @@ export const useProductCategories = () => {
         createdAt: category.createdAt || new Date(),
         updatedAt: category.updatedAt || new Date()
       };
-      setProductCategories([...productCategories, newCategory]);
+      setProductCategories(prev => [...prev, newCategory]);
       
-      // Updated to use sonner toast
+      // Show a single toast notification
       toast.success("Categoria adicionada", {
         description: "Categoria de produto adicionada com sucesso!"
       });
@@ -160,7 +190,6 @@ export const useProductCategories = () => {
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
       
-      // Updated to use sonner toast
       toast.error("Erro ao adicionar", {
         description: "Não foi possível adicionar a categoria de produtos."
       });
@@ -187,14 +216,13 @@ export const useProductCategories = () => {
         } : pc))
       );
       
-      // Updated to use sonner toast
+      // Show a single toast notification
       toast.success("Categoria atualizada", {
         description: "Categoria de produto atualizada com sucesso!"
       });
     } catch (error) {
       console.error("Erro ao atualizar categoria:", error);
       
-      // Updated to use sonner toast
       toast.error("Erro ao atualizar", {
         description: "Não foi possível atualizar a categoria de produtos."
       });
@@ -203,23 +231,15 @@ export const useProductCategories = () => {
 
   const deleteProductCategory = async (id: string) => {
     try {
-      // Keep track of whether we've already shown a toast
-      let toastShown = false;
-      
       await productCategoryService.delete(id);
       setProductCategories(productCategories.filter(pc => pc.id !== id));
       
-      // Only show success toast if we haven't shown one yet
-      if (!toastShown) {
-        toast.success("Categoria excluída", {
-          description: "Categoria de produto excluída com sucesso!"
-        });
-        toastShown = true;
-      }
+      toast.success("Categoria excluída", {
+        description: "Categoria de produto excluída com sucesso!"
+      });
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
       
-      // Only show error toast if we haven't shown one yet
       toast.error("Erro ao excluir", {
         description: "Não foi possível excluir a categoria de produtos."
       });

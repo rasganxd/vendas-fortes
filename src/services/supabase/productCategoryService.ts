@@ -31,10 +31,10 @@ export const productCategoryService = {
     return firebaseProductCategoryService.update(id, category);
   },
   
-  // Delete product category - Modified to prevent duplicate notifications
+  // Delete product category
   delete: async (id: string): Promise<void> => {
     console.log(`Supabase productCategoryService.delete: Delegating to Firebase for id ${id}`);
-    // Directly call Firebase service without re-throwing errors that might trigger duplicate notifications
+    // Call Firebase service without re-throwing errors that might trigger duplicate notifications
     try {
       await firebaseProductCategoryService.delete(id);
     } catch (error) {
