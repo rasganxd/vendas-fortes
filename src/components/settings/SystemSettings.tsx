@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Database, Settings, Smartphone } from "lucide-react";
+import { Database, Smartphone } from "lucide-react";
 import MobileSyncPanel from './MobileSyncPanel';
 
 export default function SystemSettings() {
@@ -14,30 +14,6 @@ export default function SystemSettings() {
           Gerencie as configurações técnicas e sincronização da sua aplicação.
         </p>
       </div>
-      
-      {/* Card de configurações do sistema com visual melhorado */}
-      <Card className="overflow-hidden border-none shadow-lg transition-all duration-200 hover:shadow-xl">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b pb-8">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-primary/10 p-2.5">
-              <Settings className="text-primary h-6 w-6" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">
-                Sistema e Servidor
-              </CardTitle>
-              <CardDescription className="mt-1.5">
-                Gerencie configurações técnicas do sistema.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-sm text-muted-foreground">
-            <p>Esta seção permite gerenciar configurações técnicas do sistema, como sincronização com dispositivos móveis e configurações do servidor.</p>
-          </div>
-        </CardContent>
-      </Card>
       
       {/* Card de sincronização móvel com visual melhorado */}
       <Card className="overflow-hidden border-none shadow-lg transition-all duration-200 hover:shadow-xl">
