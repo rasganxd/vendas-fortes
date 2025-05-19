@@ -1,22 +1,34 @@
 
 import React from 'react';
-import { Payment } from '@/types';
+import { Customer, Payment, PaymentTable } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
 import { formatCurrency, formatCurrencyInWords } from '@/lib/format-utils';
 import { useAppContext } from '@/hooks/useAppContext';
 
 interface PromissoryNoteViewProps {
-  payment: Payment;
+  order: any;
+  customer: Customer | null;
+  paymentTable: PaymentTable | undefined;
+  payments: any[];
 }
 
-const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
+const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ order, customer, paymentTable, payments }) => {
   const { settings } = useAppContext();
   const companyData = settings?.company;
 
-  // Safety check to prevent rendering if payment is undefined
-  if (!payment) {
-    return <div className="p-4">No payment data available</div>;
-  }
+  // Calculate total payments
+  const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const remainingAmount = order.total - totalPaid;
+  
+  // Use the first payment for the promissory note details, or create defaults if no payments
+  const payment = payments.length > 0 ? payments[0] : {
+    amount: remainingAmount,
+    dueDate: order.dueDate,
+    date: order.date,
+    customerName: customer?.name || order.customerName,
+    customerDocument: customer?.document,
+    customerAddress: customer?.address
+  };
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
@@ -39,27 +51,27 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
           NOTA PROMISSÓRIA
         </h1>
         <p className="mt-2 text-right">
-          <span className="font-semibold">Valor:</span> {formatCurrency(payment.amount || 0)}
+          <span className="font-semibold">Valor:</span> {formatCurrency(remainingAmount || payment.amount || 0)}
         </p>
       </div>
 
       {/* Main Content */}
       <div className="mb-6 text-justify">
         <p className="mb-4">
-          Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || new Date())}</span>,
+          Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || order.dueDate || new Date())}</span>,
           pagarei por esta única via de NOTA PROMISSÓRIA a {companyData?.name || "___________________"},
-          ou à sua ordem, a quantia de {formatCurrency(payment.amount || 0)} ({payment.amountInWords || formatCurrencyInWords(payment.amount)}),
+          ou à sua ordem, a quantia de {formatCurrency(remainingAmount || payment.amount || 0)} ({payment.amountInWords || formatCurrencyInWords(remainingAmount || payment.amount)}),
           em moeda corrente deste país.
         </p>
         <p>
-          Pagável em {payment.paymentLocation || "___________________"}
+          Pagável em {paymentTable?.paymentLocation || payment.paymentLocation || "___________________"}
         </p>
       </div>
 
       {/* Signatures */}
       <div className="mt-12">
         <p className="text-right mb-2">
-          {payment.emissionLocation || "___________________"}, {formatDateToBR(payment.date || new Date())}
+          {paymentTable?.paymentLocation || payment.emissionLocation || "___________________"}, {formatDateToBR(payment.date || order.date || new Date())}
         </p>
         <div className="border-t border-gray-400 pt-2 mt-16 text-center">
           <p>Assinatura do Emitente</p>
@@ -68,20 +80,20 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({ payment }) => {
 
       {/* Customer Info */}
       <div className="mt-8">
-        <p><span className="font-semibold">Nome:</span> {payment.customerName || "___________________"}</p>
-        {payment.customerDocument && (
-          <p><span className="font-semibold">CPF/CNPJ:</span> {payment.customerDocument}</p>
+        <p><span className="font-semibold">Nome:</span> {customer?.name || payment.customerName || "___________________"}</p>
+        {(customer?.document || payment.customerDocument) && (
+          <p><span className="font-semibold">CPF/CNPJ:</span> {customer?.document || payment.customerDocument}</p>
         )}
-        {payment.customerAddress && (
-          <p><span className="font-semibold">Endereço:</span> {payment.customerAddress}</p>
+        {(customer?.address || payment.customerAddress) && (
+          <p><span className="font-semibold">Endereço:</span> {customer?.address || payment.customerAddress}</p>
         )}
       </div>
 
       {/* Payment Details */}
       <div className="mt-8 text-sm">
-        <p><span className="font-semibold">Referente ao pedido:</span> {payment.orderId}</p>
-        {payment.notes && (
-          <p><span className="font-semibold">Observações:</span> {payment.notes}</p>
+        <p><span className="font-semibold">Referente ao pedido:</span> #{order.code || order.id}</p>
+        {order.notes && (
+          <p><span className="font-semibold">Observações:</span> {order.notes}</p>
         )}
         {payment.installments && Array.isArray(payment.installments) && payment.installments.length > 0 && (
           <div className="mt-4">
