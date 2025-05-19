@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -404,15 +403,6 @@ export default function FirebaseDataTester() {
         name: `Vendedor Teste ${new Date().getTime()}`,
         code: Math.floor(Math.random() * 10000),
         phone: '(99) 99999-9999',
-        email: '', // Added missing property
-        address: '', // Added missing property
-        city: '', // Added missing property
-        state: '', // Added missing property
-        zip: '', // Added missing property
-        region: '', // Added missing property
-        document: '', // Added missing property
-        role: '', // Added missing property
-        notes: '', // Added missing property
         active: true,
         createdAt: new Date(),
         updatedAt: new Date()
