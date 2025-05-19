@@ -1,16 +1,17 @@
 
 import React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { SalesRep } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { salesRepService } from '@/services/firebase/salesRepService';
 import { toast } from '@/hooks/use-toast';
 
 interface DeleteSalesRepDialogProps {
@@ -28,18 +29,17 @@ export const DeleteSalesRepDialog: React.FC<DeleteSalesRepDialogProps> = ({
 }) => {
   const handleDelete = async () => {
     try {
-      // Delete from Supabase
-      const { error } = await supabase
-        .from('sales_reps')
-        .delete()
-        .eq('id', salesRep.id);
+      console.log(`Deleting sales rep with ID: ${salesRep.id}`);
       
-      if (error) throw error;
+      // Use Firebase service instead of Supabase
+      await salesRepService.delete(salesRep.id);
       
       setSalesReps(currentSalesReps => 
         currentSalesReps.filter(sr => sr.id !== salesRep.id)
       );
+      
       onOpenChange(false);
+      
       toast("Representante excluído", {
         description: "Representante excluído com sucesso!"
       });
@@ -52,25 +52,27 @@ export const DeleteSalesRepDialog: React.FC<DeleteSalesRepDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Excluir Representante</DialogTitle>
-          <DialogDescription>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir Representante</AlertDialogTitle>
+          <AlertDialogDescription>
             Tem certeza que deseja excluir o representante {salesRep.name}?
             Esta ação não pode ser desfeita.
-          </DialogDescription>
-        </DialogHeader>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button variant="destructive" onClick={handleDelete}>
+        <AlertDialogFooter className="mt-6">
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={handleDelete}
+            className="bg-destructive hover:bg-destructive/90">
             Excluir
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
+
+export default DeleteSalesRepDialog;
