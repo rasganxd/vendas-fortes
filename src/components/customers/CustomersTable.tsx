@@ -37,27 +37,26 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow className="h-8">
-            <TableHead className="w-14 py-2">Código</TableHead>
-            <TableHead className="py-2">Nome</TableHead>
-            <TableHead className="py-2">Telefone</TableHead>
-            <TableHead className="w-20 text-right py-2">Ações</TableHead>
+          <TableRow>
+            <TableHead className="w-14">Código</TableHead>
+            <TableHead>Nome</TableHead>
+            <TableHead>Telefone</TableHead>
+            <TableHead className="w-20 text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody className="max-h-[600px]">
           {customers.map((customer) => (
-            <TableRow key={customer.id} className="h-10">
-              <TableCell className="font-medium py-1.5">
+            <TableRow key={customer.id}>
+              <TableCell className="font-medium">
                 {customer.code || "—"}
               </TableCell>
-              <TableCell className="py-1.5">{customer.name}</TableCell>
-              <TableCell className="py-1.5">{customer.phone || "—"}</TableCell>
-              <TableCell className="text-right py-1.5">
+              <TableCell>{customer.name}</TableCell>
+              <TableCell>{customer.phone || "—"}</TableCell>
+              <TableCell className="text-right">
                 <div className="flex justify-end space-x-1">
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2"
                     onClick={() => onView(customer)}
                   >
                     <Eye size={16} />
@@ -65,7 +64,6 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2"
                     onClick={() => onEdit(customer)}
                   >
                     <ExternalLink size={16} />
@@ -73,7 +71,7 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-destructive hover:text-destructive/90" 
+                    className="text-destructive hover:text-destructive/90" 
                     onClick={() => onDelete(customer.id, customer)}
                   >
                     <Trash2 size={16} />
