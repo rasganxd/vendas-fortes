@@ -290,21 +290,21 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
   const handleCreateOrder = async () => {
     // Form validation
     if (!selectedCustomer) {
-      toast.error("Erro", {
+      toast({
         description: "Selecione um cliente para o pedido."
       });
       return;
     }
     
     if (!selectedSalesRep) {
-      toast.error("Erro", {
+      toast({
         description: "Selecione um vendedor para o pedido."
       });
       return;
     }
     
     if (orderItems.length === 0) {
-      toast.error("Erro", {
+      toast({
         description: "Adicione pelo menos um item ao pedido."
       });
       return;
@@ -438,7 +438,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       }, 1500);
     } catch (error) {
       console.error("Erro ao processar pedido:", error);
-      toast.error(isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido", {
+      toast({
         description: `Ocorreu um erro ao processar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
       });
     } finally {

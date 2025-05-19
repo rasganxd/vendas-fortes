@@ -7,7 +7,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { useReactToPrint } from 'react-to-print';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
-import '../styles/promissory-notes.css';
+import '@/styles/promissory-notes.css';
 
 interface PromissoryNoteViewProps {
   order: any;
