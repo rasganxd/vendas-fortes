@@ -17,6 +17,7 @@ export type ToastActionElement = React.ReactElement;
  * Basic usage:
  * toast("Message")                 - Simple toast with just a message
  * toast("Title", { description })  - Toast with title and description
+ * toast({ title, description })    - Toast with object configuration
  * 
  * Variants:
  * toast.success("Success message") - Success toast
@@ -24,16 +25,30 @@ export type ToastActionElement = React.ReactElement;
  * toast.warning("Warning message") - Warning toast
  */
 export function toast(
-  titleOrMessage: string,
+  titleOrOptions: string | ToastProps,
   options?: { description?: React.ReactNode; variant?: "default" | "destructive" | "warning" }
 ) {
-  if (options?.variant === "destructive") {
-    return sonnerToast.error(titleOrMessage, { description: options?.description });
-  } else if (options?.variant === "warning") {
-    return sonnerToast.warning(titleOrMessage, { description: options?.description });
+  // Handle object-style calls: toast({ title, description, variant })
+  if (typeof titleOrOptions === 'object') {
+    const { title, description, variant } = titleOrOptions;
+    
+    if (variant === "destructive") {
+      return sonnerToast.error(title as string, { description });
+    } else if (variant === "warning") {
+      return sonnerToast.warning(title as string, { description });
+    }
+    
+    return sonnerToast(title as string, { description });
   }
   
-  return sonnerToast(titleOrMessage, { description: options?.description });
+  // Handle string-style calls: toast("Title", { description })
+  if (options?.variant === "destructive") {
+    return sonnerToast.error(titleOrOptions, { description: options?.description });
+  } else if (options?.variant === "warning") {
+    return sonnerToast.warning(titleOrOptions, { description: options?.description });
+  }
+  
+  return sonnerToast(titleOrOptions, { description: options?.description });
 }
 
 // Add success shorthand 
