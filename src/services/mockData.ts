@@ -1,3 +1,5 @@
 
-// Re-export all mock data from the new structure
-export * from '@/data/mock';
+// This file is kept for compatibility but no longer exports any mock data
+// All mock data imports have been removed
+
+export const mockDataRemoved = true;

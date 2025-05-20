@@ -3,12 +3,11 @@ import { loadCustomers } from "@/hooks/useCustomers";
 import { fetchProducts } from "@/hooks/useProducts";
 import { loadOrders } from "@/hooks/useOrders";
 import { Customer, Product, Order } from '@/types';
-import { mockProducts } from '@/data/mock/products';
-import { mockCustomers } from '@/data/mock/customers';
 import { toast } from "@/components/ui/use-toast";
 
 /**
  * Loads core application data (customers and products)
+ * Modified to NOT use mock data as fallback
  */
 export const loadCoreData = async (
   setIsLoadingCustomers: React.Dispatch<React.SetStateAction<boolean>>,
@@ -27,18 +26,12 @@ export const loadCoreData = async (
       loadedCustomers = await loadCustomers();
       console.log(`Loaded ${loadedCustomers.length} customers`);
       setCustomers(loadedCustomers);
-      
-      // Check if we're using mock data
-      if (loadedCustomers.length > 0 && loadedCustomers[0].id.startsWith('local-')) {
-        setIsUsingMockData(true);
-      }
     } catch (error) {
       console.error("Failed to load customers:", error);
-      setCustomers(mockCustomers);
-      setIsUsingMockData(true);
+      setCustomers([]);
       toast({
         title: "Erro ao carregar clientes",
-        description: "Usando dados locais temporariamente.",
+        description: "Não foi possível carregar os clientes.",
         variant: "destructive"
       });
     } finally {
@@ -50,24 +43,22 @@ export const loadCoreData = async (
     try {
       console.log("About to load products...");
       const loadedProducts = await fetchProducts();
-      console.log(`Loaded ${loadedProducts.length} products from Supabase`);
+      console.log(`Loaded ${loadedProducts.length} products`);
       
       // Always make sure we update the state even if empty array
       if (loadedProducts && loadedProducts.length > 0) {
         setProducts(loadedProducts);
-        console.log("Set products from Supabase:", loadedProducts.length);
+        console.log("Set products:", loadedProducts.length);
       } else {
-        console.log("No products loaded from Supabase, using mock data");
-        setProducts(mockProducts);
-        setIsUsingMockData(true);
+        console.log("No products loaded, using empty array");
+        setProducts([]);
       }
     } catch (error) {
       console.error("Failed to load products:", error);
-      setProducts(mockProducts);
-      setIsUsingMockData(true);
+      setProducts([]);
       toast({
         title: "Erro ao carregar produtos",
-        description: "Usando dados locais temporariamente.",
+        description: "Não foi possível carregar os produtos.",
         variant: "destructive"
       });
     } finally {
@@ -75,8 +66,9 @@ export const loadCoreData = async (
       setIsLoadingProducts(false);
     }
     
-    // Return flag indicating if using mock data
-    return setIsUsingMockData;
+    // We're no longer using mock data
+    setIsUsingMockData(false);
+    return false;
   } catch (error) {
     console.error("Error loading core data:", error);
     toast({
@@ -84,47 +76,20 @@ export const loadCoreData = async (
       description: "Houve um problema ao carregar os dados do sistema.",
       variant: "destructive"
     });
-    return setIsUsingMockData;
+    setIsUsingMockData(false);
+    return false;
   }
 };
 
 /**
- * Loads data from localStorage if available
+ * Loads data from localStorage if available - now just clears any mock data
  */
 export const loadFromLocalStorage = (
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>,
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
-  const localCustomers = localStorage.getItem('mockCustomers');
-  const localProducts = localStorage.getItem('mockProducts');
-  
-  if (localCustomers) {
-    try {
-      const parsedCustomers = JSON.parse(localCustomers);
-      if (Array.isArray(parsedCustomers) && parsedCustomers.length > 0) {
-        setCustomers(parsedCustomers);
-        console.log("Loaded customers from localStorage:", parsedCustomers.length);
-      }
-    } catch (error) {
-      console.error("Error parsing customers from localStorage:", error);
-    }
-  }
-  
-  if (localProducts) {
-    try {
-      const parsedProducts = JSON.parse(localProducts);
-      if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
-        setProducts(currentProducts => {
-          // Only update from localStorage if we don't have products yet
-          if (currentProducts.length === 0) {
-            console.log("Loaded products from localStorage:", parsedProducts.length);
-            return parsedProducts;
-          }
-          return currentProducts;
-        });
-      }
-    } catch (error) {
-      console.error("Error parsing products from localStorage:", error);
-    }
-  }
+  // Import clearDemoData to ensure no mock data is used
+  import('@/utils/clearDemoData').then(({ clearDemoData }) => {
+    clearDemoData();
+  });
 };

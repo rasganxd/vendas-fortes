@@ -1,6 +1,11 @@
 
 // Format currency to Brazilian Real format
-export const formatCurrency = (value: number): string => {
+export const formatCurrency = (value: number | undefined | null): string => {
+  // Handle undefined, null, or NaN values
+  if (value === undefined || value === null || isNaN(value)) {
+    value = 0;
+  }
+  
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
@@ -9,7 +14,7 @@ export const formatCurrency = (value: number): string => {
 
 // Convert a number to words (for currency)
 export const formatCurrencyInWords = (value: number | undefined): string => {
-  if (value === undefined || value === null) {
+  if (value === undefined || value === null || isNaN(value)) {
     return "zero reais";
   }
 
@@ -87,11 +92,17 @@ export const formatCurrencyInWords = (value: number | undefined): string => {
 
 // Format date to Brazilian format (DD/MM/YYYY)
 export const formatDateBR = (date: Date): string => {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return "";
+  }
   return new Intl.DateTimeFormat('pt-BR').format(date);
 };
 
 // Format date to short format (DD/MM/YY)
 export const formatDateShort = (date: Date): string => {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return "";
+  }
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
@@ -101,6 +112,9 @@ export const formatDateShort = (date: Date): string => {
 
 // Format date and time
 export const formatDateTime = (date: Date): string => {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return "";
+  }
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
@@ -111,12 +125,18 @@ export const formatDateTime = (date: Date): string => {
 };
 
 // Format number with thousands separator
-export const formatNumber = (value: number): string => {
+export const formatNumber = (value: number | undefined | null): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    value = 0;
+  }
   return new Intl.NumberFormat('pt-BR').format(value);
 };
 
 // Format percentage
-export const formatPercentage = (value: number): string => {
+export const formatPercentage = (value: number | undefined | null): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    value = 0;
+  }
   return new Intl.NumberFormat('pt-BR', {
     style: 'percent',
     minimumFractionDigits: 2,

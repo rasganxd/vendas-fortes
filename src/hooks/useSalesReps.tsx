@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { salesRepService } from '@/services/supabase/salesRepService';
@@ -27,24 +26,11 @@ export const useSalesReps = () => {
         console.error("Error loading sales reps:", error);
         toast({
           title: "Erro ao carregar vendedores",
-          description: "Houve um problema ao carregar os vendedores. Usando dados em cache ou mock se disponível.",
+          description: "Houve um problema ao carregar os vendedores.",
           variant: "destructive"
         });
-        
-        // Try to load mock data if available
-        try {
-          const mockModule = await import('@/data/mock/salesReps');
-          if (mockModule.mockSalesReps) {
-            console.log("Using mock sales rep data as fallback");
-            setSalesReps(mockModule.mockSalesReps);
-            toast({
-              title: "Usando dados de exemplo",
-              description: "Não foi possível conectar ao banco de dados. Usando dados de exemplo temporariamente."
-            });
-          }
-        } catch (mockError) {
-          console.error("Failed to load mock data:", mockError);
-        }
+        // Set empty array instead of mock data
+        setSalesReps([]);
       } finally {
         setIsLoading(false);
       }

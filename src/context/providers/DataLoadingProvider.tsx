@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Customer, Product, Order } from '@/types';
@@ -88,7 +89,7 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
         
         toast({
           title: "Erro ao carregar clientes",
-          description: "Usando dados locais temporariamente.",
+          description: "Usando dados locais.",
           variant: "destructive"
         });
       } finally {
@@ -114,12 +115,15 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
         
         toast({
           title: "Erro ao carregar produtos",
-          description: "Usando dados locais temporariamente.",
+          description: "Usando dados locais.",
           variant: "destructive"
         });
       } finally {
         setIsLoadingProducts(false);
       }
+
+      // Always set isUsingMockData to false
+      setIsUsingMockData(false);
     } catch (error) {
       console.error("Error loading core data from Firebase:", error);
       
@@ -271,7 +275,8 @@ export const loadCoreData = async (
       setIsLoadingProducts(false);
     }
     
-    // Return flag indicating not using mock data
+    // Always set isUsingMockData to false
+    setIsUsingMockData(false);
     return false;
   } catch (error) {
     console.error("Error loading core data:", error);
@@ -280,7 +285,7 @@ export const loadCoreData = async (
       description: "Houve um problema ao carregar os dados do sistema.",
       variant: "destructive"
     });
-    return false; // Never use mock data
+    return false;
   }
 };
 
@@ -292,7 +297,7 @@ export const loadFromLocalStorage = (
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>,
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
-  // Just clear any existing mock data and return empty arrays
+  // Just clear any existing mock data
   clearDemoData();
   
   // Set empty arrays for customers and products

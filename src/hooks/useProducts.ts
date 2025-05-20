@@ -83,7 +83,8 @@ export const loadProducts = async (forceRefresh = true): Promise<Product[]> => {
         return JSON.parse(cachedData) as Product[];
       }
       
-      throw error;
+      // Return empty array instead of throwing
+      return [];
     }
   }
 };
