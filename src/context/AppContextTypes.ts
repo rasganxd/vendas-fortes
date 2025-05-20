@@ -1,3 +1,4 @@
+
 import { Customer, Product, Order, Payment, Vehicle, SalesRep, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 import { Load } from '@/types';
 
@@ -132,7 +133,7 @@ export type AppContextType = {
   deleteDeliveryRoute: (id: string) => Promise<void>;
   
   // Backup operations
-  createBackup: (name?: string) => Promise<string>;
+  createBackup: (name?: string, description?: string) => Promise<string>;
   restoreBackup: (id: string) => Promise<boolean>;
   deleteBackup: (id: string) => Promise<boolean>;
   
@@ -142,6 +143,7 @@ export type AppContextType = {
   
   // System operations
   startNewMonth: () => Promise<boolean>;
+  startNewDay: () => Promise<boolean>;
   clearCache: () => Promise<void>;
   refreshData: () => Promise<boolean>;
 };

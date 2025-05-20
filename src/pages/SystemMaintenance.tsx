@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layout/PageLayout';
@@ -55,7 +54,7 @@ const SystemMaintenance = () => {
 
   const handleStartNewDay = async () => {
     try {
-      await startNewDay(createBackup);
+      await startNewDay();
       showStatus("O processo de atualização diária foi iniciado com sucesso", "success");
     } catch (error) {
       console.error("Error starting new day:", error);
@@ -65,7 +64,7 @@ const SystemMaintenance = () => {
 
   const handleStartNewMonth = async () => {
     try {
-      await startNewMonth(createBackup);
+      await startNewMonth();
       showStatus("O processo de fechamento mensal foi iniciado com sucesso", "success");
     } catch (error) {
       console.error("Error starting new month:", error);
