@@ -1,5 +1,0 @@
-
-project_id = "etrkhbbklcmnjuypfllf"
-
-[functions.mobile-sync]
-verify_jwt = true

@@ -1,16 +1,12 @@
 
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/services/supabase/salesRepService';
-import { transformSalesRepData, transformArray } from '@/utils/dataTransformers';
-import { useSalesRepsCache } from './useSalesRepsCache';
+import { salesRepService } from '@/services/firebase/salesRepService';
 import { salesRepLocalService } from '@/services/local/salesRepLocalService';
 
 /**
  * Service hook for sales rep data operations
  */
 export const useSalesRepsService = () => {
-  const { getFromCache, saveToCache, getFallbackFromCache } = useSalesRepsCache();
-
   /**
    * Load sales reps with caching
    * @param forceRefresh - Force refresh from storage
@@ -18,33 +14,48 @@ export const useSalesRepsService = () => {
    */
   const loadSalesReps = async (forceRefresh = false): Promise<SalesRep[]> => {
     try {
-      // Try to get from cache if not forcing refresh
-      if (!forceRefresh) {
-        const cachedData = getFromCache();
-        if (cachedData) return cachedData;
+      // If forcing refresh, go directly to Firebase
+      if (forceRefresh) {
+        console.log("Forcing refresh from Firebase");
+        const firebaseSalesReps = await salesRepService.getAll();
+        
+        // Update local storage with new data
+        await salesRepLocalService.setAll(firebaseSalesReps);
+        
+        return firebaseSalesReps;
       }
       
-      console.log("Cache miss or force refresh, loading from local storage");
+      console.log("Loading from Firebase and falling back to local if needed");
       
-      // If not in cache or cache is stale, fetch from local storage
-      const salesReps = await salesRepLocalService.getAll();
-      console.log("Loaded sales reps:", salesReps);
-      
-      // Store in localStorage cache
-      saveToCache(salesReps);
-      
-      return salesReps;
+      // Try to load from Firebase first
+      try {
+        const firebaseSalesReps = await salesRepService.getAll();
+        
+        // Update local storage with new data for offline use
+        await salesRepLocalService.setAll(firebaseSalesReps);
+        
+        return firebaseSalesReps;
+      } catch (error) {
+        console.error("Error loading sales reps from Firebase:", error);
+        
+        // Fall back to local storage
+        console.log("Falling back to local storage");
+        const localSalesReps = await salesRepLocalService.getAll();
+        console.log(`Loaded ${localSalesReps.length} sales reps from local storage`);
+        
+        return localSalesReps;
+      }
     } catch (error) {
       console.error("Error loading sales reps:", error);
       
-      // Try to use cached data even if expired as fallback
-      const fallbackData = getFallbackFromCache();
-      if (fallbackData) {
-        console.log("Using expired cache as fallback");
-        return fallbackData;
+      // Try local storage as final fallback
+      try {
+        const localSalesReps = await salesRepLocalService.getAll();
+        return localSalesReps;
+      } catch (localError) {
+        console.error("Error loading from local storage:", localError);
+        return [];
       }
-      
-      throw error;
     }
   };
 

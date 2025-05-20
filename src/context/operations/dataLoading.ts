@@ -7,7 +7,7 @@ import { toast } from "@/components/ui/use-toast";
 
 /**
  * Loads core application data (customers and products)
- * Modified to NOT use mock data as fallback
+ * Modified to use Firebase exclusively
  */
 export const loadCoreData = async (
   setIsLoadingCustomers: React.Dispatch<React.SetStateAction<boolean>>,
@@ -17,17 +17,17 @@ export const loadCoreData = async (
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
   try {
-    console.log("Fetching core application data...");
+    console.log("Fetching core application data from Firebase...");
     
     // Start loading customers
     setIsLoadingCustomers(true);
     let loadedCustomers: Customer[] = [];
     try {
       loadedCustomers = await loadCustomers();
-      console.log(`Loaded ${loadedCustomers.length} customers`);
+      console.log(`Loaded ${loadedCustomers.length} customers from Firebase`);
       setCustomers(loadedCustomers);
     } catch (error) {
-      console.error("Failed to load customers:", error);
+      console.error("Failed to load customers from Firebase:", error);
       setCustomers([]);
       toast({
         title: "Erro ao carregar clientes",
@@ -41,9 +41,9 @@ export const loadCoreData = async (
     // Start loading products
     setIsLoadingProducts(true);
     try {
-      console.log("About to load products...");
+      console.log("About to load products from Firebase...");
       const loadedProducts = await fetchProducts();
-      console.log(`Loaded ${loadedProducts.length} products`);
+      console.log(`Loaded ${loadedProducts.length} products from Firebase`);
       
       // Always make sure we update the state even if empty array
       if (loadedProducts && loadedProducts.length > 0) {
@@ -54,7 +54,7 @@ export const loadCoreData = async (
         setProducts([]);
       }
     } catch (error) {
-      console.error("Failed to load products:", error);
+      console.error("Failed to load products from Firebase:", error);
       setProducts([]);
       toast({
         title: "Erro ao carregar produtos",
@@ -70,7 +70,7 @@ export const loadCoreData = async (
     setIsUsingMockData(false);
     return false;
   } catch (error) {
-    console.error("Error loading core data:", error);
+    console.error("Error loading core data from Firebase:", error);
     toast({
       title: "Erro ao carregar dados",
       description: "Houve um problema ao carregar os dados do sistema.",

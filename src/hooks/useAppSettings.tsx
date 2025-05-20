@@ -6,9 +6,9 @@ import {
   loadCachedTheme 
 } from '@/utils/theme-utils';
 import { 
-  fetchSettingsFromSupabase, 
+  fetchSettingsFromFirebase, 
   createDefaultSettings,
-  updateSettingsInSupabase 
+  updateSettingsInFirebase 
 } from '@/services/settings/settingsService';
 
 /**
@@ -20,14 +20,14 @@ export const useAppSettings = () => {
   const [error, setError] = useState<Error | null>(null);
 
   /**
-   * Fetches settings from Supabase or initializes defaults
+   * Fetches settings from Firebase or initializes defaults
    */
   const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true);
       
       // Try to fetch existing settings
-      const fetchedSettings = await fetchSettingsFromSupabase();
+      const fetchedSettings = await fetchSettingsFromFirebase();
       
       if (fetchedSettings) {
         setSettings(fetchedSettings);
@@ -47,7 +47,7 @@ export const useAppSettings = () => {
       console.error('Error fetching settings:', err);
       setError(err as Error);
       
-      // If there's an error fetching from Supabase, try to load from cache
+      // If there's an error fetching from Firebase, try to load from cache
       loadCachedTheme();
     } finally {
       setIsLoading(false);
@@ -67,8 +67,8 @@ export const useAppSettings = () => {
       // Merge existing and new settings
       const updatedSettings = { ...settings, ...newSettings } as AppSettings;
       
-      // Update in Supabase
-      await updateSettingsInSupabase(settings, newSettings);
+      // Update in Firebase
+      await updateSettingsInFirebase(settings, newSettings);
       
       // Update local state
       setSettings(updatedSettings);
@@ -86,7 +86,7 @@ export const useAppSettings = () => {
     }
   };
 
-  // Apply cached theme on mount, before Supabase data is available
+  // Apply cached theme on mount, before Firebase data is available
   useEffect(() => {
     loadCachedTheme();
     fetchSettings();

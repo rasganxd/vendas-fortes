@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { DeliveryRoute } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-import { deliveryRouteService } from '@/services/supabase';
+import { deliveryRouteService } from '@/services/firebase/deliveryRouteService';
 import { ensureDate } from '@/lib/date-utils';
 
 export const useDeliveryRoutes = () => {

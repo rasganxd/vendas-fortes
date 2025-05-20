@@ -1,138 +1,159 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { AppSettings } from '@/types';
+import { AppSettings, Theme } from '@/types';
+import { db } from '@/services/firebase/config';
+import { collection, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
+
+// Firebase collection name
+const SETTINGS_COLLECTION = 'app_settings';
+const SETTINGS_DOC_ID = 'app_settings';
+
+// Local storage keys for caching theme
+const THEME_CACHE_KEY = 'app_theme_cache';
 
 /**
- * Fetches application settings from Supabase
- * @returns Promise with settings data
+ * Fetches settings from Firebase
+ * @returns Promise<AppSettings | null>
  */
-export async function fetchSettingsFromSupabase(): Promise<AppSettings | null> {
-  // Fetch settings from Supabase
-  const { data: settingsData, error: fetchError } = await supabase
-    .from('app_settings')
-    .select('*')
-    .limit(1)
-    .single();
-    
-  if (fetchError && fetchError.code !== 'PGRST116') { // Not found error code
-    throw fetchError;
+export const fetchSettingsFromFirebase = async (): Promise<AppSettings | null> => {
+  try {
+    console.log('Fetching settings from Firebase...');
+    const docRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      console.log('Settings found:', docSnap.data());
+      
+      // Convert Firebase timestamp to Date objects
+      const data = docSnap.data();
+      
+      return {
+        id: docSnap.id,
+        companyName: data.companyName || '',
+        companyLogo: data.companyLogo || '',
+        theme: data.theme || null,
+        createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000) : new Date()
+      } as AppSettings;
+    } else {
+      console.log('No settings found');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching app settings:', error);
+    return null;
   }
-  
-  if (settingsData) {
-    // Transform the data to match AppSettings structure
-    return {
-      id: settingsData.id,
-      company: {
-        name: settingsData.company_name || '',
-        address: settingsData.company_address || '',
-        phone: settingsData.company_phone || '',
-        email: settingsData.company_email || '',
-        document: settingsData.company_document || '',
-        footer: settingsData.company_footer || 'Para qualquer suporte: (11) 9999-8888'
-      },
+};
+
+/**
+ * Creates default settings if none exist
+ * @returns Promise<AppSettings>
+ */
+export const createDefaultSettings = async (): Promise<AppSettings> => {
+  try {
+    console.log('Creating default settings...');
+    
+    const defaultSettings: AppSettings = {
+      id: SETTINGS_DOC_ID,
+      companyName: 'Minha Empresa',
+      companyLogo: '',
       theme: {
-        primaryColor: settingsData.primary_color || '#1C64F2',
-        secondaryColor: settingsData.secondary_color || '#047481',
-        accentColor: settingsData.accent_color || '#0694A2'
-      }
+        primary: '#1C64F2',
+        secondary: '#047481',
+        accent: '#0694A2'
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // Save to Firebase
+    await setDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID), defaultSettings);
+    
+    // Cache the theme
+    cacheTheme(defaultSettings.theme);
+    
+    console.log('Default settings created:', defaultSettings);
+    return defaultSettings;
+  } catch (error) {
+    console.error('Error creating default settings:', error);
+    
+    // Return the default settings anyway so the app can continue
+    return {
+      id: 'local-fallback',
+      companyName: 'Minha Empresa',
+      companyLogo: '',
+      theme: {
+        primary: '#1C64F2',
+        secondary: '#047481',
+        accent: '#0694A2'
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
   }
-
-  return null;
-}
+};
 
 /**
- * Creates default settings in Supabase
- * @returns Promise with default settings
- */
-export async function createDefaultSettings(): Promise<AppSettings> {
-  // Initialize with default settings if none exist
-  const defaultSettings: AppSettings = {
-    company: {
-      name: '',
-      address: '',
-      phone: '',
-      email: '',
-      document: '',
-      footer: 'Para qualquer suporte: (11) 9999-8888'
-    },
-    theme: {
-      primaryColor: '#1C64F2',
-      secondaryColor: '#047481',
-      accentColor: '#0694A2'
-    }
-  };
-  
-  // Try to insert default settings
-  const { data: newSettings, error: insertError } = await supabase
-    .from('app_settings')
-    .insert({
-      company_name: defaultSettings.company.name,
-      company_address: defaultSettings.company.address,
-      company_phone: defaultSettings.company.phone,
-      company_email: defaultSettings.company.email,
-      company_document: defaultSettings.company.document,
-      company_footer: defaultSettings.company.footer,
-      primary_color: defaultSettings.theme.primaryColor,
-      secondary_color: defaultSettings.theme.secondaryColor,
-      accent_color: defaultSettings.theme.accentColor
-    })
-    .select();
-    
-  if (insertError) {
-    console.error("Error inserting default settings:", insertError);
-  } else if (newSettings && newSettings.length > 0) {
-    defaultSettings.id = newSettings[0].id;
-  }
-  
-  return defaultSettings;
-}
-
-/**
- * Updates settings in Supabase
- * @param settings - Current settings object with ID
+ * Updates settings in Firebase
+ * @param currentSettings - Current settings object
  * @param newSettings - Partial settings to update
+ * @returns Promise<boolean>
  */
-export async function updateSettingsInSupabase(
-  settings: AppSettings | null,
+export const updateSettingsInFirebase = async (
+  currentSettings: AppSettings | null,
   newSettings: Partial<AppSettings>
-): Promise<void> {
-  // Convert to Supabase format
-  const supabaseData: Record<string, any> = {};
-  
-  if (newSettings.company) {
-    if (newSettings.company.name !== undefined) supabaseData.company_name = newSettings.company.name;
-    if (newSettings.company.address !== undefined) supabaseData.company_address = newSettings.company.address;
-    if (newSettings.company.phone !== undefined) supabaseData.company_phone = newSettings.company.phone;
-    if (newSettings.company.email !== undefined) supabaseData.company_email = newSettings.company.email;
-    if (newSettings.company.document !== undefined) supabaseData.company_document = newSettings.company.document;
-    if (newSettings.company.footer !== undefined) supabaseData.company_footer = newSettings.company.footer;
-  }
-  
-  if (newSettings.theme) {
-    if (newSettings.theme.primaryColor !== undefined) supabaseData.primary_color = newSettings.theme.primaryColor;
-    if (newSettings.theme.secondaryColor !== undefined) supabaseData.secondary_color = newSettings.theme.secondaryColor;
-    if (newSettings.theme.accentColor !== undefined) supabaseData.accent_color = newSettings.theme.accentColor;
-  }
-  
-  // Update settings in Supabase if we have an id
-  if (settings?.id) {
-    const { error: updateError } = await supabase
-      .from('app_settings')
-      .update(supabaseData)
-      .eq('id', settings.id);
-      
-    if (updateError) {
-      throw updateError;
+): Promise<boolean> => {
+  try {
+    if (!currentSettings?.id) {
+      // If no current settings, create default ones first
+      await createDefaultSettings();
     }
-  } else {
-    // Insert if no id exists yet
-    const { error: insertError } = await supabase
-      .from('app_settings')
-      .insert(supabaseData);
-      
-    if (insertError) {
-      throw insertError;
+    
+    // Prepare update data with timestamp
+    const updateData = {
+      ...newSettings,
+      updatedAt: new Date()
+    };
+    
+    // Update in Firebase
+    await updateDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID), updateData);
+    
+    // If theme was updated, cache it
+    if (newSettings.theme) {
+      cacheTheme(newSettings.theme);
     }
+    
+    console.log('Settings updated successfully');
+    return true;
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    return false;
   }
-}
+};
+
+/**
+ * Cache theme in localStorage for offline use
+ * @param theme - Theme object
+ */
+export const cacheTheme = (theme: Theme | null): void => {
+  if (theme) {
+    localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme));
+  }
+};
+
+/**
+ * Load theme from cache
+ * @returns Theme | null
+ */
+export const loadCachedTheme = (): Theme | null => {
+  try {
+    const cachedTheme = localStorage.getItem(THEME_CACHE_KEY);
+    if (cachedTheme) {
+      return JSON.parse(cachedTheme);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error loading cached theme:', error);
+    return null;
+  }
+};

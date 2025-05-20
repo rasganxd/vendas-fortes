@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { SyncLogEntry, syncService } from "@/services/supabase/syncService";
+import { mobileSyncService, SyncLogEntry } from "@/services/firebase/mobileSyncService";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MobileSyncStatusProps {
@@ -46,7 +45,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     
     setIsLoading(true);
     try {
-      const data = await syncService.getSyncLogs(salesRepId);
+      const data = await mobileSyncService.getSyncLogs(salesRepId);
       
       setSyncLogs(data);
       
@@ -57,37 +56,6 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       console.error("Error loading sync logs:", error);
       setStatusMessage("Não foi possível carregar os logs de sincronização.");
       setStatusType('error');
-      
-      // Método alternativo caso o RPC falhe
-      try {
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('sync_logs')
-          .select('*')
-          .eq('sales_rep_id', salesRepId)
-          .order('created_at', { ascending: false })
-          .limit(10);
-          
-        if (fallbackError) throw fallbackError;
-        
-        // Transform the data to match the SyncLogEntry type
-        const typedData: SyncLogEntry[] = fallbackData ? fallbackData.map((log: any) => ({
-          id: log.id,
-          event_type: log.event_type as 'upload' | 'download' | 'error', 
-          device_id: log.device_id,
-          sales_rep_id: log.sales_rep_id,
-          created_at: log.created_at,
-          details: log.details
-        })) : [];
-        
-        setSyncLogs(typedData);
-        
-        if (typedData && typedData.length > 0) {
-          setLastSynced(new Date(typedData[0].created_at).toLocaleString());
-          setStatusMessage(null); // Clear error if fallback succeeds
-        }
-      } catch (fallbackError) {
-        console.error("Fallback method also failed:", fallbackError);
-      }
     } finally {
       setIsLoading(false);
     }

@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/services/supabase/salesRepService';
+import { salesRepService } from '@/services/firebase/salesRepService';
 import { toast } from '@/components/ui/use-toast';
 import { useSalesRepsService } from './useSalesRepsService';
-import { useSalesRepsCache } from './useSalesRepsCache';
+import { salesRepLocalService } from '@/services/local/salesRepLocalService';
 
 /**
  * Main hook for managing sales reps state and operations
@@ -12,7 +13,6 @@ export const useSalesReps = () => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { loadSalesReps, generateNextCode: generateNextCodeService } = useSalesRepsService();
-  const { updateCache } = useSalesRepsCache();
   
   useEffect(() => {
     const fetchSalesReps = async () => {
@@ -61,8 +61,8 @@ export const useSalesReps = () => {
       const updatedSalesReps = [...salesReps, newSalesRep];
       setSalesReps(updatedSalesReps);
       
-      // Update cache
-      updateCache(updatedSalesReps);
+      // Update local cache
+      await salesRepLocalService.setAll(updatedSalesReps);
       
       toast({
         title: "Vendedor adicionado",
@@ -97,8 +97,8 @@ export const useSalesReps = () => {
       );
       setSalesReps(updatedSalesReps);
       
-      // Update cache
-      updateCache(updatedSalesReps);
+      // Update local cache
+      await salesRepLocalService.setAll(updatedSalesReps);
       
       toast({
         title: "Vendedor atualizado",
@@ -124,8 +124,8 @@ export const useSalesReps = () => {
       const updatedSalesReps = salesReps.filter(s => s.id !== id);
       setSalesReps(updatedSalesReps);
       
-      // Update cache
-      updateCache(updatedSalesReps);
+      // Update local cache
+      await salesRepLocalService.setAll(updatedSalesReps);
       
       toast({
         title: "Vendedor excluído",
