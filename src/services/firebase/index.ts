@@ -18,6 +18,7 @@ export { productCategoryService } from './productCategoryService';
 export { productBrandService } from './productBrandService';
 export { productGroupService } from './productGroupService';
 export { deliveryRouteService } from './deliveryRouteService';
+export { mobileSyncService } from './mobileSyncService';
 
 // Firestore utilities
 export { initializeFirestore } from './initializeFirestore';

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CloudUpload, Users, Calendar } from "lucide-react";
 import { useAppContext } from '@/hooks/useAppContext';
 import { useToast } from "@/hooks/use-toast";
-import { syncService, SyncLogEntry } from '@/services/supabase/syncService';
+import { mobileSyncService, SyncLogEntry } from '@/services/firebase/mobileSyncService';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -51,7 +51,7 @@ export default function MobileSyncPanel() {
     
     setIsLoadingLogs(true);
     try {
-      const logs = await syncService.getSyncLogs(salesRepId);
+      const logs = await mobileSyncService.getSyncLogs(salesRepId);
       setSyncLogs(logs);
     } catch (error) {
       console.error('Error fetching sync logs:', error);

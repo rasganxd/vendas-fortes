@@ -1,5 +1,5 @@
 
-import { syncService } from '@/services/supabase/syncService';
+import { mobileSyncService } from '@/services/firebase/mobileSyncService';
 
 /**
  * Starts a new month process
@@ -75,7 +75,7 @@ export const syncMobileData = async (salesReps: string[] = []): Promise<boolean>
     // Fetch all sales reps if none specified
     let syncTargets = salesReps;
     if (syncTargets.length === 0) {
-      const allSalesReps = await syncService.getAllSalesReps();
+      const allSalesReps = await mobileSyncService.getAllSalesReps();
       syncTargets = allSalesReps.map(rep => rep.id);
     }
     
@@ -89,7 +89,7 @@ export const syncMobileData = async (salesReps: string[] = []): Promise<boolean>
     const syncPromises = syncTargets.map(async (salesRepId) => {
       try {
         // Sync sales rep data
-        const syncedRep = await syncService.syncSalesRepById(salesRepId);
+        const syncedRep = await mobileSyncService.syncSalesRepById(salesRepId);
         
         if (!syncedRep) {
           console.error(`Failed to sync sales rep ${salesRepId}`);

@@ -32,6 +32,14 @@ export const fetchSettingsFromFirebase = async (): Promise<AppSettings | null> =
         companyName: data.companyName || '',
         companyLogo: data.companyLogo || '',
         theme: data.theme || null,
+        company: data.company || {
+          name: '',
+          address: '',
+          phone: '',
+          email: '',
+          document: '',
+          footer: ''
+        },
         createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
         updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000) : new Date()
       } as AppSettings;
@@ -62,6 +70,14 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
         secondary: '#047481',
         accent: '#0694A2'
       },
+      company: {
+        name: 'Minha Empresa',
+        address: '',
+        phone: '',
+        email: '',
+        document: '',
+        footer: '',
+      },
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -86,6 +102,14 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
         primary: '#1C64F2',
         secondary: '#047481',
         accent: '#0694A2'
+      },
+      company: {
+        name: 'Minha Empresa',
+        address: '',
+        phone: '',
+        email: '',
+        document: '',
+        footer: '',
       },
       createdAt: new Date(),
       updatedAt: new Date()

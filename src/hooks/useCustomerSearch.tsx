@@ -1,7 +1,7 @@
 
 import { useState, KeyboardEvent, useEffect } from 'react';
 import { Customer } from '@/types';
-import { getCustomerByCode } from '@/services/supabase/customerService';
+import { getCustomerByCode } from '@/services/firebase/customerService';
 
 interface UseCustomerSearchProps {
   customers: Customer[];

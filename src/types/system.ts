@@ -10,8 +10,13 @@ export interface Backup {
 }
 
 export interface AppSettings {
-  id?: string; // Add the id property that's referenced in useAppSettings
-  company: {
+  id?: string;
+  companyName: string;
+  companyLogo: string;
+  theme?: Theme;
+  createdAt: Date;
+  updatedAt: Date;
+  company?: {
     name: string;
     address: string;
     phone: string;
@@ -19,9 +24,10 @@ export interface AppSettings {
     document: string;
     footer: string;
   };
-  theme?: {
-    primaryColor?: string;
-    secondaryColor?: string;
-    accentColor?: string;
-  };
+}
+
+export interface Theme {
+  primary: string;
+  secondary: string;
+  accent: string;
 }

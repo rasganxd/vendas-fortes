@@ -14,7 +14,7 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command";
-import { getSalesRepByCode } from '@/services/supabase/salesRepService';
+import { getSalesRepByCode } from '@/services/firebase/salesRepService';
 
 interface SalesRepSearchInputProps {
   salesReps: SalesRep[];

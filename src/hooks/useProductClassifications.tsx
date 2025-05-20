@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { ProductGroup, ProductCategory, ProductBrand } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { useAppContext } from './useAppContext';
+import { productGroupService } from '@/services/firebase/productGroupService';
+import { productCategoryService } from '@/services/firebase/productCategoryService';
+import { productBrandService } from '@/services/firebase/productBrandService';
 
 export const useProductGroups = () => {
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
@@ -14,23 +15,9 @@ export const useProductGroups = () => {
       try {
         setIsLoading(true);
         
-        const { data, error } = await supabase
-          .from('product_groups')
-          .select('*')
-          .order('name', { ascending: true });
-          
-        if (error) throw error;
-        
-        const groups: ProductGroup[] = data.map(group => ({
-          id: group.id,
-          name: group.name,
-          description: group.description || '',
-          notes: group.notes || '',
-          createdAt: new Date(group.created_at),
-          updatedAt: new Date(group.updated_at)
-        }));
-        
+        const groups = await productGroupService.getAll();
         setProductGroups(groups);
+        console.log(`Loaded ${groups.length} product groups from Firebase`);
       } catch (error) {
         console.error("Error loading product groups:", error);
       } finally {
@@ -43,24 +30,13 @@ export const useProductGroups = () => {
   
   const addProductGroup = async (productGroup: Omit<ProductGroup, 'id'>) => {
     try {
-      const { data, error } = await supabase
-        .from('product_groups')
-        .insert({
-          name: productGroup.name,
-          description: productGroup.description || '',
-          notes: productGroup.notes || ''
-        })
-        .select();
-        
-      if (error) throw error;
-      
+      const id = await productGroupService.add(productGroup);
+
       const newGroup: ProductGroup = {
-        id: data[0].id,
-        name: data[0].name,
-        description: data[0].description || '',
-        notes: data[0].notes || '',
-        createdAt: new Date(data[0].created_at),
-        updatedAt: new Date(data[0].updated_at)
+        ...productGroup,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
       setProductGroups([...productGroups, newGroup]);
@@ -75,7 +51,7 @@ export const useProductGroups = () => {
       console.error("Error adding product group:", error);
       toast({
         title: "Erro ao adicionar grupo",
-        description: "Houve um problema ao adicionar o grupo.",
+        description: "Não foi possível adicionar o grupo.",
         variant: "destructive"
       });
       return "";
@@ -84,19 +60,10 @@ export const useProductGroups = () => {
   
   const updateProductGroup = async (id: string, productGroup: Partial<ProductGroup>) => {
     try {
-      const { error } = await supabase
-        .from('product_groups')
-        .update({
-          name: productGroup.name,
-          description: productGroup.description,
-          notes: productGroup.notes
-        })
-        .eq('id', id);
-        
-      if (error) throw error;
+      await productGroupService.update(id, productGroup);
       
-      setProductGroups(productGroups.map(group => 
-        group.id === id ? { ...group, ...productGroup } : group
+      setProductGroups(productGroups.map(pg => 
+        pg.id === id ? { ...pg, ...productGroup, updatedAt: new Date() } : pg
       ));
       
       toast({
@@ -107,7 +74,7 @@ export const useProductGroups = () => {
       console.error("Error updating product group:", error);
       toast({
         title: "Erro ao atualizar grupo",
-        description: "Houve um problema ao atualizar o grupo.",
+        description: "Não foi possível atualizar o grupo.",
         variant: "destructive"
       });
     }
@@ -115,14 +82,9 @@ export const useProductGroups = () => {
   
   const deleteProductGroup = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('product_groups')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
+      await productGroupService.delete(id);
       
-      setProductGroups(productGroups.filter(group => group.id !== id));
+      setProductGroups(productGroups.filter(pg => pg.id !== id));
       
       toast({
         title: "Grupo excluído",
@@ -132,7 +94,7 @@ export const useProductGroups = () => {
       console.error("Error deleting product group:", error);
       toast({
         title: "Erro ao excluir grupo",
-        description: "Houve um problema ao excluir o grupo.",
+        description: "Não foi possível excluir o grupo.",
         variant: "destructive"
       });
     }
@@ -156,22 +118,7 @@ export const useProductCategories = () => {
       try {
         setIsLoading(true);
         
-        const { data, error } = await supabase
-          .from('product_categories')
-          .select('*')
-          .order('name', { ascending: true });
-          
-        if (error) throw error;
-        
-        const categories: ProductCategory[] = data.map(category => ({
-          id: category.id,
-          name: category.name,
-          description: category.description || '',
-          notes: category.notes || '',
-          createdAt: new Date(category.created_at),
-          updatedAt: new Date(category.updated_at)
-        }));
-        
+        const categories = await productCategoryService.getAll();
         setProductCategories(categories);
       } catch (error) {
         console.error("Error loading product categories:", error);
@@ -185,24 +132,13 @@ export const useProductCategories = () => {
   
   const addProductCategory = async (productCategory: Omit<ProductCategory, 'id'>) => {
     try {
-      const { data, error } = await supabase
-        .from('product_categories')
-        .insert({
-          name: productCategory.name,
-          description: productCategory.description || '',
-          notes: productCategory.notes || ''
-        })
-        .select();
-        
-      if (error) throw error;
+      const id = await productCategoryService.add(productCategory);
       
       const newCategory: ProductCategory = {
-        id: data[0].id,
-        name: data[0].name,
-        description: data[0].description || '',
-        notes: data[0].notes || '',
-        createdAt: new Date(data[0].created_at),
-        updatedAt: new Date(data[0].updated_at)
+        ...productCategory,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
       setProductCategories([...productCategories, newCategory]);
@@ -217,7 +153,7 @@ export const useProductCategories = () => {
       console.error("Error adding product category:", error);
       toast({
         title: "Erro ao adicionar categoria",
-        description: "Houve um problema ao adicionar a categoria.",
+        description: "Não foi possível adicionar a categoria.",
         variant: "destructive"
       });
       return "";
@@ -226,19 +162,10 @@ export const useProductCategories = () => {
   
   const updateProductCategory = async (id: string, productCategory: Partial<ProductCategory>) => {
     try {
-      const { error } = await supabase
-        .from('product_categories')
-        .update({
-          name: productCategory.name,
-          description: productCategory.description,
-          notes: productCategory.notes
-        })
-        .eq('id', id);
-        
-      if (error) throw error;
+      await productCategoryService.update(id, productCategory);
       
       setProductCategories(productCategories.map(category => 
-        category.id === id ? { ...category, ...productCategory } : category
+        category.id === id ? { ...category, ...productCategory, updatedAt: new Date() } : category
       ));
       
       toast({
@@ -249,7 +176,7 @@ export const useProductCategories = () => {
       console.error("Error updating product category:", error);
       toast({
         title: "Erro ao atualizar categoria",
-        description: "Houve um problema ao atualizar a categoria.",
+        description: "Não foi possível atualizar a categoria.",
         variant: "destructive"
       });
     }
@@ -257,12 +184,7 @@ export const useProductCategories = () => {
   
   const deleteProductCategory = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('product_categories')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
+      await productCategoryService.delete(id);
       
       setProductCategories(productCategories.filter(category => category.id !== id));
       
@@ -274,7 +196,7 @@ export const useProductCategories = () => {
       console.error("Error deleting product category:", error);
       toast({
         title: "Erro ao excluir categoria",
-        description: "Houve um problema ao excluir a categoria.",
+        description: "Não foi possível excluir a categoria.",
         variant: "destructive"
       });
     }
@@ -298,22 +220,7 @@ export const useProductBrands = () => {
       try {
         setIsLoading(true);
         
-        const { data, error } = await supabase
-          .from('product_brands')
-          .select('*')
-          .order('name', { ascending: true });
-          
-        if (error) throw error;
-        
-        const brands: ProductBrand[] = data.map(brand => ({
-          id: brand.id,
-          name: brand.name,
-          description: brand.description || '',
-          notes: brand.notes || '',
-          createdAt: new Date(brand.created_at),
-          updatedAt: new Date(brand.updated_at)
-        }));
-        
+        const brands = await productBrandService.getAll();
         setProductBrands(brands);
       } catch (error) {
         console.error("Error loading product brands:", error);
@@ -327,24 +234,13 @@ export const useProductBrands = () => {
   
   const addProductBrand = async (productBrand: Omit<ProductBrand, 'id'>) => {
     try {
-      const { data, error } = await supabase
-        .from('product_brands')
-        .insert({
-          name: productBrand.name,
-          description: productBrand.description || '',
-          notes: productBrand.notes || ''
-        })
-        .select();
-        
-      if (error) throw error;
+      const id = await productBrandService.add(productBrand);
       
       const newBrand: ProductBrand = {
-        id: data[0].id,
-        name: data[0].name,
-        description: data[0].description || '',
-        notes: data[0].notes || '',
-        createdAt: new Date(data[0].created_at),
-        updatedAt: new Date(data[0].updated_at)
+        ...productBrand,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
       setProductBrands([...productBrands, newBrand]);
@@ -359,7 +255,7 @@ export const useProductBrands = () => {
       console.error("Error adding product brand:", error);
       toast({
         title: "Erro ao adicionar marca",
-        description: "Houve um problema ao adicionar a marca.",
+        description: "Não foi possível adicionar a marca.",
         variant: "destructive"
       });
       return "";
@@ -368,19 +264,10 @@ export const useProductBrands = () => {
   
   const updateProductBrand = async (id: string, productBrand: Partial<ProductBrand>) => {
     try {
-      const { error } = await supabase
-        .from('product_brands')
-        .update({
-          name: productBrand.name,
-          description: productBrand.description,
-          notes: productBrand.notes
-        })
-        .eq('id', id);
-        
-      if (error) throw error;
+      await productBrandService.update(id, productBrand);
       
       setProductBrands(productBrands.map(brand => 
-        brand.id === id ? { ...brand, ...productBrand } : brand
+        brand.id === id ? { ...brand, ...productBrand, updatedAt: new Date() } : brand
       ));
       
       toast({
@@ -391,7 +278,7 @@ export const useProductBrands = () => {
       console.error("Error updating product brand:", error);
       toast({
         title: "Erro ao atualizar marca",
-        description: "Houve um problema ao atualizar a marca.",
+        description: "Não foi possível atualizar a marca.",
         variant: "destructive"
       });
     }
@@ -399,12 +286,7 @@ export const useProductBrands = () => {
   
   const deleteProductBrand = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('product_brands')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
+      await productBrandService.delete(id);
       
       setProductBrands(productBrands.filter(brand => brand.id !== id));
       
@@ -416,7 +298,7 @@ export const useProductBrands = () => {
       console.error("Error deleting product brand:", error);
       toast({
         title: "Erro ao excluir marca",
-        description: "Houve um problema ao excluir a marca.",
+        description: "Não foi possível excluir a marca.",
         variant: "destructive"
       });
     }

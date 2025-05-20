@@ -5,3 +5,4 @@ export * from './local/index';
 
 // Re-export specific services
 export * from './settings/settingsService';
+export { mobileSyncService } from './firebase/mobileSyncService';
