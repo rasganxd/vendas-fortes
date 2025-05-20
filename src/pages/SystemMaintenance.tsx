@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/hooks/useAppContext';
-import { toast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useState } from 'react';
 
 const SystemMaintenance = () => {
   const { 
@@ -15,46 +16,42 @@ const SystemMaintenance = () => {
     clearCache 
   } = useAppContext();
 
+  const [statusMessage, setStatusMessage] = useState<{message: string, type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
+
+  // Show status message for 5 seconds
+  const showStatus = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setStatusMessage({ message, type });
+    setTimeout(() => setStatusMessage(null), 5000);
+  };
+
   const handleCreateBackup = async () => {
     try {
       const backupName = `Manual backup ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
       await createBackup(backupName);
-      toast("Backup criado", {
-        description: "Backup manual criado com sucesso"
-      });
+      showStatus("Backup manual criado com sucesso", "success");
     } catch (error) {
       console.error("Error creating backup:", error);
-      toast.error("Erro", {
-        description: "Houve um erro ao criar o backup"
-      });
+      showStatus("Houve um erro ao criar o backup", "error");
     }
   };
 
   const handleStartNewMonth = async () => {
     try {
       await startNewMonth();
-      toast("Fechamento mensal iniciado", {
-        description: "O processo de fechamento mensal foi iniciado com sucesso"
-      });
+      showStatus("O processo de fechamento mensal foi iniciado com sucesso", "success");
     } catch (error) {
       console.error("Error starting new month:", error);
-      toast.error("Erro", {
-        description: "Houve um erro ao iniciar o fechamento mensal"
-      });
+      showStatus("Houve um erro ao iniciar o fechamento mensal", "error");
     }
   };
 
   const handleClearCache = async () => {
     try {
       await clearCache();
-      toast("Cache limpo", {
-        description: "O cache foi limpo com sucesso"
-      });
+      showStatus("O cache foi limpo com sucesso", "success");
     } catch (error) {
       console.error("Error clearing cache:", error);
-      toast.error("Erro", {
-        description: "Houve um erro ao limpar o cache"
-      });
+      showStatus("Houve um erro ao limpar o cache", "error");
     }
   };
 
@@ -63,6 +60,25 @@ const SystemMaintenance = () => {
       title="Manutenção do Sistema" 
       subtitle="Funções para manter o sistema funcionando corretamente"
     >
+      {statusMessage && (
+        <Alert className={`mb-6 ${
+          statusMessage.type === 'success' ? 'bg-green-50 border-green-200' : 
+          statusMessage.type === 'error' ? 'bg-red-50 border-red-200' :
+          statusMessage.type === 'warning' ? 'bg-amber-50 border-amber-200' :
+          'bg-blue-50 border-blue-200'
+        }`}>
+          <AlertTitle>{
+            statusMessage.type === 'success' ? 'Sucesso!' :
+            statusMessage.type === 'error' ? 'Erro!' :
+            statusMessage.type === 'warning' ? 'Atenção!' :
+            'Informação'
+          }</AlertTitle>
+          <AlertDescription>
+            {statusMessage.message}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader>

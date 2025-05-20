@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -16,10 +17,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SyncLogEntry, syncService } from "@/services/supabase/syncService";
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MobileSyncStatusProps {
   salesRepId: string;
@@ -29,7 +30,16 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
   const [syncLogs, setSyncLogs] = useState<SyncLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusType, setStatusType] = useState<'error' | 'info'>('info');
+
+  // Clear status message after 5 seconds
+  useEffect(() => {
+    if (statusMessage) {
+      const timer = setTimeout(() => setStatusMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusMessage]);
 
   const loadSyncLogs = async () => {
     if (!salesRepId) return;
@@ -45,11 +55,8 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       }
     } catch (error) {
       console.error("Error loading sync logs:", error);
-      toast({
-        title: "Erro ao carregar logs de sincronização",
-        description: "Não foi possível carregar os logs de sincronização.",
-        variant: "destructive"
-      });
+      setStatusMessage("Não foi possível carregar os logs de sincronização.");
+      setStatusType('error');
       
       // Método alternativo caso o RPC falhe
       try {
@@ -76,6 +83,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
         
         if (typedData && typedData.length > 0) {
           setLastSynced(new Date(typedData[0].created_at).toLocaleString());
+          setStatusMessage(null); // Clear error if fallback succeeds
         }
       } catch (fallbackError) {
         console.error("Fallback method also failed:", fallbackError);
@@ -87,11 +95,8 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
 
   const generateQRCode = () => {
     // This would generate a QR code with connection information
-    // For now we'll just show a toast
-    toast({
-      title: "QR Code para sincronização",
-      description: "Funcionalidade será implementada em breve."
-    });
+    setStatusMessage("Funcionalidade será implementada em breve.");
+    setStatusType('info');
   };
 
   useEffect(() => {
@@ -125,6 +130,12 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {statusMessage && (
+          <Alert className={`mb-4 ${statusType === 'error' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+            <AlertDescription>{statusMessage}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
             <span className="font-medium">Último sincronizado:</span>

@@ -1,6 +1,6 @@
 
-import { useNotification } from './useNotification';
-import notificationService, { NotificationOptions } from '@/services/notificationService';
+// This file now provides a no-op toast implementation
+// All toast functionality has been removed
 
 // Type definitions to maintain compatibility with existing code
 export interface ToastProps {
@@ -13,64 +13,42 @@ export interface ToastProps {
 export type ToastActionElement = React.ReactElement;
 
 /**
- * Enhanced toast function that uses our notification system
- * with duplicate prevention and theme support
- * 
- * Basic usage:
- * toast("Message")                 - Simple toast with just a message
- * toast("Title", { description })  - Toast with title and description
- * toast({ title, description })    - Toast with object configuration
- * 
- * Variants:
- * toast.success("Success message") - Success toast
- * toast.error("Error message")     - Error toast
- * toast.warning("Warning message") - Warning toast
+ * No-op implementation of toast functions
+ * This maintains compatibility with existing code but doesn't show notifications
  */
 export function toast(
   titleOrOptions: string | ToastProps,
   options?: { description?: React.ReactNode; variant?: "default" | "destructive" | "warning" }
 ) {
-  // Handle object-style calls: toast({ title, description, variant })
+  // Log to console instead of showing notification
   if (typeof titleOrOptions === 'object') {
-    const { title, description, variant } = titleOrOptions;
-    
-    if (variant === "destructive") {
-      return notificationService.error(title as string, { description } as NotificationOptions);
-    } else if (variant === "warning") {
-      return notificationService.warning(title as string, { description } as NotificationOptions);
-    }
-    
-    return notificationService.show(title as string, { description } as NotificationOptions);
+    console.log('[Toast]', titleOrOptions.title, titleOrOptions.description || '');
+  } else {
+    console.log('[Toast]', titleOrOptions, options?.description || '');
   }
   
-  // Handle string-style calls: toast("Title", { description })
-  if (options?.variant === "destructive") {
-    return notificationService.error(titleOrOptions, { description: options?.description } as NotificationOptions);
-  } else if (options?.variant === "warning") {
-    return notificationService.warning(titleOrOptions, { description: options?.description } as NotificationOptions);
-  }
-  
-  return notificationService.show(titleOrOptions, { description: options?.description } as NotificationOptions);
+  // Return an empty string as ID for compatibility
+  return '';
 }
 
-// Add success shorthand 
+// No-op versions of the shorthand methods
 toast.success = (message: string, options?: { description?: React.ReactNode }) => {
-  return notificationService.success(message, options as NotificationOptions);
+  console.log('[Toast Success]', message, options?.description || '');
+  return '';
 };
 
-// Add error shorthand for destructive variant
 toast.error = (message: string, options?: { description?: React.ReactNode }) => {
-  return notificationService.error(message, options as NotificationOptions);
+  console.log('[Toast Error]', message, options?.description || '');
+  return '';
 };
 
-// Add warning shorthand
 toast.warning = (message: string, options?: { description?: React.ReactNode }) => {
-  return notificationService.warning(message, options as NotificationOptions);
+  console.log('[Toast Warning]', message, options?.description || '');
+  return '';
 };
 
 /**
- * Hook that returns the toast function
- * This makes the hook usage consistent with how most expect it to work
+ * No-op implementation of useToast
  */
 export function useToast() {
   return { toast };

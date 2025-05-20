@@ -1,5 +1,4 @@
 
-import { toast } from "@/hooks/use-toast";
 import { syncService } from '@/services/supabase/syncService';
 
 /**
@@ -14,19 +13,16 @@ export const startNewMonth = async (createBackup: (name: string, description?: s
     );
     
     if (!backupId) {
-      toast.error("Erro", { description: "Não foi possível criar backup antes de iniciar novo mês" });
+      console.error("Não foi possível criar backup antes de iniciar novo mês");
       return false;
     }
     
     // Here would be code to reset monthly data, finalize reports, etc.
-    // For now we just show a success message
-    
-    toast("Novo mês iniciado", { description: "O sistema foi preparado para o novo mês" });
+    console.log("Novo mês iniciado: O sistema foi preparado para o novo mês");
     
     return true;
   } catch (error) {
     console.error("Error starting new month:", error);
-    toast.error("Erro", { description: "Houve um problema ao iniciar novo mês" });
     return false;
   }
 };
@@ -53,10 +49,9 @@ export const clearCache = async (
     const loadedProducts = await loadProducts();
     setProducts(loadedProducts);
     
-    toast("Cache limpo", { description: "Cache do aplicativo limpo com sucesso!" });
+    console.log("Cache limpo com sucesso!");
   } catch (error) {
     console.error("Erro ao limpar cache:", error);
-    toast.error("Erro", { description: "Houve um erro ao limpar o cache do aplicativo." });
     throw error;
   }
 };
@@ -69,7 +64,7 @@ export const clearCache = async (
 export const syncMobileData = async (salesReps: string[] = []): Promise<boolean> => {
   try {
     // Log start of sync process
-    toast("Sincronização iniciada", { description: "Preparando dados para equipe de vendas móvel..." });
+    console.log("Sincronização iniciada: Preparando dados para equipe de vendas móvel...");
     
     // Fetch all sales reps if none specified
     let syncTargets = salesReps;
@@ -80,7 +75,7 @@ export const syncMobileData = async (salesReps: string[] = []): Promise<boolean>
     
     // Early return if no sales reps to sync
     if (syncTargets.length === 0) {
-      toast.error("Nenhum vendedor encontrado", { description: "Não há vendedores para sincronizar os dados" });
+      console.error("Nenhum vendedor encontrado para sincronizar os dados");
       return false;
     }
     
@@ -108,17 +103,16 @@ export const syncMobileData = async (salesReps: string[] = []): Promise<boolean>
     const results = await Promise.all(syncPromises);
     const successCount = results.filter(Boolean).length;
     
-    // Show toast with results
+    // Show results
     if (successCount === syncTargets.length) {
-      toast("Sincronização concluída", { description: `Dados preparados com sucesso para ${successCount} vendedores` });
+      console.log(`Sincronização concluída: Dados preparados com sucesso para ${successCount} vendedores`);
       return true;
     } else {
-      toast("Sincronização parcial", { description: `Sincronizados ${successCount} de ${syncTargets.length} vendedores` });
+      console.log(`Sincronização parcial: Sincronizados ${successCount} de ${syncTargets.length} vendedores`);
       return successCount > 0;
     }
   } catch (error) {
     console.error("Error syncing mobile data:", error);
-    toast.error("Erro na sincronização", { description: "Houve um problema ao sincronizar os dados móveis" });
     return false;
   }
 };

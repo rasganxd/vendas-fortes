@@ -9,7 +9,6 @@ import {
   getMinimumPrice as getMinimumPriceOp,
   addBulkProducts as addBulkProductsOp
 } from '@/context/operations/productOperations';
-import { toast } from '@/components/ui/use-toast';
 
 export const useProductOperations = (
   products: Product[],
