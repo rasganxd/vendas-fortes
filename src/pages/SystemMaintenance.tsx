@@ -25,20 +25,26 @@ const SystemMaintenance = () => {
     setTimeout(() => setStatusMessage(null), 5000);
   };
 
-  const handleCreateManualBackup = async () => {
+  const handleCreateMonthlyBackup = async () => {
     try {
-      const backupName = `Manual backup ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
-      await createBackup(backupName);
-      showStatus("Backup manual criado com sucesso", "success");
+      // Get the current month and year for the backup name
+      const date = new Date();
+      const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      const monthYear = `${monthNames[date.getMonth()]}/${date.getFullYear()}`;
+      
+      const backupName = `Cópia mensal ${monthYear}`;
+      await createBackup(backupName, "Backup mensal de segurança");
+      showStatus("Cópia mensal criada com sucesso", "success");
     } catch (error) {
-      console.error("Error creating backup:", error);
-      showStatus("Houve um erro ao criar o backup", "error");
+      console.error("Error creating monthly backup:", error);
+      showStatus("Houve um erro ao criar a cópia mensal", "error");
     }
   };
 
   const handleCreateDailyBackup = async () => {
     try {
-      const backupName = `Daily backup ${new Date().toLocaleDateString()}`;
+      const backupName = `Cópia diária ${new Date().toLocaleDateString()}`;
       await createBackup(backupName, "Backup diário automático");
       showStatus("Backup diário criado com sucesso", "success");
     } catch (error) {
@@ -49,7 +55,7 @@ const SystemMaintenance = () => {
 
   const handleStartNewDay = async () => {
     try {
-      await startNewDay();
+      await startNewDay(createBackup);
       showStatus("O processo de atualização diária foi iniciado com sucesso", "success");
     } catch (error) {
       console.error("Error starting new day:", error);
@@ -59,7 +65,7 @@ const SystemMaintenance = () => {
 
   const handleStartNewMonth = async () => {
     try {
-      await startNewMonth();
+      await startNewMonth(createBackup);
       showStatus("O processo de fechamento mensal foi iniciado com sucesso", "success");
     } catch (error) {
       console.error("Error starting new month:", error);
@@ -133,24 +139,24 @@ const SystemMaintenance = () => {
         </Card>
       </div>
 
-      <h3 className="text-lg font-medium mb-4">Operações Mensais e Manuais</h3>
+      <h3 className="text-lg font-medium mb-4">Operações Mensais</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-l-4 border-l-amber-500">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Save className="h-5 w-5 text-amber-500" />
-              <CardTitle>Criar Backup</CardTitle>
+              <CardTitle>Cópia Mensal</CardTitle>
             </div>
-            <CardDescription>Cria um backup manual do banco de dados.</CardDescription>
+            <CardDescription>Cria um backup mensal do banco de dados.</CardDescription>
           </CardHeader>
           <CardContent>
-            Clique no botão abaixo para criar um backup manual do banco de dados a qualquer momento.
+            Clique no botão abaixo para criar uma cópia de segurança mensal do sistema.
           </CardContent>
           <CardFooter>
-            <Button onClick={handleCreateManualBackup} className="bg-amber-500 hover:bg-amber-600">
+            <Button onClick={handleCreateMonthlyBackup} className="bg-amber-500 hover:bg-amber-600">
               <Save className="mr-2 h-4 w-4" />
-              Criar Backup Manual
+              Criar Cópia Mensal
             </Button>
           </CardFooter>
         </Card>
