@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
-import { customerService } from '@/services/supabase/customerService';
+import { customerService } from '@/services/firebase/customerService';
 import { toast } from '@/components/ui/use-toast';
 import { customerLocalService } from '@/services/local/customerLocalService';
 import { useDataLoading } from '@/context/providers/DataLoadingProvider';

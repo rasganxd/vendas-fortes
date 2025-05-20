@@ -24,7 +24,6 @@ export const getCustomerByCode = async (code: number): Promise<Customer | null> 
       id: doc.id,
       code: data.code,
       name: data.name,
-      fantasyName: data.fantasyName || '',
       email: data.email || '',
       phone: data.phone || '',
       address: data.address || {},
@@ -33,6 +32,9 @@ export const getCustomerByCode = async (code: number): Promise<Customer | null> 
       notes: data.notes || '',
       salesRepId: data.salesRepId || '',
       deliveryRouteId: data.deliveryRouteId || '',
+      city: data.city || '',
+      state: data.state || '',
+      zip: data.zip || '',
       createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
       updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000) : new Date()
     };
@@ -56,7 +58,6 @@ export const loadCustomers = async (): Promise<Customer[]> => {
         id: doc.id,
         code: data.code,
         name: data.name,
-        fantasyName: data.fantasyName || '',
         email: data.email || '',
         phone: data.phone || '',
         address: data.address || {},
@@ -65,6 +66,9 @@ export const loadCustomers = async (): Promise<Customer[]> => {
         notes: data.notes || '',
         salesRepId: data.salesRepId || '',
         deliveryRouteId: data.deliveryRouteId || '',
+        city: data.city || '',
+        state: data.state || '',
+        zip: data.zip || '',
         createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date(),
         updatedAt: data.updatedAt ? new Date(data.updatedAt.seconds * 1000) : new Date()
       });
@@ -75,4 +79,10 @@ export const loadCustomers = async (): Promise<Customer[]> => {
     console.error("Error loading customers:", error);
     return [];
   }
+};
+
+// Create a customerService object to match the expected export format
+export const customerService = {
+  getAll: loadCustomers,
+  getByCode: getCustomerByCode
 };

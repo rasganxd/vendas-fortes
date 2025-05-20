@@ -78,6 +78,9 @@ export function applyThemeColors(theme?: {
   primaryColor?: string; 
   secondaryColor?: string; 
   accentColor?: string;
+  primary?: string;
+  secondary?: string;
+  accent?: string;
 }): void {
   if (!theme) {
     console.log('No theme colors to apply');
@@ -89,34 +92,39 @@ export function applyThemeColors(theme?: {
     localStorage.setItem(THEME_COLORS_CACHE_KEY, JSON.stringify(theme));
     
     // Convert hex to HSL and apply to CSS variables
-    if (theme.primaryColor) {
-      const primaryHsl = convertHexToHSL(theme.primaryColor);
+    // Use primaryColor first, fall back to primary if not available
+    const primaryColor = theme.primaryColor || theme.primary;
+    const secondaryColor = theme.secondaryColor || theme.secondary;
+    const accentColor = theme.accentColor || theme.accent;
+    
+    if (primaryColor) {
+      const primaryHsl = convertHexToHSL(primaryColor);
       document.documentElement.style.setProperty('--primary', primaryHsl);
       document.documentElement.style.setProperty('--sidebar-primary', primaryHsl);
       document.documentElement.style.setProperty('--ring', primaryHsl);
       
       // Create a darker version of the primary color for sidebar background
-      const darkPrimaryHex = adjustColorBrightness(theme.primaryColor, -0.3);
+      const darkPrimaryHex = adjustColorBrightness(primaryColor, -0.3);
       const darkPrimaryHsl = convertHexToHSL(darkPrimaryHex);
       document.documentElement.style.setProperty('--sidebar-background', darkPrimaryHsl);
     }
     
-    if (theme.secondaryColor) {
-      const secondaryHsl = convertHexToHSL(theme.secondaryColor);
+    if (secondaryColor) {
+      const secondaryHsl = convertHexToHSL(secondaryColor);
       document.documentElement.style.setProperty('--secondary', secondaryHsl);
     }
     
-    if (theme.accentColor) {
-      const accentHsl = convertHexToHSL(theme.accentColor);
+    if (accentColor) {
+      const accentHsl = convertHexToHSL(accentColor);
       document.documentElement.style.setProperty('--accent', accentHsl);
       document.documentElement.style.setProperty('--sidebar-accent', accentHsl);
     }
     
     // Apply sidebar styling efficiently
-    if (theme.primaryColor) {
+    if (primaryColor) {
       const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
       if (sidebarHeader) {
-        sidebarHeader.style.backgroundColor = theme.primaryColor;
+        sidebarHeader.style.backgroundColor = primaryColor;
         sidebarHeader.style.color = '#ffffff';
       }
     }

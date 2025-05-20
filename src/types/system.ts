@@ -30,4 +30,7 @@ export interface Theme {
   primary: string;
   secondary: string;
   accent: string;
+  primaryColor?: string;  // Add these properties to match usage in code
+  secondaryColor?: string;
+  accentColor?: string;
 }

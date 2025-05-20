@@ -1,205 +1,166 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { CloudUpload, Users, Calendar } from "lucide-react";
-import { useAppContext } from '@/hooks/useAppContext';
-import { useToast } from "@/hooks/use-toast";
-import { mobileSyncService, SyncLogEntry } from '@/services/firebase/mobileSyncService';
-import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
+import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle } from "lucide-react";
+import { mobileSyncService, SyncLogEntry } from "@/services/firebase/mobileSyncService";
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-export default function MobileSyncPanel() {
-  const { salesReps } = useAppContext();
-  const { toast } = useToast();
-  const [isSyncing, setIsSyncing] = useState(false);
+interface MobileSyncStatusProps {
+  salesRepId: string;
+}
+
+const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
   const [syncLogs, setSyncLogs] = useState<SyncLogEntry[]>([]);
-  const [selectedSalesRep, setSelectedSalesRep] = useState<string>('');
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusType, setStatusType] = useState<'error' | 'info'>('info');
 
-  // Function to handle data sync
-  const handleSyncData = async () => {
-    try {
-      setIsSyncing(true);
-      
-      // If a sales rep is selected, only sync for that rep
-      const repsToSync = selectedSalesRep ? [selectedSalesRep] : [];
-      
-      // Import syncMobileData dynamically to avoid circular dependencies
-      const { syncMobileData } = await import('@/context/operations/systemOperations');
-      await syncMobileData(repsToSync);
-      
-      // Refresh logs after sync
-      if (selectedSalesRep) {
-        fetchSyncLogs(selectedSalesRep);
-      }
-    } catch (error) {
-      console.error('Error syncing data:', error);
-      toast({
-        title: "Erro na sincronização",
-        description: "Não foi possível sincronizar os dados. Verifique a conexão e tente novamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSyncing(false);
+  // Clear status message after 5 seconds
+  useEffect(() => {
+    if (statusMessage) {
+      const timer = setTimeout(() => setStatusMessage(null), 5000);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [statusMessage]);
 
-  // Fetch sync logs for a specific sales rep
-  const fetchSyncLogs = async (salesRepId: string) => {
+  const loadSyncLogs = async () => {
     if (!salesRepId) return;
     
-    setIsLoadingLogs(true);
+    setIsLoading(true);
     try {
-      const logs = await mobileSyncService.getSyncLogs(salesRepId);
-      setSyncLogs(logs);
+      const data = await mobileSyncService.getSyncLogs(salesRepId);
+      
+      setSyncLogs(data);
+      
+      if (data && data.length > 0) {
+        setLastSynced(new Date(data[0].created_at).toLocaleString());
+      }
     } catch (error) {
-      console.error('Error fetching sync logs:', error);
-      toast({
-        title: "Erro ao carregar logs",
-        description: "Não foi possível carregar o histórico de sincronização.",
-        variant: "destructive"
-      });
+      console.error("Error loading sync logs:", error);
+      setStatusMessage("Não foi possível carregar os logs de sincronização.");
+      setStatusType('error');
     } finally {
-      setIsLoadingLogs(false);
+      setIsLoading(false);
     }
   };
 
-  // Handle sales rep selection change
-  const handleSalesRepChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const repId = e.target.value;
-    setSelectedSalesRep(repId);
-    if (repId) {
-      fetchSyncLogs(repId);
-    } else {
-      setSyncLogs([]);
-    }
+  const generateQRCode = () => {
+    // This would generate a QR code with connection information
+    setStatusMessage("Funcionalidade será implementada em breve.");
+    setStatusType('info');
   };
 
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'dd/MM/yyyy HH:mm:ss');
-    } catch (error) {
-      return dateString;
+  useEffect(() => {
+    if (salesRepId) {
+      loadSyncLogs();
     }
-  };
+  }, [salesRepId]);
 
-  // Get badge color based on event type
-  const getBadgeVariant = (eventType: string): "default" | "secondary" | "destructive" => {
+  const getStatusIcon = (eventType: 'upload' | 'download' | 'error') => {
     switch (eventType) {
-      case 'upload': return 'default';
-      case 'download': return 'secondary';
-      case 'error': return 'destructive';
-      default: return 'default';
+      case 'upload':
+        return <CheckCircle className="text-green-500 h-5 w-5" />;
+      case 'download':
+        return <CheckCircle className="text-blue-500 h-5 w-5" />;
+      case 'error':
+        return <AlertCircle className="text-red-500 h-5 w-5" />;
+      default:
+        return null;
     }
   };
-  
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl flex items-center gap-2">
-          <CloudUpload className="text-primary" size={20} />
-          Sincronização de Dados Mobile
+        <CardTitle className="flex items-center">
+          <Smartphone className="mr-2" />
+          Status de Sincronização Mobile
         </CardTitle>
         <CardDescription>
-          Gere e sincronize dados para a equipe de vendas mobile.
+          Status e histórico de sincronização do aplicativo mobile
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label htmlFor="salesRep" className="block text-sm font-medium text-gray-700 mb-1">
-                Vendedor
-              </label>
-              <select
-                id="salesRep"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                value={selectedSalesRep}
-                onChange={handleSalesRepChange}
-              >
-                <option value="">Todos os vendedores</option>
-                {salesReps.map(rep => (
-                  <option key={rep.id} value={rep.id}>{rep.name}</option>
-                ))}
-              </select>
-            </div>
-            <Button 
-              onClick={handleSyncData}
-              disabled={isSyncing}
-              className="flex items-center gap-2"
-            >
-              <CloudUpload size={16} className={isSyncing ? "animate-spin" : ""} />
-              {isSyncing ? "Sincronizando..." : "Sincronizar Dados"}
-            </Button>
-          </div>
-          
-          {selectedSalesRep && (
-            <div className="mt-6">
-              <h3 className="text-md font-medium mb-3 flex items-center gap-2">
-                <Calendar size={16} />
-                Histórico de Sincronização
-              </h3>
-              
-              {isLoadingLogs ? (
-                <p className="text-sm text-gray-500">Carregando histórico...</p>
-              ) : syncLogs.length > 0 ? (
-                <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Evento
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Dispositivo
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {syncLogs.map((log) => (
-                        <tr key={log.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(log.created_at)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant={getBadgeVariant(log.event_type)}>
-                              {log.event_type === 'upload' ? 'Envio' : 
-                               log.event_type === 'download' ? 'Download' : 'Erro'}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {log.device_id}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Nenhum registro de sincronização encontrado.</p>
-              )}
-            </div>
-          )}
-          
-          <div className="mt-4 p-4 bg-gray-50 rounded-md">
-            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-              <Users size={16} />
-              Informações Sincronizadas
-            </h4>
-            <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
-              <li>Clientes atribuídos à rota do vendedor</li>
-              <li>Catálogo completo de produtos com preços</li>
-              <li>Histórico de pedidos do vendedor</li>
-              <li>Informações de pagamentos</li>
-            </ul>
+      <CardContent>
+        {statusMessage && (
+          <Alert className={`mb-4 ${statusType === 'error' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+            <AlertDescription>{statusMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-medium">Último sincronizado:</span>
+            <span>{lastSynced || 'Nunca'}</span>
           </div>
         </div>
+
+        <h3 className="text-lg font-medium mb-2">Histórico de Sincronização</h3>
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : syncLogs.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Status</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Dispositivo</TableHead>
+                <TableHead>Data</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {syncLogs.map((log) => (
+                <TableRow key={log.id}>
+                  <TableCell>{getStatusIcon(log.event_type)}</TableCell>
+                  <TableCell>
+                    {log.event_type === 'upload' ? 'Envio' : 
+                     log.event_type === 'download' ? 'Recebimento' : 'Erro'}
+                  </TableCell>
+                  <TableCell>{log.device_id}</TableCell>
+                  <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            Nenhum registro de sincronização encontrado
+          </div>
+        )}
       </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button 
+          variant="outline" 
+          onClick={() => loadSyncLogs()}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
+        <Button onClick={generateQRCode}>
+          Gerar QR Code para Sincronização
+        </Button>
+      </CardFooter>
     </Card>
   );
-}
+};
+
+export default MobileSyncStatus;
