@@ -1,7 +1,6 @@
 
 import { SalesRep } from '@/types';
 import { LocalStorageService } from './localStorageService';
-import { mockSalesReps } from '@/data/mock/salesReps';
 
 /**
  * LocalStorage service for sales representatives
@@ -9,19 +8,6 @@ import { mockSalesReps } from '@/data/mock/salesReps';
 class SalesRepLocalService extends LocalStorageService<SalesRep> {
   constructor() {
     super('sales_reps');
-    this.initializeWithMockData();
-  }
-  
-  /**
-   * Initialize with mock data if empty
-   */
-  async initializeWithMockData(): Promise<void> {
-    const data = await this.getAll();
-    
-    if (data.length === 0) {
-      console.log("Initializing sales reps local storage with mock data");
-      await this.initializeWithDefault(mockSalesReps);
-    }
   }
   
   /**

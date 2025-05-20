@@ -1,7 +1,6 @@
 
 import { Product } from '@/types';
 import { LocalStorageService } from './localStorageService';
-import { mockProducts } from '@/data/mock/products';
 
 /**
  * LocalStorage service for products
@@ -9,19 +8,6 @@ import { mockProducts } from '@/data/mock/products';
 class ProductLocalService extends LocalStorageService<Product> {
   constructor() {
     super('products');
-    this.initializeWithMockData();
-  }
-  
-  /**
-   * Initialize with mock data if empty
-   */
-  async initializeWithMockData(): Promise<void> {
-    const data = await this.getAll();
-    
-    if (data.length === 0) {
-      console.log("Initializing products local storage with mock data");
-      await this.initializeWithDefault(mockProducts);
-    }
   }
   
   /**

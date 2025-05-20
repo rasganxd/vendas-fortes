@@ -129,6 +129,7 @@ const defaultContextValues: AppContextType = {
   updateSettings: async () => {},
   
   startNewMonth: async () => true,
+  startNewDay: async () => true,
   clearCache: async () => {},
   refreshData: async () => true,
 };

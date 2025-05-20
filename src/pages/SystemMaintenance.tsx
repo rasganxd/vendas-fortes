@@ -1,54 +1,55 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layout/PageLayout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, ArrowRight, Calendar, Database, RefreshCw, Save, Trash } from 'lucide-react';
 import { useAppContext } from '@/hooks/useAppContext';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useState } from 'react';
-import { Calendar, RotateCw, Save, Archive } from 'lucide-react';
+import { clearDemoData } from '@/utils/clearDemoData';
 
-const SystemMaintenance = () => {
+export default function SystemMaintenance() {
+  const { toast } = useToast();
   const { 
+    startNewMonth, 
+    startNewDay, 
     createBackup, 
-    backups, 
-    isLoadingBackups, 
-    startNewMonth,
-    startNewDay
+    refreshData 
   } = useAppContext();
 
-  const [statusMessage, setStatusMessage] = useState<{message: string, type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
+  const showStatus = (message: string, type: "default" | "success" | "error" = "default") => {
+    toast({
+      title: type === "error" ? "Erro" : "Sucesso",
+      description: message,
+      variant: type === "error" ? "destructive" : "default"
+    });
+  };
 
-  // Show status message for 5 seconds
-  const showStatus = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-    setStatusMessage({ message, type });
-    setTimeout(() => setStatusMessage(null), 5000);
+  const handleClearDemoData = () => {
+    try {
+      clearDemoData();
+      showStatus("Todos os dados de demonstração foram removidos com sucesso", "success");
+    } catch (error) {
+      console.error("Error clearing demo data:", error);
+      showStatus("Erro ao limpar dados de demonstração", "error");
+    }
   };
 
   const handleCreateMonthlyBackup = async () => {
     try {
-      // Get the current month and year for the backup name
-      const date = new Date();
-      const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-      const monthYear = `${monthNames[date.getMonth()]}/${date.getFullYear()}`;
-      
-      const backupName = `Cópia mensal ${monthYear}`;
-      await createBackup(backupName, "Backup mensal de segurança");
-      showStatus("Cópia mensal criada com sucesso", "success");
+      const currentDate = new Date();
+      const backupId = await createBackup(
+        `Cópia Mensal - ${currentDate.toLocaleDateString('pt-BR')}`,
+        'Backup mensal criado manualmente'
+      );
+      if (backupId) {
+        showStatus("Backup mensal criado com sucesso", "success");
+      } else {
+        showStatus("Não foi possível criar o backup mensal", "error");
+      }
     } catch (error) {
       console.error("Error creating monthly backup:", error);
-      showStatus("Houve um erro ao criar a cópia mensal", "error");
-    }
-  };
-
-  const handleCreateDailyBackup = async () => {
-    try {
-      const backupName = `Cópia diária ${new Date().toLocaleDateString()}`;
-      await createBackup(backupName, "Backup diário automático");
-      showStatus("Backup diário criado com sucesso", "success");
-    } catch (error) {
-      console.error("Error creating daily backup:", error);
-      showStatus("Houve um erro ao criar o backup diário", "error");
+      showStatus("Erro ao criar backup mensal", "error");
     }
   };
 
@@ -58,7 +59,7 @@ const SystemMaintenance = () => {
       showStatus("O processo de atualização diária foi iniciado com sucesso", "success");
     } catch (error) {
       console.error("Error starting new day:", error);
-      showStatus("Houve um erro ao iniciar a atualização diária", "error");
+      showStatus("Erro ao iniciar novo dia", "error");
     }
   };
 
@@ -68,119 +69,126 @@ const SystemMaintenance = () => {
       showStatus("O processo de fechamento mensal foi iniciado com sucesso", "success");
     } catch (error) {
       console.error("Error starting new month:", error);
-      showStatus("Houve um erro ao iniciar o fechamento mensal", "error");
+      showStatus("Erro ao iniciar novo mês", "error");
+    }
+  };
+
+  const handleRefreshData = async () => {
+    try {
+      const success = await refreshData();
+      if (success) {
+        showStatus("Dados atualizados com sucesso", "success");
+      } else {
+        showStatus("Não foi possível atualizar os dados", "error");
+      }
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      showStatus("Erro ao atualizar dados", "error");
     }
   };
 
   return (
-    <PageLayout 
-      title="Manutenção do Sistema" 
-      subtitle="Funções para manter o sistema funcionando corretamente"
-    >
-      {statusMessage && (
-        <Alert className={`mb-6 ${
-          statusMessage.type === 'success' ? 'bg-green-50 border-green-200' : 
-          statusMessage.type === 'error' ? 'bg-red-50 border-red-200' :
-          statusMessage.type === 'warning' ? 'bg-amber-50 border-amber-200' :
-          'bg-blue-50 border-blue-200'
-        }`}>
-          <AlertTitle>{
-            statusMessage.type === 'success' ? 'Sucesso!' :
-            statusMessage.type === 'error' ? 'Erro!' :
-            statusMessage.type === 'warning' ? 'Atenção!' :
-            'Informação'
-          }</AlertTitle>
-          <AlertDescription>
-            {statusMessage.message}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <h3 className="text-lg font-medium mb-4">Operações Diárias</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-500" />
-              <CardTitle>Cópia Diária</CardTitle>
-            </div>
-            <CardDescription>Cria um backup diário do banco de dados.</CardDescription>
+    <PageLayout title="Manutenção do Sistema">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <RefreshCw className="w-5 h-5 mr-2" /> Atualização Diária
+            </CardTitle>
+            <CardDescription>
+              Preparar sistema para um novo dia de trabalho
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            Clique no botão abaixo para criar um backup diário automatizado dos dados do sistema.
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleCreateDailyBackup} className="bg-blue-500 hover:bg-blue-600">
-              <Calendar className="mr-2 h-4 w-4" />
-              Criar Cópia Diária
+            <p className="text-sm mb-4">
+              Este processo realiza a configuração necessária para iniciar um novo dia de trabalho.
+            </p>
+            <Button onClick={handleStartNewDay} className="w-full">
+              Iniciar Novo Dia <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
-          </CardFooter>
+          </CardContent>
         </Card>
-
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <RotateCw className="h-5 w-5 text-green-500" />
-              <CardTitle>Atualização do Dia</CardTitle>
-            </div>
-            <CardDescription>Prepara o sistema para um novo dia de trabalho.</CardDescription>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Save className="w-5 h-5 mr-2" /> Cópia Mensal
+            </CardTitle>
+            <CardDescription>
+              Criar um backup mensal dos dados
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            Clique no botão abaixo para iniciar o processo de atualização diária e preparar o sistema para um novo dia de trabalho.
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleStartNewDay} className="bg-green-500 hover:bg-green-600">
-              <RotateCw className="mr-2 h-4 w-4" />
-              Iniciar Novo Dia
+            <p className="text-sm mb-4">
+              Salva uma cópia completa de todos os dados do sistema.
+            </p>
+            <Button onClick={handleCreateMonthlyBackup} className="w-full">
+              Criar Backup Mensal <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
-          </CardFooter>
+          </CardContent>
         </Card>
-      </div>
-
-      <h3 className="text-lg font-medium mb-4">Operações Mensais</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-l-4 border-l-amber-500">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Save className="h-5 w-5 text-amber-500" />
-              <CardTitle>Cópia Mensal</CardTitle>
-            </div>
-            <CardDescription>Cria um backup mensal do banco de dados.</CardDescription>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="w-5 h-5 mr-2" /> Fechamento Mensal
+            </CardTitle>
+            <CardDescription>
+              Encerra o mês atual e prepara para o próximo
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            Clique no botão abaixo para criar uma cópia de segurança mensal do sistema.
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleCreateMonthlyBackup} className="bg-amber-500 hover:bg-amber-600">
-              <Save className="mr-2 h-4 w-4" />
-              Criar Cópia Mensal
+            <p className="text-sm mb-4">
+              Este processo encerra o mês atual, prepara relatórios e configura o sistema para o próximo mês.
+            </p>
+            <Button onClick={handleStartNewMonth} className="w-full">
+              Iniciar Novo Mês <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
-          </CardFooter>
+          </CardContent>
         </Card>
-
-        <Card className="border-l-4 border-l-purple-500">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Archive className="h-5 w-5 text-purple-500" />
-              <CardTitle>Fechamento Mensal</CardTitle>
-            </div>
-            <CardDescription>Prepara o sistema para um novo mês.</CardDescription>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Database className="w-5 h-5 mr-2" /> Atualizar Dados
+            </CardTitle>
+            <CardDescription>
+              Sincroniza dados com o servidor
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            Clique no botão abaixo para iniciar o processo de fechamento mensal e preparar o sistema para um novo mês.
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleStartNewMonth} className="bg-purple-500 hover:bg-purple-600">
-              <Archive className="mr-2 h-4 w-4" />
-              Iniciar Fechamento Mensal
+            <p className="text-sm mb-4">
+              Este processo atualiza todos os dados a partir do servidor.
+            </p>
+            <Button onClick={handleRefreshData} className="w-full">
+              Atualizar Dados <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
-          </CardFooter>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Trash className="w-5 h-5 mr-2 text-red-500" /> Limpar Dados Demo
+            </CardTitle>
+            <CardDescription>
+              Remove todos os dados de demonstração
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm mb-4 text-amber-600">
+              <AlertCircle className="inline-block w-4 h-4 mr-1" /> 
+              Cuidado: Esta operação remove todos os dados de demonstração do sistema.
+            </p>
+            <Button 
+              variant="destructive" 
+              onClick={handleClearDemoData} 
+              className="w-full">
+              Remover Dados Demo <Trash className="ml-2 w-4 h-4" />
+            </Button>
+          </CardContent>
         </Card>
       </div>
     </PageLayout>
   );
-};
-
-export default SystemMaintenance;
+}

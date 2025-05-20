@@ -371,12 +371,10 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     settings,
     updateSettings,
     startNewMonth: async () => {
-      await startNewMonth(createBackupFunc);
-      return true;
+      return await startNewMonth();
     },
     startNewDay: async () => {
-      await startNewDay(createBackupFunc);
-      return true;
+      return await startNewDay();
     },
     clearCache: async () => {
       await refreshData();

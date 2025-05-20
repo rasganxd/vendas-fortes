@@ -4,12 +4,11 @@ import { Customer, Product, Order } from '@/types';
 import { loadCustomers } from '@/hooks/useCustomers';
 import { fetchProducts } from '@/hooks/useProducts';
 import { loadOrders } from '@/hooks/useOrders';
-import { mockProducts } from '@/data/mock/products';
-import { mockCustomers } from '@/data/mock/customers';
 import { useConnection } from './ConnectionProvider';
 import { customerLocalService } from '@/services/local/customerLocalService';
 import { productLocalService } from '@/services/local/productLocalService';
 import { orderLocalService } from '@/services/local/orderLocalService';
+import { clearDemoData } from '@/utils/clearDemoData';
 
 interface DataLoadingContextType {
   customers: Customer[];
@@ -45,6 +44,11 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(0);
   const { isOnline } = useConnection();
+
+  // Clear any demo data on first load
+  useEffect(() => {
+    clearDemoData();
+  }, []);
 
   // Load core data on app initialization with priority to Firebase
   useEffect(() => {
@@ -119,9 +123,8 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
     } catch (error) {
       console.error("Error loading core data from Firebase:", error);
       
-      // If Firebase completely fails, try to load from local storage as fallback
-      console.log("Falling back to local storage entirely");
-      loadFromLocalStorage(setCustomers, setProducts);
+      // If Firebase completely fails, show error but don't load mock data
+      console.log("Firebase loading failed completely");
       
       toast({
         title: "Erro ao carregar dados",
@@ -217,6 +220,7 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
 
 /**
  * Loads core application data (customers and products)
+ * Modified to not use mock data as fallback
  */
 export const loadCoreData = async (
   setIsLoadingCustomers: React.Dispatch<React.SetStateAction<boolean>>,
@@ -237,12 +241,10 @@ export const loadCoreData = async (
       setCustomers(loadedCustomers);
     } catch (error) {
       console.error("Failed to load customers:", error);
-      await customerLocalService.initializeWithDefault(mockCustomers);
-      loadedCustomers = await customerLocalService.getAll();
-      setCustomers(loadedCustomers);
+      setCustomers([]);
       toast({
         title: "Erro ao carregar clientes",
-        description: "Usando dados iniciais.",
+        description: "Nenhum cliente disponível.",
         variant: "destructive"
       });
     } finally {
@@ -258,12 +260,10 @@ export const loadCoreData = async (
       setProducts(loadedProducts);
     } catch (error) {
       console.error("Failed to load products:", error);
-      await productLocalService.initializeWithDefault(mockProducts);
-      const loadedProducts = await productLocalService.getAll();
-      setProducts(loadedProducts);
+      setProducts([]);
       toast({
         title: "Erro ao carregar produtos",
-        description: "Usando dados iniciais.",
+        description: "Nenhum produto disponível.",
         variant: "destructive"
       });
     } finally {
@@ -271,7 +271,7 @@ export const loadCoreData = async (
       setIsLoadingProducts(false);
     }
     
-    // Return flag indicating if using mock data (false since we're using local storage)
+    // Return flag indicating not using mock data
     return false;
   } catch (error) {
     console.error("Error loading core data:", error);
@@ -280,49 +280,26 @@ export const loadCoreData = async (
       description: "Houve um problema ao carregar os dados do sistema.",
       variant: "destructive"
     });
-    return setIsUsingMockData;
+    return false; // Never use mock data
   }
 };
 
 /**
  * Loads data from localStorage if available
+ * Modified to not use mock data
  */
 export const loadFromLocalStorage = (
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>,
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
-  const localCustomers = localStorage.getItem('mockCustomers');
-  const localProducts = localStorage.getItem('mockProducts');
+  // Just clear any existing mock data and return empty arrays
+  clearDemoData();
   
-  if (localCustomers) {
-    try {
-      const parsedCustomers = JSON.parse(localCustomers);
-      if (Array.isArray(parsedCustomers) && parsedCustomers.length > 0) {
-        setCustomers(parsedCustomers);
-        console.log("Loaded customers from localStorage:", parsedCustomers.length);
-      }
-    } catch (error) {
-      console.error("Error parsing customers from localStorage:", error);
-    }
-  }
+  // Set empty arrays for customers and products
+  setCustomers([]);
+  setProducts([]);
   
-  if (localProducts) {
-    try {
-      const parsedProducts = JSON.parse(localProducts);
-      if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
-        setProducts(currentProducts => {
-          // Only update from localStorage if we don't have products yet
-          if (currentProducts.length === 0) {
-            console.log("Loaded products from localStorage:", parsedProducts.length);
-            return parsedProducts;
-          }
-          return currentProducts;
-        });
-      }
-    } catch (error) {
-      console.error("Error parsing products from localStorage:", error);
-    }
-  }
+  console.log("Local storage cleared of mock data");
 };
 
 /**
