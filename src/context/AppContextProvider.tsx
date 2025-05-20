@@ -31,7 +31,7 @@ import {
   getMinimumPrice,
   addBulkProducts
 } from './operations/productOperations';
-import { startNewMonth } from './operations/systemOperations';
+import { startNewMonth, startNewDay } from './operations/systemOperations';
 
 export const AppContext = createContext<AppContextType>(defaultContextValues);
 
@@ -372,6 +372,10 @@ const AppContextProviderInner = ({ children }: { children: React.ReactNode }) =>
     updateSettings,
     startNewMonth: async () => {
       await startNewMonth(createBackupFunc);
+      return true;
+    },
+    startNewDay: async () => {
+      await startNewDay(createBackupFunc);
       return true;
     },
     clearCache: async () => {

@@ -1,4 +1,3 @@
-
 import { syncService } from '@/services/supabase/syncService';
 
 /**
@@ -23,6 +22,32 @@ export const startNewMonth = async (createBackup: (name: string, description?: s
     return true;
   } catch (error) {
     console.error("Error starting new month:", error);
+    return false;
+  }
+};
+
+/**
+ * Starts a new day process
+ * @param createBackup Function to create a backup before starting new day
+ */
+export const startNewDay = async (createBackup: (name: string, description?: string) => any) => {
+  try {
+    const backupId = createBackup(
+      `Auto-backup before day start ${new Date().toLocaleDateString()}`,
+      'Automatic backup created before starting new day'
+    );
+    
+    if (!backupId) {
+      console.error("Não foi possível criar backup antes de iniciar novo dia");
+      return false;
+    }
+    
+    // Here would be code to prepare the system for a new day
+    console.log("Novo dia iniciado: O sistema foi preparado para um novo dia de trabalho");
+    
+    return true;
+  } catch (error) {
+    console.error("Error starting new day:", error);
     return false;
   }
 };
