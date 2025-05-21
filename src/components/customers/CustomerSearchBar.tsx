@@ -1,0 +1,67 @@
+
+import React from 'react';
+import { Search, Plus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface CustomerSearchBarProps {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  sortBy: string;
+  setSortBy: (value: string) => void;
+  onAddCustomer: () => void;
+}
+
+const CustomerSearchBar: React.FC<CustomerSearchBarProps> = ({
+  searchTerm,
+  setSearchTerm,
+  sortBy,
+  setSortBy,
+  onAddCustomer
+}) => {
+  return (
+    <div className="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
+      <div className="relative w-full sm:w-64 md:w-80">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+        <Input
+          type="text"
+          placeholder="Buscar clientes..."
+          className="pl-8"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      
+      <div className="flex items-center gap-2 w-full sm:w-auto">
+        <Select onValueChange={setSortBy} defaultValue={sortBy}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Nome</SelectItem>
+            <SelectItem value="code">Código</SelectItem>
+            <SelectItem value="salesRep">Vendedor</SelectItem>
+            <SelectItem value="visitFrequency">Frequência de Visita</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <Button 
+          className="bg-sales-800 hover:bg-sales-700"
+          onClick={onAddCustomer}
+        >
+          <Plus size={16} className="mr-2" />
+          Adicionar Cliente
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default CustomerSearchBar;

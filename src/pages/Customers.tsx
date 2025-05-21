@@ -1,31 +1,15 @@
+
 import React, { useState } from 'react';
-import { Search, Plus } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { useCustomers } from '@/hooks/useCustomers';
 import { Customer } from '@/types';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-// Componentes importados
-import CustomersTable from '@/components/customers/CustomersTable';
-import EditCustomerForm from '@/components/customers/EditCustomerForm';
-import NewCustomerForm from '@/components/customers/NewCustomerForm';
-import CustomerDetails from '@/components/customers/CustomerDetails';
+// Refactored components
+import CustomerSearchBar from '@/components/customers/CustomerSearchBar';
+import CustomersList from '@/components/customers/CustomersList';
+import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
+import NewCustomerDialog from '@/components/customers/NewCustomerDialog';
+import CustomerDetailsDialog from '@/components/customers/CustomerDetailsDialog';
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
 
 const Customers = () => {
@@ -78,7 +62,6 @@ const Customers = () => {
   };
 
   const handleNewCustomer = () => {
-    const nextCode = generateNextCode();
     setIsNewCustomerDialogOpen(true);
   };
 
@@ -125,114 +108,50 @@ const Customers = () => {
       title="Clientes" 
       subtitle="Gerencie seus clientes e suas informações"
     >
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
-        <div className="relative w-full sm:w-64 md:w-80">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="text"
-            placeholder="Buscar clientes..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Select onValueChange={setSortBy} defaultValue={sortBy}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Ordenar por" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Nome</SelectItem>
-              <SelectItem value="code">Código</SelectItem>
-              <SelectItem value="salesRep">Vendedor</SelectItem>
-              <SelectItem value="visitFrequency">Frequência de Visita</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button 
-            className="bg-sales-800 hover:bg-sales-700"
-            onClick={handleNewCustomer}
-          >
-            <Plus size={16} className="mr-2" />
-            Adicionar Cliente
-          </Button>
-        </div>
-      </div>
+      <CustomerSearchBar 
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        onAddCustomer={handleNewCustomer}
+      />
 
-      <Card className="overflow-hidden">
-        <CustomersTable 
-          customers={sortedCustomers}
-          onView={handleViewCustomerDetails}
-          onEdit={handleEditCustomer}
-          onDelete={handleDeleteCustomer}
-        />
-      </Card>
+      <CustomersList 
+        customers={sortedCustomers}
+        onView={handleViewCustomerDetails}
+        onEdit={handleEditCustomer}
+        onDelete={handleDeleteCustomer}
+      />
 
-      {/* Dialog para editar cliente */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-3xl p-3 sm:p-4">
-          <DialogHeader>
-            <DialogTitle>Editar Cliente</DialogTitle>
-            <DialogDescription>
-              Atualize as informações e dias de visita do cliente
-            </DialogDescription>
-          </DialogHeader>
-          
-          {editingCustomer && (
-            <EditCustomerForm 
-              customer={editingCustomer}
-              onSubmit={onSubmit}
-              onCancel={() => setIsDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Dialogs */}
+      <EditCustomerDialog 
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        customer={editingCustomer}
+        onSubmit={onSubmit}
+      />
 
-      {/* Dialog para adicionar novo cliente */}
-      <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
-        <DialogContent className="sm:max-w-3xl p-2 sm:p-3">
-          <DialogHeader className="px-1">
-            <DialogTitle>Adicionar Novo Cliente</DialogTitle>
-            <DialogDescription>
-              Preencha as informações do novo cliente
-            </DialogDescription>
-          </DialogHeader>
-          
-          <NewCustomerForm 
-            initialCode={generateNextCode()}
-            onSubmit={onAddCustomer}
-            onCancel={() => setIsNewCustomerDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <NewCustomerDialog 
+        open={isNewCustomerDialogOpen}
+        onOpenChange={setIsNewCustomerDialogOpen}
+        initialCode={generateNextCode()}
+        onSubmit={onAddCustomer}
+      />
 
-      {/* Dialog para visualizar detalhes do cliente */}
-      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden p-3 sm:p-4">
-          <DialogHeader>
-            <DialogTitle>Detalhes do Cliente</DialogTitle>
-          </DialogHeader>
-          
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)] pr-4">
-            {selectedCustomer && (
-              <CustomerDetails 
-                customer={selectedCustomer}
-                onEdit={() => {
-                  setIsDetailsDialogOpen(false);
-                  handleEditCustomer(selectedCustomer);
-                }}
-                onDelete={() => {
-                  setIsDetailsDialogOpen(false);
-                  handleDeleteCustomer(selectedCustomer.id, selectedCustomer);
-                }}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CustomerDetailsDialog 
+        open={isDetailsDialogOpen}
+        onOpenChange={setIsDetailsDialogOpen}
+        customer={selectedCustomer}
+        onEdit={() => {
+          setIsDetailsDialogOpen(false);
+          if (selectedCustomer) handleEditCustomer(selectedCustomer);
+        }}
+        onDelete={() => {
+          setIsDetailsDialogOpen(false);
+          if (selectedCustomer) handleDeleteCustomer(selectedCustomer.id, selectedCustomer);
+        }}
+      />
 
-      {/* Dialog para confirmar exclusão de cliente */}
       <DeleteCustomerDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
