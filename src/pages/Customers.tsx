@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
@@ -172,7 +171,7 @@ const Customers = () => {
 
       {/* Dialog para editar cliente */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-3xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
             <DialogDescription>
@@ -192,8 +191,8 @@ const Customers = () => {
 
       {/* Dialog para adicionar novo cliente */}
       <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-3xl p-3 sm:p-4">
+          <DialogHeader className="px-2">
             <DialogTitle>Adicionar Novo Cliente</DialogTitle>
             <DialogDescription>
               Preencha as informações do novo cliente
@@ -210,7 +209,7 @@ const Customers = () => {
 
       {/* Dialog para visualizar detalhes do cliente */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Detalhes do Cliente</DialogTitle>
           </DialogHeader>
