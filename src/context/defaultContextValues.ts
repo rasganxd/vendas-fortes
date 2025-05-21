@@ -1,3 +1,4 @@
+
 import { AppContextType } from './AppContextTypes';
 
 // This file will only contain part of the defaultContextValues to add the connectionStatus
