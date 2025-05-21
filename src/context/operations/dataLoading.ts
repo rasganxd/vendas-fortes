@@ -2,7 +2,7 @@
 import { loadCustomers } from "@/hooks/useCustomers";
 import { fetchProducts } from "@/hooks/useProducts";
 import { loadOrders } from "@/hooks/useOrders";
-import { Customer, Product, Order } from '@/types';
+import { Customer, Product } from '@/types';
 import { toast } from "@/components/ui/use-toast";
 
 /**
@@ -12,7 +12,6 @@ import { toast } from "@/components/ui/use-toast";
 export const loadCoreData = async (
   setIsLoadingCustomers: React.Dispatch<React.SetStateAction<boolean>>,
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>,
-  setIsUsingMockData: React.Dispatch<React.SetStateAction<boolean>>,
   setIsLoadingProducts: React.Dispatch<React.SetStateAction<boolean>>,
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
@@ -66,8 +65,6 @@ export const loadCoreData = async (
       setIsLoadingProducts(false);
     }
     
-    // We're no longer using mock data
-    setIsUsingMockData(false);
     return false;
   } catch (error) {
     console.error("Error loading core data from Firebase:", error);
@@ -76,20 +73,23 @@ export const loadCoreData = async (
       description: "Houve um problema ao carregar os dados do sistema.",
       variant: "destructive"
     });
-    setIsUsingMockData(false);
     return false;
   }
 };
 
 /**
- * Loads data from localStorage if available - now just clears any mock data
+ * Loads data from localStorage if available - now just clears any demo data
  */
 export const loadFromLocalStorage = (
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>,
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
-  // Import clearDemoData to ensure no mock data is used
+  // Import clearDemoData to ensure no demo data is used
   import('@/utils/clearDemoData').then(({ clearDemoData }) => {
     clearDemoData();
   });
+  
+  // Set empty arrays for data
+  setCustomers([]);
+  setProducts([]);
 };

@@ -1,6 +1,6 @@
 
 /**
- * Utility function to clear all demo and mock data from localStorage
+ * Utility function to clear all demo data from localStorage
  */
 export const clearDemoData = () => {
   console.log("Clearing all demo data from localStorage...");
@@ -14,17 +14,7 @@ export const clearDemoData = () => {
     'app_customers_cache',
     'app_customers_cache_timestamp',
     'app_products_cache',
-    'app_products_cache_timestamp',
-    'mockCustomers',
-    'mockProducts',
-    'mockOrders',
-    'mockSalesReps',
-    'mockPayments',
-    'mockLoads',
-    'mockLoadItems',
-    'mockRouteStops',
-    'mockRoutes',
-    'mockVehicles'
+    'app_products_cache_timestamp'
   ];
   
   // Clear each key
@@ -39,17 +29,16 @@ export const clearDemoData = () => {
 };
 
 /**
- * Utility function to check if the app is currently using mock data
+ * Utility to check if the app is using local storage data 
+ * (removed isUsingMockData as we no longer use mock data)
  */
-export const isUsingMockData = (): boolean => {
-  // Check for any mock data keys
-  const mockKeys = [
-    'mockCustomers',
-    'mockProducts',
-    'mockOrders',
-    'mockSalesReps'
+export const isUsingLocalData = (): boolean => {
+  // Check for local data keys
+  const localKeys = [
+    'app_customers_cache',
+    'app_products_cache'
   ];
   
-  // Return true if any mock data key exists in localStorage
-  return mockKeys.some(key => localStorage.getItem(key) !== null);
+  // Return true if any local data key exists in localStorage
+  return localKeys.some(key => localStorage.getItem(key) !== null);
 };

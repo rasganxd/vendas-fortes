@@ -29,7 +29,7 @@ export const useSalesReps = () => {
           description: "Houve um problema ao carregar os vendedores.",
           variant: "destructive"
         });
-        // Set empty array instead of mock data
+        // Set empty array when no data is available
         setSalesReps([]);
       } finally {
         setIsLoading(false);

@@ -16,7 +16,6 @@ interface DataLoadingContextType {
   products: Product[];
   isLoadingCustomers: boolean;
   isLoadingProducts: boolean;
-  isUsingMockData: boolean;
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   refreshData: () => Promise<boolean>;
@@ -28,7 +27,6 @@ const DataLoadingContext = createContext<DataLoadingContextType>({
   products: [],
   isLoadingCustomers: true,
   isLoadingProducts: true,
-  isUsingMockData: false,
   setCustomers: () => {},
   setProducts: () => {},
   refreshData: async () => false,
@@ -42,7 +40,6 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(0);
   const { isOnline } = useConnection();
 
@@ -121,13 +118,10 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
       } finally {
         setIsLoadingProducts(false);
       }
-
-      // Always set isUsingMockData to false
-      setIsUsingMockData(false);
     } catch (error) {
       console.error("Error loading core data from Firebase:", error);
       
-      // If Firebase completely fails, show error but don't load mock data
+      // If Firebase completely fails, show error
       console.log("Firebase loading failed completely");
       
       toast({
@@ -211,7 +205,6 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
       products,
       isLoadingCustomers,
       isLoadingProducts,
-      isUsingMockData,
       setCustomers,
       setProducts,
       refreshData,
@@ -224,12 +217,11 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
 
 /**
  * Loads core application data (customers and products)
- * Modified to not use mock data as fallback
+ * Modified to use only real data, no mock fallbacks
  */
 export const loadCoreData = async (
   setIsLoadingCustomers: React.Dispatch<React.SetStateAction<boolean>>,
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>,
-  setIsUsingMockData: React.Dispatch<React.SetStateAction<boolean>>,
   setIsLoadingProducts: React.Dispatch<React.SetStateAction<boolean>>,
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
@@ -275,8 +267,6 @@ export const loadCoreData = async (
       setIsLoadingProducts(false);
     }
     
-    // Always set isUsingMockData to false
-    setIsUsingMockData(false);
     return false;
   } catch (error) {
     console.error("Error loading core data:", error);
@@ -291,20 +281,19 @@ export const loadCoreData = async (
 
 /**
  * Loads data from localStorage if available
- * Modified to not use mock data
  */
 export const loadFromLocalStorage = (
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>,
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
-  // Just clear any existing mock data
+  // Just clear any existing demo data
   clearDemoData();
   
   // Set empty arrays for customers and products
   setCustomers([]);
   setProducts([]);
   
-  console.log("Local storage cleared of mock data");
+  console.log("Local storage cleared of demo data");
 };
 
 /**

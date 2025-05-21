@@ -1,4 +1,3 @@
-
 import { AppContextType } from './AppContextTypes';
 
 // This file will only contain part of the defaultContextValues to add the connectionStatus
@@ -36,7 +35,6 @@ const defaultContextValues: AppContextType = {
   isLoadingProductBrands: false,
   isLoadingDeliveryRoutes: false,
   isLoadingBackups: false,
-  isUsingMockData: false,
   
   setCustomers: () => {},
   setProducts: () => {},
