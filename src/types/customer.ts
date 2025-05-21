@@ -17,7 +17,8 @@ export interface Customer {
   visitDays?: string[];
   visitFrequency?: string;
   visitSequence?: number;
-  sales_rep_id?: string;
+  sales_rep_id?: string; // Changed from salesRepId to match usage
+  deliveryRouteId?: string;
   sales_rep_name?: string;
 }
 
@@ -38,5 +39,5 @@ export type CustomerFormValues = {
   createdAt: Date;
   updatedAt: Date;
   visitSequence: number;
-  sales_rep_id: string;
+  sales_rep_id: string; // Changed from sales_rep_id to match interface
 };

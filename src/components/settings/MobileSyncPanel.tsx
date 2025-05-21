@@ -87,6 +87,11 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     }
   };
 
+  // Ensure created_at is properly formatted when passing to formatDate
+  const formatSyncDate = (dateValue: string | Date): string => {
+    return formatDate(dateValue);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -137,7 +142,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                      log.event_type === 'download' ? 'Recebimento' : 'Erro'}
                   </TableCell>
                   <TableCell>{log.device_id}</TableCell>
-                  <TableCell>{formatDate(log.created_at)}</TableCell>
+                  <TableCell>{formatSyncDate(log.created_at)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

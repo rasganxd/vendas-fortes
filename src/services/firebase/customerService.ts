@@ -29,7 +29,7 @@ export const getCustomerByCode = async (code: number): Promise<Customer | null> 
       address: data.address || '',
       document: data.document || '',
       notes: data.notes || '',
-      salesRepId: data.salesRepId || '',
+      sales_rep_id: data.sales_rep_id || '', // Changed from salesRepId to sales_rep_id
       deliveryRouteId: data.deliveryRouteId || '',
       city: data.city || '',
       state: data.state || '',
@@ -62,7 +62,7 @@ export const loadCustomers = async (): Promise<Customer[]> => {
         address: data.address || '',
         document: data.document || '',
         notes: data.notes || '',
-        salesRepId: data.salesRepId || '',
+        sales_rep_id: data.sales_rep_id || '', // Changed from salesRepId to sales_rep_id
         deliveryRouteId: data.deliveryRouteId || '',
         city: data.city || '',
         state: data.state || '',
@@ -103,7 +103,7 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
       address: data.address || '',
       document: data.document || '',
       notes: data.notes || '',
-      salesRepId: data.salesRepId || '',
+      sales_rep_id: data.sales_rep_id || '', // Changed from salesRepId to sales_rep_id
       deliveryRouteId: data.deliveryRouteId || '',
       city: data.city || '',
       state: data.state || '',

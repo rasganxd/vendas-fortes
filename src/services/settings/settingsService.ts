@@ -27,11 +27,26 @@ export const fetchSettingsFromFirebase = async (): Promise<AppSettings | null> =
       // Convert Firebase timestamp to Date objects
       const data = docSnap.data();
       
+      // Ensure both naming conventions are supported in the theme
+      let theme = null;
+      if (data.theme) {
+        theme = {
+          ...data.theme,
+          // Ensure both property sets exist
+          primary: data.theme.primary || data.theme.primaryColor || '#1C64F2',
+          secondary: data.theme.secondary || data.theme.secondaryColor || '#047481',
+          accent: data.theme.accent || data.theme.accentColor || '#0694A2',
+          primaryColor: data.theme.primaryColor || data.theme.primary || '#1C64F2',
+          secondaryColor: data.theme.secondaryColor || data.theme.secondary || '#047481',
+          accentColor: data.theme.accentColor || data.theme.accent || '#0694A2'
+        };
+      }
+      
       return {
         id: docSnap.id,
         companyName: data.companyName || '',
         companyLogo: data.companyLogo || '',
-        theme: data.theme || null,
+        theme: theme,
         company: data.company || {
           name: '',
           address: '',
@@ -68,7 +83,10 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
       theme: {
         primary: '#1C64F2',
         secondary: '#047481',
-        accent: '#0694A2'
+        accent: '#0694A2',
+        primaryColor: '#1C64F2',
+        secondaryColor: '#047481',
+        accentColor: '#0694A2'
       },
       company: {
         name: 'Minha Empresa',
@@ -101,7 +119,10 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
       theme: {
         primary: '#1C64F2',
         secondary: '#047481',
-        accent: '#0694A2'
+        accent: '#0694A2',
+        primaryColor: '#1C64F2',
+        secondaryColor: '#047481',
+        accentColor: '#0694A2'
       },
       company: {
         name: 'Minha Empresa',
