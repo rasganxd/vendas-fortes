@@ -25,7 +25,12 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
   onEdit,
   onDelete,
 }) => {
-  if (customers.length === 0) {
+  // Filter out invalid customers (those without name or with empty data)
+  const validCustomers = customers.filter(customer => 
+    customer && customer.id && customer.name && customer.name.trim() !== ''
+  );
+  
+  if (validCustomers.length === 0) {
     return (
       <div className="text-center py-4 text-gray-500 h-[600px] flex items-center justify-center">
         Nenhum cliente encontrado
@@ -45,7 +50,7 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody className="max-h-[600px]">
-          {customers.map((customer) => (
+          {validCustomers.map((customer) => (
             <TableRow key={customer.id}>
               <TableCell className="font-medium">
                 {customer.code || "—"}

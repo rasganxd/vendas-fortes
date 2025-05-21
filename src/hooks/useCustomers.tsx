@@ -10,6 +10,16 @@ const CUSTOMERS_CACHE_KEY = 'app_customers_cache';
 const CUSTOMERS_CACHE_TIMESTAMP_KEY = 'app_customers_cache_timestamp';
 const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+// Helper function to filter valid customers
+const filterValidCustomers = (customers: Customer[]): Customer[] => {
+  return customers.filter(customer => 
+    customer && 
+    customer.id && 
+    customer.name && 
+    customer.name.trim() !== ''
+  );
+};
+
 // Load customers with improved caching strategy
 export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> => {
   try {
@@ -20,13 +30,14 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
       console.log("Force refreshing customer data from Firebase");
       try {
         const customers = await customerService.getAll();
+        const validCustomers = filterValidCustomers(customers);
         
         // Update localStorage cache with fresh data from Firebase
-        localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
+        localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(validCustomers));
         localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
         
-        console.log(`Loaded ${customers.length} customers from Firebase`);
-        return customers;
+        console.log(`Loaded ${validCustomers.length} valid customers from Firebase`);
+        return validCustomers;
       } catch (error) {
         console.error("Error loading customers from Firebase:", error);
         throw error; // Let the caller handle the fallback
@@ -44,7 +55,9 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
       // If cache is still fresh, use it
       if (now - timestamp < CACHE_MAX_AGE) {
         console.log("Using cached customer data");
-        return JSON.parse(cachedData) as Customer[];
+        const customers = JSON.parse(cachedData) as Customer[];
+        // Still filter to ensure no invalid data
+        return filterValidCustomers(customers); 
       }
     }
     
@@ -52,21 +65,23 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
     try {
       console.log("Getting customer data from Firebase");
       const customers = await customerService.getAll();
+      const validCustomers = filterValidCustomers(customers);
       
       // Store in localStorage cache
-      localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(customers));
+      localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(validCustomers));
       localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
-      console.log(`Loaded ${customers.length} customers from Firebase`);
-      return customers;
+      console.log(`Loaded ${validCustomers.length} valid customers from Firebase`);
+      return validCustomers;
     } catch (firebaseError) {
       console.error("Error loading customers from Firebase:", firebaseError);
       
       // If Firebase fails, try local storage
       console.log("Falling back to local storage");
       const localCustomers = await customerLocalService.getAll();
-      console.log(`Loaded ${localCustomers.length} customers from local storage`);
-      return localCustomers;
+      const validLocalCustomers = filterValidCustomers(localCustomers);
+      console.log(`Loaded ${validLocalCustomers.length} valid customers from local storage`);
+      return validLocalCustomers;
     }
   } catch (error) {
     console.error("Error in loadCustomers:", error);
@@ -75,7 +90,8 @@ export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> =
     const cachedData = localStorage.getItem(CUSTOMERS_CACHE_KEY);
     if (cachedData) {
       console.log("Using expired cache as fallback due to error");
-      return JSON.parse(cachedData) as Customer[];
+      const customers = JSON.parse(cachedData) as Customer[];
+      return filterValidCustomers(customers);
     }
     
     throw error;
@@ -210,10 +226,11 @@ export const useCustomers = () => {
       const updatedCustomers = customers.map(c => 
         c.id === id ? { ...c, ...customer } : c
       );
-      setCustomers(updatedCustomers);
+      // Filter out invalid customers after update
+      setCustomers(filterValidCustomers(updatedCustomers));
       
       // Update cache
-      localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(updatedCustomers));
+      localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(filterValidCustomers(updatedCustomers)));
       localStorage.setItem(CUSTOMERS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       toast({
@@ -284,7 +301,7 @@ export const useCustomers = () => {
 
   // Return the hook methods
   return {
-    customers,
+    customers: filterValidCustomers(customers), // Ensure we always return valid customers
     addCustomer,
     updateCustomer,
     deleteCustomer,

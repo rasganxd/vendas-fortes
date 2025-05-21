@@ -14,7 +14,10 @@ export const clearDemoData = () => {
     'app_customers_cache',
     'app_customers_cache_timestamp',
     'app_products_cache',
-    'app_products_cache_timestamp'
+    'app_products_cache_timestamp',
+    'customer_data', // Additional possible keys
+    'product_data',
+    'order_data',
   ];
   
   // Clear each key
@@ -23,6 +26,13 @@ export const clearDemoData = () => {
       localStorage.removeItem(key);
       console.log(`Cleared ${key} from localStorage`);
     }
+  });
+  
+  // Ensure all empty arrays are saved for collections to prevent blank entries
+  const collectionsToReset = ['customers', 'products', 'orders', 'sales_reps'];
+  collectionsToReset.forEach(key => {
+    localStorage.setItem(key, JSON.stringify([]));
+    console.log(`Reset ${key} to empty array`);
   });
   
   console.log("All demo data cleared successfully");
