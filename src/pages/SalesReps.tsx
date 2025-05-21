@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import {
   Table,
@@ -86,10 +87,11 @@ const SalesRepsPage = () => {
     }
   };
 
+  // Fix: Add null checks to prevent toLowerCase on undefined values
   const filteredSalesReps = salesReps.filter(rep => 
-    rep.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    rep.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    rep.code?.toString().includes(searchTerm)
+    (rep.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (rep.phone?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (rep.code?.toString() || '').includes(searchTerm)
   );
 
   return (
