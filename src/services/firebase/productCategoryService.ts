@@ -8,7 +8,18 @@ import { productCategoryFirestoreService } from './ProductCategoryFirestoreServi
 export const productCategoryService = {
   // Get all product categories
   getAll: async (): Promise<ProductCategory[]> => {
-    return productCategoryFirestoreService.getAll();
+    const categories = await productCategoryFirestoreService.getAll();
+    
+    // Remove duplicates by name
+    const uniqueCategories = categories.reduce((acc: ProductCategory[], current) => {
+      const existingCategory = acc.find(item => item.name === current.name);
+      if (!existingCategory) {
+        acc.push(current);
+      }
+      return acc;
+    }, []);
+    
+    return uniqueCategories;
   },
   
   // Get product category by ID
@@ -23,6 +34,14 @@ export const productCategoryService = {
   
   // Add product category
   add: async (category: Omit<ProductCategory, 'id'>): Promise<string> => {
+    // Check if category with same name already exists
+    const existingCategory = await productCategoryFirestoreService.getByName(category.name);
+    
+    if (existingCategory) {
+      console.log(`Category with name '${category.name}' already exists with ID: ${existingCategory.id}`);
+      return existingCategory.id;
+    }
+    
     const categoryWithDates = {
       ...category,
       createdAt: new Date(),

@@ -8,7 +8,18 @@ import { productGroupFirestoreService } from './ProductGroupFirestoreService';
 export const productGroupService = {
   // Get all product groups
   getAll: async (): Promise<ProductGroup[]> => {
-    return productGroupFirestoreService.getAll();
+    const groups = await productGroupFirestoreService.getAll();
+    
+    // Remove duplicates by name
+    const uniqueGroups = groups.reduce((acc: ProductGroup[], current) => {
+      const existingGroup = acc.find(item => item.name === current.name);
+      if (!existingGroup) {
+        acc.push(current);
+      }
+      return acc;
+    }, []);
+    
+    return uniqueGroups;
   },
   
   // Get product group by ID
@@ -23,6 +34,14 @@ export const productGroupService = {
   
   // Add product group
   add: async (group: Omit<ProductGroup, 'id'>): Promise<string> => {
+    // Check if group with same name already exists
+    const existingGroup = await productGroupFirestoreService.getByName(group.name);
+    
+    if (existingGroup) {
+      console.log(`Group with name '${group.name}' already exists with ID: ${existingGroup.id}`);
+      return existingGroup.id;
+    }
+    
     const groupWithDates = {
       ...group,
       createdAt: new Date(),

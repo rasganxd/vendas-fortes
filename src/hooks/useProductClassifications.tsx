@@ -39,7 +39,14 @@ export const useProductGroups = () => {
         updatedAt: new Date()
       };
       
-      setProductGroups([...productGroups, newGroup]);
+      setProductGroups(prevGroups => {
+        // Check if already exists to avoid duplicates in state
+        const exists = prevGroups.some(pg => pg.name === newGroup.name);
+        if (exists) {
+          return prevGroups;
+        }
+        return [...prevGroups, newGroup];
+      });
       
       toast({
         title: "Grupo adicionado",
@@ -141,7 +148,14 @@ export const useProductCategories = () => {
         updatedAt: new Date()
       };
       
-      setProductCategories([...productCategories, newCategory]);
+      setProductCategories(prevCategories => {
+        // Check if already exists to avoid duplicates in state
+        const exists = prevCategories.some(pc => pc.name === newCategory.name);
+        if (exists) {
+          return prevCategories;
+        }
+        return [...prevCategories, newCategory];
+      });
       
       toast({
         title: "Categoria adicionada",
@@ -243,7 +257,14 @@ export const useProductBrands = () => {
         updatedAt: new Date()
       };
       
-      setProductBrands([...productBrands, newBrand]);
+      setProductBrands(prevBrands => {
+        // Check if already exists to avoid duplicates in state
+        const exists = prevBrands.some(pb => pb.name === newBrand.name);
+        if (exists) {
+          return prevBrands;
+        }
+        return [...prevBrands, newBrand];
+      });
       
       toast({
         title: "Marca adicionada",
