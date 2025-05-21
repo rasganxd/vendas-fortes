@@ -18,6 +18,9 @@ export const clearDemoData = () => {
     'customer_data', // Additional possible keys
     'product_data',
     'order_data',
+    'sync_logs', // Added sync_logs key
+    'last_sync', 
+    'sync_status'
   ];
   
   // Clear each key
@@ -29,7 +32,7 @@ export const clearDemoData = () => {
   });
   
   // Ensure all empty arrays are saved for collections to prevent blank entries
-  const collectionsToReset = ['customers', 'products', 'orders', 'sales_reps'];
+  const collectionsToReset = ['customers', 'products', 'orders', 'sales_reps', 'sync_logs'];
   collectionsToReset.forEach(key => {
     localStorage.setItem(key, JSON.stringify([]));
     console.log(`Reset ${key} to empty array`);
@@ -46,7 +49,9 @@ export const isUsingLocalData = (): boolean => {
   // Check for local data keys
   const localKeys = [
     'app_customers_cache',
-    'app_products_cache'
+    'app_products_cache',
+    'sales_reps',
+    'sync_logs'
   ];
   
   // Return true if any local data key exists in localStorage

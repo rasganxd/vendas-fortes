@@ -87,12 +87,14 @@ const SalesRepsPage = () => {
     }
   };
 
-  // Fix: Add null checks to prevent toLowerCase on undefined values
-  const filteredSalesReps = salesReps.filter(rep => 
-    (rep.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (rep.phone?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (rep.code?.toString() || '').includes(searchTerm)
-  );
+  // Improved filtering with robust null checks
+  const filteredSalesReps = salesReps.filter(rep => {
+    const nameMatch = rep.name ? rep.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+    const phoneMatch = rep.phone ? rep.phone.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+    const codeMatch = rep.code ? rep.code.toString().includes(searchTerm) : false;
+    
+    return nameMatch || phoneMatch || codeMatch;
+  });
 
   return (
     <PageLayout title="Representantes de Vendas">
@@ -146,9 +148,9 @@ const SalesRepsPage = () => {
             <TableBody>
               {filteredSalesReps.map((salesRep) => (
                 <TableRow key={salesRep.id}>
-                  <TableCell className="font-medium">{salesRep.code}</TableCell>
-                  <TableCell>{salesRep.name}</TableCell>
-                  <TableCell>{salesRep.phone}</TableCell>
+                  <TableCell className="font-medium">{salesRep.code || '—'}</TableCell>
+                  <TableCell>{salesRep.name || '—'}</TableCell>
+                  <TableCell>{salesRep.phone || '—'}</TableCell>
                   <TableCell className="text-right">
                     <Button 
                       variant="ghost"

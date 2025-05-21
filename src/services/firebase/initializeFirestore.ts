@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   getDocs, 
@@ -21,7 +22,8 @@ const requiredCollections = [
   'sales_reps',
   'product_categories',
   'product_brands',
-  'product_groups'
+  'product_groups',
+  'sync_logs' // Added sync_logs collection
 ];
 
 // Maximum retry attempts for initialization
@@ -68,8 +70,15 @@ const initializeCollection = async (collectionName: string, attempt = 1): Promis
         _description: `Temporary document to initialize ${collectionName} collection`
       };
       
-      await addDoc(collection(db, collectionName), tempDoc);
-      console.log(`initializeFirestore: Collection ${collectionName} initialized with temporary document`);
+      try {
+        await addDoc(collection(db, collectionName), tempDoc);
+        console.log(`initializeFirestore: Collection ${collectionName} initialized with temporary document`);
+      } catch (addError) {
+        console.error(`initializeFirestore: Error adding document to ${collectionName}:`, addError);
+        // Continue execution even if adding document fails
+        // This prevents the entire initialization from failing due to one collection
+        return false;
+      }
     } else {
       console.log(`initializeFirestore: Collection ${collectionName} already has ${querySnapshot.size} documents`);
       querySnapshot.forEach((doc) => {
@@ -147,6 +156,14 @@ export const initializeFirestore = async (showToasts = false): Promise<boolean> 
   
   try {
     console.log('initializeFirestore: Firebase config:', db ? 'Firebase initialized' : 'Firebase NOT initialized');
+    
+    if (!db) {
+      console.error('initializeFirestore: Firebase db is not initialized!');
+      if (showToasts) {
+        toast.error('Firebase não está inicializado corretamente. Verifique a conexão com a internet.');
+      }
+      return false;
+    }
     
     // Enable offline persistence first - this must happen before any other Firestore operations
     const persistenceEnabled = await setupOfflinePersistence();
