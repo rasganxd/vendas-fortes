@@ -35,7 +35,7 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
   
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
         <FormField
           control={form.control}
           name="code"
@@ -162,7 +162,6 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
           )}
         />
         
-        {/* Novo campo para Vendedor */}
         <FormField
           control={form.control}
           name="sales_rep_id"
@@ -192,7 +191,7 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 w-full">
         <FormField
           control={form.control}
           name="visitFrequency"
@@ -222,7 +221,7 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 w-full">
         <FormField
           control={form.control}
           name="visitSequence"
@@ -242,7 +241,7 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 w-full">
         <FormLabel>Dias de Visita</FormLabel>
         <div className="grid grid-cols-2 sm:grid-cols-4 mt-2 gap-2">
           {DaysOfWeekOptions.map((option) => (
@@ -281,7 +280,7 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 w-full">
         <FormField
           control={form.control}
           name="notes"

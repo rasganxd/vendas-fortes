@@ -171,7 +171,7 @@ const Customers = () => {
 
       {/* Dialog para editar cliente */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-3xl p-4 sm:p-6">
+        <DialogContent className="sm:max-w-3xl p-3 sm:p-4">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
             <DialogDescription>
@@ -191,8 +191,8 @@ const Customers = () => {
 
       {/* Dialog para adicionar novo cliente */}
       <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>
-        <DialogContent className="sm:max-w-3xl p-3 sm:p-4">
-          <DialogHeader className="px-2">
+        <DialogContent className="sm:max-w-3xl p-2 sm:p-3">
+          <DialogHeader className="px-1">
             <DialogTitle>Adicionar Novo Cliente</DialogTitle>
             <DialogDescription>
               Preencha as informações do novo cliente
@@ -209,12 +209,12 @@ const Customers = () => {
 
       {/* Dialog para visualizar detalhes do cliente */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden p-4 sm:p-6">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden p-3 sm:p-4">
           <DialogHeader>
             <DialogTitle>Detalhes do Cliente</DialogTitle>
           </DialogHeader>
           
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)] pr-2">
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)] pr-1">
             {selectedCustomer && (
               <CustomerDetails 
                 customer={selectedCustomer}
