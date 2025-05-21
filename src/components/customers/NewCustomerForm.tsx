@@ -56,7 +56,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
-        <div className="max-h-[70vh] overflow-y-auto pr-1 pb-2">
+        <div className="max-h-[70vh] overflow-y-auto pr-4 pb-2">
           <CustomerFormFields form={form} />
         </div>
         

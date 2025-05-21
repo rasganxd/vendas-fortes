@@ -214,7 +214,7 @@ const Customers = () => {
             <DialogTitle>Detalhes do Cliente</DialogTitle>
           </DialogHeader>
           
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)] pr-1">
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)] pr-4">
             {selectedCustomer && (
               <CustomerDetails 
                 customer={selectedCustomer}

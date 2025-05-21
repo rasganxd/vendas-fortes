@@ -69,7 +69,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="max-h-[60vh] overflow-y-auto pr-1 pb-4">
+        <div className="max-h-[60vh] overflow-y-auto pr-4 pb-4">
           <CustomerFormFields form={form} />
         </div>
         
