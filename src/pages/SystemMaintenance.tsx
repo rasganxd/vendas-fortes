@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layout/PageLayout';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Calendar, Database, RefreshCw, Save } from 'lucide-react';
+import { ArrowRight, Calendar, Save } from 'lucide-react';
 import { useAppContext } from '@/hooks/useAppContext';
 
 export default function SystemMaintenance() {
@@ -12,8 +12,7 @@ export default function SystemMaintenance() {
   const { 
     startNewMonth, 
     startNewDay, 
-    createBackup, 
-    refreshData 
+    createBackup
   } = useAppContext();
 
   const showStatus = (message: string, type: "default" | "success" | "error" = "default") => {
@@ -62,27 +61,13 @@ export default function SystemMaintenance() {
     }
   };
 
-  const handleRefreshData = async () => {
-    try {
-      const success = await refreshData();
-      if (success) {
-        showStatus("Dados atualizados com sucesso", "success");
-      } else {
-        showStatus("Não foi possível atualizar os dados", "error");
-      }
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      showStatus("Erro ao atualizar dados", "error");
-    }
-  };
-
   return (
     <PageLayout title="Manutenção do Sistema">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <RefreshCw className="w-5 h-5 mr-2" /> Atualização Diária
+              <ArrowRight className="w-5 h-5 mr-2" /> Atualização Diária
             </CardTitle>
             <CardDescription>
               Preparar sistema para um novo dia de trabalho
@@ -132,25 +117,6 @@ export default function SystemMaintenance() {
             </p>
             <Button onClick={handleStartNewMonth} className="w-full">
               Iniciar Novo Mês <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Database className="w-5 h-5 mr-2" /> Atualizar Dados
-            </CardTitle>
-            <CardDescription>
-              Sincroniza dados com o servidor
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm mb-4">
-              Este processo atualiza todos os dados a partir do servidor.
-            </p>
-            <Button onClick={handleRefreshData} className="w-full">
-              Atualizar Dados <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </CardContent>
         </Card>
