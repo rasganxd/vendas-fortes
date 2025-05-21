@@ -111,10 +111,10 @@ const defaultContextValues: AppContextType = {
   deleteBackup: async () => true,
   
   settings: {
-    companyName: 'Minha Empresa', // Added required property
-    companyLogo: '', // Added required property
-    createdAt: new Date(), // Added required property
-    updatedAt: new Date(), // Added required property
+    companyName: 'Minha Empresa',
+    companyLogo: '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
     company: {
       name: '',
       address: '',
@@ -127,9 +127,9 @@ const defaultContextValues: AppContextType = {
       primary: '#1C64F2',
       secondary: '#047481',
       accent: '#0694A2',
-      primaryColor: '#1C64F2', // Added required property
-      secondaryColor: '#047481', // Added required property
-      accentColor: '#0694A2' // Added required property
+      primaryColor: '#1C64F2',
+      secondaryColor: '#047481',
+      accentColor: '#0694A2'
     }
   },
   updateSettings: async () => {},
