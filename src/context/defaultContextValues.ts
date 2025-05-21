@@ -19,6 +19,7 @@ const defaultContextValues: AppContextType = {
   deliveryRoutes: [],
   backups: [],
   connectionStatus: 'online', // Default to online
+  isUsingMockData: false, // Added this property set to false
   
   isLoadingCustomers: false,
   isLoadingProducts: false,

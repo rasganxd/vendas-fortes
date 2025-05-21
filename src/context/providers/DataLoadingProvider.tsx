@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Customer, Product, Order } from '@/types';
@@ -16,6 +15,7 @@ interface DataLoadingContextType {
   products: Product[];
   isLoadingCustomers: boolean;
   isLoadingProducts: boolean;
+  isUsingMockData: boolean; // Added this property to the interface
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   refreshData: () => Promise<boolean>;
@@ -27,6 +27,7 @@ const DataLoadingContext = createContext<DataLoadingContextType>({
   products: [],
   isLoadingCustomers: true,
   isLoadingProducts: true,
+  isUsingMockData: false, // Added default value
   setCustomers: () => {},
   setProducts: () => {},
   refreshData: async () => false,
@@ -42,6 +43,7 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(0);
   const { isOnline } = useConnection();
+  const [isUsingMockData, setIsUsingMockData] = useState(false); // Always false now that we've removed mock data
 
   // Clear any demo data on first load
   useEffect(() => {
@@ -205,6 +207,7 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
       products,
       isLoadingCustomers,
       isLoadingProducts,
+      isUsingMockData, // Include the property in the provider value
       setCustomers,
       setProducts,
       refreshData,

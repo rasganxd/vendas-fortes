@@ -1,4 +1,3 @@
-
 import { Customer, Product, Order, Payment, Vehicle, SalesRep, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 import { Load } from '@/types';
 
@@ -22,6 +21,7 @@ export type AppContextType = {
   deliveryRoutes: DeliveryRoute[];
   backups: Backup[];
   connectionStatus: ConnectionStatus;
+  isUsingMockData: boolean; // This property is now defined properly
   
   isLoadingCustomers: boolean;
   isLoadingProducts: boolean;
@@ -38,7 +38,6 @@ export type AppContextType = {
   isLoadingProductBrands: boolean;
   isLoadingDeliveryRoutes: boolean;
   isLoadingBackups: boolean;
-  isUsingMockData: boolean;
   
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
