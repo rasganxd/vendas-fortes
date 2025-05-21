@@ -42,7 +42,7 @@ class CustomerFirestoreServiceClass extends FirestoreService<Customer> {
   async getBySalesRepId(salesRepId: string): Promise<Customer[]> {
     try {
       console.log(`CustomerFirestoreService: Getting customers by sales rep ID ${salesRepId}`);
-      const customers = await this.query([where('sales_rep_id', '==', salesRepId)]);
+      const customers = await this.query([where('salesRepId', '==', salesRepId)]);
       console.log(`CustomerFirestoreService: Found ${customers.length} customers for sales rep ${salesRepId}`);
       return customers;
     } catch (error) {

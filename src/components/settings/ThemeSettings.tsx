@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/hooks/useAppContext";
 import { Palette, SwatchBook, RefreshCcw, Bell } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { AppSettings } from '@/types';
+import { AppSettings, Theme } from '@/types';
 import { useAppSettings } from '@/hooks/useAppSettings';
 
 const defaultThemes = [
@@ -21,9 +21,9 @@ export default function ThemeSettings() {
   const { settings, updateSettings, applyThemeColors } = useAppSettings();
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [customColors, setCustomColors] = useState({
-    primaryColor: settings?.theme?.primaryColor || '#1C64F2',
-    secondaryColor: settings?.theme?.secondaryColor || '#047481',
-    accentColor: settings?.theme?.accentColor || '#0694A2',
+    primaryColor: settings?.theme?.primaryColor || settings?.theme?.primary || '#1C64F2',
+    secondaryColor: settings?.theme?.secondaryColor || settings?.theme?.secondary || '#047481',
+    accentColor: settings?.theme?.accentColor || settings?.theme?.accent || '#0694A2',
   });
   
   const [isSaving, setIsSaving] = useState(false);
@@ -33,16 +33,16 @@ export default function ThemeSettings() {
   useEffect(() => {
     if (settings?.theme && !colorsInitialized.current) {
       setCustomColors({
-        primaryColor: settings.theme.primaryColor || '#1C64F2',
-        secondaryColor: settings.theme.secondaryColor || '#047481',
-        accentColor: settings.theme.accentColor || '#0694A2',
+        primaryColor: settings.theme.primaryColor || settings.theme.primary || '#1C64F2',
+        secondaryColor: settings.theme.secondaryColor || settings.theme.secondary || '#047481',
+        accentColor: settings.theme.accentColor || settings.theme.accent || '#0694A2',
       });
       
       // Find if current colors match any predefined theme
       const matchingTheme = defaultThemes.find(theme => 
-        theme.primaryColor === settings.theme?.primaryColor &&
-        theme.secondaryColor === settings.theme?.secondaryColor &&
-        theme.accentColor === settings.theme?.accentColor
+        theme.primaryColor === (settings.theme?.primaryColor || settings.theme?.primary) &&
+        theme.secondaryColor === (settings.theme?.secondaryColor || settings.theme?.secondary) &&
+        theme.accentColor === (settings.theme?.accentColor || settings.theme?.accent)
       );
       
       if (matchingTheme) {
@@ -67,7 +67,10 @@ export default function ThemeSettings() {
       applyThemeColors({
         primaryColor: primary,
         secondaryColor: secondary,
-        accentColor: accent
+        accentColor: accent,
+        primary: primary,
+        secondary: secondary,
+        accent: accent
       });
       
       // Save to database
@@ -75,8 +78,11 @@ export default function ThemeSettings() {
         theme: {
           primaryColor: primary,
           secondaryColor: secondary,
-          accentColor: accent
-        }
+          accentColor: accent,
+          primary: primary,
+          secondary: secondary,
+          accent: accent
+        } as Theme
       });
       
       toast({

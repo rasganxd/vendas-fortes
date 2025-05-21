@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle } from "lucide-react";
 import { mobileSyncService, SyncLogEntry } from "@/services/firebase/mobileSyncService";
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { formatDate } from '@/utils/date-format';
 
 interface MobileSyncStatusProps {
   salesRepId: string;
@@ -135,7 +137,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                      log.event_type === 'download' ? 'Recebimento' : 'Erro'}
                   </TableCell>
                   <TableCell>{log.device_id}</TableCell>
-                  <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
+                  <TableCell>{formatDate(log.created_at)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

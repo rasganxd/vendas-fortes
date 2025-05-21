@@ -1,4 +1,3 @@
-
 import { AppContextType } from './AppContextTypes';
 
 // This file will only contain part of the defaultContextValues to add the connectionStatus
@@ -121,6 +120,9 @@ const defaultContextValues: AppContextType = {
       footer: ''
     },
     theme: {
+      primary: '#1C64F2',
+      secondary: '#047481',
+      accent: '#0694A2',
       primaryColor: '#1C64F2',
       secondaryColor: '#047481',
       accentColor: '#0694A2'

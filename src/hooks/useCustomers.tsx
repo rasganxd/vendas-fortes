@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/firebase/customerService';

@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { AppSettings } from '@/types';
+import { AppSettings, Theme } from '@/types';
 import { 
   applyThemeColors, 
   loadCachedTheme 
@@ -33,14 +33,18 @@ export const useAppSettings = () => {
         setSettings(fetchedSettings);
         // Apply the theme colors if present
         if (fetchedSettings.theme) {
-          applyThemeColors(fetchedSettings.theme);
+          // Ensure both naming conventions are supported
+          const themeWithBothStyles = ensureThemeProperties(fetchedSettings.theme);
+          applyThemeColors(themeWithBothStyles);
         }
       } else {
         // Create default settings if none exist
         const defaultSettings = await createDefaultSettings();
         setSettings(defaultSettings);
         if (defaultSettings.theme) {
-          applyThemeColors(defaultSettings.theme);
+          // Ensure both naming conventions are supported
+          const themeWithBothStyles = ensureThemeProperties(defaultSettings.theme);
+          applyThemeColors(themeWithBothStyles);
         }
       }
     } catch (err) {
@@ -53,6 +57,26 @@ export const useAppSettings = () => {
       setIsLoading(false);
     }
   }, []);
+
+  /**
+   * Helper to ensure theme has both naming convention properties
+   */
+  const ensureThemeProperties = (theme: Theme): Theme & {
+    primaryColor?: string;
+    secondaryColor?: string;
+    accentColor?: string;
+  } => {
+    return {
+      ...theme,
+      // Ensure both naming conventions are present
+      primary: theme.primary,
+      secondary: theme.secondary,
+      accent: theme.accent,
+      primaryColor: theme.primaryColor || theme.primary,
+      secondaryColor: theme.secondaryColor || theme.secondary,
+      accentColor: theme.accentColor || theme.accent
+    };
+  };
 
   /**
    * Updates application settings
@@ -75,7 +99,9 @@ export const useAppSettings = () => {
       
       // If theme was updated, apply the new colors
       if (newSettings.theme) {
-        applyThemeColors(newSettings.theme);
+        // Ensure both naming conventions are present
+        const themeWithBothStyles = ensureThemeProperties(newSettings.theme as Theme);
+        applyThemeColors(themeWithBothStyles);
       }
       
       return true;

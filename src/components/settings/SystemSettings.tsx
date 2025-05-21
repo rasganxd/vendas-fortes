@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 export default function SystemSettings() {
+  // Using a dummy sales rep ID for now - in a real app, this would come from context
+  const defaultSalesRepId = "default-sales-rep";
+  
   return (
     <div className="space-y-8">
       {/* Cabeçalho principal com descrição */}
@@ -35,7 +38,7 @@ export default function SystemSettings() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <MobileSyncPanel />
+          <MobileSyncPanel salesRepId={defaultSalesRepId} />
         </CardContent>
       </Card>
       
