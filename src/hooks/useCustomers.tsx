@@ -8,6 +8,9 @@ import { useCustomerCrud } from './customer/useCustomerCrud';
 import { useCustomerConnection } from './customer/useCustomerConnection';
 import { toast } from '@/components/ui/use-toast';
 
+// Re-export loadCustomers from the loader hook for backward compatibility
+export { loadCustomers } from './customer/useCustomerLoader';
+
 /**
  * Main hook for customer management
  */
@@ -83,4 +86,3 @@ export const useCustomers = () => {
     isOnline
   };
 };
-

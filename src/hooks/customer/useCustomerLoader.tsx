@@ -98,3 +98,76 @@ export const useCustomerLoader = () => {
   };
 };
 
+/**
+ * Standalone function to load customers - exported for backward compatibility
+ */
+export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> => {
+  try {
+    console.log("Using standalone loadCustomers function with forceRefresh =", forceRefresh);
+    
+    // Create a temporary instance of the customer cache
+    const { saveToCache, getFromCache, filterValidCustomers } = 
+      typeof window !== 'undefined' ? 
+      // @ts-ignore - We know this hook can be used outside React components
+      useCustomerCache() : 
+      {
+        saveToCache: (customers: Customer[]) => customers,
+        getFromCache: () => ({ customers: [], isFresh: false }),
+        filterValidCustomers: (customers: Customer[]) => customers
+      };
+    
+    // Try to get from Firebase if forcing refresh
+    if (forceRefresh) {
+      console.log("Force refreshing customer data from Firebase");
+      try {
+        const customers = await customerService.getAll();
+        const validCustomers = saveToCache(customers);
+        console.log(`Loaded ${validCustomers.length} valid customers from Firebase`);
+        return validCustomers;
+      } catch (error) {
+        console.error("Error loading customers from Firebase:", error);
+        throw error;
+      }
+    }
+    
+    // If not force refreshing, try to get from cache
+    const { customers: cachedCustomers, isFresh } = getFromCache();
+    
+    // If cache is still fresh, use it
+    if (cachedCustomers.length > 0 && isFresh) {
+      console.log("Using cached customer data");
+      return filterValidCustomers(cachedCustomers);
+    }
+    
+    // If cache is stale or missing, try Firebase
+    try {
+      console.log("Getting customer data from Firebase");
+      const customers = await customerService.getAll();
+      const validCustomers = saveToCache(customers);
+      
+      console.log(`Loaded ${validCustomers.length} valid customers from Firebase`);
+      return validCustomers;
+    } catch (firebaseError) {
+      console.error("Error loading customers from Firebase:", firebaseError);
+      
+      // If Firebase fails, try local storage
+      console.log("Falling back to local storage");
+      const localCustomers = await customerLocalService.getAll();
+      const validLocalCustomers = filterValidCustomers(localCustomers);
+      console.log(`Loaded ${validLocalCustomers.length} valid customers from local storage`);
+      return validLocalCustomers;
+    }
+  } catch (error) {
+    console.error("Error in loadCustomers:", error);
+    
+    // Last resort - try to get customers from local storage directly
+    try {
+      const localCustomers = await customerLocalService.getAll();
+      console.log(`Retrieved ${localCustomers.length} customers from local storage as fallback`);
+      return localCustomers;
+    } catch (localError) {
+      console.error("Failed to get customers from local storage:", localError);
+      return [];
+    }
+  }
+};
