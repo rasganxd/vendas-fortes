@@ -10,6 +10,7 @@ import ThemePresets from './ThemePresets';
 import CustomColorPicker from './CustomColorPicker';
 import ThemePreview from './ThemePreview';
 import { defaultThemes } from './theme-data';
+import { cacheTheme } from '@/services/settings/settingsService';
 
 export default function ThemeSettings() {
   // Use the optimized useAppSettings hook
@@ -58,26 +59,25 @@ export default function ThemeSettings() {
   const applyTheme = async (primary: string, secondary: string, accent: string) => {
     setIsSaving(true);
     try {
-      // Apply theme using our optimized function
-      applyThemeColors({
+      // Create theme object with both naming conventions
+      const themeData = {
         primaryColor: primary,
         secondaryColor: secondary,
         accentColor: accent,
         primary: primary,
         secondary: secondary,
         accent: accent
-      });
+      };
+      
+      // Apply theme using our optimized function
+      applyThemeColors(themeData);
+      
+      // Make sure theme is cached for offline use
+      cacheTheme(themeData);
       
       // Save to database
       await updateSettings({
-        theme: {
-          primaryColor: primary,
-          secondaryColor: secondary,
-          accentColor: accent,
-          primary: primary,
-          secondary: secondary,
-          accent: accent
-        } as Theme
+        theme: themeData as Theme
       });
       
       toast({
@@ -119,6 +119,9 @@ export default function ThemeSettings() {
     if (settings?.theme) {
       // Reapply the current theme
       applyThemeColors(settings.theme);
+      
+      // Ensure theme is cached
+      cacheTheme(settings.theme);
       
       toast({
         title: "Cores reaplicadas",

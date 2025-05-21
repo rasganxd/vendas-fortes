@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { initializeThemeVariables } from "@/lib/utils"
+import { loadCachedTheme } from "@/utils/theme-utils"
 
 type Theme = "dark" | "light" | "system"
 
@@ -52,6 +53,11 @@ export function ThemeProvider({
     // Initialize theme variables when theme changes
     initializeThemeVariables();
   }, [theme])
+
+  // Load cached theme colors on mount
+  useEffect(() => {
+    loadCachedTheme();
+  }, []);
 
   const value = {
     theme,

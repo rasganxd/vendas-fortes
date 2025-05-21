@@ -1,12 +1,19 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanySettings from '@/components/settings/CompanySettings';
 import ThemeSettings from '@/components/settings/ThemeSettings';
 import SystemSettings from '@/components/settings/SystemSettings';
+import { loadCachedTheme } from '@/utils/theme-utils';
 
 export default function Settings() {
+  // Ensure theme is loaded when settings page is mounted
+  useEffect(() => {
+    // Load cached theme on settings page mount
+    loadCachedTheme();
+  }, []);
+
   return (
     <PageLayout title="Configurações">
       <div className="space-y-6">
