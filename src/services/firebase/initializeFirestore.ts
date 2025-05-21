@@ -6,7 +6,11 @@ import {
   enableIndexedDbPersistence, 
   disableNetwork, 
   enableNetwork,
-  getFirestore
+  getFirestore,
+  query,
+  where,
+  deleteDoc,
+  doc
 } from 'firebase/firestore';
 import { db } from './config';
 import { toast } from 'sonner';
@@ -23,7 +27,7 @@ const requiredCollections = [
   'product_categories',
   'product_brands',
   'product_groups',
-  'sync_logs' // Added sync_logs collection
+  'sync_logs' 
 ];
 
 // Maximum retry attempts for initialization
@@ -49,6 +53,38 @@ const collectionExists = async (collectionName: string): Promise<boolean> => {
 };
 
 /**
+ * Removes temporary initialization documents from a collection
+ * @param collectionName Collection name to clean
+ * @returns Promise resolving to number of documents removed
+ */
+const cleanTemporaryDocuments = async (collectionName: string): Promise<number> => {
+  try {
+    console.log(`initializeFirestore: Cleaning temporary documents from ${collectionName}`);
+    let removedCount = 0;
+    
+    const collectionRef = collection(db, collectionName);
+    const querySnapshot = await getDocs(collectionRef);
+    
+    // Delete each temporary document
+    for (const docSnapshot of querySnapshot.docs) {
+      const data = docSnapshot.data();
+      
+      // Check if it's a temporary initialization document
+      if (data._temp === true || data._initialized) {
+        await deleteDoc(doc(db, collectionName, docSnapshot.id));
+        removedCount++;
+      }
+    }
+    
+    console.log(`initializeFirestore: Removed ${removedCount} temporary documents from ${collectionName}`);
+    return removedCount;
+  } catch (error) {
+    console.error(`initializeFirestore: Error cleaning temporary documents from ${collectionName}:`, error);
+    return 0;
+  }
+};
+
+/**
  * Initializes a collection by adding a temporary document if it doesn't exist
  * @param collectionName Collection name to initialize
  * @param attempt Current retry attempt number
@@ -57,6 +93,10 @@ const collectionExists = async (collectionName: string): Promise<boolean> => {
 const initializeCollection = async (collectionName: string, attempt = 1): Promise<boolean> => {
   try {
     console.log(`initializeFirestore: Initializing collection: ${collectionName} (attempt ${attempt})`);
+    
+    // First, clean any previous temporary documents
+    await cleanTemporaryDocuments(collectionName);
+    
     // Check if collection already has documents
     const querySnapshot = await getDocs(collection(db, collectionName));
     
@@ -67,7 +107,8 @@ const initializeCollection = async (collectionName: string, attempt = 1): Promis
       const tempDoc = {
         _temp: true,
         _initialized: new Date(),
-        _description: `Temporary document to initialize ${collectionName} collection`
+        _description: `Temporary document to initialize ${collectionName} collection`,
+        _version: 2  // Version to track document format
       };
       
       try {
@@ -81,12 +122,19 @@ const initializeCollection = async (collectionName: string, attempt = 1): Promis
       }
     } else {
       console.log(`initializeFirestore: Collection ${collectionName} already has ${querySnapshot.size} documents`);
+      
+      // Check for and report temporary documents
+      let tempDocCount = 0;
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         if (data._temp) {
-          console.log(`initializeFirestore: Found initialization document in ${collectionName}`);
+          tempDocCount++;
         }
       });
+      
+      if (tempDocCount > 0) {
+        console.log(`initializeFirestore: Found ${tempDocCount} temporary initialization documents in ${collectionName}`);
+      }
     }
     
     return true;

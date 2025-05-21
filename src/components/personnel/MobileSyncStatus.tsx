@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -17,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, Info, Trash2 } from "lucide-react";
 import { mobileSyncService, SyncLogEntry } from "@/services/firebase/mobileSyncService";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/components/ui/use-toast';
@@ -31,8 +30,9 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [statusType, setStatusType] = useState<'error' | 'info'>('info');
+  const [statusType, setStatusType] = useState<'error' | 'success' | 'info' | 'warning'>('info');
   const [connectionError, setConnectionError] = useState<boolean>(false);
+  const [isClearing, setIsClearing] = useState<boolean>(false);
 
   // Clear status message after 5 seconds
   useEffect(() => {
@@ -41,6 +41,20 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       return () => clearTimeout(timer);
     }
   }, [statusMessage]);
+
+  // Filter function to remove temporary documents from results
+  const filterTemporaryDocs = (logs: SyncLogEntry[]): SyncLogEntry[] => {
+    if (!logs || !Array.isArray(logs)) return [];
+    
+    return logs.filter(log => {
+      // Skip documents that are marked as temporary
+      if (!log || typeof log !== 'object') return false;
+      if (log._temp === true) return false;
+      
+      // Keep only documents with valid properties
+      return log.id && log.event_type && log.created_at;
+    });
+  };
 
   const loadSyncLogs = async () => {
     if (!salesRepId) {
@@ -57,16 +71,23 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       console.log(`MobileSyncStatus: Loading sync logs for sales rep ID ${salesRepId}`);
       const data = await mobileSyncService.getSyncLogs(salesRepId);
       
-      setSyncLogs(data || []);
+      // Filter out temporary documents
+      const filteredData = filterTemporaryDocs(data || []);
+      setSyncLogs(filteredData);
       
-      if (data && data.length > 0) {
-        const dateObj = data[0].created_at instanceof Date 
-          ? data[0].created_at 
-          : new Date(data[0].created_at);
+      if (filteredData && filteredData.length > 0) {
+        const dateObj = filteredData[0].created_at instanceof Date 
+          ? filteredData[0].created_at 
+          : new Date(filteredData[0].created_at);
         
         setLastSynced(dateObj.toLocaleString());
+        setStatusMessage("Dados carregados com sucesso.");
+        setStatusType('success');
       } else {
         console.log("MobileSyncStatus: No sync logs found for this sales rep");
+        setStatusMessage("Nenhum histórico de sincronização encontrado.");
+        setStatusType('info');
+        setLastSynced(null);
       }
     } catch (error) {
       console.error("MobileSyncStatus: Error loading sync logs:", error);
@@ -81,6 +102,41 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const clearSyncLogs = async () => {
+    if (!salesRepId) {
+      setStatusMessage("ID do representante de vendas não fornecido.");
+      setStatusType('error');
+      return;
+    }
+    
+    setIsClearing(true);
+    
+    try {
+      await mobileSyncService.clearSyncLogs(salesRepId);
+      setSyncLogs([]);
+      setLastSynced(null);
+      setStatusMessage("Histórico de sincronização limpo com sucesso.");
+      setStatusType('success');
+      
+      toast({
+        title: "Logs de sincronização",
+        description: "Histórico de sincronização limpo com sucesso!",
+      });
+    } catch (error) {
+      console.error("Error clearing sync logs:", error);
+      setStatusMessage("Erro ao limpar histórico de sincronização.");
+      setStatusType('error');
+      
+      toast({
+        title: "Erro",
+        description: "Não foi possível limpar o histórico de sincronização.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -108,6 +164,20 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
         return <AlertCircle className="text-red-500 h-5 w-5" />;
       default:
         return null;
+    }
+  };
+
+  const getAlertStyles = () => {
+    switch (statusType) {
+      case 'error':
+        return 'bg-red-50 border-red-200';
+      case 'success':
+        return 'bg-green-50 border-green-200';
+      case 'warning':
+        return 'bg-yellow-50 border-yellow-200';
+      case 'info':
+      default:
+        return 'bg-blue-50 border-blue-200';
     }
   };
 
@@ -144,7 +214,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       </CardHeader>
       <CardContent>
         {statusMessage && (
-          <Alert className={`mb-4 ${statusType === 'error' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+          <Alert className={`mb-4 ${getAlertStyles()}`}>
             <AlertDescription>{statusMessage}</AlertDescription>
           </Alert>
         )}
@@ -202,14 +272,25 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
         )}
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button 
-          variant="outline" 
-          onClick={() => loadSyncLogs()}
-          disabled={isLoading}
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => loadSyncLogs()}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={clearSyncLogs}
+            disabled={isLoading || isClearing || syncLogs.length === 0}
+          >
+            <Trash2 className={`mr-2 h-4 w-4 ${isClearing ? 'animate-spin' : ''}`} />
+            Limpar Histórico
+          </Button>
+        </div>
         <Button onClick={generateQRCode}>
           Gerar QR Code para Sincronização
         </Button>
