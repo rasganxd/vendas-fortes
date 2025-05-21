@@ -1,3 +1,4 @@
 
-// This file now simply exports from AppContextProvider to maintain backward compatibility
-export { AppContext, AppProvider } from './AppContextProvider';
+// Este arquivo agora exporta o AppContext e AppProvider do novo arquivo
+import { AppContext, AppProvider } from './AppContextProvider';
+export { AppContext, AppProvider };
