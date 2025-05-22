@@ -109,18 +109,17 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   // Apply theme color if set in settings, otherwise use default neutral color
   useEffect(() => {
     const defaultColor = '#6B7280'; // Cinza neutro como padrão
-    const colorToApply = settings?.primaryColor || defaultColor;
     
     const style = document.createElement('style');
     style.innerHTML = `
       :root {
-        --primary: ${colorToApply} !important;
-        --ring: ${colorToApply} !important;
-        --sidebar-primary: ${colorToApply} !important;
+        --primary: ${defaultColor} !important;
+        --ring: ${defaultColor} !important;
+        --sidebar-primary: ${defaultColor} !important;
       }
     `;
     document.head.appendChild(style);
-  }, [settings?.primaryColor]);
+  }, []);
   
   // Wrappers para corrigir tipos de retorno
   const createAutoPaymentWrapper = async (order: Order): Promise<string> => {

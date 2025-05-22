@@ -19,7 +19,6 @@ const OrdersActionButtons: React.FC<OrdersActionButtonsProps> = ({
       <Button 
         onClick={handleNewOrder} 
         variant="default" 
-        className="bg-sales-800 hover:bg-sales-700"
       >
         <Plus className="h-4 w-4 mr-2" /> Novo Pedido
       </Button>
@@ -30,7 +29,7 @@ const OrdersActionButtons: React.FC<OrdersActionButtonsProps> = ({
       >
         <Clipboard className="h-4 w-4 mr-2" /> Imprimir
         {selectedOrderCount > 0 && (
-          <span className="ml-2 bg-sales-100 text-sales-700 rounded-full px-2 py-0.5 text-xs font-medium">
+          <span className="ml-2 bg-gray-200 text-gray-800 rounded-full px-2 py-0.5 text-xs font-medium">
             {selectedOrderCount}
           </span>
         )}
