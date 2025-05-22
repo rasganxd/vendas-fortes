@@ -8,15 +8,12 @@ export const useProductGroups = () => {
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load product groups from Firebase and clean up duplicates
+  // Load product groups from Firebase
   useEffect(() => {
     const fetchProductGroups = async () => {
       setIsLoading(true);
       try {
-        // First clean up any duplicates in the database
-        await productGroupService.cleanupDuplicates();
-        
-        // Then fetch the cleaned up list
+        // Fetch the list
         const groups = await productGroupService.getAll();
         setProductGroups(groups);
         console.log(`Loaded ${groups.length} product groups from Firebase`);

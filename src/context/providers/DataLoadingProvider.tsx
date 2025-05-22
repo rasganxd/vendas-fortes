@@ -3,7 +3,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useFirebaseConnection } from '@/hooks/useFirebaseConnection';
 import { useProducts } from '@/hooks/useProducts';
 import { useCustomers } from '@/hooks/useCustomers';
-import { cleanupUtils } from '@/utils/cleanupUtils';
 
 // Tipos
 interface DataLoadingContextType {
@@ -44,7 +43,7 @@ export const useDataLoading = () => useContext(DataLoadingContext);
 // Provedor de dados
 export const DataLoadingProvider = ({ children }: { children: React.ReactNode }) => {
   const { connectionStatus } = useFirebaseConnection();
-  // Fix the type comparison issue by using proper type check
+  // Fix the type comparison issue
   const isConnected = connectionStatus === 'online' || connectionStatus === 'authenticated';
   
   const { 
@@ -61,7 +60,6 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
     setCustomers 
   } = useCustomers();
   
-  const [isCleaningData, setIsCleaningData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState('Carregando dados...');
   const [isUsingMockData, setIsUsingMockData] = useState(false);
@@ -92,36 +90,13 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
     }
   };
 
-  // Limpar duplicatas e problemas de dados
-  useEffect(() => {
-    const cleanupData = async () => {
-      if (isConnected && !isCleaningData) {
-        try {
-          setIsCleaningData(true);
-          setLoadingMessage("Limpando dados duplicados...");
-          
-          // Clean up duplicate product classifications
-          await cleanupUtils.cleanupAllProductClassifications();
-        } catch (error) {
-          console.error("Error cleaning up data:", error);
-        } finally {
-          setIsCleaningData(false);
-        }
-      }
-    };
-    
-    cleanupData();
-  }, [isConnected, isCleaningData]);
-
   // Verificar se está carregando dados
   useEffect(() => {
-    const loading = isLoadingProducts || isLoadingCustomers || !isConnected || isCleaningData;
+    const loading = isLoadingProducts || isLoadingCustomers || !isConnected;
     setIsLoading(loading);
     
     if (!loading) {
       setLoadingMessage('');
-    } else if (isCleaningData) {
-      setLoadingMessage('Limpando dados duplicados...');
     } else if (!isConnected) {
       setLoadingMessage('Conectando ao Firebase...');
     } else if (isLoadingProducts) {
@@ -129,7 +104,7 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
     } else if (isLoadingCustomers) {
       setLoadingMessage('Carregando clientes...');
     }
-  }, [isLoadingProducts, isLoadingCustomers, isConnected, isCleaningData]);
+  }, [isLoadingProducts, isLoadingCustomers, isConnected]);
 
   return (
     <DataLoadingContext.Provider

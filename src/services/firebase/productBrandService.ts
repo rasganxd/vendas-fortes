@@ -1,3 +1,4 @@
+
 import { ProductBrand } from '@/types';
 import { productBrandFirestoreService } from './ProductBrandFirestoreService';
 import { where } from 'firebase/firestore';
@@ -91,46 +92,6 @@ export const productBrandService = {
       console.log(`Deleted all brands with name: ${name}`);
     } catch (error) {
       console.error(`Error deleting all brands with name ${name}:`, error);
-      throw error;
-    }
-  },
-  
-  // Clean up duplicate brands
-  cleanupDuplicates: async (): Promise<void> => {
-    try {
-      console.log("Starting cleanup of duplicate brands");
-      const brands = await productBrandFirestoreService.getAll();
-      
-      // Group brands by name
-      const brandsByName = brands.reduce((acc, brand) => {
-        if (!acc[brand.name]) {
-          acc[brand.name] = [];
-        }
-        acc[brand.name].push(brand);
-        return acc;
-      }, {} as Record<string, ProductBrand[]>);
-      
-      // For each group of brands with the same name, keep only the first one
-      for (const [name, brandsGroup] of Object.entries(brandsByName)) {
-        if (brandsGroup.length > 1) {
-          console.log(`Found ${brandsGroup.length} duplicates for brand: ${name}`);
-          
-          // Keep the first brand, delete the rest
-          const [toKeep, ...toDelete] = brandsGroup;
-          
-          // Delete each duplicate
-          const deletePromises = toDelete.map(brand => 
-            productBrandFirestoreService.delete(brand.id)
-          );
-          
-          await Promise.all(deletePromises);
-          console.log(`Kept brand ${toKeep.id} and deleted ${toDelete.length} duplicates for: ${name}`);
-        }
-      }
-      
-      console.log("Finished cleanup of duplicate brands");
-    } catch (error) {
-      console.error("Error cleaning up duplicate brands:", error);
       throw error;
     }
   }

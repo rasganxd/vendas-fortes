@@ -1,3 +1,4 @@
+
 import { ProductCategory } from '@/types';
 import { productCategoryFirestoreService } from './ProductCategoryFirestoreService';
 import { where } from 'firebase/firestore';
@@ -91,46 +92,6 @@ export const productCategoryService = {
       console.log(`Deleted all categories with name: ${name}`);
     } catch (error) {
       console.error(`Error deleting all categories with name ${name}:`, error);
-      throw error;
-    }
-  },
-  
-  // Clean up duplicate categories
-  cleanupDuplicates: async (): Promise<void> => {
-    try {
-      console.log("Starting cleanup of duplicate categories");
-      const categories = await productCategoryFirestoreService.getAll();
-      
-      // Group categories by name
-      const categoriesByName = categories.reduce((acc, category) => {
-        if (!acc[category.name]) {
-          acc[category.name] = [];
-        }
-        acc[category.name].push(category);
-        return acc;
-      }, {} as Record<string, ProductCategory[]>);
-      
-      // For each group of categories with the same name, keep only the first one
-      for (const [name, categoriesGroup] of Object.entries(categoriesByName)) {
-        if (categoriesGroup.length > 1) {
-          console.log(`Found ${categoriesGroup.length} duplicates for category: ${name}`);
-          
-          // Keep the first category, delete the rest
-          const [toKeep, ...toDelete] = categoriesGroup;
-          
-          // Delete each duplicate
-          const deletePromises = toDelete.map(category => 
-            productCategoryFirestoreService.delete(category.id)
-          );
-          
-          await Promise.all(deletePromises);
-          console.log(`Kept category ${toKeep.id} and deleted ${toDelete.length} duplicates for: ${name}`);
-        }
-      }
-      
-      console.log("Finished cleanup of duplicate categories");
-    } catch (error) {
-      console.error("Error cleaning up duplicate categories:", error);
       throw error;
     }
   }
