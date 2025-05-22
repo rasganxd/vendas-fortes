@@ -23,4 +23,5 @@ export interface AppSettings {
     document: string;
     footer: string;
   };
+  primaryColor?: string; // Added this property to fix the SideNav errors
 }

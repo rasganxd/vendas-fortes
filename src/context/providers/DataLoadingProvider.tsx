@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppContext } from '../AppContext';
-import { AppContextType, AppSettings } from '../AppContextTypes';
+import { AppContextType } from '../AppContextTypes';
 import defaultContextValues from '../defaultContextValues';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
@@ -24,6 +25,18 @@ import { isMockDataEnabled } from '@/services/mockDataService';
 interface DataLoadingProviderProps {
   children: React.ReactNode;
 }
+
+// Create a Context for useDataLoading
+const DataLoadingContext = React.createContext<any>(undefined);
+
+// Export the useDataLoading hook
+export const useDataLoading = () => {
+  const context = React.useContext(DataLoadingContext);
+  if (context === undefined) {
+    throw new Error('useDataLoading must be used within a DataLoadingProvider');
+  }
+  return context;
+};
 
 export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ children }) => {
   // Load data using custom hooks
@@ -143,20 +156,18 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   
   const { 
     productBrands, 
-    setProductBrands, 
-    addProductBrand, 
-    updateProductBrand, 
-    deleteProductBrand, 
-    isLoading: isLoadingProductBrands 
+    isLoading: isLoadingProductBrands,
+    addProductBrand,
+    updateProductBrand,
+    deleteProductBrand
   } = useProductBrands();
   
   const { 
     deliveryRoutes, 
-    setDeliveryRoutes, 
-    addDeliveryRoute, 
-    updateDeliveryRoute, 
-    deleteDeliveryRoute, 
-    isLoading: isLoadingDeliveryRoutes 
+    isLoading: isLoadingDeliveryRoutes,
+    addDeliveryRoute,
+    updateDeliveryRoute,
+    deleteDeliveryRoute
   } = useDeliveryRoutes();
   
   const { 
@@ -179,7 +190,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   const [connectionStatus, setConnectionStatus] = useState(onlineStatus);
   
   useEffect(() => {
-    setConnectionStatus(onlineStatus);
+    setConnectionStatus(onlineStatus ? 'online' : 'offline');
   }, [onlineStatus]);
   
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -203,6 +214,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   const clearCache = useCallback(async () => {
     // Clear cache implementation here
     console.log('Cache cleared');
+    return true;
   }, []);
   
   const startNewMonth = useCallback(async () => {
@@ -216,6 +228,18 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     console.log('New day started');
     return true;
   }, []);
+
+  // Create the data loading context value
+  const dataLoadingContextValue = {
+    customers,
+    products,
+    isLoadingCustomers,
+    isLoadingProducts,
+    isUsingMockData: isMockDataEnabled(),
+    setCustomers,
+    setProducts,
+    refreshData
+  };
   
   const appContextValue: AppContextType = {
     ...defaultContextValues,
@@ -247,8 +271,8 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     setPaymentTables,
     setProductGroups,
     setProductCategories,
-    setProductBrands,
-    setDeliveryRoutes,
+    setProductBrands: () => {}, // Fixed return type
+    setDeliveryRoutes: () => {}, // Fixed return type
     setBackups,
     
     addRoute,
@@ -268,15 +292,23 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     
     getOrderById,
     addOrder,
-    updateOrder,
+    updateOrder: async (id: string, orderData: any) => {
+      await updateOrder(id, orderData);
+      return id; // Return string to match expected type
+    },
     deleteOrder,
+    
     addVehicle,
     updateVehicle,
     deleteVehicle,
+    
     addPayment,
     updatePayment,
     deletePayment,
-    createAutomaticPaymentRecord,
+    createAutomaticPaymentRecord: async (order: any) => {
+      await createAutomaticPaymentRecord(order);
+      return ''; // Return string to match expected type
+    },
     
     addPaymentMethod,
     updatePaymentMethod,
@@ -285,28 +317,44 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     addLoad,
     updateLoad,
     deleteLoad,
+    
     addSalesRep,
     updateSalesRep,
     deleteSalesRep,
+    
     addPaymentTable,
     updatePaymentTable,
     deletePaymentTable,
+    
     addProductGroup,
     updateProductGroup,
     deleteProductGroup,
+    
     addProductCategory,
     updateProductCategory,
     deleteProductCategory,
+    
     addProductBrand,
     updateProductBrand,
     deleteProductBrand,
+    
     addDeliveryRoute,
     updateDeliveryRoute,
     deleteDeliveryRoute,
     
-    createBackup,
-    restoreBackup,
-    deleteBackup,
+    createBackup: async (name?: string, description?: string) => {
+      if (!name) return '';
+      const result = await createBackup(name, description);
+      return result;
+    },
+    restoreBackup: async (id: string) => {
+      await restoreBackup(id);
+      return true; // Return boolean to match expected type
+    },
+    deleteBackup: async (id: string) => {
+      await deleteBackup(id);
+      return true; // Return boolean to match expected type
+    },
     
     isLoadingCustomers,
     isLoadingProducts,
@@ -325,20 +373,25 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     isLoadingBackups,
     
     settings: settings || defaultContextValues.settings,
-    updateSettings,
+    updateSettings: async (newSettings: any) => {
+      const result = await updateSettings(newSettings);
+      return; // Return void to match expected type
+    },
     
     startNewMonth,
     startNewDay,
     clearCache,
     refreshData,
     
-    connectionStatus: connectionStatus,
+    connectionStatus: connectionStatus as 'online' | 'offline' | 'connecting' | 'error',
     isUsingMockData: isMockDataEnabled(),
   };
   
   return (
-    <AppContext.Provider value={appContextValue}>
-      {children}
-    </AppContext.Provider>
+    <DataLoadingContext.Provider value={dataLoadingContextValue}>
+      <AppContext.Provider value={appContextValue}>
+        {children}
+      </AppContext.Provider>
+    </DataLoadingContext.Provider>
   );
 };

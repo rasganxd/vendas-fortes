@@ -1,3 +1,4 @@
+
 import { AppContextType } from './AppContextTypes';
 
 // This file will only contain part of the defaultContextValues to add the connectionStatus
@@ -78,7 +79,7 @@ const defaultContextValues: AppContextType = {
   addPayment: async () => '',
   updatePayment: async () => {},
   deletePayment: async () => {},
-  createAutomaticPaymentRecord: async () => undefined,
+  createAutomaticPaymentRecord: async () => '',
   
   addPaymentMethod: async () => '',
   updatePaymentMethod: async () => {},
@@ -123,14 +124,7 @@ const defaultContextValues: AppContextType = {
       document: '',
       footer: ''
     },
-    theme: {
-      primary: '#1C64F2',
-      secondary: '#047481',
-      accent: '#0694A2',
-      primaryColor: '#1C64F2',
-      secondaryColor: '#047481',
-      accentColor: '#0694A2'
-    }
+    primaryColor: '#1C64F2'
   },
   updateSettings: async () => {},
   

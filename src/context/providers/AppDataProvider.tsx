@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { useOrders } from '@/hooks/useOrders';
 import { usePayments } from '@/hooks/usePayments';
@@ -77,7 +76,7 @@ interface AppDataContextType {
   refreshData: () => Promise<boolean>;
 }
 
-// Criar o contexto
+// Create the context
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 // Provider dos dados da aplicação
