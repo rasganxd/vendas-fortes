@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AppContextType } from '../AppContextTypes';
 import { useAppData } from './AppDataProvider';
@@ -16,7 +15,7 @@ import { useProductGroups } from '@/hooks/useProductGroups';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
-import { Order } from '@/types';
+import { Order, ProductGroup } from '@/types';
 
 export const AppContextInnerProvider = ({ children }: { children: React.ReactNode }) => {
   // Obter dados da aplicação
