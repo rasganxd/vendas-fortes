@@ -401,15 +401,21 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
       await updateSettings(newSettings);
     },
     
-    startNewMonth,
-    startNewDay,
+    startNewMonth: async () => {
+      await startNewMonth();
+      return true;
+    },
+    startNewDay: async () => {
+      await startNewDay();
+      return true;
+    },
     clearCache: async () => {
       await clearCache();
-      return; // Ensure return type matches Promise<void>
+      return true;
     },
     refreshData: async () => {
-      await refreshData();
-      return; // Ensure return type matches Promise<void>
+      const result = await refreshData();
+      return result;
     },
     
     connectionStatus,

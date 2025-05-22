@@ -80,15 +80,13 @@ export const useProducts = () => {
       // Atualizar o estado local - ensure we're using the correct setter pattern for state updates
       setProducts(currentProducts => [...currentProducts, newProduct]);
       
-      toast({
-        title: "Produto adicionado",
+      toast("Produto adicionado", {
         description: "Produto adicionado com sucesso!"
       });
       return id;
     } catch (error) {
       console.error("Erro ao adicionar produto:", error);
-      toast({
-        title: "Erro ao adicionar produto",
+      toast("Erro ao adicionar produto", {
         description: "Houve um problema ao adicionar o produto.",
         variant: "destructive"
       });
@@ -116,14 +114,12 @@ export const useProducts = () => {
         currentProducts.map(p => p.id === id ? { ...p, ...updateData } : p)
       );
       
-      toast({
-        title: "Produto atualizado",
+      toast("Produto atualizado", {
         description: "Produto atualizado com sucesso!"
       });
     } catch (error) {
       console.error("Erro ao atualizar produto:", error);
-      toast({
-        title: "Erro ao atualizar produto",
+      toast("Erro ao atualizar produto", {
         description: "Houve um problema ao atualizar o produto.",
         variant: "destructive"
       });
@@ -148,14 +144,12 @@ export const useProducts = () => {
       // Update local storage service
       await productLocalService.delete(id);
       
-      toast({
-        title: "Produto excluído",
+      toast("Produto excluído", {
         description: "Produto excluído com sucesso!"
       });
     } catch (error) {
       console.error("Error deleting product:", error);
-      toast({
-        title: "Erro ao excluir produto",
+      toast("Erro ao excluir produto", {
         description: "Houve um problema ao excluir o produto.",
         variant: "destructive"
       });
@@ -222,16 +216,14 @@ export const useProducts = () => {
       // Update state
       setProducts(currentProducts => [...currentProducts, ...newProducts]);
       
-      toast({
-        title: "Produtos adicionados",
+      toast("Produtos adicionados", {
         description: `${newProducts.length} produtos foram adicionados com sucesso!`
       });
       
       return ids;
     } catch (error) {
       console.error("Erro ao adicionar produtos em massa:", error);
-      toast({
-        title: "Erro ao adicionar produtos",
+      toast("Erro ao adicionar produtos", {
         description: "Houve um problema ao adicionar os produtos em massa.",
         variant: "destructive"
       });
