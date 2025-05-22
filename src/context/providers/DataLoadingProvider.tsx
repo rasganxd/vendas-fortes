@@ -29,7 +29,7 @@ interface DataLoadingContextType {
   isUsingMockData: boolean;
   setCustomers: React.Dispatch<React.SetStateAction<any[]>>;
   setProducts: React.Dispatch<React.SetStateAction<any[]>>;
-  refreshData: () => Promise<boolean>; // Changed to boolean to match AppDataContextType
+  refreshData: () => Promise<boolean>; // Keep as boolean return type
   clearItemCache: (itemType: string) => Promise<boolean>;
 }
 
@@ -200,7 +200,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Changed return type to boolean to match interface
+  // Keep as boolean return type
   const refreshData = useCallback(async (): Promise<boolean> => {
     setIsRefreshing(true);
     try {
@@ -414,8 +414,9 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
       return true;
     },
     refreshData: async () => {
-      const result = await refreshData();
-      return result; // Return boolean result
+      // Adapt the boolean return value to void return type
+      await refreshData();
+      // No return value to match the void return type in AppContextType
     },
     
     connectionStatus,

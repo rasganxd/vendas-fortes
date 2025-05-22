@@ -13,7 +13,6 @@ import { useProductGroups } from '@/hooks/useProductGroups';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
-import { useCustomers } from '@/hooks/useCustomers';
 import { Customer, Product, Order, Load, ProductGroup } from '@/types';
 import { useConnection } from './ConnectionProvider';
 import { useDataLoading } from './DataLoadingProvider';
