@@ -64,7 +64,13 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   const { 
     products, 
     setProducts, 
-    isLoading: isLoadingProducts 
+    isLoading: isLoadingProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    validateProductDiscount,
+    getMinimumPrice,
+    addBulkProducts 
   } = useProducts();
   
   const { 
@@ -249,7 +255,14 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   };
   
   // Access to product operations from useProducts
-  const productOperations = useProducts();
+  const productOperations = { 
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    validateProductDiscount,
+    getMinimumPrice,
+    addBulkProducts 
+  };
   
   const appContextValue: AppContextType = {
     ...defaultContextValues,
@@ -294,12 +307,12 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     generateNextCustomerCode,
     
     // Product operations from useProducts
-    addProduct: productOperations.addProduct,
-    updateProduct: productOperations.updateProduct,
-    deleteProduct: productOperations.deleteProduct,
-    validateProductDiscount: productOperations.validateProductDiscount,
-    getMinimumPrice: productOperations.getMinimumPrice,
-    addBulkProducts: productOperations.addBulkProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    validateProductDiscount,
+    getMinimumPrice,
+    addBulkProducts,
     
     getOrderById,
     addOrder,
@@ -390,8 +403,14 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     
     startNewMonth,
     startNewDay,
-    clearCache,
-    refreshData,
+    clearCache: async () => {
+      await clearCache();
+      return; // Ensure return type matches Promise<void>
+    },
+    refreshData: async () => {
+      await refreshData();
+      return; // Ensure return type matches Promise<void>
+    },
     
     connectionStatus,
     isUsingMockData: isMockDataEnabled(),
