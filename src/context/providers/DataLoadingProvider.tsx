@@ -44,6 +44,7 @@ export const useDataLoading = () => useContext(DataLoadingContext);
 // Provedor de dados
 export const DataLoadingProvider = ({ children }: { children: React.ReactNode }) => {
   const { connectionStatus } = useFirebaseConnection();
+  // Fix the type comparison by checking against string value
   const isConnected = connectionStatus === 'online';
   
   const { 

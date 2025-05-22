@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/firebase/productService'; 
 import { productLocalService } from '@/services/local/productLocalService';
-import { useDataLoading } from '@/context/providers/DataLoadingProvider';
 
 // Cache keys
 const PRODUCTS_CACHE_KEY = 'app_products_cache';
@@ -34,7 +33,7 @@ export const useProducts = () => {
     try {
       localStorage.removeItem(PRODUCTS_CACHE_KEY);
       localStorage.removeItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
-      await productLocalService.clearAll();
+      await localStorage.removeItem('app_products');
       
       // Fetch fresh data from Firebase
       const freshProducts = await productService.getAll();

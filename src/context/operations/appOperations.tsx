@@ -23,7 +23,7 @@ export function useAppOperations() {
     orders
   } = useAppData();
   
-  // Hook de clientes 
+  // Use directly from hook (with destructuring to get the specific methods)
   const { 
     addCustomer,
     updateCustomer,

@@ -13,7 +13,8 @@ import CustomerDetailsDialog from '@/components/customers/CustomerDetailsDialog'
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
 
 const Customers = () => {
-  const { customers, addCustomer, updateCustomer, deleteCustomer, generateNextCode } = useCustomers();
+  // Use the full hook with all the operations it provides
+  const { customers, addCustomer, updateCustomer, deleteCustomer, generateNextCustomerCode: generateNextCode } = useCustomers();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCustomer, setEditingCustomer] = useState<null | Customer>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<null | Customer>(null);
