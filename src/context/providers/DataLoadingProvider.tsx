@@ -413,7 +413,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
       await clearCache();
       return true;
     },
-    refreshData: async () => {
+    refreshData: async (): Promise<void> => {
       // We call refreshData but ignore the return value to match void return type
       await refreshData();
       // No return needed since this function returns void
