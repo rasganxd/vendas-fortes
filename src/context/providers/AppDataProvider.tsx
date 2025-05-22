@@ -224,7 +224,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setPaymentTables,
     setBackups,
     
-    refreshData
+    refreshData: async () => {
+      const result = await refreshData();
+      return result; // Return the boolean result from the original refreshData
+    }
   };
 
   return (
