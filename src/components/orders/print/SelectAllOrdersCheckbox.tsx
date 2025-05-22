@@ -21,7 +21,7 @@ const SelectAllOrdersCheckbox: React.FC<SelectAllOrdersCheckboxProps> = ({
         checked={filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length}
         onCheckedChange={handleSelectAllOrders}
       />
-      <label htmlFor="selectAll" className="text-sm cursor-pointer">
+      <label htmlFor="selectAll" className="text-sm font-medium text-gray-700 cursor-pointer">
         Selecionar todos os pedidos
       </label>
     </div>
