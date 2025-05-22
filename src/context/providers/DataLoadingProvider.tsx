@@ -264,6 +264,13 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     addBulkProducts 
   };
   
+  // Create a wrapper for refreshData that returns void to match AppContextType
+  const refreshDataWrapper = async (): Promise<void> => {
+    // Call the original refreshData but don't return its value
+    await refreshData();
+    // No return value to match void return type
+  };
+  
   const appContextValue: AppContextType = {
     ...defaultContextValues,
     customers,
@@ -413,11 +420,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
       await clearCache();
       return true;
     },
-    refreshData: async (): Promise<void> => {
-      // We call refreshData but ignore the return value to match void return type
-      await refreshData();
-      // No return needed since this function returns void
-    },
+    refreshData: refreshDataWrapper,
     
     connectionStatus,
     isUsingMockData: isMockDataEnabled(),
