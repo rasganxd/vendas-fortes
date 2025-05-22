@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -29,8 +28,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableCaption,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -41,7 +38,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
@@ -50,23 +46,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Switch } from "@/components/ui/switch"
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon, RefreshCw } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn, formatCurrency, generateId } from "@/lib/utils"
-import { format } from "date-fns"
+import { cn, formatCurrency } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "@/components/ui/use-toast"
 import { Trash, Loader2 } from 'lucide-react';
-import { Product, ProductGroup, ProductCategory, ProductBrand } from '@/types';
+import { Product } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import BulkProductUpload from '@/components/products/BulkProductUpload';
+import ProductSyncStatus from '@/components/products/ProductSyncStatus';
+import { useProducts } from '@/hooks/useProducts';
 
 // Define a schema for the product form - removing minStock field
 const productFormSchema = z.object({
@@ -103,24 +94,33 @@ const PRODUCT_UNITS = [
 
 export default function Products() {
   const { 
-    products, 
-    addProduct, 
-    updateProduct, 
-    deleteProduct, 
     productGroups, 
     productCategories, 
-    productBrands,
-    isLoadingProducts 
+    productBrands
   } = useAppContext();
+  
+  // Use the enhanced useProducts hook directly
+  const {
+    products,
+    isLoading,
+    isSyncing,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    syncPendingProducts,
+    forceRefreshProducts
+  } = useProducts();
   
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Count pending products
+  const pendingProducts = products.filter(p => p.syncStatus === 'pending').length;
 
-  const form = useForm<ProductFormData>({
+  const form = useForm<z.infer<typeof productFormSchema>>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       code: 0,
@@ -132,7 +132,7 @@ export default function Products() {
       groupId: "",
       brandId: "",
     },
-  })
+  });
 
   const handleEdit = (product: Product) => {
     setIsEditing(true);
@@ -184,7 +184,7 @@ export default function Products() {
     setOpen(true);
   };
 
-  const handleSubmit = async (data: ProductFormData) => {
+  const handleSubmit = async (data: z.infer<typeof productFormSchema>) => {
     setIsSubmitting(true);
     try {
       const productData: Partial<Product> = {
@@ -237,39 +237,12 @@ export default function Products() {
     setBulkUploadOpen(true);
   };
   
-  // Function to refresh products list by fetching from the API
-  const refreshProductsList = async () => {
-    setIsRefreshing(true);
-    try {
-      // Import the loadProducts function directly
-      const { loadProducts } = await import('@/hooks/useProducts');
-      console.log("Manually refreshing products...");
-      const refreshedProducts = await loadProducts(true);
-      
-      // Update the context with the refreshed products
-      // We're directly updating the state in this component
-      console.log("Refreshed products:", refreshedProducts.length);
-      
-      // If we got products back, use them directly
-      if (refreshedProducts && refreshedProducts.length > 0) {
-        // Update the app context with the new product list
-        useAppContext().setProducts(refreshedProducts);
-      }
-      
-      toast({
-        title: "Lista atualizada",
-        description: `${refreshedProducts.length} produtos carregados com sucesso`
-      });
-    } catch (error) {
-      console.error("Erro ao atualizar lista de produtos:", error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao atualizar a lista de produtos",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
+  const handleForceRefresh = async () => {
+    await forceRefreshProducts();
+  };
+  
+  const handleSyncProducts = async () => {
+    await syncPendingProducts();
   };
 
   return (
@@ -283,15 +256,13 @@ export default function Products() {
                 Gerencie os produtos da sua empresa
               </CardDescription>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={refreshProductsList}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
+            <ProductSyncStatus
+              productsPending={pendingProducts}
+              isLoading={isLoading}
+              isSyncing={isSyncing}
+              onSyncProducts={handleSyncProducts}
+              onRefreshProducts={handleForceRefresh}
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -305,7 +276,7 @@ export default function Products() {
               <Button variant="outline">Classificações</Button>
             </Link>
           </div>
-          {isLoadingProducts ? (
+          {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>

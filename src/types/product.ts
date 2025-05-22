@@ -15,6 +15,7 @@ export interface Product {
   unit?: string;
   createdAt: Date;
   updatedAt: Date;
+  syncStatus?: 'synced' | 'pending' | 'error';
 }
 
 export interface ProductGroup {

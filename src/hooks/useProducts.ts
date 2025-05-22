@@ -3,6 +3,7 @@ import { Product } from '@/types';
 import { productService } from '@/services/firebase/productService'; 
 import { productLocalService } from '@/services/local/productLocalService';
 import { toast } from 'sonner';
+import { useFirebaseConnection } from './useFirebaseConnection';
 
 // Cache keys
 const PRODUCTS_CACHE_KEY = 'app_products_cache';
@@ -13,7 +14,9 @@ const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [isSyncing, setIsSyncing] = useState(false);
+  const { connectionStatus } = useFirebaseConnection();
+  
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -30,6 +33,13 @@ export const useProducts = () => {
     fetchData();
   }, []);
 
+  // When connection is restored, try to sync pending products
+  useEffect(() => {
+    if (connectionStatus === 'connected') {
+      syncPendingProducts();
+    }
+  }, [connectionStatus]);
+
   const clearCache = async () => {
     try {
       localStorage.removeItem(PRODUCTS_CACHE_KEY);
@@ -37,13 +47,49 @@ export const useProducts = () => {
       await localStorage.removeItem('app_products');
       
       // Fetch fresh data from Firebase
-      const freshProducts = await productService.getAll();
+      const freshProducts = await productService.forceRefresh();
       setProducts(freshProducts);
+      
+      toast("Cache limpo", {
+        description: "Cache de produtos limpo com sucesso!"
+      });
       
       return true;
     } catch (error) {
       console.error("Error clearing products cache:", error);
+      toast("Erro ao limpar cache", {
+        description: "Não foi possível limpar o cache de produtos."
+      });
       return false;
+    }
+  };
+  
+  const syncPendingProducts = async () => {
+    if (isSyncing || connectionStatus !== 'connected') return;
+    
+    setIsSyncing(true);
+    try {
+      const { success, failed } = await productService.syncPendingProducts();
+      
+      if (success > 0) {
+        toast("Sincronização concluída", {
+          description: `${success} produto(s) sincronizado(s) com sucesso!`
+        });
+        
+        // Refresh products list after successful sync
+        const refreshedProducts = await loadProducts(true);
+        setProducts(refreshedProducts);
+      }
+      
+      if (failed > 0) {
+        toast("Sincronização parcial", {
+          description: `${failed} produto(s) não puderam ser sincronizados.`
+        });
+      }
+    } catch (error) {
+      console.error("Error syncing pending products:", error);
+    } finally {
+      setIsSyncing(false);
     }
   };
   
@@ -66,8 +112,8 @@ export const useProducts = () => {
       
       console.log("Adding product:", productWithCode);
       
-      // Add to local storage
-      const id = await productLocalService.add(productWithCode);
+      // Add to service (which handles both Firebase and local storage)
+      const id = await productService.add(productWithCode);
       console.log("Product added with ID:", id);
       
       if (!id) {
@@ -77,12 +123,9 @@ export const useProducts = () => {
       const newProduct = { ...productWithCode, id };
       console.log("New product with ID:", newProduct);
       
-      // Atualizar o estado local - ensure we're using the correct setter pattern for state updates
+      // Update local state - ensure we're using the correct setter pattern for state updates
       setProducts(currentProducts => [...currentProducts, newProduct]);
       
-      toast("Produto adicionado", {
-        description: "Produto adicionado com sucesso!"
-      });
       return id;
     } catch (error) {
       console.error("Erro ao adicionar produto:", error);
@@ -104,23 +147,16 @@ export const useProducts = () => {
         }
       }
       
-      // Update in local storage
-      await productLocalService.update(id, updateData);
+      // Update using the service (which handles both Firebase and local storage)
+      await productService.update(id, updateData);
       console.log("Product updated, ID:", id, "Data:", updateData);
       
       // Atualizar o estado local usando a função de atualização correta
       setProducts(currentProducts => 
         currentProducts.map(p => p.id === id ? { ...p, ...updateData } : p)
       );
-      
-      toast("Produto atualizado", {
-        description: "Produto atualizado com sucesso!"
-      });
     } catch (error) {
       console.error("Erro ao atualizar produto:", error);
-      toast("Erro ao atualizar produto", {
-        description: "Houve um problema ao atualizar o produto."
-      });
     }
   };
 
@@ -128,28 +164,13 @@ export const useProducts = () => {
     try {
       console.log(`Deleting product ${id}`);
       
-      // Delete from Firebase first
+      // Delete using the service
       await productService.delete(id);
       
       // Update local state
-      const updatedProducts = products.filter(product => product.id !== id);
-      setProducts(updatedProducts);
-      
-      // Update localStorage cache
-      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
-      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-      
-      // Update local storage service
-      await productLocalService.delete(id);
-      
-      toast("Produto excluído", {
-        description: "Produto excluído com sucesso!"
-      });
+      setProducts(currentProducts => currentProducts.filter(product => product.id !== id));
     } catch (error) {
       console.error("Error deleting product:", error);
-      toast("Erro ao excluir produto", {
-        description: "Houve um problema ao excluir o produto."
-      });
       throw error;
     }
   };
@@ -185,7 +206,7 @@ export const useProducts = () => {
 
   const addBulkProducts = async (productsArray: Omit<Product, 'id'>[]): Promise<string[]> => {
     try {
-      // Preparar dados para armazenamento local
+      // Preparar dados para armazenamento
       const productsWithData = productsArray.map(product => {
         // Garantir que o produto tenha um código
         const productCode = product.code || (products.length > 0 
@@ -199,12 +220,11 @@ export const useProducts = () => {
         };
       });
       
-      // Add to local storage
-      console.log("Adding bulk products:", productsWithData);
-      const ids = await productLocalService.createBulk(productsWithData);
+      // Add in bulk through our service
+      const ids = await Promise.all(productsWithData.map(product => productService.add(product)));
       console.log("Products added with IDs:", ids);
       
-      // Create products with IDs
+      // Create products with IDs and update state
       const newProducts = productsWithData.map((product, index) => ({
         ...product,
         id: ids[index]
@@ -213,23 +233,41 @@ export const useProducts = () => {
       // Update state
       setProducts(currentProducts => [...currentProducts, ...newProducts]);
       
-      toast("Produtos adicionados", {
-        description: `${newProducts.length} produtos foram adicionados com sucesso!`
-      });
-      
       return ids;
     } catch (error) {
       console.error("Erro ao adicionar produtos em massa:", error);
-      toast("Erro ao adicionar produtos", {
-        description: "Houve um problema ao adicionar os produtos em massa."
-      });
       return [];
+    }
+  };
+
+  const forceRefreshProducts = async (): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const refreshedProducts = await productService.forceRefresh();
+      setProducts(refreshedProducts);
+      
+      toast("Produtos atualizados", {
+        description: `${refreshedProducts.length} produtos carregados com sucesso!`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error refreshing products:", error);
+      
+      toast("Erro ao atualizar produtos", {
+        description: "Não foi possível atualizar a lista de produtos do servidor."
+      });
+      
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     products,
     isLoading,
+    isSyncing,
     clearCache,
     setProducts,
     addProduct,
@@ -237,25 +275,19 @@ export const useProducts = () => {
     deleteProduct,
     validateProductDiscount,
     getMinimumPrice,
-    addBulkProducts
+    addBulkProducts,
+    syncPendingProducts,
+    forceRefreshProducts
   };
 };
 
 // Exporting this function so it can be imported directly
-export const loadProducts = async (forceRefresh = true): Promise<Product[]> => {
+export const loadProducts = async (forceRefresh = false): Promise<Product[]> => {
   try {
     if (forceRefresh) {
       console.log("Force refreshing products from Firebase");
       try {
-        const products = await productService.getAll();
-        
-        // Store in localStorage cache
-        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(products));
-        localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-        
-        // Update local storage service cache
-        await productLocalService.setAll(products);
-        
+        const products = await productService.forceRefresh();
         console.log(`Loaded ${products.length} products from Firebase`);
         return products;
       } catch (error) {
@@ -283,10 +315,6 @@ export const loadProducts = async (forceRefresh = true): Promise<Product[]> => {
     try {
       console.log("Getting product data from Firebase");
       const products = await productService.getAll();
-      
-      // Store in localStorage cache
-      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(products));
-      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       console.log(`Loaded ${products.length} products from Firebase`);
       return products;

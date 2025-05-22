@@ -3,6 +3,12 @@ import { Product } from '@/types';
 import { productFirestoreService } from './ProductFirestoreService';
 import { productLocalService } from '../local/productLocalService';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
+import { useFirebaseConnection } from '@/hooks/useFirebaseConnection';
+
+// Cache keys for product data
+const PRODUCTS_CACHE_KEY = 'app_products_cache';
+const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_cache_timestamp';
 
 /**
  * Service for product operations
@@ -16,8 +22,17 @@ export const productService = {
       const result = await productFirestoreService.getAll();
       console.log(`productService: Retrieved ${result.length} products from Firestore`);
       
-      // Sync to local storage for offline use
-      await productLocalService.setAll(result);
+      // Sync to local storage for offline use with synced status
+      const productsWithStatus = result.map(product => ({
+        ...product,
+        syncStatus: 'synced' as const
+      }));
+      
+      await productLocalService.setAll(productsWithStatus);
+      
+      // Also update cache for quick access
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(productsWithStatus));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       // Log detailed information about the first few products (if any)
       if (result.length > 0) {
@@ -33,7 +48,7 @@ export const productService = {
         console.log("productService: No products returned from Firestore");
       }
       
-      return result;
+      return productsWithStatus;
     } catch (error) {
       console.error("Error in productService.getAll:", error);
       
@@ -61,7 +76,12 @@ export const productService = {
         });
         
         // Sync to local storage for offline use
-        await productLocalService.update(id, product);
+        const productWithStatus = {
+          ...product,
+          syncStatus: 'synced' as const
+        };
+        
+        await productLocalService.update(id, productWithStatus);
       } else {
         console.log(`productService: No product found with ID ${id}`);
       }
@@ -96,27 +116,58 @@ export const productService = {
       console.log(`productService: Product added successfully with ID: ${id}`);
       
       // Sync to local storage for offline use
-      const newProduct = { ...productWithDates, id } as Product;
-      await productLocalService.add(newProduct);
+      const newProduct = { 
+        ...productWithDates, 
+        id,
+        syncStatus: 'synced' 
+      } as Product;
+      
+      // Ensure localStorage is updated
+      await productLocalService.forceSave(newProduct);
+      
+      // Update cache too
+      const cachedProducts = JSON.parse(localStorage.getItem(PRODUCTS_CACHE_KEY) || '[]');
+      cachedProducts.push(newProduct);
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(cachedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      toast("Produto adicionado", {
+        description: "Produto adicionado e sincronizado com sucesso!"
+      });
       
       return id;
     } catch (error) {
       console.error("Error in productService.add:", error);
+      toast("Erro de conexão", {
+        description: "Produto salvo localmente. Será sincronizado quando houver conexão."
+      });
       
-      // If Firebase fails, try to add to local storage with a temporary UUID
+      // If Firebase fails, try to add to local storage with a temporary UUID and pending status
       try {
         const tempId = uuidv4();
-        await productLocalService.add({
+        const productWithStatus = {
           ...product, 
           id: tempId,
           createdAt: new Date(),
-          updatedAt: new Date()
-        });
+          updatedAt: new Date(),
+          syncStatus: 'pending'
+        };
+        
+        await productLocalService.add(productWithStatus);
+        
+        // Update cache too
+        const cachedProducts = JSON.parse(localStorage.getItem(PRODUCTS_CACHE_KEY) || '[]');
+        cachedProducts.push(productWithStatus);
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(cachedProducts));
+        localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
         
         console.log(`productService: Added product to local storage with temporary ID: ${tempId}`);
         return tempId;
       } catch (localError) {
         console.error("Failed to add product to local storage:", localError);
+        toast("Erro crítico", {
+          description: "Não foi possível salvar o produto nem localmente."
+        });
         throw error; // Re-throw the original error
       }
     }
@@ -128,7 +179,8 @@ export const productService = {
       console.log(`productService: Updating product ${id} with:`, product);
       const updateData = {
         ...product,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        syncStatus: 'synced'
       };
       
       await productFirestoreService.update(id, updateData);
@@ -136,21 +188,48 @@ export const productService = {
       
       // Sync to local storage
       await productLocalService.update(id, updateData);
+      
+      // Update cache too
+      const cachedProducts = JSON.parse(localStorage.getItem(PRODUCTS_CACHE_KEY) || '[]');
+      const productIndex = cachedProducts.findIndex((p: Product) => p.id === id);
+      if (productIndex >= 0) {
+        cachedProducts[productIndex] = {...cachedProducts[productIndex], ...updateData};
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(cachedProducts));
+        localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      }
+      
+      toast("Produto atualizado", {
+        description: "Produto atualizado e sincronizado com sucesso!"
+      });
     } catch (error) {
       console.error(`Error in productService.update(${id}):`, error);
+      toast("Erro de conexão", {
+        description: "Produto atualizado localmente. Será sincronizado quando houver conexão."
+      });
       
       // Try to update local storage even if Firebase fails
       try {
-        await productLocalService.update(id, {
+        const updateData = {
           ...product,
-          updatedAt: new Date()
-        });
+          updatedAt: new Date(),
+          syncStatus: 'pending'
+        };
+        
+        await productLocalService.update(id, updateData);
+        
+        // Update cache too
+        const cachedProducts = JSON.parse(localStorage.getItem(PRODUCTS_CACHE_KEY) || '[]');
+        const productIndex = cachedProducts.findIndex((p: Product) => p.id === id);
+        if (productIndex >= 0) {
+          cachedProducts[productIndex] = {...cachedProducts[productIndex], ...updateData};
+          localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(cachedProducts));
+          localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        }
+        
         console.log(`productService: Updated product ${id} in local storage only`);
       } catch (localError) {
         console.error("Failed to update product in local storage:", localError);
       }
-      
-      throw error; // Re-throw the original error
     }
   },
 
@@ -163,18 +242,29 @@ export const productService = {
       
       // Sync to local storage
       await productLocalService.delete(id);
+      
+      // Update cache too
+      const cachedProducts = JSON.parse(localStorage.getItem(PRODUCTS_CACHE_KEY) || '[]');
+      const updatedCache = cachedProducts.filter((p: Product) => p.id !== id);
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedCache));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      toast("Produto excluído", {
+        description: "Produto excluído com sucesso!"
+      });
     } catch (error) {
       console.error(`Error in productService.delete(${id}):`, error);
+      toast("Erro ao excluir", {
+        description: "Não foi possível excluir o produto do servidor."
+      });
       
-      // Try to delete from local storage even if Firebase fails
+      // Mark as pending deletion in local storage
       try {
-        await productLocalService.delete(id);
-        console.log(`productService: Deleted product ${id} from local storage only`);
+        await productLocalService.update(id, { syncStatus: 'pending' });
+        console.log(`productService: Marked product ${id} for deletion in local storage`);
       } catch (localError) {
-        console.error("Failed to delete product from local storage:", localError);
+        console.error("Failed to mark product for deletion in local storage:", localError);
       }
-      
-      throw error; // Re-throw the original error
     }
   },
 
@@ -187,7 +277,10 @@ export const productService = {
       if (product) {
         console.log(`productService: Found product with code ${code}`);
         // Sync to local storage
-        await productLocalService.update(product.id, product);
+        await productLocalService.update(product.id, {
+          ...product,
+          syncStatus: 'synced'
+        });
       } else {
         console.log(`productService: No product found with code ${code}`);
       }
@@ -198,6 +291,93 @@ export const productService = {
       
       // Fall back to local storage
       return productLocalService.getByCode(code);
+    }
+  },
+  
+  // Synchronize pending products
+  syncPendingProducts: async (): Promise<{success: number, failed: number}> => {
+    try {
+      console.log("productService: Starting synchronization of pending products");
+      
+      // Get all products from local storage
+      const localProducts = await productLocalService.getAll();
+      
+      // Filter products with pending sync status
+      const pendingProducts = localProducts.filter(p => p.syncStatus === 'pending');
+      console.log(`productService: Found ${pendingProducts.length} pending products to sync`);
+      
+      if (pendingProducts.length === 0) {
+        return { success: 0, failed: 0 };
+      }
+      
+      let successCount = 0;
+      let failedCount = 0;
+      
+      // Process each pending product
+      for (const product of pendingProducts) {
+        try {
+          const { id, ...productData } = product;
+          
+          // Update in Firestore
+          await productFirestoreService.update(id, {
+            ...productData,
+            syncStatus: 'synced'
+          });
+          
+          // Update local status
+          await productLocalService.update(id, { syncStatus: 'synced' });
+          
+          console.log(`productService: Successfully synced product ${id}`);
+          successCount++;
+        } catch (error) {
+          console.error(`productService: Failed to sync product ${product.id}:`, error);
+          failedCount++;
+        }
+      }
+      
+      // Update cache
+      const updatedProducts = await productLocalService.getAll();
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      console.log(`productService: Sync completed - Success: ${successCount}, Failed: ${failedCount}`);
+      return { success: successCount, failed: failedCount };
+    } catch (error) {
+      console.error("Error in syncPendingProducts:", error);
+      return { success: 0, failed: 0 };
+    }
+  },
+  
+  // Force refresh all products from Firebase
+  forceRefresh: async (): Promise<Product[]> => {
+    try {
+      console.log("productService: Force refreshing products from Firebase");
+      
+      // Clear cache first
+      localStorage.removeItem(PRODUCTS_CACHE_KEY);
+      localStorage.removeItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
+      
+      // Get fresh data from Firebase
+      const result = await productFirestoreService.getAll();
+      console.log(`productService: Retrieved ${result.length} products from Firestore`);
+      
+      // Add syncStatus to all products
+      const productsWithStatus = result.map(product => ({
+        ...product,
+        syncStatus: 'synced' as const
+      }));
+      
+      // Update local storage
+      await productLocalService.setAll(productsWithStatus);
+      
+      // Update cache
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(productsWithStatus));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      return productsWithStatus;
+    } catch (error) {
+      console.error("Error in productService.forceRefresh:", error);
+      throw error;
     }
   }
 };
