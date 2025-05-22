@@ -8,11 +8,15 @@ export const useProductGroups = () => {
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load product groups from Firebase
+  // Load product groups from Firebase and clean up duplicates
   useEffect(() => {
     const fetchProductGroups = async () => {
       setIsLoading(true);
       try {
+        // First clean up any duplicates in the database
+        await productGroupService.cleanupDuplicates();
+        
+        // Then fetch the cleaned up list
         const groups = await productGroupService.getAll();
         setProductGroups(groups);
         console.log(`Loaded ${groups.length} product groups from Firebase`);
@@ -35,21 +39,16 @@ export const useProductGroups = () => {
     try {
       const id = await productGroupService.add(group);
 
-      const newGroup: ProductGroup = {
-        ...group,
-        id,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      setProductGroups([...productGroups, newGroup]);
+      // Refresh groups after adding to ensure we have the latest data without duplicates
+      const updatedGroups = await productGroupService.getAll();
+      setProductGroups(updatedGroups);
       
       toast({
         title: "Grupo adicionado",
         description: "Grupo de produto adicionado com sucesso!"
       });
       
-      return newGroup.id;
+      return id;
     } catch (error) {
       console.error("Erro ao adicionar grupo:", error);
       toast({
@@ -65,13 +64,15 @@ export const useProductGroups = () => {
     try {
       await productGroupService.update(id, group);
 
-      setProductGroups(
-        productGroups.map(pg => (pg.id === id ? { 
-          ...pg, 
-          ...group,
-          updatedAt: new Date()
-        } : pg))
-      );
+      // Refresh the list to ensure consistency
+      const groupToUpdate = productGroups.find(g => g.id === id);
+      if (groupToUpdate) {
+        const updatedGroup = { ...groupToUpdate, ...group, updatedAt: new Date() };
+        
+        setProductGroups(
+          productGroups.map(pg => (pg.id === id ? updatedGroup : pg))
+        );
+      }
       
       toast({
         title: "Grupo atualizado",
@@ -89,9 +90,20 @@ export const useProductGroups = () => {
 
   const deleteProductGroup = async (id: string) => {
     try {
-      await productGroupService.delete(id);
-
-      setProductGroups(productGroups.filter(pg => pg.id !== id));
+      // Get the name of the group before deleting
+      const groupToDelete = productGroups.find(g => g.id === id);
+      if (groupToDelete) {
+        // Delete all groups with this name to ensure no duplicates remain
+        await productGroupService.deleteAllByName(groupToDelete.name);
+        
+        // Refresh the list from the server
+        const updatedGroups = await productGroupService.getAll();
+        setProductGroups(updatedGroups);
+      } else {
+        // If not found in local state, just delete by ID
+        await productGroupService.delete(id);
+        setProductGroups(productGroups.filter(pg => pg.id !== id));
+      }
       
       toast({
         title: "Grupo excluído",

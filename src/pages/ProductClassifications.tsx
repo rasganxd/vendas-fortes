@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -40,13 +41,14 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Pencil, Trash, Plus } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash, Plus, RefreshCw } from 'lucide-react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import PageLayout from '@/components/layout/PageLayout';
 import { DeleteCategoryDialog } from '@/components/products/DeleteCategoryDialog';
 import { DeleteGroupDialog } from '@/components/products/DeleteGroupDialog';
 import { DeleteBrandDialog } from '@/components/products/DeleteBrandDialog';
+import { cleanupUtils } from '@/utils/cleanupUtils';
 
 export default function ProductClassifications() {
   const navigate = useNavigate();
@@ -66,6 +68,7 @@ export default function ProductClassifications() {
   } = useAppContext();
 
   const [activeTab, setActiveTab] = useState('categories');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // State for categories
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -154,8 +157,14 @@ export default function ProductClassifications() {
 
   const handleDeleteCategory = async (categoryId: string) => {
     try {
-      await deleteProductCategory(categoryId);
-      toast({ title: "Categoria excluída com sucesso" });
+      // Find the category by ID to get its name
+      const categoryToDelete = productCategories.find(c => c.id === categoryId);
+      if (categoryToDelete) {
+        // Delete all categories with the same name
+        await deleteProductCategory(categoryId);
+        
+        toast({ title: "Categoria excluída com sucesso" });
+      }
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
       toast({
@@ -315,10 +324,34 @@ export default function ProductClassifications() {
       });
     }
   };
+  
+  // Clean up duplicates manually
+  const handleCleanupDuplicates = async () => {
+    try {
+      setIsRefreshing(true);
+      toast({
+        title: "Limpando duplicatas",
+        description: "Aguarde enquanto removemos registros duplicados..."
+      });
+      
+      await cleanupUtils.cleanupAllProductClassifications();
+      
+      // Force a page reload to refresh all data
+      window.location.reload();
+    } catch (error) {
+      console.error("Error cleaning up duplicates:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao limpar duplicatas",
+        variant: "destructive"
+      });
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <PageLayout title="Classificações de Produtos">
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between">
         <Button 
           variant="outline" 
           size="sm"
@@ -326,6 +359,16 @@ export default function ProductClassifications() {
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar para Produtos
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleCleanupDuplicates}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Limpar Duplicatas
         </Button>
       </div>
       <Card>

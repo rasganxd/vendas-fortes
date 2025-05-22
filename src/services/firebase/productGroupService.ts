@@ -1,6 +1,6 @@
-
 import { ProductGroup } from '@/types';
 import { productGroupFirestoreService } from './ProductGroupFirestoreService';
+import { where } from 'firebase/firestore';
 
 /**
  * Service for product group operations using Firebase
@@ -32,6 +32,16 @@ export const productGroupService = {
     return productGroupFirestoreService.getByName(name);
   },
   
+  // Get all product groups with the same name
+  getAllByName: async (name: string): Promise<ProductGroup[]> => {
+    try {
+      return await productGroupFirestoreService.query([where('name', '==', name)]);
+    } catch (error) {
+      console.error(`ProductGroupService: Error getting groups by name ${name}:`, error);
+      return [];
+    }
+  },
+  
   // Add product group
   add: async (group: Omit<ProductGroup, 'id'>): Promise<string> => {
     // Check if group with same name already exists
@@ -59,8 +69,69 @@ export const productGroupService = {
     return productGroupFirestoreService.update(id, updateData);
   },
   
-  // Delete product group
+  // Delete product group by ID
   delete: async (id: string): Promise<void> => {
     return productGroupFirestoreService.delete(id);
+  },
+  
+  // Delete all product groups with the same name
+  deleteAllByName: async (name: string): Promise<void> => {
+    try {
+      console.log(`Deleting all groups with name: ${name}`);
+      const groups = await productGroupFirestoreService.query([where('name', '==', name)]);
+      
+      console.log(`Found ${groups.length} groups with name: ${name}`);
+      
+      // Delete each group with the same name
+      const deletePromises = groups.map(group => 
+        productGroupFirestoreService.delete(group.id)
+      );
+      
+      await Promise.all(deletePromises);
+      console.log(`Deleted all groups with name: ${name}`);
+    } catch (error) {
+      console.error(`Error deleting all groups with name ${name}:`, error);
+      throw error;
+    }
+  },
+  
+  // Clean up duplicate groups
+  cleanupDuplicates: async (): Promise<void> => {
+    try {
+      console.log("Starting cleanup of duplicate groups");
+      const groups = await productGroupFirestoreService.getAll();
+      
+      // Group groups by name
+      const groupsByName = groups.reduce((acc, group) => {
+        if (!acc[group.name]) {
+          acc[group.name] = [];
+        }
+        acc[group.name].push(group);
+        return acc;
+      }, {} as Record<string, ProductGroup[]>);
+      
+      // For each group of groups with the same name, keep only the first one
+      for (const [name, groupsGroup] of Object.entries(groupsByName)) {
+        if (groupsGroup.length > 1) {
+          console.log(`Found ${groupsGroup.length} duplicates for group: ${name}`);
+          
+          // Keep the first group, delete the rest
+          const [toKeep, ...toDelete] = groupsGroup;
+          
+          // Delete each duplicate
+          const deletePromises = toDelete.map(group => 
+            productGroupFirestoreService.delete(group.id)
+          );
+          
+          await Promise.all(deletePromises);
+          console.log(`Kept group ${toKeep.id} and deleted ${toDelete.length} duplicates for: ${name}`);
+        }
+      }
+      
+      console.log("Finished cleanup of duplicate groups");
+    } catch (error) {
+      console.error("Error cleaning up duplicate groups:", error);
+      throw error;
+    }
   }
 };

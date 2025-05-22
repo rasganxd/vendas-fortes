@@ -1,6 +1,6 @@
-
 import { ProductCategory } from '@/types';
 import { productCategoryFirestoreService } from './ProductCategoryFirestoreService';
+import { where } from 'firebase/firestore';
 
 /**
  * Service for product category operations using Firebase
@@ -32,6 +32,16 @@ export const productCategoryService = {
     return productCategoryFirestoreService.getByName(name);
   },
   
+  // Get all product categories with the same name
+  getAllByName: async (name: string): Promise<ProductCategory[]> => {
+    try {
+      return await productCategoryFirestoreService.query([where('name', '==', name)]);
+    } catch (error) {
+      console.error(`ProductCategoryService: Error getting categories by name ${name}:`, error);
+      return [];
+    }
+  },
+  
   // Add product category
   add: async (category: Omit<ProductCategory, 'id'>): Promise<string> => {
     // Check if category with same name already exists
@@ -59,8 +69,69 @@ export const productCategoryService = {
     return productCategoryFirestoreService.update(id, updateData);
   },
   
-  // Delete product category
+  // Delete product category by ID
   delete: async (id: string): Promise<void> => {
     return productCategoryFirestoreService.delete(id);
+  },
+  
+  // Delete all product categories with the same name
+  deleteAllByName: async (name: string): Promise<void> => {
+    try {
+      console.log(`Deleting all categories with name: ${name}`);
+      const categories = await productCategoryFirestoreService.query([where('name', '==', name)]);
+      
+      console.log(`Found ${categories.length} categories with name: ${name}`);
+      
+      // Delete each category with the same name
+      const deletePromises = categories.map(category => 
+        productCategoryFirestoreService.delete(category.id)
+      );
+      
+      await Promise.all(deletePromises);
+      console.log(`Deleted all categories with name: ${name}`);
+    } catch (error) {
+      console.error(`Error deleting all categories with name ${name}:`, error);
+      throw error;
+    }
+  },
+  
+  // Clean up duplicate categories
+  cleanupDuplicates: async (): Promise<void> => {
+    try {
+      console.log("Starting cleanup of duplicate categories");
+      const categories = await productCategoryFirestoreService.getAll();
+      
+      // Group categories by name
+      const categoriesByName = categories.reduce((acc, category) => {
+        if (!acc[category.name]) {
+          acc[category.name] = [];
+        }
+        acc[category.name].push(category);
+        return acc;
+      }, {} as Record<string, ProductCategory[]>);
+      
+      // For each group of categories with the same name, keep only the first one
+      for (const [name, categoriesGroup] of Object.entries(categoriesByName)) {
+        if (categoriesGroup.length > 1) {
+          console.log(`Found ${categoriesGroup.length} duplicates for category: ${name}`);
+          
+          // Keep the first category, delete the rest
+          const [toKeep, ...toDelete] = categoriesGroup;
+          
+          // Delete each duplicate
+          const deletePromises = toDelete.map(category => 
+            productCategoryFirestoreService.delete(category.id)
+          );
+          
+          await Promise.all(deletePromises);
+          console.log(`Kept category ${toKeep.id} and deleted ${toDelete.length} duplicates for: ${name}`);
+        }
+      }
+      
+      console.log("Finished cleanup of duplicate categories");
+    } catch (error) {
+      console.error("Error cleaning up duplicate categories:", error);
+      throw error;
+    }
   }
 };
