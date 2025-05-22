@@ -414,9 +414,9 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
       return true;
     },
     refreshData: async () => {
-      // Adapt the boolean return value to void return type
+      // We call refreshData but ignore the return value to match void return type
       await refreshData();
-      // No return value to match the void return type in AppContextType
+      // No return needed since this function returns void
     },
     
     connectionStatus,
