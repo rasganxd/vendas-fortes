@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppContextType } from '../AppContextTypes';
 import { useAppData } from './AppDataProvider';
@@ -209,7 +210,7 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     updateDeliveryRoute,
     deleteDeliveryRoute,
     
-    // Make sure refreshData returns the correct type according to AppContextType
+    // Make sure refreshData returns boolean to match AppContextType
     refreshData: async () => {
       const result = await appData.refreshData();
       return result; // Return the boolean result from appData.refreshData

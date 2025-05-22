@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext } from 'react';
 import { useOrders } from '@/hooks/useOrders';
 import { usePayments } from '@/hooks/usePayments';
@@ -223,10 +224,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setPaymentTables,
     setBackups,
     
-    refreshData: async () => {
-      const result = await refreshData();
-      return result; // Return the boolean result from the original refreshData
-    }
+    refreshData // Use the original refreshData directly which returns boolean
   };
 
   return (

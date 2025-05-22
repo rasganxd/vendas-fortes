@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { AppContext } from '../AppContext';
-import { AppContextType } from '../AppContextTypes';
+import { DataLoadingContext } from '../hooks/useDataLoadingContext';
 import defaultContextValues from '../defaultContextValues';
+import { dataOperations } from '../utils/dataOperations';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useProducts } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
@@ -19,30 +21,6 @@ import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
 import { useBackups } from '@/hooks/useBackups';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { isMockDataEnabled } from '@/services/mockDataService';
-
-// Create a Context for DataLoading
-interface DataLoadingContextType {
-  customers: any[];
-  products: any[];
-  isLoadingCustomers: boolean;
-  isLoadingProducts: boolean;
-  isUsingMockData: boolean;
-  setCustomers: React.Dispatch<React.SetStateAction<any[]>>;
-  setProducts: React.Dispatch<React.SetStateAction<any[]>>;
-  refreshData: () => Promise<boolean>; // Keep as boolean return type
-  clearItemCache: (itemType: string) => Promise<boolean>;
-}
-
-const DataLoadingContext = createContext<DataLoadingContextType | undefined>(undefined);
-
-// Export the useDataLoading hook
-export const useDataLoading = () => {
-  const context = useContext(DataLoadingContext);
-  if (context === undefined) {
-    throw new Error('useDataLoading must be used within a DataLoadingProvider');
-  }
-  return context;
-};
 
 interface DataLoadingProviderProps {
   children: React.ReactNode;
@@ -218,31 +196,16 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   }, [refetchSettings]);
   
   const clearItemCache = useCallback(async (itemType: string) => {
-    // Clear cache implementation for specific item type
-    console.log(`Cache cleared for ${itemType}`);
-    return true;
+    return dataOperations.clearItemCache(itemType);
   }, []);
   
   const clearCache = useCallback(async () => {
-    // Clear cache implementation here
-    console.log('Cache cleared');
-    return true;
+    await dataOperations.clearCache();
+    return;
   }, []);
   
-  const startNewMonth = useCallback(async () => {
-    // Start new month implementation here
-    console.log('New month started');
-    return true;
-  }, []);
-  
-  const startNewDay = useCallback(async () => {
-    // Start new day implementation here
-    console.log('New day started');
-    return true;
-  }, []);
-
   // Create the data loading context value
-  const dataLoadingContextValue: DataLoadingContextType = {
+  const dataLoadingContextValue = {
     customers,
     products,
     isLoadingCustomers,
@@ -264,14 +227,8 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     addBulkProducts 
   };
   
-  // Create a wrapper for refreshData that returns void to match AppContextType
-  const refreshDataWrapper = async (): Promise<void> => {
-    // Call the original refreshData but don't return its value
-    await refreshData();
-    // No return value to match void return type
-  };
-  
-  const appContextValue: AppContextType = {
+  // Build the app context value
+  const appContextValue = {
     ...defaultContextValues,
     customers,
     products,
@@ -409,18 +366,17 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     },
     
     startNewMonth: async () => {
-      await startNewMonth();
+      await dataOperations.startNewMonth();
       return true;
     },
     startNewDay: async () => {
-      await startNewDay();
+      await dataOperations.startNewDay();
       return true;
     },
     clearCache: async () => {
       await clearCache();
-      return true;
     },
-    refreshData: refreshDataWrapper,
+    refreshData,  // Use the original refreshData that returns boolean
     
     connectionStatus,
     isUsingMockData: isMockDataEnabled(),
@@ -434,3 +390,6 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     </DataLoadingContext.Provider>
   );
 };
+
+// Export renamed hook to maintain backward compatibility
+export { useDataLoadingContext as useDataLoading } from '../hooks/useDataLoadingContext';
