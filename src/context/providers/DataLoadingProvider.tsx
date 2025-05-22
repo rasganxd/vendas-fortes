@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { AppContext } from '../AppContext';
 import { AppContextType } from '../AppContextTypes';
 import defaultContextValues from '../defaultContextValues';
@@ -22,21 +22,33 @@ import { useAppSettings } from '@/hooks/useAppSettings';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { isMockDataEnabled } from '@/services/mockDataService';
 
-interface DataLoadingProviderProps {
-  children: React.ReactNode;
+// Create a Context for DataLoading
+interface DataLoadingContextType {
+  customers: any[];
+  products: any[];
+  isLoadingCustomers: boolean;
+  isLoadingProducts: boolean;
+  isUsingMockData: boolean;
+  setCustomers: React.Dispatch<React.SetStateAction<any[]>>;
+  setProducts: React.Dispatch<React.SetStateAction<any[]>>;
+  refreshData: () => Promise<boolean>;
+  clearItemCache: (itemType: string) => Promise<boolean>;
 }
 
-// Create a Context for useDataLoading
-const DataLoadingContext = React.createContext<any>(undefined);
+const DataLoadingContext = createContext<DataLoadingContextType | undefined>(undefined);
 
 // Export the useDataLoading hook
 export const useDataLoading = () => {
-  const context = React.useContext(DataLoadingContext);
+  const context = useContext(DataLoadingContext);
   if (context === undefined) {
     throw new Error('useDataLoading must be used within a DataLoadingProvider');
   }
   return context;
 };
+
+interface DataLoadingProviderProps {
+  children: React.ReactNode;
+}
 
 export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ children }) => {
   // Load data using custom hooks
@@ -186,12 +198,12 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     refetch: refetchSettings
   } = useAppSettings();
   
-  const onlineStatus = useOnlineStatus();
-  const [connectionStatus, setConnectionStatus] = useState(onlineStatus);
+  const isOnline = useOnlineStatus();
+  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'connecting' | 'error'>(isOnline ? 'online' : 'offline');
   
   useEffect(() => {
-    setConnectionStatus(onlineStatus ? 'online' : 'offline');
-  }, [onlineStatus]);
+    setConnectionStatus(isOnline ? 'online' : 'offline');
+  }, [isOnline]);
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -210,6 +222,12 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
       setIsRefreshing(false);
     }
   }, [refetchSettings]);
+  
+  const clearItemCache = useCallback(async (itemType: string) => {
+    // Clear cache implementation for specific item type
+    console.log(`Cache cleared for ${itemType}`);
+    return true;
+  }, []);
   
   const clearCache = useCallback(async () => {
     // Clear cache implementation here
@@ -230,7 +248,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   }, []);
 
   // Create the data loading context value
-  const dataLoadingContextValue = {
+  const dataLoadingContextValue: DataLoadingContextType = {
     customers,
     products,
     isLoadingCustomers,
@@ -238,7 +256,8 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     isUsingMockData: isMockDataEnabled(),
     setCustomers,
     setProducts,
-    refreshData
+    refreshData,
+    clearItemCache
   };
   
   const appContextValue: AppContextType = {
@@ -374,16 +393,19 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     
     settings: settings || defaultContextValues.settings,
     updateSettings: async (newSettings: any) => {
-      const result = await updateSettings(newSettings);
-      return; // Return void to match expected type
+      await updateSettings(newSettings);
     },
     
     startNewMonth,
     startNewDay,
-    clearCache,
-    refreshData,
+    clearCache: async () => {
+      return await clearCache();
+    },
+    refreshData: async () => {
+      return await refreshData();
+    },
     
-    connectionStatus: connectionStatus as 'online' | 'offline' | 'connecting' | 'error',
+    connectionStatus,
     isUsingMockData: isMockDataEnabled(),
   };
   

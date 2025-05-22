@@ -4,7 +4,6 @@ import { ProductBrand } from '@/types';
 import { productBrandService } from '@/services/firebase/productBrandService';
 import { productBrandLocalService } from '@/services/local/productBrandLocalService';
 import { toast } from '@/components/ui/use-toast';
-import { useDataLoading } from '@/context/providers/DataLoadingProvider';
 
 // Cache keys
 const BRANDS_CACHE_KEY = 'app_product_brands_cache';
@@ -14,7 +13,15 @@ const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 export const useProductBrands = () => {
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { clearItemCache } = useDataLoading();
+
+  // Helper function to clear cache for specific item
+  const clearItemCache = async (itemType: string) => {
+    if (itemType === 'products') {
+      localStorage.removeItem(BRANDS_CACHE_KEY);
+      localStorage.removeItem(BRANDS_CACHE_TIMESTAMP_KEY);
+    }
+    return true;
+  };
 
   useEffect(() => {
     const fetchBrands = async () => {

@@ -6,7 +6,7 @@ import { AppDataProvider } from './providers/AppDataProvider';
 import { AppContextInnerProvider } from './providers/AppContextInnerProvider';
 
 // Contexto central da aplicação
-export { AppContext } from './AppContextTypes';
+export { AppContext } from './AppContext';
 
 // Provider principal que combina todos os providers
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
