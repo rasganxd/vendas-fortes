@@ -19,7 +19,6 @@ import { useProductBrands } from '@/hooks/useProductBrands';
 import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
 import { useBackups } from '@/hooks/useBackups';
 import { useAppSettings } from '@/hooks/useAppSettings';
-import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { isMockDataEnabled } from '@/services/mockDataService';
 
 // Create a Context for DataLoading
@@ -65,13 +64,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   const { 
     products, 
     setProducts, 
-    addProduct, 
-    updateProduct, 
-    deleteProduct, 
-    isLoading: isLoadingProducts,
-    validateProductDiscount,
-    getMinimumPrice,
-    addBulkProducts
+    isLoading: isLoadingProducts 
   } = useProducts();
   
   const { 
@@ -198,12 +191,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     refetch: refetchSettings
   } = useAppSettings();
   
-  const isOnline = useOnlineStatus();
-  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'connecting' | 'error'>(isOnline ? 'online' : 'offline');
-  
-  useEffect(() => {
-    setConnectionStatus(isOnline ? 'online' : 'offline');
-  }, [isOnline]);
+  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'connecting' | 'error'>('online');
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -260,6 +248,9 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     clearItemCache
   };
   
+  // Access to product operations from useProducts
+  const productOperations = useProducts();
+  
   const appContextValue: AppContextType = {
     ...defaultContextValues,
     customers,
@@ -302,12 +293,13 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     deleteCustomer,
     generateNextCustomerCode,
     
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    validateProductDiscount,
-    getMinimumPrice,
-    addBulkProducts,
+    // Product operations from useProducts
+    addProduct: productOperations.addProduct,
+    updateProduct: productOperations.updateProduct,
+    deleteProduct: productOperations.deleteProduct,
+    validateProductDiscount: productOperations.validateProductDiscount,
+    getMinimumPrice: productOperations.getMinimumPrice,
+    addBulkProducts: productOperations.addBulkProducts,
     
     getOrderById,
     addOrder,
@@ -398,12 +390,8 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
     
     startNewMonth,
     startNewDay,
-    clearCache: async () => {
-      return await clearCache();
-    },
-    refreshData: async () => {
-      return await refreshData();
-    },
+    clearCache,
+    refreshData,
     
     connectionStatus,
     isUsingMockData: isMockDataEnabled(),

@@ -1,27 +1,21 @@
 
 import { useState, useEffect } from 'react';
 
-/**
- * Hook for monitoring online/offline status
- * @returns boolean - true if online, false if offline
- */
-export const useOnlineStatus = () => {
+export const useOnlineStatus = (): 'online' | 'offline' => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  
-  // Monitor online/offline status
+
   useEffect(() => {
-    const handleOnlineStatus = () => {
-      setIsOnline(navigator.onLine);
-    };
-    
-    window.addEventListener('online', handleOnlineStatus);
-    window.addEventListener('offline', handleOnlineStatus);
-    
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     return () => {
-      window.removeEventListener('online', handleOnlineStatus);
-      window.removeEventListener('offline', handleOnlineStatus);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
-  
-  return isOnline;
+
+  return isOnline ? 'online' : 'offline';
 };

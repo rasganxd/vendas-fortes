@@ -5,7 +5,7 @@ import { DataLoadingProvider } from './providers/DataLoadingProvider';
 import { AppDataProvider } from './providers/AppDataProvider';
 import { AppContextInnerProvider } from './providers/AppContextInnerProvider';
 
-// Contexto central da aplicação
+// Export the context from the dedicated file
 export { AppContext } from './AppContext';
 
 // Provider principal que combina todos os providers
