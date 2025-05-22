@@ -18,7 +18,7 @@ const OrdersActionButtons: React.FC<OrdersActionButtonsProps> = ({
     <div className="flex gap-2 mb-4">
       <Button 
         onClick={handleNewOrder} 
-        variant="default" 
+        variant="default"
       >
         <Plus className="h-4 w-4 mr-2" /> Novo Pedido
       </Button>
@@ -29,7 +29,7 @@ const OrdersActionButtons: React.FC<OrdersActionButtonsProps> = ({
       >
         <Clipboard className="h-4 w-4 mr-2" /> Imprimir
         {selectedOrderCount > 0 && (
-          <span className="ml-2 bg-gray-200 text-gray-800 rounded-full px-2 py-0.5 text-xs font-medium">
+          <span className="ml-2 bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 text-xs font-medium">
             {selectedOrderCount}
           </span>
         )}

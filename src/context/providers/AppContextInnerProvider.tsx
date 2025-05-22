@@ -106,16 +106,16 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     isLoading: isLoadingSettings
   } = useAppSettings();
   
-  // Apply theme color if set in settings, otherwise use default neutral color
+  // Apply soft blue theme color as default
   useEffect(() => {
-    const defaultColor = '#6B7280'; // Cinza neutro como padrão
+    const softBlueColor = '#4a86e8'; // Soft blue as default
     
     const style = document.createElement('style');
     style.innerHTML = `
       :root {
-        --primary: ${defaultColor} !important;
-        --ring: ${defaultColor} !important;
-        --sidebar-primary: ${defaultColor} !important;
+        --primary: ${softBlueColor} !important;
+        --ring: ${softBlueColor} !important;
+        --sidebar-primary: ${softBlueColor} !important;
       }
     `;
     document.head.appendChild(style);

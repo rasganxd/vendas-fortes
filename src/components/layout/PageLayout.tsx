@@ -29,7 +29,7 @@ export default function PageLayout({ children, title, subtitle, description }: P
               {description && (
                 <p className="mt-2 text-sm text-gray-500">{description}</p>
               )}
-              <div className="h-1 w-20 mt-3 rounded-full accent-indicator"></div>
+              <div className="h-1 w-20 mt-3 rounded-full bg-blue-500"></div>
             </div>
           )}
           <div>
