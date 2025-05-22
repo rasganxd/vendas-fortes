@@ -21,7 +21,7 @@ const PrintDialogActions: React.FC<PrintDialogActionsProps> = ({
       </Button>
       <Button 
         onClick={handleBulkPrint} 
-        variant="sales"
+        variant="default"
         disabled={isPrintDisabled}
         className="flex items-center gap-2"
       >

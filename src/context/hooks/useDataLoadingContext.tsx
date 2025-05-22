@@ -12,6 +12,7 @@ interface DataLoadingContextType {
   setProducts: React.Dispatch<React.SetStateAction<any[]>>;
   refreshData: () => Promise<boolean>; // Keep as boolean return type
   clearItemCache: (itemType: string) => Promise<boolean>;
+  applyThemeColor?: (color: string) => void; // Add optional theme color function
 }
 
 export const DataLoadingContext = createContext<DataLoadingContextType | undefined>(undefined);

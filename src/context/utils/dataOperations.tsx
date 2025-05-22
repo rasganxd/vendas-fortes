@@ -68,5 +68,18 @@ export const dataOperations = {
   startNewDay: async (): Promise<boolean> => {
     console.log('New day started');
     return true;
+  },
+  
+  applyThemeColor: (color: string): void => {
+    if (!color) return;
+    
+    try {
+      // Apply primary color
+      document.documentElement.style.setProperty('--primary', color);
+      document.documentElement.style.setProperty('--ring', color);
+      document.documentElement.style.setProperty('--sidebar-primary', color);
+    } catch (error) {
+      console.error('Error applying theme color:', error);
+    }
   }
 };

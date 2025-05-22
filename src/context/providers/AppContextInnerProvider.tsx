@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AppContextType } from '../AppContextTypes';
 import { useAppData } from './AppDataProvider';
 import { useAppOperations } from '../operations/appOperations';
@@ -16,6 +15,7 @@ import { useProductGroups } from '@/hooks/useProductGroups';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { Order, ProductGroup } from '@/types';
 
 export const AppContextInnerProvider = ({ children }: { children: React.ReactNode }) => {
@@ -100,6 +100,27 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     deleteDeliveryRoute
   } = useDeliveryRoutes();
 
+  // Get app settings
+  const { 
+    settings,
+    isLoading: isLoadingSettings
+  } = useAppSettings();
+  
+  // Apply theme color if set in settings
+  useEffect(() => {
+    if (settings?.primaryColor) {
+      const style = document.createElement('style');
+      style.innerHTML = `
+        :root {
+          --primary: ${settings.primaryColor} !important;
+          --ring: ${settings.primaryColor} !important;
+          --sidebar-primary: ${settings.primaryColor} !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, [settings?.primaryColor]);
+  
   // Wrappers para corrigir tipos de retorno
   const createAutoPaymentWrapper = async (order: Order): Promise<string> => {
     await createAutomaticPaymentRecord(order);
