@@ -12,6 +12,13 @@ interface DataLoadingContextType {
   clearItemCache: (itemType: string) => Promise<void>;
   isLoadingProducts: boolean;
   isLoadingCustomers: boolean;
+  // Add missing properties that AppDataProvider needs
+  customers: any[];
+  products: any[];
+  isUsingMockData: boolean;
+  setCustomers: React.Dispatch<React.SetStateAction<any[]>>;
+  setProducts: React.Dispatch<React.SetStateAction<any[]>>;
+  refreshData: () => Promise<boolean>;
 }
 
 const defaultValue: DataLoadingContextType = {
@@ -19,7 +26,13 @@ const defaultValue: DataLoadingContextType = {
   loadingMessage: 'Carregando dados...',
   clearItemCache: async () => {},
   isLoadingProducts: true,
-  isLoadingCustomers: true
+  isLoadingCustomers: true,
+  customers: [],
+  products: [],
+  isUsingMockData: false,
+  setCustomers: () => {},
+  setProducts: () => {},
+  refreshData: async () => false
 };
 
 // Criar contexto
@@ -30,13 +43,39 @@ export const useDataLoading = () => useContext(DataLoadingContext);
 
 // Provedor de dados
 export const DataLoadingProvider = ({ children }: { children: React.ReactNode }) => {
-  const { isConnected } = useFirebaseConnection();
-  const { isLoading: isLoadingProducts, clearCache: clearProductsCache } = useProducts();
-  const { isLoading: isLoadingCustomers, clearCache: clearCustomersCache } = useCustomers();
+  const { connectionStatus } = useFirebaseConnection();
+  const isConnected = connectionStatus === 'online';
+  
+  const { 
+    products, 
+    isLoading: isLoadingProducts, 
+    clearCache: clearProductsCache, 
+    setProducts 
+  } = useProducts();
+  
+  const { 
+    customers, 
+    isLoading: isLoadingCustomers, 
+    clearCache: clearCustomersCache,
+    setCustomers 
+  } = useCustomers();
   
   const [isCleaningData, setIsCleaningData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState('Carregando dados...');
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
+
+  // Refresh all data
+  const refreshData = async (): Promise<boolean> => {
+    try {
+      await clearItemCache('products');
+      await clearItemCache('customers');
+      return true;
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      return false;
+    }
+  };
 
   // Limpar cache por tipo
   const clearItemCache = async (itemType: string) => {
@@ -98,7 +137,13 @@ export const DataLoadingProvider = ({ children }: { children: React.ReactNode })
         loadingMessage,
         clearItemCache,
         isLoadingProducts,
-        isLoadingCustomers
+        isLoadingCustomers,
+        customers,
+        products,
+        isUsingMockData,
+        setCustomers,
+        setProducts,
+        refreshData
       }}
     >
       {children}

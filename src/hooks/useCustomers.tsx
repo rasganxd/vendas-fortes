@@ -1,88 +1,63 @@
 
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
-import { useDataLoading } from '@/context/providers/DataLoadingProvider';
-import { useCustomerCache } from './customer/useCustomerCache';
-import { useCustomerLoader } from './customer/useCustomerLoader';
-import { useCustomerCrud } from './customer/useCustomerCrud';
-import { useCustomerConnection } from './customer/useCustomerConnection';
-import { toast } from '@/components/ui/use-toast';
+import { customerService } from '@/services/firebase/customerService';
+import { customerLocalService } from '@/services/local/customerLocalService';
 
-// Re-export loadCustomers from the loader hook for backward compatibility
-export { loadCustomers } from './customer/useCustomerLoader';
+// Cache keys
+const CUSTOMERS_CACHE_KEY = 'app_customers_cache';
+const CUSTOMERS_CACHE_TIMESTAMP_KEY = 'app_customers_timestamp';
 
-/**
- * Main hook for customer management
- */
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const { clearItemCache } = useDataLoading();
-  const { filterValidCustomers } = useCustomerCache();
-  const { loadCustomers, refreshCustomers, isLoading, setIsLoading } = useCustomerLoader();
-  const { isOnline } = useCustomerConnection();
-  const { 
-    addCustomer: addCustomerBase, 
-    updateCustomer: updateCustomerBase,
-    deleteCustomer: deleteCustomerBase,
-    generateNextCode,
-    generateNextCustomerCode
-  } = useCustomerCrud(customers, setCustomers);
-  
-  // Initial data loading
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
   useEffect(() => {
-    const fetchCustomers = async () => {
+    const loadCustomers = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        const loadedCustomers = await loadCustomers(true); // Force refresh from Firebase first
-        setCustomers(loadedCustomers);
+        const data = await customerService.getAll();
+        setCustomers(data);
       } catch (error) {
-        console.error("Error loading customers:", error);
-        toast({
-          title: "Erro ao carregar clientes",
-          description: "Houve um problema ao carregar os clientes.",
-          variant: "destructive"
-        });
+        console.error('Error loading customers:', error);
+        try {
+          // Try to load from local storage as fallback
+          const localData = await customerLocalService.getAll();
+          setCustomers(localData);
+        } catch (localError) {
+          console.error('Error loading customers from local storage:', localError);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCustomers();
+    loadCustomers();
   }, []);
-  
-  // Connection status change handling
-  useEffect(() => {
-    if (isOnline) {
-      // Refresh data when coming back online
-      console.log("Coming back online - refreshing customer data");
-      refreshCustomers()
-        .then(refreshedCustomers => {
-          setCustomers(refreshedCustomers);
-        })
-        .catch(error => {
-          console.error("Failed to refresh customers:", error);
-        });
-    }
-  }, [isOnline]);
 
-  // Enhanced delete function to clear cache
-  const deleteCustomer = async (id: string) => {
-    await deleteCustomerBase(id);
-    // Refresh cache to ensure consistency
-    await clearItemCache('customers');
+  const clearCache = async () => {
+    try {
+      localStorage.removeItem(CUSTOMERS_CACHE_KEY);
+      localStorage.removeItem(CUSTOMERS_CACHE_TIMESTAMP_KEY);
+      await customerLocalService.clearAll();
+      
+      // Fetch fresh data
+      const freshCustomers = await customerService.getAll();
+      setCustomers(freshCustomers);
+      
+      return true;
+    } catch (error) {
+      console.error("Error clearing customers cache:", error);
+      return false;
+    }
   };
-  
-  // Return combined API
+
   return {
-    customers: filterValidCustomers(customers), // Ensure we always return valid customers
-    addCustomer: addCustomerBase,
-    updateCustomer: updateCustomerBase,
-    deleteCustomer,
-    generateNextCode,
-    generateNextCustomerCode,
+    customers,
     isLoading,
-    setCustomers,
-    refreshCustomers,
-    isOnline
+    clearCache,
+    setCustomers
   };
 };
+
+export default useCustomers;

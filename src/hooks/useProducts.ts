@@ -9,6 +9,52 @@ const PRODUCTS_CACHE_KEY = 'app_products_cache';
 const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_timestamp';
 const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 
+// Create a proper useProducts hook
+export const useProducts = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const productsData = await loadProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Error in useProducts hook:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const clearCache = async () => {
+    try {
+      localStorage.removeItem(PRODUCTS_CACHE_KEY);
+      localStorage.removeItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
+      await productLocalService.clearAll();
+      
+      // Fetch fresh data from Firebase
+      const freshProducts = await productService.getAll();
+      setProducts(freshProducts);
+      
+      return true;
+    } catch (error) {
+      console.error("Error clearing products cache:", error);
+      return false;
+    }
+  };
+
+  return {
+    products,
+    isLoading,
+    clearCache,
+    setProducts
+  };
+};
+
 // Exporting this function so it can be imported directly
 export const loadProducts = async (forceRefresh = true): Promise<Product[]> => {
   try {
