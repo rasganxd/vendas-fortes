@@ -36,14 +36,14 @@
     --input: 214 15% 90%;
     --ring: 215 50% 50%;
 
-    /* Sidebar styles - more subdued */
-    --sidebar-background: 220 30% 20%;
-    --sidebar-foreground: 210 40% 98%;
+    /* Sidebar styles - more subdued blue */
+    --sidebar-background: 210 50% 98%;
+    --sidebar-foreground: 215 50% 30%;
     --sidebar-primary: 215 50% 50%;
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 215 50% 50%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 15% 25%;
+    --sidebar-border: 214 15% 90%;
     --sidebar-ring: 215 50% 50%;
 
     --radius: 0.5rem;
@@ -180,29 +180,29 @@
   
   /* Sidebar gradient that uses more subtle CSS variables */
   .sidebar-gradient {
-    background: hsl(var(--primary)) !important;
+    background: #4a86e8 !important;
     color: white !important;
     transition: background 0.3s ease;
   }
   
   /* Sidebar header styles - more subtle */
   .dynamic-sidebar-header {
-    background-color: hsl(var(--primary));
+    background-color: #4a86e8;
     color: white;
     transition: background 0.3s ease;
   }
   
   .active-menu-item {
-    background-color: hsl(var(--primary)/0.10);
-    color: hsl(var(--primary));
+    background-color: rgba(74, 134, 232, 0.1);
+    color: #4a86e8;
   }
   
   .active-icon {
-    color: hsl(var(--primary));
+    color: #4a86e8;
   }
   
   .accent-indicator {
-    background-color: hsl(var(--primary));
+    background-color: #4a86e8;
   }
 }
 

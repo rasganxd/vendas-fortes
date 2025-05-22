@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -130,13 +131,13 @@ export default function SideNav() {
   useEffect(() => {
     // Add dynamic-sidebar class to the sidebar header to allow styling from CSS
     const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-    if (sidebarHeader && settings?.primaryColor) {
-      sidebarHeader.style.backgroundColor = settings.primaryColor;
+    if (sidebarHeader) {
+      sidebarHeader.style.backgroundColor = '#4a86e8'; // Soft blue color for sidebar header
       sidebarHeader.style.color = '#ffffff';
     }
     
     console.log("Theme change detected in SideNav");
-  }, [settings?.primaryColor]);
+  }, []);
   
   // Group the navigation items by their group
   const groupedNavItems = navigation.reduce((groups, item) => {
@@ -158,7 +159,7 @@ export default function SideNav() {
   };
   
   return (
-    <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium">
+    <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium bg-blue-50">
       <SidebarHeader className="px-5 py-4 flex items-center justify-between dynamic-sidebar-header transition-colors">
         <h1 className="text-xl font-bold text-white">SalesTrack</h1>
       </SidebarHeader>
@@ -167,8 +168,8 @@ export default function SideNav() {
           <SidebarMenu>
             {Object.entries(groupedNavItems).map(([group, items]) => (
               <div key={group} className="mb-6">
-                <h3 className="text-xs uppercase font-semibold text-sidebar-foreground/70 px-3 mb-2 flex items-center">
-                  <ChevronRight size={14} className="mr-1 text-sidebar-foreground/70" />
+                <h3 className="text-xs uppercase font-semibold text-blue-800/80 px-3 mb-2 flex items-center">
+                  <ChevronRight size={14} className="mr-1 text-blue-800/80" />
                   {groupLabels[group] || group}
                 </h3>
                 {items.map((item) => {
@@ -186,14 +187,14 @@ export default function SideNav() {
                           "transition-all duration-200 rounded-lg",
                           isActive ? 
                             "active-menu-item font-medium" : 
-                            "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            "text-blue-900 hover:bg-blue-100 hover:text-blue-700"
                         )}
                       >
                         <Link to={item.href} className="flex items-center px-3 py-2 text-sm">
                           {IconComponent && (
                             <div className={cn(
                               "mr-3 flex items-center justify-center w-6 h-6 rounded-md",
-                              isActive ? "active-icon" : "text-sidebar-foreground"
+                              isActive ? "active-icon" : "text-blue-700"
                             )}>
                               <IconComponent size={18} />
                             </div>
