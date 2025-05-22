@@ -44,8 +44,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
       toast("Erro ao adicionar categoria", {
-        description: "Houve um problema ao adicionar a categoria.",
-        variant: "destructive"
+        description: "Houve um problema ao adicionar a categoria."
       });
       return "";
     }
@@ -58,8 +57,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao atualizar categoria:", error);
       toast("Erro ao atualizar categoria", {
-        description: "Houve um problema ao atualizar a categoria.",
-        variant: "destructive"
+        description: "Houve um problema ao atualizar a categoria."
       });
     }
   };
@@ -71,8 +69,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
       toast("Erro ao excluir categoria", {
-        description: "Houve um problema ao excluir a categoria.",
-        variant: "destructive"
+        description: "Houve um problema ao excluir a categoria."
       });
     }
   };
@@ -86,8 +83,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao adicionar grupo:", error);
       toast("Erro ao adicionar grupo", {
-        description: "Houve um problema ao adicionar o grupo.",
-        variant: "destructive"
+        description: "Houve um problema ao adicionar o grupo."
       });
       return "";
     }
@@ -100,8 +96,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao atualizar grupo:", error);
       toast("Erro ao atualizar grupo", {
-        description: "Houve um problema ao atualizar o grupo.",
-        variant: "destructive"
+        description: "Houve um problema ao atualizar o grupo."
       });
     }
   };
@@ -113,8 +108,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao excluir grupo:", error);
       toast("Erro ao excluir grupo", {
-        description: "Houve um problema ao excluir o grupo.",
-        variant: "destructive"
+        description: "Houve um problema ao excluir o grupo."
       });
     }
   };
@@ -128,8 +122,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao adicionar marca:", error);
       toast("Erro ao adicionar marca", {
-        description: "Houve um problema ao adicionar a marca.",
-        variant: "destructive"
+        description: "Houve um problema ao adicionar a marca."
       });
       return "";
     }
@@ -142,8 +135,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao atualizar marca:", error);
       toast("Erro ao atualizar marca", {
-        description: "Houve um problema ao atualizar a marca.",
-        variant: "destructive"
+        description: "Houve um problema ao atualizar a marca."
       });
     }
   };
@@ -155,8 +147,7 @@ export const useProductClassification = () => {
     } catch (error) {
       console.error("Erro ao excluir marca:", error);
       toast("Erro ao excluir marca", {
-        description: "Houve um problema ao excluir a marca.",
-        variant: "destructive"
+        description: "Houve um problema ao excluir a marca."
       });
     }
   };

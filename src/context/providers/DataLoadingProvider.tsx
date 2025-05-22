@@ -30,7 +30,7 @@ interface DataLoadingContextType {
   isUsingMockData: boolean;
   setCustomers: React.Dispatch<React.SetStateAction<any[]>>;
   setProducts: React.Dispatch<React.SetStateAction<any[]>>;
-  refreshData: () => Promise<boolean>;
+  refreshData: () => Promise<void>; // Changed from boolean to void
   clearItemCache: (itemType: string) => Promise<boolean>;
 }
 
@@ -201,17 +201,18 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  const refreshData = useCallback(async () => {
+  // Changed return type to void to match interface
+  const refreshData = useCallback(async (): Promise<void> => {
     setIsRefreshing(true);
     try {
       await Promise.all([
         refetchSettings(),
         // Add other refetch functions here
       ]);
-      return true;
+      // No return value needed
     } catch (error) {
       console.error("Error refreshing data:", error);
-      return false;
+      // No return value needed
     } finally {
       setIsRefreshing(false);
     }
@@ -414,8 +415,8 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
       return true;
     },
     refreshData: async () => {
-      const result = await refreshData();
-      return result;
+      await refreshData();
+      // Changed to void return type
     },
     
     connectionStatus,

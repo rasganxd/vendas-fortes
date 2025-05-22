@@ -87,8 +87,7 @@ export const useProducts = () => {
     } catch (error) {
       console.error("Erro ao adicionar produto:", error);
       toast("Erro ao adicionar produto", {
-        description: "Houve um problema ao adicionar o produto.",
-        variant: "destructive"
+        description: "Houve um problema ao adicionar o produto."
       });
       return "";
     }
@@ -120,8 +119,7 @@ export const useProducts = () => {
     } catch (error) {
       console.error("Erro ao atualizar produto:", error);
       toast("Erro ao atualizar produto", {
-        description: "Houve um problema ao atualizar o produto.",
-        variant: "destructive"
+        description: "Houve um problema ao atualizar o produto."
       });
     }
   };
@@ -150,8 +148,7 @@ export const useProducts = () => {
     } catch (error) {
       console.error("Error deleting product:", error);
       toast("Erro ao excluir produto", {
-        description: "Houve um problema ao excluir o produto.",
-        variant: "destructive"
+        description: "Houve um problema ao excluir o produto."
       });
       throw error;
     }
@@ -224,8 +221,7 @@ export const useProducts = () => {
     } catch (error) {
       console.error("Erro ao adicionar produtos em massa:", error);
       toast("Erro ao adicionar produtos", {
-        description: "Houve um problema ao adicionar os produtos em massa.",
-        variant: "destructive"
+        description: "Houve um problema ao adicionar os produtos em massa."
       });
       return [];
     }
