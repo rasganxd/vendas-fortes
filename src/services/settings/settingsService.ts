@@ -1,15 +1,11 @@
 
-import { AppSettings, Theme } from '@/types';
+import { AppSettings } from '@/types';
 import { db } from '@/services/firebase/config';
 import { collection, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { v4 as uuidv4 } from 'uuid';
 
 // Firebase collection name
 const SETTINGS_COLLECTION = 'app_settings';
 const SETTINGS_DOC_ID = 'app_settings';
-
-// Local storage keys for caching theme
-const THEME_CACHE_KEY = 'app_theme_cache';
 
 /**
  * Fetches settings from Firebase
@@ -27,26 +23,10 @@ export const fetchSettingsFromFirebase = async (): Promise<AppSettings | null> =
       // Convert Firebase timestamp to Date objects
       const data = docSnap.data();
       
-      // Ensure both naming conventions are supported in the theme
-      let theme = null;
-      if (data.theme) {
-        theme = {
-          ...data.theme,
-          // Ensure both property sets exist
-          primary: data.theme.primary || data.theme.primaryColor || '#1C64F2',
-          secondary: data.theme.secondary || data.theme.secondaryColor || '#047481',
-          accent: data.theme.accent || data.theme.accentColor || '#0694A2',
-          primaryColor: data.theme.primaryColor || data.theme.primary || '#1C64F2',
-          secondaryColor: data.theme.secondaryColor || data.theme.secondary || '#047481',
-          accentColor: data.theme.accentColor || data.theme.accent || '#0694A2'
-        };
-      }
-      
       return {
         id: docSnap.id,
         companyName: data.companyName || '',
         companyLogo: data.companyLogo || '',
-        theme: theme,
         company: data.company || {
           name: '',
           address: '',
@@ -80,14 +60,6 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
       id: SETTINGS_DOC_ID,
       companyName: 'Minha Empresa',
       companyLogo: '',
-      theme: {
-        primary: '#1C64F2',
-        secondary: '#047481',
-        accent: '#0694A2',
-        primaryColor: '#1C64F2',
-        secondaryColor: '#047481',
-        accentColor: '#0694A2'
-      },
       company: {
         name: 'Minha Empresa',
         address: '',
@@ -103,9 +75,6 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
     // Save to Firebase
     await setDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID), defaultSettings);
     
-    // Cache the theme
-    cacheTheme(defaultSettings.theme);
-    
     console.log('Default settings created:', defaultSettings);
     return defaultSettings;
   } catch (error) {
@@ -116,14 +85,6 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
       id: 'local-fallback',
       companyName: 'Minha Empresa',
       companyLogo: '',
-      theme: {
-        primary: '#1C64F2',
-        secondary: '#047481',
-        accent: '#0694A2',
-        primaryColor: '#1C64F2',
-        secondaryColor: '#047481',
-        accentColor: '#0694A2'
-      },
       company: {
         name: 'Minha Empresa',
         address: '',
@@ -163,42 +124,10 @@ export const updateSettingsInFirebase = async (
     // Update in Firebase
     await updateDoc(doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID), updateData);
     
-    // If theme was updated, cache it
-    if (newSettings.theme) {
-      cacheTheme(newSettings.theme);
-    }
-    
     console.log('Settings updated successfully');
     return true;
   } catch (error) {
     console.error('Error updating settings:', error);
     return false;
-  }
-};
-
-/**
- * Cache theme in localStorage for offline use
- * @param theme - Theme object
- */
-export const cacheTheme = (theme: Theme | null): void => {
-  if (theme) {
-    localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme));
-  }
-};
-
-/**
- * Load theme from cache
- * @returns Theme | null
- */
-export const loadCachedTheme = (): Theme | null => {
-  try {
-    const cachedTheme = localStorage.getItem(THEME_CACHE_KEY);
-    if (cachedTheme) {
-      return JSON.parse(cachedTheme);
-    }
-    return null;
-  } catch (error) {
-    console.error('Error loading cached theme:', error);
-    return null;
   }
 };

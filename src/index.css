@@ -1,3 +1,4 @@
+
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
@@ -14,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 40% 12%;
 
-    /* Modern blue primary */
+    /* Fixed blue primary */
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
 
@@ -36,15 +37,15 @@
     --input: 214 32% 91%;
     --ring: 217 91% 60%;
 
-    /* Sidebar styles - these now are linked to theme variables */
-    --sidebar-background: 221 83% 18%; /* Default dark version of primary */
+    /* Sidebar styles - fixed values */
+    --sidebar-background: 221 83% 18%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: var(--primary);
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: var(--primary);
+    --sidebar-accent: 217 91% 60%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 20% 26%;
-    --sidebar-ring: var(--primary);
+    --sidebar-ring: 217 91% 60%;
 
     --radius: 0.5rem;
 
@@ -178,15 +179,17 @@
     @apply text-xl md:text-2xl;
   }
   
-  /* Sidebar gradient that uses CSS variables and will adapt to theme changes */
+  /* Sidebar gradient that uses fixed CSS variables */
   .sidebar-gradient {
     background: hsl(var(--primary)) !important;
     color: white !important;
     transition: background 0.3s ease;
   }
   
-  /* Dynamic sidebar header that updates with theme changes */
+  /* Fixed sidebar header styles */
   .dynamic-sidebar-header {
+    background-color: hsl(var(--primary));
+    color: white;
     transition: background 0.3s ease;
   }
   

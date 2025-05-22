@@ -1,10 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { AppSettings, Theme } from '@/types';
-import { 
-  applyThemeColors, 
-  loadCachedTheme 
-} from '@/utils/theme-utils';
+import { AppSettings } from '@/types';
 import { 
   fetchSettingsFromFirebase, 
   createDefaultSettings,
@@ -12,7 +8,7 @@ import {
 } from '@/services/settings/settingsService';
 
 /**
- * Hook for managing application settings with optimized theme handling
+ * Hook for managing application settings without theme handling
  */
 export const useAppSettings = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -31,52 +27,18 @@ export const useAppSettings = () => {
       
       if (fetchedSettings) {
         setSettings(fetchedSettings);
-        // Apply the theme colors if present
-        if (fetchedSettings.theme) {
-          // Ensure both naming conventions are supported
-          const themeWithBothStyles = ensureThemeProperties(fetchedSettings.theme);
-          applyThemeColors(themeWithBothStyles);
-        }
       } else {
         // Create default settings if none exist
         const defaultSettings = await createDefaultSettings();
         setSettings(defaultSettings);
-        if (defaultSettings.theme) {
-          // Ensure both naming conventions are supported
-          const themeWithBothStyles = ensureThemeProperties(defaultSettings.theme);
-          applyThemeColors(themeWithBothStyles);
-        }
       }
     } catch (err) {
       console.error('Error fetching settings:', err);
       setError(err as Error);
-      
-      // If there's an error fetching from Firebase, try to load from cache
-      loadCachedTheme();
     } finally {
       setIsLoading(false);
     }
   }, []);
-
-  /**
-   * Helper to ensure theme has both naming convention properties
-   */
-  const ensureThemeProperties = (theme: Theme): Theme & {
-    primaryColor?: string;
-    secondaryColor?: string;
-    accentColor?: string;
-  } => {
-    return {
-      ...theme,
-      // Ensure both naming conventions are present
-      primary: theme.primary,
-      secondary: theme.secondary,
-      accent: theme.accent,
-      primaryColor: theme.primaryColor || theme.primary,
-      secondaryColor: theme.secondaryColor || theme.secondary,
-      accentColor: theme.accentColor || theme.accent
-    };
-  };
 
   /**
    * Updates application settings
@@ -97,13 +59,6 @@ export const useAppSettings = () => {
       // Update local state
       setSettings(updatedSettings);
       
-      // If theme was updated, apply the new colors
-      if (newSettings.theme) {
-        // Ensure both naming conventions are present
-        const themeWithBothStyles = ensureThemeProperties(newSettings.theme as Theme);
-        applyThemeColors(themeWithBothStyles);
-      }
-      
       return true;
     } catch (err) {
       console.error('Error updating settings:', err);
@@ -112,9 +67,8 @@ export const useAppSettings = () => {
     }
   };
 
-  // Apply cached theme on mount, before Firebase data is available
+  // Load settings on mount
   useEffect(() => {
-    loadCachedTheme();
     fetchSettings();
   }, [fetchSettings]);
 
@@ -123,7 +77,6 @@ export const useAppSettings = () => {
     updateSettings,
     isLoading,
     error,
-    refetch: fetchSettings,
-    applyThemeColors // Expose this function so it can be called manually if needed
+    refetch: fetchSettings
   };
 };

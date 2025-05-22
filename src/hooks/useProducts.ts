@@ -137,10 +137,8 @@ export const loadProducts = async (forceRefresh = true): Promise<Product[]> => {
 // For backward compatibility, we keep the old name as well
 export const fetchProducts = loadProducts;
 
-// Context operations can now leverage these improvements
+// Export a simplified version of product operations without the useDataLoading dependency
 export const useProductOperations = () => {
-  const { clearItemCache } = useDataLoading();
-  
   const deleteProductAndSync = async (
     id: string, 
     products: Product[], 
@@ -162,9 +160,6 @@ export const useProductOperations = () => {
       
       // Update local storage service
       await productLocalService.delete(id);
-      
-      // Refresh product cache to ensure consistency
-      await clearItemCache('products');
       
       return;
     } catch (error) {

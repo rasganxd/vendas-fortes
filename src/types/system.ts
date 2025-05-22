@@ -13,7 +13,6 @@ export interface AppSettings {
   id?: string;
   companyName: string;
   companyLogo: string;
-  theme?: Theme;
   createdAt: Date;
   updatedAt: Date;
   company?: {
@@ -24,13 +23,4 @@ export interface AppSettings {
     document: string;
     footer: string;
   };
-}
-
-export interface Theme {
-  primary: string;
-  secondary: string;
-  accent: string;
-  primaryColor: string;  // Ensure both naming conventions are supported
-  secondaryColor: string;
-  accentColor: string;
 }
