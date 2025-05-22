@@ -200,7 +200,7 @@ export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ childr
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Keep as boolean return type
+  // Implementation of refreshData that returns a boolean
   const refreshData = useCallback(async (): Promise<boolean> => {
     setIsRefreshing(true);
     try {

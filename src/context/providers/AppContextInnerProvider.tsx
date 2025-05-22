@@ -207,7 +207,13 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     
     addDeliveryRoute,
     updateDeliveryRoute,
-    deleteDeliveryRoute
+    deleteDeliveryRoute,
+    
+    // Make sure refreshData returns the correct type according to AppContextType
+    refreshData: async () => {
+      const result = await appData.refreshData();
+      return result; // Return the boolean result from appData.refreshData
+    }
   };
   
   return (
