@@ -130,13 +130,13 @@ export default function SideNav() {
   useEffect(() => {
     // Add dynamic-sidebar class to the sidebar header to allow styling from CSS
     const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-    if (sidebarHeader && settings?.theme?.primaryColor) {
-      sidebarHeader.style.backgroundColor = settings.theme.primaryColor;
+    if (sidebarHeader && settings?.primaryColor) {
+      sidebarHeader.style.backgroundColor = settings.primaryColor;
       sidebarHeader.style.color = '#ffffff';
     }
     
     console.log("Theme change detected in SideNav");
-  }, [settings?.theme]);
+  }, [settings?.primaryColor]);
   
   // Group the navigation items by their group
   const groupedNavItems = navigation.reduce((groups, item) => {
