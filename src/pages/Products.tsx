@@ -60,6 +60,17 @@ export default function Products() {
     if (!Array.isArray(productCategories)) {
       console.warn("productCategories is not an array");
     }
+
+    // Log individual items for debugging
+    if (Array.isArray(productCategories) && productCategories.length > 0) {
+      console.log("Sample product category:", productCategories[0]);
+    }
+    if (Array.isArray(productGroups) && productGroups.length > 0) {
+      console.log("Sample product group:", productGroups[0]);
+    }
+    if (Array.isArray(productBrands) && productBrands.length > 0) {
+      console.log("Sample product brand:", productBrands[0]);
+    }
   }, [productGroups, productCategories, productBrands]);
 
   // Count pending products

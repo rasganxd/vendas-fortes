@@ -42,100 +42,22 @@ export const useProductCategories = () => {
           
           setProductCategories(uniqueCategories);
         } else {
-          // If no categories in Firebase, use default ones
-          console.log("No product categories found in Firebase, using defaults");
-          const currentDate = new Date();
-          const defaultCategories = [
-            { 
-              id: '1', 
-              name: 'Refrigerantes', 
-              description: 'Refrigerantes em lata e garrafa',
-              notes: '',
-              createdAt: currentDate,
-              updatedAt: currentDate
-            },
-            { 
-              id: '2', 
-              name: 'Cervejas', 
-              description: 'Cervejas em lata e garrafa',
-              notes: '',
-              createdAt: currentDate,
-              updatedAt: currentDate
-            },
-            { 
-              id: '3', 
-              name: 'Biscoitos', 
-              description: 'Biscoitos e bolachas',
-              notes: '',
-              createdAt: currentDate,
-              updatedAt: currentDate
-            },
-            { 
-              id: '4', 
-              name: 'Detergentes', 
-              description: 'Detergentes líquidos e em pó',
-              notes: '',
-              createdAt: currentDate,
-              updatedAt: currentDate
-            }
-          ];
-          setProductCategories(defaultCategories);
-          
-          // Add the default categories to Firebase
-          for (const category of defaultCategories) {
-            try {
-              // Don't show toast notifications for default categories
-              await addProductCategoryWithoutToast(category);
-            } catch (error) {
-              console.error("Error adding default category:", error);
-              // Continue with next category even if one fails
-            }
-          }
+          // If no categories in Firebase, show empty state
+          console.log("No product categories found in Firebase");
+          setProductCategories([]);
+          notification.info("Nenhuma categoria encontrada", {
+            description: "Você precisa criar categorias de produtos para utilizá-las."
+          });
         }
       } catch (error) {
         console.error("Error loading product categories:", error);
         
-        // Show error toast only once with new notification system
         notification.error("Erro ao carregar categorias", {
-          description: "Não foi possível carregar as categorias de produtos. Usando padrões."
+          description: "Não foi possível carregar as categorias de produtos."
         });
         
-        // Fallback to default categories if there's an error
-        const currentDate = new Date();
-        setProductCategories([
-          { 
-            id: '1', 
-            name: 'Refrigerantes', 
-            description: 'Refrigerantes em lata e garrafa',
-            notes: '',
-            createdAt: currentDate,
-            updatedAt: currentDate
-          },
-          { 
-            id: '2', 
-            name: 'Cervejas', 
-            description: 'Cervejas em lata e garrafa',
-            notes: '',
-            createdAt: currentDate,
-            updatedAt: currentDate
-          },
-          { 
-            id: '3', 
-            name: 'Biscoitos', 
-            description: 'Biscoitos e bolachas',
-            notes: '',
-            createdAt: currentDate,
-            updatedAt: currentDate
-          },
-          { 
-            id: '4', 
-            name: 'Detergentes', 
-            description: 'Detergentes líquidos e em pó',
-            notes: '',
-            createdAt: currentDate,
-            updatedAt: currentDate
-          }
-        ]);
+        // Set empty array instead of defaults to prevent duplication
+        setProductCategories([]);
       } finally {
         setIsLoading(false);
       }

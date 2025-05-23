@@ -9,18 +9,28 @@ import { where } from 'firebase/firestore';
 export const productCategoryService = {
   // Get all product categories
   getAll: async (): Promise<ProductCategory[]> => {
-    const categories = await productCategoryFirestoreService.getAll();
-    
-    // Remove duplicates by name
-    const uniqueCategories = categories.reduce((acc: ProductCategory[], current) => {
-      const existingCategory = acc.find(item => item.name === current.name);
-      if (!existingCategory) {
-        acc.push(current);
-      }
-      return acc;
-    }, []);
-    
-    return uniqueCategories;
+    try {
+      console.log("Getting all product categories...");
+      const categories = await productCategoryFirestoreService.getAll();
+      console.log(`Retrieved ${categories.length} product categories from Firestore`);
+      
+      // Remove duplicates by name
+      const uniqueCategories = categories.reduce((acc: ProductCategory[], current) => {
+        const existingCategory = acc.find(item => item.name === current.name);
+        if (!existingCategory) {
+          acc.push(current);
+        } else {
+          console.log(`Found duplicate category with name: ${current.name}, keeping only one instance`);
+        }
+        return acc;
+      }, []);
+      
+      console.log(`Returning ${uniqueCategories.length} unique product categories`);
+      return uniqueCategories;
+    } catch (error) {
+      console.error("Error getting all product categories:", error);
+      return [];
+    }
   },
   
   // Get product category by ID
@@ -36,7 +46,10 @@ export const productCategoryService = {
   // Get all product categories with the same name
   getAllByName: async (name: string): Promise<ProductCategory[]> => {
     try {
-      return await productCategoryFirestoreService.query([where('name', '==', name)]);
+      console.log(`Getting all product categories with name: ${name}`);
+      const results = await productCategoryFirestoreService.query([where('name', '==', name)]);
+      console.log(`Found ${results.length} categories with name: ${name}`);
+      return results;
     } catch (error) {
       console.error(`ProductCategoryService: Error getting categories by name ${name}:`, error);
       return [];
@@ -45,20 +58,29 @@ export const productCategoryService = {
   
   // Add product category
   add: async (category: Omit<ProductCategory, 'id'>): Promise<string> => {
-    // Check if category with same name already exists
-    const existingCategory = await productCategoryFirestoreService.getByName(category.name);
-    
-    if (existingCategory) {
-      console.log(`Category with name '${category.name}' already exists with ID: ${existingCategory.id}`);
-      return existingCategory.id;
+    try {
+      console.log(`Adding new product category: ${category.name}`);
+      
+      // Check if category with same name already exists
+      const existingCategory = await productCategoryFirestoreService.getByName(category.name);
+      
+      if (existingCategory) {
+        console.log(`Category with name '${category.name}' already exists with ID: ${existingCategory.id}`);
+        return existingCategory.id;
+      }
+      
+      const categoryWithDates = {
+        ...category,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      const id = await productCategoryFirestoreService.add(categoryWithDates);
+      console.log(`Added new product category with ID: ${id}`);
+      return id;
+    } catch (error) {
+      console.error(`Error adding product category ${category.name}:`, error);
+      throw error;
     }
-    
-    const categoryWithDates = {
-      ...category,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    return productCategoryFirestoreService.add(categoryWithDates);
   },
   
   // Update product category
