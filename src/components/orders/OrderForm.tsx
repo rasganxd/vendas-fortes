@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Customer, SalesRep, PaymentTable, Product, OrderItem } from '@/types';
@@ -11,7 +10,6 @@ import OrderItemsTable from './OrderItemsTable';
 import { Button } from "@/components/ui/button";
 import { Save, FileText, ClipboardList, Wifi, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
 interface OrderFormProps {
   customers: Customer[];
   salesReps: SalesRep[];
@@ -35,7 +33,6 @@ interface OrderFormProps {
   handleRemoveItem: (productId: string) => void;
   connectionStatus?: ConnectionStatus;
 }
-
 export default function OrderForm({
   customers,
   salesReps,
@@ -63,39 +60,32 @@ export default function OrderForm({
   const customerInputRef = useRef<HTMLInputElement>(null);
   const paymentTableRef = useRef<HTMLButtonElement>(null);
   const productInputRef = useRef<HTMLInputElement>(null);
-
   const calculateTotal = () => {
-    return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
+    return orderItems.reduce((total, item) => total + (item.unitPrice || 0) * (item.quantity || 0), 0);
   };
 
   // Helper function to get color class based on connection status
   const getConnectionStatusColor = () => {
     switch (connectionStatus) {
-      case 'online': return 'bg-green-500 hover:bg-green-600';
-      case 'offline': return 'bg-amber-500 hover:bg-amber-600';
-      case 'connecting': return 'bg-blue-500 hover:bg-blue-600';
-      case 'error': return 'bg-red-500 hover:bg-red-600';
-      default: return 'bg-gray-500 hover:bg-gray-600';
+      case 'online':
+        return 'bg-green-500 hover:bg-green-600';
+      case 'offline':
+        return 'bg-amber-500 hover:bg-amber-600';
+      case 'connecting':
+        return 'bg-blue-500 hover:bg-blue-600';
+      case 'error':
+        return 'bg-red-500 hover:bg-red-600';
+      default:
+        return 'bg-gray-500 hover:bg-gray-600';
     }
   };
-
   const getConnectionStatusBadge = () => {
     const icon = connectionStatus === 'online' ? <Wifi size={14} /> : <WifiOff size={14} />;
     const variant = connectionStatus === 'online' ? 'success' : 'warning';
-    const text = connectionStatus === 'online' ? 'Online' : 
-                 connectionStatus === 'offline' ? 'Offline' : 
-                 connectionStatus === 'connecting' ? 'Conectando' : 'Erro';
-    
-    return (
-      <Badge variant={variant as any} className="ml-2 flex items-center gap-1">
-        {icon}
-        <span>{text}</span>
-      </Badge>
-    );
+    const text = connectionStatus === 'online' ? 'Online' : connectionStatus === 'offline' ? 'Offline' : connectionStatus === 'connecting' ? 'Conectando' : 'Erro';
+    return;
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card className="shadow-md border-gray-200">
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 gap-6">
@@ -108,61 +98,28 @@ export default function OrderForm({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               <div className="relative">
-                <SalesRepSearchInput
-                  salesReps={salesReps}
-                  selectedSalesRep={selectedSalesRep}
-                  setSelectedSalesRep={setSelectedSalesRep}
-                  inputRef={salesRepInputRef}
-                  onEnterPress={() => customerInputRef.current?.focus()}
-                  initialInputValue={salesRepInputValue}
-                />
+                <SalesRepSearchInput salesReps={salesReps} selectedSalesRep={selectedSalesRep} setSelectedSalesRep={setSelectedSalesRep} inputRef={salesRepInputRef} onEnterPress={() => customerInputRef.current?.focus()} initialInputValue={salesRepInputValue} />
               </div>
               
               <div className="relative">
-                <CustomerSearchInput 
-                  customers={customers}
-                  selectedCustomer={selectedCustomer}
-                  setSelectedCustomer={setSelectedCustomer}
-                  inputRef={customerInputRef}
-                  onEnterPress={() => paymentTableRef.current?.focus()}
-                  initialInputValue={customerInputValue}
-                />
+                <CustomerSearchInput customers={customers} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} inputRef={customerInputRef} onEnterPress={() => paymentTableRef.current?.focus()} initialInputValue={customerInputValue} />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               <div className="relative">
-                <PaymentOptionsInput
-                  paymentTables={paymentTables}
-                  selectedPaymentTable={selectedPaymentTable}
-                  setSelectedPaymentTable={setSelectedPaymentTable}
-                  simplifiedView={true}
-                  buttonRef={paymentTableRef}
-                  onSelectComplete={() => productInputRef.current?.focus()}
-                  customerId={selectedCustomer?.id}
-                  customerName={selectedCustomer?.name}
-                  orderTotal={calculateTotal()}
-                />
+                <PaymentOptionsInput paymentTables={paymentTables} selectedPaymentTable={selectedPaymentTable} setSelectedPaymentTable={setSelectedPaymentTable} simplifiedView={true} buttonRef={paymentTableRef} onSelectComplete={() => productInputRef.current?.focus()} customerId={selectedCustomer?.id} customerName={selectedCustomer?.name} orderTotal={calculateTotal()} />
               </div>
               
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
-                  <Button 
-                    onClick={handleViewRecentPurchases} 
-                    variant="outline" 
-                    className="w-full border-dashed border-gray-300 hover:border-gray-400 text-gray-700"
-                    disabled={!selectedCustomer}
-                  >
+                  <Button onClick={handleViewRecentPurchases} variant="outline" className="w-full border-dashed border-gray-300 hover:border-gray-400 text-gray-700" disabled={!selectedCustomer}>
                     <ClipboardList size={18} className="mr-2" />
                     Visualizar Compras Recentes
                   </Button>
                 </div>
                 
-                <Button 
-                  onClick={handleCreateOrder} 
-                  disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
-                  className={`w-48 h-11 text-white ${getConnectionStatusColor()}`}
-                >
+                <Button onClick={handleCreateOrder} disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} className={`w-48 h-11 text-white ${getConnectionStatusColor()}`}>
                   <Save size={18} className="mr-2" />
                   {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}
                 </Button>
@@ -174,25 +131,14 @@ export default function OrderForm({
       
       <Card className="shadow-md border-gray-200">
         <CardContent className="pt-6">
-          <ProductSearchInput
-            products={products}
-            addItemToOrder={handleAddItem}
-            inlineLayout={true}
-            inputRef={productInputRef}
-          />
+          <ProductSearchInput products={products} addItemToOrder={handleAddItem} inlineLayout={true} inputRef={productInputRef} />
         </CardContent>
       </Card>
       
       <Card className="shadow-md border-gray-200">
         <CardContent className="p-0">
-          <OrderItemsTable 
-            orderItems={orderItems}
-            onRemoveItem={handleRemoveItem}
-            calculateTotal={calculateTotal}
-            isEditMode={isEditMode}
-          />
+          <OrderItemsTable orderItems={orderItems} onRemoveItem={handleRemoveItem} calculateTotal={calculateTotal} isEditMode={isEditMode} />
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
