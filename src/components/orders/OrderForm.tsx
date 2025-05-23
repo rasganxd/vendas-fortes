@@ -92,7 +92,7 @@ export default function OrderForm({
               <h3 className="text-lg font-medium">
                 {isEditMode ? 'Editar Pedido' : 'Novo Pedido'}
               </h3>
-              <ConnectionStatus />
+              {/* Remove the ConnectionStatus component here since it's already in the page header */}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">

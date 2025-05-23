@@ -100,7 +100,7 @@ export default function NewOrder() {
   }
   
   return (
-    <PageLayout title={pageTitle}>
+    <PageLayout title={pageTitle} showConnectionStatus={true}>
       <div className="max-w-7xl mx-auto">
         <OrderFormContainer preloadedOrder={orderData} orderId={orderId} />
       </div>
