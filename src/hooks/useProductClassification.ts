@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { toast } from 'sonner';
 import { useProductCategories } from './useProductCategories';
@@ -34,6 +34,13 @@ export const useProductClassification = () => {
 
   // State for the active tab
   const [activeTab, setActiveTab] = useState<'categories' | 'groups' | 'brands'>('categories');
+
+  // Add debugging to see if data is loading correctly
+  useEffect(() => {
+    console.log("useProductClassification - productCategories:", productCategories);
+    console.log("useProductClassification - productGroups:", productGroups);
+    console.log("useProductClassification - productBrands:", productBrands);
+  }, [productCategories, productGroups, productBrands]);
 
   // Category operations with toast notifications
   const handleAddCategory = async (category: Omit<ProductCategory, 'id'>) => {

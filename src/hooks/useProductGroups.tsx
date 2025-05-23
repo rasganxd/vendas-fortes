@@ -3,6 +3,12 @@ import { useState, useEffect } from 'react';
 import { ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productGroupService } from '@/services/firebase/productGroupService';
+import { productGroupLocalService } from '@/services/local/productGroupLocalService';
+
+// Cache keys for local storage
+const GROUPS_CACHE_KEY = 'app_product_groups_cache';
+const GROUPS_CACHE_TIMESTAMP_KEY = 'app_product_groups_timestamp';
+const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 
 export const useProductGroups = () => {
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
@@ -13,17 +19,73 @@ export const useProductGroups = () => {
     const fetchProductGroups = async () => {
       setIsLoading(true);
       try {
-        // Fetch the list
+        console.log("Fetching product groups from Firebase");
+        // Try Firebase first
         const groups = await productGroupService.getAll();
-        setProductGroups(groups);
         console.log(`Loaded ${groups.length} product groups from Firebase`);
+        
+        if (groups && groups.length > 0) {
+          setProductGroups(groups);
+          
+          // Update local storage for offline access
+          try {
+            await productGroupLocalService.setAll(groups);
+            console.log("Updated product groups in local storage");
+            
+            // Update cache
+            localStorage.setItem(GROUPS_CACHE_KEY, JSON.stringify(groups));
+            localStorage.setItem(GROUPS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+          } catch (localError) {
+            console.error("Error saving product groups to local storage:", localError);
+          }
+        } else {
+          console.log("No product groups found in Firebase, trying local storage");
+          
+          // Try local storage if Firebase returned empty result
+          try {
+            const localGroups = await productGroupLocalService.getAll();
+            console.log(`Found ${localGroups.length} product groups in local storage`);
+            
+            if (localGroups && localGroups.length > 0) {
+              setProductGroups(localGroups);
+            } else {
+              // Try cache as last resort
+              const cachedData = localStorage.getItem(GROUPS_CACHE_KEY);
+              if (cachedData) {
+                const cachedGroups = JSON.parse(cachedData);
+                console.log(`Found ${cachedGroups.length} product groups in cache`);
+                setProductGroups(cachedGroups);
+              }
+            }
+          } catch (localError) {
+            console.error("Error fetching product groups from local storage:", localError);
+          }
+        }
       } catch (error) {
-        console.error('Error fetching product groups:', error);
-        toast({
-          title: "Erro ao carregar grupos",
-          description: "Não foi possível carregar os grupos de produtos.",
-          variant: "destructive"
-        });
+        console.error('Error fetching product groups from Firebase:', error);
+        
+        // Try local storage as fallback
+        try {
+          console.log("Firebase fetch failed, trying local storage");
+          const localGroups = await productGroupLocalService.getAll();
+          console.log(`Found ${localGroups.length} product groups in local storage`);
+          setProductGroups(localGroups);
+        } catch (localError) {
+          console.error('Error fetching product groups from local storage:', localError);
+          
+          // Try to use cached data as last resort
+          const cachedData = localStorage.getItem(GROUPS_CACHE_KEY);
+          if (cachedData) {
+            console.log("Using cached product groups data");
+            setProductGroups(JSON.parse(cachedData));
+          } else {
+            toast({
+              title: "Erro ao carregar grupos",
+              description: "Não foi possível carregar os grupos de produtos.",
+              variant: "destructive"
+            });
+          }
+        }
       } finally {
         setIsLoading(false);
       }
@@ -34,11 +96,23 @@ export const useProductGroups = () => {
 
   const addProductGroup = async (group: Omit<ProductGroup, 'id'>) => {
     try {
+      console.log("Adding new product group:", group);
       const id = await productGroupService.add(group);
 
       // Refresh groups after adding to ensure we have the latest data without duplicates
       const updatedGroups = await productGroupService.getAll();
       setProductGroups(updatedGroups);
+      
+      try {
+        // Update local storage
+        await productGroupLocalService.setAll(updatedGroups);
+        
+        // Update cache
+        localStorage.setItem(GROUPS_CACHE_KEY, JSON.stringify(updatedGroups));
+        localStorage.setItem(GROUPS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      } catch (localError) {
+        console.error("Error updating local storage after adding group:", localError);
+      }
       
       toast({
         title: "Grupo adicionado",
@@ -59,6 +133,7 @@ export const useProductGroups = () => {
 
   const updateProductGroup = async (id: string, group: Partial<ProductGroup>) => {
     try {
+      console.log(`Updating product group ${id}:`, group);
       await productGroupService.update(id, group);
 
       // Refresh the list to ensure consistency
@@ -66,9 +141,19 @@ export const useProductGroups = () => {
       if (groupToUpdate) {
         const updatedGroup = { ...groupToUpdate, ...group, updatedAt: new Date() };
         
-        setProductGroups(
-          productGroups.map(pg => (pg.id === id ? updatedGroup : pg))
-        );
+        const updatedGroups = productGroups.map(pg => (pg.id === id ? updatedGroup : pg));
+        setProductGroups(updatedGroups);
+        
+        try {
+          // Update local storage
+          await productGroupLocalService.update(id, group);
+          
+          // Update cache
+          localStorage.setItem(GROUPS_CACHE_KEY, JSON.stringify(updatedGroups));
+          localStorage.setItem(GROUPS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        } catch (localError) {
+          console.error("Error updating local storage after updating group:", localError);
+        }
       }
       
       toast({
@@ -87,6 +172,7 @@ export const useProductGroups = () => {
 
   const deleteProductGroup = async (id: string) => {
     try {
+      console.log(`Deleting product group ${id}`);
       // Get the name of the group before deleting
       const groupToDelete = productGroups.find(g => g.id === id);
       if (groupToDelete) {
@@ -96,10 +182,34 @@ export const useProductGroups = () => {
         // Refresh the list from the server
         const updatedGroups = await productGroupService.getAll();
         setProductGroups(updatedGroups);
+        
+        try {
+          // Update local storage
+          await productGroupLocalService.delete(id);
+          
+          // Update cache
+          localStorage.setItem(GROUPS_CACHE_KEY, JSON.stringify(updatedGroups));
+          localStorage.setItem(GROUPS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        } catch (localError) {
+          console.error("Error updating local storage after deleting group:", localError);
+        }
       } else {
         // If not found in local state, just delete by ID
         await productGroupService.delete(id);
-        setProductGroups(productGroups.filter(pg => pg.id !== id));
+        
+        const updatedGroups = productGroups.filter(pg => pg.id !== id);
+        setProductGroups(updatedGroups);
+        
+        try {
+          // Update local storage
+          await productGroupLocalService.delete(id);
+          
+          // Update cache
+          localStorage.setItem(GROUPS_CACHE_KEY, JSON.stringify(updatedGroups));
+          localStorage.setItem(GROUPS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        } catch (localError) {
+          console.error("Error updating local storage after deleting group:", localError);
+        }
       }
       
       toast({

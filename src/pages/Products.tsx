@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
@@ -39,6 +39,13 @@ export default function Products() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+
+  // Add logging to check if we're getting the product classifications
+  useEffect(() => {
+    console.log("Product Groups from context:", productGroups);
+    console.log("Product Categories from context:", productCategories);
+    console.log("Product Brands from context:", productBrands);
+  }, [productGroups, productCategories, productBrands]);
 
   // Count pending products
   const pendingProducts = products.filter(p => p.syncStatus === 'pending').length;
@@ -82,10 +89,10 @@ export default function Products() {
         // Set initial price equal to cost (it will be updated in pricing page)
         price: data.cost,
         unit: data.unit,
-        // Make sure to handle "none" values properly
-        categoryId: data.categoryId && data.categoryId !== "none" ? data.categoryId : undefined,
-        groupId: data.groupId && data.groupId !== "none" ? data.groupId : undefined,
-        brandId: data.brandId && data.brandId !== "none" ? data.brandId : undefined,
+        // Make sure to handle "none" values properly - use null instead of undefined
+        categoryId: data.categoryId && data.categoryId !== "none" ? data.categoryId : null,
+        groupId: data.groupId && data.groupId !== "none" ? data.groupId : null,
+        brandId: data.brandId && data.brandId !== "none" ? data.brandId : null,
         stock: data.stock || 0,
         minStock: 0 // Default value for minStock
       };

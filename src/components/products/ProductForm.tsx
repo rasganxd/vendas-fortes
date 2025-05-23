@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Form,
   FormControl,
@@ -29,8 +29,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2 } from 'lucide-react';
-import { Product } from '@/types';
+import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { formatCurrency } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Define a schema for the product form
 const productFormSchema = z.object({
@@ -71,9 +72,9 @@ interface ProductFormProps {
   isEditing: boolean;
   selectedProduct: Product | null;
   products: Product[];
-  productCategories: any[];
-  productGroups: any[];
-  productBrands: any[];
+  productCategories: ProductCategory[];
+  productGroups: ProductGroup[];
+  productBrands: ProductBrand[];
   onSubmit: (data: ProductFormData) => Promise<void>;
 }
 
@@ -89,6 +90,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
   onSubmit
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Add debug logging for classification data
+  useEffect(() => {
+    console.log("ProductForm received productCategories:", productCategories);
+    console.log("ProductForm received productGroups:", productGroups);
+    console.log("ProductForm received productBrands:", productBrands);
+  }, [productCategories, productGroups, productBrands]);
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
@@ -108,11 +116,17 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const handleSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
+      console.log("Submitting form data:", data);
       await onSubmit(data);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Check if classifications data is available
+  const hasCategories = productCategories && productCategories.length > 0;
+  const hasGroups = productGroups && productGroups.length > 0;
+  const hasBrands = productBrands && productBrands.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -224,17 +238,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value || "none"}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhuma</SelectItem>
-                          {productCategories.map(category => (
-                            <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {productCategories === undefined ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhuma</SelectItem>
+                            {hasCategories ? (
+                              productCategories.map(category => (
+                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-categories" disabled>Nenhuma categoria cadastrada</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -247,17 +269,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Grupo</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value || "none"}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Grupo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {productGroups.map(group => (
-                            <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {productGroups === undefined ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Grupo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum</SelectItem>
+                            {hasGroups ? (
+                              productGroups.map(group => (
+                                <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-groups" disabled>Nenhum grupo cadastrado</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -270,17 +300,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Marca</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value || "none"}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Marca" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhuma</SelectItem>
-                          {productBrands.map(brand => (
-                            <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {productBrands === undefined ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Marca" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhuma</SelectItem>
+                            {hasBrands ? (
+                              productBrands.map(brand => (
+                                <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-brands" disabled>Nenhuma marca cadastrada</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>
