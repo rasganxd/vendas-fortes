@@ -1,29 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useConnection } from '@/context/providers/ConnectionProvider';
 
 /**
  * Hook for monitoring online/offline status for customer data
  */
 export const useCustomerConnection = () => {
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  
-  // Monitor online/offline status
-  useEffect(() => {
-    const handleOnlineStatus = () => {
-      const online = navigator.onLine;
-      console.log("Connection status changed:", online ? "ONLINE" : "OFFLINE");
-      setIsOnline(online);
-    };
-    
-    window.addEventListener('online', handleOnlineStatus);
-    window.addEventListener('offline', handleOnlineStatus);
-    
-    return () => {
-      window.removeEventListener('online', handleOnlineStatus);
-      window.removeEventListener('offline', handleOnlineStatus);
-    };
-  }, []);
+  const { isOnline } = useConnection();
   
   return { isOnline };
 };
-

@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/firebase/productService'; 
 import { productLocalService } from '@/services/local/productLocalService';
 import { toast } from 'sonner';
-import { useFirebaseConnection } from './useFirebaseConnection';
+import { useConnection } from '@/context/providers/ConnectionProvider';
 
 // Cache keys
 const PRODUCTS_CACHE_KEY = 'app_products_cache';
@@ -16,7 +15,7 @@ export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const { connectionStatus } = useFirebaseConnection();
+  const { connectionStatus } = useConnection();
   
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +35,7 @@ export const useProducts = () => {
 
   // When connection is restored, try to sync pending products
   useEffect(() => {
-    if (connectionStatus === 'connected') {
+    if (connectionStatus === 'online') {
       syncPendingProducts();
     }
   }, [connectionStatus]);
@@ -66,7 +65,7 @@ export const useProducts = () => {
   };
   
   const syncPendingProducts = async (): Promise<boolean> => {
-    if (isSyncing || connectionStatus !== 'connected') return false;
+    if (isSyncing || connectionStatus !== 'online') return false;
     
     setIsSyncing(true);
     try {
@@ -97,7 +96,6 @@ export const useProducts = () => {
     }
   };
   
-  // Add product operations
   const addProduct = async (product: Omit<Product, 'id'>): Promise<string> => {
     try {
       // Garantir que o produto tenha um código

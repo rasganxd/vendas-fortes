@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Card,
@@ -18,6 +17,7 @@ import { useProducts } from '@/hooks/useProducts';
 import ProductsTable from '@/components/products/ProductsTable';
 import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import ProductForm from '@/components/products/ProductForm';
+import { useConnection } from '@/context/providers/ConnectionProvider';
 
 export default function Products() {
   const { 
@@ -25,6 +25,8 @@ export default function Products() {
     productCategories, 
     productBrands
   } = useAppContext();
+  
+  const { connectionStatus } = useConnection();
   
   // Use the enhanced useProducts hook directly
   const {
