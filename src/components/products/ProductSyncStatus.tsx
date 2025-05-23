@@ -8,6 +8,7 @@ interface ProductSyncStatusProps {
   isSyncing: boolean;
   onSyncProducts: () => Promise<boolean>;
   onRefreshProducts: () => Promise<boolean>;
+  hideButtons?: boolean;
 }
 
 const ProductSyncStatus: React.FC<ProductSyncStatusProps> = ({
@@ -15,17 +16,19 @@ const ProductSyncStatus: React.FC<ProductSyncStatusProps> = ({
   isLoading,
   isSyncing,
   onSyncProducts,
-  onRefreshProducts
+  onRefreshProducts,
+  hideButtons = false
 }) => {
   return (
     <ConnectionStatus 
       pendingItems={productsPending}
       isLoading={isLoading}
       isPendingSync={isSyncing}
-      onSyncPending={onSyncProducts}
-      onRefresh={onRefreshProducts}
+      onSyncPending={hideButtons ? undefined : onSyncProducts}
+      onRefresh={hideButtons ? undefined : onRefreshProducts}
       className="ml-auto"
       hideWhenSynchronized={false}
+      showRefresh={!hideButtons}
     />
   );
 };

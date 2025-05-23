@@ -132,6 +132,19 @@ export default function Products() {
 
   return (
     <PageLayout title="Produtos">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
+        </div>
+        <ProductSyncStatus
+          productsPending={pendingProducts}
+          isLoading={isLoading}
+          isSyncing={isSyncing}
+          onSyncProducts={handleSyncProducts}
+          onRefreshProducts={handleForceRefresh}
+        />
+      </div>
+      
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -147,6 +160,7 @@ export default function Products() {
               isSyncing={isSyncing}
               onSyncProducts={handleSyncProducts}
               onRefreshProducts={handleForceRefresh}
+              hideButtons={true}
             />
           </div>
         </CardHeader>
