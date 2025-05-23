@@ -131,7 +131,7 @@ export default function Products() {
   };
 
   return (
-    <PageLayout title="Produtos">
+    <PageLayout title="Produtos" showConnectionStatus={false}>
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">

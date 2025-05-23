@@ -25,6 +25,7 @@ const ProductSyncStatus: React.FC<ProductSyncStatusProps> = ({
       onSyncPending={onSyncProducts}
       onRefresh={onRefreshProducts}
       className="ml-auto"
+      hideWhenSynchronized={false}
     />
   );
 };

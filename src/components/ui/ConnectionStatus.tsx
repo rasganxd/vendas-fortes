@@ -14,6 +14,7 @@ interface ConnectionStatusProps {
   onSyncPending?: () => Promise<boolean>;
   isLoading?: boolean;
   className?: string;
+  hideWhenSynchronized?: boolean;
 }
 
 const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
@@ -24,6 +25,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   onSyncPending,
   isLoading = false,
   className = '',
+  hideWhenSynchronized = false,
 }) => {
   const { connectionStatus, reconnect, isOnline } = useConnection();
   
@@ -57,6 +59,12 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       await onSyncPending();
     }
   };
+  
+  // If hideWhenSynchronized is true and everything is synchronized, return null
+  if (hideWhenSynchronized && connectionStatus === 'online' && pendingItems === 0 && 
+      !isLoading && !isPendingSync) {
+    return null;
+  }
   
   return (
     <div className={`flex items-center gap-2 ${className}`}>
