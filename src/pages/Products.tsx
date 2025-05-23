@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -154,14 +155,6 @@ export default function Products() {
                 Gerencie os produtos da sua empresa
               </CardDescription>
             </div>
-            <ProductSyncStatus
-              productsPending={pendingProducts}
-              isLoading={isLoading}
-              isSyncing={isSyncing}
-              onSyncProducts={handleSyncProducts}
-              onRefreshProducts={handleForceRefresh}
-              hideButtons={true}
-            />
           </div>
         </CardHeader>
         <CardContent>
