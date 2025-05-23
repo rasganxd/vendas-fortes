@@ -25,7 +25,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   isLoading = false,
   className = '',
 }) => {
-  const { connectionStatus, reconnect } = useConnection();
+  const { connectionStatus, reconnect, isOnline } = useConnection();
   
   const handleRefresh = async () => {
     if (onRefresh) {

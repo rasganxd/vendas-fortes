@@ -181,6 +181,7 @@ export default function Vehicles() {
     <PageLayout 
       title="Cadastro de Veículos" 
       subtitle="Gerenciamento dos veículos disponíveis para as rotas de entrega"
+      showConnectionStatus={true} // Explicitly enable connection status
     >
       <div className="mb-6 flex justify-between items-center">
         <div>

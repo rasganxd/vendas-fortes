@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   getDocs, 
@@ -27,7 +26,8 @@ const requiredCollections = [
   'product_categories',
   'product_brands',
   'product_groups',
-  'sync_logs' 
+  'sync_logs',
+  'vehicles' // Added vehicles collection here
 ];
 
 // Maximum retry attempts for initialization
