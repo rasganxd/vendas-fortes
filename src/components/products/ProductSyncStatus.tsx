@@ -24,11 +24,12 @@ const ProductSyncStatus: React.FC<ProductSyncStatusProps> = ({
       pendingItems={productsPending}
       isLoading={isLoading}
       isPendingSync={isSyncing}
-      onSyncPending={hideButtons ? undefined : onSyncProducts}
-      onRefresh={hideButtons ? undefined : onRefreshProducts}
+      onSyncPending={onSyncProducts}
+      onRefresh={onRefreshProducts}
       className="ml-auto"
       hideWhenSynchronized={false}
       showRefresh={!hideButtons}
+      showButtons={!hideButtons}
     />
   );
 };

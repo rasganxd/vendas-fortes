@@ -15,6 +15,7 @@ interface ConnectionStatusProps {
   isLoading?: boolean;
   className?: string;
   hideWhenSynchronized?: boolean;
+  showButtons?: boolean;
 }
 
 const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
@@ -26,6 +27,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   isLoading = false,
   className = '',
   hideWhenSynchronized = false,
+  showButtons = true,
 }) => {
   const { connectionStatus, reconnect, isOnline } = useConnection();
   
@@ -89,7 +91,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
         </Badge>
       )}
       
-      {pendingItems > 0 && connectionStatus === 'online' && onSyncPending && (
+      {showButtons && pendingItems > 0 && connectionStatus === 'online' && onSyncPending && (
         <Button 
           variant="outline" 
           size="sm" 
@@ -101,7 +103,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
         </Button>
       )}
       
-      {showRefresh && (
+      {showButtons && showRefresh && (
         <Button 
           variant="outline" 
           size="sm" 
