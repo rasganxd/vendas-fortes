@@ -62,7 +62,7 @@ export default function Products() {
       console.error("Erro ao excluir produto:", error);
       toast("Erro", {
         description: "Ocorreu um erro ao excluir o produto",
-        variant: "destructive"
+        style: { backgroundColor: 'rgb(239, 68, 68)', color: 'white' }
       });
     }
   };
@@ -111,7 +111,7 @@ export default function Products() {
       console.error("Erro ao salvar produto:", error);
       toast("Erro", {
         description: "Ocorreu um erro ao salvar o produto",
-        variant: "destructive"
+        style: { backgroundColor: 'rgb(239, 68, 68)', color: 'white' }
       });
     }
   };
