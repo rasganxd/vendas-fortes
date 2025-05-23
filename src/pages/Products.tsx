@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Product } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
-import BulkProductUpload from '@/components/products/BulkProductUpload';
 import { useProducts } from '@/hooks/useProducts';
 import ProductsTable from '@/components/products/ProductsTable';
 import ProductsActionButtons from '@/components/products/ProductsActionButtons';
@@ -38,7 +37,6 @@ export default function Products() {
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   // Add detailed logging to check if we're getting the product classifications
   useEffect(() => {
@@ -142,9 +140,6 @@ export default function Products() {
       });
     }
   };
-  const openBulkUpload = () => {
-    setBulkUploadOpen(true);
-  };
   const handleForceRefresh = async () => {
     return await forceRefreshProducts();
   };
@@ -175,7 +170,7 @@ export default function Products() {
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            <ProductsActionButtons onAddProduct={handleAdd} onOpenBulkUpload={openBulkUpload} />
+            <ProductsActionButtons onAddProduct={handleAdd} />
           </div>
           
           <ProductsTable products={products} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
@@ -183,7 +178,5 @@ export default function Products() {
       </Card>
       
       <ProductForm open={open} onOpenChange={setOpen} isEditing={isEditing} selectedProduct={selectedProduct} products={products} productCategories={safeProductCategories} productGroups={safeProductGroups} productBrands={safeProductBrands} onSubmit={handleSubmit} />
-      
-      <BulkProductUpload open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
     </PageLayout>;
 }
