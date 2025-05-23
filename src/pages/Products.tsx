@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -7,90 +7,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { cn, formatCurrency } from "@/lib/utils"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { toast } from "@/components/ui/use-toast"
-import { Trash, Loader2 } from 'lucide-react';
+import { toast } from "sonner";
 import { Product } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import BulkProductUpload from '@/components/products/BulkProductUpload';
 import ProductSyncStatus from '@/components/products/ProductSyncStatus';
 import { useProducts } from '@/hooks/useProducts';
-
-// Define a schema for the product form - removing minStock field
-const productFormSchema = z.object({
-  code: z.number().min(1, {
-    message: "Código deve ser maior que zero.",
-  }),
-  name: z.string().min(2, {
-    message: "Nome deve ter pelo menos 2 caracteres.",
-  }),
-  cost: z.number(),
-  unit: z.string(),
-  stock: z.number().optional(),
-  categoryId: z.string().optional(),
-  groupId: z.string().optional(),
-  brandId: z.string().optional(),
-})
-
-// Define a type for the form data
-type ProductFormData = z.infer<typeof productFormSchema>
-
-// Common units for products
-const PRODUCT_UNITS = [
-  { value: 'UN', label: 'Unidade (UN)' },
-  { value: 'KG', label: 'Quilograma (KG)' },
-  { value: 'L', label: 'Litro (L)' },
-  { value: 'ML', label: 'Mililitro (ML)' },
-  { value: 'CX', label: 'Caixa (CX)' },
-  { value: 'PCT', label: 'Pacote (PCT)' },
-  { value: 'PAR', label: 'Par (PAR)' },
-  { value: 'DUZIA', label: 'Dúzia (DZ)' },
-  { value: 'ROLO', label: 'Rolo (RL)' },
-  { value: 'METRO', label: 'Metro (M)' }
-];
+import ProductsTable from '@/components/products/ProductsTable';
+import ProductsActionButtons from '@/components/products/ProductsActionButtons';
+import ProductForm from '@/components/products/ProductForm';
 
 export default function Products() {
   const { 
@@ -114,54 +41,26 @@ export default function Products() {
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   
   // Count pending products
   const pendingProducts = products.filter(p => p.syncStatus === 'pending').length;
 
-  const form = useForm<z.infer<typeof productFormSchema>>({
-    resolver: zodResolver(productFormSchema),
-    defaultValues: {
-      code: 0,
-      name: "",
-      cost: 0,
-      unit: "UN",
-      stock: 0,
-      categoryId: "",
-      groupId: "",
-      brandId: "",
-    },
-  });
-
   const handleEdit = (product: Product) => {
     setIsEditing(true);
     setSelectedProduct(product);
-    // Set default values for the form - removed minStock
-    form.reset({
-      code: product.code,
-      name: product.name,
-      cost: product.cost,
-      unit: product.unit || "UN",
-      stock: product.stock,
-      categoryId: product.categoryId || "",
-      groupId: product.groupId || "",
-      brandId: product.brandId || "",
-    });
     setOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id);
-      toast({
-        title: "Produto excluído",
+      toast("Produto excluído", {
         description: "O produto foi excluído com sucesso"
       });
     } catch (error) {
       console.error("Erro ao excluir produto:", error);
-      toast({
-        title: "Erro",
+      toast("Erro", {
         description: "Ocorreu um erro ao excluir o produto",
         variant: "destructive"
       });
@@ -171,21 +70,10 @@ export default function Products() {
   const handleAdd = () => {
     setIsEditing(false);
     setSelectedProduct(null);
-    form.reset({
-      code: Math.max(...products.map(p => p.code || 0), 0) + 1,
-      name: "",
-      cost: 0,
-      unit: "UN",
-      stock: 0,
-      categoryId: "",
-      groupId: "",
-      brandId: "",
-    });
     setOpen(true);
   };
 
-  const handleSubmit = async (data: z.infer<typeof productFormSchema>) => {
-    setIsSubmitting(true);
+  const handleSubmit = async (data: any) => {
     try {
       const productData: Partial<Product> = {
         code: data.code,
@@ -207,15 +95,13 @@ export default function Products() {
       
       if (isEditing && selectedProduct) {
         await updateProduct(selectedProduct.id, productData);
-        toast({
-          title: "Produto atualizado",
+        toast("Produto atualizado", {
           description: "O produto foi atualizado com sucesso"
         });
       } else {
         const newProductId = await addProduct(productData as Omit<Product, 'id'>);
         console.log("Product added with ID:", newProductId);
-        toast({
-          title: "Produto adicionado",
+        toast("Produto adicionado", {
           description: "O produto foi adicionado com sucesso"
         });
       }
@@ -223,13 +109,10 @@ export default function Products() {
       setOpen(false);
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
-      toast({
-        title: "Erro",
+      toast("Erro", {
         description: "Ocorreu um erro ao salvar o produto",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -238,13 +121,11 @@ export default function Products() {
   };
   
   const handleForceRefresh = async () => {
-    await forceRefreshProducts();
-    return true; // Return boolean as expected by the interface
+    return await forceRefreshProducts();
   };
   
   const handleSyncProducts = async () => {
-    const success = await syncPendingProducts();
-    return success; // Return boolean as expected by the interface
+    return await syncPendingProducts();
   };
 
   return (
@@ -268,285 +149,33 @@ export default function Products() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="pb-4 flex flex-wrap gap-2">
-            <Button onClick={handleAdd}>Adicionar Produto</Button>
-            <Button variant="outline" onClick={openBulkUpload}>Cadastro em Massa</Button>
-            <Link to="/produtos/precificacao">
-              <Button variant="outline">Precificação</Button>
-            </Link>
-            <Link to="/produtos/classificacoes">
-              <Button variant="outline">Classificações</Button>
-            </Link>
-          </div>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Custo</TableHead>
-                  <TableHead>Preço</TableHead>
-                  <TableHead>Estoque</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products && products.length > 0 ? (
-                  products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>{product.code}</TableCell>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{formatCurrency(product.cost)}</TableCell>
-                      <TableCell>{formatCurrency(product.price)}</TableCell>
-                      <TableCell>{product.stock}</TableCell>
-                      <TableCell className="text-right">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="lucide lucide-edit"
-                                >
-                                  <path d="M11 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
-                                  <path d="M15 3h6v6M10 14L21.5 2.5" />
-                                </svg>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Editar</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(product.id)}>
-                                <Trash size={16} className="text-destructive" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Excluir</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      Nenhum produto encontrado. Adicione produtos utilizando o botão acima.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+          <ProductsActionButtons 
+            onAddProduct={handleAdd}
+            onOpenBulkUpload={openBulkUpload}
+          />
+          
+          <ProductsTable 
+            products={products}
+            isLoading={isLoading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         </CardContent>
       </Card>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>{isEditing ? "Editar" : "Adicionar"} Produto</DialogTitle>
-            <DialogDescription>
-              {isEditing ? "Edite os dados do produto abaixo" : "Preencha os dados do novo produto abaixo"}
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Código do produto" {...field} 
-                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome do produto" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="cost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preço de Custo</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Preço de custo" 
-                          value={formatCurrency(field.value)} 
-                          onChange={(e) => {
-                            // Remove all non-numeric characters
-                            const numericValue = e.target.value.replace(/\D/g, '');
-                            // Convert to number and divide by 100 to get decimal value
-                            field.onChange(parseFloat(numericValue) / 100 || 0);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="unit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unidade</FormLabel>
-                      <FormControl>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a unidade" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PRODUCT_UNITS.map(unit => (
-                              <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                <FormField
-                  control={form.control}
-                  name="stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estoque</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Estoque" {...field} 
-                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoria</FormLabel>
-                      <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value || "none"}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nenhuma</SelectItem>
-                            {productCategories.map(category => (
-                              <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="groupId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Grupo</FormLabel>
-                      <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value || "none"}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Grupo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nenhum</SelectItem>
-                            {productGroups.map(group => (
-                              <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="brandId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Marca</FormLabel>
-                      <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value || "none"}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Marca" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nenhuma</SelectItem>
-                            {productBrands.map(brand => (
-                              <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    "Salvar"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      
+      <ProductForm 
+        open={open}
+        onOpenChange={setOpen}
+        isEditing={isEditing}
+        selectedProduct={selectedProduct}
+        products={products}
+        productCategories={productCategories}
+        productGroups={productGroups}
+        productBrands={productBrands}
+        onSubmit={handleSubmit}
+      />
       
       <BulkProductUpload open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
     </PageLayout>
-  )
+  );
 }
