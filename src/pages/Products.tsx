@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,12 +7,12 @@ import { Product } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import BulkProductUpload from '@/components/products/BulkProductUpload';
-import ProductSyncStatus from '@/components/products/ProductSyncStatus';
 import { useProducts } from '@/hooks/useProducts';
 import ProductsTable from '@/components/products/ProductsTable';
 import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import ProductForm from '@/components/products/ProductForm';
 import { useConnection } from '@/context/providers/ConnectionProvider';
+
 export default function Products() {
   // Get product classifications from AppContext
   const {
@@ -160,7 +161,7 @@ export default function Products() {
         <div>
           <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
         </div>
-        <ProductSyncStatus productsPending={pendingProducts} isLoading={isLoading} isSyncing={isSyncing} onSyncProducts={handleSyncProducts} onRefreshProducts={handleForceRefresh} />
+        {/* ProductSyncStatus component removed to avoid duplication */}
       </div>
       
       <Card>
