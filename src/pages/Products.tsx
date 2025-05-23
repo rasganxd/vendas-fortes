@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -131,7 +132,7 @@ export default function Products() {
   };
 
   return (
-    <PageLayout title="Produtos" showConnectionStatus={false}>
+    <PageLayout title="Produtos">
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -141,6 +142,14 @@ export default function Products() {
                 Gerencie os produtos da sua empresa
               </CardDescription>
             </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-4">
+            <ProductsActionButtons 
+              onAddProduct={handleAdd}
+              onOpenBulkUpload={openBulkUpload}
+            />
             <ProductSyncStatus
               productsPending={pendingProducts}
               isLoading={isLoading}
@@ -149,12 +158,6 @@ export default function Products() {
               onRefreshProducts={handleForceRefresh}
             />
           </div>
-        </CardHeader>
-        <CardContent>
-          <ProductsActionButtons 
-            onAddProduct={handleAdd}
-            onOpenBulkUpload={openBulkUpload}
-          />
           
           <ProductsTable 
             products={products}
