@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import ProductsTable from '@/components/products/ProductsTable';
 import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import ProductForm from '@/components/products/ProductForm';
 import { useConnection } from '@/context/providers/ConnectionProvider';
+
 export default function Products() {
   const {
     productGroups,
@@ -40,11 +42,13 @@ export default function Products() {
 
   // Count pending products
   const pendingProducts = products.filter(p => p.syncStatus === 'pending').length;
+  
   const handleEdit = (product: Product) => {
     setIsEditing(true);
     setSelectedProduct(product);
     setOpen(true);
   };
+  
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id);
@@ -62,11 +66,13 @@ export default function Products() {
       });
     }
   };
+  
   const handleAdd = () => {
     setIsEditing(false);
     setSelectedProduct(null);
     setOpen(true);
   };
+  
   const handleSubmit = async (data: any) => {
     try {
       const productData: Partial<Product> = {
@@ -83,8 +89,10 @@ export default function Products() {
         stock: data.stock || 0,
         minStock: 0 // Default value for minStock
       };
+      
       console.log("Form data submitted:", data);
       console.log("Product data being sent:", productData);
+      
       if (isEditing && selectedProduct) {
         await updateProduct(selectedProduct.id, productData);
         toast("Produto atualizado", {
@@ -109,15 +117,19 @@ export default function Products() {
       });
     }
   };
+  
   const openBulkUpload = () => {
     setBulkUploadOpen(true);
   };
+  
   const handleForceRefresh = async () => {
     return await forceRefreshProducts();
   };
+  
   const handleSyncProducts = async () => {
     return await syncPendingProducts();
   };
+
   return <PageLayout title="Produtos">
       <div className="flex justify-between items-center mb-4">
         <div>
@@ -130,10 +142,8 @@ export default function Products() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>
-            </CardTitle>
-              <CardDescription>
-            </CardDescription>
+              <CardTitle>Produtos</CardTitle>
+              <CardDescription>Lista de produtos cadastrados no sistema</CardDescription>
             </div>
           </div>
         </CardHeader>
