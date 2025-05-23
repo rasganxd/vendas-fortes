@@ -13,11 +13,16 @@ const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 export const useProductGroups = () => {
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
   // Load product groups from Firebase
   useEffect(() => {
+    // Prevent multiple load attempts
+    if (hasAttemptedLoad) return;
+    
     const fetchProductGroups = async () => {
       setIsLoading(true);
+      setHasAttemptedLoad(true);
       try {
         console.log("Fetching product groups from Firebase");
         // Try Firebase first
@@ -39,26 +44,58 @@ export const useProductGroups = () => {
             console.error("Error saving product groups to local storage:", localError);
           }
         } else {
-          console.log("No product groups found in Firebase, trying local storage");
+          console.log("No product groups found in Firebase, creating default groups");
           
-          // Try local storage if Firebase returned empty result
-          try {
-            const localGroups = await productGroupLocalService.getAll();
-            console.log(`Found ${localGroups.length} product groups in local storage`);
-            
-            if (localGroups && localGroups.length > 0) {
-              setProductGroups(localGroups);
-            } else {
-              // Try cache as last resort
-              const cachedData = localStorage.getItem(GROUPS_CACHE_KEY);
-              if (cachedData) {
-                const cachedGroups = JSON.parse(cachedData);
-                console.log(`Found ${cachedGroups.length} product groups in cache`);
-                setProductGroups(cachedGroups);
-              }
+          // Create default groups if none exist
+          const currentDate = new Date();
+          const defaultGroups = [
+            { 
+              id: 'group-1', 
+              name: 'Bebidas', 
+              description: 'Bebidas diversas',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: 'group-2', 
+              name: 'Alimentos', 
+              description: 'Produtos alimentícios',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: 'group-3', 
+              name: 'Limpeza', 
+              description: 'Produtos de limpeza',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
             }
+          ];
+          
+          // Add default groups to Firebase
+          for (const group of defaultGroups) {
+            try {
+              await productGroupService.add(group);
+            } catch (error) {
+              console.error(`Error adding default group ${group.name}:`, error);
+            }
+          }
+          
+          // Set default groups in state
+          setProductGroups(defaultGroups);
+          
+          // Update local storage with default groups
+          try {
+            await productGroupLocalService.setAll(defaultGroups);
+            
+            // Update cache
+            localStorage.setItem(GROUPS_CACHE_KEY, JSON.stringify(defaultGroups));
+            localStorage.setItem(GROUPS_CACHE_TIMESTAMP_KEY, Date.now().toString());
           } catch (localError) {
-            console.error("Error fetching product groups from local storage:", localError);
+            console.error("Error saving default groups to local storage:", localError);
           }
         }
       } catch (error) {
@@ -69,22 +106,90 @@ export const useProductGroups = () => {
           console.log("Firebase fetch failed, trying local storage");
           const localGroups = await productGroupLocalService.getAll();
           console.log(`Found ${localGroups.length} product groups in local storage`);
-          setProductGroups(localGroups);
+          
+          if (localGroups && localGroups.length > 0) {
+            setProductGroups(localGroups);
+          } else {
+            // Try to use cached data as last resort
+            const cachedData = localStorage.getItem(GROUPS_CACHE_KEY);
+            if (cachedData) {
+              console.log("Using cached product groups data");
+              setProductGroups(JSON.parse(cachedData));
+            } else {
+              // If nothing worked, create default groups
+              console.log("No product groups found in cache, creating default groups");
+              const currentDate = new Date();
+              const defaultGroups = [
+                { 
+                  id: 'group-1', 
+                  name: 'Bebidas', 
+                  description: 'Bebidas diversas',
+                  notes: '',
+                  createdAt: currentDate,
+                  updatedAt: currentDate
+                },
+                { 
+                  id: 'group-2', 
+                  name: 'Alimentos', 
+                  description: 'Produtos alimentícios',
+                  notes: '',
+                  createdAt: currentDate,
+                  updatedAt: currentDate
+                },
+                { 
+                  id: 'group-3', 
+                  name: 'Limpeza', 
+                  description: 'Produtos de limpeza',
+                  notes: '',
+                  createdAt: currentDate,
+                  updatedAt: currentDate
+                }
+              ];
+              setProductGroups(defaultGroups);
+              
+              toast({
+                title: "Grupos padrão criados",
+                description: "Foram criados grupos de produtos padrão.",
+              });
+            }
+          }
         } catch (localError) {
           console.error('Error fetching product groups from local storage:', localError);
+          toast({
+            title: "Erro ao carregar grupos",
+            description: "Não foi possível carregar os grupos de produtos.",
+            variant: "destructive"
+          });
           
-          // Try to use cached data as last resort
-          const cachedData = localStorage.getItem(GROUPS_CACHE_KEY);
-          if (cachedData) {
-            console.log("Using cached product groups data");
-            setProductGroups(JSON.parse(cachedData));
-          } else {
-            toast({
-              title: "Erro ao carregar grupos",
-              description: "Não foi possível carregar os grupos de produtos.",
-              variant: "destructive"
-            });
-          }
+          // Last resort - create default groups in memory only
+          const currentDate = new Date();
+          const defaultGroups = [
+            { 
+              id: 'group-1', 
+              name: 'Bebidas', 
+              description: 'Bebidas diversas',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: 'group-2', 
+              name: 'Alimentos', 
+              description: 'Produtos alimentícios',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: 'group-3', 
+              name: 'Limpeza', 
+              description: 'Produtos de limpeza',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            }
+          ];
+          setProductGroups(defaultGroups);
         }
       } finally {
         setIsLoading(false);
@@ -92,7 +197,7 @@ export const useProductGroups = () => {
     };
 
     fetchProductGroups();
-  }, []);
+  }, [hasAttemptedLoad]);
 
   const addProductGroup = async (group: Omit<ProductGroup, 'id'>) => {
     try {

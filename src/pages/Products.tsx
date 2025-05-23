@@ -15,6 +15,7 @@ import ProductForm from '@/components/products/ProductForm';
 import { useConnection } from '@/context/providers/ConnectionProvider';
 
 export default function Products() {
+  // Get product classifications from AppContext
   const {
     productGroups,
     productCategories,
@@ -40,11 +41,25 @@ export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
-  // Add logging to check if we're getting the product classifications
+  // Add detailed logging to check if we're getting the product classifications
   useEffect(() => {
-    console.log("Product Groups from context:", productGroups);
-    console.log("Product Categories from context:", productCategories);
-    console.log("Product Brands from context:", productBrands);
+    console.log("Product classifications data in Products.tsx:");
+    console.log("- Product Groups from context:", productGroups?.length || 0, "items");
+    console.log("- Product Categories from context:", productCategories?.length || 0, "items");
+    console.log("- Product Brands from context:", productBrands?.length || 0, "items");
+    
+    // Check if arrays are actually arrays and contain data
+    if (!Array.isArray(productGroups)) {
+      console.warn("productGroups is not an array");
+    }
+    
+    if (!Array.isArray(productBrands)) {
+      console.warn("productBrands is not an array");
+    }
+    
+    if (!Array.isArray(productCategories)) {
+      console.warn("productCategories is not an array");
+    }
   }, [productGroups, productCategories, productBrands]);
 
   // Count pending products
@@ -82,6 +97,7 @@ export default function Products() {
   
   const handleSubmit = async (data: any) => {
     try {
+      // Ensure groupId, categoryId, and brandId are null when "none" is selected
       const productData: Partial<Product> = {
         code: data.code,
         name: data.name,
@@ -137,6 +153,11 @@ export default function Products() {
     return await syncPendingProducts();
   };
 
+  // Ensure productGroups, productCategories, and productBrands are arrays
+  const safeProductGroups = Array.isArray(productGroups) ? productGroups : [];
+  const safeProductCategories = Array.isArray(productCategories) ? productCategories : [];
+  const safeProductBrands = Array.isArray(productBrands) ? productBrands : [];
+
   return <PageLayout title="Produtos">
       <div className="flex justify-between items-center mb-4">
         <div>
@@ -163,7 +184,17 @@ export default function Products() {
         </CardContent>
       </Card>
       
-      <ProductForm open={open} onOpenChange={setOpen} isEditing={isEditing} selectedProduct={selectedProduct} products={products} productCategories={productCategories} productGroups={productGroups} productBrands={productBrands} onSubmit={handleSubmit} />
+      <ProductForm 
+        open={open} 
+        onOpenChange={setOpen} 
+        isEditing={isEditing} 
+        selectedProduct={selectedProduct} 
+        products={products} 
+        productCategories={safeProductCategories} 
+        productGroups={safeProductGroups} 
+        productBrands={safeProductBrands} 
+        onSubmit={handleSubmit} 
+      />
       
       <BulkProductUpload open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
     </PageLayout>;

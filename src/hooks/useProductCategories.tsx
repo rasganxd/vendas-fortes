@@ -27,8 +27,20 @@ export const useProductCategories = () => {
         
         // If we got categories from Firebase, use them
         if (transformedCategories && transformedCategories.length > 0) {
-          setProductCategories(transformedCategories);
           console.log(`Loaded ${transformedCategories.length} product categories from Firebase`);
+          
+          // Remove any duplicates that might exist
+          const uniqueCategories = transformedCategories.reduce((acc: ProductCategory[], current) => {
+            const existingCategory = acc.find(item => item.name === current.name);
+            if (!existingCategory) {
+              acc.push(current);
+            } else {
+              console.log(`Found duplicate category with name: ${current.name}, keeping only one instance`);
+            }
+            return acc;
+          }, []);
+          
+          setProductCategories(uniqueCategories);
         } else {
           // If no categories in Firebase, use default ones
           console.log("No product categories found in Firebase, using defaults");
@@ -135,6 +147,13 @@ export const useProductCategories = () => {
   // Internal helper to add category without toast notifications
   const addProductCategoryWithoutToast = async (category: Omit<ProductCategory, 'id'>) => {
     try {
+      // Check if category with same name already exists to prevent duplicates
+      const existingCategories = await productCategoryService.getAllByName(category.name);
+      if (existingCategories && existingCategories.length > 0) {
+        console.log(`Category with name '${category.name}' already exists, skipping...`);
+        return existingCategories[0].id;
+      }
+      
       // Prepare data for Supabase
       const supabaseData = {
         name: category.name,
@@ -152,7 +171,12 @@ export const useProductCategories = () => {
         createdAt: category.createdAt || new Date(),
         updatedAt: category.updatedAt || new Date()
       };
-      setProductCategories(prev => [...prev, newCategory]);
+      setProductCategories(prev => {
+        // Check if this category already exists in the state
+        const exists = prev.some(c => c.name === newCategory.name);
+        if (exists) return prev;
+        return [...prev, newCategory];
+      });
       
       return id;
     } catch (error) {

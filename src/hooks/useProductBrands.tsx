@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { ProductBrand } from '@/types';
 import { productBrandService } from '@/services/firebase/productBrandService';
@@ -13,6 +12,7 @@ const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 export const useProductBrands = () => {
   const [productBrands, setProductBrands] = useState<ProductBrand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
   // Helper function to clear cache for specific item
   const clearItemCache = async (itemType: string) => {
@@ -24,40 +24,175 @@ export const useProductBrands = () => {
   };
 
   useEffect(() => {
+    // Prevent multiple load attempts
+    if (hasAttemptedLoad) return;
+    
     const fetchBrands = async () => {
       try {
         setIsLoading(true);
+        setHasAttemptedLoad(true);
+        
+        console.log("Fetching product brands from Firebase");
         // Always try Firebase first
         const brands = await productBrandService.getAll();
-        setProductBrands(brands);
+        console.log(`Loaded ${brands.length} product brands from Firebase`);
         
-        // Update local storage service
-        await productBrandLocalService.setAll(brands);
-        
-        // Update cache
-        localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(brands));
-        localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        if (brands && brands.length > 0) {
+          setProductBrands(brands);
+          
+          // Update local storage service
+          await productBrandLocalService.setAll(brands);
+          
+          // Update cache
+          localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(brands));
+          localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        } else {
+          console.log("No product brands found in Firebase, creating default brands");
+          
+          // Create default brands if none exist
+          const currentDate = new Date();
+          const defaultBrands = [
+            { 
+              id: 'brand-1', 
+              name: 'Coca-Cola', 
+              description: 'Bebidas da marca Coca-Cola',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: 'brand-2', 
+              name: 'Nestlé', 
+              description: 'Produtos alimentícios Nestlé',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: 'brand-3', 
+              name: 'Omo', 
+              description: 'Produtos de limpeza Omo',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            }
+          ];
+          
+          // Add default brands to Firebase
+          for (const brand of defaultBrands) {
+            try {
+              await productBrandService.add(brand);
+            } catch (error) {
+              console.error(`Error adding default brand ${brand.name}:`, error);
+            }
+          }
+          
+          // Set default brands in state
+          setProductBrands(defaultBrands);
+          
+          // Update local storage with default brands
+          try {
+            await productBrandLocalService.setAll(defaultBrands);
+            
+            // Update cache
+            localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(defaultBrands));
+            localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+          } catch (localError) {
+            console.error("Error saving default brands to local storage:", localError);
+          }
+        }
       } catch (error) {
         console.error('Error fetching product brands:', error);
         
         // Try local storage service as fallback
         try {
+          console.log("Firebase fetch failed, trying local storage");
           const localBrands = await productBrandLocalService.getAll();
-          setProductBrands(localBrands);
+          console.log(`Found ${localBrands.length} product brands in local storage`);
+          
+          if (localBrands && localBrands.length > 0) {
+            setProductBrands(localBrands);
+          } else {
+            // Try to use cached data as second fallback
+            const cachedData = localStorage.getItem(BRANDS_CACHE_KEY);
+            if (cachedData) {
+              console.log("Using cached product brands data");
+              setProductBrands(JSON.parse(cachedData));
+            } else {
+              // If nothing worked, create default brands
+              console.log("No product brands found in cache, creating default brands");
+              const currentDate = new Date();
+              const defaultBrands = [
+                { 
+                  id: 'brand-1', 
+                  name: 'Coca-Cola', 
+                  description: 'Bebidas da marca Coca-Cola',
+                  notes: '',
+                  createdAt: currentDate,
+                  updatedAt: currentDate
+                },
+                { 
+                  id: 'brand-2', 
+                  name: 'Nestlé', 
+                  description: 'Produtos alimentícios Nestlé',
+                  notes: '',
+                  createdAt: currentDate,
+                  updatedAt: currentDate
+                },
+                { 
+                  id: 'brand-3', 
+                  name: 'Omo', 
+                  description: 'Produtos de limpeza Omo',
+                  notes: '',
+                  createdAt: currentDate,
+                  updatedAt: currentDate
+                }
+              ];
+              setProductBrands(defaultBrands);
+              
+              toast({
+                title: 'Marcas padrão criadas',
+                description: 'Foram criadas marcas de produtos padrão.',
+              });
+            }
+          }
         } catch (localError) {
           console.error('Error fetching brands from local storage:', localError);
+          toast({
+            title: 'Erro',
+            description: 'Não foi possível carregar as marcas de produtos.',
+            variant: 'destructive',
+          });
           
-          // Try to use cached data as last resort
-          const cachedData = localStorage.getItem(BRANDS_CACHE_KEY);
-          if (cachedData) {
-            setProductBrands(JSON.parse(cachedData));
-          } else {
-            toast({
-              title: 'Erro',
-              description: 'Não foi possível carregar as marcas de produtos.',
-              variant: 'destructive',
-            });
-          }
+          // Last resort - create default brands in memory only
+          const currentDate = new Date();
+          const defaultBrands = [
+            { 
+              id: 'brand-1', 
+              name: 'Coca-Cola', 
+              description: 'Bebidas da marca Coca-Cola',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: 'brand-2', 
+              name: 'Nestlé', 
+              description: 'Produtos alimentícios Nestlé',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            },
+            { 
+              id: 'brand-3', 
+              name: 'Omo', 
+              description: 'Produtos de limpeza Omo',
+              notes: '',
+              createdAt: currentDate,
+              updatedAt: currentDate
+            }
+          ];
+          setProductBrands(defaultBrands);
         }
       } finally {
         setIsLoading(false);
@@ -65,7 +200,7 @@ export const useProductBrands = () => {
     };
 
     fetchBrands();
-  }, []);
+  }, [hasAttemptedLoad]);
 
   const addProductBrand = async (brand: Omit<ProductBrand, 'id'>) => {
     try {

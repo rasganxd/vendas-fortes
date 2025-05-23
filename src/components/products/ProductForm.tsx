@@ -32,6 +32,7 @@ import { Loader2 } from 'lucide-react';
 import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 // Define a schema for the product form
 const productFormSchema = z.object({
@@ -93,9 +94,22 @@ const ProductForm: React.FC<ProductFormProps> = ({
   
   // Add debug logging for classification data
   useEffect(() => {
-    console.log("ProductForm received productCategories:", productCategories);
-    console.log("ProductForm received productGroups:", productGroups);
-    console.log("ProductForm received productBrands:", productBrands);
+    console.log("ProductForm received productCategories:", productCategories?.length || 0, "items");
+    console.log("ProductForm received productGroups:", productGroups?.length || 0, "items");
+    console.log("ProductForm received productBrands:", productBrands?.length || 0, "items");
+    
+    // Log the actual data for debugging
+    if (productGroups?.length === 0) {
+      console.log("No product groups received");
+    } else {
+      console.log("First few product groups:", productGroups?.slice(0, 3));
+    }
+    
+    if (productBrands?.length === 0) {
+      console.log("No product brands received");
+    } else {
+      console.log("First few product brands:", productBrands?.slice(0, 3));
+    }
   }, [productCategories, productGroups, productBrands]);
   
   const form = useForm<ProductFormData>({
@@ -112,21 +126,44 @@ const ProductForm: React.FC<ProductFormProps> = ({
       brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
     },
   });
+  
+  // Update form values when selected product changes
+  useEffect(() => {
+    if (isEditing && selectedProduct) {
+      form.reset({
+        code: selectedProduct.code,
+        name: selectedProduct.name,
+        cost: selectedProduct.cost,
+        unit: selectedProduct.unit || "UN",
+        stock: selectedProduct.stock,
+        categoryId: selectedProduct.categoryId || "",
+        groupId: selectedProduct.groupId || "",
+        brandId: selectedProduct.brandId || "",
+      });
+    }
+  }, [selectedProduct, isEditing, form]);
 
   const handleSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
       console.log("Submitting form data:", data);
       await onSubmit(data);
+      toast("Produto salvo com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar produto:", error);
+      toast("Erro ao salvar produto. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // Check if classifications data is available
-  const hasCategories = productCategories && productCategories.length > 0;
-  const hasGroups = productGroups && productGroups.length > 0;
-  const hasBrands = productBrands && productBrands.length > 0;
+  const hasCategories = Array.isArray(productCategories) && productCategories.length > 0;
+  const hasGroups = Array.isArray(productGroups) && productGroups.length > 0;
+  const hasBrands = Array.isArray(productBrands) && productBrands.length > 0;
+  
+  // Loading state for classifications
+  const isLoadingClassifications = productCategories === undefined || productGroups === undefined || productBrands === undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -238,7 +275,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
                     <FormControl>
-                      {productCategories === undefined ? (
+                      {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
                         <Select onValueChange={field.onChange} value={field.value || "none"}>
@@ -269,7 +306,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Grupo</FormLabel>
                     <FormControl>
-                      {productGroups === undefined ? (
+                      {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
                         <Select onValueChange={field.onChange} value={field.value || "none"}>
@@ -300,7 +337,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Marca</FormLabel>
                     <FormControl>
-                      {productBrands === undefined ? (
+                      {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
                         <Select onValueChange={field.onChange} value={field.value || "none"}>

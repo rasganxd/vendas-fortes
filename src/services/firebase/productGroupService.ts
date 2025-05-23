@@ -14,6 +14,12 @@ export const productGroupService = {
       const groups = await productGroupFirestoreService.getAll();
       console.log(`Retrieved ${groups.length} product groups from Firestore`);
       
+      // Check if we have any groups
+      if (groups.length === 0) {
+        console.log("No product groups found in Firestore, returning empty array");
+        return [];
+      }
+      
       // Remove duplicates by name
       const uniqueGroups = groups.reduce((acc: ProductGroup[], current) => {
         const existingGroup = acc.find(item => item.name === current.name);
