@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Card,
@@ -142,20 +141,20 @@ export default function Products() {
                 Gerencie os produtos da sua empresa
               </CardDescription>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <ProductsActionButtons 
-              onAddProduct={handleAdd}
-              onOpenBulkUpload={openBulkUpload}
-            />
             <ProductSyncStatus
               productsPending={pendingProducts}
               isLoading={isLoading}
               isSyncing={isSyncing}
               onSyncProducts={handleSyncProducts}
               onRefreshProducts={handleForceRefresh}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <ProductsActionButtons 
+              onAddProduct={handleAdd}
+              onOpenBulkUpload={openBulkUpload}
             />
           </div>
           
