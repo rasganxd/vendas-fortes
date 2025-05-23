@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,6 @@ import ProductsTable from '@/components/products/ProductsTable';
 import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import ProductForm from '@/components/products/ProductForm';
 import { useConnection } from '@/context/providers/ConnectionProvider';
-
 export default function Products() {
   // Get product classifications from AppContext
   const {
@@ -47,16 +45,14 @@ export default function Products() {
     console.log("- Product Groups from context:", productGroups?.length || 0, "items");
     console.log("- Product Categories from context:", productCategories?.length || 0, "items");
     console.log("- Product Brands from context:", productBrands?.length || 0, "items");
-    
+
     // Check if arrays are actually arrays and contain data
     if (!Array.isArray(productGroups)) {
       console.warn("productGroups is not an array");
     }
-    
     if (!Array.isArray(productBrands)) {
       console.warn("productBrands is not an array");
     }
-    
     if (!Array.isArray(productCategories)) {
       console.warn("productCategories is not an array");
     }
@@ -75,13 +71,11 @@ export default function Products() {
 
   // Count pending products
   const pendingProducts = products.filter(p => p.syncStatus === 'pending').length;
-  
   const handleEdit = (product: Product) => {
     setIsEditing(true);
     setSelectedProduct(product);
     setOpen(true);
   };
-  
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id);
@@ -99,13 +93,11 @@ export default function Products() {
       });
     }
   };
-  
   const handleAdd = () => {
     setIsEditing(false);
     setSelectedProduct(null);
     setOpen(true);
   };
-  
   const handleSubmit = async (data: any) => {
     try {
       // Ensure groupId, categoryId, and brandId are null when "none" is selected
@@ -123,10 +115,8 @@ export default function Products() {
         stock: data.stock || 0,
         minStock: 0 // Default value for minStock
       };
-      
       console.log("Form data submitted:", data);
       console.log("Product data being sent:", productData);
-      
       if (isEditing && selectedProduct) {
         await updateProduct(selectedProduct.id, productData);
         toast("Produto atualizado", {
@@ -151,15 +141,12 @@ export default function Products() {
       });
     }
   };
-  
   const openBulkUpload = () => {
     setBulkUploadOpen(true);
   };
-  
   const handleForceRefresh = async () => {
     return await forceRefreshProducts();
   };
-  
   const handleSyncProducts = async () => {
     return await syncPendingProducts();
   };
@@ -168,7 +155,6 @@ export default function Products() {
   const safeProductGroups = Array.isArray(productGroups) ? productGroups : [];
   const safeProductCategories = Array.isArray(productCategories) ? productCategories : [];
   const safeProductBrands = Array.isArray(productBrands) ? productBrands : [];
-
   return <PageLayout title="Produtos">
       <div className="flex justify-between items-center mb-4">
         <div>
@@ -181,8 +167,8 @@ export default function Products() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Produtos</CardTitle>
-              <CardDescription>Lista de produtos cadastrados no sistema</CardDescription>
+              
+              
             </div>
           </div>
         </CardHeader>
@@ -195,17 +181,7 @@ export default function Products() {
         </CardContent>
       </Card>
       
-      <ProductForm 
-        open={open} 
-        onOpenChange={setOpen} 
-        isEditing={isEditing} 
-        selectedProduct={selectedProduct} 
-        products={products} 
-        productCategories={safeProductCategories} 
-        productGroups={safeProductGroups} 
-        productBrands={safeProductBrands} 
-        onSubmit={handleSubmit} 
-      />
+      <ProductForm open={open} onOpenChange={setOpen} isEditing={isEditing} selectedProduct={selectedProduct} products={products} productCategories={safeProductCategories} productGroups={safeProductGroups} productBrands={safeProductBrands} onSubmit={handleSubmit} />
       
       <BulkProductUpload open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
     </PageLayout>;
