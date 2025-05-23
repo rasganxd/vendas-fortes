@@ -1,4 +1,3 @@
-
 import { Product } from '@/types';
 import { productFirestoreService } from './ProductFirestoreService';
 import { productLocalService } from '../local/productLocalService';
@@ -119,7 +118,7 @@ export const productService = {
       const newProduct = { 
         ...productWithDates, 
         id,
-        syncStatus: 'synced' 
+        syncStatus: 'synced' as const
       } as Product;
       
       // Ensure localStorage is updated
@@ -150,7 +149,7 @@ export const productService = {
           id: tempId,
           createdAt: new Date(),
           updatedAt: new Date(),
-          syncStatus: 'pending'
+          syncStatus: 'pending' as const
         };
         
         await productLocalService.add(productWithStatus);
@@ -180,7 +179,7 @@ export const productService = {
       const updateData = {
         ...product,
         updatedAt: new Date(),
-        syncStatus: 'synced'
+        syncStatus: 'synced' as const
       };
       
       await productFirestoreService.update(id, updateData);
@@ -212,7 +211,7 @@ export const productService = {
         const updateData = {
           ...product,
           updatedAt: new Date(),
-          syncStatus: 'pending'
+          syncStatus: 'pending' as const
         };
         
         await productLocalService.update(id, updateData);
@@ -279,7 +278,7 @@ export const productService = {
         // Sync to local storage
         await productLocalService.update(product.id, {
           ...product,
-          syncStatus: 'synced'
+          syncStatus: 'synced' as const
         });
       } else {
         console.log(`productService: No product found with code ${code}`);
@@ -321,11 +320,11 @@ export const productService = {
           // Update in Firestore
           await productFirestoreService.update(id, {
             ...productData,
-            syncStatus: 'synced'
+            syncStatus: 'synced' as const
           });
           
           // Update local status
-          await productLocalService.update(id, { syncStatus: 'synced' });
+          await productLocalService.update(id, { syncStatus: 'synced' as const });
           
           console.log(`productService: Successfully synced product ${id}`);
           successCount++;

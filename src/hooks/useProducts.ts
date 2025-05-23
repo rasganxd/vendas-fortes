@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/firebase/productService'; 
@@ -64,8 +65,8 @@ export const useProducts = () => {
     }
   };
   
-  const syncPendingProducts = async () => {
-    if (isSyncing || connectionStatus !== 'connected') return;
+  const syncPendingProducts = async (): Promise<boolean> => {
+    if (isSyncing || connectionStatus !== 'connected') return false;
     
     setIsSyncing(true);
     try {
@@ -86,8 +87,11 @@ export const useProducts = () => {
           description: `${failed} produto(s) não puderam ser sincronizados.`
         });
       }
+      
+      return success > 0;
     } catch (error) {
       console.error("Error syncing pending products:", error);
+      return false;
     } finally {
       setIsSyncing(false);
     }

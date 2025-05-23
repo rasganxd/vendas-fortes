@@ -239,10 +239,12 @@ export default function Products() {
   
   const handleForceRefresh = async () => {
     await forceRefreshProducts();
+    return true; // Return boolean as expected by the interface
   };
   
   const handleSyncProducts = async () => {
-    await syncPendingProducts();
+    const success = await syncPendingProducts();
+    return success; // Return boolean as expected by the interface
   };
 
   return (

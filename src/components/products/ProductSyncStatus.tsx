@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, CloudOff, Check, AlertTriangle, WifiOff } from "lucide-react";
+import { RefreshCw, CloudOff, Check, WifiOff } from "lucide-react";
 import { useFirebaseConnection } from '@/hooks/useFirebaseConnection';
 import { toast } from 'sonner';
 
