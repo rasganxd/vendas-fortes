@@ -10,7 +10,7 @@ interface ProductSyncStatusProps {
   productsPending: number;
   isLoading: boolean;
   isSyncing: boolean;
-  onSyncProducts: () => Promise<void>;
+  onSyncProducts: () => Promise<boolean>;
   onRefreshProducts: () => Promise<boolean>;
 }
 
