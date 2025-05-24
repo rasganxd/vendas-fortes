@@ -1,8 +1,10 @@
-import { useState } from 'react';
+
 import { Customer } from '@/types';
 import { customerLocalService } from '@/services/local/customerLocalService';
 import { customerService } from '@/services/firebase/customerService';
 import { useCustomerCache } from './useCustomerCache';
+import { useCustomerSync } from './useCustomerSync';
+import { useCustomerCodeGenerator } from './useCustomerCodeGenerator';
 import { toast } from '@/components/ui/use-toast';
 
 /**
@@ -13,18 +15,11 @@ export const useCustomerCrud = (
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>
 ) => {
   const { saveToCache, filterValidCustomers } = useCustomerCache();
-  const [syncPending, setSyncPending] = useState<{[key: string]: Customer}>({});
-
-  const generateNextCode = (): number => {
-    if (customers.length === 0) return 1;
-    
-    const highestCode = customers.reduce(
-      (max, customer) => (customer.code && customer.code > max ? customer.code : max), 
-      0
-    );
-    
-    return highestCode + 1;
-  };
+  const { 
+    addToPendingSync,
+    syncPendingCustomers
+  } = useCustomerSync();
+  const { generateNextCode, generateNextCustomerCode } = useCustomerCodeGenerator(customers);
 
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
@@ -57,7 +52,7 @@ export const useCustomerCrud = (
         
         // Mark for sync later
         const customerWithId = { ...finalCustomer, id, syncPending: true } as Customer;
-        setSyncPending(prev => ({...prev, [id]: customerWithId}));
+        addToPendingSync(customerWithId);
         
         toast({
           title: "Cliente salvo localmente",
@@ -120,7 +115,7 @@ export const useCustomerCrud = (
         const currentCustomer = customers.find(c => c.id === id);
         if (currentCustomer) {
           const updatedCustomer = { ...currentCustomer, ...updates, syncPending: true } as Customer;
-          setSyncPending(prev => ({...prev, [id]: updatedCustomer}));
+          addToPendingSync(updatedCustomer);
         }
         
         toast({
@@ -190,46 +185,12 @@ export const useCustomerCrud = (
     }
   };
 
-  // Synchronize pending customers to Firebase when connection is restored
-  const syncPendingCustomers = async () => {
-    const pendingCustomers = Object.values(syncPending);
-    if (pendingCustomers.length === 0) return;
-    
-    console.log(`Synchronizing ${pendingCustomers.length} pending customers to Firebase`);
-    
-    for (const customer of pendingCustomers) {
-      try {
-        const { id, syncPending, ...customerData } = customer;
-        
-        // Check if customer exists in Firebase
-        const existingCustomer = await customerService.getById(id);
-        
-        if (existingCustomer) {
-          // Update existing customer
-          await customerService.update(id, customerData);
-        } else {
-          // Add as new customer
-          await customerService.add(customerData);
-        }
-        
-        // Remove from pending list
-        setSyncPending(prev => {
-          const newPending = {...prev};
-          delete newPending[id];
-          return newPending;
-        });
-      } catch (error) {
-        console.error(`Failed to sync customer ${customer.id}:`, error);
-      }
-    }
-  };
-
   return {
     addCustomer,
     updateCustomer,
     deleteCustomer,
     generateNextCode,
     syncPendingCustomers,
-    generateNextCustomerCode: generateNextCode // Alias for backward compatibility
+    generateNextCustomerCode // Alias for backward compatibility
   };
 };
