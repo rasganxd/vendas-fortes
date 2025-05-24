@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/firebase/customerService';
@@ -13,7 +12,7 @@ const CACHE_MAX_AGE = 1000 * 60 * 60 * 24; // 24 hours
 export const useCustomerLoader = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { isOnline } = useCustomerConnection();
-  const { saveToCache, loadFromCache, filterValidCustomers } = useCustomerCache();
+  const { saveToCache, getFromCache, filterValidCustomers } = useCustomerCache();
 
   const shouldRefreshCache = useCallback(() => {
     const timestamp = localStorage.getItem(CUSTOMERS_CACHE_TIMESTAMP_KEY);
@@ -30,7 +29,7 @@ export const useCustomerLoader = () => {
     
     try {
       // Try loading from cache first for faster initial load
-      const cachedCustomers = loadFromCache();
+      const { customers: cachedCustomers } = getFromCache();
       if (cachedCustomers.length > 0) {
         console.log(`Loaded ${cachedCustomers.length} customers from cache`);
         customers = cachedCustomers;
@@ -94,7 +93,7 @@ export const useCustomerLoader = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isOnline, saveToCache, loadFromCache, filterValidCustomers, shouldRefreshCache]);
+  }, [isOnline, saveToCache, getFromCache, filterValidCustomers, shouldRefreshCache]);
 
   const refreshCustomers = useCallback(async (): Promise<Customer[]> => {
     setIsLoading(true);

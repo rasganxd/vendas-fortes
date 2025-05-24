@@ -20,6 +20,7 @@ export interface Customer {
   sales_rep_id?: string; // Changed from salesRepId to match usage
   deliveryRouteId?: string;
   sales_rep_name?: string;
+  syncPending?: boolean; // Add this property to track sync status
 }
 
 export type CustomerFormValues = {

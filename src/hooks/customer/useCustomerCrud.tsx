@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Customer } from '@/types';
 import { customerLocalService } from '@/services/local/customerLocalService';
@@ -200,8 +199,7 @@ export const useCustomerCrud = (
     
     for (const customer of pendingCustomers) {
       try {
-        const { id, ...customerData } = customer;
-        delete customerData.syncPending;
+        const { id, syncPending, ...customerData } = customer;
         
         // Check if customer exists in Firebase
         const existingCustomer = await customerService.getById(id);
