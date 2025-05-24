@@ -1,7 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
-class ProductSupabaseService {
+export const productService = {
   async getAll(): Promise<Product[]> {
     try {
       console.log("Getting all products from Supabase...");
@@ -21,18 +22,16 @@ class ProductSupabaseService {
         name: item.name,
         description: item.description || '',
         cost: item.cost || 0,
-        price: item.price || 0,
-        unit: item.unit || '',
+        price: item.price,
+        unit: item.unit || 'UN',
         stock: item.stock || 0,
         minStock: item.min_stock || 0,
         categoryId: item.category_id || '',
         groupId: item.group_id || '',
         brandId: item.brand_id || '',
-        syncStatus: (item.sync_status as 'synced' | 'pending' | 'error') || 'synced',
-        photo: '',
-        active: true,
-        notes: '',
-        maxDiscountPercentage: 0,
+        syncStatus: (item.sync_status === 'synced' || item.sync_status === 'pending' || item.sync_status === 'error') 
+          ? item.sync_status as 'synced' | 'pending' | 'error'
+          : 'synced',
         createdAt: new Date(item.created_at),
         updatedAt: new Date(item.updated_at)
       })) || [];
@@ -43,7 +42,7 @@ class ProductSupabaseService {
       console.error("Error getting all products:", error);
       return [];
     }
-  }
+  },
   
   async getById(id: string): Promise<Product | null> {
     try {
@@ -55,7 +54,6 @@ class ProductSupabaseService {
       
       if (error) {
         if (error.code === 'PGRST116') return null;
-        console.error("Error getting product by ID:", error);
         return null;
       }
       
@@ -65,18 +63,16 @@ class ProductSupabaseService {
         name: data.name,
         description: data.description || '',
         cost: data.cost || 0,
-        price: data.price || 0,
-        unit: data.unit || '',
+        price: data.price,
+        unit: data.unit || 'UN',
         stock: data.stock || 0,
         minStock: data.min_stock || 0,
         categoryId: data.category_id || '',
         groupId: data.group_id || '',
         brandId: data.brand_id || '',
-        syncStatus: (data.sync_status as 'synced' | 'pending' | 'error') || 'synced',
-        photo: '',
-        active: true,
-        notes: '',
-        maxDiscountPercentage: 0,
+        syncStatus: (data.sync_status === 'synced' || data.sync_status === 'pending' || data.sync_status === 'error') 
+          ? data.sync_status as 'synced' | 'pending' | 'error'
+          : 'synced',
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };
@@ -84,7 +80,7 @@ class ProductSupabaseService {
       console.error("Error getting product by ID:", error);
       return null;
     }
-  }
+  },
   
   async add(product: Omit<Product, 'id'>): Promise<string> {
     try {
@@ -97,9 +93,9 @@ class ProductSupabaseService {
         unit: product.unit,
         stock: product.stock,
         min_stock: product.minStock,
-        category_id: product.categoryId,
-        group_id: product.groupId,
-        brand_id: product.brandId,
+        category_id: product.categoryId || null,
+        group_id: product.groupId || null,
+        brand_id: product.brandId || null,
         sync_status: product.syncStatus || 'synced'
       };
       
@@ -119,7 +115,7 @@ class ProductSupabaseService {
       console.error("Error adding product:", error);
       throw error;
     }
-  }
+  },
   
   async update(id: string, product: Partial<Product>): Promise<void> {
     try {
@@ -153,7 +149,7 @@ class ProductSupabaseService {
       console.error("Error updating product:", error);
       throw error;
     }
-  }
+  },
   
   async delete(id: string): Promise<void> {
     try {
@@ -171,24 +167,4 @@ class ProductSupabaseService {
       throw error;
     }
   }
-  
-  async generateNextCode(): Promise<number> {
-    try {
-      const { data, error } = await supabase.rpc('get_next_product_code');
-      
-      if (error) {
-        console.error('Error generating product code:', error);
-        const allProducts = await this.getAll();
-        const maxCode = allProducts.reduce((max, product) => Math.max(max, product.code || 0), 0);
-        return maxCode + 1;
-      }
-      
-      return data || 1;
-    } catch (error) {
-      console.error('Error generating product code:', error);
-      return 1;
-    }
-  }
-}
-
-export const productService = new ProductSupabaseService();
+};

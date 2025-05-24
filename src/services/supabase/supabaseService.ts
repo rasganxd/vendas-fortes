@@ -28,7 +28,7 @@ export class SupabaseService<T extends SupabaseEntity> {
         return [];
       }
       
-      return (data || []) as T[];
+      return (data || []) as unknown as T[];
     } catch (error) {
       console.error(`Error retrieving ${this.tableName}:`, error);
       return [];
@@ -53,7 +53,7 @@ export class SupabaseService<T extends SupabaseEntity> {
         return null;
       }
       
-      return data as T;
+      return data as unknown as T;
     } catch (error) {
       console.error(`Error retrieving document ${id} from ${this.tableName}:`, error);
       return null;
@@ -81,8 +81,8 @@ export class SupabaseService<T extends SupabaseEntity> {
         throw error;
       }
       
-      console.log(`Added document to ${this.tableName} with ID:`, data.id);
-      return data.id;
+      console.log(`Added document to ${this.tableName} with ID:`, (data as any).id);
+      return (data as any).id;
     } catch (error) {
       console.error(`Error adding document to ${this.tableName}:`, error);
       throw error;

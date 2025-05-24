@@ -63,10 +63,6 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       // Skip documents that are marked as temporary
       if (!log || typeof log !== 'object') return false;
       
-      // Check for temporary marker (using type assertion for dynamic property)
-      const tempLog = log as any;
-      if (tempLog._temp === true) return false;
-      
       // Keep only documents with valid properties
       return log.id && log.event_type && log.created_at;
     });
@@ -93,7 +89,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       
       if (filteredData && filteredData.length > 0) {
         const createdAt = filteredData[0].created_at;
-        const dateObj = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
+        const dateObj = new Date(createdAt);
         
         setLastSynced(dateObj.toLocaleString());
         setStatusMessage("Dados carregados com sucesso.");
@@ -179,6 +175,16 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       console.error("Error generating QR code:", error);
       setStatusMessage("Não foi possível gerar o QR code.");
       setStatusType('error');
+    }
+  };
+
+  const formatDate = (dateValue: string | Date) => {
+    try {
+      const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+      return date.toLocaleString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '—';
     }
   };
 
@@ -294,9 +300,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                     </TableCell>
                     <TableCell>{log.device_id || '—'}</TableCell>
                     <TableCell>
-                      {typeof log.created_at === 'string' 
-                        ? new Date(log.created_at).toLocaleString() 
-                        : log.created_at.toLocaleString()}
+                      {formatDate(log.created_at)}
                     </TableCell>
                   </TableRow>
                 ))}

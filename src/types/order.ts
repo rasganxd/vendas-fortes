@@ -1,13 +1,11 @@
 
-import { FirestoreEntity } from '@/services/firebase/FirestoreService';
-
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'canceled';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'partial';
 
 /**
  * Order
  */
-export interface Order extends FirestoreEntity {
+export interface Order {
   id: string;
   code: number;
   customerId: string;

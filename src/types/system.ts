@@ -1,21 +1,7 @@
 
-export interface Backup {
-  id: string;
-  name: string;
-  description: string;
-  date: Date; // Changed from createdAt/updatedAt to match usage in code
-  data: any; // Add the data property which is missing
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface AppSettings {
-  id?: string;
-  companyName: string;
-  companyLogo: string;
-  createdAt: Date;
-  updatedAt: Date;
-  company?: {
+  id: string;
+  company: {
     name: string;
     address: string;
     phone: string;
@@ -23,5 +9,7 @@ export interface AppSettings {
     document: string;
     footer: string;
   };
-  primaryColor?: string; // Added this property to fix the SideNav errors
+  theme: {
+    primaryColor: string;
+  };
 }

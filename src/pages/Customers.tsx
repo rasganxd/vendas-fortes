@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Download, Upload } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import CustomersTable from '@/components/customers/CustomersTable';
@@ -10,7 +11,7 @@ import NewCustomerDialog from '@/components/customers/NewCustomerDialog';
 import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
 import { Customer } from '@/types';
-import { ProductsActionButtons } from '@/components/products/ProductsActionButtons';
+import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import { useCustomers } from '@/hooks/useCustomers';
 
 export default function Customers() {
@@ -71,7 +72,7 @@ export default function Customers() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteCustomer = (customer: Customer) => {
+  const handleDeleteCustomer = (id: string, customer: Customer) => {
     setSelectedCustomer(customer);
     setIsDeleteDialogOpen(true);
   };
@@ -81,6 +82,16 @@ export default function Customers() {
     setIsEditDialogOpen(false);
     setIsDeleteDialogOpen(false);
     setSelectedCustomer(null);
+  };
+
+  const handleNewCustomerSubmit = (data: any) => {
+    console.log('New customer data:', data);
+    setIsNewCustomerDialogOpen(false);
+  };
+
+  const handleEditCustomerSubmit = (data: any) => {
+    console.log('Edit customer data:', data);
+    setIsEditDialogOpen(false);
   };
 
   return (
@@ -122,14 +133,15 @@ export default function Customers() {
       <NewCustomerDialog
         open={isNewCustomerDialogOpen}
         onOpenChange={setIsNewCustomerDialogOpen}
-        customerCode={newCustomerCode}
+        initialCode={newCustomerCode}
+        onSubmit={handleNewCustomerSubmit}
       />
 
       <EditCustomerDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         customer={selectedCustomer}
-        onClose={handleCloseDialogs}
+        onSubmit={handleEditCustomerSubmit}
       />
 
       <DeleteCustomerDialog

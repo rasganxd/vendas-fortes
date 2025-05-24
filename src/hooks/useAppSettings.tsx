@@ -2,9 +2,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppSettings } from '@/types';
 import { 
-  fetchSettingsFromFirebase, 
+  fetchSettingsFromSupabase, 
   createDefaultSettings,
-  updateSettingsInFirebase 
+  updateSettingsInSupabase 
 } from '@/services/settings/settingsService';
 
 /**
@@ -16,14 +16,14 @@ export const useAppSettings = () => {
   const [error, setError] = useState<Error | null>(null);
 
   /**
-   * Fetches settings from Firebase or initializes defaults
+   * Fetches settings from Supabase or initializes defaults
    */
   const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true);
       
       // Try to fetch existing settings
-      const fetchedSettings = await fetchSettingsFromFirebase();
+      const fetchedSettings = await fetchSettingsFromSupabase();
       
       if (fetchedSettings) {
         setSettings(fetchedSettings);
@@ -53,8 +53,8 @@ export const useAppSettings = () => {
       // Merge existing and new settings
       const updatedSettings = { ...settings, ...newSettings } as AppSettings;
       
-      // Update in Firebase
-      await updateSettingsInFirebase(settings, newSettings);
+      // Update in Supabase
+      await updateSettingsInSupabase(settings, newSettings);
       
       // Update local state
       setSettings(updatedSettings);
