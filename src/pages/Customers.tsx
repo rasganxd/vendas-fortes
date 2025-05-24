@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -5,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import CustomersTable from '@/components/customers/CustomersTable';
 import NewCustomerDialog from '@/components/customers/NewCustomerDialog';
 import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
 import { Customer } from '@/types';
-import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import { useCustomers } from '@/hooks/useCustomers';
 
 export default function Customers() {
@@ -95,38 +96,43 @@ export default function Customers() {
 
   return (
     <PageLayout title="Clientes">
-      <div className="mb-6 flex justify-between items-center">
+      <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-lg font-semibold">Gerenciar Clientes</h2>
+          <h2 className="text-lg font-medium">Gerencie os clientes da sua empresa</h2>
           <p className="text-gray-500">
             Total: <Badge variant="outline">{customers.length}</Badge> clientes
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleNewCustomer} className="bg-sales-800 hover:bg-sales-700">
+          <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
             <Plus size={16} className="mr-2" /> Novo Cliente
           </Button>
         </div>
       </div>
 
-      <div className="mb-4 flex items-center space-x-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar clientes..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="pl-8"
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar clientes..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="pl-8"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <CustomersTable
+            customers={filteredCustomers}
+            onEdit={handleEditCustomer}
+            onDelete={handleDeleteCustomer}
+            onView={handleEditCustomer}
           />
-        </div>
-      </div>
-
-      <CustomersTable
-        customers={filteredCustomers}
-        onEdit={handleEditCustomer}
-        onDelete={handleDeleteCustomer}
-        onView={handleEditCustomer}
-      />
+        </CardContent>
+      </Card>
 
       <NewCustomerDialog
         open={isNewCustomerDialogOpen}
