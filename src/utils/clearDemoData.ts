@@ -1,5 +1,5 @@
 
-// Simplified utility without Firebase dependencies
+// Simplified utility for demo data operations
 export const clearDemoData = async (): Promise<boolean> => {
   try {
     console.log('Demo data clearing functionality not implemented');
