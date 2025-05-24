@@ -8,9 +8,9 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
-} from "@/components/ui/alert-dialog";
-import { Customer } from '@/types';
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Customer } from '@/types/customer';
 
 interface DeleteCustomerDialogProps {
   open: boolean;
@@ -25,15 +25,9 @@ const DeleteCustomerDialog: React.FC<DeleteCustomerDialogProps> = ({
   customer,
   onDelete
 }) => {
-  const handleDelete = async () => {
-    if (!customer) return;
-    
-    try {
-      await onDelete(customer.id);
-      onOpenChange(false); // Just close the dialog, the parent will show the toast
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-      // We'll let the parent component handle the error toast
+  const handleDelete = () => {
+    if (customer) {
+      onDelete(customer.id);
     }
   };
 
@@ -45,17 +39,13 @@ const DeleteCustomerDialog: React.FC<DeleteCustomerDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir Cliente</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir o cliente {customer.name}?
+            Tem certeza que deseja excluir o cliente "{customer.name}"? 
             Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
-
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleDelete}
-            className="bg-red-600 hover:bg-red-700"
-          >
+          <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
             Excluir
           </AlertDialogAction>
         </AlertDialogFooter>

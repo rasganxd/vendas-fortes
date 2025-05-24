@@ -1,20 +1,14 @@
 
 import React from 'react';
-import { Customer } from '@/types';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import EditCustomerForm from './EditCustomerForm';
+import { Customer } from '@/types/customer';
 
 interface EditCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customer: Customer | null;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Partial<Customer>) => void;
 }
 
 const EditCustomerDialog: React.FC<EditCustomerDialogProps> = ({
@@ -23,22 +17,26 @@ const EditCustomerDialog: React.FC<EditCustomerDialogProps> = ({
   customer,
   onSubmit
 }) => {
+  const handleSubmit = (data: Partial<Customer>) => {
+    onSubmit(data);
+  };
+
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
   if (!customer) return null;
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl p-3 sm:p-4">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Cliente</DialogTitle>
-          <DialogDescription>
-            Atualize as informações e dias de visita do cliente
-          </DialogDescription>
         </DialogHeader>
-        
-        <EditCustomerForm 
+        <EditCustomerForm
           customer={customer}
-          onSubmit={onSubmit}
-          onCancel={() => onOpenChange(false)}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
         />
       </DialogContent>
     </Dialog>

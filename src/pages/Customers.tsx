@@ -15,8 +15,8 @@ import { Customer } from '@/types';
 import { useCustomers } from '@/hooks/useCustomers';
 
 export default function Customers() {
-  const { customers, isLoadingCustomers } = useAppContext();
-  const { generateNextCustomerCode } = useCustomers();
+  const { customers } = useAppContext();
+  const { generateNextCustomerCode, updateCustomer, deleteCustomer } = useCustomers();
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
@@ -85,13 +85,20 @@ export default function Customers() {
   };
 
   const handleNewCustomerSubmit = (data: any) => {
-    console.log('New customer data:', data);
+    console.log('✅ New customer submitted successfully:', data);
     setIsNewCustomerDialogOpen(false);
   };
 
-  const handleEditCustomerSubmit = (data: any) => {
-    console.log('Edit customer data:', data);
-    setIsEditDialogOpen(false);
+  const handleEditCustomerSubmit = async (data: any) => {
+    if (selectedCustomer) {
+      await updateCustomer(selectedCustomer.id, data);
+      setIsEditDialogOpen(false);
+    }
+  };
+
+  const handleDeleteConfirm = async (id: string) => {
+    await deleteCustomer(id);
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -152,10 +159,7 @@ export default function Customers() {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         customer={selectedCustomer}
-        onDelete={async (id: string) => {
-          console.log('Deleting customer:', id);
-          setIsDeleteDialogOpen(false);
-        }}
+        onDelete={handleDeleteConfirm}
       />
     </PageLayout>
   );
