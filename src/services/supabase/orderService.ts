@@ -71,6 +71,10 @@ class OrderSupabaseService extends SupabaseService<Order> {
     delete dbRecord.deliveryState;
     delete dbRecord.deliveryZip;
     
+    // IMPORTANT: Remove items field as it doesn't exist in orders table
+    delete dbRecord.items;
+    
+    console.log("📝 Transform to DB result:", dbRecord);
     return dbRecord;
   }
 
@@ -97,7 +101,10 @@ class OrderSupabaseService extends SupabaseService<Order> {
     try {
       console.log('Adding order with items:', orderData);
       
-      // Transform the order data for database
+      // Extract items before transforming order data
+      const items = orderData.items || [];
+      
+      // Transform the order data for database (without items)
       const transformedOrderData = this.transformToDB(orderData);
       
       // Add timestamps
@@ -106,6 +113,8 @@ class OrderSupabaseService extends SupabaseService<Order> {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+      
+      console.log('Transformed order data for DB:', orderWithTimestamps);
       
       // Insert the order
       const { data: orderResult, error: orderError } = await this.supabase
@@ -123,8 +132,8 @@ class OrderSupabaseService extends SupabaseService<Order> {
       console.log('Order created with ID:', orderId);
       
       // Insert order items if they exist
-      if (orderData.items && orderData.items.length > 0) {
-        const orderItems = orderData.items.map(item => ({
+      if (items && items.length > 0) {
+        const orderItems = items.map(item => ({
           order_id: orderId,
           product_id: item.productId,
           product_name: item.productName,
@@ -137,6 +146,8 @@ class OrderSupabaseService extends SupabaseService<Order> {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }));
+        
+        console.log('Inserting order items:', orderItems);
         
         const { error: itemsError } = await this.supabase
           .from('order_items')
