@@ -20,17 +20,20 @@ import { PaymentTable, PaymentTableInstallment, PaymentTableTerm } from '@/types
 import PageLayout from '@/components/layout/PageLayout';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { useAppContext } from '@/hooks/useAppContext';
+
 const paymentTableFormSchema = z.object({
   name: z.string().min(2, {
     message: "Nome deve ter pelo menos 2 caracteres."
   }),
   description: z.string().optional(),
   type: z.string().default("boleto"),
-  payableTo: z.string().optional(),
-  paymentLocation: z.string().optional(),
+  payable_to: z.string().optional(),
+  payment_location: z.string().optional(),
   active: z.boolean().default(true)
 });
+
 type PaymentTableFormValues = z.infer<typeof paymentTableFormSchema>;
+
 export default function PaymentTables() {
   const {
     paymentTables,
@@ -50,8 +53,8 @@ export default function PaymentTables() {
       name: "",
       description: "",
       type: "boleto",
-      payableTo: "",
-      paymentLocation: "",
+      payable_to: "",
+      payment_location: "",
       active: true
     }
   });
@@ -66,8 +69,8 @@ export default function PaymentTables() {
         name: values.name,
         description: values.description || "",
         type: values.type,
-        payableTo: values.payableTo || "",
-        paymentLocation: values.paymentLocation || "",
+        payableTo: values.payable_to || "",
+        paymentLocation: values.payment_location || "",
         active: values.active,
         // Empty arrays for the installments and terms
         installments: [],
@@ -76,6 +79,7 @@ export default function PaymentTables() {
         createdAt: new Date(),
         updatedAt: new Date()
       };
+      
       if (editTableId) {
         // Update existing table
         await updatePaymentTable(editTableId, paymentTable);
@@ -121,8 +125,8 @@ export default function PaymentTables() {
           name: tableToEdit.name,
           description: tableToEdit.description,
           type: tableToEdit.type || "boleto",
-          payableTo: tableToEdit.payableTo,
-          paymentLocation: tableToEdit.paymentLocation,
+          payable_to: tableToEdit.payableTo,
+          payment_location: tableToEdit.paymentLocation,
           active: tableToEdit.active !== undefined ? tableToEdit.active : true
         });
       }
@@ -131,24 +135,28 @@ export default function PaymentTables() {
         name: "",
         description: "",
         type: "boleto",
-        payableTo: "",
-        paymentLocation: "",
+        payable_to: "",
+        payment_location: "",
         active: true
       });
     }
   }, [editTableId, form, paymentTables]);
+
   const handleOpenNewTable = () => {
     setEditTableId(null);
     form.reset();
     setOpenNewTableDialog(true);
   };
+
   const handleCloseDialog = () => {
     setOpenNewTableDialog(false);
   };
+
   const handleEditTable = (tableId: string) => {
     setEditTableId(tableId);
     setOpenNewTableDialog(true);
   };
+
   const handleDeleteTable = async (tableId: string) => {
     if (window.confirm("Tem certeza que deseja excluir esta tabela?")) {
       try {
@@ -167,6 +175,7 @@ export default function PaymentTables() {
       }
     }
   };
+
   return <PageLayout title="Tabelas de Pagamento">
       <Card>
         <CardHeader>
@@ -286,7 +295,7 @@ export default function PaymentTables() {
                         </Select>
                         <FormMessage />
                       </FormItem>} />
-                  <FormField control={form.control} name="payableTo" render={({
+                  <FormField control={form.control} name="payable_to" render={({
                   field
                 }) => <FormItem>
                         <FormLabel>Pagável a</FormLabel>
@@ -295,7 +304,7 @@ export default function PaymentTables() {
                         </FormControl>
                         <FormMessage />
                       </FormItem>} />
-                  <FormField control={form.control} name="paymentLocation" render={({
+                  <FormField control={form.control} name="payment_location" render={({
                   field
                 }) => <FormItem>
                         <FormLabel>Local de pagamento</FormLabel>

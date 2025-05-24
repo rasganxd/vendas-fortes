@@ -401,27 +401,45 @@ export type Database = {
       }
       payment_tables: {
         Row: {
+          active: boolean
           created_at: string
           description: string | null
           id: string
+          installments: Json | null
           name: string
-          terms: string | null
+          notes: string | null
+          payable_to: string | null
+          payment_location: string | null
+          terms: Json | null
+          type: string | null
           updated_at: string
         }
         Insert: {
+          active?: boolean
           created_at?: string
           description?: string | null
           id?: string
+          installments?: Json | null
           name: string
-          terms?: string | null
+          notes?: string | null
+          payable_to?: string | null
+          payment_location?: string | null
+          terms?: Json | null
+          type?: string | null
           updated_at?: string
         }
         Update: {
+          active?: boolean
           created_at?: string
           description?: string | null
           id?: string
+          installments?: Json | null
           name?: string
-          terms?: string | null
+          notes?: string | null
+          payable_to?: string | null
+          payment_location?: string | null
+          terms?: Json | null
+          type?: string | null
           updated_at?: string
         }
         Relationships: []
