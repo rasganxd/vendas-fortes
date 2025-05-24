@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { salesRepService } from '@/services/supabase/salesRepService';
@@ -84,12 +85,14 @@ export const useSalesReps = () => {
         return "";
       }
       
-      // Prepare clean data for insertion - remove timestamp fields and let Supabase handle them
-      const cleanSalesRep = {
+      // Prepare clean data for insertion with all required fields
+      const cleanSalesRep: Omit<SalesRep, 'id'> = {
         code: typeof salesRep.code === 'string' ? parseInt(salesRep.code, 10) : salesRep.code,
         name: salesRep.name.trim(),
         phone: salesRep.phone || '',
-        active: salesRep.active ?? true
+        active: salesRep.active ?? true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
       console.log("📝 Clean sales rep data for insertion:", cleanSalesRep);
@@ -98,12 +101,10 @@ export const useSalesReps = () => {
       const id = await salesRepService.add(cleanSalesRep);
       console.log("✅ Sales rep added to Supabase with ID:", id);
       
-      // Create the new sales rep object for local state with current timestamps
+      // Create the new sales rep object for local state
       const newSalesRep = { 
         ...cleanSalesRep, 
-        id,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        id
       } as SalesRep;
       
       // Update local state
