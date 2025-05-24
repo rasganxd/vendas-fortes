@@ -1,8 +1,8 @@
 
 import { loadCustomers } from "@/hooks/useCustomers";
-import { fetchProducts } from "@/hooks/useProducts";
 import { Customer, Product } from '@/types';
 import { toast } from "@/components/ui/use-toast";
+import { productService } from '@/services/supabase/productService';
 
 /**
  * Loads core application data (customers and products)
@@ -40,7 +40,7 @@ export const loadCoreData = async (
     setIsLoadingProducts(true);
     try {
       console.log("About to load products from Supabase...");
-      const loadedProducts = await fetchProducts();
+      const loadedProducts = await productService.getAll();
       console.log(`Loaded ${loadedProducts.length} products from Supabase`);
       
       // Always make sure we update the state even if empty array

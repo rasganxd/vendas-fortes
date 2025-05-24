@@ -7,6 +7,7 @@ import { toast } from '@/components/ui/use-toast';
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -90,12 +91,65 @@ export const useProducts = () => {
     }
   };
 
+  const syncPendingProducts = async () => {
+    setIsSyncing(true);
+    try {
+      // Refresh products from server
+      const data = await productService.getAll();
+      setProducts(data);
+      
+      toast({
+        title: "Produtos sincronizados",
+        description: "Produtos sincronizados com sucesso!"
+      });
+    } catch (error) {
+      console.error('Error syncing products:', error);
+      toast({
+        title: "Erro ao sincronizar",
+        description: "Houve um problema ao sincronizar os produtos.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const forceRefreshProducts = async () => {
+    setIsLoading(true);
+    try {
+      const data = await productService.getAll();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error refreshing products:', error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Houve um problema ao atualizar os produtos.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     products,
     isLoading,
+    isSyncing,
     addProduct,
     updateProduct,
     deleteProduct,
-    setProducts
+    setProducts,
+    syncPendingProducts,
+    forceRefreshProducts
   };
+};
+
+// Export function for backward compatibility
+export const fetchProducts = async (): Promise<Product[]> => {
+  try {
+    return await productService.getAll();
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
 };

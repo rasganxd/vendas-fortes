@@ -145,3 +145,13 @@ export const useOrders = () => {
     getOrderById
   };
 };
+
+// Export function for backward compatibility
+export const loadOrders = async (): Promise<Order[]> => {
+  try {
+    return await orderService.getAll();
+  } catch (error) {
+    console.error('Error loading orders:', error);
+    return [];
+  }
+};

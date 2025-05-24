@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Load } from '@/types';
+import { Load, Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { loadService } from '@/services/supabase/loadService';
 import { orderService } from '@/services/supabase/orderService';
@@ -127,7 +127,7 @@ export const useLoads = () => {
   };
 
   // Get orders from a load
-  const getOrdersFromLoad = async (loadId: string) => {
+  const getOrdersFromLoad = async (loadId: string): Promise<Order[]> => {
     try {
       const load = loads.find(l => l.id === loadId);
       if (!load || !load.orderIds) return [];
@@ -136,7 +136,7 @@ export const useLoads = () => {
         load.orderIds.map(orderId => orderService.getById(orderId))
       );
       
-      return orders.filter(order => order !== null);
+      return orders.filter((order): order is Order => order !== null);
     } catch (error) {
       console.error("Erro ao carregar pedidos da carga:", error);
       return [];

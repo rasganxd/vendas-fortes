@@ -39,6 +39,7 @@ export const useAppContextHooks = () => {
     addCustomer: customersHook.addCustomer,
     updateCustomer: customersHook.updateCustomer,
     deleteCustomer: customersHook.deleteCustomer,
+    generateNextCustomerCode: customersHook.generateNextCustomerCode,
 
     // Products operations
     products: productsHook.products,
@@ -46,6 +47,9 @@ export const useAppContextHooks = () => {
     addProduct: productsHook.addProduct,
     updateProduct: productsHook.updateProduct,
     deleteProduct: productsHook.deleteProduct,
+    isSyncing: productsHook.isSyncing,
+    syncPendingProducts: productsHook.syncPendingProducts,
+    forceRefreshProducts: productsHook.forceRefreshProducts,
 
     // Payments operations
     payments: paymentsHook.payments,

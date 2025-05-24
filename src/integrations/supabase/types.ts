@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          company: Json | null
+          company_logo: string | null
+          company_name: string
+          created_at: string
+          id: string
+          primary_color: string | null
+          updated_at: string
+        }
+        Insert: {
+          company?: Json | null
+          company_logo?: string | null
+          company_name?: string
+          created_at?: string
+          id?: string
+          primary_color?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company?: Json | null
+          company_logo?: string | null
+          company_name?: string
+          created_at?: string
+          id?: string
+          primary_color?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           active: boolean
