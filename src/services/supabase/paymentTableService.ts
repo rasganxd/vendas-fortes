@@ -9,25 +9,39 @@ class PaymentTableSupabaseService extends SupabaseService<PaymentTable> {
 
   // Override the transformFromDB method to map database fields to TypeScript interface
   protected transformFromDB(dbRecord: any): PaymentTable {
-    const transformed = super.transformFromDB(dbRecord);
+    if (!dbRecord) return dbRecord;
+    
+    const baseTransformed = super.transformFromDB(dbRecord);
     
     // Map database snake_case fields to TypeScript camelCase
     return {
-      ...transformed,
+      ...baseTransformed,
       payableTo: dbRecord.payable_to || '',
-      paymentLocation: dbRecord.payment_location || ''
+      paymentLocation: dbRecord.payment_location || '',
+      installments: dbRecord.installments || [],
+      terms: dbRecord.terms || [],
+      notes: dbRecord.notes || '',
+      type: dbRecord.type || '',
+      active: dbRecord.active !== undefined ? dbRecord.active : true
     };
   }
 
   // Override the transformToDB method to map TypeScript interface to database fields
   protected transformToDB(record: Partial<PaymentTable>): any {
-    const transformed = super.transformToDB(record);
+    if (!record) return record;
+    
+    const baseTransformed = super.transformToDB(record);
     
     // Map TypeScript camelCase fields to database snake_case
     const dbRecord = {
-      ...transformed,
+      ...baseTransformed,
       payable_to: record.payableTo,
-      payment_location: record.paymentLocation
+      payment_location: record.paymentLocation,
+      installments: record.installments || [],
+      terms: record.terms || [],
+      notes: record.notes || '',
+      type: record.type || '',
+      active: record.active !== undefined ? record.active : true
     };
 
     // Remove the camelCase fields that don't exist in the database

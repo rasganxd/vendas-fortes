@@ -14,6 +14,49 @@ export class SupabaseService<T extends SupabaseEntity> {
   constructor(tableName: string) {
     this.tableName = tableName;
   }
+
+  // Transform data from database format to TypeScript interface
+  protected transformFromDB(dbRecord: any): T {
+    if (!dbRecord) return dbRecord;
+    
+    const transformed = { ...dbRecord };
+    
+    // Convert timestamp fields to Date objects
+    if (dbRecord.created_at) {
+      transformed.createdAt = new Date(dbRecord.created_at);
+      delete transformed.created_at;
+    }
+    
+    if (dbRecord.updated_at) {
+      transformed.updatedAt = new Date(dbRecord.updated_at);
+      delete transformed.updated_at;
+    }
+    
+    return transformed as T;
+  }
+
+  // Transform data from TypeScript interface to database format
+  protected transformToDB(record: Partial<T>): any {
+    if (!record) return record;
+    
+    const transformed = { ...record };
+    
+    // Remove TypeScript-specific fields and convert dates
+    if (transformed.createdAt) {
+      transformed.created_at = transformed.createdAt.toISOString();
+      delete transformed.createdAt;
+    }
+    
+    if (transformed.updatedAt) {
+      transformed.updated_at = transformed.updatedAt.toISOString();
+      delete transformed.updatedAt;
+    }
+    
+    // Remove id for inserts
+    delete transformed.id;
+    
+    return transformed;
+  }
   
   async getAll(): Promise<T[]> {
     try {
@@ -28,7 +71,7 @@ export class SupabaseService<T extends SupabaseEntity> {
         return [];
       }
       
-      return (data || []) as unknown as T[];
+      return (data || []).map(item => this.transformFromDB(item));
     } catch (error) {
       console.error(`Error retrieving ${this.tableName}:`, error);
       return [];
@@ -53,7 +96,7 @@ export class SupabaseService<T extends SupabaseEntity> {
         return null;
       }
       
-      return data as unknown as T;
+      return this.transformFromDB(data);
     } catch (error) {
       console.error(`Error retrieving document ${id} from ${this.tableName}:`, error);
       return null;
@@ -64,8 +107,10 @@ export class SupabaseService<T extends SupabaseEntity> {
     try {
       console.log(`Adding document to ${this.tableName}`);
       
+      const transformedData = this.transformToDB(entity as T);
+      
       const dataWithTimestamps = {
-        ...entity,
+        ...transformedData,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -93,8 +138,10 @@ export class SupabaseService<T extends SupabaseEntity> {
     try {
       console.log(`Updating document ${id} in ${this.tableName}`);
       
+      const transformedData = this.transformToDB(entity as T);
+      
       const dataWithTimestamp = {
-        ...entity,
+        ...transformedData,
         updated_at: new Date().toISOString()
       };
       
