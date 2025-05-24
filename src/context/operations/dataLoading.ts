@@ -1,13 +1,12 @@
 
 import { loadCustomers } from "@/hooks/useCustomers";
 import { fetchProducts } from "@/hooks/useProducts";
-import { loadOrders } from "@/hooks/useOrders";
 import { Customer, Product } from '@/types';
 import { toast } from "@/components/ui/use-toast";
 
 /**
  * Loads core application data (customers and products)
- * Modified to use Firebase exclusively
+ * Modified to use Supabase exclusively
  */
 export const loadCoreData = async (
   setIsLoadingCustomers: React.Dispatch<React.SetStateAction<boolean>>,
@@ -16,17 +15,17 @@ export const loadCoreData = async (
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ) => {
   try {
-    console.log("Fetching core application data from Firebase...");
+    console.log("Fetching core application data from Supabase...");
     
     // Start loading customers
     setIsLoadingCustomers(true);
     let loadedCustomers: Customer[] = [];
     try {
       loadedCustomers = await loadCustomers();
-      console.log(`Loaded ${loadedCustomers.length} customers from Firebase`);
+      console.log(`Loaded ${loadedCustomers.length} customers from Supabase`);
       setCustomers(loadedCustomers);
     } catch (error) {
-      console.error("Failed to load customers from Firebase:", error);
+      console.error("Failed to load customers from Supabase:", error);
       setCustomers([]);
       toast({
         title: "Erro ao carregar clientes",
@@ -40,9 +39,9 @@ export const loadCoreData = async (
     // Start loading products
     setIsLoadingProducts(true);
     try {
-      console.log("About to load products from Firebase...");
+      console.log("About to load products from Supabase...");
       const loadedProducts = await fetchProducts();
-      console.log(`Loaded ${loadedProducts.length} products from Firebase`);
+      console.log(`Loaded ${loadedProducts.length} products from Supabase`);
       
       // Always make sure we update the state even if empty array
       if (loadedProducts && loadedProducts.length > 0) {
@@ -53,7 +52,7 @@ export const loadCoreData = async (
         setProducts([]);
       }
     } catch (error) {
-      console.error("Failed to load products from Firebase:", error);
+      console.error("Failed to load products from Supabase:", error);
       setProducts([]);
       toast({
         title: "Erro ao carregar produtos",
@@ -67,7 +66,7 @@ export const loadCoreData = async (
     
     return false;
   } catch (error) {
-    console.error("Error loading core data from Firebase:", error);
+    console.error("Error loading core data from Supabase:", error);
     toast({
       title: "Erro ao carregar dados",
       description: "Houve um problema ao carregar os dados do sistema.",

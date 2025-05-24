@@ -1,136 +1,120 @@
 
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
-import { customerService } from '@/services/firebase/customerService';
-import { customerLocalService } from '@/services/local/customerLocalService';
-import { useCustomerCrud } from './customer/useCustomerCrud';
-import { useCustomerLoader } from './customer/useCustomerLoader';
-import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-
-// Cache keys
-const CUSTOMERS_CACHE_KEY = 'app_customers_cache';
-const CUSTOMERS_CACHE_TIMESTAMP_KEY = 'app_customers_timestamp';
+import { customerService } from '@/services/supabase/customerService';
+import { toast } from '@/components/ui/use-toast';
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
-  const isOnline = useOnlineStatus();
-  
-  // Use customer loader for loading functionality
-  const { loadCustomers, refreshCustomers } = useCustomerLoader();
-  
-  // Use customer CRUD operations
-  const { 
-    addCustomer, 
-    updateCustomer, 
-    deleteCustomer, 
-    generateNextCode,
-    syncPendingCustomers
-  } = useCustomerCrud(customers, setCustomers);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
-  // Initial loading of customers
   useEffect(() => {
+    if (hasAttemptedLoad) return;
+    
     const fetchCustomers = async () => {
-      setIsLoading(true);
       try {
-        const data = await loadCustomers();
-        setCustomers(data);
+        setIsLoading(true);
+        setHasAttemptedLoad(true);
+        
+        console.log("Fetching customers from Supabase");
+        const fetchedCustomers = await customerService.getAll();
+        console.log(`Loaded ${fetchedCustomers.length} customers from Supabase`);
+        
+        setCustomers(fetchedCustomers);
       } catch (error) {
-        console.error('Error loading customers:', error);
+        console.error('Error fetching customers:', error);
+        setCustomers([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchCustomers();
-  }, []);
+  }, [hasAttemptedLoad]);
 
-  // Check for connection status changes and sync if needed
-  useEffect(() => {
-    // When coming back online, try to sync pending changes
-    if (isOnline) {
-      console.log("Back online, checking for pending customer syncs");
-      syncPendingChanges();
-    }
-  }, [isOnline]);
-
-  const syncPendingChanges = async () => {
-    if (!isOnline) return;
-    
+  const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
-      setIsSyncing(true);
-      await syncPendingCustomers();
+      const id = await customerService.add(customer);
       
-      // After sync, refresh the customer list to get latest data
-      const freshCustomers = await customerService.getAll();
-      setCustomers(freshCustomers);
+      const newCustomer = { ...customer, id } as Customer;
+      setCustomers((prev) => [...prev, newCustomer]);
       
-      // Update local storage with fresh data
-      await customerLocalService.setAll(freshCustomers);
+      toast({
+        title: 'Cliente adicionado',
+        description: 'Cliente adicionado com sucesso!',
+      });
+      
+      return id;
     } catch (error) {
-      console.error("Error syncing pending customers:", error);
-    } finally {
-      setIsSyncing(false);
+      console.error('Error adding customer:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível adicionar o cliente.',
+        variant: 'destructive',
+      });
+      return "";
     }
   };
 
-  const clearCache = async () => {
+  const updateCustomer = async (id: string, customer: Partial<Customer>) => {
     try {
-      localStorage.removeItem(CUSTOMERS_CACHE_KEY);
-      localStorage.removeItem(CUSTOMERS_CACHE_TIMESTAMP_KEY);
-      await localStorage.removeItem('app_customers'); // Use this instead of clearAll
+      await customerService.update(id, customer);
       
-      // Fetch fresh data
-      const freshCustomers = await customerService.getAll();
-      setCustomers(freshCustomers);
+      setCustomers((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...customer } : item))
+      );
       
-      return true;
+      toast({
+        title: 'Cliente atualizado',
+        description: 'Cliente atualizado com sucesso!',
+      });
     } catch (error) {
-      console.error("Error clearing customers cache:", error);
-      return false;
+      console.error('Error updating customer:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o cliente.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteCustomer = async (id: string) => {
+    try {
+      await customerService.delete(id);
+      
+      setCustomers((prev) => prev.filter((item) => item.id !== id));
+      
+      toast({
+        title: 'Cliente excluído',
+        description: 'Cliente excluído com sucesso!',
+      });
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir o cliente.',
+        variant: 'destructive',
+      });
     }
   };
 
   return {
     customers,
     isLoading,
-    isSyncing,
-    clearCache,
-    setCustomers,
-    // Export CRUD operations
     addCustomer,
     updateCustomer,
     deleteCustomer,
-    generateNextCode,
-    generateNextCustomerCode: generateNextCode, // Alias for backward compatibility
-    syncPendingChanges // Export sync function
   };
 };
 
-// Export standalone function for loading customers
-export const loadCustomers = async (forceRefresh = false): Promise<Customer[]> => {
+// Export loadCustomers function for compatibility
+export const loadCustomers = async (): Promise<Customer[]> => {
   try {
-    if (forceRefresh) {
-      return await customerService.getAll();
-    }
-    
-    // Try to get from local storage if not forcing refresh
-    try {
-      const localCustomers = await customerLocalService.getAll();
-      if (localCustomers.length > 0) {
-        return localCustomers;
-      }
-    } catch (localError) {
-      console.error("Error loading from local storage:", localError);
-    }
-    
-    // Fall back to Firebase
+    console.log("Loading customers from Supabase (loadCustomers function)");
     return await customerService.getAll();
   } catch (error) {
-    console.error("Error loading customers:", error);
+    console.error('Error in loadCustomers:', error);
     return [];
   }
 };
-
-export default useCustomers;

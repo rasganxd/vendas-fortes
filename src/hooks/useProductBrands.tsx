@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { ProductBrand } from '@/types';
-import { productBrandService } from '@/services/firebase/productBrandService';
-import { productBrandLocalService } from '@/services/local/productBrandLocalService';
+import { productBrandService } from '@/services/supabase/productBrandService';
 import { toast } from '@/components/ui/use-toast';
 
 // Cache keys
@@ -15,18 +14,9 @@ export const useProductBrands = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
-  // Helper function to clear cache for specific item
-  const clearItemCache = async (itemType: string) => {
-    if (itemType === 'products') {
-      localStorage.removeItem(BRANDS_CACHE_KEY);
-      localStorage.removeItem(BRANDS_CACHE_TIMESTAMP_KEY);
-    }
-    return true;
-  };
-
-  // Function to force reload brands from Firebase
+  // Function to force reload brands from Supabase
   const forceRefreshBrands = async () => {
-    console.log("Force refreshing product brands from Firebase");
+    console.log("Force refreshing product brands from Supabase");
     setIsLoading(true);
     
     try {
@@ -37,21 +27,18 @@ export const useProductBrands = () => {
       // Clear local state
       setHasAttemptedLoad(false);
       
-      // Fetch from Firebase
+      // Fetch from Supabase
       const brands = await productBrandService.getAll();
-      console.log(`Forcefully loaded ${brands.length} product brands from Firebase`);
+      console.log(`Forcefully loaded ${brands.length} product brands from Supabase`);
       
       if (brands && brands.length > 0) {
         setProductBrands(brands);
-        
-        // Update local storage service
-        await productBrandLocalService.setAll(brands);
         
         // Update cache
         localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(brands));
         localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       } else {
-        console.log("No product brands found in Firebase during force refresh");
+        console.log("No product brands found in Supabase during force refresh");
         setProductBrands([]);
       }
       
@@ -85,55 +72,47 @@ export const useProductBrands = () => {
         setIsLoading(true);
         setHasAttemptedLoad(true);
         
-        console.log("Fetching product brands from Firebase");
-        // Always try Firebase first
+        console.log("Fetching product brands from Supabase");
+        // Always try Supabase first
         const brands = await productBrandService.getAll();
-        console.log(`Loaded ${brands.length} product brands from Firebase`);
+        console.log(`Loaded ${brands.length} product brands from Supabase`);
         console.log("Sample brand data:", brands.length > 0 ? brands[0] : "No brands found");
         
         if (brands && brands.length > 0) {
           setProductBrands(brands);
-          console.log("Updated product brands state with Firebase data");
-          
-          // Update local storage service
-          await productBrandLocalService.setAll(brands);
+          console.log("Updated product brands state with Supabase data");
           
           // Update cache
           localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(brands));
           localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
         } else {
-          console.log("No product brands found in Firebase");
-          // No default brands - just set empty array
+          console.log("No product brands found in Supabase");
           setProductBrands([]);
         }
       } catch (error) {
         console.error('Error fetching product brands:', error);
         
-        // Try local storage service as fallback
+        // Try to use cached data as fallback
         try {
-          console.log("Firebase fetch failed, trying local storage");
-          const localBrands = await productBrandLocalService.getAll();
-          console.log(`Found ${localBrands.length} product brands in local storage`);
+          console.log("Supabase fetch failed, trying cached data");
+          const cachedData = localStorage.getItem(BRANDS_CACHE_KEY);
+          const cachedTimestamp = localStorage.getItem(BRANDS_CACHE_TIMESTAMP_KEY);
           
-          if (localBrands && localBrands.length > 0) {
-            setProductBrands(localBrands);
-            console.log("Updated product brands state with local storage data");
-          } else {
-            // Try to use cached data as second fallback
-            const cachedData = localStorage.getItem(BRANDS_CACHE_KEY);
-            if (cachedData) {
+          if (cachedData && cachedTimestamp) {
+            const age = Date.now() - parseInt(cachedTimestamp);
+            if (age < CACHE_MAX_AGE) {
               console.log("Using cached product brands data");
               setProductBrands(JSON.parse(cachedData));
-              console.log("Updated product brands state with cached data");
             } else {
-              // No default brands - just set empty array
-              console.log("No product brands found in cache");
+              console.log("Cached product brands data is too old");
               setProductBrands([]);
             }
+          } else {
+            console.log("No product brands found in cache");
+            setProductBrands([]);
           }
         } catch (localError) {
-          console.error('Error fetching brands from local storage:', localError);
-          // No default brands - just set empty array
+          console.error('Error fetching brands from cache:', localError);
           setProductBrands([]);
         }
       } finally {
@@ -150,9 +129,6 @@ export const useProductBrands = () => {
       
       const newBrand = { ...brand, id } as ProductBrand;
       setProductBrands((prev) => [...prev, newBrand]);
-      
-      // Update local storage service
-      await productBrandLocalService.add(newBrand);
       
       // Update cache
       const updatedBrands = [...productBrands, newBrand];
@@ -184,9 +160,6 @@ export const useProductBrands = () => {
         prev.map((item) => (item.id === id ? { ...item, ...brand } : item))
       );
       
-      // Update local storage service
-      await productBrandLocalService.update(id, brand);
-      
       // Update cache
       const updatedBrands = productBrands.map((item) => 
         item.id === id ? { ...item, ...brand } : item
@@ -212,22 +185,16 @@ export const useProductBrands = () => {
     try {
       console.log(`Deleting brand ${id}`);
       
-      // Delete from Firebase first
+      // Delete from Supabase first
       await productBrandService.delete(id);
       
       // Update local state
       setProductBrands((prev) => prev.filter((item) => item.id !== id));
       
-      // Update local storage service
-      await productBrandLocalService.delete(id);
-      
       // Update cache
       const updatedBrands = productBrands.filter((item) => item.id !== id);
       localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(updatedBrands));
       localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-      
-      // Ensure cache consistency
-      await clearItemCache('products');
       
       toast({
         title: 'Marca excluída',
@@ -249,6 +216,6 @@ export const useProductBrands = () => {
     addProductBrand,
     updateProductBrand,
     deleteProductBrand,
-    forceRefreshBrands, // Export the force refresh function
+    forceRefreshBrands,
   };
 };

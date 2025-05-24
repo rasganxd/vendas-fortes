@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -158,30 +157,25 @@ export default function Products() {
     }
   };
   const handleAdd = () => {
-    // Remove the check that blocks product creation when classifications aren't loaded
     setIsEditing(false);
     setSelectedProduct(null);
     setOpen(true);
   };
   const handleSubmit = async (data: any) => {
     try {
-      // Ensure groupId, categoryId, and brandId are null when "none" is selected
       const productData: Partial<Product> = {
         code: data.code,
         name: data.name,
         cost: data.cost,
-        // Set initial price equal to cost (it will be updated in pricing page)
         price: data.cost,
         unit: data.unit,
-        // Make sure to handle "none" values properly - use null instead of undefined
         categoryId: data.categoryId && data.categoryId !== "none" ? data.categoryId : null,
         groupId: data.groupId && data.groupId !== "none" ? data.groupId : null,
         brandId: data.brandId && data.brandId !== "none" ? data.brandId : null,
         stock: data.stock || 0,
-        minStock: 0 // Default value for minStock
+        minStock: 0
       };
-      console.log("Form data submitted:", data);
-      console.log("Product data being sent:", productData);
+
       if (isEditing && selectedProduct) {
         await updateProduct(selectedProduct.id, productData);
         toast("Produto atualizado", {
@@ -221,7 +215,8 @@ export default function Products() {
   // Display loading status for debugging
   const isLoadingAnyClassification = isGroupsLoading || isCategoriesLoading || isBrandsLoading;
   
-  return <PageLayout title="Produtos">
+  return (
+    <PageLayout title="Produtos">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
@@ -234,10 +229,7 @@ export default function Products() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <div>
-              
-              
-            </div>
+            <div></div>
           </div>
         </CardHeader>
         <CardContent>
@@ -264,5 +256,6 @@ export default function Products() {
         productBrands={safeProductBrands} 
         onSubmit={handleSubmit} 
       />
-    </PageLayout>;
+    </PageLayout>
+  );
 }

@@ -1,7 +1,6 @@
 import { Product } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-import { productService } from '@/services/firebase/productService';
-import { productLocalService } from '@/services/local/productLocalService';
+import { productService } from '@/services/supabase/productService';
 
 // Cache keys
 const PRODUCTS_CACHE_KEY = 'app_products_cache';
@@ -32,8 +31,8 @@ export const addProduct = async (
     
     console.log("Adding product:", productWithCode);
     
-    // Add to local storage
-    const id = await productLocalService.add(productWithCode);
+    // Add to Supabase
+    const id = await productService.add(productWithCode);
     console.log("Product added with ID:", id);
     
     if (!id) {
@@ -81,8 +80,8 @@ export const updateProduct = async (
       }
     }
     
-    // Update in local storage
-    await productLocalService.update(id, updateData);
+    // Update in Supabase
+    await productService.update(id, updateData);
     console.log("Product updated, ID:", id, "Data:", updateData);
     
     // Atualizar o estado local usando a função de atualização correta
@@ -115,7 +114,7 @@ export const deleteProduct = async (
   try {
     console.log(`Deleting product ${id}`);
     
-    // Delete from Firebase first
+    // Delete from Supabase first
     await productService.delete(id);
     
     // Update local state
@@ -125,9 +124,6 @@ export const deleteProduct = async (
     // Update localStorage cache
     localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
     localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-    
-    // Update local storage service
-    await productLocalService.delete(id);
     
     toast({
       title: "Produto excluído",

@@ -1,85 +1,29 @@
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useFirebaseConnection } from '@/hooks/useFirebaseConnection';
-
-type ConnectionStatus = 'online' | 'offline' | 'connecting' | 'error';
+import React, { createContext, useContext } from 'react';
+import { useSupabaseConnection } from '@/hooks/useSupabaseConnection';
 
 interface ConnectionContextType {
-  isOnline: boolean;
-  connectionStatus: ConnectionStatus;
-  reconnect: () => Promise<void>;
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  lastConnectAttempt: Date | null;
+  reconnectToSupabase: () => Promise<void>;
+  testConnection: () => Promise<boolean>;
 }
 
-const ConnectionContext = createContext<ConnectionContextType>({
-  isOnline: true,
-  connectionStatus: 'online',
-  reconnect: async () => {}
-});
+const ConnectionContext = createContext<ConnectionContextType | undefined>(undefined);
 
-export const useConnection = () => useContext(ConnectionContext);
+export const useConnection = () => {
+  const context = useContext(ConnectionContext);
+  if (context === undefined) {
+    throw new Error('useConnection must be used within a ConnectionProvider');
+  }
+  return context;
+};
 
-export const ConnectionProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(navigator.onLine ? 'online' : 'offline');
-  
-  const {
-    connectionStatus: firebaseStatus,
-    reconnectToFirebase
-  } = useFirebaseConnection();
-  
-  // Monitor online/offline status
-  useEffect(() => {
-    const handleOnlineStatus = () => {
-      const online = navigator.onLine;
-      console.log("Connection status changed:", online ? "ONLINE" : "OFFLINE");
-      setIsOnline(online);
-      
-      if (online) {
-        setConnectionStatus('connecting');
-      } else {
-        setConnectionStatus('offline');
-      }
-    };
-    
-    window.addEventListener('online', handleOnlineStatus);
-    window.addEventListener('offline', handleOnlineStatus);
-    
-    return () => {
-      window.removeEventListener('online', handleOnlineStatus);
-      window.removeEventListener('offline', handleOnlineStatus);
-    };
-  }, []);
-  
-  // Update connection status based on Firebase connection
-  useEffect(() => {
-    if (firebaseStatus === 'connected') {
-      setConnectionStatus('online');
-    } else if (firebaseStatus === 'disconnected') {
-      setConnectionStatus(navigator.onLine ? 'connecting' : 'offline');
-    } else if (firebaseStatus === 'error') {
-      setConnectionStatus('error');
-    } else if (firebaseStatus === 'connecting') {
-      setConnectionStatus('connecting');
-    }
-  }, [firebaseStatus]);
-  
-  // Function to attempt reconnection
-  const reconnect = async () => {
-    setConnectionStatus('connecting');
-    try {
-      await reconnectToFirebase();
-    } catch (error) {
-      console.error("Error reconnecting:", error);
-      setConnectionStatus('error');
-    }
-  };
-  
+export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const connection = useSupabaseConnection();
+
   return (
-    <ConnectionContext.Provider value={{
-      isOnline,
-      connectionStatus,
-      reconnect
-    }}>
+    <ConnectionContext.Provider value={connection}>
       {children}
     </ConnectionContext.Provider>
   );
