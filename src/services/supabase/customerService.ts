@@ -43,7 +43,6 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       visit_frequency: record.visitFrequency || '',
       visit_sequence: record.visitSequence || 0,
       sales_rep_id: record.salesRepId || null,
-      sales_rep_name: record.salesRepName || null,
       delivery_route_id: record.deliveryRouteId || null,
       zip_code: record.zip || record.zipCode || ''
     };
@@ -54,7 +53,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     delete dbRecord.visitFrequency;
     delete dbRecord.visitSequence;
     delete dbRecord.salesRepId;
-    delete dbRecord.salesRepName;
+    delete dbRecord.salesRepName; // This field doesn't exist in DB, so remove it
     delete dbRecord.deliveryRouteId;
     delete dbRecord.zipCode;
     delete dbRecord.zip;
