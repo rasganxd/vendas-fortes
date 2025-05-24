@@ -140,14 +140,15 @@ export const transformCustomerData = (data: any) => {
     address: transformed.address || '',
     city: transformed.city || '',
     state: transformed.state || '',
-    zip: transformed.zip || '',
+    zip: transformed.zip || transformed.zipCode || '',
+    zipCode: transformed.zipCode || transformed.zip || '', // For backward compatibility
     document: transformed.document || '',
     notes: transformed.notes || '',
     visitDays: transformed.visitDays || [],
     visitFrequency: transformed.visitFrequency || '',
     visitSequence: transformed.visitSequence || 0,
-    sales_rep_id: transformed.salesRepId || undefined,
-    sales_rep_name: transformed.salesRepName || undefined,
+    sales_rep_id: transformed.salesRepId || data.sales_rep_id || undefined,
+    sales_rep_name: transformed.salesRepName || data.sales_rep_name || undefined,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
   };
