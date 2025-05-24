@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -104,7 +103,6 @@ export default function Customers() {
           </p>
         </div>
         <div className="flex gap-2">
-          <ProductsActionButtons onAddProduct={() => {}} />
           <Button onClick={handleNewCustomer} className="bg-sales-800 hover:bg-sales-700">
             <Plus size={16} className="mr-2" /> Novo Cliente
           </Button>
