@@ -1,4 +1,5 @@
 
+
 import { SupabaseService } from './supabaseService';
 import { Order } from '@/types';
 
@@ -47,8 +48,8 @@ class OrderSupabaseService extends SupabaseService<Order> {
       sales_rep_name: record.salesRepName,
       payment_status: record.paymentStatus || 'pending',
       payment_method: record.paymentMethod,
-      payment_method_id: record.paymentMethodId,
-      payment_table_id: record.paymentTableId,
+      payment_method_id: record.paymentMethodId || null, // Convert empty string to null
+      payment_table_id: record.paymentTableId || null, // Convert empty string to null
       due_date: record.dueDate ? record.dueDate.toISOString() : null,
       delivery_address: record.deliveryAddress,
       delivery_city: record.deliveryCity,
@@ -172,3 +173,4 @@ class OrderSupabaseService extends SupabaseService<Order> {
 }
 
 export const orderService = new OrderSupabaseService();
+
