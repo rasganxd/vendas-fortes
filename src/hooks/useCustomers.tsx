@@ -5,6 +5,7 @@ import { customerService } from '@/services/firebase/customerService';
 import { customerLocalService } from '@/services/local/customerLocalService';
 import { useCustomerCrud } from './customer/useCustomerCrud';
 import { useCustomerLoader } from './customer/useCustomerLoader';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 // Cache keys
 const CUSTOMERS_CACHE_KEY = 'app_customers_cache';
@@ -13,14 +14,22 @@ const CUSTOMERS_CACHE_TIMESTAMP_KEY = 'app_customers_timestamp';
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const isOnline = useOnlineStatus();
   
   // Use customer loader for loading functionality
   const { loadCustomers, refreshCustomers } = useCustomerLoader();
   
   // Use customer CRUD operations
-  const { addCustomer, updateCustomer, deleteCustomer, generateNextCode } = 
-    useCustomerCrud(customers, setCustomers);
+  const { 
+    addCustomer, 
+    updateCustomer, 
+    deleteCustomer, 
+    generateNextCode,
+    syncPendingCustomers
+  } = useCustomerCrud(customers, setCustomers);
 
+  // Initial loading of customers
   useEffect(() => {
     const fetchCustomers = async () => {
       setIsLoading(true);
@@ -36,6 +45,35 @@ export const useCustomers = () => {
 
     fetchCustomers();
   }, []);
+
+  // Check for connection status changes and sync if needed
+  useEffect(() => {
+    // When coming back online, try to sync pending changes
+    if (isOnline) {
+      console.log("Back online, checking for pending customer syncs");
+      syncPendingChanges();
+    }
+  }, [isOnline]);
+
+  const syncPendingChanges = async () => {
+    if (!isOnline) return;
+    
+    try {
+      setIsSyncing(true);
+      await syncPendingCustomers();
+      
+      // After sync, refresh the customer list to get latest data
+      const freshCustomers = await customerService.getAll();
+      setCustomers(freshCustomers);
+      
+      // Update local storage with fresh data
+      await customerLocalService.setAll(freshCustomers);
+    } catch (error) {
+      console.error("Error syncing pending customers:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const clearCache = async () => {
     try {
@@ -57,6 +95,7 @@ export const useCustomers = () => {
   return {
     customers,
     isLoading,
+    isSyncing,
     clearCache,
     setCustomers,
     // Export CRUD operations
@@ -64,7 +103,8 @@ export const useCustomers = () => {
     updateCustomer,
     deleteCustomer,
     generateNextCode,
-    generateNextCustomerCode: generateNextCode // Alias for backward compatibility
+    generateNextCustomerCode: generateNextCode, // Alias for backward compatibility
+    syncPendingChanges // Export sync function
   };
 };
 
