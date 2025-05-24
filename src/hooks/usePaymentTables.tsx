@@ -1,12 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { PaymentTable, PaymentTableInstallment, PaymentTableTerm } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { useAppContext } from './useAppContext';
-import { paymentTableService } from '@/services/firebase/paymentTableService';
+import { paymentTableService } from '@/services/supabase/paymentTableService';
 
 export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
   try {
-    console.log("Loading payment tables from Firebase");
+    console.log("Loading payment tables from Supabase");
     return await paymentTableService.getAll();
   } catch (error) {
     console.error("Erro ao carregar tabelas de pagamento:", error);

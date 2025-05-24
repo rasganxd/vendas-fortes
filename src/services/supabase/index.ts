@@ -10,3 +10,7 @@ export { mobileSyncService } from './mobileSyncService';
 export { deliveryRouteService } from './deliveryRouteService';
 export { loadService } from './loadService';
 export { orderService } from './orderService';
+export { paymentService } from './paymentService';
+export { paymentMethodService } from './paymentMethodService';
+export { paymentTableService } from './paymentTableService';
+export { vehicleService } from './vehicleService';

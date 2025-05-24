@@ -1,24 +1,27 @@
 
 import { useState, useEffect } from 'react';
 import { DeliveryRoute } from '@/types';
-import { deliveryRouteService } from '@/services/supabase/deliveryRouteService';
 import { toast } from '@/components/ui/use-toast';
+import { deliveryRouteService } from '@/services/supabase/deliveryRouteService';
 
 export const useDeliveryRoutes = () => {
   const [deliveryRoutes, setDeliveryRoutes] = useState<DeliveryRoute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load delivery routes on initial render
   useEffect(() => {
     const fetchDeliveryRoutes = async () => {
       try {
         setIsLoading(true);
-        console.log("Fetching delivery routes from Supabase");
-        const fetchedRoutes = await deliveryRouteService.getAll();
-        console.log(`Loaded ${fetchedRoutes.length} delivery routes from Supabase`);
-        setDeliveryRoutes(fetchedRoutes);
+        const loadedRoutes = await deliveryRouteService.getAll();
+        setDeliveryRoutes(loadedRoutes);
       } catch (error) {
-        console.error('Error fetching delivery routes:', error);
-        setDeliveryRoutes([]);
+        console.error("Error loading delivery routes:", error);
+        toast({
+          title: "Erro ao carregar rotas de entrega",
+          description: "Houve um problema ao carregar as rotas de entrega.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -27,68 +30,79 @@ export const useDeliveryRoutes = () => {
     fetchDeliveryRoutes();
   }, []);
 
+  // Add a new delivery route
   const addDeliveryRoute = async (route: Omit<DeliveryRoute, 'id'>) => {
     try {
       const id = await deliveryRouteService.add(route);
       
-      const newRoute = { ...route, id } as DeliveryRoute;
-      setDeliveryRoutes((prev) => [...prev, newRoute]);
+      const newRoute: DeliveryRoute = {
+        ...route,
+        id,
+        createdAt: route.createdAt || new Date(),
+        updatedAt: route.updatedAt || new Date()
+      };
+      
+      setDeliveryRoutes([...deliveryRoutes, newRoute]);
       
       toast({
-        title: 'Rota adicionada',
-        description: 'Rota de entrega adicionada com sucesso!',
+        title: "Rota de entrega adicionada",
+        description: "Rota de entrega adicionada com sucesso!"
       });
       
       return id;
     } catch (error) {
-      console.error('Error adding delivery route:', error);
+      console.error("Erro ao adicionar rota de entrega:", error);
       toast({
-        title: 'Erro',
-        description: 'Não foi possível adicionar a rota de entrega.',
-        variant: 'destructive',
+        title: "Erro ao adicionar rota de entrega",
+        description: "Houve um problema ao adicionar a rota de entrega.",
+        variant: "destructive"
       });
       return "";
     }
   };
 
+  // Update an existing delivery route
   const updateDeliveryRoute = async (id: string, route: Partial<DeliveryRoute>) => {
     try {
       await deliveryRouteService.update(id, route);
       
-      setDeliveryRoutes((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, ...route } : item))
-      );
+      // Update local state
+      setDeliveryRoutes(deliveryRoutes.map(dr => 
+        dr.id === id ? { ...dr, ...route } : dr
+      ));
       
       toast({
-        title: 'Rota atualizada',
-        description: 'Rota de entrega atualizada com sucesso!',
+        title: "Rota de entrega atualizada",
+        description: "Rota de entrega atualizada com sucesso!"
       });
     } catch (error) {
-      console.error('Error updating delivery route:', error);
+      console.error("Erro ao atualizar rota de entrega:", error);
       toast({
-        title: 'Erro',
-        description: 'Não foi possível atualizar a rota de entrega.',
-        variant: 'destructive',
+        title: "Erro ao atualizar rota de entrega",
+        description: "Houve um problema ao atualizar a rota de entrega.",
+        variant: "destructive"
       });
     }
   };
 
-  const deleteDeliveryRoute = async (id: string) => {
+  // Delete a delivery route
+  const deleteDeliveryRoute = async (id: string): Promise<void> => {
     try {
       await deliveryRouteService.delete(id);
       
-      setDeliveryRoutes((prev) => prev.filter((item) => item.id !== id));
+      // Update local state
+      setDeliveryRoutes(deliveryRoutes.filter(dr => dr.id !== id));
       
       toast({
-        title: 'Rota excluída',
-        description: 'Rota de entrega excluída com sucesso!',
+        title: "Rota de entrega excluída",
+        description: "Rota de entrega excluída com sucesso!"
       });
     } catch (error) {
-      console.error('Error deleting delivery route:', error);
+      console.error("Erro ao excluir rota de entrega:", error);
       toast({
-        title: 'Erro',
-        description: 'Não foi possível excluir a rota de entrega.',
-        variant: 'destructive',
+        title: "Erro ao excluir rota de entrega",
+        description: "Houve um problema ao excluir a rota de entrega.",
+        variant: "destructive"
       });
     }
   };
@@ -99,5 +113,6 @@ export const useDeliveryRoutes = () => {
     addDeliveryRoute,
     updateDeliveryRoute,
     deleteDeliveryRoute,
+    setDeliveryRoutes
   };
 };

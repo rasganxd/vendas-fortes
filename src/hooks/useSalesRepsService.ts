@@ -1,6 +1,6 @@
 
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/services/firebase/salesRepService';
+import { salesRepService } from '@/services/supabase/salesRepService';
 import { salesRepLocalService } from '@/services/local/salesRepLocalService';
 
 /**
@@ -14,29 +14,29 @@ export const useSalesRepsService = () => {
    */
   const loadSalesReps = async (forceRefresh = false): Promise<SalesRep[]> => {
     try {
-      // If forcing refresh, go directly to Firebase
+      // If forcing refresh, go directly to Supabase
       if (forceRefresh) {
-        console.log("Forcing refresh from Firebase");
-        const firebaseSalesReps = await salesRepService.getAll();
+        console.log("Forcing refresh from Supabase");
+        const supabaseSalesReps = await salesRepService.getAll();
         
         // Update local storage with new data
-        await salesRepLocalService.setAll(firebaseSalesReps);
+        await salesRepLocalService.setAll(supabaseSalesReps);
         
-        return firebaseSalesReps;
+        return supabaseSalesReps;
       }
       
-      console.log("Loading from Firebase and falling back to local if needed");
+      console.log("Loading from Supabase and falling back to local if needed");
       
-      // Try to load from Firebase first
+      // Try to load from Supabase first
       try {
-        const firebaseSalesReps = await salesRepService.getAll();
+        const supabaseSalesReps = await salesRepService.getAll();
         
         // Update local storage with new data for offline use
-        await salesRepLocalService.setAll(firebaseSalesReps);
+        await salesRepLocalService.setAll(supabaseSalesReps);
         
-        return firebaseSalesReps;
+        return supabaseSalesReps;
       } catch (error) {
-        console.error("Error loading sales reps from Firebase:", error);
+        console.error("Error loading sales reps from Supabase:", error);
         
         // Fall back to local storage
         console.log("Falling back to local storage");

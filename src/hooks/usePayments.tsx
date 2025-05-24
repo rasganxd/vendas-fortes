@@ -1,14 +1,15 @@
+
 import { useState, useEffect } from 'react';
 import { Payment } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { Order } from '@/types/order';
-import { paymentService } from '@/services/firebase/paymentService';
+import { paymentService } from '@/services/supabase/paymentService';
 
 export const loadPayments = async (): Promise<Payment[]> => {
   try {
-    console.log("Loading payments from Firebase");
+    console.log("Loading payments from Supabase");
     const payments = await paymentService.getAll();
-    console.log(`Loaded ${payments.length} payments from Firebase`);
+    console.log(`Loaded ${payments.length} payments from Supabase`);
     return payments;
   } catch (error) {
     console.error("Error loading payments:", error);
@@ -174,7 +175,7 @@ export const usePayments = () => {
         return;
       }
   
-      // Get payment tables from context/firebase
+      // Get payment tables from context/supabase
       const tables = await loadPaymentTables();
       const paymentTable = tables.find(t => t.id === order.paymentTableId);
       
@@ -235,10 +236,9 @@ export const usePayments = () => {
 
 // Helper function to load payment tables
 const loadPaymentTables = async () => {
-  // This is a simplified version since you'll integrate this with Firebase PaymentTables
   try {
-    // You'll need to implement PaymentTableFirestoreService and use it here
-    return []; // Placeholder until PaymentTableFirestoreService is implemented
+    const { paymentTableService } = await import('@/services/supabase/paymentTableService');
+    return await paymentTableService.getAll();
   } catch (error) {
     console.error("Error loading payment tables:", error);
     return [];

@@ -18,6 +18,11 @@ export class MobileSyncService {
     console.log(`Logging sync event: ${eventType} for sales rep: ${salesRepId}, device: ${deviceId}`);
     // This would be implemented with actual Supabase tables
   }
+
+  async clearSyncLogs(salesRepId: string): Promise<void> {
+    console.log(`Clearing sync logs for sales rep: ${salesRepId}`);
+    // This would be implemented with actual Supabase tables
+  }
 }
 
 export const mobileSyncService = new MobileSyncService();

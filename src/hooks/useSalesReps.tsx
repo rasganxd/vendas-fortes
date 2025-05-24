@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/services/firebase/salesRepService';
+import { salesRepService } from '@/services/supabase/salesRepService';
 import { toast } from '@/components/ui/use-toast';
 import { useSalesRepsService } from './useSalesRepsService';
 import { salesRepLocalService } from '@/services/local/salesRepLocalService';

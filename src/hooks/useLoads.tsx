@@ -1,16 +1,15 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { Load, Order } from '@/types';
+import { useState, useEffect } from 'react';
+import { Load } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-import { loadService } from '@/services/firebase/loadService';
-import { orderService } from '@/services/firebase/orderService';
+import { loadService } from '@/services/supabase/loadService';
+import { orderService } from '@/services/supabase/orderService';
 
 export const useLoads = () => {
   const [loads, setLoads] = useState<Load[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Load data from Firebase
+  // Load loads on initial render
   useEffect(() => {
     const fetchLoads = async () => {
       try {
@@ -20,9 +19,9 @@ export const useLoads = () => {
       } catch (error) {
         console.error("Error loading loads:", error);
         toast({
-          variant: "destructive",
           title: "Erro ao carregar cargas",
-          description: "Não foi possível carregar as cargas."
+          description: "Houve um problema ao carregar as cargas.",
+          variant: "destructive"
         });
       } finally {
         setIsLoading(false);
@@ -32,41 +31,19 @@ export const useLoads = () => {
     fetchLoads();
   }, []);
 
-  // Get load by ID with better error handling
-  const getLoadById = useCallback(async (id: string): Promise<Load | null> => {
-    if (!id) {
-      console.error("Invalid load ID provided");
-      return null;
-    }
-
-    try {
-      return await loadService.getById(id);
-    } catch (error) {
-      console.error(`Error getting load by ID ${id}:`, error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar carga",
-        description: `Não foi possível carregar a carga: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
-      });
-      return null;
-    }
-  }, []);
-
   // Add a new load
-  const addLoad = async (load: Omit<Load, 'id'>): Promise<string> => {
+  const addLoad = async (load: Omit<Load, 'id'>) => {
     try {
-      setIsProcessing(true);
-      
-      // Generate a new load code if not provided
-      if (!load.code) {
-        const nextCode = await loadService.generateNextCode();
-        load = { ...load, code: nextCode };
-      }
-      
       const id = await loadService.add(load);
-      const newLoad = { ...load, id } as Load;
       
-      setLoads(prev => [...prev, newLoad]);
+      const newLoad: Load = {
+        ...load,
+        id,
+        createdAt: load.createdAt || new Date(),
+        updatedAt: load.updatedAt || new Date()
+      };
+      
+      setLoads([...loads, newLoad]);
       
       toast({
         title: "Carga adicionada",
@@ -75,124 +52,68 @@ export const useLoads = () => {
       
       return id;
     } catch (error) {
-      console.error("Error adding load:", error);
+      console.error("Erro ao adicionar carga:", error);
       toast({
-        variant: "destructive",
         title: "Erro ao adicionar carga",
-        description: `Houve um problema ao adicionar a carga: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+        description: "Houve um problema ao adicionar a carga.",
+        variant: "destructive"
       });
       return "";
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   // Update an existing load
-  const updateLoad = async (id: string, load: Partial<Load>): Promise<void> => {
+  const updateLoad = async (id: string, load: Partial<Load>) => {
     try {
-      setIsProcessing(true);
-      
       await loadService.update(id, load);
       
-      setLoads(prev => 
-        prev.map(l => l.id === id ? { ...l, ...load } : l)
-      );
+      // Update local state
+      setLoads(loads.map(l => 
+        l.id === id ? { ...l, ...load } : l
+      ));
       
       toast({
         title: "Carga atualizada",
         description: "Carga atualizada com sucesso!"
       });
     } catch (error) {
-      console.error(`Error updating load ${id}:`, error);
+      console.error("Erro ao atualizar carga:", error);
       toast({
-        variant: "destructive",
         title: "Erro ao atualizar carga",
-        description: `Houve um problema ao atualizar a carga: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+        description: "Houve um problema ao atualizar a carga.",
+        variant: "destructive"
       });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   // Delete a load
   const deleteLoad = async (id: string): Promise<void> => {
     try {
-      setIsProcessing(true);
-      
       await loadService.delete(id);
       
-      setLoads(prev => prev.filter(l => l.id !== id));
+      // Update local state
+      setLoads(loads.filter(l => l.id !== id));
       
       toast({
         title: "Carga excluída",
         description: "Carga excluída com sucesso!"
       });
     } catch (error) {
-      console.error(`Error deleting load ${id}:`, error);
+      console.error("Erro ao excluir carga:", error);
       toast({
-        variant: "destructive",
         title: "Erro ao excluir carga",
-        description: `Houve um problema ao excluir a carga: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+        description: "Houve um problema ao excluir a carga.",
+        variant: "destructive"
       });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Toggle lock status of a load
-  const toggleLoadLock = async (id: string): Promise<void> => {
-    try {
-      const load = loads.find(l => l.id === id);
-      if (!load) {
-        throw new Error("Carga não encontrada");
-      }
-
-      const newLockedStatus = !load.locked;
-      await updateLoad(id, { locked: newLockedStatus });
-      
-      toast({
-        title: newLockedStatus ? "Carga bloqueada" : "Carga desbloqueada",
-        description: newLockedStatus 
-          ? "A carga foi bloqueada para edição" 
-          : "A carga foi desbloqueada para edição"
-      });
-    } catch (error) {
-      console.error(`Error toggling lock status for load ${id}:`, error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao alterar bloqueio",
-        description: "Não foi possível alterar o status de bloqueio da carga."
-      });
-    }
-  };
-
-  // Get orders from a load
-  const getOrdersFromLoad = (load: Load): Order[] => {
-    try {
-      if (!load.orderIds || load.orderIds.length === 0) {
-        return [];
-      }
-      
-      // In a real implementation, we would fetch the orders from the database
-      // For now, we'll return an empty array since we don't have access to the orders
-      // This is a placeholder function that would need to be implemented properly
-      return [];
-    } catch (error) {
-      console.error("Error getting orders from load:", error);
-      return [];
     }
   };
 
   return {
     loads,
-    setLoads,
     isLoading,
-    isProcessing,
-    getLoadById,
     addLoad,
     updateLoad,
     deleteLoad,
-    toggleLoadLock,
-    getOrdersFromLoad
+    setLoads
   };
 };
