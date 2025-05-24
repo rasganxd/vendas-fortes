@@ -1,212 +1,102 @@
 
-import { useOrders } from '@/hooks/useOrders';
-import { useRoutes } from '@/hooks/useRoutes';
-import { useVehicles } from '@/hooks/useVehicles';
-import { usePayments } from '@/hooks/usePayments';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { useLoads } from '@/hooks/useLoads';
-import { useSalesReps } from '@/hooks/useSalesReps';
-import { usePaymentTables } from '@/hooks/usePaymentTables';
-import { useProductGroups } from '@/hooks/useProductGroups';
-import { useProductCategories } from '@/hooks/useProductCategories';
-import { useProductBrands } from '@/hooks/useProductBrands';
-import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
-import { useAppSettings } from '@/hooks/useAppSettings';
-import { Order, ProductGroup } from '@/types';
+import React from 'react';
+import { useCustomers } from './useCustomers';
+import { useProducts } from './useProducts';
+import { useOrders } from './useOrders';
+import { usePayments } from './usePayments';
+import { useVehicles } from './useVehicles';
+import { useSalesReps } from './useSalesReps';
+import { useLoads } from './useLoads';
+import { useRoutes } from './useRoutes';
+import { usePaymentMethods } from './usePaymentMethods';
+import { usePaymentTables } from './usePaymentTables';
 
-/**
- * Hook that consolidates all app functionality hooks
- */
 export const useAppContextHooks = () => {
-  // Orders
-  const { 
-    getOrderById,
-    addOrder,
-    updateOrder: updateOrderHook,
-    deleteOrder
-  } = useOrders();
-  
-  // Routes
-  const {
-    addRoute,
-    updateRoute,
-    deleteRoute
-  } = useRoutes();
-  
-  // Vehicles
-  const {
-    addVehicle,
-    updateVehicle,
-    deleteVehicle
-  } = useVehicles();
-  
-  // Payments
-  const {
-    addPayment,
-    updatePayment,
-    deletePayment,
-    createAutomaticPaymentRecord
-  } = usePayments();
-  
-  // Payment Methods
-  const {
-    addPaymentMethod,
-    updatePaymentMethod,
-    deletePaymentMethod
-  } = usePaymentMethods();
-  
-  // Loads
-  const {
-    addLoad,
-    updateLoad,
-    deleteLoad
-  } = useLoads();
-  
-  // Sales Reps
-  const {
-    addSalesRep,
-    updateSalesRep,
-    deleteSalesRep
-  } = useSalesReps();
-  
-  // Payment Tables
-  const {
-    addPaymentTable,
-    updatePaymentTable,
-    deletePaymentTable
-  } = usePaymentTables();
-  
-  // Product Groups
-  const {
-    addProductGroup,
-    updateProductGroup,
-    deleteProductGroup
-  } = useProductGroups();
-  
-  // Product Categories
-  const {
-    addProductCategory,
-    updateProductCategory,
-    deleteProductCategory: deleteProductCategoryHook
-  } = useProductCategories();
-  
-  // Product Brands
-  const {
-    addProductBrand,
-    updateProductBrand,
-    deleteProductBrand: deleteProductBrandHook
-  } = useProductBrands();
-  
-  // Delivery Routes
-  const {
-    addDeliveryRoute,
-    updateDeliveryRoute,
-    deleteDeliveryRoute
-  } = useDeliveryRoutes();
+  const customersHook = useCustomers();
+  const productsHook = useProducts();
+  const ordersHook = useOrders();
+  const paymentsHook = usePayments();
+  const vehiclesHook = useVehicles();
+  const salesRepsHook = useSalesReps();
+  const loadsHook = useLoads();
+  const routesHook = useRoutes();
+  const paymentMethodsHook = usePaymentMethods();
+  const paymentTablesHook = usePaymentTables();
 
-  // App Settings
-  const { 
-    settings,
-    isLoading: isLoadingSettings
-  } = useAppSettings();
-  
-  // Wrapper functions for proper type handling
-  const createAutoPaymentWrapper = async (order: Order): Promise<string> => {
-    await createAutomaticPaymentRecord(order);
-    return '';
-  };
-
-  const deleteProductCategory = async (id: string): Promise<void> => {
-    try {
-      await deleteProductCategoryHook(id);
-    } catch (error) {
-      console.error("Error deleting product category:", error);
-    }
-  };
-
-  const deleteProductBrand = async (id: string): Promise<void> => {
-    try {
-      await deleteProductBrandHook(id);
-    } catch (error) {
-      console.error("Error deleting product brand:", error);
-    }
-  };
-
-  const updateOrder = async (id: string, orderData: Partial<Order>): Promise<string> => {
-    try {
-      await updateOrderHook(id, orderData);
-      return id;
-    } catch (error) {
-      console.error("Error in updateOrder wrapper:", error);
-      return "";
-    }
-  };
-  
   return {
-    // Orders
-    getOrderById,
-    addOrder,
-    updateOrder,
-    deleteOrder,
-    
-    // Routes
-    addRoute,
-    updateRoute,
-    deleteRoute,
-    
-    // Vehicles
-    addVehicle,
-    updateVehicle,
-    deleteVehicle,
-    
-    // Payments
-    addPayment,
-    updatePayment,
-    deletePayment,
-    createAutomaticPaymentRecord: createAutoPaymentWrapper,
-    
-    // Payment Methods
-    addPaymentMethod,
-    updatePaymentMethod,
-    deletePaymentMethod,
-    
-    // Loads
-    addLoad,
-    updateLoad,
-    deleteLoad,
-    
-    // Sales Reps
-    addSalesRep,
-    updateSalesRep,
-    deleteSalesRep,
-    
-    // Payment Tables
-    addPaymentTable,
-    updatePaymentTable,
-    deletePaymentTable,
-    
-    // Product Groups
-    addProductGroup,
-    updateProductGroup,
-    deleteProductGroup,
-    
-    // Product Categories
-    addProductCategory,
-    updateProductCategory,
-    deleteProductCategory,
-    
-    // Product Brands
-    addProductBrand,
-    updateProductBrand,
-    deleteProductBrand,
-    
-    // Delivery Routes
-    addDeliveryRoute,
-    updateDeliveryRoute,
-    deleteDeliveryRoute,
-    
-    // Settings
-    settings,
-    isLoadingSettings
+    // Orders operations
+    orders: ordersHook.orders,
+    isLoadingOrders: ordersHook.isLoading,
+    addOrder: ordersHook.addOrder,
+    updateOrder: ordersHook.updateOrder,
+    deleteOrder: ordersHook.deleteOrder,
+    getOrderById: ordersHook.getOrderById,
+    generateNextOrderCode: ordersHook.generateNextCode,
+
+    // Customers operations
+    customers: customersHook.customers,
+    isLoadingCustomers: customersHook.isLoading,
+    addCustomer: customersHook.addCustomer,
+    updateCustomer: customersHook.updateCustomer,
+    deleteCustomer: customersHook.deleteCustomer,
+
+    // Products operations
+    products: productsHook.products,
+    isLoadingProducts: productsHook.isLoading,
+    addProduct: productsHook.addProduct,
+    updateProduct: productsHook.updateProduct,
+    deleteProduct: productsHook.deleteProduct,
+
+    // Payments operations
+    payments: paymentsHook.payments,
+    isLoadingPayments: paymentsHook.isLoading,
+    addPayment: paymentsHook.addPayment,
+    updatePayment: paymentsHook.updatePayment,
+    deletePayment: paymentsHook.deletePayment,
+    createAutomaticPaymentRecord: paymentsHook.createAutomaticPaymentRecord,
+
+    // Vehicles operations
+    vehicles: vehiclesHook.vehicles,
+    isLoadingVehicles: vehiclesHook.isLoading,
+    addVehicle: vehiclesHook.addVehicle,
+    updateVehicle: vehiclesHook.updateVehicle,
+    deleteVehicle: vehiclesHook.deleteVehicle,
+
+    // Sales reps operations
+    salesReps: salesRepsHook.salesReps,
+    isLoadingSalesReps: salesRepsHook.isLoading,
+    addSalesRep: salesRepsHook.addSalesRep,
+    updateSalesRep: salesRepsHook.updateSalesRep,
+    deleteSalesRep: salesRepsHook.deleteSalesRep,
+
+    // Loads operations
+    loads: loadsHook.loads,
+    isLoadingLoads: loadsHook.isLoading,
+    addLoad: loadsHook.addLoad,
+    updateLoad: loadsHook.updateLoad,
+    deleteLoad: loadsHook.deleteLoad,
+    toggleLoadLock: loadsHook.toggleLoadLock,
+    getOrdersFromLoad: loadsHook.getOrdersFromLoad,
+
+    // Routes operations
+    routes: routesHook.routes,
+    isLoadingRoutes: routesHook.isLoading,
+    addRoute: routesHook.addRoute,
+    updateRoute: routesHook.updateRoute,
+    deleteRoute: routesHook.deleteRoute,
+
+    // Payment methods operations
+    paymentMethods: paymentMethodsHook.paymentMethods,
+    isLoadingPaymentMethods: paymentMethodsHook.isLoading,
+    addPaymentMethod: paymentMethodsHook.addPaymentMethod,
+    updatePaymentMethod: paymentMethodsHook.updatePaymentMethod,
+    deletePaymentMethod: paymentMethodsHook.deletePaymentMethod,
+
+    // Payment tables operations
+    paymentTables: paymentTablesHook.paymentTables,
+    isLoadingPaymentTables: paymentTablesHook.isLoading,
+    addPaymentTable: paymentTablesHook.addPaymentTable,
+    updatePaymentTable: paymentTablesHook.updatePaymentTable,
+    deletePaymentTable: paymentTablesHook.deletePaymentTable,
   };
 };

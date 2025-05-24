@@ -40,6 +40,23 @@ export const useOrders = () => {
     }
   };
 
+  // Get order by ID
+  const getOrderById = async (id: string): Promise<Order | null> => {
+    try {
+      // First check if order is in local state
+      const localOrder = orders.find(order => order.id === id);
+      if (localOrder) {
+        return localOrder;
+      }
+      
+      // If not found locally, fetch from service
+      return await orderService.getById(id);
+    } catch (error) {
+      console.error('Error getting order by ID:', error);
+      return null;
+    }
+  };
+
   // Add a new order
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
@@ -124,6 +141,7 @@ export const useOrders = () => {
     updateOrder,
     deleteOrder,
     setOrders,
-    generateNextCode
+    generateNextCode,
+    getOrderById
   };
 };

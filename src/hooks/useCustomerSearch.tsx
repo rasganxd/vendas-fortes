@@ -3,38 +3,68 @@ import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabase/customerService';
 
-export const useCustomerSearch = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+interface UseCustomerSearchProps {
+  customers: Customer[];
+  selectedCustomer: Customer | null;
+  setSelectedCustomer: (customer: Customer | null) => void;
+  initialInputValue?: string;
+  onEnterPress?: () => void;
+}
 
-  useEffect(() => {
-    const loadCustomers = async () => {
-      setIsLoading(true);
-      try {
-        const data = await customerService.getAll();
-        setCustomers(data);
-      } catch (error) {
-        console.error('Error loading customers:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCustomers();
-  }, []);
+export const useCustomerSearch = ({
+  customers,
+  selectedCustomer,
+  setSelectedCustomer,
+  initialInputValue = '',
+  onEnterPress
+}: UseCustomerSearchProps) => {
+  const [customerInput, setCustomerInput] = useState(initialInputValue);
+  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
 
   const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.code?.toString().includes(searchTerm) ||
-    customer.phone?.includes(searchTerm) ||
-    customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    customer.code?.toString().includes(customerSearch) ||
+    customer.phone?.includes(customerSearch) ||
+    customer.email?.toLowerCase().includes(customerSearch.toLowerCase())
   );
 
+  const handleCustomerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomerInput(value);
+    
+    // Try to find customer by code
+    const customer = customers.find(c => c.code?.toString() === value);
+    if (customer) {
+      setSelectedCustomer(customer);
+    } else if (selectedCustomer) {
+      setSelectedCustomer(null);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && onEnterPress) {
+      onEnterPress();
+    }
+  };
+
+  const handleCustomerSelect = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setCustomerInput(customer.code ? `${customer.code} - ${customer.name}` : customer.name);
+    setIsCustomerSearchOpen(false);
+    setCustomerSearch('');
+  };
+
   return {
-    customers: filteredCustomers,
-    isLoading,
-    searchTerm,
-    setSearchTerm
+    customerInput,
+    setCustomerInput,
+    isCustomerSearchOpen,
+    setIsCustomerSearchOpen,
+    customerSearch,
+    setCustomerSearch,
+    filteredCustomers,
+    handleCustomerInputChange,
+    handleKeyDown,
+    handleCustomerSelect
   };
 };

@@ -108,6 +108,11 @@ interface AppDataContextType {
     primaryColor?: string;
   };
 
+  // Operations grouped
+  productOperations?: any;
+  customerOperations?: any;
+  systemOperations?: any;
+
   // Data refresh function
   refreshData: () => Promise<boolean>;
 }
@@ -146,6 +151,9 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     settings: {
       primaryColor: '#3b82f6'
     },
+    productOperations: appOperations.productOperations,
+    customerOperations: appOperations.customerOperations,
+    systemOperations: appOperations.systemOperations,
     refreshData
   };
 

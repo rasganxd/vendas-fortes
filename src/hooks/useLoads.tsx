@@ -108,12 +108,49 @@ export const useLoads = () => {
     }
   };
 
+  // Toggle load lock status
+  const toggleLoadLock = async (id: string) => {
+    try {
+      const load = loads.find(l => l.id === id);
+      if (!load) return;
+
+      const updatedLoad = { ...load, locked: !load.locked };
+      await updateLoad(id, { locked: updatedLoad.locked });
+    } catch (error) {
+      console.error("Erro ao alterar bloqueio da carga:", error);
+      toast({
+        title: "Erro ao alterar bloqueio",
+        description: "Houve um problema ao alterar o bloqueio da carga.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Get orders from a load
+  const getOrdersFromLoad = async (loadId: string) => {
+    try {
+      const load = loads.find(l => l.id === loadId);
+      if (!load || !load.orderIds) return [];
+
+      const orders = await Promise.all(
+        load.orderIds.map(orderId => orderService.getById(orderId))
+      );
+      
+      return orders.filter(order => order !== null);
+    } catch (error) {
+      console.error("Erro ao carregar pedidos da carga:", error);
+      return [];
+    }
+  };
+
   return {
     loads,
     isLoading,
     addLoad,
     updateLoad,
     deleteLoad,
-    setLoads
+    setLoads,
+    toggleLoadLock,
+    getOrdersFromLoad
   };
 };
