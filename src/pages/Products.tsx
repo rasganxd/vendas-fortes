@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -189,11 +188,6 @@ export default function Products() {
           )}
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700">
-            <Plus size={16} className="mr-2" />
-            Adicionar Produto
-          </Button>
-          
           <Link to="/produtos/precificacao">
             <Button variant="outline">
               <DollarSign size={16} className="mr-2" />
@@ -207,6 +201,11 @@ export default function Products() {
               Classificações
             </Button>
           </Link>
+          
+          <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700">
+            <Plus size={16} className="mr-2" />
+            Novo Produto
+          </Button>
         </div>
       </div>
       
