@@ -49,15 +49,20 @@ export type Database = {
           created_at: string | null
           credit_limit: number | null
           delivery_route_id: string | null
+          document: string | null
           email: string | null
           id: string
           name: string
+          notes: string | null
           payment_terms: string | null
           phone: string | null
           region: string | null
           sales_rep_id: string | null
           state: string | null
           updated_at: string | null
+          visit_days: string[] | null
+          visit_frequency: string | null
+          visit_sequence: number | null
           zip_code: string | null
         }
         Insert: {
@@ -69,15 +74,20 @@ export type Database = {
           created_at?: string | null
           credit_limit?: number | null
           delivery_route_id?: string | null
+          document?: string | null
           email?: string | null
           id?: string
           name: string
+          notes?: string | null
           payment_terms?: string | null
           phone?: string | null
           region?: string | null
           sales_rep_id?: string | null
           state?: string | null
           updated_at?: string | null
+          visit_days?: string[] | null
+          visit_frequency?: string | null
+          visit_sequence?: number | null
           zip_code?: string | null
         }
         Update: {
@@ -89,15 +99,20 @@ export type Database = {
           created_at?: string | null
           credit_limit?: number | null
           delivery_route_id?: string | null
+          document?: string | null
           email?: string | null
           id?: string
           name?: string
+          notes?: string | null
           payment_terms?: string | null
           phone?: string | null
           region?: string | null
           sales_rep_id?: string | null
           state?: string | null
           updated_at?: string | null
+          visit_days?: string[] | null
+          visit_frequency?: string | null
+          visit_sequence?: number | null
           zip_code?: string | null
         }
         Relationships: [

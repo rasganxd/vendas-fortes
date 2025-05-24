@@ -111,8 +111,8 @@ export const transformCustomerData = (data: any) => {
     state: transformed.state || '',
     zip: transformed.zipCode || data.zip_code || '',
     zipCode: data.zip_code || transformed.zipCode || '',
-    document: transformed.document || '',
-    notes: transformed.notes || '',
+    document: transformed.document || data.document || '',
+    notes: transformed.notes || data.notes || '',
     visitDays: transformed.visitDays || data.visit_days || [],
     visitFrequency: transformed.visitFrequency || data.visit_frequency || '',
     visitSequence: transformed.visitSequence || data.visit_sequence || 0,
@@ -155,7 +155,6 @@ export const transformSalesRepData = (data: any) => {
   
   const transformed = toCamelCase(data);
   
-  // Ensure all required properties are present
   if (!transformed.name) {
     console.error('Sales rep data missing required name:', data);
   }
@@ -164,7 +163,7 @@ export const transformSalesRepData = (data: any) => {
     id: data.id || '',
     name: transformed.name || '',
     phone: transformed.phone || '',
-    active: transformed.active !== false, // Default to true if not explicitly false
+    active: transformed.active !== false,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
     code: data.code || 0,
@@ -213,7 +212,6 @@ export const transformOrderData = (data: any) => {
 export const transformData = (data: any) => {
   const transformed = toCamelCase(data);
   
-  // Handle standard timestamp fields if present
   const result = {
     ...transformed,
   };

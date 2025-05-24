@@ -1,7 +1,6 @@
 
 import { SupabaseService } from './supabaseService';
 import { Customer } from '@/types';
-import { prepareForSupabase } from '@/utils/dataTransformers';
 
 class CustomerSupabaseService extends SupabaseService<Customer> {
   constructor() {
@@ -37,7 +36,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       console.log(`📝 Adding customer to ${this.tableName}`);
       console.log("Entity data (before transformation):", entity);
       
-      // Clean and prepare data
+      // Clean and prepare data with proper field mapping
       const cleanData = {
         code: entity.code,
         name: entity.name?.trim() || '',
