@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Backup, DeliveryRoute } from '@/types';
 import { useAppContext } from './useAppContext';
@@ -49,10 +50,9 @@ export const useBackups = () => {
       id,
       name,
       description: description || '',
-      date: new Date(),  // Add the date property
-      data: backupData,  // Add the data property
       createdAt: new Date(),
-      updatedAt: new Date()
+      size: JSON.stringify(backupData).length,
+      status: 'completed'
     };
     
     // Store the backup data in localStorage since we can't add it to the Backup type
