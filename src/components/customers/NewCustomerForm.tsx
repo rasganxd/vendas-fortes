@@ -18,6 +18,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
     defaultValues: {
       code: initialCode,
       name: '',
+      companyName: '',
       document: '',
       phone: '',
       address: '',

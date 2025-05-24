@@ -40,6 +40,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       const cleanData = {
         code: entity.code,
         name: entity.name?.trim() || '',
+        company_name: entity.companyName?.trim() || '',
         phone: entity.phone || '',
         email: entity.email || '',
         address: entity.address || '',

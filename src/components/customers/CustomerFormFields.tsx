@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { 
@@ -52,10 +51,24 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         
         <FormField
           control={form.control}
+          name="companyName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Razão Social</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome</FormLabel>
+              <FormLabel>Nome Fantasia</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>

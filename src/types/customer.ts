@@ -2,7 +2,8 @@
 export interface Customer {
   id: string;
   code: number;
-  name: string;
+  name: string; // This will be "Nome Fantasia"
+  companyName?: string; // This will be "Razão Social"
   phone: string;
   email: string;
   address: string;
@@ -25,7 +26,8 @@ export interface Customer {
 
 export type CustomerFormValues = {
   code: number;
-  name: string;
+  name: string; // This will be "Nome Fantasia"
+  companyName: string; // This will be "Razão Social"
   document: string;
   phone: string;
   address: string;

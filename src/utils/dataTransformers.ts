@@ -104,6 +104,7 @@ export const transformCustomerData = (data: any) => {
     id: data.id || '',
     code: data.code || 0,
     name: transformed.name || '',
+    companyName: transformed.companyName || data.company_name || '',
     phone: transformed.phone || '',
     email: transformed.email || '',
     address: transformed.address || '',

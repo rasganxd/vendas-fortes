@@ -31,6 +31,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
     defaultValues: {
       code: standardizedCustomer.code || 0,
       name: standardizedCustomer.name,
+      companyName: standardizedCustomer.companyName || '',
       document: standardizedCustomer.document || '',
       phone: standardizedCustomer.phone,
       address: standardizedCustomer.address || '',
