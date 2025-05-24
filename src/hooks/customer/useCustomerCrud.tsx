@@ -1,7 +1,7 @@
 
 import { Customer } from '@/types';
 import { customerLocalService } from '@/services/local/customerLocalService';
-import { customerService } from '@/services/firebase/customerService';
+import { customerService } from '@/services/supabase/customerService';
 import { useCustomerCache } from './useCustomerCache';
 import { useCustomerSync } from './useCustomerSync';
 import { useCustomerCodeGenerator } from './useCustomerCodeGenerator';
@@ -39,15 +39,15 @@ export const useCustomerCrud = (
         updatedAt: new Date()
       };
       
-      // First try to save to Firebase
+      // First try to save to Supabase
       let id = '';
       try {
         id = await customerService.add(finalCustomer);
-        console.log("Customer saved to Firebase with ID:", id);
-      } catch (firebaseError) {
-        console.error("Error saving to Firebase, will save locally and sync later:", firebaseError);
+        console.log("Customer saved to Supabase with ID:", id);
+      } catch (supabaseError) {
+        console.error("Error saving to Supabase, will save locally and sync later:", supabaseError);
         
-        // If Firebase fails, save locally with a temporary ID
+        // If Supabase fails, save locally with a temporary ID
         id = await customerLocalService.add(finalCustomer);
         
         // Mark for sync later
@@ -64,7 +64,7 @@ export const useCustomerCrud = (
         return id;
       }
       
-      // If Firebase was successful, also save to local storage with the Firebase ID
+      // If Supabase was successful, also save to local storage with the Supabase ID
       const newCustomer = { ...finalCustomer, id } as Customer;
       await customerLocalService.add(newCustomer);
       
@@ -104,12 +104,12 @@ export const useCustomerCrud = (
         updatedAt: new Date()
       };
       
-      // Try to update in Firebase first
+      // Try to update in Supabase first
       try {
         await customerService.update(id, updates);
-        console.log("Customer updated in Firebase with ID:", id);
-      } catch (firebaseError) {
-        console.error("Error updating in Firebase, will update locally and sync later:", firebaseError);
+        console.log("Customer updated in Supabase with ID:", id);
+      } catch (supabaseError) {
+        console.error("Error updating in Supabase, will update locally and sync later:", supabaseError);
         
         // Mark for sync later
         const currentCustomer = customers.find(c => c.id === id);
@@ -158,7 +158,7 @@ export const useCustomerCrud = (
     try {
       console.log(`Deleting customer ${id}`);
       
-      // Delete from Firebase first
+      // Delete from Supabase first
       await customerService.delete(id);
       
       // Update local state

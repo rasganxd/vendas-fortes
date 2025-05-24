@@ -1,11 +1,11 @@
 
 import { useState } from 'react';
 import { Customer } from '@/types';
-import { customerService } from '@/services/firebase/customerService';
+import { customerService } from '@/services/supabase/customerService';
 import { toast } from '@/components/ui/use-toast';
 
 /**
- * Hook for synchronizing customers between local storage and Firebase
+ * Hook for synchronizing customers between local storage and Supabase
  */
 export const useCustomerSync = () => {
   const [syncPending, setSyncPending] = useState<{[key: string]: Customer}>({});
@@ -26,13 +26,13 @@ export const useCustomerSync = () => {
     const pendingCustomers = Object.values(syncPending);
     if (pendingCustomers.length === 0) return;
     
-    console.log(`Synchronizing ${pendingCustomers.length} pending customers to Firebase`);
+    console.log(`Synchronizing ${pendingCustomers.length} pending customers to Supabase`);
     
     for (const customer of pendingCustomers) {
       try {
         const { id, syncPending, ...customerData } = customer;
         
-        // Check if customer exists in Firebase
+        // Check if customer exists in Supabase
         const existingCustomer = await customerService.getById(id);
         
         if (existingCustomer) {

@@ -2,7 +2,6 @@
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppData } from './AppDataProvider';
-import { useAppOperations } from '../operations/appOperations';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
 import { useThemeInitializer } from '@/hooks/useThemeInitializer';
 import { buildContextValue } from '../utils/buildContextValue';
@@ -15,9 +14,6 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   // Get app data from provider
   const appData = useAppData();
   
-  // Get operations
-  const { productOperations, customerOperations, systemOperations } = useAppOperations();
-  
   // Get hooks for various data operations
   const hookOperations = useAppContextHooks();
   
@@ -27,9 +23,9 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   // Build the full context value
   const contextValue = buildContextValue(
     appData,
-    productOperations,
-    customerOperations,
-    systemOperations,
+    appData.productOperations || {},
+    appData.customerOperations || {},
+    appData.systemOperations || {},
     hookOperations,
     appData.refreshData
   );

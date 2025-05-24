@@ -1,9 +1,11 @@
+
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
 import { productBrandService } from '@/services/supabase/productBrandService';
 import { productCategoryService } from '@/services/supabase/productCategoryService';
 import { productGroupService } from '@/services/supabase/productGroupService';
+import { productLocalService } from '@/services/local/productLocalService';
 
 // Cache keys
 const PRODUCTS_CACHE_KEY = 'app_products_cache';

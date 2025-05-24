@@ -14,7 +14,18 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command";
-import { getSalesRepByCode } from '@/services/firebase/salesRepService';
+import { salesRepService } from '@/services/supabase/salesRepService';
+
+// Helper function to get sales rep by code
+export const getSalesRepByCode = async (code: number): Promise<SalesRep | null> => {
+  try {
+    const allSalesReps = await salesRepService.getAll();
+    return allSalesReps.find(rep => rep.code === code) || null;
+  } catch (error) {
+    console.error('Error fetching sales rep by code:', error);
+    return null;
+  }
+};
 
 interface SalesRepSearchInputProps {
   salesReps: SalesRep[];

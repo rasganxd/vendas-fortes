@@ -11,7 +11,7 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/services/firebase/salesRepService';
+import { salesRepService } from '@/services/supabase/salesRepService';
 import { toast } from '@/hooks/use-toast';
 
 interface DeleteSalesRepDialogProps {
@@ -31,7 +31,7 @@ export const DeleteSalesRepDialog: React.FC<DeleteSalesRepDialogProps> = ({
     try {
       console.log(`Deleting sales rep with ID: ${salesRep.id}`);
       
-      // Use Firebase service instead of Supabase
+      // Use Supabase service
       await salesRepService.delete(salesRep.id);
       
       setSalesReps(currentSalesReps => 
@@ -45,8 +45,10 @@ export const DeleteSalesRepDialog: React.FC<DeleteSalesRepDialogProps> = ({
       });
     } catch (error) {
       console.error("Error deleting sales rep:", error);
-      toast.error("Erro ao excluir representante", {
-        description: "Houve um problema ao excluir o representante."
+      toast({
+        title: "Erro ao excluir representante",
+        description: "Houve um problema ao excluir o representante.",
+        variant: "destructive"
       });
     }
   };

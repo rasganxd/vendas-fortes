@@ -3,21 +3,21 @@ import { useNotification } from '@/hooks/useNotification';
 import { mobileSyncService } from '@/services/supabase/mobileSyncService';
 
 export const useSystemOperations = () => {
-  const { addNotification } = useNotification();
+  const { notification } = useNotification();
 
   const clearCache = () => {
     // Clear any local cache
     localStorage.removeItem('app-cache');
-    addNotification('Cache limpo com sucesso', 'success');
+    notification.success('Cache limpo com sucesso');
   };
 
   const syncMobileData = async (salesRepId: string) => {
     try {
       await mobileSyncService.logSyncEvent(salesRepId, 'download', 'web-admin');
-      addNotification('Dados sincronizados com sucesso', 'success');
+      notification.success('Dados sincronizados com sucesso');
     } catch (error) {
       console.error('Error syncing mobile data:', error);
-      addNotification('Erro ao sincronizar dados', 'error');
+      notification.error('Erro ao sincronizar dados');
     }
   };
 

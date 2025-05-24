@@ -1,6 +1,7 @@
+
 import { useState, useCallback } from 'react';
 import { Customer } from '@/types';
-import { customerService } from '@/services/firebase/customerService';
+import { customerService } from '@/services/supabase/customerService';
 import { customerLocalService } from '@/services/local/customerLocalService';
 import { useCustomerCache } from './useCustomerCache';
 import { useCustomerConnection } from './useCustomerConnection';
@@ -35,36 +36,36 @@ export const useCustomerLoader = () => {
         customers = cachedCustomers;
       }
 
-      // If online, try to load from Firebase
+      // If online, try to load from Supabase
       if (isOnline) {
         try {
           // Check if we need to refresh the cache
           const shouldRefresh = shouldRefreshCache();
           if (shouldRefresh || customers.length === 0) {
-            console.log('Fetching customers from Firebase');
-            const firebaseCustomers = await customerService.getAll();
+            console.log('Fetching customers from Supabase');
+            const supabaseCustomers = await customerService.getAll();
             
-            if (firebaseCustomers.length > 0) {
-              console.log(`Loaded ${firebaseCustomers.length} customers from Firebase`);
+            if (supabaseCustomers.length > 0) {
+              console.log(`Loaded ${supabaseCustomers.length} customers from Supabase`);
               
               // Filter out invalid customers
-              const validFirebaseCustomers = filterValidCustomers(firebaseCustomers);
+              const validSupabaseCustomers = filterValidCustomers(supabaseCustomers);
               
-              // Update cache with Firebase data
-              saveToCache(validFirebaseCustomers);
+              // Update cache with Supabase data
+              saveToCache(validSupabaseCustomers);
               
               // Also update the local storage service
-              await customerLocalService.setAll(validFirebaseCustomers);
+              await customerLocalService.setAll(validSupabaseCustomers);
               
-              customers = validFirebaseCustomers;
+              customers = validSupabaseCustomers;
             }
           }
-        } catch (firebaseError) {
-          console.error('Error fetching from Firebase, will use local data:', firebaseError);
+        } catch (supabaseError) {
+          console.error('Error fetching from Supabase, will use local data:', supabaseError);
         }
       }
       
-      // If we couldn't load from Firebase, try local storage
+      // If we couldn't load from Supabase, try local storage
       if (customers.length === 0) {
         try {
           console.log('Fetching customers from local storage');
@@ -98,28 +99,28 @@ export const useCustomerLoader = () => {
   const refreshCustomers = useCallback(async (): Promise<Customer[]> => {
     setIsLoading(true);
     try {
-      // Always try Firebase first when explicitly refreshing
+      // Always try Supabase first when explicitly refreshing
       if (isOnline) {
         try {
-          console.log('Refreshing customers from Firebase');
-          const firebaseCustomers = await customerService.getAll();
+          console.log('Refreshing customers from Supabase');
+          const supabaseCustomers = await customerService.getAll();
           
-          if (firebaseCustomers.length > 0) {
-            console.log(`Refreshed ${firebaseCustomers.length} customers from Firebase`);
+          if (supabaseCustomers.length > 0) {
+            console.log(`Refreshed ${supabaseCustomers.length} customers from Supabase`);
             
             // Filter out invalid customers
-            const validFirebaseCustomers = filterValidCustomers(firebaseCustomers);
+            const validSupabaseCustomers = filterValidCustomers(supabaseCustomers);
             
-            // Update cache with Firebase data
-            saveToCache(validFirebaseCustomers);
+            // Update cache with Supabase data
+            saveToCache(validSupabaseCustomers);
             
             // Also update the local storage service
-            await customerLocalService.setAll(validFirebaseCustomers);
+            await customerLocalService.setAll(validSupabaseCustomers);
             
-            return validFirebaseCustomers;
+            return validSupabaseCustomers;
           }
-        } catch (firebaseError) {
-          console.error('Error refreshing from Firebase:', firebaseError);
+        } catch (supabaseError) {
+          console.error('Error refreshing from Supabase:', supabaseError);
         }
       }
       

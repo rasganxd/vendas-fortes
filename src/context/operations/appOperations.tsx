@@ -15,6 +15,7 @@ import { usePayments } from '@/hooks/usePayments';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { customerService } from '@/services/supabase/customerService';
+import { useSystemOperations } from './systemOperations';
 
 export const useAppOperations = () => {
   const customersHook = useCustomers();
@@ -30,6 +31,7 @@ export const useAppOperations = () => {
   const paymentsHook = usePayments();
   const paymentMethodsHook = usePaymentMethods();
   const paymentTablesHook = usePaymentTables();
+  const systemOps = useSystemOperations();
 
   // Add generateNextCustomerCode function
   const generateNextCustomerCode = async (): Promise<number> => {
@@ -49,6 +51,29 @@ export const useAppOperations = () => {
 
   return {
     // Customer operations
+    customerOperations: {
+      customers: customersHook.customers,
+      isLoading: customersHook.isLoading,
+      addCustomer: customersHook.addCustomer,
+      updateCustomer: customersHook.updateCustomer,
+      deleteCustomer: customersHook.deleteCustomer,
+      generateNextCustomerCode,
+      setCustomers,
+    },
+
+    // Product operations
+    productOperations: {
+      products: productsHook.products,
+      isLoadingProducts: productsHook.isLoading,
+      addProduct: productsHook.addProduct,
+      updateProduct: productsHook.updateProduct,
+      deleteProduct: productsHook.deleteProduct,
+    },
+
+    // System operations
+    systemOperations: systemOps,
+
+    // All operations flattened for backward compatibility
     customers: customersHook.customers,
     isLoading: customersHook.isLoading,
     addCustomer: customersHook.addCustomer,
@@ -57,84 +82,72 @@ export const useAppOperations = () => {
     generateNextCustomerCode,
     setCustomers,
 
-    // Product operations
     products: productsHook.products,
     isLoadingProducts: productsHook.isLoading,
     addProduct: productsHook.addProduct,
     updateProduct: productsHook.updateProduct,
     deleteProduct: productsHook.deleteProduct,
 
-    // Product Brand operations
     productBrands: productBrandsHook.productBrands,
     isLoadingProductBrands: productBrandsHook.isLoading,
     addProductBrand: productBrandsHook.addProductBrand,
     updateProductBrand: productBrandsHook.updateProductBrand,
     deleteProductBrand: productBrandsHook.deleteProductBrand,
 
-    // Product Category operations
     productCategories: productCategoriesHook.productCategories,
     isLoadingProductCategories: productCategoriesHook.isLoading,
     addProductCategory: productCategoriesHook.addProductCategory,
     updateProductCategory: productCategoriesHook.updateProductCategory,
     deleteProductCategory: productCategoriesHook.deleteProductCategory,
 
-    // Product Group operations
     productGroups: productGroupsHook.productGroups,
     isLoadingProductGroups: productGroupsHook.isLoading,
     addProductGroup: productGroupsHook.addProductGroup,
     updateProductGroup: productGroupsHook.updateProductGroup,
     deleteProductGroup: productGroupsHook.deleteProductGroup,
 
-    // Sales Rep operations
     salesReps: salesRepsHook.salesReps,
     isLoadingSalesReps: salesRepsHook.isLoading,
     addSalesRep: salesRepsHook.addSalesRep,
     updateSalesRep: salesRepsHook.updateSalesRep,
     deleteSalesRep: salesRepsHook.deleteSalesRep,
 
-    // Vehicle operations
     vehicles: vehiclesHook.vehicles,
     isLoadingVehicles: vehiclesHook.isLoading,
     addVehicle: vehiclesHook.addVehicle,
     updateVehicle: vehiclesHook.updateVehicle,
     deleteVehicle: vehiclesHook.deleteVehicle,
 
-    // Delivery Route operations
     deliveryRoutes: deliveryRoutesHook.deliveryRoutes,
     isLoadingDeliveryRoutes: deliveryRoutesHook.isLoading,
     addDeliveryRoute: deliveryRoutesHook.addDeliveryRoute,
     updateDeliveryRoute: deliveryRoutesHook.updateDeliveryRoute,
     deleteDeliveryRoute: deliveryRoutesHook.deleteDeliveryRoute,
 
-    // Load operations
     loads: loadsHook.loads,
     isLoadingLoads: loadsHook.isLoading,
     addLoad: loadsHook.addLoad,
     updateLoad: loadsHook.updateLoad,
     deleteLoad: loadsHook.deleteLoad,
 
-    // Order operations
     orders: ordersHook.orders,
     isLoadingOrders: ordersHook.isLoading,
     addOrder: ordersHook.addOrder,
     updateOrder: ordersHook.updateOrder,
     deleteOrder: ordersHook.deleteOrder,
 
-    // Payment operations
     payments: paymentsHook.payments,
     isLoadingPayments: paymentsHook.isLoading,
     addPayment: paymentsHook.addPayment,
     updatePayment: paymentsHook.updatePayment,
     deletePayment: paymentsHook.deletePayment,
 
-    // Payment Method operations
     paymentMethods: paymentMethodsHook.paymentMethods,
     isLoadingPaymentMethods: paymentMethodsHook.isLoading,
     addPaymentMethod: paymentMethodsHook.addPaymentMethod,
     updatePaymentMethod: paymentMethodsHook.updatePaymentMethod,
     deletePaymentMethod: paymentMethodsHook.deletePaymentMethod,
 
-    // Payment Table operations
     paymentTables: paymentTablesHook.paymentTables,
     isLoadingPaymentTables: paymentTablesHook.isLoading,
     addPaymentTable: paymentTablesHook.addPaymentTable,

@@ -102,6 +102,14 @@ interface AppDataContextType {
   lastConnectAttempt: Date | null;
   reconnectToSupabase: () => Promise<void>;
   testConnection: () => Promise<boolean>;
+
+  // App settings
+  settings?: {
+    primaryColor?: string;
+  };
+
+  // Data refresh function
+  refreshData: () => Promise<boolean>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -118,12 +126,27 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const appOperations = useAppOperations();
   const connection = useConnection();
 
+  const refreshData = async (): Promise<boolean> => {
+    try {
+      console.log('Refreshing app data...');
+      // Implement data refresh logic here
+      return true;
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      return false;
+    }
+  };
+
   const value: AppDataContextType = {
     ...appOperations,
     connectionStatus: connection.connectionStatus,
     lastConnectAttempt: connection.lastConnectAttempt,
     reconnectToSupabase: connection.reconnectToSupabase,
     testConnection: connection.testConnection,
+    settings: {
+      primaryColor: '#3b82f6'
+    },
+    refreshData
   };
 
   return (

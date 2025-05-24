@@ -26,7 +26,7 @@ import {
   Trash2,
   QrCode 
 } from "lucide-react";
-import { mobileSyncService, SyncLogEntry } from '@/services/firebase/mobileSyncService';
+import { mobileSyncService, SyncLogEntry } from '@/services/supabase/mobileSyncService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';

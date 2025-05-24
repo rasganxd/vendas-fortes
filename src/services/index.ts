@@ -13,3 +13,6 @@ export { productBrandService } from './supabase/productBrandService';
 export { productCategoryService } from './supabase/productCategoryService';
 export { productGroupService } from './supabase/productGroupService';
 export { salesRepService } from './supabase/salesRepService';
+export { deliveryRouteService } from './supabase/deliveryRouteService';
+export { loadService } from './supabase/loadService';
+export { orderService } from './supabase/orderService';
