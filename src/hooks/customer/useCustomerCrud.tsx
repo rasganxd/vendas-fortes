@@ -1,4 +1,3 @@
-
 import { Customer } from '@/types';
 import { customerLocalService } from '@/services/local/customerLocalService';
 import { customerService } from '@/services/supabase/customerService';
@@ -128,9 +127,9 @@ export const useCustomerCrud = (
       // Always update local storage
       await customerLocalService.update(id, updates);
       
-      // Update local state
+      // Update local state with proper field mapping
       const updatedCustomers = customers.map(c => 
-        c.id === id ? { ...c, ...customer } : c
+        c.id === id ? { ...c, ...updates } : c
       );
       
       // Filter out invalid customers after update

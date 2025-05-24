@@ -7,6 +7,62 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     super('customers');
   }
 
+  // Override the transformFromDB method to map database fields to TypeScript interface
+  protected transformFromDB(dbRecord: any): Customer {
+    if (!dbRecord) return dbRecord;
+    
+    const baseTransformed = super.transformFromDB(dbRecord);
+    
+    // Map database snake_case fields to TypeScript camelCase
+    return {
+      ...baseTransformed,
+      companyName: dbRecord.company_name || '',
+      visitDays: dbRecord.visit_days || [],
+      visitFrequency: dbRecord.visit_frequency || '',
+      visitSequence: dbRecord.visit_sequence || 0,
+      salesRepId: dbRecord.sales_rep_id || undefined,
+      salesRepName: dbRecord.sales_rep_name || undefined,
+      deliveryRouteId: dbRecord.delivery_route_id || undefined,
+      zipCode: dbRecord.zip_code || '',
+      // Ensure zip is set from zip_code for consistency
+      zip: dbRecord.zip_code || dbRecord.zip || ''
+    };
+  }
+
+  // Override the transformToDB method to map TypeScript interface to database fields
+  protected transformToDB(record: Partial<Customer>): any {
+    if (!record) return record;
+    
+    const baseTransformed = super.transformToDB(record);
+    
+    // Map TypeScript camelCase fields to database snake_case
+    const dbRecord = {
+      ...baseTransformed,
+      company_name: record.companyName || '',
+      visit_days: record.visitDays || [],
+      visit_frequency: record.visitFrequency || '',
+      visit_sequence: record.visitSequence || 0,
+      sales_rep_id: record.salesRepId || null,
+      sales_rep_name: record.salesRepName || null,
+      delivery_route_id: record.deliveryRouteId || null,
+      zip_code: record.zip || record.zipCode || ''
+    };
+
+    // Remove the camelCase fields that don't exist in the database
+    delete dbRecord.companyName;
+    delete dbRecord.visitDays;
+    delete dbRecord.visitFrequency;
+    delete dbRecord.visitSequence;
+    delete dbRecord.salesRepId;
+    delete dbRecord.salesRepName;
+    delete dbRecord.deliveryRouteId;
+    delete dbRecord.zipCode;
+    delete dbRecord.zip;
+    delete dbRecord.syncPending;
+    
+    return dbRecord;
+  }
+
   async generateNextCode(): Promise<number> {
     try {
       console.log("🔢 Generating next customer code...");
@@ -36,31 +92,21 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       console.log(`📝 Adding customer to ${this.tableName}`);
       console.log("Entity data (before transformation):", entity);
       
-      // Clean and prepare data with proper field mapping
-      const cleanData = {
-        code: entity.code,
-        name: entity.name?.trim() || '',
-        company_name: entity.companyName?.trim() || '',
-        phone: entity.phone || '',
-        email: entity.email || '',
-        address: entity.address || '',
-        city: entity.city || '',
-        state: entity.state || '',
-        zip_code: entity.zip || entity.zipCode || '',
-        document: entity.document || '',
-        notes: entity.notes || '',
-        visit_days: entity.visitDays || [],
-        visit_frequency: entity.visitFrequency || '',
-        visit_sequence: entity.visitSequence || 0,
-        sales_rep_id: entity.sales_rep_id || null,
+      // Use the parent transformToDB method to properly map fields
+      const transformedData = this.transformToDB(entity as Customer);
+      
+      const dataWithTimestamps = {
+        ...transformedData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         active: true
       };
       
-      console.log("Data prepared for Supabase:", cleanData);
+      console.log("Data prepared for Supabase:", dataWithTimestamps);
       
       const { data, error } = await this.supabase
         .from(this.tableName as any)
-        .insert(cleanData)
+        .insert(dataWithTimestamps)
         .select('id')
         .single();
       

@@ -24,7 +24,9 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
     // Ensure zipCode is also set for backward compatibility
     zipCode: customer.zipCode || customer.zip || '',
     // Ensure visitDays is an array
-    visitDays: Array.isArray(customer.visitDays) ? customer.visitDays : (customer.visitDays ? [customer.visitDays] : [])
+    visitDays: Array.isArray(customer.visitDays) ? customer.visitDays : (customer.visitDays ? [customer.visitDays] : []),
+    // Ensure salesRepId is properly set (use camelCase)
+    salesRepId: customer.salesRepId || ''
   };
 
   const form = useForm<CustomerFormValues>({
@@ -44,7 +46,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       visitFrequency: standardizedCustomer.visitFrequency || 'weekly',
       visitSequence: standardizedCustomer.visitSequence || 1,
       email: standardizedCustomer.email || '',
-      sales_rep_id: standardizedCustomer.sales_rep_id || '',
+      salesRepId: standardizedCustomer.salesRepId, // Use camelCase
       createdAt: standardizedCustomer.createdAt,
       updatedAt: standardizedCustomer.updatedAt || new Date()
     }
@@ -64,6 +66,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       data.visitDays = data.visitDays ? [data.visitDays as unknown as string] : [];
     }
     
+    console.log("📝 Submitting customer edit with data:", data);
     onSubmit(data);
   };
 

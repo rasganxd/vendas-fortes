@@ -84,8 +84,8 @@ export const useCustomers = () => {
         visitDays: customer.visitDays || [],
         visitFrequency: customer.visitFrequency || '',
         visitSequence: customer.visitSequence || 0,
-        sales_rep_id: customer.sales_rep_id || undefined,
-        sales_rep_name: customer.sales_rep_name || undefined,
+        salesRepId: customer.salesRepId || undefined, // Use camelCase
+        salesRepName: customer.salesRepName || undefined,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -141,12 +141,18 @@ export const useCustomers = () => {
         customer.code = parseInt(customer.code, 10);
       }
       
+      // Ensure updatedAt is set
+      const customerWithTimestamp = {
+        ...customer,
+        updatedAt: new Date()
+      };
+      
       console.log("🚀 Calling customerService.update...");
-      await customerService.update(id, customer);
+      await customerService.update(id, customerWithTimestamp);
       console.log("✅ Customer updated in Supabase");
       
       // Update local state
-      setCustomers(customers.map(c => c.id === id ? { ...c, ...customer } : c));
+      setCustomers(customers.map(c => c.id === id ? { ...c, ...customerWithTimestamp } : c));
       
       toast({
         title: "✅ Cliente atualizado",

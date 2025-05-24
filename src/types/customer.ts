@@ -18,9 +18,9 @@ export interface Customer {
   visitDays?: string[];
   visitFrequency?: string;
   visitSequence?: number;
-  sales_rep_id?: string; // Changed from salesRepId to match usage
+  salesRepId?: string; // Changed from sales_rep_id to camelCase
   deliveryRouteId?: string;
-  sales_rep_name?: string;
+  salesRepName?: string;
   syncPending?: boolean; // Add this property to track sync status
 }
 
@@ -42,5 +42,5 @@ export type CustomerFormValues = {
   createdAt: Date;
   updatedAt: Date;
   visitSequence: number;
-  sales_rep_id: string; // Changed from sales_rep_id to match interface
+  salesRepId: string; // Changed to camelCase
 };
