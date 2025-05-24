@@ -7,6 +7,8 @@ interface ConnectionContextType {
   lastConnectAttempt: Date | null;
   reconnectToSupabase: () => Promise<void>;
   testConnection: () => Promise<boolean>;
+  reconnect: () => Promise<void>;
+  isOnline: boolean;
 }
 
 const ConnectionContext = createContext<ConnectionContextType | undefined>(undefined);
@@ -22,8 +24,14 @@ export const useConnection = () => {
 export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const connection = useSupabaseConnection();
 
+  const connectionValue: ConnectionContextType = {
+    ...connection,
+    reconnect: connection.reconnectToSupabase,
+    isOnline: navigator.onLine && connection.connectionStatus === 'connected'
+  };
+
   return (
-    <ConnectionContext.Provider value={connection}>
+    <ConnectionContext.Provider value={connectionValue}>
       {children}
     </ConnectionContext.Provider>
   );

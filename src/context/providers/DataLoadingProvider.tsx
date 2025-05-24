@@ -1,395 +1,91 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { AppContext } from '../AppContext';
-import { DataLoadingContext } from '../hooks/useDataLoadingContext';
-import defaultContextValues from '../defaultContextValues';
-import { dataOperations } from '../utils/dataOperations';
-import { useCustomers } from '@/hooks/useCustomers';
-import { useProducts } from '@/hooks/useProducts';
-import { useOrders } from '@/hooks/useOrders';
-import { usePayments } from '@/hooks/usePayments';
-import { useRoutes } from '@/hooks/useRoutes';
-import { useLoads } from '@/hooks/useLoads';
-import { useSalesReps } from '@/hooks/useSalesReps';
-import { useVehicles } from '@/hooks/useVehicles';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { usePaymentTables } from '@/hooks/usePaymentTables';
-import { useProductGroups } from '@/hooks/useProductGroups';
-import { useProductCategories } from '@/hooks/useProductCategories';
-import { useProductBrands } from '@/hooks/useProductBrands';
-import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
-import { useBackups } from '@/hooks/useBackups';
-import { useAppSettings } from '@/hooks/useAppSettings';
-import { isMockDataEnabled } from '@/services/mockDataService';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
+import { loadCoreData } from '@/context/operations/dataLoading';
 
-interface DataLoadingProviderProps {
-  children: React.ReactNode;
+interface DataLoadingContextType {
+  // Loading states
+  isInitialLoading: boolean;
+  isLoadingCustomers: boolean;
+  isLoadingProducts: boolean;
+  
+  // Data
+  customers: Customer[];
+  products: Product[];
+  productGroups: ProductGroup[];
+  
+  // Methods
+  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  setProductGroups: React.Dispatch<React.SetStateAction<ProductGroup[]>>;
+  generateNextCustomerCode: () => Promise<number>;
+  
+  // Core loading function
+  loadData: () => Promise<void>;
 }
 
-export const DataLoadingProvider: React.FC<DataLoadingProviderProps> = ({ children }) => {
-  // Load data using custom hooks
-  const { 
-    customers, 
-    setCustomers, 
-    addCustomer, 
-    updateCustomer, 
-    deleteCustomer, 
-    isLoading: isLoadingCustomers,
-    generateNextCustomerCode
-  } = useCustomers();
+const DataLoadingContext = createContext<DataLoadingContextType | undefined>(undefined);
+
+export const useDataLoading = () => {
+  const context = useContext(DataLoadingContext);
+  if (context === undefined) {
+    throw new Error('useDataLoading must be used within a DataLoadingProvider');
+  }
+  return context;
+};
+
+export const DataLoadingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   
-  const { 
-    products, 
-    setProducts, 
-    isLoading: isLoadingProducts,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    validateProductDiscount,
-    getMinimumPrice,
-    addBulkProducts 
-  } = useProducts();
-  
-  const { 
-    orders, 
-    setOrders, 
-    getOrderById,
-    addOrder, 
-    updateOrder, 
-    deleteOrder, 
-    isLoading: isLoadingOrders 
-  } = useOrders();
-  
-  const { 
-    payments, 
-    setPayments, 
-    addPayment, 
-    updatePayment, 
-    deletePayment, 
-    isLoading: isLoadingPayments,
-    createAutomaticPaymentRecord
-  } = usePayments();
-  
-  const { 
-    routes, 
-    setRoutes, 
-    addRoute, 
-    updateRoute, 
-    deleteRoute, 
-    isLoading: isLoadingRoutes 
-  } = useRoutes();
-  
-  const { 
-    loads, 
-    setLoads, 
-    addLoad, 
-    updateLoad, 
-    deleteLoad, 
-    isLoading: isLoadingLoads 
-  } = useLoads();
-  
-  const { 
-    salesReps, 
-    setSalesReps, 
-    addSalesRep, 
-    updateSalesRep, 
-    deleteSalesRep, 
-    isLoading: isLoadingSalesReps 
-  } = useSalesReps();
-  
-  const { 
-    vehicles, 
-    setVehicles, 
-    addVehicle, 
-    updateVehicle, 
-    deleteVehicle, 
-    isLoading: isLoadingVehicles 
-  } = useVehicles();
-  
-  const { 
-    paymentMethods, 
-    setPaymentMethods, 
-    addPaymentMethod, 
-    updatePaymentMethod, 
-    deletePaymentMethod, 
-    isLoading: isLoadingPaymentMethods 
-  } = usePaymentMethods();
-  
-  const { 
-    paymentTables, 
-    setPaymentTables, 
-    addPaymentTable, 
-    updatePaymentTable, 
-    deletePaymentTable, 
-    isLoading: isLoadingPaymentTables 
-  } = usePaymentTables();
-  
-  const { 
-    productGroups, 
-    setProductGroups, 
-    addProductGroup, 
-    updateProductGroup, 
-    deleteProductGroup, 
-    isLoading: isLoadingProductGroups 
-  } = useProductGroups();
-  
-  const { 
-    productCategories, 
-    setProductCategories, 
-    addProductCategory, 
-    updateProductCategory, 
-    deleteProductCategory, 
-    isLoading: isLoadingProductCategories 
-  } = useProductCategories();
-  
-  const { 
-    productBrands, 
-    isLoading: isLoadingProductBrands,
-    addProductBrand,
-    updateProductBrand,
-    deleteProductBrand
-  } = useProductBrands();
-  
-  const { 
-    deliveryRoutes, 
-    isLoading: isLoadingDeliveryRoutes,
-    addDeliveryRoute,
-    updateDeliveryRoute,
-    deleteDeliveryRoute
-  } = useDeliveryRoutes();
-  
-  const { 
-    backups, 
-    setBackups, 
-    createBackup,
-    restoreBackup,
-    deleteBackup,
-    isLoading: isLoadingBackups 
-  } = useBackups();
-  
-  const { 
-    settings, 
-    updateSettings,
-    isLoading: isLoadingSettings,
-    refetch: refetchSettings
-  } = useAppSettings();
-  
-  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'connecting' | 'error'>('online');
-  
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // Implementation of refreshData that returns a boolean
-  const refreshData = useCallback(async (): Promise<boolean> => {
-    setIsRefreshing(true);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
+
+  const generateNextCustomerCode = async (): Promise<number> => {
     try {
-      await Promise.all([
-        refetchSettings(),
-        // Add other refetch functions here
-      ]);
-      return true; // Return true on success
+      // Simple implementation - get max code and add 1
+      const maxCode = customers.reduce((max, customer) => Math.max(max, customer.code || 0), 0);
+      return maxCode + 1;
     } catch (error) {
-      console.error("Error refreshing data:", error);
-      return false; // Return false on error
-    } finally {
-      setIsRefreshing(false);
+      console.error('Error generating customer code:', error);
+      return 1;
     }
-  }, [refetchSettings]);
-  
-  const clearItemCache = useCallback(async (itemType: string) => {
-    return dataOperations.clearItemCache(itemType);
+  };
+
+  const loadData = async () => {
+    try {
+      setIsInitialLoading(true);
+      await loadCoreData(setIsLoadingCustomers, setCustomers, setIsLoadingProducts, setProducts);
+    } catch (error) {
+      console.error('Error loading core data:', error);
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
-  
-  const clearCache = useCallback(async () => {
-    await dataOperations.clearCache();
-    return;
-  }, []);
-  
-  // Create the data loading context value
-  const dataLoadingContextValue = {
-    customers,
-    products,
+
+  const value: DataLoadingContextType = {
+    isInitialLoading,
     isLoadingCustomers,
     isLoadingProducts,
-    isUsingMockData: isMockDataEnabled(),
-    setCustomers,
-    setProducts,
-    refreshData,
-    clearItemCache
-  };
-  
-  // Access to product operations from useProducts
-  const productOperations = { 
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    validateProductDiscount,
-    getMinimumPrice,
-    addBulkProducts 
-  };
-  
-  // Build the app context value
-  const appContextValue = {
-    ...defaultContextValues,
     customers,
     products,
-    orders,
-    payments,
-    routes,
-    loads,
-    salesReps,
-    vehicles,
-    paymentMethods,
-    paymentTables,
     productGroups,
-    productCategories,
-    productBrands,
-    deliveryRoutes,
-    backups,
-    
     setCustomers,
     setProducts,
-    setOrders,
-    setPayments,
-    setRoutes,
-    setLoads,
-    setSalesReps,
-    setVehicles,
-    setPaymentMethods,
-    setPaymentTables,
     setProductGroups,
-    setProductCategories,
-    setProductBrands: () => {}, // Fixed return type
-    setDeliveryRoutes: () => {}, // Fixed return type
-    setBackups,
-    
-    addRoute,
-    updateRoute,
-    deleteRoute,
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
     generateNextCustomerCode,
-    
-    // Product operations from useProducts
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    validateProductDiscount,
-    getMinimumPrice,
-    addBulkProducts,
-    
-    getOrderById,
-    addOrder,
-    updateOrder: async (id: string, orderData: any) => {
-      await updateOrder(id, orderData);
-      return id; // Return string to match expected type
-    },
-    deleteOrder,
-    
-    addVehicle,
-    updateVehicle,
-    deleteVehicle,
-    
-    addPayment,
-    updatePayment,
-    deletePayment,
-    createAutomaticPaymentRecord: async (order: any) => {
-      await createAutomaticPaymentRecord(order);
-      return ''; // Return string to match expected type
-    },
-    
-    addPaymentMethod,
-    updatePaymentMethod,
-    deletePaymentMethod,
-    
-    addLoad,
-    updateLoad,
-    deleteLoad,
-    
-    addSalesRep,
-    updateSalesRep,
-    deleteSalesRep,
-    
-    addPaymentTable,
-    updatePaymentTable,
-    deletePaymentTable,
-    
-    addProductGroup,
-    updateProductGroup,
-    deleteProductGroup,
-    
-    addProductCategory,
-    updateProductCategory,
-    deleteProductCategory,
-    
-    addProductBrand,
-    updateProductBrand,
-    deleteProductBrand,
-    
-    addDeliveryRoute,
-    updateDeliveryRoute,
-    deleteDeliveryRoute,
-    
-    createBackup: async (name?: string, description?: string) => {
-      if (!name) return '';
-      const result = await createBackup(name, description);
-      return result;
-    },
-    restoreBackup: async (id: string) => {
-      await restoreBackup(id);
-      return true; // Return boolean to match expected type
-    },
-    deleteBackup: async (id: string) => {
-      await deleteBackup(id);
-      return true; // Return boolean to match expected type
-    },
-    
-    isLoadingCustomers,
-    isLoadingProducts,
-    isLoadingOrders,
-    isLoadingPayments,
-    isLoadingRoutes,
-    isLoadingLoads,
-    isLoadingSalesReps,
-    isLoadingVehicles,
-    isLoadingPaymentMethods,
-    isLoadingPaymentTables,
-    isLoadingProductGroups,
-    isLoadingProductCategories,
-    isLoadingProductBrands,
-    isLoadingDeliveryRoutes,
-    isLoadingBackups,
-    
-    settings: settings || defaultContextValues.settings,
-    updateSettings: async (newSettings: any) => {
-      await updateSettings(newSettings);
-    },
-    
-    startNewMonth: async () => {
-      await dataOperations.startNewMonth();
-      return true;
-    },
-    startNewDay: async () => {
-      await dataOperations.startNewDay();
-      return true;
-    },
-    clearCache: async () => {
-      await clearCache();
-    },
-    refreshData,  // Use the original refreshData that returns boolean
-    
-    connectionStatus,
-    isUsingMockData: isMockDataEnabled(),
+    loadData,
   };
-  
+
   return (
-    <DataLoadingContext.Provider value={dataLoadingContextValue}>
-      <AppContext.Provider value={appContextValue}>
-        {children}
-      </AppContext.Provider>
+    <DataLoadingContext.Provider value={value}>
+      {children}
     </DataLoadingContext.Provider>
   );
 };
-
-// Export renamed hook to maintain backward compatibility
-export { useDataLoadingContext as useDataLoading } from '../hooks/useDataLoadingContext';

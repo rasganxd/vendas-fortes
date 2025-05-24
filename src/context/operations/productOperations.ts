@@ -1,6 +1,9 @@
-import { Product } from '@/types';
+import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
+import { productBrandService } from '@/services/supabase/productBrandService';
+import { productCategoryService } from '@/services/supabase/productCategoryService';
+import { productGroupService } from '@/services/supabase/productGroupService';
 
 // Cache keys
 const PRODUCTS_CACHE_KEY = 'app_products_cache';
@@ -233,5 +236,39 @@ export const addBulkProducts = async (
       variant: "destructive"
     });
     return [];
+  }
+};
+
+/**
+ * Syncs products with Supabase
+ */
+export const syncProductsWithSupabase = async (
+  products: Product[],
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+  try {
+    console.log("Syncing products with Supabase...");
+    setIsLoading(true);
+    
+    // Get products from Supabase
+    const supabaseProducts = await productService.getAll();
+    console.log(`Retrieved ${supabaseProducts.length} products from Supabase`);
+    
+    setProducts(supabaseProducts);
+    
+    toast({
+      title: "Produtos sincronizados",
+      description: `${supabaseProducts.length} produtos sincronizados com sucesso.`
+    });
+  } catch (error) {
+    console.error('Error syncing products with Supabase:', error);
+    toast({
+      title: "Erro na sincronização",
+      description: "Não foi possível sincronizar os produtos.",
+      variant: "destructive"
+    });
+  } finally {
+    setIsLoading(false);
   }
 };

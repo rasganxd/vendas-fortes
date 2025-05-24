@@ -9,7 +9,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { migrateAllDataToFirebase } from '@/utils/migrationUtils';
 
 interface MigrationDialogProps {
   isOpen: boolean;
@@ -20,44 +19,27 @@ const MigrationDialog: React.FC<MigrationDialogProps> = ({
   isOpen,
   onOpenChange
 }) => {
-  const [isMigrating, setIsMigrating] = useState(false);
-  
-  const handleMigration = async () => {
-    try {
-      setIsMigrating(true);
-      await migrateAllDataToFirebase();
-      onOpenChange(false); // Close dialog after successful migration
-    } catch (error) {
-      console.error("Migration error:", error);
-    } finally {
-      setIsMigrating(false);
-    }
-  };
-  
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Migrar para Firebase</DialogTitle>
+          <DialogTitle>Migração Concluída</DialogTitle>
           <DialogDescription>
-            Esta operação irá migrar todos os seus dados do armazenamento local para o Firebase.
-            Isso garantirá sincronização entre dispositivos e maior segurança dos dados.
+            A migração para Supabase foi concluída com sucesso. 
+            Todos os dados agora estão armazenados no Supabase.
           </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">
           <p className="text-sm text-gray-500">
-            A migração pode levar alguns minutos, dependendo da quantidade de dados.
-            Por favor, não feche o navegador durante este processo.
+            O sistema agora utiliza o Supabase como backend principal.
+            Todas as funcionalidades foram migradas e estão funcionando normalmente.
           </p>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isMigrating}>
-            Cancelar
-          </Button>
-          <Button onClick={handleMigration} disabled={isMigrating}>
-            {isMigrating ? 'Migrando...' : 'Iniciar Migração'}
+          <Button onClick={() => onOpenChange(false)}>
+            Entendi
           </Button>
         </DialogFooter>
       </DialogContent>

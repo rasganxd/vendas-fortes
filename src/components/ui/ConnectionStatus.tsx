@@ -57,7 +57,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   };
 
   const handleSyncClick = async () => {
-    if (connectionStatus !== 'online') {
+    if (connectionStatus !== 'connected') {
       toast("Sem conexão", {
         description: "Você precisa estar conectado para sincronizar os dados."
       });
@@ -69,19 +69,19 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   };
 
   // If hideWhenSynchronized is true and everything is synchronized, return null
-  if (hideWhenSynchronized && connectionStatus === 'online' && pendingItems === 0 && !isLoading && !isPendingSync) {
+  if (hideWhenSynchronized && connectionStatus === 'connected' && pendingItems === 0 && !isLoading && !isPendingSync) {
     return null;
   }
 
   return <div className={`flex items-center gap-2 ${className}`}>
-      {connectionStatus === 'online' && (
+      {connectionStatus === 'connected' && (
         <Badge variant="success" className="gap-1 py-1 px-2">
           <Wifi size={14} />
           <span className="ml-1">Online</span>
         </Badge>
       )}
       
-      {connectionStatus !== 'online' && (
+      {connectionStatus !== 'connected' && (
         <Badge variant="outline" className="gap-1 py-1 px-2 border-amber-400">
           <WifiOff size={14} className="text-amber-500" />
           <span className="text-amber-500 ml-1">Offline</span>
@@ -95,7 +95,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
         </Badge>
       )}
       
-      {showButtons && pendingItems > 0 && connectionStatus === 'online' && onSyncPending && (
+      {showButtons && pendingItems > 0 && connectionStatus === 'connected' && onSyncPending && (
         <Button variant="outline" size="sm" onClick={handleSyncClick} disabled={isPendingSync || isLoading}>
           <CloudOff className={`h-4 w-4 mr-1 ${isPendingSync ? 'animate-pulse' : ''}`} />
           {isPendingSync ? 'Sincronizando...' : 'Sincronizar'}

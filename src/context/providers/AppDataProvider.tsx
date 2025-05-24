@@ -1,244 +1,134 @@
 
-import React, { createContext, useContext } from 'react';
-import { useOrders } from '@/hooks/useOrders';
-import { usePayments } from '@/hooks/usePayments';
-import { useRoutes } from '@/hooks/useRoutes';
-import { useLoads } from '@/hooks/useLoads';
-import { useSalesReps } from '@/hooks/useSalesReps';
-import { useVehicles } from '@/hooks/useVehicles';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { usePaymentTables } from '@/hooks/usePaymentTables';
-import { useBackups } from '@/hooks/useBackups';
-import { useAppSettings } from '@/hooks/useAppSettings';
-import { useProductGroups } from '@/hooks/useProductGroups';
-import { useProductCategories } from '@/hooks/useProductCategories';
-import { useProductBrands } from '@/hooks/useProductBrands';
-import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
-import { Customer, Product, Order, Load, ProductGroup } from '@/types';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
+import { useAppOperations } from '@/context/operations/appOperations';
 import { useConnection } from './ConnectionProvider';
-import { useDataLoading } from './DataLoadingProvider';
 
-// Tipo para o contexto de dados da aplicação
 interface AppDataContextType {
-  // Estados de dados principais
+  // Customer data
   customers: Customer[];
+  isLoading: boolean;
+  addCustomer: (customer: Omit<Customer, 'id'>) => Promise<string>;
+  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<void>;
+  deleteCustomer: (id: string) => Promise<void>;
+  generateNextCustomerCode: () => Promise<number>;
+
+  // Product data
   products: Product[];
-  orders: Order[];
-  payments: any[];
-  routes: any[];
-  loads: Load[];
-  salesReps: any[];
-  vehicles: any[];
-  paymentMethods: any[];
-  paymentTables: any[];
-  productGroups: ProductGroup[];
-  productCategories: any[];
-  productBrands: any[];
-  deliveryRoutes: any[];
-  backups: any[];
-  settings: any;
-  
-  // Estados de carregamento
-  isLoadingCustomers: boolean;
   isLoadingProducts: boolean;
-  isLoadingOrders: boolean;
-  isLoadingPayments: boolean;
-  isLoadingRoutes: boolean;
-  isLoadingLoads: boolean;
-  isLoadingSalesReps: boolean;
-  isLoadingVehicles: boolean;
-  isLoadingPaymentMethods: boolean;
-  isLoadingPaymentTables: boolean;
-  isLoadingProductGroups: boolean;
-  isLoadingProductCategories: boolean;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
+  updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+
+  // Product Brand data
+  productBrands: ProductBrand[];
   isLoadingProductBrands: boolean;
+  addProductBrand: (brand: Omit<ProductBrand, 'id'>) => Promise<string>;
+  updateProductBrand: (id: string, brand: Partial<ProductBrand>) => Promise<void>;
+  deleteProductBrand: (id: string) => Promise<void>;
+
+  // Product Category data
+  productCategories: ProductCategory[];
+  isLoadingProductCategories: boolean;
+  addProductCategory: (category: Omit<ProductCategory, 'id'>) => Promise<string>;
+  updateProductCategory: (id: string, category: Partial<ProductCategory>) => Promise<void>;
+  deleteProductCategory: (id: string) => Promise<void>;
+
+  // Product Group data
+  productGroups: ProductGroup[];
+  isLoadingProductGroups: boolean;
+  addProductGroup: (group: Omit<ProductGroup, 'id'>) => Promise<string>;
+  updateProductGroup: (id: string, group: Partial<ProductGroup>) => Promise<void>;
+  deleteProductGroup: (id: string) => Promise<void>;
+
+  // Sales Rep data
+  salesReps: SalesRep[];
+  isLoadingSalesReps: boolean;
+  addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
+  updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => Promise<void>;
+  deleteSalesRep: (id: string) => Promise<void>;
+
+  // Vehicle data
+  vehicles: Vehicle[];
+  isLoadingVehicles: boolean;
+  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
+
+  // Delivery Route data
+  deliveryRoutes: DeliveryRoute[];
   isLoadingDeliveryRoutes: boolean;
-  isLoadingBackups: boolean;
-  
-  // Setters para atualizar os estados
-  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
-  setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
-  setPayments: React.Dispatch<React.SetStateAction<any[]>>;
-  setRoutes: React.Dispatch<React.SetStateAction<any[]>>;
-  setLoads: React.Dispatch<React.SetStateAction<Load[]>>;
-  setSalesReps: React.Dispatch<React.SetStateAction<any[]>>;
-  setVehicles: React.Dispatch<React.SetStateAction<any[]>>;
-  setPaymentMethods: React.Dispatch<React.SetStateAction<any[]>>;
-  setPaymentTables: React.Dispatch<React.SetStateAction<any[]>>;
-  setBackups: React.Dispatch<React.SetStateAction<any[]>>;
-  
-  // Status da conexão
-  connectionStatus: 'online' | 'offline' | 'connecting' | 'error';
-  isUsingMockData: boolean;
-  
-  // Função para atualizar os dados
-  refreshData: () => Promise<boolean>;
+  addDeliveryRoute: (route: Omit<DeliveryRoute, 'id'>) => Promise<string>;
+  updateDeliveryRoute: (id: string, route: Partial<DeliveryRoute>) => Promise<void>;
+  deleteDeliveryRoute: (id: string) => Promise<void>;
+
+  // Load data
+  loads: Load[];
+  isLoadingLoads: boolean;
+  addLoad: (load: Omit<Load, 'id'>) => Promise<string>;
+  updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
+  deleteLoad: (id: string) => Promise<void>;
+
+  // Order data
+  orders: Order[];
+  isLoadingOrders: boolean;
+  addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
+  updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
+
+  // Payment data
+  payments: Payment[];
+  isLoadingPayments: boolean;
+  addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
+  updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
+  deletePayment: (id: string) => Promise<void>;
+
+  // Payment Method data
+  paymentMethods: PaymentMethod[];
+  isLoadingPaymentMethods: boolean;
+  addPaymentMethod: (method: Omit<PaymentMethod, 'id'>) => Promise<string>;
+  updatePaymentMethod: (id: string, method: Partial<PaymentMethod>) => Promise<void>;
+  deletePaymentMethod: (id: string) => Promise<void>;
+
+  // Payment Table data
+  paymentTables: PaymentTable[];
+  isLoadingPaymentTables: boolean;
+  addPaymentTable: (table: Omit<PaymentTable, 'id'>) => Promise<string>;
+  updatePaymentTable: (id: string, table: Partial<PaymentTable>) => Promise<void>;
+  deletePaymentTable: (id: string) => Promise<void>;
+
+  // Connection status
+  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  lastConnectAttempt: Date | null;
+  reconnectToSupabase: () => Promise<void>;
+  testConnection: () => Promise<boolean>;
 }
 
-// Create the context
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
-// Provider dos dados da aplicação
-export function AppDataProvider({ children }: { children: React.ReactNode }) {
-  // Obter status da conexão do provider
-  const { connectionStatus } = useConnection();
-  
-  // Obter dados principais do DataLoadingProvider
-  const { 
-    customers, 
-    products, 
-    isLoadingCustomers, 
-    isLoadingProducts, 
-    isUsingMockData, 
-    setCustomers,
-    setProducts,
-    refreshData
-  } = useDataLoading();
-  
-  // Obter dados de outros hooks
-  const { 
-    orders,
-    setOrders,
-    isLoading: isLoadingOrders
-  } = useOrders();
-  
-  const { 
-    payments,
-    isLoading: isLoadingPayments,
-    setPayments
-  } = usePayments();
-  
-  const {
-    routes,
-    isLoading: isLoadingRoutes,
-    setRoutes
-  } = useRoutes();
-  
-  const {
-    loads,
-    isLoading: isLoadingLoads,
-    setLoads
-  } = useLoads();
-  
-  const {
-    salesReps,
-    isLoading: isLoadingSalesReps,
-    setSalesReps
-  } = useSalesReps();
-  
-  const {
-    vehicles,
-    isLoading: isLoadingVehicles,
-    setVehicles
-  } = useVehicles();
-  
-  const {
-    paymentMethods,
-    setPaymentMethods
-  } = usePaymentMethods();
-  
-  const {
-    paymentTables,
-    isLoading: isLoadingPaymentTables,
-    setPaymentTables
-  } = usePaymentTables();
-  
-  const {
-    productGroups: fetchedProductGroups,
-    isLoading: isLoadingProductGroups
-  } = useProductGroups();
-  
-  const {
-    productCategories: fetchedProductCategories,
-    isLoading: isLoadingProductCategories
-  } = useProductCategories();
-  
-  const {
-    productBrands: fetchedProductBrands,
-    isLoading: isLoadingProductBrands
-  } = useProductBrands();
-  
-  const {
-    deliveryRoutes: fetchedDeliveryRoutes,
-    isLoading: isLoadingDeliveryRoutes
-  } = useDeliveryRoutes();
-  
-  const {
-    backups,
-    isLoading: isLoadingBackups,
-    setBackups
-  } = useBackups();
-  
-  const { 
-    settings,
-    isLoading: isLoadingSettings
-  } = useAppSettings();
-  
-  // Construir o valor do contexto
-  const contextValue: AppDataContextType = {
-    customers,
-    products,
-    orders,
-    payments,
-    routes,
-    loads,
-    salesReps,
-    vehicles,
-    paymentMethods,
-    paymentTables,
-    productGroups: fetchedProductGroups,
-    productCategories: fetchedProductCategories,
-    productBrands: fetchedProductBrands,
-    deliveryRoutes: fetchedDeliveryRoutes,
-    backups,
-    settings,
-    connectionStatus,
-    
-    isLoadingCustomers,
-    isLoadingProducts,
-    isLoadingOrders,
-    isLoadingPayments,
-    isLoadingRoutes,
-    isLoadingLoads,
-    isLoadingSalesReps,
-    isLoadingVehicles,
-    isLoadingPaymentMethods: false,
-    isLoadingPaymentTables,
-    isLoadingProductGroups,
-    isLoadingProductCategories,
-    isLoadingProductBrands,
-    isLoadingDeliveryRoutes,
-    isLoadingBackups,
-    isUsingMockData,
-    
-    setCustomers,
-    setProducts,
-    setOrders,
-    setPayments,
-    setRoutes,
-    setLoads,
-    setSalesReps,
-    setVehicles,
-    setPaymentMethods,
-    setPaymentTables,
-    setBackups,
-    
-    refreshData // Use the original refreshData directly which returns boolean
-  };
-
-  return (
-    <AppDataContext.Provider value={contextValue}>
-      {children}
-    </AppDataContext.Provider>
-  );
-}
-
-// Hook para acessar os dados da aplicação
-export function useAppData() {
+export const useAppData = () => {
   const context = useContext(AppDataContext);
   if (context === undefined) {
     throw new Error('useAppData must be used within an AppDataProvider');
   }
   return context;
-}
+};
+
+export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const appOperations = useAppOperations();
+  const connection = useConnection();
+
+  const value: AppDataContextType = {
+    ...appOperations,
+    connectionStatus: connection.connectionStatus,
+    lastConnectAttempt: connection.lastConnectAttempt,
+    reconnectToSupabase: connection.reconnectToSupabase,
+    testConnection: connection.testConnection,
+  };
+
+  return (
+    <AppDataContext.Provider value={value}>
+      {children}
+    </AppDataContext.Provider>
+  );
+};

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, QrCode } from "lucide-react";
-import { mobileSyncService, SyncLogEntry } from '@/services/firebase/mobileSyncService';
+import { mobileSyncService, SyncLogEntry } from '@/services/supabase/mobileSyncService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { formatDate } from '@/utils/date-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';

@@ -9,6 +9,7 @@ export interface SupabaseEntity {
 
 export class SupabaseService<T extends SupabaseEntity> {
   protected tableName: string;
+  protected supabase = supabase;
   
   constructor(tableName: string) {
     this.tableName = tableName;

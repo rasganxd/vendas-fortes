@@ -1,124 +1,144 @@
 
-import { useState } from 'react';
-import { Customer, Product, Order, Load, ProductGroup, SalesRep, Vehicle, Payment, PaymentMethod, PaymentTable, ProductCategory, ProductBrand, DeliveryRoute, AppSettings, Backup } from '@/types';
-import { useAppData } from '../providers/AppDataProvider';
-import { 
-  addProduct, 
-  updateProduct, 
-  deleteProduct, 
-  validateProductDiscount,
-  getMinimumPrice,
-  addBulkProducts
-} from './productOperations';
-import { startNewMonth, startNewDay } from './systemOperations';
+import React from 'react';
+import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useCustomers } from '@/hooks/useCustomers';
-import { useBackups } from '@/hooks/useBackups';
-import { useAppSettings } from '@/hooks/useAppSettings';
+import { useProducts } from '@/hooks/useProducts';
+import { useProductBrands } from '@/hooks/useProductBrands';
+import { useProductCategories } from '@/hooks/useProductCategories';
+import { useProductGroups } from '@/hooks/useProductGroups';
+import { useSalesReps } from '@/hooks/useSalesReps';
+import { useVehicles } from '@/hooks/useVehicles';
+import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
+import { useLoads } from '@/hooks/useLoads';
+import { useOrders } from '@/hooks/useOrders';
+import { usePayments } from '@/hooks/usePayments';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import { usePaymentTables } from '@/hooks/usePaymentTables';
+import { customerService } from '@/services/supabase/customerService';
 
-// Hook que fornece as operações da aplicação
-export function useAppOperations() {
-  const { 
-    products, 
-    setProducts,
-    orders
-  } = useAppData();
-  
-  // Use directly from hook (with destructuring to get the specific methods)
-  const { 
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    generateNextCustomerCode
-  } = useCustomers();
-  
-  // Hook de backups
-  const {
-    createBackup: createBackupFunc,
-    restoreBackup,
-    deleteBackup,
-  } = useBackups();
-  
-  // Hook de configurações
-  const { 
-    updateSettings: updateSettingsFunc
-  } = useAppSettings();
-  
-  // Operações de produto
-  const productOperations = {
-    addProduct: async (product: Omit<Product, 'id'>) => {
-      console.log("Context: Adding product", product);
-      const id = await addProduct(product, products, setProducts);
-      console.log("Context: Product added with ID:", id);
-      return id;
-    },
-    updateProduct: (id: string, product: Partial<Product>) => {
-      console.log("Context: Updating product", id, product);
-      return updateProduct(id, product, products, setProducts);
-    },
-    deleteProduct: (id: string) => {
-      console.log("Context: Deleting product", id);
-      return deleteProduct(id, products, setProducts);
-    },
-    validateProductDiscount: (productId: string, discountedPrice: number) => 
-      validateProductDiscount(productId, discountedPrice, products),
-    getMinimumPrice: (productId: string) => 
-      getMinimumPrice(productId, products),
-    addBulkProducts: (productsArray: Omit<Product, 'id'>[]) => {
-      console.log("Context: Adding bulk products", productsArray.length);
-      return addBulkProducts(productsArray, products, setProducts, () => {});
+export const useAppOperations = () => {
+  const customersHook = useCustomers();
+  const productsHook = useProducts();
+  const productBrandsHook = useProductBrands();
+  const productCategoriesHook = useProductCategories();
+  const productGroupsHook = useProductGroups();
+  const salesRepsHook = useSalesReps();
+  const vehiclesHook = useVehicles();
+  const deliveryRoutesHook = useDeliveryRoutes();
+  const loadsHook = useLoads();
+  const ordersHook = useOrders();
+  const paymentsHook = usePayments();
+  const paymentMethodsHook = usePaymentMethods();
+  const paymentTablesHook = usePaymentTables();
+
+  // Add generateNextCustomerCode function
+  const generateNextCustomerCode = async (): Promise<number> => {
+    try {
+      return await customerService.generateNextCode();
+    } catch (error) {
+      console.error('Error generating customer code:', error);
+      return 1;
     }
   };
-  
-  // Operações de cliente
-  const customerOperations = {
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    generateNextCustomerCode
-  };
-  
-  // Funções auxiliares para wrapping de tipos
-  const createBackup = async (name?: string): Promise<string> => {
-    return await Promise.resolve(createBackupFunc(name));
+
+  // Add setCustomers function for compatibility
+  const setCustomers = (customers: Customer[] | ((prev: Customer[]) => Customer[])) => {
+    // This is handled by the useCustomers hook internally
+    console.log('setCustomers called - managed by useCustomers hook');
   };
 
-  const updateSettings = async (settings: Partial<any>): Promise<void> => {
-    await updateSettingsFunc(settings);
-  };
-  
-  // Operações do sistema
-  const systemOperations = {
-    updateSettings,
-    createBackup,
-    restoreBackup: async (id: string): Promise<boolean> => {
-      try {
-        await restoreBackup(id);
-        return true;
-      } catch (error) {
-        console.error("Error in restoreBackup wrapper:", error);
-        return false;
-      }
-    },
-    deleteBackup: async (id: string): Promise<boolean> => {
-      try {
-        await deleteBackup(id);
-        return true;
-      } catch (error) {
-        console.error("Error in deleteBackup wrapper:", error);
-        return false;
-      }
-    },
-    startNewMonth: async () => {
-      return await startNewMonth();
-    },
-    startNewDay: async () => {
-      return await startNewDay();
-    }
-  };
-  
   return {
-    productOperations,
-    customerOperations,
-    systemOperations
+    // Customer operations
+    customers: customersHook.customers,
+    isLoading: customersHook.isLoading,
+    addCustomer: customersHook.addCustomer,
+    updateCustomer: customersHook.updateCustomer,
+    deleteCustomer: customersHook.deleteCustomer,
+    generateNextCustomerCode,
+    setCustomers,
+
+    // Product operations
+    products: productsHook.products,
+    isLoadingProducts: productsHook.isLoading,
+    addProduct: productsHook.addProduct,
+    updateProduct: productsHook.updateProduct,
+    deleteProduct: productsHook.deleteProduct,
+
+    // Product Brand operations
+    productBrands: productBrandsHook.productBrands,
+    isLoadingProductBrands: productBrandsHook.isLoading,
+    addProductBrand: productBrandsHook.addProductBrand,
+    updateProductBrand: productBrandsHook.updateProductBrand,
+    deleteProductBrand: productBrandsHook.deleteProductBrand,
+
+    // Product Category operations
+    productCategories: productCategoriesHook.productCategories,
+    isLoadingProductCategories: productCategoriesHook.isLoading,
+    addProductCategory: productCategoriesHook.addProductCategory,
+    updateProductCategory: productCategoriesHook.updateProductCategory,
+    deleteProductCategory: productCategoriesHook.deleteProductCategory,
+
+    // Product Group operations
+    productGroups: productGroupsHook.productGroups,
+    isLoadingProductGroups: productGroupsHook.isLoading,
+    addProductGroup: productGroupsHook.addProductGroup,
+    updateProductGroup: productGroupsHook.updateProductGroup,
+    deleteProductGroup: productGroupsHook.deleteProductGroup,
+
+    // Sales Rep operations
+    salesReps: salesRepsHook.salesReps,
+    isLoadingSalesReps: salesRepsHook.isLoading,
+    addSalesRep: salesRepsHook.addSalesRep,
+    updateSalesRep: salesRepsHook.updateSalesRep,
+    deleteSalesRep: salesRepsHook.deleteSalesRep,
+
+    // Vehicle operations
+    vehicles: vehiclesHook.vehicles,
+    isLoadingVehicles: vehiclesHook.isLoading,
+    addVehicle: vehiclesHook.addVehicle,
+    updateVehicle: vehiclesHook.updateVehicle,
+    deleteVehicle: vehiclesHook.deleteVehicle,
+
+    // Delivery Route operations
+    deliveryRoutes: deliveryRoutesHook.deliveryRoutes,
+    isLoadingDeliveryRoutes: deliveryRoutesHook.isLoading,
+    addDeliveryRoute: deliveryRoutesHook.addDeliveryRoute,
+    updateDeliveryRoute: deliveryRoutesHook.updateDeliveryRoute,
+    deleteDeliveryRoute: deliveryRoutesHook.deleteDeliveryRoute,
+
+    // Load operations
+    loads: loadsHook.loads,
+    isLoadingLoads: loadsHook.isLoading,
+    addLoad: loadsHook.addLoad,
+    updateLoad: loadsHook.updateLoad,
+    deleteLoad: loadsHook.deleteLoad,
+
+    // Order operations
+    orders: ordersHook.orders,
+    isLoadingOrders: ordersHook.isLoading,
+    addOrder: ordersHook.addOrder,
+    updateOrder: ordersHook.updateOrder,
+    deleteOrder: ordersHook.deleteOrder,
+
+    // Payment operations
+    payments: paymentsHook.payments,
+    isLoadingPayments: paymentsHook.isLoading,
+    addPayment: paymentsHook.addPayment,
+    updatePayment: paymentsHook.updatePayment,
+    deletePayment: paymentsHook.deletePayment,
+
+    // Payment Method operations
+    paymentMethods: paymentMethodsHook.paymentMethods,
+    isLoadingPaymentMethods: paymentMethodsHook.isLoading,
+    addPaymentMethod: paymentMethodsHook.addPaymentMethod,
+    updatePaymentMethod: paymentMethodsHook.updatePaymentMethod,
+    deletePaymentMethod: paymentMethodsHook.deletePaymentMethod,
+
+    // Payment Table operations
+    paymentTables: paymentTablesHook.paymentTables,
+    isLoadingPaymentTables: paymentTablesHook.isLoading,
+    addPaymentTable: paymentTablesHook.addPaymentTable,
+    updatePaymentTable: paymentTablesHook.updatePaymentTable,
+    deletePaymentTable: paymentTablesHook.deletePaymentTable,
   };
-}
+};

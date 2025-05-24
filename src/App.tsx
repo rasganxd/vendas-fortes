@@ -27,14 +27,11 @@ import Settings from '@/pages/Settings';
 import SystemMaintenance from '@/pages/SystemMaintenance';
 import NotFound from '@/pages/NotFound';
 import './App.css';
-import { initializeFirestore } from './services/firebase/initializeFirestore';
 
 function App() {
   console.log("App: Rendering App component");
-  const [firestoreInitialized, setFirestoreInitialized] = useState(false);
-  const [initializationAttempted, setInitializationAttempted] = useState(false);
   
-  // Check if running on mobile device and initialize Firestore
+  // Check if running on mobile device
   useEffect(() => {
     console.log("App: Running main useEffect");
     
@@ -45,41 +42,9 @@ function App() {
     } else {
       console.log("App: Running on desktop device");
     }
-    
-    // Initialize Firestore collections
-    const setupFirestore = async () => {
-      console.log("App: Starting Firestore initialization");
-      try {
-        const success = await initializeFirestore(false); // Don't show toasts during initial load
-        console.log("App: Firestore initialization result:", success);
-        setFirestoreInitialized(success);
-        
-        // Force a second initialization attempt if first failed
-        if (!success) {
-          console.log("App: First initialization failed, trying again in 3 seconds");
-          setTimeout(async () => {
-            console.log("App: Attempting second Firestore initialization");
-            const retrySuccess = await initializeFirestore(true); // Show toasts on retry
-            console.log("App: Second Firestore initialization result:", retrySuccess);
-            setFirestoreInitialized(retrySuccess);
-          }, 3000);
-        }
-      } catch (error) {
-        console.error('App: Failed to initialize Firestore:', error);
-        setFirestoreInitialized(false);
-      } finally {
-        setInitializationAttempted(true);
-        console.log("App: Firestore initialization attempt completed");
-      }
-    };
-    
-    setupFirestore();
   }, []);
 
-  console.log("App: Rendering with initialization state:", { 
-    attempted: initializationAttempted,
-    successful: firestoreInitialized
-  });
+  console.log("App: Rendering application");
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="ui-theme">
@@ -113,7 +78,6 @@ function App() {
                 </RouterRoutes>
               </div>
             </div>
-            {/* Enhanced Toaster with theme awareness and duplicate prevention */}
             <Toaster />
           </SidebarProvider>
         </Router>
