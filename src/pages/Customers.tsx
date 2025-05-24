@@ -9,8 +9,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import CustomersTable from '@/components/customers/CustomersTable';
 import NewCustomerDialog from '@/components/customers/NewCustomerDialog';
 import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
+import ViewCustomerDialog from '@/components/customers/ViewCustomerDialog';
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
 import { Customer } from '@/types';
+
 export default function Customers() {
   const {
     customers,
@@ -22,6 +24,7 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [newCustomerCode, setNewCustomerCode] = useState<number>(1);
@@ -57,6 +60,10 @@ export default function Customers() {
     setNewCustomerCode(nextCode);
     setIsNewCustomerDialogOpen(true);
   };
+  const handleViewCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsViewDialogOpen(true);
+  };
   const handleEditCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsEditDialogOpen(true);
@@ -68,8 +75,17 @@ export default function Customers() {
   const handleCloseDialogs = () => {
     setIsNewCustomerDialogOpen(false);
     setIsEditDialogOpen(false);
+    setIsViewDialogOpen(false);
     setIsDeleteDialogOpen(false);
     setSelectedCustomer(null);
+  };
+  const handleEditFromView = () => {
+    setIsViewDialogOpen(false);
+    setIsEditDialogOpen(true);
+  };
+  const handleDeleteFromView = () => {
+    setIsViewDialogOpen(false);
+    setIsDeleteDialogOpen(true);
   };
   const handleNewCustomerSubmit = (data: any) => {
     console.log('✅ New customer submitted successfully:', data);
@@ -85,11 +101,11 @@ export default function Customers() {
     await deleteCustomer(id);
     setIsDeleteDialogOpen(false);
   };
-  return <PageLayout title="Clientes">
+  return (
+    <PageLayout title="Clientes">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-lg font-medium">Gerencie os clientes da sua empresa</h2>
-          
         </div>
         <div className="flex gap-2">
           <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
@@ -103,19 +119,53 @@ export default function Customers() {
           <div className="flex items-center space-x-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar clientes..." value={searchTerm} onChange={handleSearchChange} className="pl-8" />
+              <Input
+                placeholder="Buscar clientes..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="pl-8"
+              />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <CustomersTable customers={filteredCustomers} onEdit={handleEditCustomer} onDelete={handleDeleteCustomer} onView={handleEditCustomer} />
+          <CustomersTable
+            customers={filteredCustomers}
+            onEdit={handleEditCustomer}
+            onDelete={handleDeleteCustomer}
+            onView={handleViewCustomer}
+          />
         </CardContent>
       </Card>
 
-      <NewCustomerDialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen} initialCode={newCustomerCode} onSubmit={handleNewCustomerSubmit} />
+      <NewCustomerDialog
+        open={isNewCustomerDialogOpen}
+        onOpenChange={setIsNewCustomerDialogOpen}
+        initialCode={newCustomerCode}
+        onSubmit={handleNewCustomerSubmit}
+      />
 
-      <EditCustomerDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} customer={selectedCustomer} onSubmit={handleEditCustomerSubmit} />
+      <ViewCustomerDialog
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        customer={selectedCustomer}
+        onEdit={handleEditFromView}
+        onDelete={handleDeleteFromView}
+      />
 
-      <DeleteCustomerDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} customer={selectedCustomer} onDelete={handleDeleteConfirm} />
-    </PageLayout>;
+      <EditCustomerDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        customer={selectedCustomer}
+        onSubmit={handleEditCustomerSubmit}
+      />
+
+      <DeleteCustomerDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        customer={selectedCustomer}
+        onDelete={handleDeleteConfirm}
+      />
+    </PageLayout>
+  );
 }
