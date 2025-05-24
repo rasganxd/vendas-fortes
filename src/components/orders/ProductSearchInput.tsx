@@ -45,6 +45,12 @@ export default function ProductSearchInput({
     inputRef
   });
   
+  // Format price to display with 2 decimal places
+  const formatPriceDisplay = (value: number): string => {
+    if (value === 0) return '';
+    return value.toFixed(2).replace('.', ',');
+  };
+  
   return (
     <div className="relative w-full">
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -92,7 +98,7 @@ export default function ProductSearchInput({
               type="text"
               className="h-11 text-center w-28 border-gray-300"
               placeholder="Preço"
-              value={price ? price.toString() : ''}
+              value={formatPriceDisplay(price)}
               onChange={handlePriceChange}
               onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
             />
