@@ -11,14 +11,35 @@ import ProductsTable from '@/components/products/ProductsTable';
 import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import ProductForm from '@/components/products/ProductForm';
 import { useConnection } from '@/context/providers/ConnectionProvider';
+import { useProductBrands } from '@/hooks/useProductBrands';
+import { useProductCategories } from '@/hooks/useProductCategories';
+import { useProductGroups } from '@/hooks/useProductGroups';
 
 export default function Products() {
-  // Get product classifications from AppContext
+  // Get product classifications directly from hooks instead of AppContext
+  const {
+    productGroups: contextProductGroups,
+    productCategories: contextProductCategories,
+    productBrands: contextProductBrands
+  } = useAppContext();
+  
+  // Get direct access to classification hooks
+  const {
+    productBrands,
+    forceRefreshBrands,
+    isLoading: isBrandsLoading
+  } = useProductBrands();
+  
   const {
     productGroups,
+    isLoading: isGroupsLoading
+  } = useProductGroups();
+  
+  const {
     productCategories,
-    productBrands
-  } = useAppContext();
+    isLoading: isCategoriesLoading
+  } = useProductCategories();
+  
   const {
     connectionStatus
   } = useConnection();
@@ -34,16 +55,24 @@ export default function Products() {
     syncPendingProducts,
     forceRefreshProducts
   } = useProducts();
+  
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isReloadingClassifications, setIsReloadingClassifications] = useState(false);
 
   // Add detailed logging to check if we're getting the product classifications
   useEffect(() => {
-    console.log("Product classifications data in Products.tsx:");
-    console.log("- Product Groups from context:", productGroups?.length || 0, "items");
-    console.log("- Product Categories from context:", productCategories?.length || 0, "items");
-    console.log("- Product Brands from context:", productBrands?.length || 0, "items");
+    console.log("--- PRODUCT CLASSIFICATIONS STATUS IN PRODUCTS PAGE ---");
+    console.log("Direct from hooks:");
+    console.log("- Product Groups:", productGroups?.length || 0, "items");
+    console.log("- Product Categories:", productCategories?.length || 0, "items");
+    console.log("- Product Brands:", productBrands?.length || 0, "items");
+    
+    console.log("From context:");
+    console.log("- Product Groups from context:", contextProductGroups?.length || 0, "items");
+    console.log("- Product Categories from context:", contextProductCategories?.length || 0, "items");
+    console.log("- Product Brands from context:", contextProductBrands?.length || 0, "items");
 
     // Check if arrays are actually arrays and contain data
     if (!Array.isArray(productGroups)) {
@@ -66,7 +95,43 @@ export default function Products() {
     if (Array.isArray(productBrands) && productBrands.length > 0) {
       console.log("Sample product brand:", productBrands[0]);
     }
-  }, [productGroups, productCategories, productBrands]);
+  }, [productGroups, productCategories, productBrands, contextProductGroups, contextProductCategories, contextProductBrands]);
+
+  // Force reload all classifications
+  const handleReloadClassifications = async () => {
+    try {
+      setIsReloadingClassifications(true);
+      console.log("Forcing reload of all product classifications");
+      
+      // Only call forceRefreshBrands as example, integrate with others as needed
+      const result = await forceRefreshBrands();
+      
+      if (result) {
+        toast("Classificações atualizadas",  {
+          description: "As classificações de produtos foram atualizadas com sucesso"
+        });
+      } else {
+        toast("Erro na atualização",  {
+          description: "Não foi possível atualizar todas as classificações",
+          style: {
+            backgroundColor: 'rgb(239, 68, 68)',
+            color: 'white'
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error reloading classifications:", error);
+      toast("Erro",  {
+        description: "Ocorreu um erro ao recarregar as classificações",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsReloadingClassifications(false);
+    }
+  };
 
   // Count pending products
   const pendingProducts = products.filter(p => p.syncStatus === 'pending').length;
@@ -93,6 +158,19 @@ export default function Products() {
     }
   };
   const handleAdd = () => {
+    // Check if classifications are loaded before opening form
+    if (
+      (Array.isArray(productGroups) && productGroups.length === 0 && !isGroupsLoading) ||
+      (Array.isArray(productCategories) && productCategories.length === 0 && !isCategoriesLoading) ||
+      (Array.isArray(productBrands) && productBrands.length === 0 && !isBrandsLoading)
+    ) {
+      console.log("Some classifications may not be loaded yet. Prompting user.");
+      if (confirm("Algumas classificações podem não estar carregadas. Deseja recarregá-las antes de continuar?")) {
+        handleReloadClassifications();
+        return;
+      }
+    }
+    
     setIsEditing(false);
     setSelectedProduct(null);
     setOpen(true);
@@ -147,16 +225,22 @@ export default function Products() {
     return await syncPendingProducts();
   };
 
-  // Ensure productGroups, productCategories, and productBrands are arrays
+  // Use classifications directly from hooks for the most updated data
   const safeProductGroups = Array.isArray(productGroups) ? productGroups : [];
   const safeProductCategories = Array.isArray(productCategories) ? productCategories : [];
   const safeProductBrands = Array.isArray(productBrands) ? productBrands : [];
+  
+  // Display loading status for debugging
+  const isLoadingAnyClassification = isGroupsLoading || isCategoriesLoading || isBrandsLoading;
+  
   return <PageLayout title="Produtos">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
+          {isLoadingAnyClassification && (
+            <p className="text-orange-500 text-sm">Carregando classificações...</p>
+          )}
         </div>
-        {/* ProductSyncStatus component removed to avoid duplication */}
       </div>
       
       <Card>
@@ -170,13 +254,27 @@ export default function Products() {
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            <ProductsActionButtons onAddProduct={handleAdd} />
+            <ProductsActionButtons 
+              onAddProduct={handleAdd} 
+              onReloadClassifications={handleReloadClassifications}
+              isReloading={isReloadingClassifications}
+            />
           </div>
           
           <ProductsTable products={products} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
         </CardContent>
       </Card>
       
-      <ProductForm open={open} onOpenChange={setOpen} isEditing={isEditing} selectedProduct={selectedProduct} products={products} productCategories={safeProductCategories} productGroups={safeProductGroups} productBrands={safeProductBrands} onSubmit={handleSubmit} />
+      <ProductForm 
+        open={open} 
+        onOpenChange={setOpen} 
+        isEditing={isEditing} 
+        selectedProduct={selectedProduct} 
+        products={products} 
+        productCategories={safeProductCategories} 
+        productGroups={safeProductGroups} 
+        productBrands={safeProductBrands} 
+        onSubmit={handleSubmit} 
+      />
     </PageLayout>;
 }

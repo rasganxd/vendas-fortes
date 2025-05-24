@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ProductBrand } from '@/types';
 import { productBrandService } from '@/services/firebase/productBrandService';
@@ -23,6 +24,58 @@ export const useProductBrands = () => {
     return true;
   };
 
+  // Function to force reload brands from Firebase
+  const forceRefreshBrands = async () => {
+    console.log("Force refreshing product brands from Firebase");
+    setIsLoading(true);
+    
+    try {
+      // Clear cache
+      localStorage.removeItem(BRANDS_CACHE_KEY);
+      localStorage.removeItem(BRANDS_CACHE_TIMESTAMP_KEY);
+      
+      // Clear local state
+      setHasAttemptedLoad(false);
+      
+      // Fetch from Firebase
+      const brands = await productBrandService.getAll();
+      console.log(`Forcefully loaded ${brands.length} product brands from Firebase`);
+      
+      if (brands && brands.length > 0) {
+        setProductBrands(brands);
+        
+        // Update local storage service
+        await productBrandLocalService.setAll(brands);
+        
+        // Update cache
+        localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(brands));
+        localStorage.setItem(BRANDS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      } else {
+        console.log("No product brands found in Firebase during force refresh");
+        setProductBrands([]);
+      }
+      
+      toast({
+        title: 'Marcas atualizadas',
+        description: `${brands.length} marcas carregadas com sucesso!`,
+      });
+      
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      console.error('Error during force refresh of product brands:', error);
+      setIsLoading(false);
+      
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar as marcas de produtos.',
+        variant: 'destructive',
+      });
+      
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Prevent multiple load attempts
     if (hasAttemptedLoad) return;
@@ -36,9 +89,11 @@ export const useProductBrands = () => {
         // Always try Firebase first
         const brands = await productBrandService.getAll();
         console.log(`Loaded ${brands.length} product brands from Firebase`);
+        console.log("Sample brand data:", brands.length > 0 ? brands[0] : "No brands found");
         
         if (brands && brands.length > 0) {
           setProductBrands(brands);
+          console.log("Updated product brands state with Firebase data");
           
           // Update local storage service
           await productBrandLocalService.setAll(brands);
@@ -62,12 +117,14 @@ export const useProductBrands = () => {
           
           if (localBrands && localBrands.length > 0) {
             setProductBrands(localBrands);
+            console.log("Updated product brands state with local storage data");
           } else {
             // Try to use cached data as second fallback
             const cachedData = localStorage.getItem(BRANDS_CACHE_KEY);
             if (cachedData) {
               console.log("Using cached product brands data");
               setProductBrands(JSON.parse(cachedData));
+              console.log("Updated product brands state with cached data");
             } else {
               // No default brands - just set empty array
               console.log("No product brands found in cache");
@@ -192,5 +249,6 @@ export const useProductBrands = () => {
     addProductBrand,
     updateProductBrand,
     deleteProductBrand,
+    forceRefreshBrands, // Export the force refresh function
   };
 };
