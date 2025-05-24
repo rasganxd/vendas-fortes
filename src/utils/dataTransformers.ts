@@ -67,9 +67,9 @@ export const prepareForSupabase = (data: any): Record<string, unknown> => {
   // First, make a shallow copy to avoid modifying the original data
   const cleanData = { ...data };
   
-  // Remove undefined values
+  // Remove undefined values and problematic fields
   Object.keys(cleanData).forEach(key => {
-    if (cleanData[key] === undefined) {
+    if (cleanData[key] === undefined || key === 'id' || key === 'createdAt' || key === 'updatedAt') {
       delete cleanData[key];
     }
   });
@@ -169,18 +169,10 @@ export const transformSalesRepData = (data: any) => {
   return {
     id: data.id || '',
     name: transformed.name || '',
-    email: transformed.email || '',
     phone: transformed.phone || '',
-    document: transformed.document || '',
-    address: transformed.address || '',
-    city: transformed.city || '',
-    state: transformed.state || '',
-    zip: transformed.zip || '',
-    notes: transformed.notes || '',
     active: transformed.active !== false, // Default to true if not explicitly false
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-    visitDay: data.visit_day || '',
     code: data.code || 0,
   };
 };

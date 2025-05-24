@@ -1,6 +1,7 @@
 
 import { SupabaseService } from './supabaseService';
 import { SalesRep } from '@/types';
+import { prepareForSupabase } from '@/utils/dataTransformers';
 
 class SalesRepSupabaseService extends SupabaseService<SalesRep> {
   constructor() {
@@ -34,19 +35,16 @@ class SalesRepSupabaseService extends SupabaseService<SalesRep> {
   async add(entity: Omit<SalesRep, 'id'>): Promise<string> {
     try {
       console.log(`📝 Adding sales rep to ${this.tableName}`);
-      console.log("Entity data:", entity);
+      console.log("Entity data (before transformation):", entity);
       
-      const dataWithTimestamps = {
-        ...entity,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      // Use the dataTransformers utility to prepare data for Supabase
+      const supabaseData = prepareForSupabase(entity);
       
-      console.log("Data with timestamps:", dataWithTimestamps);
+      console.log("Data prepared for Supabase:", supabaseData);
       
       const { data, error } = await this.supabase
         .from(this.tableName as any)
-        .insert(dataWithTimestamps)
+        .insert(supabaseData)
         .select('id')
         .single();
       
