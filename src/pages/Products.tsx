@@ -158,19 +158,7 @@ export default function Products() {
     }
   };
   const handleAdd = () => {
-    // Check if classifications are loaded before opening form
-    if (
-      (Array.isArray(productGroups) && productGroups.length === 0 && !isGroupsLoading) ||
-      (Array.isArray(productCategories) && productCategories.length === 0 && !isCategoriesLoading) ||
-      (Array.isArray(productBrands) && productBrands.length === 0 && !isBrandsLoading)
-    ) {
-      console.log("Some classifications may not be loaded yet. Prompting user.");
-      if (confirm("Algumas classificações podem não estar carregadas. Deseja recarregá-las antes de continuar?")) {
-        handleReloadClassifications();
-        return;
-      }
-    }
-    
+    // Remove the check that blocks product creation when classifications aren't loaded
     setIsEditing(false);
     setSelectedProduct(null);
     setOpen(true);
