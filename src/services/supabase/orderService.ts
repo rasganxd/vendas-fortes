@@ -25,13 +25,10 @@ class OrderSupabaseService extends SupabaseService<Order> {
       paymentMethodId: dbRecord.payment_method_id || '',
       paymentTableId: dbRecord.payment_table_id || '',
       dueDate: dbRecord.due_date ? new Date(dbRecord.due_date) : new Date(),
-      deliveryDate: dbRecord.delivery_date ? new Date(dbRecord.delivery_date) : undefined,
       deliveryAddress: dbRecord.delivery_address || '',
       deliveryCity: dbRecord.delivery_city || '',
       deliveryState: dbRecord.delivery_state || '',
-      deliveryZip: dbRecord.delivery_zip || '',
-      paymentTable: dbRecord.payment_table || '',
-      syncStatus: dbRecord.sync_status || 'synced'
+      deliveryZip: dbRecord.delivery_zip || ''
     };
   }
 
@@ -53,13 +50,10 @@ class OrderSupabaseService extends SupabaseService<Order> {
       payment_method_id: record.paymentMethodId,
       payment_table_id: record.paymentTableId,
       due_date: record.dueDate ? record.dueDate.toISOString() : null,
-      delivery_date: record.deliveryDate ? record.deliveryDate.toISOString() : null,
       delivery_address: record.deliveryAddress,
       delivery_city: record.deliveryCity,
       delivery_state: record.deliveryState,
-      delivery_zip: record.deliveryZip,
-      payment_table: record.paymentTable,
-      sync_status: record.syncStatus || 'synced'
+      delivery_zip: record.deliveryZip
     };
 
     // Remove the camelCase fields that don't exist in the database
@@ -72,13 +66,10 @@ class OrderSupabaseService extends SupabaseService<Order> {
     delete dbRecord.paymentMethodId;
     delete dbRecord.paymentTableId;
     delete dbRecord.dueDate;
-    delete dbRecord.deliveryDate;
     delete dbRecord.deliveryAddress;
     delete dbRecord.deliveryCity;
     delete dbRecord.deliveryState;
     delete dbRecord.deliveryZip;
-    delete dbRecord.paymentTable;
-    delete dbRecord.syncStatus;
     
     return dbRecord;
   }
