@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,12 +8,13 @@ import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
 import { useProducts } from '@/hooks/useProducts';
 import ProductsTable from '@/components/products/ProductsTable';
-import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import ProductForm from '@/components/products/ProductForm';
 import { useConnection } from '@/context/providers/ConnectionProvider';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductGroups } from '@/hooks/useProductGroups';
+import { Link } from 'react-router-dom';
+import { Plus, DollarSign, Tags } from 'lucide-react';
 
 export default function Products() {
   // Get product classifications directly from hooks instead of AppContext
@@ -25,7 +27,6 @@ export default function Products() {
   // Get direct access to classification hooks
   const {
     productBrands,
-    forceRefreshBrands,
     isLoading: isBrandsLoading
   } = useProductBrands();
   
@@ -58,7 +59,6 @@ export default function Products() {
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isReloadingClassifications, setIsReloadingClassifications] = useState(false);
 
   // Add detailed logging to check if we're getting the product classifications
   useEffect(() => {
@@ -95,42 +95,6 @@ export default function Products() {
       console.log("Sample product brand:", productBrands[0]);
     }
   }, [productGroups, productCategories, productBrands, contextProductGroups, contextProductCategories, contextProductBrands]);
-
-  // Force reload all classifications
-  const handleReloadClassifications = async () => {
-    try {
-      setIsReloadingClassifications(true);
-      console.log("Forcing reload of all product classifications");
-      
-      // Only call forceRefreshBrands as example, integrate with others as needed
-      const result = await forceRefreshBrands();
-      
-      if (result) {
-        toast("Classificações atualizadas",  {
-          description: "As classificações de produtos foram atualizadas com sucesso"
-        });
-      } else {
-        toast("Erro na atualização",  {
-          description: "Não foi possível atualizar todas as classificações",
-          style: {
-            backgroundColor: 'rgb(239, 68, 68)',
-            color: 'white'
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Error reloading classifications:", error);
-      toast("Erro",  {
-        description: "Ocorreu um erro ao recarregar as classificações",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
-    } finally {
-      setIsReloadingClassifications(false);
-    }
-  };
 
   // Count pending products
   const pendingProducts = products.filter(p => p.syncStatus === 'pending').length;
@@ -224,6 +188,26 @@ export default function Products() {
             <p className="text-orange-500 text-sm">Carregando classificações...</p>
           )}
         </div>
+        <div className="flex gap-2">
+          <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700">
+            <Plus size={16} className="mr-2" />
+            Adicionar Produto
+          </Button>
+          
+          <Link to="/produtos/precificacao">
+            <Button variant="outline">
+              <DollarSign size={16} className="mr-2" />
+              Precificação
+            </Button>
+          </Link>
+          
+          <Link to="/produtos/classificacoes">
+            <Button variant="outline">
+              <Tags size={16} className="mr-2" />
+              Classificações
+            </Button>
+          </Link>
+        </div>
       </div>
       
       <Card>
@@ -233,14 +217,6 @@ export default function Products() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <ProductsActionButtons 
-              onAddProduct={handleAdd} 
-              onReloadClassifications={handleReloadClassifications}
-              isReloading={isReloadingClassifications}
-            />
-          </div>
-          
           <ProductsTable products={products} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
         </CardContent>
       </Card>
