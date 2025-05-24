@@ -112,19 +112,18 @@ const defaultContextValues: AppContextType = {
   deleteBackup: async () => true,
   
   settings: {
-    companyName: 'Minha Empresa',
-    companyLogo: '',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    id: 'default',
     company: {
-      name: '',
+      name: 'Minha Empresa',
       address: '',
       phone: '',
       email: '',
       document: '',
       footer: ''
     },
-    primaryColor: '#1C64F2'
+    theme: {
+      primaryColor: '#6B7280'
+    }
   },
   updateSettings: async () => {},
   

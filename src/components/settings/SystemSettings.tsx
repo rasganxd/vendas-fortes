@@ -13,7 +13,7 @@ export default function SystemSettings() {
   
   // Definindo uma cor padrão mais clara e neutra
   const defaultColor = '#6B7280'; // Cinza neutro
-  const [selectedColor, setSelectedColor] = useState(settings?.primaryColor || defaultColor);
+  const [selectedColor, setSelectedColor] = useState(settings?.theme?.primaryColor || defaultColor);
   
   const handleColorChange = async (color: string) => {
     setSelectedColor(color);
@@ -33,7 +33,11 @@ export default function SystemSettings() {
     
     // Save to settings
     try {
-      await updateSettings({ primaryColor: color });
+      await updateSettings({ 
+        theme: { 
+          primaryColor: color 
+        } 
+      });
       toast.success("Cor atualizada com sucesso");
     } catch (error) {
       console.error("Erro ao atualizar cor:", error);
@@ -50,7 +54,7 @@ export default function SystemSettings() {
   
   // Aplicando cor padrão na inicialização se necessário
   React.useEffect(() => {
-    if (!settings?.primaryColor || settings.primaryColor !== defaultColor) {
+    if (!settings?.theme?.primaryColor || settings.theme.primaryColor !== defaultColor) {
       handleColorChange(defaultColor);
     }
   }, [settings]);

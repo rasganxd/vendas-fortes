@@ -104,7 +104,7 @@ export default function Customers() {
           </p>
         </div>
         <div className="flex gap-2">
-          <ProductsActionButtons />
+          <ProductsActionButtons onAddProduct={() => {}} />
           <Button onClick={handleNewCustomer} className="bg-sales-800 hover:bg-sales-700">
             <Plus size={16} className="mr-2" /> Novo Cliente
           </Button>
@@ -125,9 +125,9 @@ export default function Customers() {
 
       <CustomersTable
         customers={filteredCustomers}
-        isLoading={isLoadingCustomers}
         onEdit={handleEditCustomer}
         onDelete={handleDeleteCustomer}
+        onView={handleEditCustomer}
       />
 
       <NewCustomerDialog
@@ -148,7 +148,10 @@ export default function Customers() {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         customer={selectedCustomer}
-        onClose={handleCloseDialogs}
+        onDelete={async (id: string) => {
+          console.log('Deleting customer:', id);
+          setIsDeleteDialogOpen(false);
+        }}
       />
     </PageLayout>
   );
