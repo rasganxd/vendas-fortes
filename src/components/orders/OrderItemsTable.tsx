@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OrderItem } from '@/types';
 import { Button } from "@/components/ui/button";
@@ -54,16 +55,16 @@ export default function OrderItemsTable({
                   <td className="px-4 py-3 text-center">{item.quantity}</td>
                   <td className="px-4 py-3 text-center">un</td>
                   <td className="px-4 py-3 text-right">
-                    {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {(item.unitPrice || item.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
                   <td className="px-4 py-3 text-right font-medium">
-                    {(item.unitPrice * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {((item.unitPrice || item.price || 0) * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => onRemoveItem(item.productId)}
+                      onClick={() => onRemoveItem(item.productId || '')}
                       type="button"
                     >
                       <Trash2 size={16} className="text-red-500" />

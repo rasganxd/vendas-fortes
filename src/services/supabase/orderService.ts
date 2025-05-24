@@ -1,7 +1,6 @@
 
-
 import { SupabaseService } from './supabaseService';
-import { Order } from '@/types';
+import { Order, OrderItem } from '@/types';
 
 class OrderSupabaseService extends SupabaseService<Order> {
   constructor() {
@@ -29,7 +28,8 @@ class OrderSupabaseService extends SupabaseService<Order> {
       deliveryAddress: dbRecord.delivery_address || '',
       deliveryCity: dbRecord.delivery_city || '',
       deliveryState: dbRecord.delivery_state || '',
-      deliveryZip: dbRecord.delivery_zip || ''
+      deliveryZip: dbRecord.delivery_zip || '',
+      items: dbRecord.items || [] // Ensure items is always an array
     };
   }
 
@@ -77,6 +77,142 @@ class OrderSupabaseService extends SupabaseService<Order> {
     
     console.log("📝 Transform to DB result:", dbRecord);
     return dbRecord;
+  }
+
+  // Override getById to include order items
+  async getById(id: string): Promise<Order | null> {
+    try {
+      console.log(`🔍 Getting order by ID: ${id}`);
+      
+      // Get the order
+      const { data: orderData, error: orderError } = await this.supabase
+        .from('orders')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (orderError) {
+        console.error('❌ Error getting order:', orderError);
+        if (orderError.code === 'PGRST116') return null;
+        throw orderError;
+      }
+      
+      if (!orderData) {
+        console.log('❌ Order not found');
+        return null;
+      }
+      
+      // Get the order items
+      console.log(`🔍 Getting items for order: ${id}`);
+      const { data: itemsData, error: itemsError } = await this.supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', id);
+      
+      if (itemsError) {
+        console.error('❌ Error getting order items:', itemsError);
+        // Don't throw error, just log it and continue with empty items
+      }
+      
+      // Transform items to match OrderItem interface
+      const items: OrderItem[] = (itemsData || []).map(item => ({
+        id: item.id,
+        orderId: item.order_id,
+        productId: item.product_id,
+        productName: item.product_name,
+        productCode: item.product_code || 0,
+        quantity: item.quantity,
+        unitPrice: item.unit_price || item.price,
+        price: item.price,
+        discount: item.discount || 0,
+        total: item.total
+      }));
+      
+      console.log(`✅ Found ${items.length} items for order ${id}`);
+      
+      // Add items to order data
+      const orderWithItems = {
+        ...orderData,
+        items: items
+      };
+      
+      // Transform the order data
+      const transformedOrder = this.transformFromDB(orderWithItems);
+      console.log('✅ Order with items loaded successfully:', transformedOrder.id);
+      
+      return transformedOrder;
+    } catch (error) {
+      console.error('❌ Error in getById:', error);
+      throw error;
+    }
+  }
+
+  // Override getAll to include order items
+  async getAll(): Promise<Order[]> {
+    try {
+      console.log('🔍 Getting all orders with items');
+      
+      // Get all orders
+      const { data: ordersData, error: ordersError } = await this.supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (ordersError) {
+        console.error('❌ Error getting orders:', ordersError);
+        throw ordersError;
+      }
+      
+      if (!ordersData || ordersData.length === 0) {
+        console.log('📝 No orders found');
+        return [];
+      }
+      
+      // Get all order items
+      const { data: itemsData, error: itemsError } = await this.supabase
+        .from('order_items')
+        .select('*');
+      
+      if (itemsError) {
+        console.error('❌ Error getting order items:', itemsError);
+        // Continue without items if there's an error
+      }
+      
+      // Group items by order_id
+      const itemsByOrderId = (itemsData || []).reduce((acc, item) => {
+        if (!acc[item.order_id]) {
+          acc[item.order_id] = [];
+        }
+        acc[item.order_id].push({
+          id: item.id,
+          orderId: item.order_id,
+          productId: item.product_id,
+          productName: item.product_name,
+          productCode: item.product_code || 0,
+          quantity: item.quantity,
+          unitPrice: item.unit_price || item.price,
+          price: item.price,
+          discount: item.discount || 0,
+          total: item.total
+        });
+        return acc;
+      }, {});
+      
+      // Transform orders and add items
+      const orders = ordersData.map(orderData => {
+        const orderWithItems = {
+          ...orderData,
+          items: itemsByOrderId[orderData.id] || []
+        };
+        return this.transformFromDB(orderWithItems);
+      });
+      
+      console.log(`✅ Loaded ${orders.length} orders with items`);
+      return orders;
+    } catch (error) {
+      console.error('❌ Error in getAll:', error);
+      throw error;
+    }
   }
 
   async generateNextCode(): Promise<number> {
@@ -170,7 +306,86 @@ class OrderSupabaseService extends SupabaseService<Order> {
       throw error;
     }
   }
+
+  // Override update method to handle items
+  async update(id: string, order: Partial<Order>): Promise<void> {
+    try {
+      console.log(`📝 Updating order ${id}`);
+      
+      // Extract items before transforming order data
+      const items = order.items;
+      
+      // Transform the order data for database (without items)
+      const transformedOrderData = this.transformToDB(order as Order);
+      
+      const dataWithTimestamp = {
+        ...transformedOrderData,
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('Data prepared for Supabase update:', dataWithTimestamp);
+      
+      // Update the order
+      const { error: orderError } = await this.supabase
+        .from('orders')
+        .update(dataWithTimestamp)
+        .eq('id', id);
+      
+      if (orderError) {
+        console.error(`❌ Supabase error updating order ${id}:`, orderError);
+        throw orderError;
+      }
+      
+      // Update items if provided
+      if (items && Array.isArray(items)) {
+        console.log(`📝 Updating ${items.length} items for order ${id}`);
+        
+        // Delete existing items
+        const { error: deleteError } = await this.supabase
+          .from('order_items')
+          .delete()
+          .eq('order_id', id);
+        
+        if (deleteError) {
+          console.error('Error deleting existing items:', deleteError);
+          throw deleteError;
+        }
+        
+        // Insert new items
+        if (items.length > 0) {
+          const orderItems = items.map(item => ({
+            order_id: id,
+            product_id: item.productId,
+            product_name: item.productName,
+            product_code: item.productCode,
+            quantity: item.quantity,
+            price: item.unitPrice || item.price,
+            unit_price: item.unitPrice || item.price,
+            total: item.total,
+            discount: item.discount || 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }));
+          
+          const { error: itemsError } = await this.supabase
+            .from('order_items')
+            .insert(orderItems);
+          
+          if (itemsError) {
+            console.error('Error updating order items:', itemsError);
+            throw itemsError;
+          }
+          
+          console.log('Order items updated successfully');
+        }
+      }
+      
+      console.log(`✅ Updated order ${id}`);
+    } catch (error) {
+      console.error(`❌ Critical error updating order ${id}:`, error);
+      throw error;
+    }
+  }
 }
 
 export const orderService = new OrderSupabaseService();
-
