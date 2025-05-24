@@ -17,18 +17,20 @@ import { useSalesReps } from '@/hooks/useSalesReps';
 import { EditSalesRepDialog } from '@/components/personnel/EditSalesRepDialog';
 import { DeleteSalesRepDialog } from '@/components/personnel/DeleteSalesRepDialog';
 import MobileSyncStatus from '@/components/personnel/MobileSyncStatus';
-import { Plus, ExternalLink, Trash2, Smartphone } from 'lucide-react';
+import { Plus, ExternalLink, Trash2, Smartphone, RefreshCw } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const SalesRepsPage = () => {
-  const { salesReps, addSalesRep, updateSalesRep, generateNextCode, isLoading, setSalesReps } = useSalesReps();
+  const { salesReps, addSalesRep, updateSalesRep, generateNextCode, isLoading, setSalesReps, refreshSalesReps } = useSalesReps();
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedSalesRep, setSelectedSalesRep] = useState<SalesRep | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const [newSalesRep, setNewSalesRep] = useState<Omit<SalesRep, 'id'>>({
     code: generateNextCode(),
     name: '',
@@ -50,20 +52,30 @@ const SalesRepsPage = () => {
   
   const handleCreate = async () => {
     try {
-      await addSalesRep(newSalesRep);
-      setOpenCreate(false);
-      setNewSalesRep(initialSalesRep); // Reset the form
-      toast({
-        title: "Representante de vendas criado",
-        description: "Representante de vendas criado com sucesso!",
-      })
+      console.log("=== CREATING SALES REP FROM UI ===");
+      console.log("New sales rep data:", newSalesRep);
+      
+      setIsCreating(true);
+      
+      const result = await addSalesRep(newSalesRep);
+      console.log("Create result:", result);
+      
+      if (result) {
+        setOpenCreate(false);
+        setNewSalesRep({ ...initialSalesRep, code: generateNextCode() }); // Reset with new code
+        console.log("✅ Sales rep created successfully from UI");
+      } else {
+        console.error("❌ Create operation returned empty result");
+      }
     } catch (error) {
-      console.error("Error creating sales rep:", error);
+      console.error("❌ Error in handleCreate:", error);
       toast({
-        title: "Erro ao criar representante de vendas",
-        description: "Houve um problema ao criar o representante de vendas.",
+        title: "❌ Erro ao criar representante de vendas",
+        description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
-      })
+      });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -74,17 +86,23 @@ const SalesRepsPage = () => {
       await updateSalesRep(selectedSalesRep.id, selectedSalesRep);
       setOpenEdit(false);
       toast({
-        title: "Representante de vendas atualizado",
+        title: "✅ Representante de vendas atualizado",
         description: "Representante de vendas atualizado com sucesso!",
       });
     } catch (error) {
       console.error("Error updating sales rep:", error);
       toast({
-        title: "Erro ao atualizar representante de vendas",
-        description: "Houve um problema ao atualizar o representante de vendas.",
+        title: "❌ Erro ao atualizar representante de vendas",
+        description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     }
+  };
+
+  const handleOpenCreate = () => {
+    const nextCode = generateNextCode();
+    setNewSalesRep({ ...initialSalesRep, code: nextCode });
+    setOpenCreate(true);
   };
 
   // Improved filtering with robust null checks
@@ -95,6 +113,16 @@ const SalesRepsPage = () => {
     
     return nameMatch || phoneMatch || codeMatch;
   });
+
+  if (isLoading) {
+    return (
+      <PageLayout title="Representantes de Vendas">
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout title="Representantes de Vendas">
@@ -129,19 +157,41 @@ const SalesRepsPage = () => {
               </svg>
             </div>
             
-            <Button onClick={() => setOpenCreate(true)} className="bg-sales-800 hover:bg-sales-700">
-              <Plus size={16} className="mr-2" />
-              Adicionar
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={refreshSalesReps} 
+                variant="outline"
+                disabled={isLoading}
+              >
+                <RefreshCw size={16} className="mr-2" />
+                Atualizar
+              </Button>
+              
+              <Button 
+                onClick={handleOpenCreate} 
+                className="bg-sales-800 hover:bg-sales-700"
+                disabled={isCreating}
+              >
+                {isCreating ? (
+                  <LoadingSpinner size="sm" className="mr-2" />
+                ) : (
+                  <Plus size={16} className="mr-2" />
+                )}
+                {isCreating ? 'Adicionando...' : 'Adicionar'}
+              </Button>
+            </div>
           </div>
           
           <Table>
-            <TableCaption>Lista de representantes de vendas.</TableCaption>
+            <TableCaption>
+              Total: {salesReps.length} representantes de vendas cadastrados.
+            </TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[100px]">Código</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Telefone</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -151,6 +201,13 @@ const SalesRepsPage = () => {
                   <TableCell className="font-medium">{salesRep.code || '—'}</TableCell>
                   <TableCell>{salesRep.name || '—'}</TableCell>
                   <TableCell>{salesRep.phone || '—'}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      salesRep.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {salesRep.active ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button 
                       variant="ghost"
@@ -188,8 +245,15 @@ const SalesRepsPage = () => {
               ))}
               {filteredSalesReps.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={5} className="text-center py-8">
                     {searchTerm ? "Nenhum representante encontrado para essa busca." : "Nenhum representante de vendas encontrado."}
+                    {!searchTerm && (
+                      <div className="mt-2">
+                        <Button onClick={handleOpenCreate} variant="outline">
+                          Adicionar primeiro vendedor
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               )}
