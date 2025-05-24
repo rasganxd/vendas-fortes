@@ -60,10 +60,18 @@ export const useOrders = () => {
   // Add a new order
   const addOrder = async (order: Omit<Order, 'id'>) => {
     try {
-      const id = await orderService.add(order);
+      // Generate order code if not provided
+      const orderCode = order.code || await generateNextCode();
+      
+      const orderWithCode = {
+        ...order,
+        code: orderCode
+      };
+      
+      const id = await orderService.addWithItems(orderWithCode);
       
       const newOrder: Order = {
-        ...order,
+        ...orderWithCode,
         id,
         createdAt: order.createdAt || new Date(),
         updatedAt: order.updatedAt || new Date()
@@ -73,7 +81,7 @@ export const useOrders = () => {
       
       toast({
         title: "Pedido adicionado",
-        description: "Pedido adicionado com sucesso!"
+        description: `Pedido #${orderCode} adicionado com sucesso!`
       });
       
       return id;

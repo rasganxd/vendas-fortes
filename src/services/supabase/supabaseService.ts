@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SupabaseEntity {
@@ -41,13 +40,13 @@ export class SupabaseService<T extends SupabaseEntity> {
     
     const transformed = { ...record } as any;
     
-    // Remove TypeScript-specific fields and convert dates
-    if (transformed.createdAt) {
+    // Convert dates and handle optional fields safely
+    if ('createdAt' in transformed && transformed.createdAt) {
       transformed.created_at = transformed.createdAt.toISOString();
       delete transformed.createdAt;
     }
     
-    if (transformed.updatedAt) {
+    if ('updatedAt' in transformed && transformed.updatedAt) {
       transformed.updated_at = transformed.updatedAt.toISOString();
       delete transformed.updatedAt;
     }

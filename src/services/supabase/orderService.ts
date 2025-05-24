@@ -7,6 +7,82 @@ class OrderSupabaseService extends SupabaseService<Order> {
     super('orders');
   }
 
+  // Override the transformFromDB method to map database fields to TypeScript interface
+  protected transformFromDB(dbRecord: any): Order {
+    if (!dbRecord) return dbRecord;
+    
+    const baseTransformed = super.transformFromDB(dbRecord);
+    
+    // Map database snake_case fields to TypeScript camelCase
+    return {
+      ...baseTransformed,
+      customerId: dbRecord.customer_id || '',
+      customerName: dbRecord.customer_name || '',
+      salesRepId: dbRecord.sales_rep_id || '',
+      salesRepName: dbRecord.sales_rep_name || '',
+      paymentStatus: dbRecord.payment_status || 'pending',
+      paymentMethod: dbRecord.payment_method || '',
+      paymentMethodId: dbRecord.payment_method_id || '',
+      paymentTableId: dbRecord.payment_table_id || '',
+      dueDate: dbRecord.due_date ? new Date(dbRecord.due_date) : new Date(),
+      deliveryDate: dbRecord.delivery_date ? new Date(dbRecord.delivery_date) : undefined,
+      deliveryAddress: dbRecord.delivery_address || '',
+      deliveryCity: dbRecord.delivery_city || '',
+      deliveryState: dbRecord.delivery_state || '',
+      deliveryZip: dbRecord.delivery_zip || '',
+      paymentTable: dbRecord.payment_table || '',
+      syncStatus: dbRecord.sync_status || 'synced'
+    };
+  }
+
+  // Override the transformToDB method to map TypeScript interface to database fields
+  protected transformToDB(record: Partial<Order>): any {
+    if (!record) return record;
+    
+    const baseTransformed = super.transformToDB(record);
+    
+    // Map TypeScript camelCase fields to database snake_case
+    const dbRecord = {
+      ...baseTransformed,
+      customer_id: record.customerId,
+      customer_name: record.customerName,
+      sales_rep_id: record.salesRepId,
+      sales_rep_name: record.salesRepName,
+      payment_status: record.paymentStatus || 'pending',
+      payment_method: record.paymentMethod,
+      payment_method_id: record.paymentMethodId,
+      payment_table_id: record.paymentTableId,
+      due_date: record.dueDate ? record.dueDate.toISOString() : null,
+      delivery_date: record.deliveryDate ? record.deliveryDate.toISOString() : null,
+      delivery_address: record.deliveryAddress,
+      delivery_city: record.deliveryCity,
+      delivery_state: record.deliveryState,
+      delivery_zip: record.deliveryZip,
+      payment_table: record.paymentTable,
+      sync_status: record.syncStatus || 'synced'
+    };
+
+    // Remove the camelCase fields that don't exist in the database
+    delete dbRecord.customerId;
+    delete dbRecord.customerName;
+    delete dbRecord.salesRepId;
+    delete dbRecord.salesRepName;
+    delete dbRecord.paymentStatus;
+    delete dbRecord.paymentMethod;
+    delete dbRecord.paymentMethodId;
+    delete dbRecord.paymentTableId;
+    delete dbRecord.dueDate;
+    delete dbRecord.deliveryDate;
+    delete dbRecord.deliveryAddress;
+    delete dbRecord.deliveryCity;
+    delete dbRecord.deliveryState;
+    delete dbRecord.deliveryZip;
+    delete dbRecord.paymentTable;
+    delete dbRecord.syncStatus;
+    
+    return dbRecord;
+  }
+
   async generateNextCode(): Promise<number> {
     try {
       const { data, error } = await this.supabase.rpc('get_next_order_code');
@@ -23,6 +99,72 @@ class OrderSupabaseService extends SupabaseService<Order> {
     } catch (error) {
       console.error('Error generating order code:', error);
       return 1;
+    }
+  }
+
+  async addWithItems(orderData: Omit<Order, 'id'>): Promise<string> {
+    try {
+      console.log('Adding order with items:', orderData);
+      
+      // Transform the order data for database
+      const transformedOrderData = this.transformToDB(orderData);
+      
+      // Add timestamps
+      const orderWithTimestamps = {
+        ...transformedOrderData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Insert the order
+      const { data: orderResult, error: orderError } = await this.supabase
+        .from('orders')
+        .insert(orderWithTimestamps)
+        .select('id')
+        .single();
+      
+      if (orderError) {
+        console.error('Error adding order:', orderError);
+        throw orderError;
+      }
+      
+      const orderId = orderResult.id;
+      console.log('Order created with ID:', orderId);
+      
+      // Insert order items if they exist
+      if (orderData.items && orderData.items.length > 0) {
+        const orderItems = orderData.items.map(item => ({
+          order_id: orderId,
+          product_id: item.productId,
+          product_name: item.productName,
+          product_code: item.productCode,
+          quantity: item.quantity,
+          price: item.unitPrice || item.price,
+          unit_price: item.unitPrice || item.price,
+          total: item.total,
+          discount: item.discount || 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+        
+        const { error: itemsError } = await this.supabase
+          .from('order_items')
+          .insert(orderItems);
+        
+        if (itemsError) {
+          console.error('Error adding order items:', itemsError);
+          // Try to clean up the order if items failed
+          await this.supabase.from('orders').delete().eq('id', orderId);
+          throw itemsError;
+        }
+        
+        console.log('Order items added successfully');
+      }
+      
+      return orderId;
+    } catch (error) {
+      console.error('Error in addWithItems:', error);
+      throw error;
     }
   }
 }

@@ -262,9 +262,12 @@ export type Database = {
           id: string
           order_id: string | null
           price: number
+          product_code: number | null
           product_id: string | null
+          product_name: string | null
           quantity: number
           total: number
+          unit_price: number | null
           updated_at: string
         }
         Insert: {
@@ -273,9 +276,12 @@ export type Database = {
           id?: string
           order_id?: string | null
           price: number
+          product_code?: number | null
           product_id?: string | null
+          product_name?: string | null
           quantity: number
           total: number
+          unit_price?: number | null
           updated_at?: string
         }
         Update: {
@@ -284,9 +290,12 @@ export type Database = {
           id?: string
           order_id?: string | null
           price?: number
+          product_code?: number | null
           product_id?: string | null
+          product_name?: string | null
           quantity?: number
           total?: number
+          unit_price?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -308,48 +317,87 @@ export type Database = {
       }
       orders: {
         Row: {
+          archived: boolean | null
           code: number
           created_at: string
           customer_id: string | null
+          customer_name: string | null
           date: string
+          delivery_address: string | null
+          delivery_city: string | null
           delivery_date: string | null
+          delivery_state: string | null
+          delivery_zip: string | null
+          discount: number | null
+          due_date: string | null
           id: string
           notes: string | null
           payment_method: string | null
+          payment_method_id: string | null
+          payment_status: string | null
           payment_table: string | null
+          payment_table_id: string | null
+          payments: Json | null
           sales_rep_id: string | null
+          sales_rep_name: string | null
           status: string
           sync_status: string | null
           total: number
           updated_at: string
         }
         Insert: {
+          archived?: boolean | null
           code: number
           created_at?: string
           customer_id?: string | null
+          customer_name?: string | null
           date?: string
+          delivery_address?: string | null
+          delivery_city?: string | null
           delivery_date?: string | null
+          delivery_state?: string | null
+          delivery_zip?: string | null
+          discount?: number | null
+          due_date?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
+          payment_method_id?: string | null
+          payment_status?: string | null
           payment_table?: string | null
+          payment_table_id?: string | null
+          payments?: Json | null
           sales_rep_id?: string | null
+          sales_rep_name?: string | null
           status?: string
           sync_status?: string | null
           total?: number
           updated_at?: string
         }
         Update: {
+          archived?: boolean | null
           code?: number
           created_at?: string
           customer_id?: string | null
+          customer_name?: string | null
           date?: string
+          delivery_address?: string | null
+          delivery_city?: string | null
           delivery_date?: string | null
+          delivery_state?: string | null
+          delivery_zip?: string | null
+          discount?: number | null
+          due_date?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
+          payment_method_id?: string | null
+          payment_status?: string | null
           payment_table?: string | null
+          payment_table_id?: string | null
+          payments?: Json | null
           sales_rep_id?: string | null
+          sales_rep_name?: string | null
           status?: string
           sync_status?: string | null
           total?: number
