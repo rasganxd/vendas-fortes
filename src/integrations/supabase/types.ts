@@ -46,6 +46,7 @@ export type Database = {
           category: string | null
           city: string | null
           code: number | null
+          company_name: string | null
           created_at: string | null
           credit_limit: number | null
           delivery_route_id: string | null
@@ -71,6 +72,7 @@ export type Database = {
           category?: string | null
           city?: string | null
           code?: number | null
+          company_name?: string | null
           created_at?: string | null
           credit_limit?: number | null
           delivery_route_id?: string | null
@@ -96,6 +98,7 @@ export type Database = {
           category?: string | null
           city?: string | null
           code?: number | null
+          company_name?: string | null
           created_at?: string | null
           credit_limit?: number | null
           delivery_route_id?: string | null
