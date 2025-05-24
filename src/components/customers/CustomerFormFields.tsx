@@ -177,13 +177,13 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({ form }) => {
         
         <FormField
           control={form.control}
-          name="sales_rep_id"
+          name="salesRepId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Vendedor</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
-                value={field.value}
+                value={field.value || ''}
               >
                 <FormControl>
                   <SelectTrigger>

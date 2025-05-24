@@ -30,7 +30,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       visitDays: [] as string[],
       visitFrequency: 'weekly',
       email: '',
-      sales_rep_id: '',
+      salesRepId: '',
       createdAt: new Date(),
       updatedAt: new Date(),
       visitSequence: 1

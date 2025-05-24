@@ -78,7 +78,7 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Vendedor</TableCell>
-                  <TableCell>{customer.sales_rep_name || '—'}</TableCell>
+                  <TableCell>{customer.salesRepName || '—'}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Criado em</TableCell>
