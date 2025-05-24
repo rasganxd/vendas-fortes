@@ -19,7 +19,7 @@ export class SupabaseService<T extends SupabaseEntity> {
     try {
       console.log(`Fetching all documents from ${this.tableName}`);
       const { data, error } = await supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -28,7 +28,7 @@ export class SupabaseService<T extends SupabaseEntity> {
         return [];
       }
       
-      return data || [];
+      return (data || []) as T[];
     } catch (error) {
       console.error(`Error retrieving ${this.tableName}:`, error);
       return [];
@@ -39,7 +39,7 @@ export class SupabaseService<T extends SupabaseEntity> {
     try {
       console.log(`Fetching document with ID: ${id} from ${this.tableName}`);
       const { data, error } = await supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .select('*')
         .eq('id', id)
         .single();
@@ -53,7 +53,7 @@ export class SupabaseService<T extends SupabaseEntity> {
         return null;
       }
       
-      return data;
+      return data as T;
     } catch (error) {
       console.error(`Error retrieving document ${id} from ${this.tableName}:`, error);
       return null;
@@ -71,7 +71,7 @@ export class SupabaseService<T extends SupabaseEntity> {
       };
       
       const { data, error } = await supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .insert(dataWithTimestamps)
         .select('id')
         .single();
@@ -99,7 +99,7 @@ export class SupabaseService<T extends SupabaseEntity> {
       };
       
       const { error } = await supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .update(dataWithTimestamp)
         .eq('id', id);
       
@@ -120,7 +120,7 @@ export class SupabaseService<T extends SupabaseEntity> {
       console.log(`Deleting document ${id} from ${this.tableName}`);
       
       const { error } = await supabase
-        .from(this.tableName)
+        .from(this.tableName as any)
         .delete()
         .eq('id', id);
       

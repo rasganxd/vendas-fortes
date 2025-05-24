@@ -1,166 +1,143 @@
-
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
-import { useCustomers } from '@/hooks/useCustomers';
-import { Customer } from '@/types';
-
-// Refactored components
-import CustomerSearchBar from '@/components/customers/CustomerSearchBar';
-import CustomersList from '@/components/customers/CustomersList';
-import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
+import { Button } from '@/components/ui/button';
+import { Plus, Search, Download, Upload } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import CustomersTable from '@/components/customers/CustomersTable';
 import NewCustomerDialog from '@/components/customers/NewCustomerDialog';
-import CustomerDetailsDialog from '@/components/customers/CustomerDetailsDialog';
+import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
+import { Customer } from '@/types';
+import { ProductsActionButtons } from '@/components/products/ProductsActionButtons';
+import { useCustomers } from '@/hooks/useCustomers';
 
-const Customers = () => {
-  // Use the full hook with all the operations it provides
-  const { customers, addCustomer, updateCustomer, deleteCustomer, generateNextCustomerCode: generateNextCode } = useCustomers();
+export default function Customers() {
+  const { customers, isLoadingCustomers } = useAppContext();
+  const { generateNextCustomerCode } = useCustomers();
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingCustomer, setEditingCustomer] = useState<null | Customer>(null);
-  const [selectedCustomer, setSelectedCustomer] = useState<null | Customer>(null);
-  const [customerToDelete, setCustomerToDelete] = useState<null | Customer>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('name');
-  
-  const handleEditCustomer = (customer: Customer) => {
-    setEditingCustomer(customer);
-    setIsDialogOpen(true);
-  };
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [newCustomerCode, setNewCustomerCode] = useState<number>(1);
 
-  const handleViewCustomerDetails = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsDetailsDialogOpen(true);
-  };
+  // Load new customer code on component mount
+  useEffect(() => {
+    const loadCustomerCode = async () => {
+      try {
+        const nextCode = await generateNextCustomerCode();
+        setNewCustomerCode(nextCode);
+      } catch (error) {
+        console.error('Error generating customer code:', error);
+        // Fallback to current max + 1
+        const maxCode = customers.length > 0 ? Math.max(...customers.map(c => c.code || 0)) : 0;
+        setNewCustomerCode(maxCode + 1);
+      }
+    };
+    
+    loadCustomerCode();
+  }, [customers, generateNextCustomerCode]);
 
-  const handleDeleteCustomer = (id: string, customer: Customer) => {
-    setCustomerToDelete(customer);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const onDeleteCustomer = async (id: string) => {
-    await deleteCustomer(id);
-  };
-
-  const onSubmit = (data: any) => {
-    if (editingCustomer) {
-      updateCustomer(editingCustomer.id, {
-        ...data,
-        createdAt: editingCustomer.createdAt
-      });
-      setIsDialogOpen(false);
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = customers.filter(customer =>
+        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.phone.includes(searchTerm) ||
+        customer.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.code?.toString().includes(searchTerm)
+      );
+      setFilteredCustomers(filtered);
+    } else {
+      setFilteredCustomers(customers);
     }
+  }, [customers, searchTerm]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
-  const onAddCustomer = async (data: any) => {
-    await addCustomer({
-      ...data,
-      createdAt: new Date(),
-    });
-    setIsNewCustomerDialogOpen(false);
-  };
-
-  const handleNewCustomer = () => {
+  const handleNewCustomer = async () => {
+    const nextCode = await generateNextCustomerCode();
+    setNewCustomerCode(nextCode);
     setIsNewCustomerDialogOpen(true);
   };
 
-  // Filter customers based on search term - adding null checks to prevent toLowerCase error
-  const filteredCustomers = customers.filter(customer => {
-    // Only filter if searchTerm is not empty
-    if (!searchTerm) return true;
-    
-    // Add null checks for each property before calling toLowerCase()
-    return (
-      (customer.name && customer.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (customer.document && customer.document.includes(searchTerm)) ||
-      (customer.phone && customer.phone.includes(searchTerm)) ||
-      (customer.code !== undefined && customer.code !== null && customer.code.toString().includes(searchTerm))
-    );
-  });
+  const handleEditCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsEditDialogOpen(true);
+  };
 
-  // Sort customers based on selected sort option
-  const sortedCustomers = [...filteredCustomers].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return (a.name || '').localeCompare(b.name || '');
-      case 'code':
-        return (a.code || 0) - (b.code || 0);
-      case 'visitFrequency':
-        const frequencyOrder = {
-          'weekly': 1,
-          'biweekly': 2,
-          'monthly': 3,
-          'quarterly': 4,
-          undefined: 5
-        };
-        return (frequencyOrder[a.visitFrequency as keyof typeof frequencyOrder] || 5) - 
-               (frequencyOrder[b.visitFrequency as keyof typeof frequencyOrder] || 5);
-      case 'salesRep':
-        return (a.sales_rep_name || '').localeCompare(b.sales_rep_name || '');
-      default:
-        return (a.name || '').localeCompare(b.name || '');
-    }
-  });
+  const handleDeleteCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleCloseDialogs = () => {
+    setIsNewCustomerDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setIsDeleteDialogOpen(false);
+    setSelectedCustomer(null);
+  };
 
   return (
-    <PageLayout 
-      title="Clientes" 
-      subtitle="Gerencie seus clientes e suas informações"
-    >
-      <CustomerSearchBar 
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        onAddCustomer={handleNewCustomer}
-      />
+    <PageLayout title="Clientes">
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-semibold">Gerenciar Clientes</h2>
+          <p className="text-gray-500">
+            Total: <Badge variant="outline">{customers.length}</Badge> clientes
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <ProductsActionButtons />
+          <Button onClick={handleNewCustomer} className="bg-sales-800 hover:bg-sales-700">
+            <Plus size={16} className="mr-2" /> Novo Cliente
+          </Button>
+        </div>
+      </div>
 
-      <CustomersList 
-        customers={sortedCustomers}
-        onView={handleViewCustomerDetails}
+      <div className="mb-4 flex items-center space-x-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar clientes..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
+      <CustomersTable
+        customers={filteredCustomers}
+        isLoading={isLoadingCustomers}
         onEdit={handleEditCustomer}
         onDelete={handleDeleteCustomer}
       />
 
-      {/* Dialogs */}
-      <EditCustomerDialog 
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        customer={editingCustomer}
-        onSubmit={onSubmit}
-      />
-
-      <NewCustomerDialog 
+      <NewCustomerDialog
         open={isNewCustomerDialogOpen}
         onOpenChange={setIsNewCustomerDialogOpen}
-        initialCode={generateNextCode()}
-        onSubmit={onAddCustomer}
+        customerCode={newCustomerCode}
       />
 
-      <CustomerDetailsDialog 
-        open={isDetailsDialogOpen}
-        onOpenChange={setIsDetailsDialogOpen}
+      <EditCustomerDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
         customer={selectedCustomer}
-        onEdit={() => {
-          setIsDetailsDialogOpen(false);
-          if (selectedCustomer) handleEditCustomer(selectedCustomer);
-        }}
-        onDelete={() => {
-          setIsDetailsDialogOpen(false);
-          if (selectedCustomer) handleDeleteCustomer(selectedCustomer.id, selectedCustomer);
-        }}
+        onClose={handleCloseDialogs}
       />
 
       <DeleteCustomerDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        customer={customerToDelete}
-        onDelete={onDeleteCustomer}
+        customer={selectedCustomer}
+        onClose={handleCloseDialogs}
       />
     </PageLayout>
   );
-};
-
-export default Customers;
+}

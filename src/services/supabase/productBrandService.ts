@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ProductBrand } from '@/types';
 
@@ -20,6 +19,7 @@ export const productBrandService = {
         id: item.id,
         name: item.name,
         description: item.description || '',
+        notes: '', // Add default notes field
         createdAt: new Date(item.created_at),
         updatedAt: new Date(item.updated_at)
       })) || [];
@@ -50,6 +50,7 @@ export const productBrandService = {
         id: data.id,
         name: data.name,
         description: data.description || '',
+        notes: '', // Add default notes field
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };
@@ -77,6 +78,7 @@ export const productBrandService = {
         id: data.id,
         name: data.name,
         description: data.description || '',
+        notes: '', // Add default notes field
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };

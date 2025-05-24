@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useLoads } from '@/hooks/useLoads';
@@ -34,9 +34,20 @@ export default function Loads() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [loadOrders, setLoadOrders] = useState<Order[]>([]);
 
-  const handleViewLoad = (load: Load) => {
+  const handleViewLoad = async (load: Load) => {
     setSelectedLoad(load);
+    
+    // Load orders for this load
+    try {
+      const orders = await getOrdersFromLoad(load.id);
+      setLoadOrders(orders);
+    } catch (error) {
+      console.error('Error loading orders for load:', error);
+      setLoadOrders([]);
+    }
+    
     setIsViewDialogOpen(true);
   };
 
@@ -53,8 +64,18 @@ export default function Loads() {
     }
   };
 
-  const handlePrintLoad = (load: Load) => {
+  const handlePrintLoad = async (load: Load) => {
     setSelectedLoad(load);
+    
+    // Load orders for printing
+    try {
+      const orders = await getOrdersFromLoad(load.id);
+      setLoadOrders(orders);
+    } catch (error) {
+      console.error('Error loading orders for print:', error);
+      setLoadOrders([]);
+    }
+    
     setIsPrintDialogOpen(true);
   };
 
@@ -235,7 +256,7 @@ export default function Loads() {
               )}
             </div>
             <div className="p-3">
-              {selectedLoad && renderSimplifiedOrdersList(getOrdersFromLoad(selectedLoad))}
+              {renderSimplifiedOrdersList(loadOrders)}
             </div>
           </div>
           
@@ -279,7 +300,7 @@ export default function Loads() {
           
           {selectedLoad && (
             <LoadPickingList 
-              orders={getOrdersFromLoad(selectedLoad)} 
+              orders={loadOrders} 
               onClose={() => setIsPrintDialogOpen(false)} 
               loadName={selectedLoad.name}
             />

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ProductGroup } from '@/types';
 
@@ -20,6 +19,7 @@ export const productGroupService = {
         id: item.id,
         name: item.name,
         description: item.description || '',
+        notes: '', // Add default notes field
         createdAt: new Date(item.created_at),
         updatedAt: new Date(item.updated_at)
       })) || [];
@@ -49,6 +49,7 @@ export const productGroupService = {
         id: data.id,
         name: data.name,
         description: data.description || '',
+        notes: '', // Add default notes field
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };
@@ -75,6 +76,7 @@ export const productGroupService = {
         id: data.id,
         name: data.name,
         description: data.description || '',
+        notes: '', // Add default notes field
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };
@@ -83,6 +85,7 @@ export const productGroupService = {
       return null;
     }
   },
+  
   
   async add(group: Omit<ProductGroup, 'id'>): Promise<string> {
     try {

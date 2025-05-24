@@ -62,7 +62,10 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     return logs.filter(log => {
       // Skip documents that are marked as temporary
       if (!log || typeof log !== 'object') return false;
-      if (log._temp === true) return false;
+      
+      // Check for temporary marker (using type assertion for dynamic property)
+      const tempLog = log as any;
+      if (tempLog._temp === true) return false;
       
       // Keep only documents with valid properties
       return log.id && log.event_type && log.created_at;
@@ -89,9 +92,8 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       setSyncLogs(filteredData);
       
       if (filteredData && filteredData.length > 0) {
-        const dateObj = filteredData[0].created_at instanceof Date 
-          ? filteredData[0].created_at 
-          : new Date(filteredData[0].created_at);
+        const createdAt = filteredData[0].created_at;
+        const dateObj = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
         
         setLastSynced(dateObj.toLocaleString());
         setStatusMessage("Dados carregados com sucesso.");
@@ -292,9 +294,9 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                     </TableCell>
                     <TableCell>{log.device_id || '—'}</TableCell>
                     <TableCell>
-                      {log.created_at instanceof Date 
-                        ? log.created_at.toLocaleString() 
-                        : new Date(log.created_at).toLocaleString()}
+                      {typeof log.created_at === 'string' 
+                        ? new Date(log.created_at).toLocaleString() 
+                        : log.created_at.toLocaleString()}
                     </TableCell>
                   </TableRow>
                 ))}

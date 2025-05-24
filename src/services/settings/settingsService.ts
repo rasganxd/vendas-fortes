@@ -1,54 +1,60 @@
 
-import { AppSettings } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-
-// Supabase table name
-const SETTINGS_TABLE = 'app_settings';
+import { AppSettings } from '@/types';
 
 /**
  * Fetches settings from Supabase
  * @returns Promise<AppSettings | null>
  */
-export const fetchSettingsFromFirebase = async (): Promise<AppSettings | null> => {
+export const fetchSettingsFromSupabase = async (): Promise<AppSettings | null> => {
   try {
     console.log('Fetching settings from Supabase...');
-    
     const { data, error } = await supabase
-      .from(SETTINGS_TABLE)
+      .from('app_settings')
       .select('*')
       .single();
-
+    
     if (error) {
       if (error.code === 'PGRST116') {
-        // No rows found
-        console.log('No settings found');
+        console.log('No settings found, will create default');
         return null;
       }
-      throw error;
+      console.error('Error fetching app settings:', error);
+      return null;
     }
-
+    
     if (data) {
       console.log('Settings found:', data);
       
+      // Parse the company JSONB field safely
+      let companyData;
+      try {
+        companyData = typeof data.company === 'string' 
+          ? JSON.parse(data.company) 
+          : data.company || {};
+      } catch (e) {
+        console.warn('Error parsing company data, using defaults:', e);
+        companyData = {};
+      }
+      
+      // Convert to AppSettings format
       return {
         id: data.id,
-        companyName: data.company_name || '',
-        companyLogo: data.company_logo || '',
-        company: data.company || {
-          name: '',
-          address: '',
-          phone: '',
-          email: '',
-          document: '',
-          footer: ''
+        company: {
+          name: companyData.name || data.company_name || 'Minha Empresa',
+          address: companyData.address || '',
+          phone: companyData.phone || '',
+          email: companyData.email || '',
+          document: companyData.document || '',
+          footer: companyData.footer || ''
         },
-        createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-        updatedAt: data.updated_at ? new Date(data.updated_at) : new Date()
-      } as AppSettings;
-    } else {
-      console.log('No settings found');
-      return null;
+        theme: {
+          primaryColor: data.primary_color || '#6B7280'
+        }
+      };
     }
+    
+    return null;
   } catch (error) {
     console.error('Error fetching app settings:', error);
     return null;
@@ -62,69 +68,59 @@ export const fetchSettingsFromFirebase = async (): Promise<AppSettings | null> =
 export const createDefaultSettings = async (): Promise<AppSettings> => {
   try {
     console.log('Creating default settings...');
+    const defaultCompany = {
+      name: 'Minha Empresa',
+      address: '',
+      phone: '',
+      email: '',
+      document: '',
+      footer: ''
+    };
     
     const defaultSettings = {
       company_name: 'Minha Empresa',
       company_logo: '',
-      company: {
-        name: 'Minha Empresa',
-        address: '',
-        phone: '',
-        email: '',
-        document: '',
-        footer: '',
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      company: defaultCompany,
+      primary_color: '#6B7280'
     };
     
     // Save to Supabase
     const { data, error } = await supabase
-      .from(SETTINGS_TABLE)
-      .insert([defaultSettings])
+      .from('app_settings')
+      .insert(defaultSettings)
       .select()
       .single();
     
     if (error) {
+      console.error('Error creating default settings:', error);
       throw error;
     }
     
-    const result: AppSettings = {
-      id: data.id,
-      companyName: data.company_name || 'Minha Empresa',
-      companyLogo: data.company_logo || '',
-      company: data.company || {
-        name: 'Minha Empresa',
-        address: '',
-        phone: '',
-        email: '',
-        document: '',
-        footer: '',
-      },
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at)
-    };
+    console.log('Default settings created:', data);
     
-    console.log('Default settings created:', result);
-    return result;
+    return {
+      id: data.id,
+      company: defaultCompany,
+      theme: {
+        primaryColor: '#6B7280'
+      }
+    };
   } catch (error) {
     console.error('Error creating default settings:', error);
-    
     // Return the default settings anyway so the app can continue
     return {
       id: 'local-fallback',
-      companyName: 'Minha Empresa',
-      companyLogo: '',
       company: {
         name: 'Minha Empresa',
         address: '',
         phone: '',
         email: '',
         document: '',
-        footer: '',
+        footer: ''
       },
-      createdAt: new Date(),
-      updatedAt: new Date()
+      theme: {
+        primaryColor: '#6B7280'
+      }
     };
   }
 };
@@ -135,43 +131,37 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
  * @param newSettings - Partial settings to update
  * @returns Promise<boolean>
  */
-export const updateSettingsInFirebase = async (
-  currentSettings: AppSettings | null,
+export const updateSettingsInSupabase = async (
+  currentSettings: AppSettings | null, 
   newSettings: Partial<AppSettings>
 ): Promise<boolean> => {
   try {
-    if (!currentSettings?.id) {
+    if (!currentSettings?.id || currentSettings.id === 'local-fallback') {
       // If no current settings, create default ones first
       await createDefaultSettings();
     }
     
-    // Prepare update data with timestamp
-    const updateData: any = {
-      updated_at: new Date().toISOString()
-    };
+    // Prepare update data
+    const updateData: any = {};
     
-    // Map fields from AppSettings to database schema
-    if (newSettings.companyName !== undefined) {
-      updateData.company_name = newSettings.companyName;
-    }
-    if (newSettings.companyLogo !== undefined) {
-      updateData.company_logo = newSettings.companyLogo;
-    }
-    if (newSettings.company !== undefined) {
+    if (newSettings.company) {
       updateData.company = newSettings.company;
+      updateData.company_name = newSettings.company.name;
     }
-    if (newSettings.primaryColor !== undefined) {
-      updateData.primary_color = newSettings.primaryColor;
+    
+    if (newSettings.theme?.primaryColor) {
+      updateData.primary_color = newSettings.theme.primaryColor;
     }
     
     // Update in Supabase
     const { error } = await supabase
-      .from(SETTINGS_TABLE)
+      .from('app_settings')
       .update(updateData)
-      .eq('id', currentSettings?.id || 'default');
+      .eq('id', currentSettings?.id);
     
     if (error) {
-      throw error;
+      console.error('Error updating settings:', error);
+      return false;
     }
     
     console.log('Settings updated successfully');
