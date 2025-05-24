@@ -39,7 +39,7 @@ export class SupabaseService<T extends SupabaseEntity> {
   protected transformToDB(record: Partial<T>): any {
     if (!record) return record;
     
-    const transformed = { ...record };
+    const transformed = { ...record } as any;
     
     // Remove TypeScript-specific fields and convert dates
     if (transformed.createdAt) {
