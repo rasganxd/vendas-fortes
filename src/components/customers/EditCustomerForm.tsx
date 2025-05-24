@@ -26,14 +26,18 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
     // Ensure visitDays is an array
     visitDays: Array.isArray(customer.visitDays) ? customer.visitDays : (customer.visitDays ? [customer.visitDays] : []),
     // Ensure salesRepId is properly set (use camelCase)
-    salesRepId: customer.salesRepId || ''
+    salesRepId: customer.salesRepId || '',
+    // Ensure companyName is set
+    companyName: customer.companyName || ''
   };
+
+  console.log("📝 Editing customer with standardized data:", standardizedCustomer);
 
   const form = useForm<CustomerFormValues>({
     defaultValues: {
       code: standardizedCustomer.code || 0,
       name: standardizedCustomer.name,
-      companyName: standardizedCustomer.companyName || '',
+      companyName: standardizedCustomer.companyName,
       document: standardizedCustomer.document || '',
       phone: standardizedCustomer.phone,
       address: standardizedCustomer.address || '',
@@ -46,7 +50,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       visitFrequency: standardizedCustomer.visitFrequency || 'weekly',
       visitSequence: standardizedCustomer.visitSequence || 1,
       email: standardizedCustomer.email || '',
-      salesRepId: standardizedCustomer.salesRepId, // Use camelCase
+      salesRepId: standardizedCustomer.salesRepId,
       createdAt: standardizedCustomer.createdAt,
       updatedAt: standardizedCustomer.updatedAt || new Date()
     }
@@ -54,20 +58,25 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
 
   const handleSubmit = (data: CustomerFormValues) => {
     // Ensure data consistency before submitting
-    data.zipCode = data.zip;
+    const processedData = {
+      ...data,
+      zipCode: data.zip, // Keep backward compatibility
+      
+      // Ensure code is a number
+      code: typeof data.code === 'string' ? parseInt(data.code, 10) : data.code,
+      
+      // Ensure visitDays is an array
+      visitDays: Array.isArray(data.visitDays) ? data.visitDays : (data.visitDays ? [data.visitDays as unknown as string] : []),
+      
+      // Ensure visitSequence is a number
+      visitSequence: typeof data.visitSequence === 'string' ? parseInt(data.visitSequence, 10) : data.visitSequence,
+      
+      // Set updatedAt
+      updatedAt: new Date()
+    };
     
-    // Ensure code is a number
-    if (typeof data.code === 'string') {
-      data.code = parseInt(data.code, 10);
-    }
-    
-    // Ensure visitDays is an array
-    if (!Array.isArray(data.visitDays)) {
-      data.visitDays = data.visitDays ? [data.visitDays as unknown as string] : [];
-    }
-    
-    console.log("📝 Submitting customer edit with data:", data);
-    onSubmit(data);
+    console.log("📝 Submitting customer edit with processed data:", processedData);
+    onSubmit(processedData);
   };
 
   return (

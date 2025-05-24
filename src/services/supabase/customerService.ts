@@ -60,6 +60,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     delete dbRecord.zip;
     delete dbRecord.syncPending;
     
+    console.log("📝 Transform to DB result:", dbRecord);
     return dbRecord;
   }
 
@@ -126,6 +127,44 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       return insertedId;
     } catch (error) {
       console.error(`❌ Critical error adding to ${this.tableName}:`, error);
+      throw error;
+    }
+  }
+
+  async update(id: string, entity: Partial<Customer>): Promise<void> {
+    try {
+      console.log(`📝 Updating customer ${id} in ${this.tableName}`);
+      console.log("Entity data (before transformation):", entity);
+      
+      // Use the transformToDB method to properly map fields
+      const transformedData = this.transformToDB(entity as Customer);
+      
+      const dataWithTimestamp = {
+        ...transformedData,
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log("Data prepared for Supabase update:", dataWithTimestamp);
+      
+      const { error } = await this.supabase
+        .from(this.tableName as any)
+        .update(dataWithTimestamp)
+        .eq('id', id);
+      
+      if (error) {
+        console.error(`❌ Supabase error updating ${id} in ${this.tableName}:`, error);
+        console.error("Error details:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+      
+      console.log(`✅ Updated customer ${id} in ${this.tableName}`);
+    } catch (error) {
+      console.error(`❌ Critical error updating ${id} in ${this.tableName}:`, error);
       throw error;
     }
   }
