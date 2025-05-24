@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAppContext } from '@/hooks/useAppContext';
+import { useAppData } from '@/context/providers/AppDataProvider';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Plus, Search } from 'lucide-react';
@@ -12,11 +12,9 @@ import NewCustomerDialog from '@/components/customers/NewCustomerDialog';
 import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
 import { Customer } from '@/types';
-import { useCustomers } from '@/hooks/useCustomers';
 
 export default function Customers() {
-  const { customers } = useAppContext();
-  const { generateNextCustomerCode, updateCustomer, deleteCustomer } = useCustomers();
+  const { customers, updateCustomer, deleteCustomer, generateNextCustomerCode } = useAppData();
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);

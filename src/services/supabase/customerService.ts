@@ -37,14 +37,30 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       console.log(`📝 Adding customer to ${this.tableName}`);
       console.log("Entity data (before transformation):", entity);
       
-      // Use the dataTransformers utility to prepare data for Supabase
-      const supabaseData = prepareForSupabase(entity);
+      // Clean and prepare data
+      const cleanData = {
+        code: entity.code,
+        name: entity.name?.trim() || '',
+        phone: entity.phone || '',
+        email: entity.email || '',
+        address: entity.address || '',
+        city: entity.city || '',
+        state: entity.state || '',
+        zip_code: entity.zip || entity.zipCode || '',
+        document: entity.document || '',
+        notes: entity.notes || '',
+        visit_days: entity.visitDays || [],
+        visit_frequency: entity.visitFrequency || '',
+        visit_sequence: entity.visitSequence || 0,
+        sales_rep_id: entity.sales_rep_id || null,
+        active: true
+      };
       
-      console.log("Data prepared for Supabase:", supabaseData);
+      console.log("Data prepared for Supabase:", cleanData);
       
       const { data, error } = await this.supabase
         .from(this.tableName as any)
-        .insert(supabaseData)
+        .insert(cleanData)
         .select('id')
         .single();
       

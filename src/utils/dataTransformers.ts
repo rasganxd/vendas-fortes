@@ -45,7 +45,6 @@ export function toSnakeCase<T extends object>(obj: T): Record<string, unknown> {
   }
 
   return Object.keys(obj).reduce((result, key) => {
-    // Correctly convert camelCase to snake_case (e.g. createdAt -> created_at)
     const snakeKey = key.replace(/([A-Z])/g, letter => `_${letter.toLowerCase()}`);
     const value = obj[key as keyof T];
     const snakeValue = value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -64,7 +63,6 @@ export function toSnakeCase<T extends object>(obj: T): Record<string, unknown> {
  * Converts dates to ISO strings and camelCase to snake_case
  */
 export const prepareForSupabase = (data: any): Record<string, unknown> => {
-  // First, make a shallow copy to avoid modifying the original data
   const cleanData = { ...data };
   
   // Remove undefined values and problematic fields
@@ -76,26 +74,53 @@ export const prepareForSupabase = (data: any): Record<string, unknown> => {
   
   // Process the data: Convert Date objects to ISO strings
   const processedData = Object.entries(cleanData).reduce((acc, [key, value]) => {
-    // Convert Date objects to ISO strings
     if (value instanceof Date) {
       acc[key] = value.toISOString();
-    } 
-    // Keep other values as is
-    else {
+    } else {
       acc[key] = value;
     }
     return acc;
   }, {} as Record<string, any>);
   
-  // Now convert all keys to snake_case
+  // Convert all keys to snake_case
   const snakeCaseData = toSnakeCase(processedData);
   
-  // Debug logs
   console.log("Original data:", data);
   console.log("Processed data (before snake_case conversion):", processedData);
   console.log("Final snake_case data:", snakeCaseData);
   
   return snakeCaseData;
+};
+
+/**
+ * Transform a Supabase customer record to our internal Customer type
+ */
+export const transformCustomerData = (data: any) => {
+  if (!data) return null;
+  
+  const transformed = toCamelCase(data);
+  
+  return {
+    id: data.id || '',
+    code: data.code || 0,
+    name: transformed.name || '',
+    phone: transformed.phone || '',
+    email: transformed.email || '',
+    address: transformed.address || '',
+    city: transformed.city || '',
+    state: transformed.state || '',
+    zip: transformed.zipCode || data.zip_code || '',
+    zipCode: data.zip_code || transformed.zipCode || '',
+    document: transformed.document || '',
+    notes: transformed.notes || '',
+    visitDays: transformed.visitDays || data.visit_days || [],
+    visitFrequency: transformed.visitFrequency || data.visit_frequency || '',
+    visitSequence: transformed.visitSequence || data.visit_sequence || 0,
+    sales_rep_id: data.sales_rep_id || transformed.salesRepId || undefined,
+    sales_rep_name: data.sales_rep_name || transformed.salesRepName || undefined,
+    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
+    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
+  };
 };
 
 /**
@@ -117,38 +142,6 @@ export const transformProductCategoryData = (data: any) => {
   const transformed = toCamelCase(data);
   return {
     ...transformed,
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-  };
-};
-
-/**
- * Transform a Supabase customer record to our internal Customer type
- */
-export const transformCustomerData = (data: any) => {
-  if (!data) return null;
-  
-  const transformed = toCamelCase(data);
-  
-  // Ensure we return a complete Customer object with required fields
-  return {
-    id: data.id || '',
-    code: data.code || 0,
-    name: transformed.name || '',
-    phone: transformed.phone || '',
-    email: transformed.email || '',
-    address: transformed.address || '',
-    city: transformed.city || '',
-    state: transformed.state || '',
-    zip: transformed.zip || transformed.zipCode || '',
-    zipCode: transformed.zipCode || transformed.zip || '', // For backward compatibility
-    document: transformed.document || '',
-    notes: transformed.notes || '',
-    visitDays: transformed.visitDays || [],
-    visitFrequency: transformed.visitFrequency || '',
-    visitSequence: transformed.visitSequence || 0,
-    sales_rep_id: transformed.salesRepId || data.sales_rep_id || undefined,
-    sales_rep_name: transformed.salesRepName || data.sales_rep_name || undefined,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
   };

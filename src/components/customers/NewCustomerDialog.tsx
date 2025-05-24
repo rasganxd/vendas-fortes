@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import NewCustomerForm from './NewCustomerForm';
 import { Customer } from '@/types/customer';
-import { useCustomers } from '@/hooks/useCustomers';
+import { useAppData } from '@/context/providers/AppDataProvider';
 
 interface NewCustomerDialogProps {
   open: boolean;
@@ -18,7 +18,7 @@ const NewCustomerDialog: React.FC<NewCustomerDialogProps> = ({
   initialCode,
   onSubmit
 }) => {
-  const { addCustomer } = useCustomers();
+  const { addCustomer } = useAppData();
 
   const handleSubmit = async (data: Omit<Customer, 'id'>) => {
     try {
