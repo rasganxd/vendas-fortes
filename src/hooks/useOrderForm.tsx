@@ -14,8 +14,10 @@ export function useOrderForm() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [originalOrder, setOriginalOrder] = useState<Order | null>(null);
+  const [isProcessingItem, setIsProcessingItem] = useState(false);
 
   const resetForm = () => {
+    console.log("🔄 Resetting form completely");
     setSelectedCustomer(null);
     setSelectedSalesRep(null);
     setOrderItems([]);
@@ -25,6 +27,7 @@ export function useOrderForm() {
     setCustomerInputValue('');
     setSalesRepInputValue('');
     setOriginalOrder(null);
+    setIsProcessingItem(false);
   };
 
   const calculateTotal = () => {
@@ -32,12 +35,19 @@ export function useOrderForm() {
   };
 
   const handleAddItem = (product: any, quantity: number, price: number) => {
-    console.log("🛒 === ADDING ITEM TO ORDER ===");
+    console.log("🛒 === STARTING ADD ITEM PROCESS ===");
     console.log("📦 Product:", product);
     console.log("🔢 Quantity:", quantity);
     console.log("💰 Price:", price);
     console.log("🎯 Edit Mode:", isEditMode);
+    console.log("🔄 Currently processing:", isProcessingItem);
     
+    // Prevent multiple simultaneous operations
+    if (isProcessingItem) {
+      console.log("⚠️ Already processing an item operation, skipping");
+      return;
+    }
+
     if (!product || !product.id) {
       console.error("❌ Invalid product provided:", product);
       toast({
@@ -69,8 +79,11 @@ export function useOrderForm() {
     }
     
     try {
+      setIsProcessingItem(true);
+      
       setOrderItems(currentItems => {
-        console.log("📋 Current items before adding:", currentItems);
+        console.log("📋 Current items before adding:", currentItems.length);
+        console.log("📋 Current items details:", currentItems.map(item => ({ id: item.id, productId: item.productId, name: item.productName, qty: item.quantity })));
         
         const existingItemIndex = currentItems.findIndex(item => item.productId === product.id);
         
@@ -90,6 +103,7 @@ export function useOrderForm() {
           };
           
           console.log("✅ Updated existing item. New quantity:", newQuantity);
+          console.log("📋 Updated items list:", updatedItems.length);
           
           toast({
             title: "Item atualizado",
@@ -98,8 +112,9 @@ export function useOrderForm() {
           
           return updatedItems;
         } else {
+          const newItemId = uuidv4();
           const newItem: OrderItem = {
-            id: uuidv4(),
+            id: newItemId,
             productId: product.id,
             productName: product.name,
             productCode: product.code || 0,
@@ -110,7 +125,8 @@ export function useOrderForm() {
             total: price * quantity
           };
           
-          console.log("➕ Adding new item:", newItem);
+          console.log("➕ Adding new item with ID:", newItemId);
+          console.log("➕ New item details:", newItem);
           const updatedItems = [...currentItems, newItem];
           console.log("✅ Added new item. Total items:", updatedItems.length);
           
@@ -129,38 +145,81 @@ export function useOrderForm() {
         description: "Ocorreu um erro ao adicionar o item ao pedido",
         variant: "destructive"
       });
+    } finally {
+      // Reset processing flag after a short delay
+      setTimeout(() => {
+        setIsProcessingItem(false);
+        console.log("🔄 Processing flag reset");
+      }, 500);
     }
   };
 
   const handleRemoveItem = (productId: string) => {
-    console.log("🗑️ === REMOVING ITEM FROM ORDER ===");
+    console.log("🗑️ === STARTING REMOVE ITEM PROCESS ===");
     console.log("🎯 Product ID to remove:", productId);
     console.log("🎯 Edit Mode:", isEditMode);
+    console.log("🔄 Currently processing:", isProcessingItem);
     
-    setOrderItems(currentItems => {
-      console.log("📋 Current items before removal:", currentItems);
-      
-      const itemToRemove = currentItems.find(item => item.productId === productId);
-      if (!itemToRemove) {
-        console.warn("⚠️ Item not found for removal:", productId);
-        toast({
-          title: "Erro",
-          description: "Item não encontrado para remoção",
-          variant: "destructive"
-        });
-        return currentItems;
-      }
-      
-      const updatedItems = currentItems.filter(item => item.productId !== productId);
-      console.log("✅ Item removed successfully. Remaining items:", updatedItems.length);
-      
+    // Prevent multiple simultaneous operations
+    if (isProcessingItem) {
+      console.log("⚠️ Already processing an item operation, skipping");
+      return;
+    }
+    
+    if (!productId || productId.trim() === '') {
+      console.error("❌ Invalid product ID provided:", productId);
       toast({
-        title: "Item removido",
-        description: `${itemToRemove.productName} removido do pedido`
+        title: "Erro",
+        description: "ID do produto inválido para remoção",
+        variant: "destructive"
       });
+      return;
+    }
+    
+    try {
+      setIsProcessingItem(true);
       
-      return updatedItems;
-    });
+      setOrderItems(currentItems => {
+        console.log("📋 Current items before removal:", currentItems.length);
+        console.log("📋 Items to check:", currentItems.map(item => ({ id: item.id, productId: item.productId, name: item.productName })));
+        
+        const itemToRemove = currentItems.find(item => item.productId === productId);
+        if (!itemToRemove) {
+          console.warn("⚠️ Item not found for removal. ProductId:", productId);
+          console.warn("⚠️ Available productIds:", currentItems.map(item => item.productId));
+          toast({
+            title: "Erro",
+            description: "Item não encontrado para remoção",
+            variant: "destructive"
+          });
+          return currentItems;
+        }
+        
+        const updatedItems = currentItems.filter(item => item.productId !== productId);
+        console.log("✅ Item removed successfully. Remaining items:", updatedItems.length);
+        console.log("✅ Removed item:", itemToRemove.productName);
+        
+        toast({
+          title: "Item removido",
+          description: `${itemToRemove.productName} removido do pedido`
+        });
+        
+        return updatedItems;
+      });
+    } catch (error) {
+      console.error("❌ Error in handleRemoveItem:", error);
+      toast({
+        title: "Erro ao remover item",
+        description: "Ocorreu um erro ao remover o item do pedido",
+        variant: "destructive"
+      });
+    } finally {
+      // Reset processing flag after a short delay
+      setTimeout(() => {
+        setIsProcessingItem(false);
+        console.log("🔄 Processing flag reset");
+      }, 500);
+    }
   };
 
   return {
@@ -182,6 +241,7 @@ export function useOrderForm() {
     setCurrentOrderId,
     originalOrder,
     setOriginalOrder,
+    isProcessingItem,
     resetForm,
     calculateTotal,
     handleAddItem,

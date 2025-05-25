@@ -27,14 +27,29 @@ export default function OrderItemsTable({
     return `${item.productId}-${index}`;
   };
 
-  const handleRemoveClick = (item: OrderItem) => {
-    console.log("🗑️ Remove button clicked for item:", item);
-    console.log("🎯 Product ID:", item.productId);
+  const handleRemoveClick = (item: OrderItem, index: number) => {
+    console.log("🗑️ === REMOVE BUTTON CLICKED ===");
+    console.log("🗑️ Item details:", {
+      id: item.id,
+      productId: item.productId,
+      productName: item.productName,
+      index: index
+    });
     
-    if (item.productId) {
-      onRemoveItem(item.productId);
-    } else {
-      console.error("❌ No productId found for item:", item);
+    // Try to use productId first, then fallback to id
+    const removeKey = item.productId || item.id;
+    
+    if (!removeKey) {
+      console.error("❌ No valid key found for item removal:", item);
+      return;
+    }
+    
+    console.log("🎯 Using remove key:", removeKey);
+    
+    try {
+      onRemoveItem(removeKey);
+    } catch (error) {
+      console.error("❌ Error calling onRemoveItem:", error);
     }
   };
 
@@ -76,10 +91,10 @@ export default function OrderItemsTable({
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => handleRemoveClick(item)}
+                      onClick={() => handleRemoveClick(item, index)}
                       type="button"
                       className="hover:bg-red-50 hover:text-red-600 transition-colors"
-                      title="Remover item do pedido"
+                      title={`Remover ${item.productName} do pedido`}
                     >
                       <Trash2 size={16} className="text-red-500 hover:text-red-600" />
                     </Button>

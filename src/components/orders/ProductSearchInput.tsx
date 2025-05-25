@@ -52,6 +52,7 @@ export default function ProductSearchInput({
     resultsRef,
     quantityInputRef,
     priceInputRef,
+    isAddingItem,
     handleSearch,
     handleSearchKeyDown,
     handleProductSelect,
@@ -88,6 +89,7 @@ export default function ProductSearchInput({
                 onChange={handleSearch}
                 onKeyDown={handleSearchKeyDown}
                 autoComplete="off"
+                disabled={isAddingItem}
               />
               
               {showResults && (
@@ -122,17 +124,18 @@ export default function ProductSearchInput({
               value={formatPriceDisplay(price)}
               onChange={handlePriceChange}
               onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
+              disabled={isAddingItem}
             />
           </div>
           
           <Button 
             type="button"
             className="h-11 flex-none w-32 bg-sales-800 hover:bg-sales-700 text-white"
-            disabled={!selectedProduct || quantity === null || quantity <= 0}
+            disabled={!selectedProduct || quantity === null || quantity <= 0 || isAddingItem}
             onClick={handleAddToOrder}
           >
             <ShoppingCart size={18} className="mr-2" />
-            Adicionar
+            {isAddingItem ? 'Adicionando...' : 'Adicionar'}
           </Button>
         </div>
       </div>
