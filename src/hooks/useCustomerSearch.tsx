@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
-import { customerService } from '@/services/supabase/customerService';
 
 interface UseCustomerSearchProps {
   customers: Customer[];
@@ -33,11 +32,17 @@ export const useCustomerSearch = ({
     const value = e.target.value;
     setCustomerInput(value);
     
+    // Extract just the code part if it's in the format "code - name"
+    const codeMatch = value.match(/^(\d+)/);
+    const codeValue = codeMatch ? codeMatch[1] : value;
+    
     // Try to find customer by code
-    const customer = customers.find(c => c.code?.toString() === value);
+    const customer = customers.find(c => c.code?.toString() === codeValue);
     if (customer) {
+      console.log('🎯 Customer found by code:', customer.code, '-', customer.name);
       setSelectedCustomer(customer);
-    } else if (selectedCustomer) {
+    } else if (selectedCustomer && !value.includes(selectedCustomer.name)) {
+      // Clear selection if user is typing something that doesn't match current selection
       setSelectedCustomer(null);
     }
   };
@@ -54,6 +59,16 @@ export const useCustomerSearch = ({
     setIsCustomerSearchOpen(false);
     setCustomerSearch('');
   };
+
+  // Update input when selectedCustomer changes externally
+  useEffect(() => {
+    if (selectedCustomer) {
+      const displayValue = selectedCustomer.code 
+        ? `${selectedCustomer.code} - ${selectedCustomer.name}` 
+        : selectedCustomer.name;
+      setCustomerInput(displayValue);
+    }
+  }, [selectedCustomer]);
 
   return {
     customerInput,

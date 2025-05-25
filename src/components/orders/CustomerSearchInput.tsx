@@ -46,6 +46,10 @@ export default function CustomerSearchInput({
     onEnterPress
   });
 
+  const displayValue = selectedCustomer 
+    ? (selectedCustomer.code ? `${selectedCustomer.code} - ${selectedCustomer.name}` : selectedCustomer.name)
+    : customerInput;
+
   return (
     <>
       <div className="space-y-2">
@@ -58,7 +62,7 @@ export default function CustomerSearchInput({
               type="text"
               id="customer"
               placeholder="Digite o código do cliente"
-              value={customerInput}
+              value={displayValue}
               onChange={handleCustomerInputChange}
               onKeyDown={handleKeyDown}
               ref={inputRef}
@@ -101,4 +105,3 @@ export default function CustomerSearchInput({
     </>
   );
 }
-
