@@ -64,8 +64,6 @@ export default function OrderForm({
   const paymentTableRef = useRef<HTMLButtonElement>(null);
   const productInputRef = useRef<HTMLInputElement>(null);
   
-  console.log("🔄 OrderForm rendered - isEditMode:", isEditMode);
-  
   const calculateTotal = () => {
     return orderItems.reduce((total, item) => total + (item.unitPrice || 0) * (item.quantity || 0), 0);
   };
@@ -108,36 +106,21 @@ export default function OrderForm({
               )}
             </div>
             
-            {/* Seção de seleção de vendedor, cliente e forma de pagamento - sempre visível */}
-            <div className="space-y-4">
+            {/* Informações básicas do pedido */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Vendedor</label>
-                <SalesRepSearchInput
-                  salesReps={salesReps}
-                  selectedSalesRep={selectedSalesRep}
-                  setSelectedSalesRep={setSelectedSalesRep}
-                  inputRef={salesRepInputRef}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
+                <div className="text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
-                <CustomerSearchInput
-                  customers={customers}
-                  selectedCustomer={selectedCustomer}
-                  setSelectedCustomer={setSelectedCustomer}
-                  inputRef={customerInputRef}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                <div className="text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-                <PaymentOptionsInput
-                  paymentTables={paymentTables}
-                  selectedPaymentTable={selectedPaymentTable}
-                  setSelectedPaymentTable={setSelectedPaymentTable}
-                  buttonRef={paymentTableRef}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+                <div className="text-gray-900 font-medium">{getPaymentTableName()}</div>
               </div>
             </div>
             
@@ -168,7 +151,7 @@ export default function OrderForm({
         </CardContent>
       </Card>
       
-      {/* Busca de produtos */}
+      {/* Busca de produtos - sempre editável */}
       <Card className="shadow-md border-gray-200">
         <CardContent className="pt-6">
           <div className="mb-4">
@@ -185,7 +168,7 @@ export default function OrderForm({
         </CardContent>
       </Card>
       
-      {/* Tabela de itens */}
+      {/* Tabela de itens - sempre editável */}
       <Card className="shadow-md border-gray-200">
         <CardContent className="p-0">
           <div className="p-4 border-b bg-gray-50">
@@ -200,7 +183,7 @@ export default function OrderForm({
             orderItems={orderItems} 
             onRemoveItem={handleRemoveItem} 
             calculateTotal={calculateTotal} 
-            isEditMode={isEditMode}
+            isEditMode={isEditMode} 
           />
         </CardContent>
       </Card>

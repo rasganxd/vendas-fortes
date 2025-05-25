@@ -18,8 +18,6 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
   const { customers, salesReps, products, orders, connectionStatus } = useAppContext();
   const { paymentTables } = usePaymentTables();
   
-  console.log("🔄 OrderFormContainer rendered - orderId:", orderId, "preloadedOrder:", !!preloadedOrder);
-  
   const {
     selectedCustomer,
     setSelectedCustomer,
@@ -45,16 +43,6 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     handleRemoveItem
   } = useOrderForm();
 
-  // Determine if we're in edit mode based on whether we have an order ID
-  const actualEditMode = !!(orderId || preloadedOrder?.id);
-  
-  console.log("🎯 Edit mode determination:", {
-    orderId,
-    preloadedOrderId: preloadedOrder?.id,
-    actualEditMode,
-    isEditModeFromHook: isEditMode
-  });
-
   const { isLoading, loadError } = useOrderLoader({
     preloadedOrder,
     orderId,
@@ -78,7 +66,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     orderItems,
     selectedPaymentTable,
     paymentTables,
-    isEditMode: actualEditMode,
+    isEditMode,
     currentOrderId,
     originalOrder,
     connectionStatus,
@@ -138,7 +126,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         setSelectedPaymentTable={setSelectedPaymentTable}
         isSubmitting={isSubmitting}
         handleCreateOrder={handleCreateOrder}
-        isEditMode={actualEditMode}
+        isEditMode={isEditMode}
         handleViewRecentPurchases={handleViewRecentPurchases}
         customerInputValue={customerInputValue}
         salesRepInputValue={salesRepInputValue}
