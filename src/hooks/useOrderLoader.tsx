@@ -4,7 +4,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Order, Customer, SalesRep } from '@/types';
 import { useOrders } from '@/hooks/useOrders';
 import { toast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
+import { useOrderValidator } from './orderLoader/useOrderValidator';
+import { useOrderFormPopulator } from './orderLoader/useOrderFormPopulator';
 
 interface UseOrderLoaderProps {
   preloadedOrder?: Order | null;
@@ -23,43 +24,41 @@ interface UseOrderLoaderProps {
   setOriginalOrder: (order: Order | null) => void;
 }
 
-export function useOrderLoader({
-  preloadedOrder,
-  orderId,
-  customers,
-  salesReps,
-  paymentTables,
-  setSelectedCustomer,
-  setSelectedSalesRep,
-  setOrderItems,
-  setSelectedPaymentTable,
-  setCustomerInputValue,
-  setSalesRepInputValue,
-  setIsEditMode,
-  setCurrentOrderId,
-  setOriginalOrder
-}: UseOrderLoaderProps) {
+export function useOrderLoader(props: UseOrderLoaderProps) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { getOrderById } = useOrders();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   
-  // Use refs to prevent duplicate loading
   const loadingRef = useRef(false);
   const loadedOrderIdRef = useRef<string | null>(null);
 
+  const { validateAndFixOrderItems } = useOrderValidator();
+  const { populateOrderForm } = useOrderFormPopulator(
+    props.customers,
+    props.salesReps,
+    props.paymentTables,
+    props.setSelectedCustomer,
+    props.setSelectedSalesRep,
+    props.setOrderItems,
+    props.setSelectedPaymentTable,
+    props.setCustomerInputValue,
+    props.setSalesRepInputValue,
+    props.setIsEditMode,
+    props.setCurrentOrderId,
+    props.setOriginalOrder
+  );
+
   useEffect(() => {
-    const orderIdToLoad = orderId || searchParams.get('id');
+    const orderIdToLoad = props.orderId || searchParams.get('id');
     
-    // Skip if no order ID or already loading this order
     if (!orderIdToLoad || loadingRef.current || loadedOrderIdRef.current === orderIdToLoad) {
       return;
     }
 
     const loadOrder = async (orderToLoad: string) => {
       try {
-        // Set loading state
         loadingRef.current = true;
         setIsLoading(true);
         setLoadError(null);
@@ -68,10 +67,9 @@ export function useOrderLoader({
         
         let orderToEdit: Order | null = null;
         
-        // Use preloaded order if available
-        if (preloadedOrder && preloadedOrder.id === orderToLoad) {
-          console.log("✅ Using preloaded order data:", preloadedOrder.id);
-          orderToEdit = preloadedOrder;
+        if (props.preloadedOrder && props.preloadedOrder.id === orderToLoad) {
+          console.log("✅ Using preloaded order data:", props.preloadedOrder.id);
+          orderToEdit = props.preloadedOrder;
         } else {
           console.log("🔍 Fetching order data from service:", orderToLoad);
           orderToEdit = await getOrderById(orderToLoad);
@@ -81,94 +79,12 @@ export function useOrderLoader({
           throw new Error("Pedido não encontrado");
         }
         
-        console.log("📋 Order loaded successfully:", orderToEdit.id);
-        
-        // Set edit mode and store order
-        setIsEditMode(true);
-        setCurrentOrderId(orderToLoad);
-        setOriginalOrder(orderToEdit);
         loadedOrderIdRef.current = orderToLoad;
         
-        // Load customer
-        const customer = customers.find(c => c.id === orderToEdit?.customerId);
-        if (customer) {
-          console.log("✅ Customer found and set:", customer.name);
-          setSelectedCustomer(customer);
-          const displayValue = customer.code ? `${customer.code} - ${customer.name}` : customer.name;
-          setCustomerInputValue(displayValue);
-        } else {
-          console.warn("⚠️ Customer not found for ID:", orderToEdit?.customerId);
-          if (orderToEdit.customerName) {
-            setCustomerInputValue(orderToEdit.customerName);
-          }
-        }
+        const validatedItems = validateAndFixOrderItems(orderToEdit);
+        populateOrderForm(orderToEdit, orderToLoad, validatedItems);
         
-        // Load sales rep
-        const salesRep = salesReps.find(s => s.id === orderToEdit?.salesRepId);
-        if (salesRep) {
-          console.log("✅ Sales rep found and set:", salesRep.name);
-          setSelectedSalesRep(salesRep);
-          const displayValue = salesRep.code ? `${salesRep.code} - ${salesRep.name}` : salesRep.name;
-          setSalesRepInputValue(displayValue);
-        } else {
-          console.warn("⚠️ Sales rep not found for ID:", orderToEdit?.salesRepId);
-          if (orderToEdit.salesRepName) {
-            setSalesRepInputValue(orderToEdit.salesRepName);
-          }
-        }
-        
-        // Load order items with validation
-        if (orderToEdit?.items && Array.isArray(orderToEdit.items)) {
-          console.log("📦 Processing order items:", orderToEdit.items.length);
-          
-          const validatedItems = orderToEdit.items.map((item, index) => {
-            if (!item) {
-              console.warn(`⚠️ Null item found at index ${index}`);
-              return {
-                id: uuidv4(),
-                productId: `unknown-${index}`,
-                productName: "Item desconhecido",
-                productCode: 0,
-                quantity: 1,
-                unitPrice: 0,
-                price: 0,
-                discount: 0,
-                total: 0
-              };
-            }
-            
-            return {
-              id: item.id || uuidv4(),
-              productId: item.productId || `unknown-${index}`,
-              productName: item.productName || "Item sem nome",
-              productCode: item.productCode || 0,
-              quantity: Math.max(item.quantity || 1, 1),
-              unitPrice: Math.max(item.unitPrice || item.price || 0, 0),
-              price: Math.max(item.price || item.unitPrice || 0, 0),
-              discount: Math.max(item.discount || 0, 0),
-              total: Math.max((item.unitPrice || item.price || 0) * (item.quantity || 1), 0)
-            };
-          });
-          
-          setOrderItems(validatedItems);
-          console.log("✅ Order items loaded:", validatedItems.length);
-        } else {
-          console.warn("⚠️ No valid items found in order");
-          setOrderItems([]);
-        }
-        
-        // Set payment table
-        if (orderToEdit?.paymentTableId) {
-          const tableExists = paymentTables.some(pt => pt.id === orderToEdit.paymentTableId);
-          if (tableExists) {
-            setSelectedPaymentTable(orderToEdit.paymentTableId);
-          } else {
-            setSelectedPaymentTable(paymentTables.length > 0 ? paymentTables[0].id : 'default-table');
-          }
-        }
-        
-        // Show success message only if not using preloaded order
-        if (!preloadedOrder) {
+        if (!props.preloadedOrder) {
           toast({
             title: "Pedido carregado",
             description: `Editando pedido #${orderToEdit.code || orderToLoad.substring(0, 6)}`
@@ -186,7 +102,6 @@ export function useOrderLoader({
           variant: "destructive"
         });
         
-        // Reset refs on error
         loadedOrderIdRef.current = null;
         
         setTimeout(() => {
@@ -199,9 +114,8 @@ export function useOrderLoader({
     };
     
     loadOrder(orderIdToLoad);
-  }, [preloadedOrder, orderId, searchParams, getOrderById, customers, salesReps, paymentTables, navigate]);
+  }, [props.preloadedOrder, props.orderId, searchParams, getOrderById, props.customers, props.salesReps, props.paymentTables, navigate, validateAndFixOrderItems, populateOrderForm]);
 
-  // Reset loading state when component unmounts or order changes
   useEffect(() => {
     return () => {
       loadingRef.current = false;

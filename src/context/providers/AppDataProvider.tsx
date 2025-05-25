@@ -1,10 +1,10 @@
-
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/appOperations';
 import { useConnection } from './ConnectionProvider';
-import { useProducts } from '@/hooks/useProducts';
-import { useOrders } from '@/hooks/useOrders';
+import { useAppDataState } from './appData/useAppDataState';
+import { useAppDataOperations } from './appData/useAppDataOperations';
+import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
 
 interface AppDataContextType {
   // Customer data
@@ -15,7 +15,7 @@ interface AppDataContextType {
   deleteCustomer: (id: string) => Promise<void>;
   generateNextCustomerCode: () => Promise<number>;
 
-  // Product data - now centralized from useProducts hook
+  // Product data
   products: Product[];
   isLoadingProducts: boolean;
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
@@ -72,7 +72,7 @@ interface AppDataContextType {
   updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
   deleteLoad: (id: string) => Promise<void>;
 
-  // Order data - now centralized from useOrders hook
+  // Order data
   orders: Order[];
   isLoadingOrders: boolean;
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
@@ -135,77 +135,42 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const appOperations = useAppOperations();
   const connection = useConnection();
   
-  // Use the centralized products hook
   const {
     products,
-    isLoading: isLoadingProducts,
-    addProduct: addProductHook,
-    updateProduct: updateProductHook,
-    deleteProduct: deleteProductHook,
-    forceRefreshProducts
-  } = useProducts();
-
-  // Use the centralized orders hook
-  const {
+    isLoadingProducts,
+    addProductHook,
+    updateProductHook,
+    deleteProductHook,
+    forceRefreshProducts,
     orders,
-    isLoading: isLoadingOrders,
-    addOrder: addOrderHook,
-    updateOrder: updateOrderHook,
-    deleteOrder: deleteOrderHook,
-    refreshOrders: refreshOrdersHook,
+    isLoadingOrders,
+    addOrderHook,
+    updateOrderHook,
+    deleteOrderHook,
+    refreshOrdersHook,
     markOrderAsBeingEdited,
     unmarkOrderAsBeingEdited
-  } = useOrders();
+  } = useAppDataState();
 
-  // Enhanced product operations with automatic refresh
-  const addProduct = async (product: Omit<Product, 'id'>) => {
-    const result = await addProductHook(product);
-    // Trigger refresh across all components
-    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'add', productId: result } }));
-    return result;
-  };
-
-  const updateProduct = async (id: string, product: Partial<Product>) => {
-    await updateProductHook(id, product);
-    // Trigger refresh across all components
-    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'update', productId: id } }));
-  };
-
-  const deleteProduct = async (id: string) => {
-    await deleteProductHook(id);
-    // Trigger refresh across all components
-    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'delete', productId: id } }));
-  };
-
-  const refreshProducts = async (): Promise<boolean> => {
-    try {
-      const result = await forceRefreshProducts();
-      // Trigger refresh across all components
-      window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'refresh' } }));
-      return result;
-    } catch (error) {
-      console.error('Error refreshing products:', error);
-      return false;
-    }
-  };
-
-  // Enhanced order operations with automatic refresh
-  const addOrder = async (order: Omit<Order, 'id'>) => {
-    const result = await addOrderHook(order);
-    return result;
-  };
-
-  const updateOrder = async (id: string, order: Partial<Order>) => {
-    await updateOrderHook(id, order);
-  };
-
-  const deleteOrder = async (id: string) => {
-    await deleteOrderHook(id);
-  };
-
-  const refreshOrders = async (): Promise<void> => {
-    await refreshOrdersHook();
-  };
+  const {
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    refreshProducts,
+    addOrder,
+    updateOrder,
+    deleteOrder,
+    refreshOrders
+  } = useAppDataOperations(
+    addProductHook,
+    updateProductHook,
+    deleteProductHook,
+    forceRefreshProducts,
+    addOrderHook,
+    updateOrderHook,
+    deleteOrderHook,
+    refreshOrdersHook
+  );
 
   const refreshData = async (): Promise<boolean> => {
     try {
@@ -222,38 +187,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  // Set up global event listeners for data synchronization
-  useEffect(() => {
-    console.log('🔧 Setting up global data synchronization listeners');
-    
-    const handleDataSync = () => {
-      console.log('🔄 Global data sync triggered');
-      refreshData();
-    };
-
-    const handleOrderEditStarted = (event: CustomEvent) => {
-      const { orderId } = event.detail;
-      console.log('🔒 Order edit started:', orderId);
-      markOrderAsBeingEdited(orderId);
-    };
-
-    const handleOrderEditFinished = (event: CustomEvent) => {
-      const { orderId } = event.detail;
-      console.log('🔓 Order edit finished:', orderId);
-      unmarkOrderAsBeingEdited(orderId);
-    };
-
-    // Listen for manual refresh requests
-    window.addEventListener('globalDataRefresh', handleDataSync);
-    window.addEventListener('orderEditStarted', handleOrderEditStarted as EventListener);
-    window.addEventListener('orderEditFinished', handleOrderEditFinished as EventListener);
-
-    return () => {
-      window.removeEventListener('globalDataRefresh', handleDataSync);
-      window.removeEventListener('orderEditStarted', handleOrderEditStarted as EventListener);
-      window.removeEventListener('orderEditFinished', handleOrderEditFinished as EventListener);
-    };
-  }, [markOrderAsBeingEdited, unmarkOrderAsBeingEdited]);
+  useAppDataEventHandlers(refreshData, markOrderAsBeingEdited, unmarkOrderAsBeingEdited);
 
   const value: AppDataContextType = {
     // Use centralized products from useProducts hook
@@ -274,7 +208,62 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     // Keep existing operations
     ...appOperations,
-    
+    customers: appOperations.customers,
+    isLoading: appOperations.isLoading,
+    addCustomer: appOperations.addCustomer,
+    updateCustomer: appOperations.updateCustomer,
+    deleteCustomer: appOperations.deleteCustomer,
+    generateNextCustomerCode: appOperations.generateNextCustomerCode,
+    productBrands: appOperations.productBrands,
+    isLoadingProductBrands: appOperations.isLoadingProductBrands,
+    addProductBrand: appOperations.addProductBrand,
+    updateProductBrand: appOperations.updateProductBrand,
+    deleteProductBrand: appOperations.deleteProductBrand,
+    productCategories: appOperations.productCategories,
+    isLoadingProductCategories: appOperations.isLoadingProductCategories,
+    addProductCategory: appOperations.addProductCategory,
+    updateProductCategory: appOperations.updateProductCategory,
+    deleteProductCategory: appOperations.deleteProductCategory,
+    productGroups: appOperations.productGroups,
+    isLoadingProductGroups: appOperations.isLoadingProductGroups,
+    addProductGroup: appOperations.addProductGroup,
+    updateProductGroup: appOperations.updateProductGroup,
+    deleteProductGroup: appOperations.deleteProductGroup,
+    salesReps: appOperations.salesReps,
+    isLoadingSalesReps: appOperations.isLoadingSalesReps,
+    addSalesRep: appOperations.addSalesRep,
+    updateSalesRep: appOperations.updateSalesRep,
+    deleteSalesRep: appOperations.deleteSalesRep,
+    vehicles: appOperations.vehicles,
+    isLoadingVehicles: appOperations.isLoadingVehicles,
+    addVehicle: appOperations.addVehicle,
+    updateVehicle: appOperations.updateVehicle,
+    deleteVehicle: appOperations.deleteVehicle,
+    deliveryRoutes: appOperations.deliveryRoutes,
+    isLoadingDeliveryRoutes: appOperations.isLoadingDeliveryRoutes,
+    addDeliveryRoute: appOperations.addDeliveryRoute,
+    updateDeliveryRoute: appOperations.updateDeliveryRoute,
+    deleteDeliveryRoute: appOperations.deleteDeliveryRoute,
+    loads: appOperations.loads,
+    isLoadingLoads: appOperations.isLoadingLoads,
+    addLoad: appOperations.addLoad,
+    updateLoad: appOperations.updateLoad,
+    deleteLoad: appOperations.deleteLoad,
+    payments: appOperations.payments,
+    isLoadingPayments: appOperations.isLoadingPayments,
+    addPayment: appOperations.addPayment,
+    updatePayment: appOperations.updatePayment,
+    deletePayment: appOperations.deletePayment,
+    paymentMethods: appOperations.paymentMethods,
+    isLoadingPaymentMethods: appOperations.isLoadingPaymentMethods,
+    addPaymentMethod: appOperations.addPaymentMethod,
+    updatePaymentMethod: appOperations.updatePaymentMethod,
+    deletePaymentMethod: appOperations.deletePaymentMethod,
+    paymentTables: appOperations.paymentTables,
+    isLoadingPaymentTables: appOperations.isLoadingPaymentTables,
+    addPaymentTable: appOperations.addPaymentTable,
+    updatePaymentTable: appOperations.updatePaymentTable,
+    deletePaymentTable: appOperations.deletePaymentTable,
     connectionStatus: connection.connectionStatus,
     lastConnectAttempt: connection.lastConnectAttempt,
     reconnectToSupabase: connection.reconnectToSupabase,
