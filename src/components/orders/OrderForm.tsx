@@ -116,7 +116,7 @@ export default function OrderForm({
                   <SalesRepSearchInput
                     salesReps={salesReps}
                     selectedSalesRep={selectedSalesRep}
-                    onSalesRepSelect={setSelectedSalesRep}
+                    setSelectedSalesRep={setSelectedSalesRep}
                     inputRef={salesRepInputRef}
                     onKeyDown={(e) => e.key === 'Enter' && customerInputRef.current?.focus()}
                   />
@@ -127,7 +127,7 @@ export default function OrderForm({
                   <CustomerSearchInput
                     customers={customers}
                     selectedCustomer={selectedCustomer}
-                    onCustomerSelect={setSelectedCustomer}
+                    setSelectedCustomer={setSelectedCustomer}
                     inputRef={customerInputRef}
                     onKeyDown={(e) => e.key === 'Enter' && paymentTableRef.current?.focus()}
                   />
@@ -138,7 +138,7 @@ export default function OrderForm({
                   <PaymentOptionsInput
                     paymentTables={paymentTables}
                     selectedPaymentTable={selectedPaymentTable}
-                    onPaymentTableSelect={setSelectedPaymentTable}
+                    setSelectedPaymentTable={setSelectedPaymentTable}
                     buttonRef={paymentTableRef}
                     onKeyDown={(e) => e.key === 'Enter' && productInputRef.current?.focus()}
                   />
@@ -225,7 +225,7 @@ export default function OrderForm({
             orderItems={orderItems} 
             onRemoveItem={handleRemoveItem} 
             calculateTotal={calculateTotal} 
-            isEditMode={true}
+            isEditMode={isEditMode}
           />
         </CardContent>
       </Card>
