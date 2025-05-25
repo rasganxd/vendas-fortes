@@ -84,7 +84,14 @@ export default function OrderForm({
     }
   };
 
-  return <div className="space-y-6">
+  // Get selected payment table name for display
+  const getPaymentTableName = () => {
+    const table = paymentTables.find(pt => pt.id === selectedPaymentTable);
+    return table?.name || 'Não selecionado';
+  };
+
+  return (
+    <div className="space-y-6">
       <Card className="shadow-md border-gray-200">
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 gap-6">
@@ -92,52 +99,123 @@ export default function OrderForm({
               <h3 className="text-lg font-medium">
                 {isEditMode ? 'Editar Pedido' : 'Novo Pedido'}
               </h3>
-              {/* Remove the ConnectionStatus component here since it's already in the page header */}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-              <div className="relative">
-                <SalesRepSearchInput salesReps={salesReps} selectedSalesRep={selectedSalesRep} setSelectedSalesRep={setSelectedSalesRep} inputRef={salesRepInputRef} onEnterPress={() => customerInputRef.current?.focus()} initialInputValue={salesRepInputValue} />
-              </div>
-              
-              <div className="relative">
-                <CustomerSearchInput customers={customers} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} inputRef={customerInputRef} onEnterPress={() => paymentTableRef.current?.focus()} initialInputValue={customerInputValue} />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-              <div className="relative">
-                <PaymentOptionsInput paymentTables={paymentTables} selectedPaymentTable={selectedPaymentTable} setSelectedPaymentTable={setSelectedPaymentTable} simplifiedView={true} buttonRef={paymentTableRef} onSelectComplete={() => productInputRef.current?.focus()} customerId={selectedCustomer?.id} customerName={selectedCustomer?.name} orderTotal={calculateTotal()} />
-              </div>
-              
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <Button onClick={handleViewRecentPurchases} variant="outline" className="w-full border-dashed border-gray-300 hover:border-gray-400 text-gray-700" disabled={!selectedCustomer}>
-                    <ClipboardList size={18} className="mr-2" />
-                    Visualizar Compras Recentes
-                  </Button>
+            {isEditMode ? (
+              // Read-only view for edit mode
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
+                  <div className="text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
                 </div>
                 
-                <Button onClick={handleCreateOrder} disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} className={`w-48 h-11 text-white ${getConnectionStatusColor()}`}>
-                  <Save size={18} className="mr-2" />
-                  {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}
-                </Button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                  <div className="text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+                  <div className="text-gray-900 font-medium">{getPaymentTableName()}</div>
+                </div>
               </div>
+            ) : (
+              // Editable form for new orders
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                  <div className="relative">
+                    <SalesRepSearchInput 
+                      salesReps={salesReps} 
+                      selectedSalesRep={selectedSalesRep} 
+                      setSelectedSalesRep={setSelectedSalesRep} 
+                      inputRef={salesRepInputRef} 
+                      onEnterPress={() => customerInputRef.current?.focus()} 
+                      initialInputValue={salesRepInputValue} 
+                    />
+                  </div>
+                  
+                  <div className="relative">
+                    <CustomerSearchInput 
+                      customers={customers} 
+                      selectedCustomer={selectedCustomer} 
+                      setSelectedCustomer={setSelectedCustomer} 
+                      inputRef={customerInputRef} 
+                      onEnterPress={() => paymentTableRef.current?.focus()} 
+                      initialInputValue={customerInputValue} 
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                  <div className="relative">
+                    <PaymentOptionsInput 
+                      paymentTables={paymentTables} 
+                      selectedPaymentTable={selectedPaymentTable} 
+                      setSelectedPaymentTable={setSelectedPaymentTable} 
+                      simplifiedView={true} 
+                      buttonRef={paymentTableRef} 
+                      onSelectComplete={() => productInputRef.current?.focus()} 
+                      customerId={selectedCustomer?.id} 
+                      customerName={selectedCustomer?.name} 
+                      orderTotal={calculateTotal()} 
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <Button 
+                        onClick={handleViewRecentPurchases} 
+                        variant="outline" 
+                        className="w-full border-dashed border-gray-300 hover:border-gray-400 text-gray-700" 
+                        disabled={!selectedCustomer}
+                      >
+                        <ClipboardList size={18} className="mr-2" />
+                        Visualizar Compras Recentes
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* Save button - always visible */}
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleCreateOrder} 
+                disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
+                className={`w-48 h-11 text-white ${getConnectionStatusColor()}`}
+              >
+                <Save size={18} className="mr-2" />
+                {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
       
+      {/* Product search - always editable */}
       <Card className="shadow-md border-gray-200">
         <CardContent className="pt-6">
-          <ProductSearchInput products={products} addItemToOrder={handleAddItem} inlineLayout={true} inputRef={productInputRef} />
+          <ProductSearchInput 
+            products={products} 
+            addItemToOrder={handleAddItem} 
+            inlineLayout={true} 
+            inputRef={productInputRef} 
+          />
         </CardContent>
       </Card>
       
+      {/* Order items table - always editable */}
       <Card className="shadow-md border-gray-200">
         <CardContent className="p-0">
-          <OrderItemsTable orderItems={orderItems} onRemoveItem={handleRemoveItem} calculateTotal={calculateTotal} isEditMode={isEditMode} />
+          <OrderItemsTable 
+            orderItems={orderItems} 
+            onRemoveItem={handleRemoveItem} 
+            calculateTotal={calculateTotal} 
+            isEditMode={isEditMode} 
+          />
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 }
