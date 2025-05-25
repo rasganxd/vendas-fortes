@@ -48,7 +48,8 @@ export function useOrderOperations({
       return "Adicione pelo menos um item ao pedido";
     }
     
-    if (connectionStatus === 'disconnected') {
+    // Fix: Check for 'error' instead of 'disconnected' to match ConnectionStatus type
+    if (connectionStatus === 'error') {
       return "Sem conexão com o servidor. Verifique sua internet.";
     }
     
@@ -126,10 +127,10 @@ export function useOrderOperations({
         
         console.log("✅ Order updated successfully");
         
+        // Fix: Remove duration property
         toast({
           title: "Pedido atualizado",
-          description: `Pedido #${orderData.code} foi atualizado com sucesso!`,
-          duration: 3000
+          description: `Pedido #${orderData.code} foi atualizado com sucesso!`
         });
 
         // Navigate back to orders list after successful update
@@ -145,10 +146,10 @@ export function useOrderOperations({
         if (newOrderId) {
           console.log("✅ Order created successfully with ID:", newOrderId);
           
+          // Fix: Remove duration property
           toast({
             title: "Pedido criado",
-            description: `Pedido #${orderData.code} foi criado com sucesso!`,
-            duration: 3000
+            description: `Pedido #${orderData.code} foi criado com sucesso!`
           });
 
           // Reset form after successful creation
@@ -170,11 +171,12 @@ export function useOrderOperations({
       console.error("❌ Error saving order:", error);
       
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      
+      // Fix: Remove duration property
       toast({
         title: isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido",
         description: `Ocorreu um erro: ${errorMessage}`,
-        variant: "destructive",
-        duration: 5000
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
