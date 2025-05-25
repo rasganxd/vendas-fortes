@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import OrderFormContainer from '@/components/orders/OrderFormContainer';
+import { OrderLoadingSkeleton } from '@/components/ui/order-skeleton';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useOrders } from '@/hooks/useOrders';
 import { Order } from '@/types';
@@ -16,6 +17,7 @@ export default function NewOrder() {
   const [isValid, setIsValid] = useState(true);
   const [orderData, setOrderData] = useState<Order | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [showContent, setShowContent] = useState(!orderId); // Show immediately if no orderId
   
   // Validate order ID to prevent navigation to invalid orders
   useEffect(() => {
@@ -44,6 +46,8 @@ export default function NewOrder() {
             console.log("Order validated successfully:", order.id);
             setOrderData(order);
             setIsValid(true);
+            // Show content with smooth transition
+            setTimeout(() => setShowContent(true), 100);
           }
         } catch (error) {
           console.error("Error validating order ID:", error);
@@ -64,12 +68,7 @@ export default function NewOrder() {
     return (
       <PageLayout title={pageTitle}>
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
-              <p className="text-lg text-gray-700">Validando pedido...</p>
-            </div>
-          </div>
+          <OrderLoadingSkeleton />
         </div>
       </PageLayout>
     );
@@ -79,7 +78,7 @@ export default function NewOrder() {
     return (
       <PageLayout title="Pedido não encontrado">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-center items-center h-64">
+          <div className="flex justify-center items-center h-64 animate-fade-in">
             <div className="text-center">
               <div className="rounded-full h-12 w-12 border-2 border-red-500 mx-auto mb-4 flex items-center justify-center">
                 <span className="text-red-500 text-xl">!</span>
@@ -88,7 +87,7 @@ export default function NewOrder() {
               <p className="text-sm text-gray-500">{validationError || "O pedido solicitado não está disponível ou foi excluído."}</p>
               <button 
                 onClick={() => navigate('/pedidos')} 
-                className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded"
+                className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded transition-colors"
               >
                 Voltar para lista de pedidos
               </button>
@@ -101,7 +100,7 @@ export default function NewOrder() {
   
   return (
     <PageLayout title={pageTitle} showConnectionStatus={true}>
-      <div className="max-w-7xl mx-auto">
+      <div className={`max-w-7xl mx-auto transition-opacity duration-300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
         <OrderFormContainer preloadedOrder={orderData} orderId={orderId} />
       </div>
     </PageLayout>

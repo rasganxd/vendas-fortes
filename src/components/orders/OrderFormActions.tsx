@@ -1,17 +1,19 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Loader } from 'lucide-react';
+import { InlineSavingIndicator } from '@/components/ui/saving-indicator';
 import { Customer, SalesRep, OrderItem } from '@/types';
-import { ConnectionStatus as ConnectionStatusType } from '@/context/AppContextTypes';
-import { Button } from "@/components/ui/button";
-import { Save, ClipboardList } from "lucide-react";
+import { ConnectionStatus } from '@/context/AppContextTypes';
 
 interface OrderFormActionsProps {
   selectedCustomer: Customer | null;
   selectedSalesRep: SalesRep | null;
   orderItems: OrderItem[];
   isSubmitting: boolean;
+  isSaving?: boolean;
   isEditMode: boolean;
-  connectionStatus: ConnectionStatusType;
+  connectionStatus: ConnectionStatus;
   handleViewRecentPurchases: () => void;
   handleCreateOrder: () => Promise<void>;
 }
@@ -21,48 +23,56 @@ export default function OrderFormActions({
   selectedSalesRep,
   orderItems,
   isSubmitting,
+  isSaving = false,
   isEditMode,
   connectionStatus,
   handleViewRecentPurchases,
   handleCreateOrder
 }: OrderFormActionsProps) {
-  const getConnectionStatusColor = () => {
-    switch (connectionStatus) {
-      case 'online':
-        return 'bg-green-500 hover:bg-green-600';
-      case 'offline':
-        return 'bg-amber-500 hover:bg-amber-600';
-      case 'connecting':
-        return 'bg-blue-500 hover:bg-blue-600';
-      case 'error':
-        return 'bg-red-500 hover:bg-red-600';
-      default:
-        return 'bg-gray-500 hover:bg-gray-600';
-    }
-  };
+  const canCreateOrder = selectedCustomer && selectedSalesRep && orderItems.length > 0 && connectionStatus !== 'offline';
+  const isOffline = connectionStatus === 'offline';
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2">
-      <Button 
-        onClick={handleViewRecentPurchases} 
-        variant="outline" 
-        size="sm"
-        className="border-dashed border-gray-300 hover:border-gray-400 text-gray-700" 
-        disabled={!selectedCustomer}
-      >
-        <ClipboardList size={16} className="mr-2" />
-        Compras Recentes
-      </Button>
-      
-      <Button 
-        onClick={handleCreateOrder} 
-        disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
-        size="sm"
-        className={`sm:w-40 text-white ${getConnectionStatusColor()}`}
-      >
-        <Save size={16} className="mr-2" />
-        {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar' : 'Finalizar'}
-      </Button>
+    <div className="flex justify-between items-center">
+      <div className="flex space-x-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleViewRecentPurchases}
+          disabled={!selectedCustomer || isSubmitting}
+          className="transition-colors"
+        >
+          Compras Recentes
+        </Button>
+        
+        {isOffline && (
+          <div className="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded-md">
+            Modo Offline
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center space-x-3">
+        <InlineSavingIndicator 
+          isVisible={isSaving} 
+          message={isEditMode ? "Salvando alterações..." : "Criando pedido..."}
+        />
+        
+        <Button
+          onClick={handleCreateOrder}
+          disabled={!canCreateOrder || isSubmitting}
+          className="min-w-[120px] transition-all duration-200 hover:scale-105"
+        >
+          {isSubmitting ? (
+            <div className="flex items-center space-x-2">
+              <Loader className="h-4 w-4 animate-spin" />
+              <span>{isEditMode ? 'Salvando...' : 'Criando...'}</span>
+            </div>
+          ) : (
+            isEditMode ? 'Salvar Pedido' : 'Criar Pedido'
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

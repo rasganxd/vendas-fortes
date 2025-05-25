@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { useOrderForm } from '@/hooks/useOrderForm';
@@ -7,6 +7,7 @@ import { useOrderLoader } from '@/hooks/useOrderLoader';
 import { useOrderOperations } from '@/hooks/useOrderOperations';
 import OrderForm from './OrderForm';
 import { RecentPurchasesManager } from './RecentPurchasesManager';
+import { OrderFormSkeleton } from '@/components/ui/order-skeleton';
 import { Order } from '@/types';
 
 interface OrderFormContainerProps {
@@ -76,8 +77,6 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
   // Mark order as being edited when in edit mode
   useEffect(() => {
     if (isEditMode && currentOrderId) {
-      // Get the markOrderAsBeingEdited function from useOrders context
-      // We'll need to access this through the AppDataProvider
       console.log("🔒 Order is now being edited:", currentOrderId);
       
       // Dispatch event to mark order as being edited
@@ -94,14 +93,46 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     }
   }, [isEditMode, currentOrderId]);
 
-  const handleViewRecentPurchases = () => {
+  // Memoize the view recent purchases handler to prevent re-renders
+  const handleViewRecentPurchases = useCallback(() => {
     // This will be handled by the RecentPurchasesManager component
-  };
+  }, []);
 
-  // Show loading state or error message if applicable
+  // Memoize form props to prevent unnecessary re-renders
+  const formProps = useMemo(() => ({
+    customers,
+    salesReps,
+    paymentTables,
+    products,
+    selectedCustomer,
+    setSelectedCustomer,
+    selectedSalesRep,
+    setSelectedSalesRep,
+    orderItems,
+    setOrderItems,
+    selectedPaymentTable,
+    setSelectedPaymentTable,
+    isSubmitting,
+    handleCreateOrder,
+    isEditMode,
+    handleViewRecentPurchases,
+    customerInputValue,
+    salesRepInputValue,
+    handleAddItem,
+    handleRemoveItem,
+    connectionStatus
+  }), [
+    customers, salesReps, paymentTables, products,
+    selectedCustomer, selectedSalesRep, orderItems, selectedPaymentTable,
+    isSubmitting, isEditMode, customerInputValue, salesRepInputValue,
+    connectionStatus, handleCreateOrder, handleViewRecentPurchases,
+    handleAddItem, handleRemoveItem
+  ]);
+
+  // Show error state with smooth transition
   if (loadError) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-64 animate-fade-in">
         <div className="text-center">
           <div className="rounded-full h-12 w-12 border-2 border-red-500 mx-auto mb-4 flex items-center justify-center">
             <span className="text-red-500 text-xl">!</span>
@@ -110,7 +141,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
           <p className="text-sm text-gray-500">{loadError}</p>
           <button 
             onClick={() => window.location.href = '/pedidos'} 
-            className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded"
+            className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded transition-colors"
           >
             Voltar para lista de pedidos
           </button>
@@ -119,47 +150,19 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     );
   }
 
+  // Show skeleton loading state
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-700">Carregando pedido...</p>
-        </div>
-      </div>
-    );
+    return <OrderFormSkeleton />;
   }
 
   return (
-    <>
-      <OrderForm 
-        customers={customers}
-        salesReps={salesReps}
-        paymentTables={paymentTables}
-        products={products}
-        selectedCustomer={selectedCustomer}
-        setSelectedCustomer={setSelectedCustomer}
-        selectedSalesRep={selectedSalesRep}
-        setSelectedSalesRep={setSelectedSalesRep}
-        orderItems={orderItems}
-        setOrderItems={setOrderItems}
-        selectedPaymentTable={selectedPaymentTable}
-        setSelectedPaymentTable={setSelectedPaymentTable}
-        isSubmitting={isSubmitting}
-        handleCreateOrder={handleCreateOrder}
-        isEditMode={isEditMode}
-        handleViewRecentPurchases={handleViewRecentPurchases}
-        customerInputValue={customerInputValue}
-        salesRepInputValue={salesRepInputValue}
-        handleAddItem={handleAddItem}
-        handleRemoveItem={handleRemoveItem}
-        connectionStatus={connectionStatus}
-      />
+    <div className="animate-fade-in">
+      <OrderForm {...formProps} />
 
       <RecentPurchasesManager
         selectedCustomer={selectedCustomer}
         orders={orders}
       />
-    </>
+    </div>
   );
 }
