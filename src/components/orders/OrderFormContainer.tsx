@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -40,93 +39,89 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    console.log("Available payment tables:", paymentTables);
-  }, [paymentTables]);
-
-  useEffect(() => {
-    console.log("Current connection status:", connectionStatus);
-  }, [connectionStatus]);
-
-  // Improved load order function that uses preloaded data when available
+  // Enhanced load order function with improved data handling
   useEffect(() => {
     const loadOrder = async (orderToLoad: string) => {
       try {
         setIsLoading(true);
         setLoadError(null);
-        console.log("Loading order for editing:", orderToLoad);
+        console.log("🔄 Loading order for editing:", orderToLoad);
         
         if (!orderToLoad) {
           throw new Error("ID do pedido não fornecido");
         }
         
-        // Check if we already have the preloaded order data
         let orderToEdit: Order | null = null;
         
         if (preloadedOrder && preloadedOrder.id === orderToLoad) {
-          console.log("Using preloaded order data:", preloadedOrder.id);
+          console.log("✅ Using preloaded order data:", preloadedOrder.id);
           orderToEdit = preloadedOrder;
         } else {
-          console.log("Fetching order data from service:", orderToLoad);
+          console.log("🔍 Fetching order data from service:", orderToLoad);
           orderToEdit = await getOrderById(orderToLoad);
         }
-        
-        console.log("Order data received:", orderToEdit);
         
         if (!orderToEdit) {
           throw new Error("Pedido não encontrado");
         }
         
-        console.log("Order loaded successfully:", orderToEdit);
+        console.log("📋 Order loaded successfully:", orderToEdit);
         setIsEditMode(true);
         setCurrentOrderId(orderToLoad);
         setOriginalOrder(orderToEdit);
         
-        // Find and set customer with error handling
+        // Enhanced customer loading with better error handling
+        console.log("🔍 Looking for customer with ID:", orderToEdit.customerId);
+        console.log("📊 Available customers:", customers.length);
+        
         const customer = customers.find(c => c.id === orderToEdit?.customerId);
         if (customer) {
-          console.log("Setting customer:", customer.name);
+          console.log("✅ Customer found and set:", customer.name);
           setSelectedCustomer(customer);
-          
-          // Set the customer input value for display
           const displayValue = customer.code ? `${customer.code} - ${customer.name}` : customer.name;
           setCustomerInputValue(displayValue);
+          console.log("📝 Customer input value set to:", displayValue);
         } else {
-          console.warn("Customer not found for ID:", orderToEdit?.customerId);
-          toast("Cliente não encontrado", {
-            description: "O cliente associado a este pedido não foi encontrado."
+          console.warn("⚠️ Customer not found for ID:", orderToEdit?.customerId);
+          // Set customer name from order data as fallback
+          if (orderToEdit.customerName) {
+            console.log("🔄 Using customer name from order:", orderToEdit.customerName);
+            setCustomerInputValue(orderToEdit.customerName);
+          }
+          toast({
+            title: "Atenção",
+            description: "Cliente associado não encontrado na lista atual, mas o nome será mantido."
           });
         }
         
-        // Find and set sales rep with error handling
+        // Enhanced sales rep loading
+        console.log("🔍 Looking for sales rep with ID:", orderToEdit.salesRepId);
         const salesRep = salesReps.find(s => s.id === orderToEdit?.salesRepId);
         if (salesRep) {
-          console.log("Setting sales rep:", salesRep.name);
+          console.log("✅ Sales rep found and set:", salesRep.name);
           setSelectedSalesRep(salesRep);
-          
-          // Set the sales rep input value for display
           const displayValue = salesRep.code ? `${salesRep.code} - ${salesRep.name}` : salesRep.name;
           setSalesRepInputValue(displayValue);
         } else {
-          console.warn("Sales rep not found for ID:", orderToEdit?.salesRepId);
-          toast("Vendedor não encontrado", {
-            description: "O vendedor associado a este pedido não foi encontrado."
+          console.warn("⚠️ Sales rep not found for ID:", orderToEdit?.salesRepId);
+          // Set sales rep name from order data as fallback
+          if (orderToEdit.salesRepName) {
+            console.log("🔄 Using sales rep name from order:", orderToEdit.salesRepName);
+            setSalesRepInputValue(orderToEdit.salesRepName);
+          }
+          toast({
+            title: "Atenção",
+            description: "Vendedor associado não encontrado na lista atual, mas o nome será mantido."
           });
         }
         
-        // Enhanced validation and processing of order items
+        // Enhanced order items processing with validation
         if (orderToEdit?.items && Array.isArray(orderToEdit.items)) {
-          console.log("Processing order items:", orderToEdit.items.length);
+          console.log("📦 Processing order items:", orderToEdit.items.length);
           
-          if (orderToEdit.items.length === 0) {
-            console.warn("Order has no items");
-          }
-          
-          // Improved item normalization with more thorough validation
-          const updatedItems: OrderItem[] = orderToEdit.items.map((item, index) => {
+          const validatedItems: OrderItem[] = orderToEdit.items.map((item, index) => {
             if (!item) {
-              console.warn(`Null or undefined item found at index ${index}`);
-              // Create a placeholder item to prevent crashes
+              console.warn(`⚠️ Null item found at index ${index}`);
               return {
                 id: uuidv4(),
                 productId: `unknown-${index}`,
@@ -140,60 +135,62 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
               };
             }
             
-            return {
+            // Ensure all required fields are present and valid
+            const validatedItem: OrderItem = {
               id: item.id || uuidv4(),
               productId: item.productId || `unknown-${index}`,
               productName: item.productName || "Item sem nome",
               productCode: item.productCode || 0,
-              quantity: item.quantity || 1,
-              unitPrice: item.unitPrice || item.price || 0,
-              price: item.price || item.unitPrice || 0,
-              discount: item.discount || 0,
-              total: ((item.unitPrice || item.price || 0) * (item.quantity || 1))
+              quantity: Math.max(item.quantity || 1, 1),
+              unitPrice: Math.max(item.unitPrice || item.price || 0, 0),
+              price: Math.max(item.price || item.unitPrice || 0, 0),
+              discount: Math.max(item.discount || 0, 0),
+              total: Math.max((item.unitPrice || item.price || 0) * (item.quantity || 1), 0)
             };
+            
+            console.log(`✅ Validated item ${index + 1}:`, validatedItem.productName);
+            return validatedItem;
           });
           
-          console.log("Normalized order items:", updatedItems);
-          setOrderItems(updatedItems);
+          console.log("📋 Setting validated order items:", validatedItems.length);
+          setOrderItems(validatedItems);
         } else {
-          console.warn("Order items are missing or not in expected format", orderToEdit?.items);
+          console.warn("⚠️ No valid items found in order");
           setOrderItems([]);
-          toast({
-            title: "Erro nos itens",
-            description: "Os itens deste pedido não puderam ser carregados corretamente."
-          });
         }
         
         // Set payment table with validation
         if (orderToEdit?.paymentTableId) {
-          console.log("Setting payment table ID:", orderToEdit.paymentTableId);
+          console.log("💳 Setting payment table ID:", orderToEdit.paymentTableId);
           const tableExists = paymentTables.some(pt => pt.id === orderToEdit.paymentTableId);
           
           if (tableExists) {
             setSelectedPaymentTable(orderToEdit.paymentTableId);
           } else {
-            console.warn("Payment table not found:", orderToEdit.paymentTableId);
-            // Fall back to default table
+            console.warn("⚠️ Payment table not found:", orderToEdit.paymentTableId);
             setSelectedPaymentTable(paymentTables.length > 0 ? paymentTables[0].id : 'default-table');
           }
         }
         
-        // Remove duplicate toast messages since parent component already validated the order
         if (!preloadedOrder) {
-          toast("Pedido carregado", {
-            description: `Editando pedido ${orderToLoad.substring(0, 6)}`
+          toast({
+            title: "Pedido carregado",
+            description: `Editando pedido #${orderToLoad.substring(0, 6)}`
           });
         }
+        
+        console.log("🎉 Order loading completed successfully");
       } catch (error) {
-        console.error("Error loading order:", error);
+        console.error("❌ Error loading order:", error);
         const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
         setLoadError(errorMsg);
         
-        toast.error("Erro ao carregar pedido", {
-          description: `Ocorreu um erro ao carregar o pedido: ${errorMsg}`
+        toast({
+          title: "Erro ao carregar pedido",
+          description: `Ocorreu um erro: ${errorMsg}`,
+          variant: "destructive"
         });
         
-        // Navigation with delay
         setTimeout(() => {
           navigate('/pedidos');
         }, 3000);
@@ -202,7 +199,6 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       }
     };
     
-    // Get orderId either from props or from URL params as fallback
     const orderIdToLoad = orderId || searchParams.get('id');
     
     if (orderIdToLoad) {
@@ -227,38 +223,41 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
   };
 
-  // Enhanced add item function with better logging and error handling
+  // Enhanced add item function with detailed logging and state management
   const handleAddItem = (product: Product, quantity: number, price: number) => {
-    console.log("=== ADDING ITEM TO ORDER (ENHANCED) ===");
-    console.log("Product:", product);
-    console.log("Quantity:", quantity);
-    console.log("Price:", price);
-    console.log("Current order items before addition:", orderItems);
-    console.log("Is edit mode:", isEditMode);
+    console.log("🛒 === ADDING ITEM TO ORDER (EDIT MODE) ===");
+    console.log("📦 Product:", product);
+    console.log("🔢 Quantity:", quantity);
+    console.log("💰 Price:", price);
+    console.log("📋 Current order items:", orderItems.length);
+    console.log("✏️ Is edit mode:", isEditMode);
     
     if (!product || !product.id) {
-      console.error("Invalid product provided:", product);
+      console.error("❌ Invalid product provided:", product);
       toast({
         title: "Erro",
-        description: "Produto inválido selecionado"
+        description: "Produto inválido selecionado",
+        variant: "destructive"
       });
       return;
     }
 
     if (!quantity || quantity <= 0) {
-      console.error("Invalid quantity provided:", quantity);
+      console.error("❌ Invalid quantity provided:", quantity);
       toast({
         title: "Erro", 
-        description: "Quantidade deve ser maior que zero"
+        description: "Quantidade deve ser maior que zero",
+        variant: "destructive"
       });
       return;
     }
 
-    if (!price || price < 0) {
-      console.error("Invalid price provided:", price);
+    if (price < 0) {
+      console.error("❌ Invalid price provided:", price);
       toast({
         title: "Erro",
-        description: "Preço deve ser maior ou igual a zero"
+        description: "Preço deve ser maior ou igual a zero",
+        variant: "destructive"
       });
       return;
     }
@@ -268,13 +267,12 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       const existingItemIndex = orderItems.findIndex(item => item.productId === product.id);
       
       if (existingItemIndex !== -1) {
-        console.log("Updating existing item at index:", existingItemIndex);
+        console.log("🔄 Updating existing item at index:", existingItemIndex);
         const existingItem = orderItems[existingItemIndex];
-        const updatedItems = [...orderItems];
-        
         const newQuantity = (existingItem.quantity || 0) + quantity;
         const newTotal = price * newQuantity;
         
+        const updatedItems = [...orderItems];
         updatedItems[existingItemIndex] = {
           ...existingItem,
           quantity: newQuantity,
@@ -284,14 +282,14 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         };
         
         setOrderItems(updatedItems);
-        console.log("Updated order items after modification:", updatedItems);
+        console.log("✅ Updated existing item. New quantity:", newQuantity);
         
         toast({
           title: "Item atualizado",
           description: `${quantity}x ${product.name} adicionado ao item existente (total: ${newQuantity})`
         });
       } else {
-        // Create new item with unique identifier
+        // Create new item
         const newItem: OrderItem = {
           id: uuidv4(),
           productId: product.id,
@@ -304,10 +302,10 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
           total: price * quantity
         };
         
-        console.log("Adding new item with generated ID:", newItem);
+        console.log("➕ Adding new item:", newItem);
         const updatedItems = [...orderItems, newItem];
         setOrderItems(updatedItems);
-        console.log("Updated order items after addition:", updatedItems);
+        console.log("✅ Added new item. Total items:", updatedItems.length);
         
         toast({
           title: "Item adicionado",
@@ -315,24 +313,40 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         });
       }
     } catch (error) {
-      console.error("Error in handleAddItem:", error);
+      console.error("❌ Error in handleAddItem:", error);
       toast({
         title: "Erro ao adicionar item",
-        description: "Ocorreu um erro ao adicionar o item ao pedido"
+        description: "Ocorreu um erro ao adicionar o item ao pedido",
+        variant: "destructive"
       });
     }
   };
 
-  // Remove item function
+  // Enhanced remove item function with proper state management
   const handleRemoveItem = (productId: string) => {
-    console.log("Removing item with productId:", productId);
+    console.log("🗑️ Removing item with productId:", productId);
+    console.log("📋 Current items before removal:", orderItems.length);
+    
+    const itemToRemove = orderItems.find(item => item.productId === productId);
+    if (!itemToRemove) {
+      console.warn("⚠️ Item not found for removal:", productId);
+      toast({
+        title: "Erro",
+        description: "Item não encontrado para remoção",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const updatedItems = orderItems.filter(item => item.productId !== productId);
     setOrderItems(updatedItems);
-    console.log("Items after removal:", updatedItems);
+    
+    console.log("✅ Item removed successfully. Remaining items:", updatedItems.length);
+    console.log("🗑️ Removed item:", itemToRemove.productName);
     
     toast({
       title: "Item removido",
-      description: "Item removido do pedido"
+      description: `${itemToRemove.productName} removido do pedido`
     });
   };
 
@@ -340,25 +354,37 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
   const handleCreateOrder = async () => {
     // Form validation
     if (!selectedCustomer) {
-      toast("Selecione um cliente para o pedido.");
+      toast({
+        title: "Erro",
+        description: "Selecione um cliente para o pedido.",
+        variant: "destructive"
+      });
       return;
     }
     
     if (!selectedSalesRep) {
-      toast("Selecione um vendedor para o pedido.");
+      toast({
+        title: "Erro",
+        description: "Selecione um vendedor para o pedido.",
+        variant: "destructive"
+      });
       return;
     }
     
     if (orderItems.length === 0) {
-      toast("Adicione pelo menos um item ao pedido.");
+      toast({
+        title: "Erro",
+        description: "Adicione pelo menos um item ao pedido.",
+        variant: "destructive"
+      });
       return;
     }
     
     try {
       setIsSubmitting(true);
-      console.log("Starting order submission process...");
-      console.log("Current connection status:", connectionStatus);
-      console.log("Order items to save:", orderItems);
+      console.log("💾 Starting order submission process...");
+      console.log("🌐 Current connection status:", connectionStatus);
+      console.log("📦 Order items to save:", orderItems);
       
       // Normalize order items with improved validation
       const normalizedItems = orderItems.map(item => ({
@@ -373,7 +399,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         total: (item.unitPrice || item.price || 0) * (item.quantity || 1)
       }));
       
-      console.log("Normalized items for saving:", normalizedItems);
+      console.log("✅ Normalized items for saving:", normalizedItems);
       
       // Calculate total based on the normalized items
       const calculatedTotal = normalizedItems.reduce((sum, item) => 
@@ -410,23 +436,23 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         archived: isEditMode && originalOrder?.archived ? originalOrder.archived : false,
       };
       
-      console.log("Saving order with data:", orderData);
+      console.log("💾 Saving order with data:", orderData);
       
       let orderId = "";
       let isPromissoryNote = false;
       
       if (isEditMode && currentOrderId) {
-        console.log("Updating existing order:", currentOrderId);
-        // Ensure we're passing the normalized items with IDs
+        console.log("✏️ Updating existing order:", currentOrderId);
         await updateOrder(currentOrderId, {
           ...orderData,
           items: normalizedItems
         });
         
         orderId = currentOrderId;
-        console.log("Order successfully updated:", orderId);
+        console.log("✅ Order successfully updated:", orderId);
         
-        toast.success("Pedido Atualizado", {
+        toast({
+          title: "Pedido Atualizado",
           description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
         });
 
@@ -435,25 +461,26 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         
         // Create automatic payment record if needed
         if (isPromissoryNote && orderId) {
-          console.log("Creating automatic payment record for promissory note");
+          console.log("📝 Creating automatic payment record for promissory note");
           await createAutomaticPaymentRecord({
             ...orderData,
             id: orderId,
             code: orderData.code || 0
           } as Order);
           
-          // Inform the user that a promissory note was generated
-          toast.success("Nota Promissória Gerada", {
+          toast({
+            title: "Nota Promissória Gerada",
             description: "A nota promissória foi gerada e pode ser acessada na aba de Pagamentos."
           });
         }
       } else {
-        console.log("Creating new order");
+        console.log("➕ Creating new order");
         orderId = await addOrder(orderData as Omit<Order, "id">);
-        console.log("Order created with ID:", orderId);
+        console.log("✅ Order created with ID:", orderId);
         
         if (orderId) {
-          toast.success("Pedido Criado", {
+          toast({
+            title: "Pedido Criado",
             description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
           });
           
@@ -462,15 +489,15 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
           
           // Create automatic payment record if needed
           if (isPromissoryNote) {
-            console.log("Creating automatic payment record for promissory note");
+            console.log("📝 Creating automatic payment record for promissory note");
             await createAutomaticPaymentRecord({
               ...orderData,
               id: orderId,
               code: orderData.code || 0
             } as Order);
             
-            // Inform the user that a promissory note was generated
-            toast.success("Nota Promissória Gerada", {
+            toast({
+              title: "Nota Promissória Gerada",
               description: "A nota promissória foi gerada e pode ser acessada na aba de Pagamentos."
             });
           }
@@ -486,9 +513,11 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         navigate('/pedidos');
       }, 1500);
     } catch (error) {
-      console.error("Erro ao processar pedido:", error);
-      toast.error("Erro ao processar pedido", {
-        description: `${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      console.error("❌ Erro ao processar pedido:", error);
+      toast({
+        title: "Erro ao processar pedido",
+        description: `${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
@@ -510,7 +539,8 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     if (selectedCustomer) {
       setIsRecentPurchasesDialogOpen(true);
     } else {
-      toast("Atenção", {
+      toast({
+        title: "Atenção",
         description: "Selecione um cliente primeiro para ver compras recentes."
       });
     }

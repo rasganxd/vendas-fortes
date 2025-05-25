@@ -55,7 +55,7 @@ export function useProductSearch({
   };
   
   const handleProductSelect = (product: Product) => {
-    console.log("Product selected:", product);
+    console.log("📦 Product selected:", product);
     setSelectedProduct(product);
     setSearchTerm(product.name);
     setPrice(product.price);
@@ -82,42 +82,49 @@ export function useProductSearch({
     const value = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
     setPrice(parseFloat(value) || 0);
   };
-  
+
+  // Enhanced handleAddToOrder with proper form reset
   const handleAddToOrder = () => {
-    console.log("=== ADDING ITEM TO ORDER ===");
-    console.log("Selected product:", selectedProduct);
-    console.log("Quantity:", quantity);
-    console.log("Price:", price);
+    console.log("🛒 === ADDING ITEM TO ORDER (PRODUCT SEARCH) ===");
+    console.log("📦 Selected product:", selectedProduct);
+    console.log("🔢 Quantity:", quantity);
+    console.log("💰 Price:", price);
     
     if (selectedProduct && (quantity !== null && quantity > 0)) {
       try {
         // Call the addItemToOrder function passed from parent
         addItemToOrder(selectedProduct, quantity, price);
         
-        console.log("Item successfully added, resetting form");
+        console.log("✅ Item successfully added, resetting form");
         
-        // Reset form fields immediately after successful addition
-        setSearchTerm('');
-        setSelectedProduct(null);
-        setQuantity(null);
-        setPrice(0);
-        setShowResults(false);
+        // Reset all form fields immediately
+        resetForm();
         
         // Focus back on the search input with a small delay
         setTimeout(() => {
           if (inputRef?.current) {
             inputRef.current.focus();
-            console.log("Focus returned to search input");
+            console.log("🎯 Focus returned to search input");
           }
         }, 100);
       } catch (error) {
-        console.error("Error adding item to order:", error);
+        console.error("❌ Error adding item to order:", error);
       }
     } else {
-      console.warn("Cannot add item - missing product or invalid quantity");
-      console.warn("Selected product:", selectedProduct);
-      console.warn("Quantity:", quantity);
+      console.warn("⚠️ Cannot add item - missing product or invalid quantity");
+      console.warn("📦 Selected product:", selectedProduct);
+      console.warn("🔢 Quantity:", quantity);
     }
+  };
+
+  // Enhanced form reset function
+  const resetForm = () => {
+    console.log("🔄 Resetting product search form");
+    setSearchTerm('');
+    setSelectedProduct(null);
+    setQuantity(null);
+    setPrice(0);
+    setShowResults(false);
   };
   
   const incrementQuantity = () => {
@@ -200,6 +207,7 @@ export function useProductSearch({
     handlePriceChange,
     handleAddToOrder,
     incrementQuantity,
-    decrementQuantity
+    decrementQuantity,
+    resetForm
   };
 }
