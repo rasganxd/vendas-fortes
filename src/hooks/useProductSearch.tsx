@@ -55,7 +55,7 @@ export function useProductSearch({
   };
   
   const handleProductSelect = (product: Product) => {
-    console.log("Product selected in edit mode:", product);
+    console.log("Product selected:", product);
     setSelectedProduct(product);
     setSearchTerm(product.name);
     setPrice(product.price);
@@ -84,31 +84,39 @@ export function useProductSearch({
   };
   
   const handleAddToOrder = () => {
-    console.log("Adding item to order - Selected product:", selectedProduct);
-    console.log("Adding item to order - Quantity:", quantity);
-    console.log("Adding item to order - Price:", price);
+    console.log("=== ADDING ITEM TO ORDER ===");
+    console.log("Selected product:", selectedProduct);
+    console.log("Quantity:", quantity);
+    console.log("Price:", price);
     
     if (selectedProduct && (quantity !== null && quantity > 0)) {
-      // Call the addItemToOrder function passed from parent
-      addItemToOrder(selectedProduct, quantity, price);
-      
-      // Reset form fields immediately after successful addition
-      console.log("Resetting form fields after adding item");
-      setSearchTerm('');
-      setSelectedProduct(null);
-      setQuantity(null);
-      setPrice(0);
-      setShowResults(false);
-      
-      // Focus back on the search input with a small delay
-      setTimeout(() => {
-        if (inputRef?.current) {
-          inputRef.current.focus();
-          console.log("Focus returned to search input");
-        }
-      }, 100);
+      try {
+        // Call the addItemToOrder function passed from parent
+        addItemToOrder(selectedProduct, quantity, price);
+        
+        console.log("Item successfully added, resetting form");
+        
+        // Reset form fields immediately after successful addition
+        setSearchTerm('');
+        setSelectedProduct(null);
+        setQuantity(null);
+        setPrice(0);
+        setShowResults(false);
+        
+        // Focus back on the search input with a small delay
+        setTimeout(() => {
+          if (inputRef?.current) {
+            inputRef.current.focus();
+            console.log("Focus returned to search input");
+          }
+        }, 100);
+      } catch (error) {
+        console.error("Error adding item to order:", error);
+      }
     } else {
       console.warn("Cannot add item - missing product or invalid quantity");
+      console.warn("Selected product:", selectedProduct);
+      console.warn("Quantity:", quantity);
     }
   };
   

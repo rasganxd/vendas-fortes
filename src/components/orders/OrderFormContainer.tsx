@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Order, OrderItem, Customer, SalesRep, Product } from '@/types';
@@ -228,55 +229,98 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
 
   // Enhanced add item function with better logging and error handling
   const handleAddItem = (product: Product, quantity: number, price: number) => {
-    console.log("=== ADDING ITEM TO ORDER (EDIT MODE) ===");
+    console.log("=== ADDING ITEM TO ORDER (ENHANCED) ===");
     console.log("Product:", product);
     console.log("Quantity:", quantity);
     console.log("Price:", price);
-    console.log("Current order items:", orderItems);
+    console.log("Current order items before addition:", orderItems);
     console.log("Is edit mode:", isEditMode);
     
-    // Check if product already exists in order
-    const existingItemIndex = orderItems.findIndex(item => item.productId === product.id);
-    
-    if (existingItemIndex !== -1) {
-      console.log("Updating existing item at index:", existingItemIndex);
-      const existingItem = orderItems[existingItemIndex];
-      const updatedItems = [...orderItems];
-      
-      updatedItems[existingItemIndex] = {
-        ...existingItem,
-        quantity: (existingItem.quantity || 0) + quantity,
-        unitPrice: price,
-        price: price,
-        total: price * ((existingItem.quantity || 0) + quantity)
-      };
-      
-      setOrderItems(updatedItems);
-      console.log("Updated order items after modification:", updatedItems);
-    } else {
-      // Create new item with unique identifier
-      const newItem: OrderItem = {
-        id: uuidv4(),
-        productId: product.id,
-        productName: product.name,
-        productCode: product.code || 0,
-        quantity: quantity,
-        price: price,
-        unitPrice: price,
-        discount: 0,
-        total: price * quantity
-      };
-      
-      console.log("Adding new item with generated ID:", newItem);
-      const updatedItems = [...orderItems, newItem];
-      setOrderItems(updatedItems);
-      console.log("Updated order items after addition:", updatedItems);
+    if (!product || !product.id) {
+      console.error("Invalid product provided:", product);
+      toast({
+        title: "Erro",
+        description: "Produto inválido selecionado"
+      });
+      return;
+    }
+
+    if (!quantity || quantity <= 0) {
+      console.error("Invalid quantity provided:", quantity);
+      toast({
+        title: "Erro", 
+        description: "Quantidade deve ser maior que zero"
+      });
+      return;
+    }
+
+    if (!price || price < 0) {
+      console.error("Invalid price provided:", price);
+      toast({
+        title: "Erro",
+        description: "Preço deve ser maior ou igual a zero"
+      });
+      return;
     }
     
-    toast({
-      title: "Item adicionado",
-      description: `${quantity}x ${product.name} adicionado ao pedido`
-    });
+    try {
+      // Check if product already exists in order
+      const existingItemIndex = orderItems.findIndex(item => item.productId === product.id);
+      
+      if (existingItemIndex !== -1) {
+        console.log("Updating existing item at index:", existingItemIndex);
+        const existingItem = orderItems[existingItemIndex];
+        const updatedItems = [...orderItems];
+        
+        const newQuantity = (existingItem.quantity || 0) + quantity;
+        const newTotal = price * newQuantity;
+        
+        updatedItems[existingItemIndex] = {
+          ...existingItem,
+          quantity: newQuantity,
+          unitPrice: price,
+          price: price,
+          total: newTotal
+        };
+        
+        setOrderItems(updatedItems);
+        console.log("Updated order items after modification:", updatedItems);
+        
+        toast({
+          title: "Item atualizado",
+          description: `${quantity}x ${product.name} adicionado ao item existente (total: ${newQuantity})`
+        });
+      } else {
+        // Create new item with unique identifier
+        const newItem: OrderItem = {
+          id: uuidv4(),
+          productId: product.id,
+          productName: product.name,
+          productCode: product.code || 0,
+          quantity: quantity,
+          price: price,
+          unitPrice: price,
+          discount: 0,
+          total: price * quantity
+        };
+        
+        console.log("Adding new item with generated ID:", newItem);
+        const updatedItems = [...orderItems, newItem];
+        setOrderItems(updatedItems);
+        console.log("Updated order items after addition:", updatedItems);
+        
+        toast({
+          title: "Item adicionado",
+          description: `${quantity}x ${product.name} adicionado ao pedido`
+        });
+      }
+    } catch (error) {
+      console.error("Error in handleAddItem:", error);
+      toast({
+        title: "Erro ao adicionar item",
+        description: "Ocorreu um erro ao adicionar o item ao pedido"
+      });
+    }
   };
 
   // Remove item function
@@ -314,6 +358,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       setIsSubmitting(true);
       console.log("Starting order submission process...");
       console.log("Current connection status:", connectionStatus);
+      console.log("Order items to save:", orderItems);
       
       // Normalize order items with improved validation
       const normalizedItems = orderItems.map(item => ({
@@ -327,6 +372,8 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         discount: item.discount || 0,
         total: (item.unitPrice || item.price || 0) * (item.quantity || 1)
       }));
+      
+      console.log("Normalized items for saving:", normalizedItems);
       
       // Calculate total based on the normalized items
       const calculatedTotal = normalizedItems.reduce((sum, item) => 
@@ -377,6 +424,8 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
         });
         
         orderId = currentOrderId;
+        console.log("Order successfully updated:", orderId);
+        
         toast.success("Pedido Atualizado", {
           description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
         });
