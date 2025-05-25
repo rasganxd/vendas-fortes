@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrders } from '@/hooks/useOrders';
+import { usePayments } from '@/hooks/usePayments';
 import { toast } from '@/hooks/use-toast';
 import { Customer, SalesRep, OrderItem, PaymentTable, Order } from '@/types';
 import { ConnectionStatus } from '@/context/AppContextTypes';
@@ -34,6 +35,7 @@ export function useOrderOperations({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { addOrder, updateOrder, generateNextCode } = useOrders();
+  const { addPayment } = usePayments();
   const navigate = useNavigate();
 
   const validateOrderForm = useCallback(() => {
@@ -76,6 +78,46 @@ export function useOrderOperations({
     return true;
   }, [selectedCustomer, selectedSalesRep, orderItems, connectionStatus]);
 
+  const createPromissoryNotePayment = useCallback(async (order: Order, paymentTable: PaymentTable) => {
+    try {
+      console.log('Creating promissory note payment for order:', order.id);
+      
+      // Create a payment record for the promissory note
+      const now = new Date();
+      const dueDate = new Date(now);
+      
+      // Add 30 days by default, or use the first term if available
+      if (paymentTable.terms && paymentTable.terms.length > 0) {
+        dueDate.setDate(now.getDate() + paymentTable.terms[0].days);
+      } else {
+        dueDate.setDate(now.getDate() + 30);
+      }
+
+      await addPayment({
+        orderId: order.id,
+        amount: order.total,
+        method: 'Nota Promissória',
+        status: 'pending',
+        date: now,
+        dueDate: dueDate,
+        notes: `Nota promissória - Pedido #${order.code}`,
+        customerName: order.customerName,
+        createdAt: now,
+        updatedAt: now
+      });
+
+      console.log('Promissory note payment created successfully');
+    } catch (error) {
+      console.error('Error creating promissory note payment:', error);
+      // Don't throw error to avoid breaking the order creation
+      toast({
+        title: "Aviso",
+        description: "Pedido criado, mas houve um problema ao gerar a nota promissória.",
+        variant: "destructive"
+      });
+    }
+  }, [addPayment]);
+
   const handleCreateOrder = useCallback(async () => {
     if (!validateOrderForm()) return;
 
@@ -107,6 +149,12 @@ export function useOrderOperations({
         };
 
         await updateOrder(currentOrderId, orderUpdate);
+        
+        // Check if payment table is promissory note type and create payment if needed
+        if (selectedTable && (selectedTable.type === 'promissoria' || selectedTable.type === 'promissory_note')) {
+          const updatedOrder = { ...originalOrder, ...orderUpdate, id: currentOrderId };
+          await createPromissoryNotePayment(updatedOrder as Order, selectedTable);
+        }
         
         // Smooth transition before navigation
         setTimeout(() => {
@@ -143,7 +191,14 @@ export function useOrderOperations({
           updatedAt: new Date()
         };
 
-        await addOrder(newOrder);
+        const orderId = await addOrder(newOrder);
+        
+        // Check if payment table is promissory note type and create payment
+        if (selectedTable && (selectedTable.type === 'promissoria' || selectedTable.type === 'promissory_note')) {
+          const createdOrder = { ...newOrder, id: orderId } as Order;
+          await createPromissoryNotePayment(createdOrder, selectedTable);
+        }
+        
         resetForm();
         
         // Smooth transition before navigation
@@ -166,7 +221,7 @@ export function useOrderOperations({
     validateOrderForm, isEditMode, currentOrderId, originalOrder,
     selectedCustomer, selectedSalesRep, selectedPaymentTable,
     paymentTables, orderItems, updateOrder, generateNextCode,
-    addOrder, resetForm, navigate
+    addOrder, resetForm, navigate, createPromissoryNotePayment
   ]);
 
   return {
