@@ -99,87 +99,45 @@ export default function OrderForm({
               <h3 className="text-lg font-medium">
                 {isEditMode ? 'Editar Pedido' : 'Novo Pedido'}
               </h3>
+              {isEditMode && (
+                <div className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                  Modo de Edição - Você pode adicionar e remover itens
+                </div>
+              )}
             </div>
             
-            {isEditMode ? (
-              // Read-only view for edit mode
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
-                  <div className="text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                  <div className="text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
-                  <div className="text-gray-900 font-medium">{getPaymentTableName()}</div>
-                </div>
+            {/* Informações básicas do pedido */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
+                <div className="text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
               </div>
-            ) : (
-              // Editable form for new orders
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                  <div className="relative">
-                    <SalesRepSearchInput 
-                      salesReps={salesReps} 
-                      selectedSalesRep={selectedSalesRep} 
-                      setSelectedSalesRep={setSelectedSalesRep} 
-                      inputRef={salesRepInputRef} 
-                      onEnterPress={() => customerInputRef.current?.focus()} 
-                      initialInputValue={salesRepInputValue} 
-                    />
-                  </div>
-                  
-                  <div className="relative">
-                    <CustomerSearchInput 
-                      customers={customers} 
-                      selectedCustomer={selectedCustomer} 
-                      setSelectedCustomer={setSelectedCustomer} 
-                      inputRef={customerInputRef} 
-                      onEnterPress={() => paymentTableRef.current?.focus()} 
-                      initialInputValue={customerInputValue} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                  <div className="relative">
-                    <PaymentOptionsInput 
-                      paymentTables={paymentTables} 
-                      selectedPaymentTable={selectedPaymentTable} 
-                      setSelectedPaymentTable={setSelectedPaymentTable} 
-                      simplifiedView={true} 
-                      buttonRef={paymentTableRef} 
-                      onSelectComplete={() => productInputRef.current?.focus()} 
-                      customerId={selectedCustomer?.id} 
-                      customerName={selectedCustomer?.name} 
-                      orderTotal={calculateTotal()} 
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <Button 
-                        onClick={handleViewRecentPurchases} 
-                        variant="outline" 
-                        className="w-full border-dashed border-gray-300 hover:border-gray-400 text-gray-700" 
-                        disabled={!selectedCustomer}
-                      >
-                        <ClipboardList size={18} className="mr-2" />
-                        Visualizar Compras Recentes
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                <div className="text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+                <div className="text-gray-900 font-medium">{getPaymentTableName()}</div>
+              </div>
+            </div>
             
-            {/* Save button - always visible */}
-            <div className="flex justify-end">
+            {/* Botão de compras recentes e salvar */}
+            <div className="flex justify-between items-center gap-4">
+              <div className="flex-1">
+                <Button 
+                  onClick={handleViewRecentPurchases} 
+                  variant="outline" 
+                  className="w-full border-dashed border-gray-300 hover:border-gray-400 text-gray-700" 
+                  disabled={!selectedCustomer}
+                >
+                  <ClipboardList size={18} className="mr-2" />
+                  Visualizar Compras Recentes
+                </Button>
+              </div>
+              
               <Button 
                 onClick={handleCreateOrder} 
                 disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
@@ -193,9 +151,14 @@ export default function OrderForm({
         </CardContent>
       </Card>
       
-      {/* Product search - always editable */}
+      {/* Busca de produtos - sempre editável */}
       <Card className="shadow-md border-gray-200">
         <CardContent className="pt-6">
+          <div className="mb-4">
+            <h4 className="text-md font-medium text-gray-800 mb-2">
+              {isEditMode ? 'Adicionar Novos Itens ao Pedido' : 'Adicionar Itens ao Pedido'}
+            </h4>
+          </div>
           <ProductSearchInput 
             products={products} 
             addItemToOrder={handleAddItem} 
@@ -205,9 +168,17 @@ export default function OrderForm({
         </CardContent>
       </Card>
       
-      {/* Order items table - always editable */}
+      {/* Tabela de itens - sempre editável */}
       <Card className="shadow-md border-gray-200">
         <CardContent className="p-0">
+          <div className="p-4 border-b bg-gray-50">
+            <h4 className="text-md font-medium text-gray-800">
+              Itens do Pedido
+              {isEditMode && (
+                <span className="ml-2 text-sm text-blue-600">(Clique no ícone da lixeira para remover itens)</span>
+              )}
+            </h4>
+          </div>
           <OrderItemsTable 
             orderItems={orderItems} 
             onRemoveItem={handleRemoveItem} 

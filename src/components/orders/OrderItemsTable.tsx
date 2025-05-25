@@ -27,61 +27,79 @@ export default function OrderItemsTable({
     return `${item.productId}-${index}`;
   };
 
+  const handleRemoveClick = (item: OrderItem) => {
+    console.log("🗑️ Remove button clicked for item:", item);
+    console.log("🎯 Product ID:", item.productId);
+    
+    if (item.productId) {
+      onRemoveItem(item.productId);
+    } else {
+      console.error("❌ No productId found for item:", item);
+    }
+  };
+
   return (
     <>
       {orderItems.length === 0 ? (
-        <div className="text-center py-6 text-gray-500">
-          Nenhum item adicionado ao pedido.
+        <div className="text-center py-12 text-gray-500">
+          <div className="text-lg mb-2">Nenhum item adicionado ao pedido</div>
+          <div className="text-sm">Use a busca de produtos acima para adicionar itens</div>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left">Código</th>
-                <th className="px-4 py-2 text-left">Descrição</th>
-                <th className="px-4 py-2 text-center">Qtde</th>
-                <th className="px-4 py-2 text-center">Un</th>
-                <th className="px-4 py-2 text-right">Valor Unit.</th>
-                <th className="px-4 py-2 text-right">Valor Total</th>
-                <th className="px-4 py-2 text-center">Ações</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">Código</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">Descrição</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-700">Qtde</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-700">Un</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-700">Valor Unit.</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-700">Valor Total</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-700">Ações</th>
               </tr>
             </thead>
             <tbody>
               {orderItems.map((item, index) => (
-                <tr key={getItemKey(item, index)} className="border-t">
-                  <td className="px-4 py-3">{item.productCode || '—'}</td>
-                  <td className="px-4 py-3">{item.productName}</td>
-                  <td className="px-4 py-3 text-center">{item.quantity}</td>
-                  <td className="px-4 py-3 text-center">un</td>
-                  <td className="px-4 py-3 text-right">
+                <tr key={getItemKey(item, index)} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-3 text-gray-800">{item.productCode || '—'}</td>
+                  <td className="px-4 py-3 text-gray-800 font-medium">{item.productName}</td>
+                  <td className="px-4 py-3 text-center text-gray-800">{item.quantity}</td>
+                  <td className="px-4 py-3 text-center text-gray-600">un</td>
+                  <td className="px-4 py-3 text-right text-gray-800">
                     {(item.unitPrice || item.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
-                  <td className="px-4 py-3 text-right font-medium">
+                  <td className="px-4 py-3 text-right font-semibold text-gray-900">
                     {((item.unitPrice || item.price || 0) * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => onRemoveItem(item.productId || '')}
+                      onClick={() => handleRemoveClick(item)}
                       type="button"
+                      className="hover:bg-red-50 hover:text-red-600 transition-colors"
+                      title="Remover item do pedido"
                     >
-                      <Trash2 size={16} className="text-red-500" />
+                      <Trash2 size={16} className="text-red-500 hover:text-red-600" />
                     </Button>
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t bg-gray-50">
-                <td colSpan={4} className="px-4 py-3 text-left">
-                  <span className="font-medium">Itens: {orderItems.length}</span>
-                  <span className="mx-4 text-gray-500">|</span>
-                  <span className="font-medium">Qtde: {orderItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
+              <tr className="border-t-2 bg-gray-50">
+                <td colSpan={4} className="px-4 py-4 text-left">
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="font-semibold text-gray-700">Itens: {orderItems.length}</span>
+                    <span className="text-gray-400">|</span>
+                    <span className="font-semibold text-gray-700">
+                      Qtde Total: {orderItems.reduce((sum, item) => sum + item.quantity, 0)}
+                    </span>
+                  </div>
                 </td>
-                <td colSpan={1} className="px-4 py-3 text-right font-semibold">Total:</td>
-                <td className="px-4 py-3 text-right font-bold">
+                <td className="px-4 py-4 text-right font-semibold text-gray-700">Total Geral:</td>
+                <td className="px-4 py-4 text-right font-bold text-lg text-gray-900">
                   {calculateTotal().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </td>
                 <td></td>

@@ -36,6 +36,7 @@ export function useOrderForm() {
     console.log("📦 Product:", product);
     console.log("🔢 Quantity:", quantity);
     console.log("💰 Price:", price);
+    console.log("🎯 Edit Mode:", isEditMode);
     
     if (!product || !product.id) {
       console.error("❌ Invalid product provided:", product);
@@ -68,53 +69,59 @@ export function useOrderForm() {
     }
     
     try {
-      const existingItemIndex = orderItems.findIndex(item => item.productId === product.id);
-      
-      if (existingItemIndex !== -1) {
-        console.log("🔄 Updating existing item at index:", existingItemIndex);
-        const existingItem = orderItems[existingItemIndex];
-        const newQuantity = (existingItem.quantity || 0) + quantity;
-        const newTotal = price * newQuantity;
+      setOrderItems(currentItems => {
+        console.log("📋 Current items before adding:", currentItems);
         
-        const updatedItems = [...orderItems];
-        updatedItems[existingItemIndex] = {
-          ...existingItem,
-          quantity: newQuantity,
-          unitPrice: price,
-          price: price,
-          total: newTotal
-        };
+        const existingItemIndex = currentItems.findIndex(item => item.productId === product.id);
         
-        setOrderItems(updatedItems);
-        console.log("✅ Updated existing item. New quantity:", newQuantity);
-        
-        toast({
-          title: "Item atualizado",
-          description: `${quantity}x ${product.name} adicionado ao item existente (total: ${newQuantity})`
-        });
-      } else {
-        const newItem: OrderItem = {
-          id: uuidv4(),
-          productId: product.id,
-          productName: product.name,
-          productCode: product.code || 0,
-          quantity: quantity,
-          price: price,
-          unitPrice: price,
-          discount: 0,
-          total: price * quantity
-        };
-        
-        console.log("➕ Adding new item:", newItem);
-        const updatedItems = [...orderItems, newItem];
-        setOrderItems(updatedItems);
-        console.log("✅ Added new item. Total items:", updatedItems.length);
-        
-        toast({
-          title: "Item adicionado",
-          description: `${quantity}x ${product.name} adicionado ao pedido`
-        });
-      }
+        if (existingItemIndex !== -1) {
+          console.log("🔄 Updating existing item at index:", existingItemIndex);
+          const existingItem = currentItems[existingItemIndex];
+          const newQuantity = (existingItem.quantity || 0) + quantity;
+          const newTotal = price * newQuantity;
+          
+          const updatedItems = [...currentItems];
+          updatedItems[existingItemIndex] = {
+            ...existingItem,
+            quantity: newQuantity,
+            unitPrice: price,
+            price: price,
+            total: newTotal
+          };
+          
+          console.log("✅ Updated existing item. New quantity:", newQuantity);
+          
+          toast({
+            title: "Item atualizado",
+            description: `${quantity}x ${product.name} adicionado ao item existente (total: ${newQuantity})`
+          });
+          
+          return updatedItems;
+        } else {
+          const newItem: OrderItem = {
+            id: uuidv4(),
+            productId: product.id,
+            productName: product.name,
+            productCode: product.code || 0,
+            quantity: quantity,
+            price: price,
+            unitPrice: price,
+            discount: 0,
+            total: price * quantity
+          };
+          
+          console.log("➕ Adding new item:", newItem);
+          const updatedItems = [...currentItems, newItem];
+          console.log("✅ Added new item. Total items:", updatedItems.length);
+          
+          toast({
+            title: "Item adicionado",
+            description: `${quantity}x ${product.name} adicionado ao pedido`
+          });
+          
+          return updatedItems;
+        }
+      });
     } catch (error) {
       console.error("❌ Error in handleAddItem:", error);
       toast({
@@ -126,27 +133,33 @@ export function useOrderForm() {
   };
 
   const handleRemoveItem = (productId: string) => {
-    console.log("🗑️ Removing item with productId:", productId);
+    console.log("🗑️ === REMOVING ITEM FROM ORDER ===");
+    console.log("🎯 Product ID to remove:", productId);
+    console.log("🎯 Edit Mode:", isEditMode);
     
-    const itemToRemove = orderItems.find(item => item.productId === productId);
-    if (!itemToRemove) {
-      console.warn("⚠️ Item not found for removal:", productId);
+    setOrderItems(currentItems => {
+      console.log("📋 Current items before removal:", currentItems);
+      
+      const itemToRemove = currentItems.find(item => item.productId === productId);
+      if (!itemToRemove) {
+        console.warn("⚠️ Item not found for removal:", productId);
+        toast({
+          title: "Erro",
+          description: "Item não encontrado para remoção",
+          variant: "destructive"
+        });
+        return currentItems;
+      }
+      
+      const updatedItems = currentItems.filter(item => item.productId !== productId);
+      console.log("✅ Item removed successfully. Remaining items:", updatedItems.length);
+      
       toast({
-        title: "Erro",
-        description: "Item não encontrado para remoção",
-        variant: "destructive"
+        title: "Item removido",
+        description: `${itemToRemove.productName} removido do pedido`
       });
-      return;
-    }
-    
-    const updatedItems = orderItems.filter(item => item.productId !== productId);
-    setOrderItems(updatedItems);
-    
-    console.log("✅ Item removed successfully. Remaining items:", updatedItems.length);
-    
-    toast({
-      title: "Item removido",
-      description: `${itemToRemove.productName} removido do pedido`
+      
+      return updatedItems;
     });
   };
 
