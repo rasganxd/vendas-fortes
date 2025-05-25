@@ -1,12 +1,12 @@
 
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { useOrderForm } from '@/hooks/useOrderForm';
 import { useOrderLoader } from '@/hooks/useOrderLoader';
 import { useOrderOperations } from '@/hooks/useOrderOperations';
 import OrderForm from './OrderForm';
-import { RecentPurchasesManager } from './RecentPurchasesManager';
+import { RecentPurchasesManager, RecentPurchasesManagerRef } from './RecentPurchasesManager';
 import { OrderFormSkeleton } from '@/components/ui/order-skeleton';
 import { Order } from '@/types';
 
@@ -18,6 +18,7 @@ interface OrderFormContainerProps {
 export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFormContainerProps) {
   const { customers, salesReps, products, orders, connectionStatus } = useAppContext();
   const { paymentTables } = usePaymentTables();
+  const recentPurchasesRef = useRef<RecentPurchasesManagerRef>(null);
   
   const {
     selectedCustomer,
@@ -93,9 +94,11 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     }
   }, [isEditMode, currentOrderId]);
 
-  // Memoize the view recent purchases handler to prevent re-renders
+  // Connect the Recent Purchases functionality
   const handleViewRecentPurchases = useCallback(() => {
-    // This will be handled by the RecentPurchasesManager component
+    if (recentPurchasesRef.current) {
+      recentPurchasesRef.current.handleViewRecentPurchases();
+    }
   }, []);
 
   // Memoize form props to prevent unnecessary re-renders
@@ -160,6 +163,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       <OrderForm {...formProps} />
 
       <RecentPurchasesManager
+        ref={recentPurchasesRef}
         selectedCustomer={selectedCustomer}
         orders={orders}
       />
