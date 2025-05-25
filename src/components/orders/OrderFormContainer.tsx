@@ -226,31 +226,37 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
   };
 
-  // Add item function
+  // Enhanced add item function with better logging and error handling
   const handleAddItem = (product: Product, quantity: number, price: number) => {
-    console.log("Adding item to order:", product, quantity, price);
+    console.log("=== ADDING ITEM TO ORDER (EDIT MODE) ===");
+    console.log("Product:", product);
+    console.log("Quantity:", quantity);
+    console.log("Price:", price);
+    console.log("Current order items:", orderItems);
+    console.log("Is edit mode:", isEditMode);
     
     // Check if product already exists in order
-    const existingItem = orderItems.find(item => item.productId === product.id);
+    const existingItemIndex = orderItems.findIndex(item => item.productId === product.id);
     
-    if (existingItem) {
-      console.log("Updating existing item:", existingItem);
-      const updatedItems = orderItems.map(item =>
-        item.productId === product.id ? 
-          { 
-            ...item, 
-            quantity: (item.quantity || 0) + quantity,
-            unitPrice: price,  // Update the unit price to the new one
-            price: price,      // Ensure price field is also set for consistency
-            total: price * ((item.quantity || 0) + quantity)
-          } : item
-      );
+    if (existingItemIndex !== -1) {
+      console.log("Updating existing item at index:", existingItemIndex);
+      const existingItem = orderItems[existingItemIndex];
+      const updatedItems = [...orderItems];
+      
+      updatedItems[existingItemIndex] = {
+        ...existingItem,
+        quantity: (existingItem.quantity || 0) + quantity,
+        unitPrice: price,
+        price: price,
+        total: price * ((existingItem.quantity || 0) + quantity)
+      };
+      
       setOrderItems(updatedItems);
-      console.log("Updated order items:", updatedItems);
+      console.log("Updated order items after modification:", updatedItems);
     } else {
-      // IMPROVED: Create new item with unique identifier
+      // Create new item with unique identifier
       const newItem: OrderItem = {
-        id: uuidv4(), // Generate a unique ID for each new item
+        id: uuidv4(),
         productId: product.id,
         productName: product.name,
         productCode: product.code || 0,
@@ -262,19 +268,28 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
       };
       
       console.log("Adding new item with generated ID:", newItem);
-      setOrderItems(prevItems => [...prevItems, newItem]);
+      const updatedItems = [...orderItems, newItem];
+      setOrderItems(updatedItems);
+      console.log("Updated order items after addition:", updatedItems);
     }
     
-    toast(`${quantity}x ${product.name} adicionado ao pedido`);
+    toast({
+      title: "Item adicionado",
+      description: `${quantity}x ${product.name} adicionado ao pedido`
+    });
   };
 
   // Remove item function
   const handleRemoveItem = (productId: string) => {
     console.log("Removing item with productId:", productId);
-    setOrderItems(items => items.filter(item => item.productId !== productId));
-    console.log("Items after removal:", orderItems.filter(item => item.productId !== productId));
+    const updatedItems = orderItems.filter(item => item.productId !== productId);
+    setOrderItems(updatedItems);
+    console.log("Items after removal:", updatedItems);
     
-    toast("Item removido do pedido");
+    toast({
+      title: "Item removido",
+      description: "Item removido do pedido"
+    });
   };
 
   // Order creation/update function with improved error handling
