@@ -4,50 +4,147 @@ import { Product } from '@/types';
 import { productService } from '@/services/supabase/productService';
 import { toast } from '@/components/ui/use-toast';
 
+// Reduced cache time for faster updates
+const CACHE_MAX_AGE = 2 * 60 * 1000; // 2 minutes instead of 5
+const PRODUCTS_CACHE_KEY = 'app_products_cache';
+const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_timestamp';
+
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setIsLoading(true);
-        const data = await productService.getAll();
-        setProducts(data);
-      } catch (error) {
-        console.error('Error loading products:', error);
-        toast({
-          title: "Erro ao carregar produtos",
-          description: "Houve um problema ao carregar os produtos.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
+  // Force refresh function
+  const forceRefreshProducts = async () => {
+    console.log("Force refreshing products from Supabase");
+    setIsLoading(true);
+    
+    try {
+      // Clear cache
+      localStorage.removeItem(PRODUCTS_CACHE_KEY);
+      localStorage.removeItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
+      
+      // Fetch from Supabase
+      const fetchedProducts = await productService.getAll();
+      console.log(`Forcefully loaded ${fetchedProducts.length} products from Supabase`);
+      
+      setProducts(fetchedProducts);
+      
+      // Update cache
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      toast({
+        title: 'Produtos atualizados',
+        description: `${fetchedProducts.length} produtos carregados com sucesso!`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error during force refresh of products:', error);
+      
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar os produtos.',
+        variant: 'destructive',
+      });
+      
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load products with improved caching
+  const loadProducts = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Check cache first
+      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
+      
+      if (cachedData && cachedTimestamp) {
+        const age = Date.now() - parseInt(cachedTimestamp);
+        if (age < CACHE_MAX_AGE) {
+          console.log("Using cached products data");
+          setProducts(JSON.parse(cachedData));
+          setIsLoading(false);
+          return;
+        }
       }
+      
+      console.log("Fetching products from Supabase");
+      const fetchedProducts = await productService.getAll();
+      console.log(`Loaded ${fetchedProducts.length} products from Supabase`);
+      
+      setProducts(fetchedProducts);
+      
+      // Update cache
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      
+      // Try to use cached data as fallback
+      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
+      if (cachedData) {
+        console.log("Using cached products data as fallback");
+        setProducts(JSON.parse(cachedData));
+      } else {
+        setProducts([]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Listen for product updates from other components
+  useEffect(() => {
+    const handleProductsUpdated = () => {
+      console.log("Products updated event received, refreshing...");
+      forceRefreshProducts();
     };
 
+    window.addEventListener('productsUpdated', handleProductsUpdated);
+    
+    return () => {
+      window.removeEventListener('productsUpdated', handleProductsUpdated);
+    };
+  }, []);
+
+  // Initial load
+  useEffect(() => {
     loadProducts();
   }, []);
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
       const id = await productService.add(product);
-      const newProduct = { ...product, id };
-      setProducts([...products, newProduct]);
+      
+      const newProduct = { ...product, id, createdAt: new Date(), updatedAt: new Date() } as Product;
+      
+      // Update local state immediately
+      setProducts((prev) => [...prev, newProduct]);
+      
+      // Update cache
+      const updatedProducts = [...products, newProduct];
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       toast({
-        title: "Produto adicionado",
-        description: "Produto adicionado com sucesso!"
+        title: 'Produto adicionado',
+        description: 'Produto adicionado com sucesso!',
       });
       
       return id;
     } catch (error) {
       console.error('Error adding product:', error);
       toast({
-        title: "Erro ao adicionar produto",
-        description: "Houve um problema ao adicionar o produto.",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível adicionar o produto.',
+        variant: 'destructive',
       });
       return "";
     }
@@ -56,37 +153,58 @@ export const useProducts = () => {
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
       await productService.update(id, product);
-      setProducts(products.map(p => p.id === id ? { ...p, ...product } : p));
+      
+      // Update local state immediately
+      setProducts((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...product, updatedAt: new Date() } : item))
+      );
+      
+      // Update cache
+      const updatedProducts = products.map((item) => 
+        item.id === id ? { ...item, ...product, updatedAt: new Date() } : item
+      );
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       toast({
-        title: "Produto atualizado",
-        description: "Produto atualizado com sucesso!"
+        title: 'Produto atualizado',
+        description: 'Produto atualizado com sucesso!',
       });
     } catch (error) {
       console.error('Error updating product:', error);
       toast({
-        title: "Erro ao atualizar produto",
-        description: "Houve um problema ao atualizar o produto.",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível atualizar o produto.',
+        variant: 'destructive',
       });
     }
   };
 
   const deleteProduct = async (id: string) => {
     try {
+      console.log(`Deleting product ${id}`);
+      
+      // Delete from Supabase first
       await productService.delete(id);
-      setProducts(products.filter(p => p.id !== id));
+      
+      // Update local state immediately
+      setProducts((prev) => prev.filter((item) => item.id !== id));
+      
+      // Update cache
+      const updatedProducts = products.filter((item) => item.id !== id);
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       toast({
-        title: "Produto excluído",
-        description: "Produto excluído com sucesso!"
+        title: 'Produto excluído',
+        description: 'Produto excluído com sucesso!',
       });
     } catch (error) {
       console.error('Error deleting product:', error);
       toast({
-        title: "Erro ao excluir produto",
-        description: "Houve um problema ao excluir o produto.",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível excluir o produto.',
+        variant: 'destructive',
       });
     }
   };
@@ -94,40 +212,13 @@ export const useProducts = () => {
   const syncPendingProducts = async () => {
     setIsSyncing(true);
     try {
-      // Refresh products from server
-      const data = await productService.getAll();
-      setProducts(data);
-      
-      toast({
-        title: "Produtos sincronizados",
-        description: "Produtos sincronizados com sucesso!"
-      });
+      const result = await forceRefreshProducts();
+      setIsSyncing(false);
+      return result;
     } catch (error) {
       console.error('Error syncing products:', error);
-      toast({
-        title: "Erro ao sincronizar",
-        description: "Houve um problema ao sincronizar os produtos.",
-        variant: "destructive"
-      });
-    } finally {
       setIsSyncing(false);
-    }
-  };
-
-  const forceRefreshProducts = async () => {
-    setIsLoading(true);
-    try {
-      const data = await productService.getAll();
-      setProducts(data);
-    } catch (error) {
-      console.error('Error refreshing products:', error);
-      toast({
-        title: "Erro ao atualizar",
-        description: "Houve um problema ao atualizar os produtos.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      return false;
     }
   };
 

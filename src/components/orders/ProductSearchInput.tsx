@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Search, ShoppingCart } from 'lucide-react';
 import { useProductSearch } from '@/hooks/useProductSearch';
 import ProductSearchResults from './ProductSearchResults';
 import QuantityInput from './QuantityInput';
+import { useAppData } from '@/context/providers/AppDataProvider';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -16,11 +17,31 @@ interface ProductSearchInputProps {
 }
 
 export default function ProductSearchInput({
-  products,
+  products: propProducts,
   addItemToOrder,
   inlineLayout = false,
   inputRef
 }: ProductSearchInputProps) {
+  // Use centralized products from AppData to ensure we have the latest data
+  const { products: centralizedProducts, refreshProducts } = useAppData();
+  
+  // Use the most recent products list available
+  const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
+  
+  // Listen for product updates
+  useEffect(() => {
+    const handleProductsUpdated = () => {
+      console.log("Products updated event received in ProductSearchInput");
+      // Products will be automatically updated via centralized hook
+    };
+
+    window.addEventListener('productsUpdated', handleProductsUpdated);
+    
+    return () => {
+      window.removeEventListener('productsUpdated', handleProductsUpdated);
+    };
+  }, []);
+
   const {
     searchTerm,
     selectedProduct,

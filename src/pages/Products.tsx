@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
 import { Product } from '@/types';
-import { useAppContext } from '@/hooks/useAppContext';
+import { useAppData } from '@/context/providers/AppDataProvider';
 import PageLayout from '@/components/layout/PageLayout';
-import { useProducts } from '@/hooks/useProducts';
 import ProductsTable from '@/components/products/ProductsTable';
 import ProductForm from '@/components/products/ProductForm';
 import { useConnection } from '@/context/providers/ConnectionProvider';
@@ -16,92 +16,63 @@ import { Link } from 'react-router-dom';
 import { Plus, DollarSign, Tags } from 'lucide-react';
 
 export default function Products() {
-  // Get product classifications directly from hooks instead of AppContext
-  const {
-    productGroups: contextProductGroups,
-    productCategories: contextProductCategories,
-    productBrands: contextProductBrands
-  } = useAppContext();
-  
-  // Get direct access to classification hooks
-  const {
-    productBrands,
-    isLoading: isBrandsLoading
-  } = useProductBrands();
-  
-  const {
-    productGroups,
-    isLoading: isGroupsLoading
-  } = useProductGroups();
-  
-  const {
-    productCategories,
-    isLoading: isCategoriesLoading
-  } = useProductCategories();
-  
-  const {
-    connectionStatus
-  } = useConnection();
-
-  // Use the enhanced useProducts hook directly
+  // Use centralized products from AppData
   const {
     products,
-    isLoading,
-    isSyncing,
+    isLoadingProducts,
     addProduct,
     updateProduct,
     deleteProduct,
-    syncPendingProducts,
-    forceRefreshProducts
-  } = useProducts();
+    refreshProducts,
+    productBrands,
+    productCategories,
+    productGroups
+  } = useAppData();
+  
+  const { connectionStatus } = useConnection();
+  
+  // Get direct access to classification hooks for additional data
+  const { productBrands: hookProductBrands } = useProductBrands();
+  const { productGroups: hookProductGroups } = useProductGroups();
+  const { productCategories: hookProductCategories } = useProductCategories();
   
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Add detailed logging to check if we're getting the product classifications
+  // Listen for product updates to refresh the list
   useEffect(() => {
-    console.log("--- PRODUCT CLASSIFICATIONS STATUS IN PRODUCTS PAGE ---");
-    console.log("Direct from hooks:");
-    console.log("- Product Groups:", productGroups?.length || 0, "items");
-    console.log("- Product Categories:", productCategories?.length || 0, "items");
-    console.log("- Product Brands:", productBrands?.length || 0, "items");
+    const handleProductsUpdated = () => {
+      console.log("Products updated event received in Products page");
+      // The products will be automatically updated via the centralized hook
+    };
+
+    window.addEventListener('productsUpdated', handleProductsUpdated);
     
-    console.log("From context:");
-    console.log("- Product Groups from context:", contextProductGroups?.length || 0, "items");
-    console.log("- Product Categories from context:", contextProductCategories?.length || 0, "items");
-    console.log("- Product Brands from context:", contextProductBrands?.length || 0, "items");
+    return () => {
+      window.removeEventListener('productsUpdated', handleProductsUpdated);
+    };
+  }, []);
 
-    // Check if arrays are actually arrays and contain data
-    if (!Array.isArray(productGroups)) {
-      console.warn("productGroups is not an array");
-    }
-    if (!Array.isArray(productBrands)) {
-      console.warn("productBrands is not an array");
-    }
-    if (!Array.isArray(productCategories)) {
-      console.warn("productCategories is not an array");
-    }
+  // Use the most complete dataset available
+  const safeProductGroups = Array.isArray(productGroups) && productGroups.length > 0 
+    ? productGroups 
+    : Array.isArray(hookProductGroups) ? hookProductGroups : [];
+    
+  const safeProductCategories = Array.isArray(productCategories) && productCategories.length > 0 
+    ? productCategories 
+    : Array.isArray(hookProductCategories) ? hookProductCategories : [];
+    
+  const safeProductBrands = Array.isArray(productBrands) && productBrands.length > 0 
+    ? productBrands 
+    : Array.isArray(hookProductBrands) ? hookProductBrands : [];
 
-    // Log individual items for debugging
-    if (Array.isArray(productCategories) && productCategories.length > 0) {
-      console.log("Sample product category:", productCategories[0]);
-    }
-    if (Array.isArray(productGroups) && productGroups.length > 0) {
-      console.log("Sample product group:", productGroups[0]);
-    }
-    if (Array.isArray(productBrands) && productBrands.length > 0) {
-      console.log("Sample product brand:", productBrands[0]);
-    }
-  }, [productGroups, productCategories, productBrands, contextProductGroups, contextProductCategories, contextProductBrands]);
-
-  // Count pending products
-  const pendingProducts = products.filter(p => p.syncStatus === 'pending').length;
   const handleEdit = (product: Product) => {
     setIsEditing(true);
     setSelectedProduct(product);
     setOpen(true);
   };
+
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id);
@@ -119,11 +90,13 @@ export default function Products() {
       });
     }
   };
+
   const handleAdd = () => {
     setIsEditing(false);
     setSelectedProduct(null);
     setOpen(true);
   };
+
   const handleSubmit = async (data: any) => {
     try {
       const productData: Partial<Product> = {
@@ -163,29 +136,19 @@ export default function Products() {
       });
     }
   };
+
   const handleForceRefresh = async () => {
-    return await forceRefreshProducts();
-  };
-  const handleSyncProducts = async () => {
-    return await syncPendingProducts();
+    return await refreshProducts();
   };
 
-  // Use classifications directly from hooks for the most updated data
-  const safeProductGroups = Array.isArray(productGroups) ? productGroups : [];
-  const safeProductCategories = Array.isArray(productCategories) ? productCategories : [];
-  const safeProductBrands = Array.isArray(productBrands) ? productBrands : [];
-  
-  // Display loading status for debugging
-  const isLoadingAnyClassification = isGroupsLoading || isCategoriesLoading || isBrandsLoading;
-  
   return (
     <PageLayout title="Produtos">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
-          {isLoadingAnyClassification && (
-            <p className="text-orange-500 text-sm">Carregando classificações...</p>
-          )}
+          <p className="text-sm text-gray-600">
+            {products.length} produtos cadastrados
+          </p>
         </div>
         <div className="flex gap-2">
           <Link to="/produtos/precificacao">
@@ -210,13 +173,13 @@ export default function Products() {
       </div>
       
       <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div></div>
-          </div>
-        </CardHeader>
         <CardContent>
-          <ProductsTable products={products} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
+          <ProductsTable 
+            products={products} 
+            isLoading={isLoadingProducts} 
+            onEdit={handleEdit} 
+            onDelete={handleDelete} 
+          />
         </CardContent>
       </Card>
       

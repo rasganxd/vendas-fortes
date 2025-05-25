@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/appOperations';
 import { useConnection } from './ConnectionProvider';
+import { useProducts } from '@/hooks/useProducts';
 
 interface AppDataContextType {
   // Customer data
@@ -13,12 +13,13 @@ interface AppDataContextType {
   deleteCustomer: (id: string) => Promise<void>;
   generateNextCustomerCode: () => Promise<number>;
 
-  // Product data
+  // Product data - now centralized from useProducts hook
   products: Product[];
   isLoadingProducts: boolean;
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  refreshProducts: () => Promise<boolean>;
 
   // Product Brand data
   productBrands: ProductBrand[];
@@ -130,11 +131,53 @@ export const useAppData = () => {
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const appOperations = useAppOperations();
   const connection = useConnection();
+  
+  // Use the centralized products hook
+  const {
+    products,
+    isLoading: isLoadingProducts,
+    addProduct: addProductHook,
+    updateProduct: updateProductHook,
+    deleteProduct: deleteProductHook,
+    forceRefreshProducts
+  } = useProducts();
+
+  // Enhanced product operations with automatic refresh
+  const addProduct = async (product: Omit<Product, 'id'>) => {
+    const result = await addProductHook(product);
+    // Trigger refresh across all components
+    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'add', productId: result } }));
+    return result;
+  };
+
+  const updateProduct = async (id: string, product: Partial<Product>) => {
+    await updateProductHook(id, product);
+    // Trigger refresh across all components
+    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'update', productId: id } }));
+  };
+
+  const deleteProduct = async (id: string) => {
+    await deleteProductHook(id);
+    // Trigger refresh across all components
+    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'delete', productId: id } }));
+  };
+
+  const refreshProducts = async (): Promise<boolean> => {
+    try {
+      const result = await forceRefreshProducts();
+      // Trigger refresh across all components
+      window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'refresh' } }));
+      return result;
+    } catch (error) {
+      console.error('Error refreshing products:', error);
+      return false;
+    }
+  };
 
   const refreshData = async (): Promise<boolean> => {
     try {
       console.log('Refreshing app data...');
-      // Implement data refresh logic here
+      await refreshProducts();
       return true;
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -143,7 +186,17 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const value: AppDataContextType = {
+    // Use centralized products from useProducts hook
+    products,
+    isLoadingProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    refreshProducts,
+    
+    // Keep existing operations
     ...appOperations,
+    
     connectionStatus: connection.connectionStatus,
     lastConnectAttempt: connection.lastConnectAttempt,
     reconnectToSupabase: connection.reconnectToSupabase,
