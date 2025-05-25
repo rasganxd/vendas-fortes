@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Order, Customer, SalesRep } from '@/types';
 import { useOrders } from '@/hooks/useOrders';
@@ -44,20 +44,31 @@ export function useOrderLoader({
   const { getOrderById } = useOrders();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  
+  // Use refs to prevent duplicate loading
+  const loadingRef = useRef(false);
+  const loadedOrderIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    const orderIdToLoad = orderId || searchParams.get('id');
+    
+    // Skip if no order ID or already loading this order
+    if (!orderIdToLoad || loadingRef.current || loadedOrderIdRef.current === orderIdToLoad) {
+      return;
+    }
+
     const loadOrder = async (orderToLoad: string) => {
       try {
+        // Set loading state
+        loadingRef.current = true;
         setIsLoading(true);
         setLoadError(null);
-        console.log("🔄 Loading order for editing:", orderToLoad);
         
-        if (!orderToLoad) {
-          throw new Error("ID do pedido não fornecido");
-        }
+        console.log("🔄 Loading order for editing:", orderToLoad);
         
         let orderToEdit: Order | null = null;
         
+        // Use preloaded order if available
         if (preloadedOrder && preloadedOrder.id === orderToLoad) {
           console.log("✅ Using preloaded order data:", preloadedOrder.id);
           orderToEdit = preloadedOrder;
@@ -70,10 +81,13 @@ export function useOrderLoader({
           throw new Error("Pedido não encontrado");
         }
         
-        console.log("📋 Order loaded successfully:", orderToEdit);
+        console.log("📋 Order loaded successfully:", orderToEdit.id);
+        
+        // Set edit mode and store order
         setIsEditMode(true);
         setCurrentOrderId(orderToLoad);
         setOriginalOrder(orderToEdit);
+        loadedOrderIdRef.current = orderToLoad;
         
         // Load customer
         const customer = customers.find(c => c.id === orderToEdit?.customerId);
@@ -87,10 +101,6 @@ export function useOrderLoader({
           if (orderToEdit.customerName) {
             setCustomerInputValue(orderToEdit.customerName);
           }
-          toast({
-            title: "Atenção",
-            description: "Cliente associado não encontrado na lista atual, mas o nome será mantido."
-          });
         }
         
         // Load sales rep
@@ -105,13 +115,9 @@ export function useOrderLoader({
           if (orderToEdit.salesRepName) {
             setSalesRepInputValue(orderToEdit.salesRepName);
           }
-          toast({
-            title: "Atenção",
-            description: "Vendedor associado não encontrado na lista atual, mas o nome será mantido."
-          });
         }
         
-        // Load order items
+        // Load order items with validation
         if (orderToEdit?.items && Array.isArray(orderToEdit.items)) {
           console.log("📦 Processing order items:", orderToEdit.items.length);
           
@@ -145,6 +151,7 @@ export function useOrderLoader({
           });
           
           setOrderItems(validatedItems);
+          console.log("✅ Order items loaded:", validatedItems.length);
         } else {
           console.warn("⚠️ No valid items found in order");
           setOrderItems([]);
@@ -160,10 +167,11 @@ export function useOrderLoader({
           }
         }
         
+        // Show success message only if not using preloaded order
         if (!preloadedOrder) {
           toast({
             title: "Pedido carregado",
-            description: `Editando pedido #${orderToLoad.substring(0, 6)}`
+            description: `Editando pedido #${orderToEdit.code || orderToLoad.substring(0, 6)}`
           });
         }
         
@@ -178,20 +186,27 @@ export function useOrderLoader({
           variant: "destructive"
         });
         
+        // Reset refs on error
+        loadedOrderIdRef.current = null;
+        
         setTimeout(() => {
           navigate('/pedidos');
         }, 3000);
       } finally {
         setIsLoading(false);
+        loadingRef.current = false;
       }
     };
     
-    const orderIdToLoad = orderId || searchParams.get('id');
-    
-    if (orderIdToLoad) {
-      loadOrder(orderIdToLoad);
-    }
+    loadOrder(orderIdToLoad);
   }, [preloadedOrder, orderId, searchParams, getOrderById, customers, salesReps, paymentTables, navigate]);
+
+  // Reset loading state when component unmounts or order changes
+  useEffect(() => {
+    return () => {
+      loadingRef.current = false;
+    };
+  }, []);
 
   return { isLoading, loadError };
 }

@@ -7,6 +7,7 @@ import { orderService } from '@/services/supabase/orderService';
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // Load orders on initial render
   useEffect(() => {
@@ -15,6 +16,8 @@ export const useOrders = () => {
         setIsLoading(true);
         const loadedOrders = await orderService.getAll();
         setOrders(loadedOrders);
+        setLastRefresh(new Date());
+        console.log("📋 Orders loaded:", loadedOrders.length);
       } catch (error) {
         console.error("Error loading orders:", error);
         toast({
@@ -30,6 +33,43 @@ export const useOrders = () => {
     fetchOrders();
   }, []);
 
+  // Listen for order updates
+  useEffect(() => {
+    const handleOrderUpdated = (event: CustomEvent) => {
+      console.log("🔄 Order updated event received:", event.detail);
+      refreshOrders();
+    };
+
+    const handleOrderItemsUpdated = (event: CustomEvent) => {
+      console.log("🔄 Order items updated event received:", event.detail);
+      // Refresh orders after a short delay to allow for database updates
+      setTimeout(() => {
+        refreshOrders();
+      }, 1000);
+    };
+
+    window.addEventListener('orderUpdated', handleOrderUpdated as EventListener);
+    window.addEventListener('orderItemsUpdated', handleOrderItemsUpdated as EventListener);
+
+    return () => {
+      window.removeEventListener('orderUpdated', handleOrderUpdated as EventListener);
+      window.removeEventListener('orderItemsUpdated', handleOrderItemsUpdated as EventListener);
+    };
+  }, []);
+
+  // Refresh orders from server
+  const refreshOrders = async () => {
+    try {
+      console.log("🔄 Refreshing orders from server...");
+      const loadedOrders = await orderService.getAll();
+      setOrders(loadedOrders);
+      setLastRefresh(new Date());
+      console.log("✅ Orders refreshed:", loadedOrders.length);
+    } catch (error) {
+      console.error("Error refreshing orders:", error);
+    }
+  };
+
   // Generate next order code
   const generateNextCode = async (): Promise<number> => {
     try {
@@ -40,17 +80,35 @@ export const useOrders = () => {
     }
   };
 
-  // Get order by ID
+  // Get order by ID with caching
   const getOrderById = async (id: string): Promise<Order | null> => {
     try {
       // First check if order is in local state
       const localOrder = orders.find(order => order.id === id);
-      if (localOrder) {
+      if (localOrder && (new Date().getTime() - lastRefresh.getTime()) < 30000) { // 30 seconds cache
+        console.log("📋 Using cached order:", id);
         return localOrder;
       }
       
-      // If not found locally, fetch from service
-      return await orderService.getById(id);
+      // If not found locally or cache is old, fetch from service
+      console.log("🔍 Fetching order from server:", id);
+      const serverOrder = await orderService.getById(id);
+      
+      // Update local cache if found
+      if (serverOrder) {
+        setOrders(prevOrders => {
+          const existingIndex = prevOrders.findIndex(o => o.id === id);
+          if (existingIndex !== -1) {
+            const updated = [...prevOrders];
+            updated[existingIndex] = serverOrder;
+            return updated;
+          } else {
+            return [...prevOrders, serverOrder];
+          }
+        });
+      }
+      
+      return serverOrder;
     } catch (error) {
       console.error('Error getting order by ID:', error);
       return null;
@@ -77,7 +135,13 @@ export const useOrders = () => {
         updatedAt: order.updatedAt || new Date()
       };
       
-      setOrders([...orders, newOrder]);
+      // Update local state immediately
+      setOrders(prevOrders => [...prevOrders, newOrder]);
+      
+      // Dispatch global event
+      window.dispatchEvent(new CustomEvent('orderUpdated', { 
+        detail: { action: 'add', orderId: id } 
+      }));
       
       toast({
         title: "Pedido adicionado",
@@ -101,15 +165,28 @@ export const useOrders = () => {
     try {
       await orderService.update(id, order);
       
-      // Update local state
-      setOrders(orders.map(o => 
-        o.id === id ? { ...o, ...order } : o
-      ));
+      // Update local state immediately
+      setOrders(prevOrders => 
+        prevOrders.map(o => 
+          o.id === id ? { ...o, ...order, updatedAt: new Date() } : o
+        )
+      );
+      
+      // Dispatch global event
+      window.dispatchEvent(new CustomEvent('orderUpdated', { 
+        detail: { action: 'update', orderId: id } 
+      }));
       
       toast({
         title: "Pedido atualizado",
         description: "Pedido atualizado com sucesso!"
       });
+      
+      // Refresh after a delay to ensure consistency
+      setTimeout(() => {
+        refreshOrders();
+      }, 2000);
+      
     } catch (error) {
       console.error("Erro ao atualizar pedido:", error);
       toast({
@@ -125,8 +202,13 @@ export const useOrders = () => {
     try {
       await orderService.delete(id);
       
-      // Update local state
-      setOrders(orders.filter(o => o.id !== id));
+      // Update local state immediately
+      setOrders(prevOrders => prevOrders.filter(o => o.id !== id));
+      
+      // Dispatch global event
+      window.dispatchEvent(new CustomEvent('orderUpdated', { 
+        detail: { action: 'delete', orderId: id } 
+      }));
       
       toast({
         title: "Pedido excluído",
@@ -150,7 +232,9 @@ export const useOrders = () => {
     deleteOrder,
     setOrders,
     generateNextCode,
-    getOrderById
+    getOrderById,
+    refreshOrders,
+    lastRefresh
   };
 };
 

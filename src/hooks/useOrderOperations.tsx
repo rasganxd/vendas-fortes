@@ -1,22 +1,21 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Order, Customer, SalesRep, OrderItem } from '@/types';
+import { Customer, SalesRep, OrderItem, Order, PaymentTable } from '@/types';
+import { ConnectionStatus } from '@/context/AppContextTypes';
 import { useOrders } from '@/hooks/useOrders';
-import { usePayments } from '@/hooks/usePayments';
 import { toast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from 'react-router-dom';
 
 interface UseOrderOperationsProps {
   selectedCustomer: Customer | null;
   selectedSalesRep: SalesRep | null;
   orderItems: OrderItem[];
   selectedPaymentTable: string;
-  paymentTables: any[];
+  paymentTables: PaymentTable[];
   isEditMode: boolean;
   currentOrderId: string | null;
   originalOrder: Order | null;
-  connectionStatus: any;
+  connectionStatus: ConnectionStatus;
   resetForm: () => void;
 }
 
@@ -33,167 +32,153 @@ export function useOrderOperations({
   resetForm
 }: UseOrderOperationsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { addOrder, updateOrder } = useOrders();
-  const { createAutomaticPaymentRecord } = usePayments();
+  const { addOrder, updateOrder, refreshOrders } = useOrders();
   const navigate = useNavigate();
 
-  const handleCreateOrder = async () => {
-    // Form validation
+  const validateOrder = (): string | null => {
     if (!selectedCustomer) {
-      toast({
-        title: "Erro",
-        description: "Selecione um cliente para o pedido.",
-        variant: "destructive"
-      });
-      return;
+      return "Selecione um cliente";
     }
     
     if (!selectedSalesRep) {
-      toast({
-        title: "Erro",
-        description: "Selecione um vendedor para o pedido.",
-        variant: "destructive"
-      });
-      return;
+      return "Selecione um vendedor";
     }
     
     if (orderItems.length === 0) {
+      return "Adicione pelo menos um item ao pedido";
+    }
+    
+    if (connectionStatus === 'disconnected') {
+      return "Sem conexão com o servidor. Verifique sua internet.";
+    }
+    
+    return null;
+  };
+
+  const buildOrderData = (): Omit<Order, 'id'> => {
+    const paymentTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
+    const total = orderItems.reduce((sum, item) => sum + (item.total || 0), 0);
+    
+    return {
+      code: originalOrder?.code || 0,
+      customerId: selectedCustomer?.id || '',
+      customerName: selectedCustomer?.name || '',
+      salesRepId: selectedSalesRep?.id || '',
+      salesRepName: selectedSalesRep?.name || '',
+      date: originalOrder?.date || new Date(),
+      dueDate: originalOrder?.dueDate || new Date(),
+      items: orderItems,
+      total: total,
+      discount: originalOrder?.discount || 0,
+      status: originalOrder?.status || 'draft',
+      paymentStatus: originalOrder?.paymentStatus || 'pending',
+      paymentMethod: paymentTable?.name || '',
+      paymentMethodId: '',
+      paymentTableId: selectedPaymentTable,
+      payments: originalOrder?.payments || [],
+      notes: originalOrder?.notes || '',
+      createdAt: originalOrder?.createdAt || new Date(),
+      updatedAt: new Date(),
+      archived: originalOrder?.archived || false,
+      deliveryAddress: originalOrder?.deliveryAddress || '',
+      deliveryCity: originalOrder?.deliveryCity || '',
+      deliveryState: originalOrder?.deliveryState || '',
+      deliveryZip: originalOrder?.deliveryZip || ''
+    };
+  };
+
+  const handleCreateOrder = async (): Promise<void> => {
+    console.log("💾 === STARTING ORDER SAVE PROCESS ===");
+    console.log("📝 Edit Mode:", isEditMode);
+    console.log("🆔 Current Order ID:", currentOrderId);
+    console.log("📦 Items Count:", orderItems.length);
+    console.log("👤 Customer:", selectedCustomer?.name);
+    console.log("👨‍💼 Sales Rep:", selectedSalesRep?.name);
+    
+    if (isSubmitting) {
+      console.log("⚠️ Already submitting, skipping");
+      return;
+    }
+
+    // Validate order
+    const validationError = validateOrder();
+    if (validationError) {
+      console.error("❌ Validation failed:", validationError);
       toast({
-        title: "Erro",
-        description: "Adicione pelo menos um item ao pedido.",
+        title: "Erro de validação",
+        description: validationError,
         variant: "destructive"
       });
       return;
     }
-    
+
     try {
       setIsSubmitting(true);
-      console.log("💾 Starting order submission process...");
-      console.log("🌐 Current connection status:", connectionStatus);
-      
-      // Normalize order items
-      const normalizedItems = orderItems.map(item => ({
-        id: item.id || uuidv4(),
-        productId: item.productId || '',
-        productName: item.productName || 'Produto sem nome',
-        productCode: item.productCode || 0,
-        quantity: item.quantity || 1,
-        unitPrice: item.unitPrice || item.price || 0,
-        price: item.price || item.unitPrice || 0,
-        discount: item.discount || 0,
-        total: (item.unitPrice || item.price || 0) * (item.quantity || 1)
-      }));
-      
-      const calculatedTotal = normalizedItems.reduce((sum, item) => 
-        sum + ((item.quantity || 1) * (item.unitPrice || item.price || 0)), 0);
-      
-      const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
-      
-      const orderData = {
-        customerId: selectedCustomer.id,
-        customerName: selectedCustomer.name,
-        salesRepId: selectedSalesRep.id,
-        salesRepName: selectedSalesRep.name,
-        items: normalizedItems,
-        total: calculatedTotal,
-        paymentStatus: isEditMode && originalOrder?.paymentStatus ? originalOrder.paymentStatus : "pending" as Order["paymentStatus"],
-        paymentMethod: selectedTable?.name || "Padrão",
-        paymentMethodId: isEditMode && originalOrder?.paymentMethodId ? originalOrder.paymentMethodId : "",
-        paymentTableId: selectedPaymentTable,
-        code: isEditMode && originalOrder?.code ? originalOrder.code : Math.floor(Math.random() * 10000),
-        date: isEditMode && originalOrder?.date ? originalOrder.date : new Date(),
-        dueDate: isEditMode && originalOrder?.dueDate ? originalOrder.dueDate : new Date(),
-        discount: isEditMode && originalOrder?.discount ? originalOrder.discount : 0,
-        payments: isEditMode && originalOrder?.payments ? [...originalOrder.payments] : [],
-        notes: isEditMode && originalOrder?.notes ? originalOrder.notes : "",
-        createdAt: isEditMode && originalOrder?.createdAt ? originalOrder.createdAt : new Date(),
-        updatedAt: new Date(),
-        status: isEditMode && originalOrder?.status ? originalOrder.status : "draft" as Order["status"],
-        deliveryAddress: isEditMode && originalOrder?.deliveryAddress ? originalOrder.deliveryAddress : "",
-        deliveryCity: isEditMode && originalOrder?.deliveryCity ? originalOrder.deliveryCity : "",
-        deliveryState: isEditMode && originalOrder?.deliveryState ? originalOrder.deliveryState : "",
-        deliveryZip: isEditMode && originalOrder?.deliveryZip ? originalOrder.deliveryZip : "",
-        archived: isEditMode && originalOrder?.archived ? originalOrder.archived : false,
-      };
-      
-      let orderId = "";
-      let isPromissoryNote = false;
-      
+      console.log("🔄 Setting submitting state to true");
+
+      const orderData = buildOrderData();
+      console.log("📋 Order data built:", orderData);
+
       if (isEditMode && currentOrderId) {
         console.log("✏️ Updating existing order:", currentOrderId);
-        await updateOrder(currentOrderId, {
-          ...orderData,
-          items: normalizedItems
-        });
         
-        orderId = currentOrderId;
-        console.log("✅ Order successfully updated:", orderId);
+        await updateOrder(currentOrderId, orderData);
+        
+        console.log("✅ Order updated successfully");
         
         toast({
-          title: "Pedido Atualizado",
-          description: `Pedido #${orderId.substring(0, 6)} atualizado com sucesso.`
+          title: "Pedido atualizado",
+          description: `Pedido #${orderData.code} foi atualizado com sucesso!`,
+          duration: 3000
         });
 
-        isPromissoryNote = selectedTable?.type === 'promissoria';
+        // Navigate back to orders list after successful update
+        setTimeout(() => {
+          navigate('/pedidos');
+        }, 1500);
         
-        if (isPromissoryNote && orderId) {
-          console.log("📝 Creating automatic payment record for promissory note");
-          await createAutomaticPaymentRecord({
-            ...orderData,
-            id: orderId,
-            code: orderData.code || 0
-          } as Order);
-          
-          toast({
-            title: "Nota Promissória Gerada",
-            description: "A nota promissória foi gerada e pode ser acessada na aba de Pagamentos."
-          });
-        }
       } else {
         console.log("➕ Creating new order");
-        orderId = await addOrder(orderData as Omit<Order, "id">);
-        console.log("✅ Order created with ID:", orderId);
         
-        if (orderId) {
+        const newOrderId = await addOrder(orderData);
+        
+        if (newOrderId) {
+          console.log("✅ Order created successfully with ID:", newOrderId);
+          
           toast({
-            title: "Pedido Criado",
-            description: `Pedido #${orderId.substring(0, 6)} criado com sucesso.`
+            title: "Pedido criado",
+            description: `Pedido #${orderData.code} foi criado com sucesso!`,
+            duration: 3000
           });
+
+          // Reset form after successful creation
+          resetForm();
           
-          isPromissoryNote = selectedTable?.type === 'promissoria';
-          
-          if (isPromissoryNote) {
-            console.log("📝 Creating automatic payment record for promissory note");
-            await createAutomaticPaymentRecord({
-              ...orderData,
-              id: orderId,
-              code: orderData.code || 0
-            } as Order);
-            
-            toast({
-              title: "Nota Promissória Gerada",
-              description: "A nota promissória foi gerada e pode ser acessada na aba de Pagamentos."
-            });
-          }
-        } else {
-          throw new Error("Falha ao criar pedido: ID não retornado");
+          // Navigate back to orders list
+          setTimeout(() => {
+            navigate('/pedidos');
+          }, 1500);
         }
       }
-      
-      resetForm();
-      
+
+      // Force refresh orders list
       setTimeout(() => {
-        navigate('/pedidos');
-      }, 1500);
+        refreshOrders();
+      }, 500);
+
     } catch (error) {
-      console.error("❌ Erro ao processar pedido:", error);
+      console.error("❌ Error saving order:", error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
-        title: "Erro ao processar pedido",
-        description: `${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-        variant: "destructive"
+        title: isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido",
+        description: `Ocorreu um erro: ${errorMessage}`,
+        variant: "destructive",
+        duration: 5000
       });
     } finally {
       setIsSubmitting(false);
+      console.log("🔄 Setting submitting state to false");
     }
   };
 

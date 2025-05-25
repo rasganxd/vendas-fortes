@@ -15,6 +15,7 @@ export function useOrderForm() {
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [originalOrder, setOriginalOrder] = useState<Order | null>(null);
   const [isProcessingItem, setIsProcessingItem] = useState(false);
+  const [lastOperation, setLastOperation] = useState<string>('');
 
   const resetForm = () => {
     console.log("🔄 Resetting form completely");
@@ -28,6 +29,7 @@ export function useOrderForm() {
     setSalesRepInputValue('');
     setOriginalOrder(null);
     setIsProcessingItem(false);
+    setLastOperation('');
   };
 
   const calculateTotal = () => {
@@ -35,16 +37,18 @@ export function useOrderForm() {
   };
 
   const handleAddItem = (product: any, quantity: number, price: number) => {
-    console.log("🛒 === STARTING ADD ITEM PROCESS ===");
+    const operationId = `add-${Date.now()}`;
+    console.log("🛒 === STARTING ADD ITEM PROCESS ===", operationId);
     console.log("📦 Product:", product);
     console.log("🔢 Quantity:", quantity);
     console.log("💰 Price:", price);
     console.log("🎯 Edit Mode:", isEditMode);
     console.log("🔄 Currently processing:", isProcessingItem);
+    console.log("🔄 Last operation:", lastOperation);
     
-    // Prevent multiple simultaneous operations
-    if (isProcessingItem) {
-      console.log("⚠️ Already processing an item operation, skipping");
+    // Prevent duplicate operations
+    if (isProcessingItem || lastOperation === operationId) {
+      console.log("⚠️ Operation blocked - already processing or duplicate");
       return;
     }
 
@@ -80,10 +84,10 @@ export function useOrderForm() {
     
     try {
       setIsProcessingItem(true);
+      setLastOperation(operationId);
       
       setOrderItems(currentItems => {
         console.log("📋 Current items before adding:", currentItems.length);
-        console.log("📋 Current items details:", currentItems.map(item => ({ id: item.id, productId: item.productId, name: item.productName, qty: item.quantity })));
         
         const existingItemIndex = currentItems.findIndex(item => item.productId === product.id);
         
@@ -103,7 +107,6 @@ export function useOrderForm() {
           };
           
           console.log("✅ Updated existing item. New quantity:", newQuantity);
-          console.log("📋 Updated items list:", updatedItems.length);
           
           toast({
             title: "Item atualizado",
@@ -126,7 +129,6 @@ export function useOrderForm() {
           };
           
           console.log("➕ Adding new item with ID:", newItemId);
-          console.log("➕ New item details:", newItem);
           const updatedItems = [...currentItems, newItem];
           console.log("✅ Added new item. Total items:", updatedItems.length);
           
@@ -138,6 +140,16 @@ export function useOrderForm() {
           return updatedItems;
         }
       });
+
+      // Dispatch event for global state updates
+      window.dispatchEvent(new CustomEvent('orderItemsUpdated', { 
+        detail: { 
+          action: 'add', 
+          product: product,
+          orderId: currentOrderId 
+        } 
+      }));
+
     } catch (error) {
       console.error("❌ Error in handleAddItem:", error);
       toast({
@@ -146,23 +158,24 @@ export function useOrderForm() {
         variant: "destructive"
       });
     } finally {
-      // Reset processing flag after a short delay
+      // Reset processing flag
       setTimeout(() => {
         setIsProcessingItem(false);
-        console.log("🔄 Processing flag reset");
-      }, 500);
+        console.log("🔄 Processing flag reset for operation:", operationId);
+      }, 1000);
     }
   };
 
   const handleRemoveItem = (productId: string) => {
-    console.log("🗑️ === STARTING REMOVE ITEM PROCESS ===");
+    const operationId = `remove-${Date.now()}`;
+    console.log("🗑️ === STARTING REMOVE ITEM PROCESS ===", operationId);
     console.log("🎯 Product ID to remove:", productId);
     console.log("🎯 Edit Mode:", isEditMode);
     console.log("🔄 Currently processing:", isProcessingItem);
     
-    // Prevent multiple simultaneous operations
-    if (isProcessingItem) {
-      console.log("⚠️ Already processing an item operation, skipping");
+    // Prevent duplicate operations
+    if (isProcessingItem || lastOperation === operationId) {
+      console.log("⚠️ Operation blocked - already processing or duplicate");
       return;
     }
     
@@ -178,15 +191,14 @@ export function useOrderForm() {
     
     try {
       setIsProcessingItem(true);
+      setLastOperation(operationId);
       
       setOrderItems(currentItems => {
         console.log("📋 Current items before removal:", currentItems.length);
-        console.log("📋 Items to check:", currentItems.map(item => ({ id: item.id, productId: item.productId, name: item.productName })));
         
         const itemToRemove = currentItems.find(item => item.productId === productId);
         if (!itemToRemove) {
           console.warn("⚠️ Item not found for removal. ProductId:", productId);
-          console.warn("⚠️ Available productIds:", currentItems.map(item => item.productId));
           toast({
             title: "Erro",
             description: "Item não encontrado para remoção",
@@ -197,12 +209,20 @@ export function useOrderForm() {
         
         const updatedItems = currentItems.filter(item => item.productId !== productId);
         console.log("✅ Item removed successfully. Remaining items:", updatedItems.length);
-        console.log("✅ Removed item:", itemToRemove.productName);
         
         toast({
           title: "Item removido",
           description: `${itemToRemove.productName} removido do pedido`
         });
+
+        // Dispatch event for global state updates
+        window.dispatchEvent(new CustomEvent('orderItemsUpdated', { 
+          detail: { 
+            action: 'remove', 
+            productId: productId,
+            orderId: currentOrderId 
+          } 
+        }));
         
         return updatedItems;
       });
@@ -214,11 +234,11 @@ export function useOrderForm() {
         variant: "destructive"
       });
     } finally {
-      // Reset processing flag after a short delay
+      // Reset processing flag
       setTimeout(() => {
         setIsProcessingItem(false);
-        console.log("🔄 Processing flag reset");
-      }, 500);
+        console.log("🔄 Processing flag reset for operation:", operationId);
+      }, 1000);
     }
   };
 

@@ -1,8 +1,9 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/appOperations';
 import { useConnection } from './ConnectionProvider';
 import { useProducts } from '@/hooks/useProducts';
+import { useOrders } from '@/hooks/useOrders';
 
 interface AppDataContextType {
   // Customer data
@@ -70,12 +71,13 @@ interface AppDataContextType {
   updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
   deleteLoad: (id: string) => Promise<void>;
 
-  // Order data
+  // Order data - now centralized from useOrders hook
   orders: Order[];
   isLoadingOrders: boolean;
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
   updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
+  refreshOrders: () => Promise<void>;
 
   // Payment data
   payments: Payment[];
@@ -142,6 +144,16 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     forceRefreshProducts
   } = useProducts();
 
+  // Use the centralized orders hook
+  const {
+    orders,
+    isLoading: isLoadingOrders,
+    addOrder: addOrderHook,
+    updateOrder: updateOrderHook,
+    deleteOrder: deleteOrderHook,
+    refreshOrders: refreshOrdersHook
+  } = useOrders();
+
   // Enhanced product operations with automatic refresh
   const addProduct = async (product: Omit<Product, 'id'>) => {
     const result = await addProductHook(product);
@@ -174,16 +186,55 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  // Enhanced order operations with automatic refresh
+  const addOrder = async (order: Omit<Order, 'id'>) => {
+    const result = await addOrderHook(order);
+    return result;
+  };
+
+  const updateOrder = async (id: string, order: Partial<Order>) => {
+    await updateOrderHook(id, order);
+  };
+
+  const deleteOrder = async (id: string) => {
+    await deleteOrderHook(id);
+  };
+
+  const refreshOrders = async (): Promise<void> => {
+    await refreshOrdersHook();
+  };
+
   const refreshData = async (): Promise<boolean> => {
     try {
-      console.log('Refreshing app data...');
-      await refreshProducts();
+      console.log('🔄 Refreshing all app data...');
+      await Promise.all([
+        refreshProducts(),
+        refreshOrders()
+      ]);
+      console.log('✅ All app data refreshed successfully');
       return true;
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('❌ Error refreshing data:', error);
       return false;
     }
   };
+
+  // Set up global event listeners for data synchronization
+  useEffect(() => {
+    console.log('🔧 Setting up global data synchronization listeners');
+    
+    const handleDataSync = () => {
+      console.log('🔄 Global data sync triggered');
+      refreshData();
+    };
+
+    // Listen for manual refresh requests
+    window.addEventListener('globalDataRefresh', handleDataSync);
+
+    return () => {
+      window.removeEventListener('globalDataRefresh', handleDataSync);
+    };
+  }, []);
 
   const value: AppDataContextType = {
     // Use centralized products from useProducts hook
@@ -193,6 +244,14 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     updateProduct,
     deleteProduct,
     refreshProducts,
+    
+    // Use centralized orders from useOrders hook  
+    orders,
+    isLoadingOrders,
+    addOrder,
+    updateOrder,
+    deleteOrder,
+    refreshOrders,
     
     // Keep existing operations
     ...appOperations,
