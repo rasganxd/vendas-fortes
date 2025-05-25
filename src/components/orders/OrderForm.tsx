@@ -90,6 +90,24 @@ export default function OrderForm({
     return table?.name || 'Não selecionado';
   };
 
+  const handleSalesRepNext = () => {
+    if (customerInputRef.current) {
+      customerInputRef.current.focus();
+    }
+  };
+
+  const handleCustomerNext = () => {
+    if (paymentTableRef.current) {
+      paymentTableRef.current.focus();
+    }
+  };
+
+  const handlePaymentNext = () => {
+    if (productInputRef.current) {
+      productInputRef.current.focus();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="shadow-md border-gray-200">
@@ -106,23 +124,57 @@ export default function OrderForm({
               )}
             </div>
             
-            {/* Informações básicas do pedido */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
-                <div className="text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
+            {/* Campos de seleção para novo pedido ou informações readonly para edição */}
+            {!isEditMode ? (
+              <>
+                {/* Seleção de vendedor */}
+                <SalesRepSearchInput
+                  salesReps={salesReps}
+                  selectedSalesRep={selectedSalesRep}
+                  setSelectedSalesRep={setSelectedSalesRep}
+                  inputRef={salesRepInputRef}
+                  onEnterPress={handleSalesRepNext}
+                  initialInputValue={salesRepInputValue}
+                />
+
+                {/* Seleção de cliente */}
+                <CustomerSearchInput
+                  customers={customers}
+                  selectedCustomer={selectedCustomer}
+                  setSelectedCustomer={setSelectedCustomer}
+                  inputRef={customerInputRef}
+                  onEnterPress={handleCustomerNext}
+                  initialInputValue={customerInputValue}
+                />
+
+                {/* Seleção de forma de pagamento */}
+                <PaymentOptionsInput
+                  paymentTables={paymentTables}
+                  selectedPaymentTable={selectedPaymentTable}
+                  setSelectedPaymentTable={setSelectedPaymentTable}
+                  buttonRef={paymentTableRef}
+                  onSelectComplete={handlePaymentNext}
+                />
+              </>
+            ) : (
+              /* Informações readonly para edição */
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
+                  <div className="text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                  <div className="text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+                  <div className="text-gray-900 font-medium">{getPaymentTableName()}</div>
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                <div className="text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
-                <div className="text-gray-900 font-medium">{getPaymentTableName()}</div>
-              </div>
-            </div>
+            )}
             
             {/* Botão de compras recentes e salvar */}
             <div className="flex justify-between items-center gap-4">
