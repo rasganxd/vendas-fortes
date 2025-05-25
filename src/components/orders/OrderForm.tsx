@@ -108,63 +108,38 @@ export default function OrderForm({
               )}
             </div>
             
-            {/* Seção de seleção de vendedor, cliente e forma de pagamento - apenas para novos pedidos */}
-            {!isEditMode && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Vendedor</label>
-                  <SalesRepSearchInput
-                    salesReps={salesReps}
-                    selectedSalesRep={selectedSalesRep}
-                    setSelectedSalesRep={setSelectedSalesRep}
-                    inputRef={salesRepInputRef}
-                    onKeyDown={(e) => e.key === 'Enter' && customerInputRef.current?.focus()}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
-                  <CustomerSearchInput
-                    customers={customers}
-                    selectedCustomer={selectedCustomer}
-                    setSelectedCustomer={setSelectedCustomer}
-                    inputRef={customerInputRef}
-                    onKeyDown={(e) => e.key === 'Enter' && paymentTableRef.current?.focus()}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-                  <PaymentOptionsInput
-                    paymentTables={paymentTables}
-                    selectedPaymentTable={selectedPaymentTable}
-                    setSelectedPaymentTable={setSelectedPaymentTable}
-                    buttonRef={paymentTableRef}
-                    onKeyDown={(e) => e.key === 'Enter' && productInputRef.current?.focus()}
-                  />
-                </div>
+            {/* Seção de seleção de vendedor, cliente e forma de pagamento - sempre visível */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vendedor</label>
+                <SalesRepSearchInput
+                  salesReps={salesReps}
+                  selectedSalesRep={selectedSalesRep}
+                  setSelectedSalesRep={setSelectedSalesRep}
+                  inputRef={salesRepInputRef}
+                />
               </div>
-            )}
-            
-            {/* Informações do pedido em modo de edição */}
-            {isEditMode && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
-                  <div className="text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                  <div className="text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
-                  <div className="text-gray-900 font-medium">{getPaymentTableName()}</div>
-                </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
+                <CustomerSearchInput
+                  customers={customers}
+                  selectedCustomer={selectedCustomer}
+                  setSelectedCustomer={setSelectedCustomer}
+                  inputRef={customerInputRef}
+                />
               </div>
-            )}
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
+                <PaymentOptionsInput
+                  paymentTables={paymentTables}
+                  selectedPaymentTable={selectedPaymentTable}
+                  setSelectedPaymentTable={setSelectedPaymentTable}
+                  buttonRef={paymentTableRef}
+                />
+              </div>
+            </div>
             
             {/* Botão de compras recentes e salvar */}
             <div className="flex justify-between items-center gap-4">
