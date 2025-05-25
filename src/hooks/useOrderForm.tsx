@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Customer, SalesRep, OrderItem, Order } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
+import { orderItemService } from '@/services/supabase/orderItemService';
 
 export function useOrderForm() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -36,15 +37,14 @@ export function useOrderForm() {
     return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
   };
 
-  const handleAddItem = (product: any, quantity: number, price: number) => {
+  const handleAddItem = async (product: any, quantity: number, price: number) => {
     const operationId = `add-${Date.now()}`;
     console.log("🛒 === STARTING ADD ITEM PROCESS ===", operationId);
     console.log("📦 Product:", product);
     console.log("🔢 Quantity:", quantity);
     console.log("💰 Price:", price);
     console.log("🎯 Edit Mode:", isEditMode);
-    console.log("🔄 Currently processing:", isProcessingItem);
-    console.log("🔄 Last operation:", lastOperation);
+    console.log("🆔 Current Order ID:", currentOrderId);
     
     // Prevent duplicate operations
     if (isProcessingItem || lastOperation === operationId) {
@@ -86,6 +86,7 @@ export function useOrderForm() {
       setIsProcessingItem(true);
       setLastOperation(operationId);
       
+      // Update local state immediately for UX
       setOrderItems(currentItems => {
         console.log("📋 Current items before adding:", currentItems.length);
         
@@ -105,6 +106,21 @@ export function useOrderForm() {
             price: price,
             total: newTotal
           };
+          
+          // If in edit mode, persist to database
+          if (isEditMode && currentOrderId && existingItem.id) {
+            orderItemService.updateItemInOrder(currentOrderId, existingItem.id, {
+              quantity: newQuantity,
+              unitPrice: price,
+              price: price,
+              total: newTotal
+            }).then(() => {
+              orderItemService.updateOrderTotal(currentOrderId);
+              console.log("✅ Existing item updated in database");
+            }).catch(error => {
+              console.error("❌ Error updating item in database:", error);
+            });
+          }
           
           console.log("✅ Updated existing item. New quantity:", newQuantity);
           
@@ -130,6 +146,30 @@ export function useOrderForm() {
           
           console.log("➕ Adding new item with ID:", newItemId);
           const updatedItems = [...currentItems, newItem];
+          
+          // If in edit mode, persist to database
+          if (isEditMode && currentOrderId) {
+            orderItemService.addItemToOrder(currentOrderId, newItem).then((savedItem) => {
+              // Update the item with the database ID
+              setOrderItems(prevItems => 
+                prevItems.map(item => 
+                  item.id === newItemId ? { ...item, id: savedItem.id } : item
+                )
+              );
+              orderItemService.updateOrderTotal(currentOrderId);
+              console.log("✅ New item saved to database with ID:", savedItem.id);
+            }).catch(error => {
+              console.error("❌ Error saving item to database:", error);
+              // Remove the item from local state if save failed
+              setOrderItems(prevItems => prevItems.filter(item => item.id !== newItemId));
+              toast({
+                title: "Erro ao salvar item",
+                description: "Não foi possível salvar o item no banco de dados",
+                variant: "destructive"
+              });
+            });
+          }
+          
           console.log("✅ Added new item. Total items:", updatedItems.length);
           
           toast({
@@ -166,12 +206,12 @@ export function useOrderForm() {
     }
   };
 
-  const handleRemoveItem = (productId: string) => {
+  const handleRemoveItem = async (productId: string) => {
     const operationId = `remove-${Date.now()}`;
     console.log("🗑️ === STARTING REMOVE ITEM PROCESS ===", operationId);
     console.log("🎯 Product ID to remove:", productId);
     console.log("🎯 Edit Mode:", isEditMode);
-    console.log("🔄 Currently processing:", isProcessingItem);
+    console.log("🆔 Current Order ID:", currentOrderId);
     
     // Prevent duplicate operations
     if (isProcessingItem || lastOperation === operationId) {
@@ -193,6 +233,7 @@ export function useOrderForm() {
       setIsProcessingItem(true);
       setLastOperation(operationId);
       
+      // Update local state immediately for UX
       setOrderItems(currentItems => {
         console.log("📋 Current items before removal:", currentItems.length);
         
@@ -209,6 +250,23 @@ export function useOrderForm() {
         
         const updatedItems = currentItems.filter(item => item.productId !== productId);
         console.log("✅ Item removed successfully. Remaining items:", updatedItems.length);
+        
+        // If in edit mode, remove from database
+        if (isEditMode && currentOrderId) {
+          orderItemService.removeItemFromOrder(currentOrderId, productId).then(() => {
+            orderItemService.updateOrderTotal(currentOrderId);
+            console.log("✅ Item removed from database");
+          }).catch(error => {
+            console.error("❌ Error removing item from database:", error);
+            // Re-add the item to local state if database removal failed
+            setOrderItems(prevItems => [...prevItems, itemToRemove]);
+            toast({
+              title: "Erro ao remover item",
+              description: "Não foi possível remover o item do banco de dados",
+              variant: "destructive"
+            });
+          });
+        }
         
         toast({
           title: "Item removido",

@@ -1,13 +1,30 @@
-
 import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { orderService } from '@/services/supabase/orderService';
 
+// Global state to track orders being edited
+const ordersBeingEdited = new Set<string>();
+
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  // Functions to manage edit state
+  const markOrderAsBeingEdited = (orderId: string) => {
+    console.log("🔒 Marking order as being edited:", orderId);
+    ordersBeingEdited.add(orderId);
+  };
+
+  const unmarkOrderAsBeingEdited = (orderId: string) => {
+    console.log("🔓 Unmarking order as being edited:", orderId);
+    ordersBeingEdited.delete(orderId);
+  };
+
+  const isOrderBeingEdited = (orderId: string) => {
+    return ordersBeingEdited.has(orderId);
+  };
 
   // Load orders on initial render
   useEffect(() => {
@@ -37,15 +54,29 @@ export const useOrders = () => {
   useEffect(() => {
     const handleOrderUpdated = (event: CustomEvent) => {
       console.log("🔄 Order updated event received:", event.detail);
-      refreshOrders();
+      const { orderId } = event.detail;
+      
+      // Don't refresh if the order is being edited
+      if (!isOrderBeingEdited(orderId)) {
+        refreshOrders();
+      } else {
+        console.log("⚠️ Skipping refresh for order being edited:", orderId);
+      }
     };
 
     const handleOrderItemsUpdated = (event: CustomEvent) => {
       console.log("🔄 Order items updated event received:", event.detail);
-      // Refresh orders after a short delay to allow for database updates
-      setTimeout(() => {
-        refreshOrders();
-      }, 1000);
+      const { orderId } = event.detail;
+      
+      // Don't refresh if the order is being edited
+      if (!isOrderBeingEdited(orderId)) {
+        // Refresh orders after a short delay to allow for database updates
+        setTimeout(() => {
+          refreshOrders();
+        }, 1000);
+      } else {
+        console.log("⚠️ Skipping refresh for order being edited:", orderId);
+      }
     };
 
     window.addEventListener('orderUpdated', handleOrderUpdated as EventListener);
@@ -57,12 +88,25 @@ export const useOrders = () => {
     };
   }, []);
 
-  // Refresh orders from server
+  // Refresh orders from server (with edit protection)
   const refreshOrders = async () => {
     try {
       console.log("🔄 Refreshing orders from server...");
       const loadedOrders = await orderService.getAll();
-      setOrders(loadedOrders);
+      
+      // Update orders but preserve local state for orders being edited
+      setOrders(prevOrders => {
+        return loadedOrders.map(serverOrder => {
+          if (isOrderBeingEdited(serverOrder.id)) {
+            // Keep the local version for orders being edited
+            const localOrder = prevOrders.find(o => o.id === serverOrder.id);
+            console.log("⚠️ Preserving local state for edited order:", serverOrder.id);
+            return localOrder || serverOrder;
+          }
+          return serverOrder;
+        });
+      });
+      
       setLastRefresh(new Date());
       console.log("✅ Orders refreshed:", loadedOrders.length);
     } catch (error) {
@@ -172,6 +216,9 @@ export const useOrders = () => {
         )
       );
       
+      // Unmark as being edited since we're done
+      unmarkOrderAsBeingEdited(id);
+      
       // Dispatch global event
       window.dispatchEvent(new CustomEvent('orderUpdated', { 
         detail: { action: 'update', orderId: id } 
@@ -205,6 +252,9 @@ export const useOrders = () => {
       // Update local state immediately
       setOrders(prevOrders => prevOrders.filter(o => o.id !== id));
       
+      // Remove from editing state if it was being edited
+      unmarkOrderAsBeingEdited(id);
+      
       // Dispatch global event
       window.dispatchEvent(new CustomEvent('orderUpdated', { 
         detail: { action: 'delete', orderId: id } 
@@ -234,7 +284,10 @@ export const useOrders = () => {
     generateNextCode,
     getOrderById,
     refreshOrders,
-    lastRefresh
+    lastRefresh,
+    markOrderAsBeingEdited,
+    unmarkOrderAsBeingEdited,
+    isOrderBeingEdited
   };
 };
 

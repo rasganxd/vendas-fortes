@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { useOrderForm } from '@/hooks/useOrderForm';
@@ -72,6 +72,27 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     connectionStatus,
     resetForm
   });
+
+  // Mark order as being edited when in edit mode
+  useEffect(() => {
+    if (isEditMode && currentOrderId) {
+      // Get the markOrderAsBeingEdited function from useOrders context
+      // We'll need to access this through the AppDataProvider
+      console.log("🔒 Order is now being edited:", currentOrderId);
+      
+      // Dispatch event to mark order as being edited
+      window.dispatchEvent(new CustomEvent('orderEditStarted', { 
+        detail: { orderId: currentOrderId } 
+      }));
+      
+      return () => {
+        console.log("🔓 Order editing finished:", currentOrderId);
+        window.dispatchEvent(new CustomEvent('orderEditFinished', { 
+          detail: { orderId: currentOrderId } 
+        }));
+      };
+    }
+  }, [isEditMode, currentOrderId]);
 
   const handleViewRecentPurchases = () => {
     // This will be handled by the RecentPurchasesManager component

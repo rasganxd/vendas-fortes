@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/appOperations';
@@ -151,7 +152,9 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addOrder: addOrderHook,
     updateOrder: updateOrderHook,
     deleteOrder: deleteOrderHook,
-    refreshOrders: refreshOrdersHook
+    refreshOrders: refreshOrdersHook,
+    markOrderAsBeingEdited,
+    unmarkOrderAsBeingEdited
   } = useOrders();
 
   // Enhanced product operations with automatic refresh
@@ -228,13 +231,29 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       refreshData();
     };
 
+    const handleOrderEditStarted = (event: CustomEvent) => {
+      const { orderId } = event.detail;
+      console.log('🔒 Order edit started:', orderId);
+      markOrderAsBeingEdited(orderId);
+    };
+
+    const handleOrderEditFinished = (event: CustomEvent) => {
+      const { orderId } = event.detail;
+      console.log('🔓 Order edit finished:', orderId);
+      unmarkOrderAsBeingEdited(orderId);
+    };
+
     // Listen for manual refresh requests
     window.addEventListener('globalDataRefresh', handleDataSync);
+    window.addEventListener('orderEditStarted', handleOrderEditStarted as EventListener);
+    window.addEventListener('orderEditFinished', handleOrderEditFinished as EventListener);
 
     return () => {
       window.removeEventListener('globalDataRefresh', handleDataSync);
+      window.removeEventListener('orderEditStarted', handleOrderEditStarted as EventListener);
+      window.removeEventListener('orderEditFinished', handleOrderEditFinished as EventListener);
     };
-  }, []);
+  }, [markOrderAsBeingEdited, unmarkOrderAsBeingEdited]);
 
   const value: AppDataContextType = {
     // Use centralized products from useProducts hook

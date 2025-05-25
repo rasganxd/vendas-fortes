@@ -16,6 +16,7 @@ export { mobileSyncService } from './supabase/mobileSyncService';
 export { deliveryRouteService } from './supabase/deliveryRouteService';
 export { loadService } from './supabase/loadService';
 export { orderService } from './supabase/orderService';
+export { orderItemService } from './supabase/orderItemService';
 export { paymentService } from './supabase/paymentService';
 export { paymentMethodService } from './supabase/paymentMethodService';
 export { paymentTableService } from './supabase/paymentTableService';
