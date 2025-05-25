@@ -109,24 +109,24 @@ export default function OrderForm({
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="shadow-md border-gray-200">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 gap-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium">
+    <div className="space-y-4">
+      <Card className="shadow-sm border-gray-200">
+        <CardContent className="pt-4 pb-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-medium">
                 {isEditMode ? 'Editar Pedido' : 'Novo Pedido'}
               </h3>
               {isEditMode && (
-                <div className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                  Modo de Edição - Você pode adicionar e remover itens
+                <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  Modo de Edição
                 </div>
               )}
             </div>
             
             {/* Campos de seleção para novo pedido ou informações readonly para edição */}
             {!isEditMode ? (
-              <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Seleção de vendedor */}
                 <SalesRepSearchInput
                   salesReps={salesReps}
@@ -135,6 +135,7 @@ export default function OrderForm({
                   inputRef={salesRepInputRef}
                   onEnterPress={handleSalesRepNext}
                   initialInputValue={salesRepInputValue}
+                  compact={true}
                 />
 
                 {/* Seleção de cliente */}
@@ -145,58 +146,62 @@ export default function OrderForm({
                   inputRef={customerInputRef}
                   onEnterPress={handleCustomerNext}
                   initialInputValue={customerInputValue}
+                  compact={true}
                 />
 
                 {/* Seleção de forma de pagamento */}
-                <PaymentOptionsInput
-                  paymentTables={paymentTables}
-                  selectedPaymentTable={selectedPaymentTable}
-                  setSelectedPaymentTable={setSelectedPaymentTable}
-                  buttonRef={paymentTableRef}
-                  onSelectComplete={handlePaymentNext}
-                />
-              </>
+                <div className="space-y-1">
+                  <PaymentOptionsInput
+                    paymentTables={paymentTables}
+                    selectedPaymentTable={selectedPaymentTable}
+                    setSelectedPaymentTable={setSelectedPaymentTable}
+                    buttonRef={paymentTableRef}
+                    onSelectComplete={handlePaymentNext}
+                    simplifiedView={true}
+                  />
+                </div>
+              </div>
             ) : (
               /* Informações readonly para edição */
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-3 rounded">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
-                  <div className="text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Vendedor</label>
+                  <div className="text-sm text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                  <div className="text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Cliente</label>
+                  <div className="text-sm text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
-                  <div className="text-gray-900 font-medium">{getPaymentTableName()}</div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+                  <div className="text-sm text-gray-900 font-medium">{getPaymentTableName()}</div>
                 </div>
               </div>
             )}
             
             {/* Botão de compras recentes e salvar */}
-            <div className="flex justify-between items-center gap-4">
-              <div className="flex-1">
-                <Button 
-                  onClick={handleViewRecentPurchases} 
-                  variant="outline" 
-                  className="w-full border-dashed border-gray-300 hover:border-gray-400 text-gray-700" 
-                  disabled={!selectedCustomer}
-                >
-                  <ClipboardList size={18} className="mr-2" />
-                  Visualizar Compras Recentes
-                </Button>
-              </div>
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+              <Button 
+                onClick={handleViewRecentPurchases} 
+                variant="outline" 
+                size="sm"
+                className="border-dashed border-gray-300 hover:border-gray-400 text-gray-700" 
+                disabled={!selectedCustomer}
+              >
+                <ClipboardList size={16} className="mr-2" />
+                Compras Recentes
+              </Button>
               
               <Button 
                 onClick={handleCreateOrder} 
                 disabled={isSubmitting || !selectedCustomer || !selectedSalesRep || orderItems.length === 0} 
-                className={`w-48 h-11 text-white ${getConnectionStatusColor()}`}
+                size="sm"
+                className={`sm:w-40 text-white ${getConnectionStatusColor()}`}
               >
-                <Save size={18} className="mr-2" />
-                {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar Pedido' : 'Finalizar Pedido'}
+                <Save size={16} className="mr-2" />
+                {isSubmitting ? 'Salvando...' : isEditMode ? 'Atualizar' : 'Finalizar'}
               </Button>
             </div>
           </div>
@@ -204,11 +209,11 @@ export default function OrderForm({
       </Card>
       
       {/* Busca de produtos - sempre editável */}
-      <Card className="shadow-md border-gray-200">
-        <CardContent className="pt-6">
-          <div className="mb-4">
-            <h4 className="text-md font-medium text-gray-800 mb-2">
-              {isEditMode ? 'Adicionar Novos Itens ao Pedido' : 'Adicionar Itens ao Pedido'}
+      <Card className="shadow-sm border-gray-200">
+        <CardContent className="py-3">
+          <div className="mb-3">
+            <h4 className="text-sm font-medium text-gray-800">
+              {isEditMode ? 'Adicionar Itens' : 'Adicionar Itens ao Pedido'}
             </h4>
           </div>
           <ProductSearchInput 
@@ -221,13 +226,13 @@ export default function OrderForm({
       </Card>
       
       {/* Tabela de itens - sempre editável */}
-      <Card className="shadow-md border-gray-200">
+      <Card className="shadow-sm border-gray-200">
         <CardContent className="p-0">
-          <div className="p-4 border-b bg-gray-50">
-            <h4 className="text-md font-medium text-gray-800">
+          <div className="px-4 py-3 border-b bg-gray-50">
+            <h4 className="text-sm font-medium text-gray-800">
               Itens do Pedido
               {isEditMode && (
-                <span className="ml-2 text-sm text-blue-600">(Clique no ícone da lixeira para remover itens)</span>
+                <span className="ml-2 text-xs text-blue-600">(Clique na lixeira para remover)</span>
               )}
             </h4>
           </div>
