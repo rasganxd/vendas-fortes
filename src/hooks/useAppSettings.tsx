@@ -52,20 +52,32 @@ export const useAppSettings = () => {
     try {
       console.log('updateSettings called with:', newSettings);
       
-      // Make sure we have current settings
-      if (!settings) {
-        console.log('No settings loaded, waiting for them to load...');
-        throw new Error('Settings not loaded yet');
+      // Wait for settings to be loaded if they're not ready yet
+      let currentSettings = settings;
+      if (!currentSettings && !isLoading) {
+        console.log('Settings not loaded, fetching first...');
+        await fetchSettings();
+        // After fetching, we need to get the updated settings from state
+        // Since this is async, we'll refetch from the service directly
+        currentSettings = await fetchSettingsFromSupabase();
       }
       
+      // If still no settings after fetch, create defaults
+      if (!currentSettings) {
+        console.log('No settings found, creating defaults...');
+        currentSettings = await createDefaultSettings();
+      }
+      
+      console.log('Using current settings for update:', currentSettings);
+      
       // Update in Supabase
-      const success = await updateSettingsInSupabase(settings, newSettings);
+      const success = await updateSettingsInSupabase(currentSettings, newSettings);
       
       if (success) {
         // Update local state
-        const updatedSettings = { ...settings, ...newSettings } as AppSettings;
+        const updatedSettings = { ...currentSettings, ...newSettings } as AppSettings;
         setSettings(updatedSettings);
-        console.log('Settings updated successfully');
+        console.log('Settings updated successfully in hook');
         return true;
       } else {
         throw new Error('Failed to update settings in Supabase');
@@ -75,7 +87,7 @@ export const useAppSettings = () => {
       setError(err as Error);
       throw err;
     }
-  }, [settings]);
+  }, [settings, isLoading, fetchSettings]);
 
   // Load settings on mount
   useEffect(() => {

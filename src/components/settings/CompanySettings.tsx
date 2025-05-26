@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Building } from "lucide-react";
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { InlineSavingIndicator } from '@/components/ui/saving-indicator';
 
 interface CompanyData {
   name: string;
@@ -79,7 +80,7 @@ export default function CompanySettings() {
       toast({
         variant: "destructive",
         title: "Erro ao salvar dados",
-        description: "Ocorreu um erro ao salvar os dados da empresa."
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao salvar os dados da empresa."
       });
     } finally {
       setIsSaving(false);
@@ -98,7 +99,11 @@ export default function CompanySettings() {
     );
   }
 
-  console.log('Rendering CompanySettings with:', { settings, updateSettings: !!updateSettings, companyData });
+  console.log('Rendering CompanySettings with:', { 
+    settings: settings?.id ? 'loaded' : 'not loaded', 
+    updateSettings: !!updateSettings, 
+    companyData: companyData.name ? 'has data' : 'empty' 
+  });
 
   return (
     <Card>
@@ -188,7 +193,8 @@ export default function CompanySettings() {
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <InlineSavingIndicator isVisible={isSaving} message="Salvando dados..." />
             <Button 
               type="submit" 
               className="bg-sales-800 hover:bg-sales-700"
