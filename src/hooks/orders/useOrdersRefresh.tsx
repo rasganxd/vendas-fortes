@@ -9,7 +9,7 @@ export const useOrdersRefresh = (
   setLastRefresh: (date: Date) => void,
   isOrderBeingEdited: (id: string) => boolean
 ) => {
-  const refreshOrders = useCallback(async (silent = false) => {
+  const refreshOrders = useCallback(async (silent = false): Promise<void> => {
     try {
       if (!silent) {
         console.log('🔄 Refreshing orders from Supabase...');
@@ -37,8 +37,6 @@ export const useOrdersRefresh = (
           description: `${fetchedOrders.length} pedidos carregados com sucesso!`,
         });
       }
-      
-      return fetchedOrders;
     } catch (error) {
       console.error('❌ Error refreshing orders:', error);
       
@@ -49,8 +47,6 @@ export const useOrdersRefresh = (
           variant: 'destructive',
         });
       }
-      
-      return [];
     }
   }, [setOrders, setLastRefresh, isOrderBeingEdited]);
 
