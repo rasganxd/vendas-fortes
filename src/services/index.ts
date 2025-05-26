@@ -21,3 +21,4 @@ export { paymentService } from './supabase/paymentService';
 export { paymentMethodService } from './supabase/paymentMethodService';
 export { paymentTableService } from './supabase/paymentTableService';
 export { vehicleService } from './supabase/vehicleService';
+export { apiTokenService } from './supabase/apiTokenService';
