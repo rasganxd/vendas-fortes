@@ -21,13 +21,16 @@ export const useAppSettings = () => {
   const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching settings...');
       
       // Try to fetch existing settings
       const fetchedSettings = await fetchSettingsFromSupabase();
       
       if (fetchedSettings) {
+        console.log('Settings loaded:', fetchedSettings);
         setSettings(fetchedSettings);
       } else {
+        console.log('Creating default settings...');
         // Create default settings if none exist
         const defaultSettings = await createDefaultSettings();
         setSettings(defaultSettings);
@@ -44,28 +47,36 @@ export const useAppSettings = () => {
    * Updates application settings
    * @param newSettings - Partial settings to update
    */
-  const updateSettings = async (newSettings: Partial<AppSettings>) => {
+  const updateSettings = useCallback(async (newSettings: Partial<AppSettings>) => {
     try {
+      console.log('updateSettings called with:', newSettings);
+      
       if (!settings?.id) {
+        console.log('No settings ID, fetching first...');
         await fetchSettings();
       }
       
       // Merge existing and new settings
       const updatedSettings = { ...settings, ...newSettings } as AppSettings;
+      console.log('Merged settings:', updatedSettings);
       
       // Update in Supabase
-      await updateSettingsInSupabase(settings, newSettings);
+      const success = await updateSettingsInSupabase(settings, newSettings);
       
-      // Update local state
-      setSettings(updatedSettings);
-      
-      return true;
+      if (success) {
+        // Update local state
+        setSettings(updatedSettings);
+        console.log('Settings updated successfully');
+        return true;
+      } else {
+        throw new Error('Failed to update settings in Supabase');
+      }
     } catch (err) {
       console.error('Error updating settings:', err);
       setError(err as Error);
       throw err;
     }
-  };
+  }, [settings, fetchSettings]);
 
   // Load settings on mount
   useEffect(() => {

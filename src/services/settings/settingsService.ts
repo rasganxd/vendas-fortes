@@ -50,6 +50,7 @@ export const fetchSettingsFromSupabase = async (): Promise<AppSettings | null> =
       };
     }
     
+    console.log('No settings found in database');
     return null;
   } catch (error) {
     console.error('Error fetching app settings:', error);
@@ -79,6 +80,8 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
       company: defaultCompany,
       primary_color: '#6B7280'
     };
+    
+    console.log('Inserting default settings:', defaultSettings);
     
     // Save to Supabase
     const { data, error } = await supabase
@@ -132,7 +135,7 @@ export const updateSettingsInSupabase = async (
   newSettings: Partial<AppSettings>
 ): Promise<boolean> => {
   try {
-    console.log('Updating settings in Supabase...', { currentSettings, newSettings });
+    console.log('updateSettingsInSupabase called with:', { currentSettings, newSettings });
     
     // If no current settings or using fallback, fetch/create real settings first
     let settingsId = currentSettings?.id;
@@ -143,9 +146,12 @@ export const updateSettingsInSupabase = async (
       
       if (existingSettings) {
         settingsId = existingSettings.id;
+        console.log('Found existing settings with ID:', settingsId);
       } else {
+        console.log('Creating new settings...');
         const defaultSettings = await createDefaultSettings();
         settingsId = defaultSettings.id;
+        console.log('Created new settings with ID:', settingsId);
       }
     }
     
@@ -155,29 +161,33 @@ export const updateSettingsInSupabase = async (
     if (newSettings.company) {
       updateData.company = newSettings.company;
       updateData.company_name = newSettings.company.name;
+      console.log('Updating company data:', newSettings.company);
     }
     
     if (newSettings.theme?.primaryColor) {
       updateData.primary_color = newSettings.theme.primaryColor;
+      console.log('Updating theme color:', newSettings.theme.primaryColor);
     }
     
-    console.log('Updating with data:', updateData, 'for ID:', settingsId);
+    console.log('Final update data:', updateData, 'for ID:', settingsId);
     
     // Update in Supabase
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('app_settings')
       .update(updateData)
-      .eq('id', settingsId);
+      .eq('id', settingsId)
+      .select()
+      .single();
     
     if (error) {
       console.error('Error updating settings:', error);
       return false;
     }
     
-    console.log('Settings updated successfully');
+    console.log('Settings updated successfully:', data);
     return true;
   } catch (error) {
-    console.error('Error updating settings:', error);
+    console.error('Error in updateSettingsInSupabase:', error);
     return false;
   }
 };
