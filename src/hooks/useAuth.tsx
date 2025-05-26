@@ -2,7 +2,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContextType, UserProfile } from '@/types/auth';
-import { isMobileDevice } from '@/utils/deviceDetection';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -19,7 +18,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isMobile] = useState(isMobileDevice());
 
   useEffect(() => {
     // Get initial session
@@ -106,7 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     userProfile,
     isLoading,
-    isMobile,
+    isMobile: false, // Removido a detecção de dispositivo já que não é mais necessária
     signOut
   };
 
