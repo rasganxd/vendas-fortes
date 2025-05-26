@@ -13,10 +13,12 @@ export const useVehicles = () => {
     const fetchVehicles = async () => {
       try {
         setIsLoading(true);
+        console.log('🚛 Carregando veículos...');
         const loadedVehicles = await vehicleService.getAll();
+        console.log('🚛 Veículos carregados:', loadedVehicles);
         setVehicles(loadedVehicles);
       } catch (error) {
-        console.error("Error loading vehicles:", error);
+        console.error("❌ Erro ao carregar veículos:", error);
         toast({
           title: "Erro ao carregar veículos",
           description: "Houve um problema ao carregar os veículos.",
@@ -33,13 +35,15 @@ export const useVehicles = () => {
   // Add a new vehicle
   const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
     try {
+      console.log('🚛 Adicionando veículo:', vehicle);
       const id = await vehicleService.add(vehicle);
+      console.log('✅ Veículo adicionado com ID:', id);
       
       const newVehicle: Vehicle = {
         ...vehicle,
         id,
-        createdAt: vehicle.createdAt || new Date(),
-        updatedAt: vehicle.updatedAt || new Date()
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
       setVehicles([...vehicles, newVehicle]);
@@ -51,7 +55,7 @@ export const useVehicles = () => {
       
       return id;
     } catch (error) {
-      console.error("Erro ao adicionar veículo:", error);
+      console.error("❌ Erro ao adicionar veículo:", error);
       toast({
         title: "Erro ao adicionar veículo",
         description: "Houve um problema ao adicionar o veículo.",
@@ -64,11 +68,12 @@ export const useVehicles = () => {
   // Update an existing vehicle
   const updateVehicle = async (id: string, vehicle: Partial<Vehicle>) => {
     try {
+      console.log('🚛 Atualizando veículo:', id, vehicle);
       await vehicleService.update(id, vehicle);
       
       // Update local state
       setVehicles(vehicles.map(v => 
-        v.id === id ? { ...v, ...vehicle } : v
+        v.id === id ? { ...v, ...vehicle, updatedAt: new Date() } : v
       ));
       
       toast({
@@ -76,7 +81,7 @@ export const useVehicles = () => {
         description: "Veículo atualizado com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao atualizar veículo:", error);
+      console.error("❌ Erro ao atualizar veículo:", error);
       toast({
         title: "Erro ao atualizar veículo",
         description: "Houve um problema ao atualizar o veículo.",
@@ -88,6 +93,7 @@ export const useVehicles = () => {
   // Delete a vehicle
   const deleteVehicle = async (id: string): Promise<void> => {
     try {
+      console.log('🗑️ Excluindo veículo:', id);
       await vehicleService.delete(id);
       
       // Update local state
@@ -98,7 +104,7 @@ export const useVehicles = () => {
         description: "Veículo excluído com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao excluir veículo:", error);
+      console.error("❌ Erro ao excluir veículo:", error);
       toast({
         title: "Erro ao excluir veículo",
         description: "Houve um problema ao excluir o veículo.",

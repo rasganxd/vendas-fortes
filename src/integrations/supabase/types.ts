@@ -806,9 +806,14 @@ export type Database = {
           brand: string | null
           capacity: number | null
           created_at: string
+          driver_name: string | null
           id: string
+          license_plate: string
           model: string
+          name: string
+          notes: string | null
           plate_number: string
+          type: string
           updated_at: string
           year: number | null
         }
@@ -817,9 +822,14 @@ export type Database = {
           brand?: string | null
           capacity?: number | null
           created_at?: string
+          driver_name?: string | null
           id?: string
+          license_plate: string
           model: string
+          name: string
+          notes?: string | null
           plate_number: string
+          type: string
           updated_at?: string
           year?: number | null
         }
@@ -828,9 +838,14 @@ export type Database = {
           brand?: string | null
           capacity?: number | null
           created_at?: string
+          driver_name?: string | null
           id?: string
+          license_plate?: string
           model?: string
+          name?: string
+          notes?: string | null
           plate_number?: string
+          type?: string
           updated_at?: string
           year?: number | null
         }

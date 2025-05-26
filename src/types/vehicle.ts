@@ -12,5 +12,7 @@ export interface Vehicle {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
-  driverName?: string; 
+  driverName?: string;
+  brand?: string;
+  year?: number;
 }
