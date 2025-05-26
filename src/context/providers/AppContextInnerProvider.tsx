@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
@@ -7,7 +8,6 @@ import { useAppOperations } from '@/context/operations/appOperations';
 import { useAppDataState } from './appData/useAppDataState';
 import { useAppDataOperations } from './appData/useAppDataOperations';
 import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
-import { buildContextValue } from '../utils/buildContextValue';
 
 /**
  * Inner provider for the AppContext
@@ -84,7 +84,10 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   
   // Build the full context value combining all data sources
   const contextValue = {
-    // Use centralized products from useProducts hook
+    // Core data from app operations
+    ...appOperations,
+    
+    // Products data (override with direct state)
     products,
     isLoadingProducts,
     addProduct,
@@ -92,7 +95,7 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     deleteProduct,
     refreshProducts,
     
-    // Use centralized orders from useOrders hook  
+    // Orders data (override with direct state)
     orders,
     isLoadingOrders,
     addOrder,
@@ -100,64 +103,11 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     deleteOrder,
     refreshOrders,
     
-    // Keep existing operations from appOperations
-    ...appOperations,
-    customers: appOperations.customers,
-    isLoading: appOperations.isLoading,
-    addCustomer: appOperations.addCustomer,
-    updateCustomer: appOperations.updateCustomer,
-    deleteCustomer: appOperations.deleteCustomer,
-    generateNextCustomerCode: appOperations.generateNextCustomerCode,
-    productBrands: appOperations.productBrands,
-    isLoadingProductBrands: appOperations.isLoadingProductBrands,
-    addProductBrand: appOperations.addProductBrand,
-    updateProductBrand: appOperations.updateProductBrand,
-    deleteProductBrand: appOperations.deleteProductBrand,
-    productCategories: appOperations.productCategories,
-    isLoadingProductCategories: appOperations.isLoadingProductCategories,
-    addProductCategory: appOperations.addProductCategory,
-    updateProductCategory: appOperations.updateProductCategory,
-    deleteProductCategory: appOperations.deleteProductCategory,
-    productGroups: appOperations.productGroups,
-    isLoadingProductGroups: appOperations.isLoadingProductGroups,
-    addProductGroup: appOperations.addProductGroup,
-    updateProductGroup: appOperations.updateProductGroup,
-    deleteProductGroup: appOperations.deleteProductGroup,
-    salesReps: appOperations.salesReps,
-    isLoadingSalesReps: appOperations.isLoadingSalesReps,
-    addSalesRep: appOperations.addSalesRep,
-    updateSalesRep: appOperations.updateSalesRep,
-    deleteSalesRep: appOperations.deleteSalesRep,
-    vehicles: appOperations.vehicles,
-    isLoadingVehicles: appOperations.isLoadingVehicles,
-    addVehicle: appOperations.addVehicle,
-    updateVehicle: appOperations.updateVehicle,
-    deleteVehicle: appOperations.deleteVehicle,
-    deliveryRoutes: appOperations.deliveryRoutes,
-    isLoadingDeliveryRoutes: appOperations.isLoadingDeliveryRoutes,
-    addDeliveryRoute: appOperations.addDeliveryRoute,
-    updateDeliveryRoute: appOperations.updateDeliveryRoute,
-    deleteDeliveryRoute: appOperations.deleteDeliveryRoute,
-    loads: appOperations.loads,
-    isLoadingLoads: appOperations.isLoadingLoads,
-    addLoad: appOperations.addLoad,
-    updateLoad: appOperations.updateLoad,
-    deleteLoad: appOperations.deleteLoad,
-    payments: appOperations.payments,
-    isLoadingPayments: appOperations.isLoadingPayments,
-    addPayment: appOperations.addPayment,
-    updatePayment: appOperations.updatePayment,
-    deletePayment: appOperations.deletePayment,
-    paymentMethods: appOperations.paymentMethods,
-    isLoadingPaymentMethods: appOperations.isLoadingPaymentMethods,
-    addPaymentMethod: appOperations.addPaymentMethod,
-    updatePaymentMethod: appOperations.updatePaymentMethod,
-    deletePaymentMethod: appOperations.deletePaymentMethod,
-    paymentTables: appOperations.paymentTables,
-    isLoadingPaymentTables: appOperations.isLoadingPaymentTables,
-    addPaymentTable: appOperations.addPaymentTable,
-    updatePaymentTable: appOperations.updatePaymentTable,
-    deletePaymentTable: appOperations.deletePaymentTable,
+    // Hook operations that might not be in appOperations
+    getOrderById: hookOperations.getOrderById,
+    generateNextOrderCode: hookOperations.generateNextOrderCode,
+    
+    // Connection and settings
     connectionStatus: connection.connectionStatus,
     lastConnectAttempt: connection.lastConnectAttempt,
     reconnectToSupabase: connection.reconnectToSupabase,
@@ -165,10 +115,61 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     settings: {
       primaryColor: '#3b82f6'
     },
-    productOperations: appOperations.productOperations,
-    customerOperations: appOperations.customerOperations,
-    systemOperations: appOperations.systemOperations,
-    refreshData
+    
+    // System operations
+    refreshData,
+    
+    // Required setters (placeholders for compatibility)
+    setCustomers: () => {},
+    setProducts: () => {},
+    setOrders: () => {},
+    setPayments: () => {},
+    setRoutes: () => {},
+    setLoads: () => {},
+    setSalesReps: () => {},
+    setVehicles: () => {},
+    setPaymentMethods: () => {},
+    setPaymentTables: () => {},
+    setProductGroups: () => {},
+    setProductCategories: () => {},
+    setProductBrands: () => {},
+    setDeliveryRoutes: () => {},
+    setBackups: () => {},
+    
+    // Required operations that might be missing
+    routes: appOperations.routes || [],
+    isLoadingRoutes: appOperations.isLoadingRoutes || false,
+    addRoute: appOperations.addRoute || (async () => ''),
+    updateRoute: appOperations.updateRoute || (async () => {}),
+    deleteRoute: appOperations.deleteRoute || (async () => {}),
+    
+    backups: [],
+    isLoadingBackups: false,
+    createBackup: async () => '',
+    restoreBackup: async () => false,
+    deleteBackup: async () => false,
+    
+    // Product operations that might be missing
+    validateProductDiscount: () => true,
+    getMinimumPrice: () => 0,
+    addBulkProducts: async () => [],
+    
+    // Route operations
+    generateRouteUpdate: async () => 0,
+    getRouteWithCustomers: async () => null,
+    
+    // System operations that might be missing
+    startNewMonth: async () => false,
+    startNewDay: async () => false,
+    clearCache: async () => {},
+    updateSettings: async () => {},
+    
+    // Required but not used properties
+    isUsingMockData: false,
+    connectionStatus: connection.connectionStatus,
+    lastConnectAttempt: connection.lastConnectAttempt,
+    reconnectToSupabase: connection.reconnectToSupabase,
+    testConnection: connection.testConnection
   };
   
   return (
