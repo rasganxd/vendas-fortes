@@ -278,14 +278,14 @@ export default function PromissoryNotesTab({
 
         <label className="block text-sm font-medium mb-2">Filtrar por Pedido</label>
         <Select
-          value={selectedOrderId || ''}
-          onValueChange={setSelectedOrderId}
+          value={selectedOrderId || 'all'}
+          onValueChange={(value) => setSelectedOrderId(value === 'all' ? null : value)}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione um pedido para filtrar ou deixe vazio para ver todas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Mostrar todas as notas</SelectItem>
+            <SelectItem value="all">Mostrar todas as notas</SelectItem>
             {promissoryOrders.map(order => (
               <SelectItem key={order.id} value={order.id}>
                 #{order.code || '---'} - {order.customerName} 
