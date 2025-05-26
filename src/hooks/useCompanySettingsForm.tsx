@@ -16,6 +16,7 @@ interface CompanyData {
 export const useCompanySettingsForm = () => {
   const { toast } = useToast();
   const { settings, updateSettings, isLoading } = useAppSettings();
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [companyData, setCompanyData] = useState<CompanyData>(
     settings?.company || {
@@ -52,6 +53,7 @@ export const useCompanySettingsForm = () => {
     e.preventDefault();
     console.log('Form submitted, starting save process...');
     setIsSaving(true);
+    setSaveSuccess(false);
 
     try {
       console.log('Saving company data:', companyData);
@@ -63,6 +65,9 @@ export const useCompanySettingsForm = () => {
       
       const result = await updateSettings({ company: companyData });
       console.log('Save result:', result);
+      
+      // Trigger success state
+      setSaveSuccess(true);
       
       toast({
         title: "Dados salvos com sucesso",
@@ -80,6 +85,10 @@ export const useCompanySettingsForm = () => {
     }
   };
 
+  const handleSaveSuccess = () => {
+    setSaveSuccess(true);
+  };
+
   return {
     companyData,
     isSaving,
@@ -87,6 +96,8 @@ export const useCompanySettingsForm = () => {
     handleChange,
     handleSubmit,
     settings,
-    updateSettings
+    updateSettings,
+    saveSuccess,
+    handleSaveSuccess
   };
 };

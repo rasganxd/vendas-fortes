@@ -15,7 +15,9 @@ export default function CompanySettings() {
     handleChange,
     handleSubmit,
     settings,
-    updateSettings
+    updateSettings,
+    saveSuccess,
+    handleSaveSuccess
   } = useCompanySettingsForm();
 
   if (isLoading) {
@@ -61,7 +63,10 @@ export default function CompanySettings() {
             onChange={handleChange}
           />
 
-          <CompanyFormActions isSaving={isSaving} />
+          <CompanyFormActions 
+            isSaving={isSaving}
+            onSaveSuccess={saveSuccess ? handleSaveSuccess : undefined}
+          />
         </form>
       </CardContent>
     </Card>

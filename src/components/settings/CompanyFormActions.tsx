@@ -1,18 +1,50 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { InlineSavingIndicator } from '@/components/ui/saving-indicator';
+import { Check } from 'lucide-react';
 
 interface CompanyFormActionsProps {
   isSaving: boolean;
+  onSaveSuccess?: () => void;
 }
 
 export const CompanyFormActions: React.FC<CompanyFormActionsProps> = ({
-  isSaving
+  isSaving,
+  onSaveSuccess
 }) => {
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    if (onSaveSuccess) {
+      const timeoutId = setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [onSaveSuccess]);
+
+  const handleSaveSuccess = () => {
+    setShowSuccess(true);
+    if (onSaveSuccess) {
+      onSaveSuccess();
+    }
+  };
+
   return (
     <div className="flex justify-between items-center">
-      <InlineSavingIndicator isVisible={isSaving} message="Salvando dados..." />
+      <div className="flex items-center space-x-4">
+        <InlineSavingIndicator isVisible={isSaving} message="Salvando dados..." />
+        
+        {showSuccess && (
+          <div className="flex items-center space-x-2 text-green-600 animate-fade-in">
+            <Check className="h-4 w-4" />
+            <span className="text-sm font-medium">Dados salvos com sucesso!</span>
+          </div>
+        )}
+      </div>
+      
       <Button 
         type="submit" 
         className="bg-sales-800 hover:bg-sales-700"
