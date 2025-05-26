@@ -11,9 +11,9 @@ export const useSystemOperations = () => {
     notification.success('Cache limpo com sucesso');
   };
 
-  const syncMobileData = async (salesRepId: string) => {
+  const syncMobileData = async (salesRepId: string, deviceIp?: string) => {
     try {
-      await mobileSyncService.logSyncEvent(salesRepId, 'download', 'web-admin');
+      await mobileSyncService.logSyncEvent(salesRepId, 'download', 'web-admin', deviceIp);
       notification.success('Dados sincronizados com sucesso');
     } catch (error) {
       console.error('Error syncing mobile data:', error);
@@ -21,8 +21,21 @@ export const useSystemOperations = () => {
     }
   };
 
+  const generateConnectionData = async (salesRepId: string) => {
+    try {
+      const connectionData = await mobileSyncService.generateConnectionData(salesRepId);
+      console.log('Connection data generated with IP info:', connectionData);
+      return connectionData;
+    } catch (error) {
+      console.error('Error generating connection data:', error);
+      notification.error('Erro ao gerar dados de conexão');
+      return null;
+    }
+  };
+
   return {
     clearCache,
-    syncMobileData
+    syncMobileData,
+    generateConnectionData
   };
 };

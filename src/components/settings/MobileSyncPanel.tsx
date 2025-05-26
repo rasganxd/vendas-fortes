@@ -9,8 +9,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, QrCode } from "lucide-react";
-import { mobileSyncService, SyncLogEntry } from '@/services/supabase/mobileSyncService';
+import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, QrCode, Wifi, Copy } from "lucide-react";
+import { mobileSyncService, SyncLogEntry, ConnectionData } from '@/services/supabase/mobileSyncService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { formatDate } from '@/utils/date-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -28,7 +28,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'error' | 'info'>('info');
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
-  const [connectionData, setConnectionData] = useState<string>('');
+  const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
 
   // Clear status message after 5 seconds
   useEffect(() => {
@@ -70,26 +70,20 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
     }
   };
 
-  const generateQRCode = () => {
+  const generateQRCode = async () => {
     try {
-      // Generate a unique connection string
-      const timestamp = new Date().getTime();
-      const randomPart = Math.random().toString(36).substring(2, 10);
+      console.log('Generating QR Code with IP information...');
       
-      // Create connection data object
-      const connectionInfo = {
-        salesRepId: salesRepId,
-        serverUrl: window.location.origin,
-        timestamp: timestamp,
-        token: `${salesRepId}-${timestamp}-${randomPart}`
-      };
+      // Generate connection data with IP information
+      const connData = await mobileSyncService.generateConnectionData(salesRepId);
+      setConnectionData(connData);
       
-      // Convert to a string for QR code
-      setConnectionData(JSON.stringify(connectionInfo));
       setIsQrDialogOpen(true);
       
-      // Log this connection attempt for audit
-      console.log("QR Code connection data generated:", connectionInfo);
+      toast({
+        title: "QR Code gerado",
+        description: "QR Code criado com informações de IP para conexão móvel."
+      });
       
     } catch (error) {
       console.error("Error generating QR code:", error);
@@ -100,6 +94,22 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
         title: "Erro",
         description: "Não foi possível gerar o QR code para sincronização.",
         variant: "destructive"
+      });
+    }
+  };
+
+  const copyConnectionInfo = () => {
+    if (connectionData) {
+      const info = `Servidor: ${connectionData.serverUrl}\n` +
+                  `IP Público: ${connectionData.serverIp || 'N/A'}\n` +
+                  `IP Local: ${connectionData.localIp || 'N/A'}\n` +
+                  `Porta: ${connectionData.port}\n` +
+                  `Token: ${connectionData.token}`;
+      
+      navigator.clipboard.writeText(info);
+      toast({
+        title: "Copiado!",
+        description: "Informações de conexão copiadas para a área de transferência."
       });
     }
   };
@@ -142,20 +152,20 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
           <span className="text-blue-700">{lastSynced || 'Nunca'}</span>
         </div>
         
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-4 space-x-2">
           <Button 
             variant="outline" 
             onClick={() => loadSyncLogs()}
             disabled={isLoading}
-            className="mr-2 border-blue-200 text-blue-700 hover:bg-blue-100"
+            className="border-blue-200 text-blue-700 hover:bg-blue-100"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
           
           <Button onClick={generateQRCode} className="bg-blue-600 hover:bg-blue-700">
-            <QrCode className="mr-2 h-4 w-4" />
-            Gerar QR Code
+            <Wifi className="mr-2 h-4 w-4" />
+            Gerar QR Code + IP
           </Button>
         </div>
       </div>
@@ -174,6 +184,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
                 <TableHead className="text-blue-800">Status</TableHead>
                 <TableHead className="text-blue-800">Tipo</TableHead>
                 <TableHead className="text-blue-800">Dispositivo</TableHead>
+                <TableHead className="text-blue-800">IP</TableHead>
                 <TableHead className="text-blue-800">Data</TableHead>
               </TableRow>
             </TableHeader>
@@ -186,6 +197,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
                      log.event_type === 'download' ? 'Recebimento' : 'Erro'}
                   </TableCell>
                   <TableCell>{log.device_id}</TableCell>
+                  <TableCell>{log.device_ip || '—'}</TableCell>
                   <TableCell>{formatSyncDate(log.created_at)}</TableCell>
                 </TableRow>
               ))}
@@ -201,21 +213,36 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
       )}
       
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Sincronização Mobile</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Wifi className="h-5 w-5" />
+              Sincronização Mobile com IP
+            </DialogTitle>
             <DialogDescription>
-              Escaneie este QR code no aplicativo móvel para conectar e sincronizar dados.
+              Escaneie este QR code no aplicativo móvel ou use as informações de IP para conectar manualmente.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex justify-center py-6">
-            <QRCodeDisplay value={connectionData} />
+          <div className="flex justify-center py-4">
+            {connectionData && (
+              <QRCodeDisplay 
+                value={JSON.stringify(connectionData)} 
+                showConnectionInfo={true}
+              />
+            )}
+          </div>
+          
+          <div className="flex justify-center space-x-2">
+            <Button variant="outline" onClick={copyConnectionInfo} disabled={!connectionData}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copiar Info de Conexão
+            </Button>
           </div>
           
           <div className="text-center text-sm text-gray-500 mt-2">
+            <p>Use o IP local para conexão na mesma rede ou o IP público para acesso externo.</p>
             <p>Este QR code é válido por 10 minutos.</p>
-            <p>Após escaneá-lo, o aplicativo irá solicitar sua confirmação.</p>
           </div>
         </DialogContent>
       </Dialog>
