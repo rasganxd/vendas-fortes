@@ -131,6 +131,10 @@ const defaultContextValues: AppContextType = {
   startNewDay: async () => true,
   clearCache: async () => {},
   refreshData: async () => true,
+  
+  // Add the missing route operations
+  generateRouteUpdate: async () => 0,
+  getRouteWithCustomers: async () => null,
 };
 
 export default defaultContextValues;
