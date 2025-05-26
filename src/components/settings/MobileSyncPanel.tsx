@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -72,27 +71,30 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
 
   const generateQRCode = async () => {
     try {
-      console.log('Generating QR Code with IP information...');
+      console.log('📱 Generating mobile API QR Code...');
       
-      // Generate connection data with IP information
+      // Generate connection data with API endpoints
       const connData = await mobileSyncService.generateConnectionData(salesRepId);
-      setConnectionData(connData);
+      
+      // Create mobile API discovery data
+      const apiDiscoveryData = await mobileSyncService.createMobileApiDiscovery(connData);
+      setConnectionData(JSON.parse(apiDiscoveryData));
       
       setIsQrDialogOpen(true);
       
       toast({
-        title: "QR Code gerado",
-        description: "QR Code criado com informações de IP para conexão móvel."
+        title: "QR Code da API Móvel gerado",
+        description: "QR Code criado para sincronização de dados com o aplicativo móvel."
       });
       
     } catch (error) {
-      console.error("Error generating QR code:", error);
-      setStatusMessage("Não foi possível gerar o QR code.");
+      console.error("Error generating mobile API QR code:", error);
+      setStatusMessage("Não foi possível gerar o QR code da API móvel.");
       setStatusType('error');
       
       toast({
         title: "Erro",
-        description: "Não foi possível gerar o QR code para sincronização.",
+        description: "Não foi possível gerar o QR code para a API de sincronização.",
         variant: "destructive"
       });
     }
@@ -100,16 +102,27 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
 
   const copyConnectionInfo = () => {
     if (connectionData) {
-      const info = `Servidor: ${connectionData.serverUrl}\n` +
-                  `IP Público: ${connectionData.serverIp || 'N/A'}\n` +
-                  `IP Local: ${connectionData.localIp || 'N/A'}\n` +
-                  `Porta: ${connectionData.port}\n` +
-                  `Token: ${connectionData.token}`;
+      const info = `=== API MÓVEL - INFORMAÇÕES DE CONEXÃO ===\n\n` +
+                  `Servidor: ${connectionData.server?.name || connectionData.serverUrl}\n` +
+                  `URL Base: ${connectionData.server?.url || connectionData.serverUrl}\n` +
+                  `IP Local: ${connectionData.server?.localIp || 'N/A'}\n` +
+                  `IP Público: ${connectionData.server?.publicIp || 'N/A'}\n` +
+                  `Porta: ${connectionData.server?.port || 'N/A'}\n\n` +
+                  `=== AUTENTICAÇÃO ===\n` +
+                  `Token: ${connectionData.authentication?.token || 'N/A'}\n` +
+                  `Expira: ${connectionData.authentication?.expiresAt ? new Date(connectionData.authentication.expiresAt).toLocaleString() : 'N/A'}\n\n` +
+                  `=== ENDPOINTS DA API ===\n` +
+                  `Download: ${connectionData.api?.endpoints?.downloadData || 'N/A'}\n` +
+                  `Upload: ${connectionData.api?.endpoints?.uploadData || 'N/A'}\n` +
+                  `Status: ${connectionData.api?.endpoints?.checkStatus || 'N/A'}\n\n` +
+                  `=== DADOS DISPONÍVEIS ===\n` +
+                  `Download: ${connectionData.dataTypes?.download?.join(', ') || 'clientes, produtos, rotas'}\n` +
+                  `Upload: ${connectionData.dataTypes?.upload?.join(', ') || 'atualizações'}`;
       
       navigator.clipboard.writeText(info);
       toast({
         title: "Copiado!",
-        description: "Informações de conexão copiadas para a área de transferência."
+        description: "Informações da API móvel copiadas para a área de transferência."
       });
     }
   };
@@ -165,7 +178,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
           
           <Button onClick={generateQRCode} className="bg-blue-600 hover:bg-blue-700">
             <Wifi className="mr-2 h-4 w-4" />
-            Gerar QR Code + IP
+            Gerar API Móvel
           </Button>
         </div>
       </div>
@@ -217,10 +230,10 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wifi className="h-5 w-5" />
-              Sincronização Mobile com IP
+              API Móvel - Sincronização de Dados
             </DialogTitle>
             <DialogDescription>
-              Escaneie este QR code no aplicativo móvel ou use as informações de IP para conectar manualmente.
+              Escaneie este QR code no aplicativo móvel para configurar a sincronização de clientes, produtos e rotas.
             </DialogDescription>
           </DialogHeader>
           
@@ -236,13 +249,14 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
           <div className="flex justify-center space-x-2">
             <Button variant="outline" onClick={copyConnectionInfo} disabled={!connectionData}>
               <Copy className="mr-2 h-4 w-4" />
-              Copiar Info de Conexão
+              Copiar Info da API
             </Button>
           </div>
           
           <div className="text-center text-sm text-gray-500 mt-2">
-            <p>Use o IP local para conexão na mesma rede ou o IP público para acesso externo.</p>
-            <p>Este QR code é válido por 10 minutos.</p>
+            <p>📱 Use para conectar o app móvel que terá clientes, produtos e rotas</p>
+            <p>🔑 Token válido por 10 minutos</p>
+            <p>📊 Permite download e upload de dados</p>
           </div>
         </DialogContent>
       </Dialog>

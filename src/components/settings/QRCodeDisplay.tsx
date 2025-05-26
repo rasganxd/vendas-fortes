@@ -15,7 +15,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   showConnectionInfo = false
 }) => {
   const [logoSize, setLogoSize] = useState(50);
-  const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
+  const [connectionData, setConnectionData] = useState<any | null>(null);
 
   useEffect(() => {
     // Adjust logo size based on QR code size
@@ -24,7 +24,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     // Parse connection data if showing connection info
     if (showConnectionInfo && value) {
       try {
-        const parsed = JSON.parse(value) as ConnectionData;
+        const parsed = JSON.parse(value);
         setConnectionData(parsed);
       } catch (error) {
         console.error('Error parsing connection data:', error);
@@ -63,19 +63,55 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       
       {showConnectionInfo && connectionData && (
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <h4 className="font-medium text-blue-800 mb-2">Informações de Conexão</h4>
-          <div className="space-y-1 text-sm text-blue-700">
-            <div><strong>URL do Servidor:</strong> {connectionData.serverUrl}</div>
-            {connectionData.serverIp && (
-              <div><strong>IP Público:</strong> {connectionData.serverIp}</div>
+          <h4 className="font-medium text-blue-800 mb-3">📱 Informações da API Móvel</h4>
+          <div className="space-y-2 text-sm text-blue-700">
+            <div><strong>Tipo:</strong> {connectionData.type || 'Sincronização Móvel'}</div>
+            <div><strong>Servidor:</strong> {connectionData.server?.name || connectionData.serverUrl}</div>
+            
+            {connectionData.server?.localIp && (
+              <div><strong>IP Local:</strong> {connectionData.server.localIp}</div>
             )}
-            {connectionData.localIp && (
-              <div><strong>IP Local:</strong> {connectionData.localIp}</div>
+            {connectionData.server?.publicIp && (
+              <div><strong>IP Público:</strong> {connectionData.server.publicIp}</div>
             )}
-            {connectionData.port && (
-              <div><strong>Porta:</strong> {connectionData.port}</div>
+            {connectionData.server?.port && (
+              <div><strong>Porta:</strong> {connectionData.server.port}</div>
             )}
-            <div><strong>Token:</strong> {connectionData.token.substring(0, 16)}...</div>
+            
+            {connectionData.authentication?.token && (
+              <div><strong>Token:</strong> {connectionData.authentication.token.substring(0, 16)}...</div>
+            )}
+            
+            {connectionData.authentication?.expiresAt && (
+              <div><strong>Expira em:</strong> {new Date(connectionData.authentication.expiresAt).toLocaleString()}</div>
+            )}
+
+            {connectionData.dataTypes && (
+              <div className="mt-3 pt-2 border-t border-blue-200">
+                <div><strong>Dados para Download:</strong></div>
+                <div className="ml-2 text-xs">
+                  {connectionData.dataTypes.download?.join(', ') || 'clientes, produtos, rotas'}
+                </div>
+                <div className="mt-1"><strong>Dados para Upload:</strong></div>
+                <div className="ml-2 text-xs">
+                  {connectionData.dataTypes.upload?.join(', ') || 'atualizações de clientes, estoque, progresso'}
+                </div>
+              </div>
+            )}
+
+            {connectionData.api?.endpoints && (
+              <div className="mt-3 pt-2 border-t border-blue-200">
+                <div><strong>Endpoints da API:</strong></div>
+                <div className="ml-2 text-xs space-y-1">
+                  {connectionData.api.endpoints.downloadData && (
+                    <div>Download: .../{connectionData.authentication?.token?.substring(-8)}</div>
+                  )}
+                  {connectionData.api.endpoints.uploadData && (
+                    <div>Upload: .../{connectionData.authentication?.token?.substring(-8)}</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

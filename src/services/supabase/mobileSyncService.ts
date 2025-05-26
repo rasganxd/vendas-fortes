@@ -16,6 +16,11 @@ export interface ConnectionData {
   timestamp: number;
   token: string;
   port?: number;
+  apiEndpoints?: {
+    download: string;
+    upload: string;
+    status: string;
+  };
 }
 
 export class MobileSyncService {
@@ -68,6 +73,7 @@ export class MobileSyncService {
   async generateConnectionData(salesRepId: string): Promise<ConnectionData> {
     const timestamp = new Date().getTime();
     const randomPart = Math.random().toString(36).substring(2, 10);
+    const token = `${salesRepId}-${timestamp}-${randomPart}`;
     
     // Get both local and public IP addresses
     const [localIp, publicIp] = await Promise.all([
@@ -81,11 +87,16 @@ export class MobileSyncService {
       serverIp: publicIp || undefined,
       localIp: localIp || undefined,
       timestamp,
-      token: `${salesRepId}-${timestamp}-${randomPart}`,
-      port: window.location.port ? parseInt(window.location.port) : (window.location.protocol === 'https:' ? 443 : 80)
+      token,
+      port: window.location.port ? parseInt(window.location.port) : (window.location.protocol === 'https:' ? 443 : 80),
+      apiEndpoints: {
+        download: `${window.location.origin}/api/mobile/download/${token}`,
+        upload: `${window.location.origin}/api/mobile/upload/${token}`,
+        status: `${window.location.origin}/api/mobile/status/${token}`
+      }
     };
     
-    console.log('Generated connection data with IP info:', connectionData);
+    console.log('📱 Generated mobile API connection data:', connectionData);
     return connectionData;
   }
 
@@ -101,7 +112,7 @@ export class MobileSyncService {
     deviceId: string,
     deviceIp?: string
   ): Promise<void> {
-    console.log(`Logging sync event: ${eventType} for sales rep: ${salesRepId}, device: ${deviceId}, IP: ${deviceIp}`);
+    console.log(`📱 Logging sync event: ${eventType} for sales rep: ${salesRepId}, device: ${deviceId}, IP: ${deviceIp}`);
     // This would be implemented with actual Supabase tables
   }
 
@@ -110,18 +121,43 @@ export class MobileSyncService {
     // This would be implemented with actual Supabase tables
   }
 
-  // Method to create a simple HTTP endpoint for mobile device discovery
-  async createDiscoveryEndpoint(connectionData: ConnectionData): Promise<string> {
+  // Method to create mobile API discovery data
+  async createMobileApiDiscovery(connectionData: ConnectionData): Promise<string> {
     const discoveryData = {
-      ...connectionData,
-      discoveryUrl: `${connectionData.serverUrl}/api/mobile-sync/${connectionData.token}`,
-      timestamp: Date.now()
+      type: "mobile-api-sync",
+      version: "1.0",
+      server: {
+        name: "Sistema de Vendas - API Móvel",
+        url: connectionData.serverUrl,
+        localIp: connectionData.localIp,
+        publicIp: connectionData.serverIp,
+        port: connectionData.port
+      },
+      authentication: {
+        token: connectionData.token,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
+        salesRepId: connectionData.salesRepId
+      },
+      api: {
+        baseUrl: connectionData.serverUrl,
+        endpoints: {
+          downloadData: connectionData.apiEndpoints?.download,
+          uploadData: connectionData.apiEndpoints?.upload,
+          checkStatus: connectionData.apiEndpoints?.status
+        }
+      },
+      dataTypes: {
+        download: ["customers", "products", "delivery_routes"],
+        upload: ["customer_updates", "product_stock", "route_progress"]
+      },
+      instructions: {
+        pt: "Use este QR code para configurar a sincronização no app móvel",
+        en: "Use this QR code to configure sync in the mobile app"
+      },
+      createdAt: new Date().toISOString()
     };
     
-    // In a real implementation, this would store the connection data temporarily
-    // for the mobile device to discover via HTTP requests
-    console.log('Discovery endpoint created:', discoveryData);
-    
+    console.log('📱 Mobile API discovery data created:', discoveryData);
     return JSON.stringify(discoveryData);
   }
 }
