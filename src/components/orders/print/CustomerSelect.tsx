@@ -20,6 +20,9 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
   setSelectedCustomerId,
   customers
 }) => {
+  console.log("CustomerSelect rendering with customers:", customers);
+  console.log("Customer IDs:", customers.map(c => ({ name: c.name, id: c.id, idType: typeof c.id })));
+
   return (
     <div>
       <label className="text-sm font-medium mb-1 block">Filtrar por Cliente</label>
@@ -37,6 +40,14 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
             const customerValue = customer.id && customer.id.trim() !== '' 
               ? customer.id 
               : `customer-${customer.name}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            console.log(`Customer: ${customer.name}, Original ID: "${customer.id}", Generated Value: "${customerValue}"`);
+            
+            // Double-check the value is not empty
+            if (!customerValue || customerValue.trim() === '') {
+              console.error(`CRITICAL: Empty value detected for customer ${customer.name}`);
+              return null; // Skip this item entirely if we can't generate a valid value
+            }
             
             return (
               <SelectItem 
