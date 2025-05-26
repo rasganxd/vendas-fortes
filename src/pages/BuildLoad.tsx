@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -186,81 +187,87 @@ export default function BuildLoad() {
 
   return (
     <PageLayout title="Montar Carga">
-      <Card>
-        <CardHeader>
-          <CardTitle>Montar Carga</CardTitle>
-          <CardDescription>
-            Preencha os dados para montar uma nova carga
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Montar Carga</CardTitle>
+            <CardDescription>
+              Preencha os dados para montar uma nova carga
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="loadName">Nome da Carga</Label>
+                <Input
+                  id="loadName"
+                  placeholder="Nome da carga"
+                  value={loadName}
+                  onChange={(e) => setLoadName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="vehicle">Veículo</Label>
+                <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um veículo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.map(vehicle => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="salesRep">Representante</Label>
+                <Select value={selectedSalesRepId} onValueChange={setSelectedSalesRepId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um representante" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesReps.map(salesRep => (
+                      <SelectItem key={salesRep.id} value={salesRep.id}>
+                        {salesRep.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="loadDate">Data da Carga</Label>
+                <Input
+                  type="date"
+                  id="loadDate"
+                  value={loadDate.toISOString().split('T')[0]}
+                  onChange={(e) => setLoadDate(new Date(e.target.value))}
+                />
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="loadName">Nome da Carga</Label>
-              <Input
-                id="loadName"
-                placeholder="Nome da carga"
-                value={loadName}
-                onChange={(e) => setLoadName(e.target.value)}
+              <Label htmlFor="loadNotes">Observações</Label>
+              <Textarea
+                id="loadNotes"
+                placeholder="Observações sobre a carga"
+                value={loadNotes}
+                onChange={(e) => setLoadNotes(e.target.value)}
               />
             </div>
-            <div>
-              <Label htmlFor="vehicle">Veículo</Label>
-              <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um veículo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vehicles.map(vehicle => (
-                    <SelectItem key={vehicle.id} value={vehicle.id}>
-                      {vehicle.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="salesRep">Representante</Label>
-              <Select value={selectedSalesRepId} onValueChange={setSelectedSalesRepId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um representante" />
-                </SelectTrigger>
-                <SelectContent>
-                  {salesReps.map(salesRep => (
-                    <SelectItem key={salesRep.id} value={salesRep.id}>
-                      {salesRep.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="loadDate">Data da Carga</Label>
-              <Input
-                type="date"
-                id="loadDate"
-                value={loadDate.toISOString().split('T')[0]}
-                onChange={(e) => setLoadDate(new Date(e.target.value))}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="loadNotes">Observações</Label>
-            <Textarea
-              id="loadNotes"
-              placeholder="Observações sobre a carga"
-              value={loadNotes}
-              onChange={(e) => setLoadNotes(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <Label>Adicionar Produtos</Label>
-            <div className="flex gap-2 mb-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Adicionar Produtos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
                 <Input
@@ -281,97 +288,105 @@ export default function BuildLoad() {
                 <Plus size={16} className="mr-2" /> Adicionar
               </Button>
             </div>
-            <div className="border rounded-md overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Preço</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+            
+            <Table maxHeight="300px">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Preço</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map(product => (
+                  <TableRow
+                    key={product.id}
+                    onClick={() => handleProductSelect(product)}
+                    className={`cursor-pointer hover:bg-gray-100 ${selectedProduct?.id === product.id ? 'bg-gray-50' : ''}`}
+                  >
+                    <TableCell>{product.code}</TableCell>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>{formatCurrency(product.price)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleProductSelect(product)}
+                      >
+                        Selecionar
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map(product => (
-                    <TableRow
-                      key={product.id}
-                      onClick={() => handleProductSelect(product)}
-                      className={`cursor-pointer hover:bg-gray-100 ${selectedProduct?.id === product.id ? 'bg-gray-50' : ''}`}
-                    >
-                      <TableCell>{product.code}</TableCell>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{formatCurrency(product.price)}</TableCell>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Itens da Carga</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table maxHeight="300px">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                  <TableHead>Preço Unitário</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orderItems.map(item => {
+                  const product = products.find(p => p.id === item.productId);
+                  const itemTotal = product ? product.price * item.quantity : 0;
+
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.productName}</TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>{formatCurrency(product?.price)}</TableCell>
+                      <TableCell>{formatCurrency(itemTotal)}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleProductSelect(product)}
+                          onClick={() => handleRemoveItem(item.id || '')}
+                          className="text-red-500 hover:text-red-700"
                         >
-                          Selecionar
+                          <X size={16} />
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  );
+                })}
+              </TableBody>
+            </Table>
+
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-semibold">Total da Carga:</span>
+                <span className="text-lg font-bold text-blue-600">
+                  {formatCurrency(calculateLoadTotal())}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <Label>Itens da Carga</Label>
-            <div className="border rounded-md overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Quantidade</TableHead>
-                    <TableHead>Preço Unitário</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orderItems.map(item => {
-                    const product = products.find(p => p.id === item.productId);
-                    const itemTotal = product ? product.price * item.quantity : 0;
-
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.productName}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{formatCurrency(product?.price)}</TableCell>
-                        <TableCell>{formatCurrency(itemTotal)}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveItem(item.id || '')}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <X size={16} />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <div className="mt-6">
+              <Button
+                className="w-full bg-sales-800 hover:bg-sales-700"
+                onClick={handleSaveLoad}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Salvando...' : 'Salvar Carga'}
+              </Button>
             </div>
-          </div>
-
-          <div className="text-right">
-            Total da Carga: {formatCurrency(calculateLoadTotal())}
-          </div>
-
-          <Button
-            className="bg-sales-800 hover:bg-sales-700"
-            onClick={handleSaveLoad}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Salvando...' : 'Salvar Carga'}
-          </Button>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </PageLayout>
   );
 }

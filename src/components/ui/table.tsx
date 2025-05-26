@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils"
 
 const Table = React.forwardRef<
   HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
+  React.HTMLAttributes<HTMLTableElement> & { maxHeight?: string }
+>(({ className, maxHeight = "400px", ...props }, ref) => (
   <div className="w-full">
-    <ScrollArea className="max-h-[600px]">
+    <ScrollArea className={cn("rounded-md border", `max-h-[${maxHeight}]`)}>
       <table
         ref={ref}
         className={cn("w-full caption-bottom text-sm", className)}

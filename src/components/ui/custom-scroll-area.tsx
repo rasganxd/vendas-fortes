@@ -5,14 +5,22 @@ import { cn } from "@/lib/utils";
 
 interface CustomScrollAreaProps extends React.ComponentPropsWithoutRef<typeof ShadcnScrollArea> {
   hideScrollbar?: boolean;
+  maxHeight?: string;
 }
 
 export const CustomScrollArea = React.forwardRef<
   React.ElementRef<typeof ShadcnScrollArea>,
   CustomScrollAreaProps
->(({ className, hideScrollbar = true, children, ...props }, ref) => {
+>(({ className, hideScrollbar = true, maxHeight, children, ...props }, ref) => {
   return (
-    <ShadcnScrollArea ref={ref} className={cn(className)} {...props}>
+    <ShadcnScrollArea 
+      ref={ref} 
+      className={cn(
+        className,
+        maxHeight && `max-h-[${maxHeight}]`
+      )} 
+      {...props}
+    >
       {children}
       {!hideScrollbar && <ScrollBar />}
     </ShadcnScrollArea>

@@ -23,35 +23,33 @@ export default function PageLayout({
   const { settings } = useAppContext();
   
   return (
-    <div className="flex-1 bg-background w-full h-screen overflow-hidden">
-      <CustomScrollArea hideScrollbar={true} className="h-full">
-        <div className="container mx-auto px-4 py-5">
-          {title && (
-            <div className="mb-8">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                    {title}
-                  </h1>
-                  {subtitle && (
-                    <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
-                  )}
-                  {description && (
-                    <p className="mt-2 text-sm text-gray-500">{description}</p>
-                  )}
-                </div>
-                {showConnectionStatus && (
-                  <ConnectionStatus />
+    <div className="flex-1 bg-background w-full min-h-screen">
+      <div className="container mx-auto px-4 py-5">
+        {title && (
+          <div className="mb-8">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+                  {title}
+                </h1>
+                {subtitle && (
+                  <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+                )}
+                {description && (
+                  <p className="mt-2 text-sm text-gray-500">{description}</p>
                 )}
               </div>
-              <div className="h-1 w-20 mt-3 rounded-full bg-blue-500"></div>
+              {showConnectionStatus && (
+                <ConnectionStatus />
+              )}
             </div>
-          )}
-          <div>
-            {children}
+            <div className="h-1 w-20 mt-3 rounded-full bg-blue-500"></div>
           </div>
+        )}
+        <div>
+          {children}
         </div>
-      </CustomScrollArea>
+      </div>
     </div>
   );
 }
