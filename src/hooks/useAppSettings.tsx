@@ -21,6 +21,7 @@ export const useAppSettings = () => {
   const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       console.log('Fetching settings...');
       
       // Try to fetch existing settings
@@ -51,30 +52,18 @@ export const useAppSettings = () => {
     try {
       console.log('updateSettings called with:', newSettings);
       
-      // Get current settings or wait for them to load
-      let currentSettings = settings;
-      if (!currentSettings?.id) {
-        console.log('No settings loaded, fetching first...');
-        const fetchedSettings = await fetchSettingsFromSupabase();
-        if (fetchedSettings) {
-          currentSettings = fetchedSettings;
-          setSettings(fetchedSettings);
-        } else {
-          const defaultSettings = await createDefaultSettings();
-          currentSettings = defaultSettings;
-          setSettings(defaultSettings);
-        }
+      // Make sure we have current settings
+      if (!settings) {
+        console.log('No settings loaded, waiting for them to load...');
+        throw new Error('Settings not loaded yet');
       }
       
-      // Merge existing and new settings
-      const updatedSettings = { ...currentSettings, ...newSettings } as AppSettings;
-      console.log('Merged settings:', updatedSettings);
-      
       // Update in Supabase
-      const success = await updateSettingsInSupabase(currentSettings, newSettings);
+      const success = await updateSettingsInSupabase(settings, newSettings);
       
       if (success) {
         // Update local state
+        const updatedSettings = { ...settings, ...newSettings } as AppSettings;
         setSettings(updatedSettings);
         console.log('Settings updated successfully');
         return true;

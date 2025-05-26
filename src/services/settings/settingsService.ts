@@ -9,12 +9,20 @@ import { AppSettings } from '@/types';
 export const fetchSettingsFromSupabase = async (): Promise<AppSettings | null> => {
   try {
     console.log('Fetching settings from Supabase...');
+    
+    // Use .limit(1).single() to get only the first row
     const { data, error } = await supabase
       .from('app_settings')
       .select('*')
-      .maybeSingle();
+      .limit(1)
+      .single();
     
     if (error) {
+      // If no data found, that's okay - we'll create defaults
+      if (error.code === 'PGRST116') {
+        console.log('No settings found in database');
+        return null;
+      }
       console.error('Error fetching app settings:', error);
       return null;
     }
@@ -65,6 +73,19 @@ export const fetchSettingsFromSupabase = async (): Promise<AppSettings | null> =
 export const createDefaultSettings = async (): Promise<AppSettings> => {
   try {
     console.log('Creating default settings...');
+    
+    // First check if settings already exist to avoid duplicates
+    const existingSettings = await supabase
+      .from('app_settings')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+    
+    if (existingSettings.data) {
+      console.log('Settings already exist, fetching existing ones...');
+      return await fetchSettingsFromSupabase() || createFallbackSettings();
+    }
+    
     const defaultCompany = {
       name: 'Minha Empresa',
       address: '',
@@ -92,7 +113,7 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
     
     if (error) {
       console.error('Error creating default settings:', error);
-      throw error;
+      return createFallbackSettings();
     }
     
     console.log('Default settings created:', data);
@@ -106,22 +127,28 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
     };
   } catch (error) {
     console.error('Error creating default settings:', error);
-    // Return the default settings anyway so the app can continue
-    return {
-      id: 'local-fallback',
-      company: {
-        name: 'Minha Empresa',
-        address: '',
-        phone: '',
-        email: '',
-        document: '',
-        footer: ''
-      },
-      theme: {
-        primaryColor: '#6B7280'
-      }
-    };
+    return createFallbackSettings();
   }
+};
+
+/**
+ * Creates fallback settings when database operations fail
+ */
+const createFallbackSettings = (): AppSettings => {
+  return {
+    id: 'local-fallback',
+    company: {
+      name: 'Minha Empresa',
+      address: '',
+      phone: '',
+      email: '',
+      document: '',
+      footer: ''
+    },
+    theme: {
+      primaryColor: '#6B7280'
+    }
+  };
 };
 
 /**
@@ -137,20 +164,26 @@ export const updateSettingsInSupabase = async (
   try {
     console.log('updateSettingsInSupabase called with:', { currentSettings, newSettings });
     
-    // If no current settings or using fallback, fetch/create real settings first
+    // Get the settings ID
     let settingsId = currentSettings?.id;
     
     if (!settingsId || settingsId === 'local-fallback') {
       console.log('No valid settings ID, fetching or creating...');
-      const existingSettings = await fetchSettingsFromSupabase();
       
-      if (existingSettings) {
-        settingsId = existingSettings.id;
+      // Try to get existing settings first
+      const { data: existingData } = await supabase
+        .from('app_settings')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingData) {
+        settingsId = existingData.id;
         console.log('Found existing settings with ID:', settingsId);
       } else {
-        console.log('Creating new settings...');
-        const defaultSettings = await createDefaultSettings();
-        settingsId = defaultSettings.id;
+        // Create new settings
+        const newSettingsRecord = await createDefaultSettings();
+        settingsId = newSettingsRecord.id;
         console.log('Created new settings with ID:', settingsId);
       }
     }
