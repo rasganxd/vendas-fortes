@@ -9,12 +9,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, QrCode, Wifi, Copy } from "lucide-react";
-import { mobileSyncService, SyncLogEntry, ConnectionData } from '@/services/supabase/mobileSyncService';
+import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
+import { mobileSyncService, SyncLogEntry } from '@/services/supabase/mobileSyncService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { formatDate } from '@/utils/date-format';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import QRCodeDisplay from './QRCodeDisplay';
 import { toast } from '@/components/ui/use-toast';
 
 interface MobileSyncPanelProps {
@@ -24,11 +22,10 @@ interface MobileSyncPanelProps {
 const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   const [syncLogs, setSyncLogs] = useState<SyncLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'error' | 'info'>('info');
-  const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
-  const [connectionData, setConnectionData] = useState<any | null>(null);
 
   // Clear status message after 5 seconds
   useEffect(() => {
@@ -70,56 +67,33 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
     }
   };
 
-  const generateQRCode = async () => {
+  const clearSyncLogs = async () => {
+    if (!salesRepId) return;
+    
+    setIsClearing(true);
     try {
-      console.log('📱 Generating optimized mobile API QR Code...');
-      
-      const connData = await mobileSyncService.generateConnectionData(salesRepId);
-      const apiDiscoveryData = await mobileSyncService.createMobileApiDiscovery(connData);
-      
-      // Parse to validate the data
-      const parsedData = JSON.parse(apiDiscoveryData);
-      console.log('📱 QR Code data validated:', parsedData);
-      
-      setConnectionData(parsedData);
-      setIsQrDialogOpen(true);
+      await mobileSyncService.clearSyncLogs(salesRepId);
+      setSyncLogs([]);
+      setLastSynced(null);
+      setStatusMessage("Histórico de sincronização limpo com sucesso.");
+      setStatusType('info');
       
       toast({
-        title: "QR Code otimizado gerado",
-        description: `QR Code criado com ${apiDiscoveryData.length} caracteres para melhor escaneabilidade.`
+        title: "Logs de sincronização",
+        description: "Histórico de sincronização limpo com sucesso!",
       });
-      
     } catch (error) {
-      console.error("Error generating mobile API QR code:", error);
-      setStatusMessage("Não foi possível gerar o QR code da API móvel.");
+      console.error("Error clearing sync logs:", error);
+      setStatusMessage("Erro ao limpar histórico de sincronização.");
       setStatusType('error');
       
       toast({
         title: "Erro",
-        description: "Não foi possível gerar o QR code para a API de sincronização.",
+        description: "Não foi possível limpar o histórico de sincronização.",
         variant: "destructive"
       });
-    }
-  };
-
-  const copyConnectionInfo = () => {
-    if (connectionData) {
-      const info = `=== API MÓVEL - INFORMAÇÕES DE CONEXÃO ===\n\n` +
-                  `Servidor: ${connectionData.serverUrl}\n` +
-                  `IP Local: ${connectionData.localIp || 'N/A'}\n` +
-                  `IP Público: ${connectionData.serverIp || 'N/A'}\n` +
-                  `Token: ${connectionData.token}\n` +
-                  `Vendedor ID: ${connectionData.salesRepId}\n\n` +
-                  `Endpoints:\n` +
-                  `- Download: ${connectionData.endpoints?.download}\n` +
-                  `- Upload: ${connectionData.endpoints?.upload}\n` +
-                  `- Status: ${connectionData.endpoints?.status}`;
-      
-      navigator.clipboard.writeText(info);
-      toast({
-        title: "Copiado!",
-        description: "Informações da API móvel copiadas para a área de transferência."
-      });
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -172,14 +146,25 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
             Atualizar
           </Button>
           
-          <Button 
-            onClick={generateQRCode} 
-            className="bg-blue-600 hover:bg-blue-700 text-sm w-full sm:w-auto"
+          <Button
+            variant="outline"
+            onClick={clearSyncLogs}
+            disabled={isLoading || isClearing || syncLogs.length === 0}
+            className="border-blue-200 text-blue-700 hover:bg-blue-100 text-sm w-full sm:w-auto"
             size="sm"
           >
-            <Wifi className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-            Gerar API Móvel
+            <Trash2 className={`mr-2 h-3 w-3 sm:h-4 sm:w-4 ${isClearing ? 'animate-spin' : ''}`} />
+            Limpar Histórico
           </Button>
+        </div>
+        
+        <div className="mt-3 pt-2 border-t border-blue-200 text-xs text-blue-600">
+          <div className="bg-blue-100 p-2 rounded text-center">
+            <p><strong>Configuração API Móvel:</strong></p>
+            <p>URL: https://ufvnubabpcyimahbubkd.supabase.co</p>
+            <p>Chave: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdm51YmFicGN5aW1haGJ1YmtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MzQ1NzIsImV4cCI6MjA2MzQxMDU3Mn0.rL_UAaLky3SaSAigQPrWAZjhkM8FBmeO0w-pEiB5aro</p>
+            <p className="text-xs">Configure o app móvel com essas informações para sincronização direta</p>
+          </div>
         </div>
       </div>
 
@@ -226,50 +211,6 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
           <p className="text-xs sm:text-sm mt-2">Quando um dispositivo móvel sincronizar dados, o histórico aparecerá aqui.</p>
         </div>
       )}
-      
-      <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="space-y-2">
-            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Wifi className="h-4 w-4 sm:h-5 sm:w-5" />
-              API Móvel - QR Code Otimizado
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              QR Code otimizado para melhor escaneabilidade. Configure o aplicativo móvel escaneando este código.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex justify-center py-2 sm:py-4">
-            {connectionData && (
-              <QRCodeDisplay 
-                value={JSON.stringify(connectionData)} 
-                showConnectionInfo={true}
-                size={280}
-              />
-            )}
-          </div>
-          
-          <div className="flex justify-center">
-            <Button 
-              variant="outline" 
-              onClick={copyConnectionInfo} 
-              disabled={!connectionData}
-              className="text-xs sm:text-sm w-full sm:w-auto"
-              size="sm"
-            >
-              <Copy className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-              Copiar Info da API
-            </Button>
-          </div>
-          
-          <div className="text-center text-xs text-gray-500 mt-2 space-y-1">
-            <p>📱 QR Code otimizado para apps móveis</p>
-            <p>🔑 Token válido por 10 minutos</p>
-            <p>📊 Dados simplificados para melhor leitura</p>
-            <p>🎯 Tamanho otimizado para escaneabilidade</p>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

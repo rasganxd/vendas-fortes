@@ -19,32 +19,6 @@ export interface SyncLogEntry {
   created_at: string;
 }
 
-export interface ConnectionData {
-  serverUrl: string;
-  localIp?: string;
-  serverIp?: string;
-  token: string;
-  salesRepId: string;
-  apiEndpoints?: {
-    download: string;
-    upload: string;
-    status: string;
-  };
-}
-
-export interface SimplifiedMobileData {
-  serverUrl: string;
-  localIp?: string;
-  serverIp?: string;
-  token: string;
-  salesRepId: string;
-  endpoints: {
-    download: string;
-    upload: string;
-    status: string;
-  };
-}
-
 /**
  * Mobile sync service for authenticated sales reps
  * Uses RLS policies to automatically filter data by sales_rep_id = auth.uid()
@@ -348,68 +322,6 @@ class MobileSyncService {
       }
     } catch (error) {
       console.error('Error in logSyncEvent:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate connection data for mobile sync
-   */
-  async generateConnectionData(salesRepId: string): Promise<ConnectionData> {
-    try {
-      // Generate a sync token
-      const { data: tokenData, error } = await supabase
-        .rpc('generate_sync_token', {
-          p_sales_rep_id: salesRepId,
-          p_project_type: 'mobile',
-          p_expires_minutes: 10
-        });
-
-      if (error) {
-        console.error('Error generating sync token:', error);
-        throw error;
-      }
-
-      // Use the public URL directly instead of accessing protected property
-      const baseUrl = 'https://ufvnubabpcyimahbubkd.supabase.co';
-      
-      return {
-        serverUrl: baseUrl,
-        token: tokenData[0]?.token || '',
-        salesRepId,
-        apiEndpoints: {
-          download: `${baseUrl}/rest/v1/`,
-          upload: `${baseUrl}/rest/v1/`,
-          status: `${baseUrl}/rest/v1/sync_logs`
-        }
-      };
-    } catch (error) {
-      console.error('Error in generateConnectionData:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create mobile API discovery data (simplified for QR codes)
-   */
-  async createMobileApiDiscovery(connectionData: ConnectionData): Promise<string> {
-    try {
-      const simplifiedData: SimplifiedMobileData = {
-        serverUrl: connectionData.serverUrl,
-        localIp: connectionData.localIp,
-        serverIp: connectionData.serverIp,
-        token: connectionData.token,
-        salesRepId: connectionData.salesRepId,
-        endpoints: {
-          download: connectionData.apiEndpoints?.download || '',
-          upload: connectionData.apiEndpoints?.upload || '',
-          status: connectionData.apiEndpoints?.status || ''
-        }
-      };
-
-      return JSON.stringify(simplifiedData);
-    } catch (error) {
-      console.error('Error in createMobileApiDiscovery:', error);
       throw error;
     }
   }

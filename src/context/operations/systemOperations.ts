@@ -21,21 +21,8 @@ export const useSystemOperations = () => {
     }
   };
 
-  const generateConnectionData = async (salesRepId: string) => {
-    try {
-      const connectionData = await mobileSyncService.generateConnectionData(salesRepId);
-      console.log('Connection data generated with IP info:', connectionData);
-      return connectionData;
-    } catch (error) {
-      console.error('Error generating connection data:', error);
-      notification.error('Erro ao gerar dados de conexão');
-      return null;
-    }
-  };
-
   return {
     clearCache,
-    syncMobileData,
-    generateConnectionData
+    syncMobileData
   };
 };

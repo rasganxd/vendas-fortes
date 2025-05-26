@@ -24,14 +24,11 @@ import {
   AlertCircle, 
   Info, 
   Trash2,
-  Wifi,
-  Copy
+  Wifi
 } from "lucide-react";
-import { mobileSyncService, SyncLogEntry, ConnectionData } from '@/services/supabase/mobileSyncService';
+import { mobileSyncService, SyncLogEntry } from '@/services/supabase/mobileSyncService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import QRCodeDisplay from '../settings/QRCodeDisplay';
 
 interface MobileSyncStatusProps {
   salesRepId: string;
@@ -45,9 +42,6 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
   const [statusType, setStatusType] = useState<'error' | 'success' | 'info' | 'warning'>('info');
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const [isClearing, setIsClearing] = useState<boolean>(false);
-  const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
-  const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
-  const [qrData, setQrData] = useState<string>('');
 
   // Clear status message after 5 seconds
   useEffect(() => {
@@ -153,62 +147,6 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     }
   };
 
-  const generateQRCode = async () => {
-    try {
-      console.log('📱 Generating optimized QR Code for mobile sync...');
-      
-      // Generate connection data with IP information
-      const connData = await mobileSyncService.generateConnectionData(salesRepId);
-      const simplifiedData = await mobileSyncService.createMobileApiDiscovery(connData);
-      
-      // Parse and validate the simplified data
-      const parsedData = JSON.parse(simplifiedData);
-      console.log("📱 Optimized QR Code data generated:", parsedData);
-      console.log("📱 Data size:", simplifiedData.length, "characters");
-      
-      setConnectionData(connData);
-      setQrData(simplifiedData);
-      setIsQrDialogOpen(true);
-      
-      toast({
-        title: "QR Code otimizado gerado",
-        description: `QR Code criado com dados simplificados (${simplifiedData.length} caracteres) para melhor escaneabilidade.`
-      });
-      
-    } catch (error) {
-      console.error("Error generating QR code:", error);
-      setStatusMessage("Não foi possível gerar o QR code.");
-      setStatusType('error');
-      
-      toast({
-        title: "Erro",
-        description: "Não foi possível gerar o QR code otimizado.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const copyConnectionInfo = () => {
-    if (connectionData) {
-      const info = `=== CONFIGURAÇÃO API MÓVEL ===\n\n` +
-                  `Servidor: ${connectionData.serverUrl}\n` +
-                  `IP Local: ${connectionData.localIp || 'N/A'}\n` +
-                  `IP Público: ${connectionData.serverIp || 'N/A'}\n` +
-                  `Token: ${connectionData.token}\n` +
-                  `Vendedor ID: ${connectionData.salesRepId}\n\n` +
-                  `API Endpoints:\n` +
-                  `Download: ${connectionData.apiEndpoints?.download}\n` +
-                  `Upload: ${connectionData.apiEndpoints?.upload}\n` +
-                  `Status: ${connectionData.apiEndpoints?.status}`;
-      
-      navigator.clipboard.writeText(info);
-      toast({
-        title: "Copiado!",
-        description: "Informações de conexão copiadas para a área de transferência."
-      });
-    }
-  };
-
   const formatDate = (dateValue: string | Date) => {
     try {
       const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
@@ -282,7 +220,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           Status de Sincronização Mobile
         </CardTitle>
         <CardDescription className="text-blue-700">
-          Status e histórico de sincronização do aplicativo mobile com suporte a IP
+          Status e histórico de sincronização do aplicativo mobile via API direta
         </CardDescription>
       </CardHeader>
       <CardContent className="p-5">
@@ -296,6 +234,15 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           <div className="flex justify-between items-center mb-2">
             <span className="font-medium text-blue-800">Último sincronizado:</span>
             <span className="text-blue-700">{lastSynced || 'Nunca'}</span>
+          </div>
+          
+          <div className="mt-3 pt-2 border-t border-blue-200 text-xs text-blue-600">
+            <div className="bg-blue-100 p-2 rounded">
+              <p><strong>Configuração API Móvel:</strong></p>
+              <p>URL: https://ufvnubabpcyimahbubkd.supabase.co</p>
+              <p>Chave: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdm51YmFicGN5aW1haGJ1YmtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MzQ1NzIsImV4cCI6MjA2MzQxMDU3Mn0.rL_UAaLky3SaSAigQPrWAZjhkM8FBmeO0w-pEiB5aro</p>
+              <p className="text-xs mt-1">Configure o app móvel com essas informações para conexão direta</p>
+            </div>
           </div>
         </div>
 
@@ -370,48 +317,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
             Limpar Histórico
           </Button>
         </div>
-        <Button onClick={generateQRCode} className="bg-blue-600 hover:bg-blue-700">
-          <Wifi className="mr-2 h-4 w-4" />
-          QR Code Otimizado
-        </Button>
       </CardFooter>
-      
-      <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Wifi className="h-5 w-5" />
-              QR Code Otimizado para Mobile
-            </DialogTitle>
-            <DialogDescription>
-              QR Code com dados simplificados para melhor escaneabilidade no aplicativo móvel.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex justify-center py-4">
-            {qrData && (
-              <QRCodeDisplay 
-                value={qrData} 
-                showConnectionInfo={true}
-                size={280}
-              />
-            )}
-          </div>
-          
-          <div className="flex justify-center space-x-2">
-            <Button variant="outline" onClick={copyConnectionInfo} disabled={!connectionData}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copiar Configuração
-            </Button>
-          </div>
-          
-          <div className="text-center text-sm text-gray-500 mt-2 space-y-1">
-            <p>📱 QR Code otimizado com dados essenciais</p>
-            <p>🎯 Melhor escaneabilidade e compatibilidade</p>
-            <p>⏱️ Token válido por 10 minutos</p>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 };
