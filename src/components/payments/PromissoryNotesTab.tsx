@@ -90,12 +90,12 @@ export default function PromissoryNotesTab({
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) return;
 
-    // CSS styles for promissory notes printing
+    // CSS styles for compact promissory notes printing
     const printStyles = `
       @media print {
         @page {
-          margin: 1cm;
-          size: portrait;
+          margin: 0.5cm;
+          size: A4 portrait;
         }
         
         body {
@@ -104,52 +104,78 @@ export default function PromissoryNotesTab({
           padding: 0;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
-          font-size: 12pt;
+          font-size: 10pt;
+          line-height: 1.2;
         }
         
-        .promissory-note {
-          page-break-after: always;
-          height: 100vh;
-          padding: 2cm;
+        .promissory-note-compact {
+          page-break-inside: avoid;
+          height: calc(33.33vh - 1cm);
+          max-height: 25cm;
           border: 2px solid #000;
-          margin-bottom: 1cm;
+          margin-bottom: 0.5cm;
+          padding: 0.5cm;
+          font-size: 9pt;
+          line-height: 1.2;
+          background: white;
+          width: 100%;
+          box-sizing: border-box;
         }
         
-        .promissory-note:last-child {
+        .promissory-note-compact:nth-child(3n) {
+          page-break-after: always;
+        }
+        
+        .promissory-note-compact:last-child {
           page-break-after: avoid;
         }
         
         .note-header {
           text-align: center;
-          margin-bottom: 2cm;
+          margin-bottom: 0.5cm;
         }
         
         .note-title {
-          font-size: 18pt;
+          font-size: 14pt;
           font-weight: bold;
-          margin-bottom: 1cm;
+          margin-bottom: 0.2cm;
+          border-top: 2px solid #000;
+          border-bottom: 2px solid #000;
+          padding: 0.1cm;
         }
         
         .note-content {
-          line-height: 1.8;
-          font-size: 12pt;
+          line-height: 1.3;
+          font-size: 9pt;
+          text-align: justify;
         }
         
         .note-value {
-          font-size: 16pt;
+          font-size: 11pt;
           font-weight: bold;
-          text-decoration: underline;
         }
         
         .signature-section {
-          margin-top: 4cm;
+          margin-top: 1cm;
           text-align: center;
         }
         
         .signature-line {
           border-top: 1px solid #000;
-          width: 300px;
-          margin: 2cm auto 0.5cm auto;
+          width: 200px;
+          margin: 0.5cm auto 0.2cm auto;
+        }
+        
+        .customer-info {
+          font-size: 8pt;
+          margin: 0.2cm 0;
+        }
+        
+        .footer-info {
+          font-size: 7pt;
+          text-align: center;
+          margin-top: 0.3cm;
+          color: #666;
         }
         
         .no-print {
@@ -157,8 +183,8 @@ export default function PromissoryNotesTab({
         }
       }`;
 
-    // Generate promissory note HTML
-    const generatePromissoryNoteHTML = (order: any) => {
+    // Generate compact promissory note HTML
+    const generateCompactPromissoryNoteHTML = (order: any) => {
       const customer = customers.find(c => c.id === order.customerId);
       const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
       const orderPayments = payments.filter(p => p.orderId === order.id);
@@ -174,37 +200,35 @@ export default function PromissoryNotesTab({
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
       return `
-        <div class="promissory-note">
+        <div class="promissory-note-compact">
           <div class="note-header">
             <div class="note-title">NOTA PROMISSÓRIA</div>
-            <p>Nº ${order.code || 'N/A'}</p>
+            <p style="margin: 0.1cm 0; font-size: 8pt;">Nº ${order.code || 'N/A'} - <span class="note-value">${formatCurrency(order.total)}</span></p>
           </div>
           
           <div class="note-content">
-            <p>Por esta <strong>NOTA PROMISSÓRIA</strong>, reconheço que devo e pagarei a:</p>
+            <p style="margin: 0.1cm 0;">Aos <strong>${formatDate(dueDate)}</strong>, pagarei por esta única via de NOTA PROMISSÓRIA a <strong>${paymentTable?.payableTo || 'BENEFICIÁRIO'}</strong>, ou à sua ordem, a quantia de <span class="note-value">${formatCurrency(order.total)}</span>, em moeda corrente deste país.</p>
             
-            <p><strong>${paymentTable?.payableTo || 'BENEFICIÁRIO'}</strong></p>
+            <p style="margin: 0.1cm 0;">Referente ao pedido nº <strong>${order.code}</strong> realizado em <strong>${formatDate(order.createdAt)}</strong>.</p>
             
-            <p>a quantia de <span class="note-value">${formatCurrency(order.total)}</span></p>
+            ${paymentTable?.paymentLocation ? `<p style="margin: 0.1cm 0;">Pagável em: <strong>${paymentTable.paymentLocation}</strong></p>` : ''}
             
-            <p>Referente ao pedido nº <strong>${order.code}</strong> realizado em <strong>${formatDate(order.createdAt)}</strong>.</p>
-            
-            <p>Para pagamento na data de: <strong>${formatDate(dueDate)}</strong></p>
-            
-            ${paymentTable?.paymentLocation ? `<p>Local de pagamento: <strong>${paymentTable.paymentLocation}</strong></p>` : ''}
-            
-            <p>Dados do devedor:</p>
-            <p><strong>Nome:</strong> ${customer?.name || order.customerName}</p>
-            ${customer?.document ? `<p><strong>CPF/CNPJ:</strong> ${customer.document}</p>` : ''}
-            ${customer?.address ? `<p><strong>Endereço:</strong> ${customer.address}, ${customer.city || ''} - ${customer.state || ''}</p>` : ''}
-            
-            <p style="margin-top: 2cm;">Data de emissão: ${formatDate(new Date())}</p>
+            <div class="customer-info">
+              <p style="margin: 0.05cm 0;"><strong>Nome:</strong> ${customer?.name || order.customerName}</p>
+              ${customer?.document ? `<p style="margin: 0.05cm 0;"><strong>CPF/CNPJ:</strong> ${customer.document}</p>` : ''}
+              ${customer?.address ? `<p style="margin: 0.05cm 0;"><strong>Endereço:</strong> ${customer.address}, ${customer.city || ''} - ${customer.state || ''}</p>` : ''}
+            </div>
           </div>
           
           <div class="signature-section">
+            <p style="margin: 0; font-size: 8pt;">${paymentTable?.paymentLocation || '___________________'}, ${formatDate(new Date())}</p>
             <div class="signature-line"></div>
-            <p><strong>${customer?.name || order.customerName}</strong></p>
-            <p>Assinatura do Devedor</p>
+            <p style="margin: 0.1cm 0; font-size: 8pt;"><strong>${customer?.name || order.customerName}</strong></p>
+            <p style="margin: 0; font-size: 7pt;">Assinatura do Devedor</p>
+          </div>
+          
+          <div class="footer-info">
+            <p style="margin: 0;">Este documento não tem valor fiscal - Apenas para controle interno</p>
           </div>
         </div>
       `;
@@ -215,11 +239,11 @@ export default function PromissoryNotesTab({
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Impressão de Notas Promissórias</title>
+          <title>Impressão de Notas Promissórias Compactas</title>
           <style>${printStyles}</style>
         </head>
         <body>
-          ${ordersToPrint.map(order => generatePromissoryNoteHTML(order)).join('')}
+          ${ordersToPrint.map(order => generateCompactPromissoryNoteHTML(order)).join('')}
           <script>
             window.onload = function() {
               setTimeout(() => {

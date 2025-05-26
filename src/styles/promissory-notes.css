@@ -18,11 +18,26 @@
   }
 }
 
+/* Compact promissory note styling */
+.promissory-note-compact {
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
 @media print {
+  @page {
+    margin: 0.5cm;
+    size: A4 portrait;
+  }
+
   body {
-    font-size: 12pt;
+    font-size: 10pt;
     color: #000;
     background-color: #fff;
+    margin: 0;
+    padding: 0;
   }
 
   .print\:hidden {
@@ -35,22 +50,82 @@
     box-shadow: none;
   }
   
-  /* Page break adjustments */
-  .page-break-before {
-    page-break-before: always;
+  /* Compact note styling for print - 3 per page */
+  .promissory-note-compact {
+    page-break-inside: avoid;
+    height: calc(33.33vh - 1cm);
+    max-height: 25cm;
+    border: 2px solid #000;
+    margin-bottom: 0.5cm;
+    padding: 0.5cm;
+    font-size: 9pt;
+    line-height: 1.2;
+    background: white;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
   }
   
-  .page-break-after {
+  /* Ensure 3 notes per page */
+  .promissory-note-compact:nth-child(3n) {
     page-break-after: always;
   }
   
-  /* Ensure margins and borders display correctly when printing */
-  .p-4 {
-    padding: 1cm;
+  .promissory-note-compact:last-child {
+    page-break-after: avoid;
   }
   
-  .max-w-2xl {
-    max-width: none;
-    width: 100%;
+  /* Typography adjustments for compact print */
+  .promissory-note-compact h1 {
+    font-size: 14pt;
+    margin: 0.2cm 0;
+    padding: 0.1cm;
+  }
+  
+  .promissory-note-compact h2 {
+    font-size: 11pt;
+    margin: 0.1cm 0;
+  }
+  
+  .promissory-note-compact p {
+    margin: 0.1cm 0;
+    font-size: 9pt;
+  }
+  
+  .promissory-note-compact .text-xs {
+    font-size: 8pt;
+  }
+  
+  .promissory-note-compact .text-sm {
+    font-size: 9pt;
+  }
+  
+  /* Signature section adjustments */
+  .promissory-note-compact .border-t {
+    margin-top: 1cm;
+    padding-top: 0.2cm;
+  }
+  
+  /* Remove margins and paddings that waste space */
+  .promissory-note-compact .mb-3 {
+    margin-bottom: 0.2cm;
+  }
+  
+  .promissory-note-compact .mb-6 {
+    margin-bottom: 0.3cm;
+  }
+  
+  .promissory-note-compact .mt-6 {
+    margin-top: 0.3cm;
+  }
+  
+  .promissory-note-compact .mt-8 {
+    margin-top: 0.5cm;
+  }
+  
+  /* Ensure content fits within the compact space */
+  .promissory-note-compact * {
+    max-width: 100%;
+    word-wrap: break-word;
   }
 }

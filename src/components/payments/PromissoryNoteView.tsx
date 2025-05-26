@@ -53,71 +53,61 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
   return (
     <div className="relative">
       {/* Print Button */}
-      <div className="absolute top-2 right-2 print:hidden">
+      <div className="absolute top-1 right-1 print:hidden">
         <Button 
           variant="outline" 
           size="sm" 
           onClick={handlePrint} 
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 text-xs px-2 py-1"
         >
-          <Printer className="h-4 w-4" />
+          <Printer className="h-3 w-3" />
           <span>Imprimir</span>
         </Button>
       </div>
 
-      {/* Promissory Note Content */}
+      {/* Promissory Note Content - More Compact */}
       <div 
         ref={printRef} 
-        className={`p-4 max-w-2xl mx-auto ${highlight ? 'highlight-note border-2 rounded-md' : ''}`}
+        className={`promissory-note-compact p-3 max-w-xl mx-auto ${highlight ? 'highlight-note border-2 rounded-md' : ''}`}
       >
-        {/* Company Header */}
+        {/* Company Header - Compact */}
         {companyData?.name && (
-          <div className="text-center mb-6">
-            <h2 className="font-bold text-xl">{companyData.name}</h2>
+          <div className="text-center mb-3">
+            <h2 className="font-bold text-sm">{companyData.name}</h2>
             {companyData.document && (
-              <p className="text-sm text-gray-600">CNPJ: {companyData.document}</p>
+              <p className="text-xs text-gray-600">CNPJ: {companyData.document}</p>
             )}
             {companyData.address && (
-              <p className="text-sm text-gray-600">{companyData.address}</p>
+              <p className="text-xs text-gray-600">{companyData.address}</p>
             )}
           </div>
         )}
 
-        {/* Title */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold uppercase border-b-2 border-t-2 border-gray-800 py-2">
+        {/* Title - Compact */}
+        <div className="text-center mb-3">
+          <h1 className="text-lg font-bold uppercase border-b border-t border-gray-800 py-1">
             NOTA PROMISSÓRIA
           </h1>
-          <p className="mt-2 text-right">
+          <p className="mt-1 text-right text-sm">
             <span className="font-semibold">Valor:</span> {formatCurrency(remainingAmount || payment.amount || 0)}
           </p>
         </div>
 
-        {/* Main Content */}
-        <div className="mb-6 text-justify">
-          <p className="mb-4">
+        {/* Main Content - Compact */}
+        <div className="mb-3 text-justify text-sm leading-tight">
+          <p className="mb-2">
             Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || order.dueDate || new Date())}</span>,
             pagarei por esta única via de NOTA PROMISSÓRIA a {companyData?.name || "___________________"},
             ou à sua ordem, a quantia de {formatCurrency(remainingAmount || payment.amount || 0)} ({payment.amountInWords || formatCurrencyInWords(remainingAmount || payment.amount)}),
             em moeda corrente deste país.
           </p>
-          <p>
+          <p className="text-sm">
             Pagável em {paymentTable?.paymentLocation || payment.paymentLocation || "___________________"}
           </p>
         </div>
 
-        {/* Signatures */}
-        <div className="mt-12">
-          <p className="text-right mb-2">
-            {paymentTable?.paymentLocation || payment.emissionLocation || "___________________"}, {formatDateToBR(payment.date || order.date || new Date())}
-          </p>
-          <div className="border-t border-gray-400 pt-2 mt-16 text-center">
-            <p>Assinatura do Emitente</p>
-          </div>
-        </div>
-
-        {/* Customer Info */}
-        <div className="mt-8">
+        {/* Customer Info - Compact */}
+        <div className="mb-3 text-xs">
           <p><span className="font-semibold">Nome:</span> {customer?.name || payment.customerName || "___________________"}</p>
           {(customer?.document || payment.customerDocument) && (
             <p><span className="font-semibold">CPF/CNPJ:</span> {customer?.document || payment.customerDocument}</p>
@@ -127,28 +117,26 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
           )}
         </div>
 
-        {/* Payment Details */}
-        <div className="mt-8 text-sm">
+        {/* Payment Details - Compact */}
+        <div className="mb-3 text-xs">
           <p><span className="font-semibold">Referente ao pedido:</span> #{order.code || order.id}</p>
           {order.notes && (
             <p><span className="font-semibold">Observações:</span> {order.notes}</p>
           )}
-          {payment.installments && Array.isArray(payment.installments) && payment.installments.length > 0 && (
-            <div className="mt-4">
-              <p className="font-semibold">Parcelas:</p>
-              <ul className="list-disc pl-5">
-                {payment.installments.map((installment, index) => (
-                  <li key={index}>
-                    {formatDateToBR(installment.dueDate || new Date())}: {formatCurrency(installment.amount)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
 
-        {/* Footer */}
-        <div className="mt-12 text-center text-xs text-gray-500">
+        {/* Signatures - Compact */}
+        <div className="mt-6">
+          <p className="text-right mb-1 text-xs">
+            {paymentTable?.paymentLocation || payment.emissionLocation || "___________________"}, {formatDateToBR(payment.date || order.date || new Date())}
+          </p>
+          <div className="border-t border-gray-400 pt-1 mt-8 text-center">
+            <p className="text-xs">Assinatura do Emitente</p>
+          </div>
+        </div>
+
+        {/* Footer - Compact */}
+        <div className="mt-6 text-center text-xs text-gray-500">
           {companyData?.footer ? (
             <p>{companyData.footer}</p>
           ) : (
