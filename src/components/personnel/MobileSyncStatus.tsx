@@ -155,29 +155,50 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
 
   const generateQRCode = async () => {
     try {
-      console.log('Generating QR Code with IP information...');
+      console.log('📱 Generating optimized QR Code for mobile sync...');
       
       // Generate connection data with IP information
       const connData = await mobileSyncService.generateConnectionData(salesRepId);
-      setConnectionData(connData);
+      const simplifiedData = await mobileSyncService.createMobileApiDiscovery(connData);
       
+      // Parse and validate the simplified data
+      const parsedData = JSON.parse(simplifiedData);
+      console.log("📱 Optimized QR Code data generated:", parsedData);
+      console.log("📱 Data size:", simplifiedData.length, "characters");
+      
+      setConnectionData(parsedData);
       setIsQrDialogOpen(true);
       
-      console.log("QR Code connection data generated with IP:", connData);
+      toast({
+        title: "QR Code otimizado gerado",
+        description: `QR Code criado com dados simplificados (${simplifiedData.length} caracteres) para melhor escaneabilidade.`
+      });
+      
     } catch (error) {
       console.error("Error generating QR code:", error);
       setStatusMessage("Não foi possível gerar o QR code.");
       setStatusType('error');
+      
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o QR code otimizado.",
+        variant: "destructive"
+      });
     }
   };
 
   const copyConnectionInfo = () => {
     if (connectionData) {
-      const info = `Servidor: ${connectionData.serverUrl}\n` +
-                  `IP Público: ${connectionData.serverIp || 'N/A'}\n` +
+      const info = `=== CONFIGURAÇÃO API MÓVEL ===\n\n` +
+                  `Servidor: ${connectionData.serverUrl}\n` +
                   `IP Local: ${connectionData.localIp || 'N/A'}\n` +
-                  `Porta: ${connectionData.port}\n` +
-                  `Token: ${connectionData.token}`;
+                  `IP Público: ${connectionData.serverIp || 'N/A'}\n` +
+                  `Token: ${connectionData.token}\n` +
+                  `Vendedor ID: ${connectionData.salesRepId}\n\n` +
+                  `API Endpoints:\n` +
+                  `Download: ${connectionData.endpoints?.download}\n` +
+                  `Upload: ${connectionData.endpoints?.upload}\n` +
+                  `Status: ${connectionData.endpoints?.status}`;
       
       navigator.clipboard.writeText(info);
       toast({
@@ -350,7 +371,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
         </div>
         <Button onClick={generateQRCode} className="bg-blue-600 hover:bg-blue-700">
           <Wifi className="mr-2 h-4 w-4" />
-          Gerar QR + IP
+          QR Code Otimizado
         </Button>
       </CardFooter>
       
@@ -359,10 +380,10 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wifi className="h-5 w-5" />
-              Sincronização Mobile com IP
+              QR Code Otimizado para Mobile
             </DialogTitle>
             <DialogDescription>
-              Escaneie este QR code no aplicativo móvel ou use as informações de IP para conectar manualmente.
+              QR Code com dados simplificados para melhor escaneabilidade no aplicativo móvel.
             </DialogDescription>
           </DialogHeader>
           
@@ -371,6 +392,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
               <QRCodeDisplay 
                 value={JSON.stringify(connectionData)} 
                 showConnectionInfo={true}
+                size={280}
               />
             )}
           </div>
@@ -378,13 +400,14 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           <div className="flex justify-center space-x-2">
             <Button variant="outline" onClick={copyConnectionInfo} disabled={!connectionData}>
               <Copy className="mr-2 h-4 w-4" />
-              Copiar Info de Conexão
+              Copiar Configuração
             </Button>
           </div>
           
-          <div className="text-center text-sm text-gray-500 mt-2">
-            <p>Use o IP local para conexão na mesma rede ou o IP público para acesso externo.</p>
-            <p>Este QR code é válido por 10 minutos.</p>
+          <div className="text-center text-sm text-gray-500 mt-2 space-y-1">
+            <p>📱 QR Code otimizado com dados essenciais</p>
+            <p>🎯 Melhor escaneabilidade e compatibilidade</p>
+            <p>⏱️ Token válido por 10 minutos</p>
           </div>
         </DialogContent>
       </Dialog>

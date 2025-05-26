@@ -72,17 +72,21 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
 
   const generateQRCode = async () => {
     try {
-      console.log('📱 Generating mobile API QR Code...');
+      console.log('📱 Generating optimized mobile API QR Code...');
       
       const connData = await mobileSyncService.generateConnectionData(salesRepId);
       const apiDiscoveryData = await mobileSyncService.createMobileApiDiscovery(connData);
-      setConnectionData(JSON.parse(apiDiscoveryData));
       
+      // Parse to validate the data
+      const parsedData = JSON.parse(apiDiscoveryData);
+      console.log('📱 QR Code data validated:', parsedData);
+      
+      setConnectionData(parsedData);
       setIsQrDialogOpen(true);
       
       toast({
-        title: "QR Code da API Móvel gerado",
-        description: "QR Code criado para sincronização de dados com o aplicativo móvel."
+        title: "QR Code otimizado gerado",
+        description: `QR Code criado com ${apiDiscoveryData.length} caracteres para melhor escaneabilidade.`
       });
       
     } catch (error) {
@@ -101,10 +105,15 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   const copyConnectionInfo = () => {
     if (connectionData) {
       const info = `=== API MÓVEL - INFORMAÇÕES DE CONEXÃO ===\n\n` +
-                  `Servidor: ${connectionData.server?.name || connectionData.serverUrl || 'N/A'}\n` +
-                  `URL Base: ${connectionData.server?.url || connectionData.serverUrl || 'N/A'}\n` +
-                  `IP Local: ${connectionData.server?.localIp || connectionData.localIp || 'N/A'}\n` +
-                  `Token: ${connectionData.authentication?.token || connectionData.token || 'N/A'}\n`;
+                  `Servidor: ${connectionData.serverUrl}\n` +
+                  `IP Local: ${connectionData.localIp || 'N/A'}\n` +
+                  `IP Público: ${connectionData.serverIp || 'N/A'}\n` +
+                  `Token: ${connectionData.token}\n` +
+                  `Vendedor ID: ${connectionData.salesRepId}\n\n` +
+                  `Endpoints:\n` +
+                  `- Download: ${connectionData.endpoints?.download}\n` +
+                  `- Upload: ${connectionData.endpoints?.upload}\n` +
+                  `- Status: ${connectionData.endpoints?.status}`;
       
       navigator.clipboard.writeText(info);
       toast({
@@ -223,10 +232,10 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
           <DialogHeader className="space-y-2">
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Wifi className="h-4 w-4 sm:h-5 sm:w-5" />
-              API Móvel - Sincronização
+              API Móvel - QR Code Otimizado
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
-              Escaneie este QR code no aplicativo móvel para configurar a sincronização de dados.
+              QR Code otimizado para melhor escaneabilidade. Configure o aplicativo móvel escaneando este código.
             </DialogDescription>
           </DialogHeader>
           
@@ -235,7 +244,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
               <QRCodeDisplay 
                 value={JSON.stringify(connectionData)} 
                 showConnectionInfo={true}
-                size={150}
+                size={280}
               />
             )}
           </div>
@@ -254,9 +263,10 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
           </div>
           
           <div className="text-center text-xs text-gray-500 mt-2 space-y-1">
-            <p>📱 Use para conectar o app móvel</p>
+            <p>📱 QR Code otimizado para apps móveis</p>
             <p>🔑 Token válido por 10 minutos</p>
-            <p>📊 Permite download e upload de dados</p>
+            <p>📊 Dados simplificados para melhor leitura</p>
+            <p>🎯 Tamanho otimizado para escaneabilidade</p>
           </div>
         </DialogContent>
       </Dialog>

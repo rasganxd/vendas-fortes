@@ -23,6 +23,20 @@ export interface ConnectionData {
   };
 }
 
+// Simplified mobile discovery data interface
+export interface SimplifiedMobileData {
+  token: string;
+  serverUrl: string;
+  salesRepId: string;
+  endpoints: {
+    download: string;
+    upload: string;
+    status: string;
+  };
+  serverIp?: string;
+  localIp?: string;
+}
+
 export class MobileSyncService {
   private async getLocalIpAddress(): Promise<string | null> {
     try {
@@ -121,44 +135,32 @@ export class MobileSyncService {
     // This would be implemented with actual Supabase tables
   }
 
-  // Method to create mobile API discovery data
+  // Simplified method to create mobile API discovery data - optimized for QR codes
   async createMobileApiDiscovery(connectionData: ConnectionData): Promise<string> {
-    const discoveryData = {
-      type: "mobile-api-sync",
-      version: "1.0",
-      server: {
-        name: "Sistema de Vendas - API Móvel",
-        url: connectionData.serverUrl,
-        localIp: connectionData.localIp,
-        publicIp: connectionData.serverIp,
-        port: connectionData.port
+    // Create simplified data structure for QR code
+    const simplifiedData: SimplifiedMobileData = {
+      token: connectionData.token,
+      serverUrl: connectionData.serverUrl,
+      salesRepId: connectionData.salesRepId,
+      endpoints: {
+        download: `/api/mobile/download/${connectionData.token}`,
+        upload: `/api/mobile/upload/${connectionData.token}`,
+        status: `/api/mobile/status/${connectionData.token}`
       },
-      authentication: {
-        token: connectionData.token,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
-        salesRepId: connectionData.salesRepId
-      },
-      api: {
-        baseUrl: connectionData.serverUrl,
-        endpoints: {
-          downloadData: connectionData.apiEndpoints?.download,
-          uploadData: connectionData.apiEndpoints?.upload,
-          checkStatus: connectionData.apiEndpoints?.status
-        }
-      },
-      dataTypes: {
-        download: ["customers", "products", "delivery_routes"],
-        upload: ["customer_updates", "product_stock", "route_progress"]
-      },
-      instructions: {
-        pt: "Use este QR code para configurar a sincronização no app móvel",
-        en: "Use this QR code to configure sync in the mobile app"
-      },
-      createdAt: new Date().toISOString()
+      serverIp: connectionData.serverIp,
+      localIp: connectionData.localIp
     };
     
-    console.log('📱 Mobile API discovery data created:', discoveryData);
-    return JSON.stringify(discoveryData);
+    const jsonString = JSON.stringify(simplifiedData);
+    console.log('📱 Simplified mobile API data created:', simplifiedData);
+    console.log('📱 QR Code data size:', jsonString.length, 'characters');
+    
+    // Warn if data is too large for QR code
+    if (jsonString.length > 1000) {
+      console.warn('⚠️ QR Code data might be too large:', jsonString.length, 'characters');
+    }
+    
+    return jsonString;
   }
 }
 
