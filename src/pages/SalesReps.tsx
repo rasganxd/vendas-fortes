@@ -35,16 +35,18 @@ const SalesRepsPage = () => {
     code: generateNextCode(),
     name: '',
     phone: '',
+    email: '',
     createdAt: new Date(),
     updatedAt: new Date(),
     active: true
   });
 
-  // Initialize new sales rep with default values
+  // Initialize new sales rep with default values including email
   const initialSalesRep: Omit<SalesRep, 'id'> = {
     code: salesReps.length > 0 ? salesReps.reduce((max, sr) => Math.max(max, sr.code || 0), 0) + 1 : 1,
     name: '',
     phone: '',
+    email: '',
     createdAt: new Date(),
     updatedAt: new Date(),
     active: true
@@ -116,8 +118,9 @@ const SalesRepsPage = () => {
   const filteredSalesReps = salesReps.filter(rep => {
     const nameMatch = rep.name ? rep.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
     const phoneMatch = rep.phone ? rep.phone.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+    const emailMatch = rep.email ? rep.email.toLowerCase().includes(searchTerm.toLowerCase()) : false;
     const codeMatch = rep.code ? rep.code.toString().includes(searchTerm) : false;
-    return nameMatch || phoneMatch || codeMatch;
+    return nameMatch || phoneMatch || emailMatch || codeMatch;
   });
 
   if (isLoading) {

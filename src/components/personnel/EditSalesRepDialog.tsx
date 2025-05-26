@@ -69,6 +69,18 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           </div>
 
           <div className="flex flex-col gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              value={salesRep.email || ''}
+              onChange={handleChange}
+              placeholder="vendedor@empresa.com"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
             <Label htmlFor="phone">Telefone</Label>
             <Input
               id="phone"
