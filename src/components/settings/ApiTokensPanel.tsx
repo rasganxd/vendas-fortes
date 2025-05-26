@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,10 +113,14 @@ const ApiTokensPanel: React.FC = () => {
     setIsCreatingToken(true);
     try {
       console.log("Creating token for sales rep:", selectedSalesRep, "with name:", newTokenName);
+      
+      // Convert "never" to undefined for no expiration
+      const expirationValue = expirationDays === "never" ? undefined : parseInt(expirationDays);
+      
       const request: CreateTokenRequest = {
         sales_rep_id: selectedSalesRep,
         name: newTokenName.trim(),
-        expires_days: expirationDays ? parseInt(expirationDays) : undefined
+        expires_days: expirationValue
       };
 
       console.log("Token request:", request);
@@ -439,7 +442,7 @@ const ApiTokensPanel: React.FC = () => {
                   <SelectItem value="30">30 dias</SelectItem>
                   <SelectItem value="90">90 dias</SelectItem>
                   <SelectItem value="365">1 ano</SelectItem>
-                  <SelectItem value="">Nunca expira</SelectItem>
+                  <SelectItem value="never">Nunca expira</SelectItem>
                 </SelectContent>
               </Select>
             </div>
