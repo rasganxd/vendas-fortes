@@ -4,6 +4,7 @@ export interface SalesRep {
   code: number;
   name: string;
   phone: string;
+  email?: string;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -13,6 +14,7 @@ export type SalesRepFormValues = {
   code: number;
   name: string;
   phone: string;
+  email?: string;
   active: boolean;
 };
 

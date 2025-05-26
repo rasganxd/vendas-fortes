@@ -6,12 +6,14 @@ import { SalesRep } from '@/types';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { EditSalesRepDialog } from '@/components/personnel/EditSalesRepDialog';
 import { DeleteSalesRepDialog } from '@/components/personnel/DeleteSalesRepDialog';
+import SalesRepCredentialsDialog from '@/components/personnel/SalesRepCredentialsDialog';
 import MobileSyncStatus from '@/components/personnel/MobileSyncStatus';
-import { Plus, ExternalLink, Trash2, Smartphone, RefreshCw } from 'lucide-react';
+import { Plus, ExternalLink, Trash2, Smartphone, RefreshCw, Key } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+
 const SalesRepsPage = () => {
   const {
     salesReps,
@@ -25,6 +27,7 @@ const SalesRepsPage = () => {
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [openCredentials, setOpenCredentials] = useState(false);
   const [selectedSalesRep, setSelectedSalesRep] = useState<SalesRep | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -46,6 +49,7 @@ const SalesRepsPage = () => {
     updatedAt: new Date(),
     active: true
   };
+
   const handleCreate = async () => {
     try {
       console.log("=== CREATING SALES REP FROM UI ===");
@@ -74,6 +78,7 @@ const SalesRepsPage = () => {
       setIsCreating(false);
     }
   };
+
   const handleUpdate = async () => {
     if (!selectedSalesRep) return;
     try {
@@ -92,6 +97,7 @@ const SalesRepsPage = () => {
       });
     }
   };
+
   const handleOpenCreate = () => {
     const nextCode = generateNextCode();
     setNewSalesRep({
@@ -101,6 +107,11 @@ const SalesRepsPage = () => {
     setOpenCreate(true);
   };
 
+  const handleOpenCredentials = (salesRep: SalesRep) => {
+    setSelectedSalesRep(salesRep);
+    setOpenCredentials(true);
+  };
+
   // Improved filtering with robust null checks
   const filteredSalesReps = salesReps.filter(rep => {
     const nameMatch = rep.name ? rep.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
@@ -108,6 +119,7 @@ const SalesRepsPage = () => {
     const codeMatch = rep.code ? rep.code.toString().includes(searchTerm) : false;
     return nameMatch || phoneMatch || codeMatch;
   });
+
   if (isLoading) {
     return <PageLayout title="Representantes de Vendas">
         <div className="flex justify-center items-center h-64">
@@ -115,6 +127,7 @@ const SalesRepsPage = () => {
         </div>
       </PageLayout>;
   }
+
   return <PageLayout title="Representantes de Vendas">
       <Tabs defaultValue="list" className="w-full">
         <TabsList>
@@ -132,8 +145,6 @@ const SalesRepsPage = () => {
             </div>
             
             <div className="flex gap-2">
-              
-              
               <Button onClick={handleOpenCreate} className="bg-sales-800 hover:bg-sales-700" disabled={isCreating}>
                 {isCreating ? <LoadingSpinner size="sm" className="mr-2" /> : <Plus size={16} className="mr-2" />}
                 {isCreating ? 'Adicionando...' : 'Adicionar'}
@@ -150,6 +161,7 @@ const SalesRepsPage = () => {
                 <TableHead className="w-[100px]">Código</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Telefone</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -159,12 +171,17 @@ const SalesRepsPage = () => {
                   <TableCell className="font-medium">{salesRep.code || '—'}</TableCell>
                   <TableCell>{salesRep.name || '—'}</TableCell>
                   <TableCell>{salesRep.phone || '—'}</TableCell>
+                  <TableCell>{salesRep.email || '—'}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-xs ${salesRep.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                       {salesRep.active ? 'Ativo' : 'Inativo'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleOpenCredentials(salesRep)}>
+                      <Key size={16} className="mr-2" />
+                      Credenciais
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => {
                   setSelectedSalesRep(salesRep);
                 }}>
@@ -186,7 +203,7 @@ const SalesRepsPage = () => {
                   </TableCell>
                 </TableRow>)}
               {filteredSalesReps.length === 0 && <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     {searchTerm ? "Nenhum representante encontrado para essa busca." : "Nenhum representante de vendas encontrado."}
                     {!searchTerm && <div className="mt-2">
                         <Button onClick={handleOpenCreate} variant="outline">
@@ -212,6 +229,14 @@ const SalesRepsPage = () => {
 
       {/* Delete SalesRep Dialog */}
       {selectedSalesRep && <DeleteSalesRepDialog open={openDelete} onOpenChange={setOpenDelete} salesRep={selectedSalesRep} setSalesReps={setSalesReps} />}
+
+      {/* Credentials Dialog */}
+      <SalesRepCredentialsDialog 
+        open={openCredentials} 
+        onOpenChange={setOpenCredentials} 
+        salesRep={selectedSalesRep} 
+      />
     </PageLayout>;
 };
+
 export default SalesRepsPage;

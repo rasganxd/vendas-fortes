@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ApiToken {
@@ -60,7 +59,18 @@ class ApiTokenService {
       }
       
       console.log('✅ Found tokens:', data?.length || 0);
-      return data || [];
+      
+      // Transform data to match ApiToken interface
+      const transformedData = data?.map(token => ({
+        ...token,
+        permissions: Array.isArray(token.permissions) 
+          ? token.permissions 
+          : typeof token.permissions === 'string'
+            ? [token.permissions]
+            : ['read', 'write']
+      })) || [];
+      
+      return transformedData;
     } catch (error) {
       console.error('❌ Error in getTokensBySalesRep:', error);
       throw error;
