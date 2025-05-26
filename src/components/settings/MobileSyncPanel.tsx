@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
+import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, Trash2, Download } from "lucide-react";
 import { mobileSyncService, SyncLogEntry } from '@/services/supabase/mobileSyncService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { formatDate } from '@/utils/date-format';
@@ -23,6 +23,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   const [syncLogs, setSyncLogs] = useState<SyncLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'error' | 'info'>('info');
@@ -36,11 +37,9 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   }, [statusMessage]);
 
   const loadSyncLogs = async () => {
-    if (!salesRepId) return;
-    
     setIsLoading(true);
     try {
-      const data = await mobileSyncService.getSyncLogs(salesRepId);
+      const data = await mobileSyncService.getSyncLogs();
       
       setSyncLogs(data);
       
@@ -48,10 +47,10 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
         setLastSynced(new Date(data[0].created_at).toLocaleString());
       }
       
-      toast({
-        title: "Dados atualizados",
-        description: "Os logs de sincronização foram atualizados com sucesso."
-      });
+      if (!data.length) {
+        setStatusMessage("Nenhum histórico de sincronização encontrado.");
+        setStatusType('info');
+      }
     } catch (error) {
       console.error("Error loading sync logs:", error);
       setStatusMessage("Não foi possível carregar os logs de sincronização.");
@@ -68,11 +67,9 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   };
 
   const clearSyncLogs = async () => {
-    if (!salesRepId) return;
-    
     setIsClearing(true);
     try {
-      await mobileSyncService.clearSyncLogs(salesRepId);
+      await mobileSyncService.clearSyncLogs();
       setSyncLogs([]);
       setLastSynced(null);
       setStatusMessage("Histórico de sincronização limpo com sucesso.");
@@ -97,11 +94,38 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
     }
   };
 
-  useEffect(() => {
-    if (salesRepId) {
-      loadSyncLogs();
+  const triggerSync = async () => {
+    setIsSyncing(true);
+    try {
+      await mobileSyncService.syncAllData();
+      setStatusMessage("Sincronização manual executada com sucesso.");
+      setStatusType('info');
+      
+      toast({
+        title: "Sincronização concluída",
+        description: "Dados sincronizados com sucesso!",
+      });
+      
+      // Reload logs to show the new sync event
+      await loadSyncLogs();
+    } catch (error) {
+      console.error("Error during manual sync:", error);
+      setStatusMessage("Erro durante sincronização manual.");
+      setStatusType('error');
+      
+      toast({
+        title: "Erro na sincronização",
+        description: "Não foi possível executar a sincronização.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSyncing(false);
     }
-  }, [salesRepId]);
+  };
+
+  useEffect(() => {
+    loadSyncLogs();
+  }, []);
 
   const getStatusIcon = (eventType: 'upload' | 'download' | 'error') => {
     switch (eventType) {
@@ -135,6 +159,17 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
         </div>
         
         <div className="flex flex-col sm:flex-row justify-end mt-3 sm:mt-4 space-y-2 sm:space-y-0 sm:space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={triggerSync}
+            disabled={isLoading || isSyncing}
+            className="border-blue-200 text-blue-700 hover:bg-blue-100 text-sm w-full sm:w-auto"
+            size="sm"
+          >
+            <Download className={`mr-2 h-3 w-3 sm:h-4 sm:w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            Sincronizar Agora
+          </Button>
+          
           <Button 
             variant="outline" 
             onClick={() => loadSyncLogs()}
@@ -182,8 +217,8 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
                 <TableRow>
                   <TableHead className="text-blue-800 text-xs sm:text-sm">Status</TableHead>
                   <TableHead className="text-blue-800 text-xs sm:text-sm">Tipo</TableHead>
-                  <TableHead className="text-blue-800 text-xs sm:text-sm">Dispositivo</TableHead>
-                  <TableHead className="text-blue-800 text-xs sm:text-sm hidden sm:table-cell">IP</TableHead>
+                  <TableHead className="text-blue-800 text-xs sm:text-sm">Dados</TableHead>
+                  <TableHead className="text-blue-800 text-xs sm:text-sm">Qtd</TableHead>
                   <TableHead className="text-blue-800 text-xs sm:text-sm">Data</TableHead>
                 </TableRow>
               </TableHeader>
@@ -195,8 +230,8 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
                       {log.event_type === 'upload' ? 'Envio' : 
                        log.event_type === 'download' ? 'Recebimento' : 'Erro'}
                     </TableCell>
-                    <TableCell className="text-xs sm:text-sm py-2 break-all max-w-[100px] sm:max-w-none">{log.device_id}</TableCell>
-                    <TableCell className="text-xs sm:text-sm py-2 hidden sm:table-cell">{log.device_ip || '—'}</TableCell>
+                    <TableCell className="text-xs sm:text-sm py-2">{log.data_type || '—'}</TableCell>
+                    <TableCell className="text-xs sm:text-sm py-2">{log.records_count || 0}</TableCell>
                     <TableCell className="text-xs sm:text-sm py-2">{formatSyncDate(log.created_at)}</TableCell>
                   </TableRow>
                 ))}

@@ -26,12 +26,35 @@ export interface SyncLogEntry {
 class MobileSyncService {
   
   /**
+   * Check if user is authenticated
+   */
+  private async checkAuth(): Promise<boolean> {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        console.error('❌ User not authenticated:', error);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('❌ Error checking authentication:', error);
+      return false;
+    }
+  }
+
+  /**
    * Sync customers for the authenticated sales rep
    * RLS will automatically filter by sales_rep_id = auth.uid()
    */
   async syncCustomers(): Promise<Customer[]> {
     try {
       console.log('📱 Syncing customers for authenticated sales rep...');
+      
+      // Check authentication first
+      const isAuth = await this.checkAuth();
+      if (!isAuth) {
+        throw new Error('User not authenticated');
+      }
       
       const { data: customersData, error } = await supabase
         .from('customers')
@@ -41,6 +64,18 @@ class MobileSyncService {
       
       if (error) {
         console.error('❌ Error syncing customers:', error);
+        
+        // Log sync error
+        await this.logSyncEvent(
+          'error', 
+          'mobile-sync', 
+          undefined,
+          'customers',
+          0,
+          'error',
+          `Failed to sync customers: ${error.message}`
+        );
+        
         throw error;
       }
       
@@ -64,7 +99,7 @@ class MobileSyncService {
         email: customer.email || '',
         notes: customer.notes || '',
         salesRepId: customer.sales_rep_id,
-        salesRepName: undefined, // Not available in database schema
+        salesRepName: undefined,
         deliveryRouteId: customer.delivery_route_id || undefined,
         visitDays: customer.visit_days || [],
         visitFrequency: customer.visit_frequency || '',
@@ -74,6 +109,17 @@ class MobileSyncService {
       }));
       
       console.log(`✅ Synced ${customers.length} customers`);
+      
+      // Log successful sync
+      await this.logSyncEvent(
+        'download',
+        'mobile-sync',
+        undefined,
+        'customers',
+        customers.length,
+        'completed'
+      );
+      
       return customers;
       
     } catch (error) {
@@ -89,6 +135,12 @@ class MobileSyncService {
     try {
       console.log('📱 Syncing products...');
       
+      // Check authentication first
+      const isAuth = await this.checkAuth();
+      if (!isAuth) {
+        throw new Error('User not authenticated');
+      }
+      
       const { data: productsData, error } = await supabase
         .from('products')
         .select('*')
@@ -96,6 +148,18 @@ class MobileSyncService {
       
       if (error) {
         console.error('❌ Error syncing products:', error);
+        
+        // Log sync error
+        await this.logSyncEvent(
+          'error',
+          'mobile-sync',
+          undefined,
+          'products',
+          0,
+          'error',
+          `Failed to sync products: ${error.message}`
+        );
+        
         throw error;
       }
       
@@ -123,6 +187,17 @@ class MobileSyncService {
       }));
       
       console.log(`✅ Synced ${products.length} products`);
+      
+      // Log successful sync
+      await this.logSyncEvent(
+        'download',
+        'mobile-sync',
+        undefined,
+        'products',
+        products.length,
+        'completed'
+      );
+      
       return products;
       
     } catch (error) {
@@ -139,6 +214,12 @@ class MobileSyncService {
     try {
       console.log('📱 Syncing orders for authenticated sales rep...');
       
+      // Check authentication first
+      const isAuth = await this.checkAuth();
+      if (!isAuth) {
+        throw new Error('User not authenticated');
+      }
+      
       const { data: ordersData, error } = await supabase
         .from('orders')
         .select(`
@@ -149,6 +230,18 @@ class MobileSyncService {
       
       if (error) {
         console.error('❌ Error syncing orders:', error);
+        
+        // Log sync error
+        await this.logSyncEvent(
+          'error',
+          'mobile-sync',
+          undefined,
+          'orders',
+          0,
+          'error',
+          `Failed to sync orders: ${error.message}`
+        );
+        
         throw error;
       }
       
@@ -200,6 +293,17 @@ class MobileSyncService {
       }));
       
       console.log(`✅ Synced ${orders.length} orders`);
+      
+      // Log successful sync
+      await this.logSyncEvent(
+        'download',
+        'mobile-sync',
+        undefined,
+        'orders',
+        orders.length,
+        'completed'
+      );
+      
       return orders;
       
     } catch (error) {
@@ -240,14 +344,13 @@ class MobileSyncService {
   }
 
   /**
-   * Get sync logs for a specific sales rep
+   * Get sync logs for current authenticated user
    */
-  async getSyncLogs(salesRepId: string): Promise<SyncLogEntry[]> {
+  async getSyncLogs(): Promise<SyncLogEntry[]> {
     try {
       const { data, error } = await supabase
         .from('sync_logs')
         .select('*')
-        .eq('sales_rep_id', salesRepId)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -256,7 +359,6 @@ class MobileSyncService {
         throw error;
       }
 
-      // Cast event_type to the correct union type
       return (data || []).map(log => ({
         ...log,
         event_type: log.event_type as 'upload' | 'download' | 'error'
@@ -268,14 +370,14 @@ class MobileSyncService {
   }
 
   /**
-   * Clear sync logs for a specific sales rep
+   * Clear sync logs for current authenticated user
    */
-  async clearSyncLogs(salesRepId: string): Promise<void> {
+  async clearSyncLogs(): Promise<void> {
     try {
       const { error } = await supabase
         .from('sync_logs')
         .delete()
-        .eq('sales_rep_id', salesRepId);
+        .gte('created_at', '1970-01-01'); // Delete all logs for current user (RLS will filter)
 
       if (error) {
         console.error('Error clearing sync logs:', error);
@@ -291,7 +393,6 @@ class MobileSyncService {
    * Log a sync event
    */
   async logSyncEvent(
-    salesRepId: string,
     eventType: 'upload' | 'download' | 'error',
     deviceId?: string,
     deviceIp?: string,
@@ -302,10 +403,16 @@ class MobileSyncService {
     metadata?: any
   ): Promise<void> {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        console.warn('Cannot log sync event: user not authenticated');
+        return;
+      }
+
       const { error } = await supabase
         .from('sync_logs')
         .insert({
-          sales_rep_id: salesRepId,
+          sales_rep_id: session.user.id,
           event_type: eventType,
           device_id: deviceId,
           device_ip: deviceIp,
@@ -318,11 +425,9 @@ class MobileSyncService {
 
       if (error) {
         console.error('Error logging sync event:', error);
-        throw error;
       }
     } catch (error) {
       console.error('Error in logSyncEvent:', error);
-      throw error;
     }
   }
 }

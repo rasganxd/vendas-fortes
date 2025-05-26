@@ -2,169 +2,163 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SalesRep } from '@/types';
 
-interface MobileAuthResponse {
-  salesRep: SalesRep | null;
-  session: any;
+interface AuthResult {
+  success: boolean;
+  salesRep?: SalesRep;
+  session?: any;
   error?: string;
 }
 
 class MobileAuthService {
   /**
-   * Authenticate sales rep with email and password
+   * Login with email and password
    */
-  async login(email: string, password: string): Promise<MobileAuthResponse> {
+  async login(email: string, password: string): Promise<AuthResult> {
     try {
       console.log('🔐 Attempting mobile login for:', email);
       
-      // Authenticate with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
-      if (authError) {
-        console.error('❌ Authentication error:', authError);
-        return {
-          salesRep: null,
-          session: null,
-          error: authError.message
-        };
-      }
-      
-      if (!authData.user || !authData.session) {
-        return {
-          salesRep: null,
-          session: null,
-          error: 'Invalid authentication response'
-        };
-      }
-      
-      // Get sales rep data using the authenticated user ID
-      const { data: salesRepData, error: salesRepError } = await supabase
-        .from('sales_reps')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single();
-      
-      if (salesRepError) {
-        console.error('❌ Sales rep fetch error:', salesRepError);
-        return {
-          salesRep: null,
-          session: authData.session,
-          error: 'Sales rep not found'
-        };
-      }
-      
-      // Transform to SalesRep interface
-      const salesRep: SalesRep = {
-        id: salesRepData.id,
-        code: salesRepData.code,
-        name: salesRepData.name,
-        phone: salesRepData.phone || '',
-        email: salesRepData.email || '',
-        active: salesRepData.active,
-        createdAt: new Date(salesRepData.created_at),
-        updatedAt: new Date(salesRepData.updated_at)
-      };
-      
-      console.log('✅ Mobile login successful for:', salesRep.name);
-      
-      return {
-        salesRep,
-        session: authData.session,
-        error: undefined
-      };
-      
-    } catch (error) {
-      console.error('❌ Mobile login error:', error);
-      return {
-        salesRep: null,
-        session: null,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-  
-  /**
-   * Get current session and user
-   */
-  async getCurrentSession(): Promise<MobileAuthResponse> {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        return {
-          salesRep: null,
-          session: null,
-          error: error?.message || 'No active session'
-        };
-      }
-      
-      // Get sales rep data
-      const { data: salesRepData, error: salesRepError } = await supabase
-        .from('sales_reps')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
-      if (salesRepError) {
-        return {
-          salesRep: null,
-          session,
-          error: 'Sales rep not found'
-        };
-      }
-      
-      const salesRep: SalesRep = {
-        id: salesRepData.id,
-        code: salesRepData.code,
-        name: salesRepData.name,
-        phone: salesRepData.phone || '',
-        email: salesRepData.email || '',
-        active: salesRepData.active,
-        createdAt: new Date(salesRepData.created_at),
-        updatedAt: new Date(salesRepData.updated_at)
-      };
-      
-      return {
-        salesRep,
-        session,
-        error: undefined
-      };
-      
-    } catch (error) {
-      console.error('❌ Session check error:', error);
-      return {
-        salesRep: null,
-        session: null,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-  
-  /**
-   * Logout current user
-   */
-  async logout(): Promise<{ success: boolean; error?: string }> {
-    try {
-      const { error } = await supabase.auth.signOut();
-      
       if (error) {
+        console.error('❌ Login error:', error);
         return {
           success: false,
           error: error.message
         };
       }
       
-      console.log('✅ Mobile logout successful');
-      return { success: true };
+      if (!data.user) {
+        return {
+          success: false,
+          error: 'No user data returned'
+        };
+      }
+      
+      // Try to find corresponding sales rep
+      const { data: salesReps, error: salesRepError } = await supabase
+        .from('sales_reps')
+        .select('*')
+        .eq('email', email)
+        .eq('active', true)
+        .single();
+      
+      if (salesRepError || !salesReps) {
+        console.warn('⚠️ No sales rep found for email:', email);
+        return {
+          success: false,
+          error: 'Vendedor não encontrado ou inativo'
+        };
+      }
+      
+      const salesRep: SalesRep = {
+        id: salesReps.id,
+        code: salesReps.code,
+        name: salesReps.name,
+        email: salesReps.email,
+        phone: salesReps.phone,
+        active: salesReps.active,
+        createdAt: new Date(salesReps.created_at),
+        updatedAt: new Date(salesReps.updated_at)
+      };
+      
+      console.log('✅ Login successful for sales rep:', salesRep.name);
+      
+      return {
+        success: true,
+        salesRep,
+        session: data.session
+      };
       
     } catch (error) {
-      console.error('❌ Mobile logout error:', error);
+      console.error('❌ Login exception:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Erro inesperado'
       };
+    }
+  }
+  
+  /**
+   * Get current session
+   */
+  async getCurrentSession(): Promise<AuthResult> {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('❌ Session error:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+      
+      if (!session?.user) {
+        return {
+          success: false,
+          error: 'No active session'
+        };
+      }
+      
+      // Try to find corresponding sales rep
+      const { data: salesReps, error: salesRepError } = await supabase
+        .from('sales_reps')
+        .select('*')
+        .eq('email', session.user.email)
+        .eq('active', true)
+        .single();
+      
+      if (salesRepError || !salesReps) {
+        console.warn('⚠️ No sales rep found for session user');
+        return {
+          success: false,
+          error: 'Vendedor não encontrado'
+        };
+      }
+      
+      const salesRep: SalesRep = {
+        id: salesReps.id,
+        code: salesReps.code,
+        name: salesReps.name,
+        email: salesReps.email,
+        phone: salesReps.phone,
+        active: salesReps.active,
+        createdAt: new Date(salesReps.created_at),
+        updatedAt: new Date(salesReps.updated_at)
+      };
+      
+      return {
+        success: true,
+        salesRep,
+        session
+      };
+      
+    } catch (error) {
+      console.error('❌ Session check exception:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro inesperado'
+      };
+    }
+  }
+  
+  /**
+   * Logout
+   */
+  async logout(): Promise<void> {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('❌ Logout error:', error);
+        throw error;
+      }
+      console.log('✅ Logout successful');
+    } catch (error) {
+      console.error('❌ Logout exception:', error);
+      throw error;
     }
   }
 }
