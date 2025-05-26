@@ -188,8 +188,8 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     getOrderById: hookOperations.getOrderById,
     generateNextOrderCode: hookOperations.generateNextOrderCode,
     
-    // Connection and settings
-    connectionStatus: connection.connectionStatus,
+    // Connection and settings - fix the connectionStatus type
+    connectionStatus: connection.connectionStatus as 'online' | 'offline' | 'connecting' | 'error',
     lastConnectAttempt: connection.lastConnectAttempt,
     reconnectToSupabase: connection.reconnectToSupabase,
     testConnection: connection.testConnection,
