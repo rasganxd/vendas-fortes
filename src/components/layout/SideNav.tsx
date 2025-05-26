@@ -1,215 +1,224 @@
 
-import { Link, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  ListChecks,
-  Package,
-  Users,
-  Settings,
-  Truck,
-  FileText,
-  Coins,
-  Database,
-  CreditCard,
-  UserRound,
-  LucideIcon,
-  ChevronRight,
-  PlusCircle,
-  Tags
-} from "lucide-react";
-
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 import { 
   Sidebar, 
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
+  SidebarContent, 
+  SidebarGroup, 
+  SidebarGroupContent, 
+  SidebarGroupLabel, 
+  SidebarMenu, 
+  SidebarMenuButton, 
   SidebarMenuItem,
-  SidebarMenuButton
-} from "@/components/ui/sidebar";
+  SidebarHeader,
+  SidebarFooter,
+  SidebarSeparator
+} from '@/components/ui/sidebar';
+import {
+  Home,
+  Users,
+  Package,
+  ShoppingCart,
+  Truck,
+  Route,
+  UserCheck,
+  Car,
+  CreditCard,
+  DollarSign,
+  List,
+  Settings,
+  Wrench,
+  LogOut,
+  Building2,
+  UserCog,
+  Tags
+} from 'lucide-react';
 
-import { NavItem } from "@/types";
-import { CustomScrollArea } from "@/components/ui/custom-scroll-area";
-import { cn } from "@/lib/utils";
-import { useTheme } from "@/components/theme-provider";
-import { useAppContext } from "@/hooks/useAppContext";
-import { useEffect } from "react";
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  requiresRole?: string[];
+}
 
-// Define navigation items
-const navigation: NavItem[] = [
+const navigationItems: NavItem[] = [
   {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    group: "geral"
+    title: 'Dashboard',
+    href: '/dashboard',
+    icon: Home,
   },
   {
-    title: "Clientes",
-    href: "/clientes",
+    title: 'Clientes',
+    href: '/clientes',
     icon: Users,
-    group: "cadastro"
   },
   {
-    title: "Produtos",
-    href: "/produtos",
+    title: 'Produtos',
+    href: '/produtos',
     icon: Package,
-    group: "cadastro"
   },
   {
-    title: "Classificações",
-    href: "/produtos/classificacoes",
+    title: 'Classificações',
+    href: '/produtos/classificacoes',
     icon: Tags,
-    group: "cadastro"
   },
   {
-    title: "Vendedores",
-    href: "/vendedores",
-    icon: UserRound,
-    group: "cadastro"
+    title: 'Pedidos',
+    href: '/pedidos',
+    icon: ShoppingCart,
   },
   {
-    title: "Pedidos",
-    href: "/pedidos",
-    icon: FileText,
-    group: "vendas"
-  },
-  {
-    title: "Digitar Pedido",
-    href: "/pedidos/novo",
-    icon: PlusCircle,
-    group: "vendas"
-  },
-  {
-    title: "Pagamentos",
-    href: "/pagamentos",
-    icon: Coins,
-    group: "financeiro"
-  },
-  {
-    title: "Tabelas Pagto",
-    href: "/pagamentos/tabelas", 
-    icon: CreditCard,
-    group: "financeiro"
-  },
-  {
-    title: "Rotas",
-    href: "/rotas",
-    icon: ListChecks,
-    group: "logistics"
-  },
-  {
-    title: "Cargas",
-    href: "/cargas",
-    icon: Package,
-    group: "logistics"
-  },
-  {
-    title: "Veículos",
-    href: "/veiculos",
+    title: 'Cargas',
+    href: '/cargas',
     icon: Truck,
-    group: "logistics"
   },
   {
-    title: "Config",
-    href: "/configuracoes",
+    title: 'Rotas',
+    href: '/rotas',
+    icon: Route,
+  },
+  {
+    title: 'Vendedores',
+    href: '/vendedores',
+    icon: UserCheck,
+  },
+  {
+    title: 'Usuários',
+    href: '/usuarios',
+    icon: UserCog,
+    requiresRole: ['admin', 'manager']
+  },
+  {
+    title: 'Veículos',
+    href: '/veiculos',
+    icon: Car,
+  },
+];
+
+const paymentItems: NavItem[] = [
+  {
+    title: 'Métodos',
+    href: '/metodos-pagamento',
+    icon: CreditCard,
+  },
+  {
+    title: 'Tabelas',
+    href: '/pagamentos/tabelas',
+    icon: List,
+  },
+  {
+    title: 'Pagamentos',
+    href: '/pagamentos',
+    icon: DollarSign,
+  },
+];
+
+const systemItems: NavItem[] = [
+  {
+    title: 'Configurações',
+    href: '/configuracoes',
     icon: Settings,
-    group: "sistema"
   },
   {
-    title: "Manutenção",
-    href: "/manutencao",
-    icon: Database,
-    group: "sistema"
+    title: 'Manutenção',
+    href: '/manutencao',
+    icon: Wrench,
+    requiresRole: ['admin']
   },
 ];
 
 export default function SideNav() {
   const location = useLocation();
-  const { theme } = useTheme();
-  const { settings } = useAppContext();
-  
-  // Listen for theme changes with simplified effect
-  useEffect(() => {
-    // Add dynamic-sidebar class to the sidebar header to allow styling from CSS
-    const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
-    if (sidebarHeader) {
-      sidebarHeader.style.backgroundColor = '#4a86e8'; // Soft blue color for sidebar header
-      sidebarHeader.style.color = '#ffffff';
-    }
-    
-    console.log("Theme change detected in SideNav");
-  }, []);
-  
-  // Group the navigation items by their group
-  const groupedNavItems = navigation.reduce((groups, item) => {
-    const group = item.group || 'other';
-    const groupArray = groups[group] || [];
-    groupArray.push(item);
-    groups[group] = groupArray;
-    return groups;
-  }, {} as Record<string, NavItem[]>);
+  const { userProfile, signOut } = useAuth();
 
-  // Labels for groups
-  const groupLabels: Record<string, string> = {
-    geral: "GERAL",
-    cadastro: "CADASTRO",
-    vendas: "VENDAS",
-    financeiro: "FINANCEIRO",
-    logistics: "LOGÍSTICA",
-    sistema: "SISTEMA"
+  const handleSignOut = async () => {
+    await signOut();
   };
-  
+
+  const canAccessItem = (item: NavItem) => {
+    if (!item.requiresRole) return true;
+    if (!userProfile) return false;
+    return item.requiresRole.includes(userProfile.role);
+  };
+
+  const renderNavItems = (items: NavItem[]) => {
+    return items
+      .filter(canAccessItem)
+      .map((item) => (
+        <SidebarMenuItem key={item.href}>
+          <SidebarMenuButton asChild isActive={location.pathname === item.href}>
+            <Link to={item.href} className="flex items-center">
+              <item.icon className="h-4 w-4" />
+              <span>{item.title}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ));
+  };
+
   return (
-    <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium bg-blue-50">
-      <SidebarHeader className="px-5 py-4 flex items-center justify-between dynamic-sidebar-header transition-colors">
-        <h1 className="text-xl font-bold text-white">SalesTrack</h1>
+    <Sidebar>
+      <SidebarHeader className="border-b p-4">
+        <div className="flex items-center gap-2">
+          <Building2 className="h-6 w-6 text-sales-800" />
+          <div>
+            <h2 className="text-lg font-semibold">Sistema Vendas</h2>
+            {userProfile && (
+              <p className="text-sm text-gray-600">{userProfile.name}</p>
+            )}
+          </div>
+        </div>
       </SidebarHeader>
-      <CustomScrollArea hideScrollbar={true} className="h-[calc(100vh-64px)]">
-        <SidebarContent className="py-4 px-3">
-          <SidebarMenu>
-            {Object.entries(groupedNavItems).map(([group, items]) => (
-              <div key={group} className="mb-6">
-                <h3 className="text-xs uppercase font-semibold text-blue-800/80 px-3 mb-2 flex items-center">
-                  <ChevronRight size={14} className="mr-1 text-blue-800/80" />
-                  {groupLabels[group] || group}
-                </h3>
-                {items.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  const IconComponent = item.icon as LucideIcon;
-                  
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
-                        isActive={isActive} 
-                        tooltip={item.title} 
-                        size="sm"
-                        className={cn(
-                          "transition-all duration-200 rounded-lg",
-                          isActive ? 
-                            "active-menu-item font-medium" : 
-                            "text-blue-900 hover:bg-blue-100 hover:text-blue-700"
-                        )}
-                      >
-                        <Link to={item.href} className="flex items-center px-3 py-2 text-sm">
-                          {IconComponent && (
-                            <div className={cn(
-                              "mr-3 flex items-center justify-center w-6 h-6 rounded-md",
-                              isActive ? "active-icon" : "text-blue-700"
-                            )}>
-                              <IconComponent size={18} />
-                            </div>
-                          )}
-                          <span className="truncate">{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </div>
-            ))}
-          </SidebarMenu>
-        </SidebarContent>
-      </CustomScrollArea>
+      
+      <SidebarContent>
+        {/* Main Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Principal</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {renderNavItems(navigationItems)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Payments */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Financeiro</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {renderNavItems(paymentItems)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* System */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {renderNavItems(systemItems)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t p-4">
+        <Button 
+          variant="outline" 
+          onClick={handleSignOut}
+          className="w-full justify-start"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Sair
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }

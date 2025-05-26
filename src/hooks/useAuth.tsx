@@ -55,21 +55,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      // Simular busca do perfil - aqui você faria a busca real no banco
-      // Por enquanto, vou usar dados mockados baseados no email
-      const mockProfile: UserProfile = {
-        id: '1',
-        userId: userId,
-        role: user?.email?.includes('vendedor') ? 'vendedor' : 'admin',
-        name: user?.email?.split('@')[0] || 'Usuário',
-        email: user?.email || '',
-        phone: '',
-        active: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+      console.log('Loading user profile for userId:', userId);
       
-      setUserProfile(mockProfile);
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error loading user profile:', error);
+        // Se não encontrar o perfil, pode ser que ainda não foi criado pelo trigger
+        // Vamos tentar novamente em alguns segundos
+        setTimeout(() => loadUserProfile(userId), 2000);
+        return;
+      }
+
+      if (profile) {
+        console.log('User profile loaded:', profile);
+        const userProfile: UserProfile = {
+          id: profile.id,
+          userId: profile.user_id,
+          role: profile.role,
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone || '',
+          active: profile.active,
+          createdAt: new Date(profile.created_at),
+          updatedAt: new Date(profile.updated_at)
+        };
+        
+        setUserProfile(userProfile);
+      }
     } catch (error) {
       console.error('Error loading user profile:', error);
     } finally {

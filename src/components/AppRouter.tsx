@@ -25,6 +25,7 @@ import Payments from '@/pages/Payments';
 import PaymentsList from '@/pages/PaymentsList';
 import Settings from '@/pages/Settings';
 import SystemMaintenance from '@/pages/SystemMaintenance';
+import UserManagement from '@/pages/UserManagement';
 import NotFound from '@/pages/NotFound';
 
 // Mobile pages
@@ -104,6 +105,7 @@ export default function AppRouter() {
           <Route path="/cargas/:id" element={<BuildLoad />} />
           <Route path="/rotas" element={<RoutesPage />} />
           <Route path="/vendedores" element={<SalesReps />} />
+          <Route path="/usuarios" element={<UserManagement />} />
           <Route path="/veiculos" element={<Vehicles />} />
           <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
           <Route path="/metodos-pagamento" element={<PaymentMethods />} />
