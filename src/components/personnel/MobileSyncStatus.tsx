@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -48,6 +47,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
   const [isClearing, setIsClearing] = useState<boolean>(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
+  const [qrData, setQrData] = useState<string>('');
 
   // Clear status message after 5 seconds
   useEffect(() => {
@@ -166,7 +166,8 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       console.log("📱 Optimized QR Code data generated:", parsedData);
       console.log("📱 Data size:", simplifiedData.length, "characters");
       
-      setConnectionData(parsedData);
+      setConnectionData(connData);
+      setQrData(simplifiedData);
       setIsQrDialogOpen(true);
       
       toast({
@@ -196,9 +197,9 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                   `Token: ${connectionData.token}\n` +
                   `Vendedor ID: ${connectionData.salesRepId}\n\n` +
                   `API Endpoints:\n` +
-                  `Download: ${connectionData.endpoints?.download}\n` +
-                  `Upload: ${connectionData.endpoints?.upload}\n` +
-                  `Status: ${connectionData.endpoints?.status}`;
+                  `Download: ${connectionData.apiEndpoints?.download}\n` +
+                  `Upload: ${connectionData.apiEndpoints?.upload}\n` +
+                  `Status: ${connectionData.apiEndpoints?.status}`;
       
       navigator.clipboard.writeText(info);
       toast({
@@ -388,9 +389,9 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           </DialogHeader>
           
           <div className="flex justify-center py-4">
-            {connectionData && (
+            {qrData && (
               <QRCodeDisplay 
-                value={JSON.stringify(connectionData)} 
+                value={qrData} 
                 showConnectionInfo={true}
                 size={280}
               />
