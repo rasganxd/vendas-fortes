@@ -800,42 +800,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_profiles: {
-        Row: {
-          active: boolean
-          created_at: string
-          email: string
-          id: string
-          name: string
-          phone: string | null
-          role: Database["public"]["Enums"]["user_role"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          email: string
-          id?: string
-          name: string
-          phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          email?: string
-          id?: string
-          name?: string
-          phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       vehicles: {
         Row: {
           active: boolean
@@ -914,7 +878,7 @@ export type Database = {
       }
     }
     Enums: {
-      user_role: "admin" | "manager" | "vendedor"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1029,8 +993,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      user_role: ["admin", "manager", "vendedor"],
-    },
+    Enums: {},
   },
 } as const
