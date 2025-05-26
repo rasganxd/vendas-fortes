@@ -6,14 +6,13 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppProvider } from '@/context/AppContextProvider';
 import { AuthProvider } from '@/hooks/useAuth';
-import SideNav from '@/components/layout/SideNav';
 import AppRouter from '@/components/AppRouter';
 import './App.css';
 
 function App() {
   console.log("App: Rendering App component");
   
-  // Check if running on mobile device
+  // Check if running on mobile device for styling purposes
   useEffect(() => {
     console.log("App: Running main useEffect");
     
