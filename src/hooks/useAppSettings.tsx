@@ -51,17 +51,27 @@ export const useAppSettings = () => {
     try {
       console.log('updateSettings called with:', newSettings);
       
-      if (!settings?.id) {
-        console.log('No settings ID, fetching first...');
-        await fetchSettings();
+      // Get current settings or wait for them to load
+      let currentSettings = settings;
+      if (!currentSettings?.id) {
+        console.log('No settings loaded, fetching first...');
+        const fetchedSettings = await fetchSettingsFromSupabase();
+        if (fetchedSettings) {
+          currentSettings = fetchedSettings;
+          setSettings(fetchedSettings);
+        } else {
+          const defaultSettings = await createDefaultSettings();
+          currentSettings = defaultSettings;
+          setSettings(defaultSettings);
+        }
       }
       
       // Merge existing and new settings
-      const updatedSettings = { ...settings, ...newSettings } as AppSettings;
+      const updatedSettings = { ...currentSettings, ...newSettings } as AppSettings;
       console.log('Merged settings:', updatedSettings);
       
       // Update in Supabase
-      const success = await updateSettingsInSupabase(settings, newSettings);
+      const success = await updateSettingsInSupabase(currentSettings, newSettings);
       
       if (success) {
         // Update local state
@@ -76,7 +86,7 @@ export const useAppSettings = () => {
       setError(err as Error);
       throw err;
     }
-  }, [settings, fetchSettings]);
+  }, [settings]);
 
   // Load settings on mount
   useEffect(() => {

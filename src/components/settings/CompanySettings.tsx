@@ -40,12 +40,14 @@ export default function CompanySettings() {
   // Update local state when settings are loaded
   React.useEffect(() => {
     if (settings?.company) {
+      console.log('Updating company data from settings:', settings.company);
       setCompanyData(settings.company);
     }
   }, [settings]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    console.log('Field changed:', name, value);
     setCompanyData((prev) => ({
       ...prev,
       [name]: value
@@ -54,11 +56,20 @@ export default function CompanySettings() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted, starting save process...');
     setIsSaving(true);
 
     try {
       console.log('Saving company data:', companyData);
-      await updateSettings({ company: companyData });
+      
+      if (!updateSettings) {
+        console.error('updateSettings function not available');
+        throw new Error('Função updateSettings não disponível');
+      }
+      
+      const result = await updateSettings({ company: companyData });
+      console.log('Save result:', result);
+      
       toast({
         title: "Dados salvos com sucesso",
         description: "Os dados da empresa foram atualizados."
@@ -86,6 +97,8 @@ export default function CompanySettings() {
       </Card>
     );
   }
+
+  console.log('Rendering CompanySettings with:', { settings, updateSettings: !!updateSettings, companyData });
 
   return (
     <Card>

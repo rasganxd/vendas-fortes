@@ -1,16 +1,11 @@
 
-// Re-export all types from their domain-specific files
+// Re-export types from individual files for convenience
 export * from './customer';
-export * from './product';
-
-// For order.ts, need to be explicit to avoid duplicate exports
-export type { Order, OrderStatus, OrderItem, PaymentStatus, PaymentSummary } from './order';
-
-export * from './payment';
 export * from './delivery';
+export * from './order';
+export * from './payment';
 export * from './personnel';
+export * from './product';
 export * from './system';
 export * from './ui';
-
-// Export the Vehicle type explicitly from vehicle.ts to avoid ambiguity with delivery.ts
-export type { Vehicle } from './vehicle';
+export * from './vehicle';
