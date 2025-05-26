@@ -32,14 +32,21 @@ const CustomerSelect: React.FC<CustomerSelectProps> = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos os Clientes</SelectItem>
-          {customers.map((customer) => (
-            <SelectItem 
-              key={customer.id} 
-              value={customer.id || `customer-${customer.name}`} // Ensure value is never empty
-            >
-              {customer.name}
-            </SelectItem>
-          ))}
+          {customers.map((customer) => {
+            // Ensure we never have an empty string as value
+            const customerValue = customer.id && customer.id.trim() !== '' 
+              ? customer.id 
+              : `customer-${customer.name}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            return (
+              <SelectItem 
+                key={customer.id || `customer-${customer.name}`} 
+                value={customerValue}
+              >
+                {customer.name}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
     </div>
