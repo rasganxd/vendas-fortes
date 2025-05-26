@@ -42,6 +42,7 @@ const ApiTokensPanel: React.FC = () => {
   const [expirationDays, setExpirationDays] = useState<string>('30');
   const [generatedToken, setGeneratedToken] = useState<string>('');
   const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [isCreatingToken, setIsCreatingToken] = useState(false);
 
   const { salesReps, isLoading: salesRepsLoading } = useSalesReps();
 
@@ -51,8 +52,20 @@ const ApiTokensPanel: React.FC = () => {
     console.log("Sales reps loading:", salesRepsLoading);
     console.log("Sales reps data:", salesReps);
     console.log("Sales reps count:", salesReps?.length || 0);
-    console.log("Sales reps with valid data:", salesReps?.filter(rep => rep.id && rep.name) || []);
-  }, [salesReps, salesRepsLoading]);
+    console.log("Selected sales rep:", selectedSalesRep);
+    
+    if (salesReps && salesReps.length > 0) {
+      salesReps.forEach((rep, index) => {
+        console.log(`Sales rep ${index}:`, {
+          id: rep.id,
+          name: rep.name,
+          email: rep.email,
+          code: rep.code,
+          active: rep.active
+        });
+      });
+    }
+  }, [salesReps, salesRepsLoading, selectedSalesRep]);
 
   const loadTokens = async () => {
     if (!selectedSalesRep) {
@@ -83,7 +96,13 @@ const ApiTokensPanel: React.FC = () => {
   }, [selectedSalesRep]);
 
   const handleCreateToken = async () => {
+    console.log("=== CREATING TOKEN ===");
+    console.log("Selected sales rep:", selectedSalesRep);
+    console.log("Token name:", newTokenName);
+    console.log("Expiration days:", expirationDays);
+
     if (!selectedSalesRep || !newTokenName.trim()) {
+      console.log("Validation failed - missing sales rep or token name");
       toast({
         title: "Erro",
         description: "Selecione um vendedor e informe um nome para o token.",
@@ -92,6 +111,7 @@ const ApiTokensPanel: React.FC = () => {
       return;
     }
 
+    setIsCreatingToken(true);
     try {
       console.log("Creating token for sales rep:", selectedSalesRep, "with name:", newTokenName);
       const request: CreateTokenRequest = {
@@ -100,8 +120,15 @@ const ApiTokensPanel: React.FC = () => {
         expires_days: expirationDays ? parseInt(expirationDays) : undefined
       };
 
+      console.log("Token request:", request);
+
       const token = await apiTokenService.generateToken(request);
-      console.log("Token created successfully:", token ? "token generated" : "no token");
+      console.log("Token created successfully:", token ? "✅ token received" : "❌ no token returned");
+      
+      if (!token) {
+        throw new Error("Nenhum token foi retornado pelo serviço");
+      }
+
       setGeneratedToken(token);
       setShowTokenDialog(true);
       setIsDialogOpen(false);
@@ -116,12 +143,20 @@ const ApiTokensPanel: React.FC = () => {
         description: "Token de API criado com sucesso!"
       });
     } catch (error) {
-      console.error('Error creating token:', error);
+      console.error('❌ Error creating token:', error);
+      let errorMessage = "Não foi possível criar o token de API.";
+      
+      if (error instanceof Error) {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
       toast({
         title: "Erro",
-        description: "Não foi possível criar o token de API.",
+        description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setIsCreatingToken(false);
     }
   };
 
@@ -412,8 +447,18 @@ const ApiTokensPanel: React.FC = () => {
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateToken}>
-                Criar Token
+              <Button 
+                onClick={handleCreateToken}
+                disabled={isCreatingToken || !selectedSalesRep || !newTokenName.trim()}
+              >
+                {isCreatingToken ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Criando...
+                  </>
+                ) : (
+                  'Criar Token'
+                )}
               </Button>
             </div>
           </div>

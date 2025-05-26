@@ -23,8 +23,14 @@ export interface CreateTokenRequest {
 class ApiTokenService {
   async generateToken(request: CreateTokenRequest): Promise<string> {
     try {
-      console.log('🔑 Generating API token:', request);
+      console.log('🔑 Starting token generation:', request);
       
+      // Validate request
+      if (!request.sales_rep_id || !request.name) {
+        throw new Error('Sales rep ID and name are required');
+      }
+
+      console.log('🔑 Calling RPC function generate_api_token...');
       const { data, error } = await supabase.rpc('generate_api_token', {
         p_sales_rep_id: request.sales_rep_id,
         p_name: request.name,
@@ -32,21 +38,41 @@ class ApiTokenService {
       });
       
       if (error) {
-        console.error('❌ Error generating token:', error);
-        throw error;
+        console.error('❌ RPC Error generating token:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw new Error(`Erro do banco de dados: ${error.message}`);
       }
       
-      console.log('✅ Token generated successfully');
+      if (!data) {
+        console.error('❌ No data returned from RPC');
+        throw new Error('Nenhum token foi retornado pelo servidor');
+      }
+      
+      console.log('✅ Token generated successfully, length:', data.length);
       return data;
     } catch (error) {
       console.error('❌ Error in generateToken:', error);
-      throw error;
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Erro desconhecido ao gerar token');
     }
   }
 
   async getTokensBySalesRep(salesRepId: string): Promise<ApiToken[]> {
     try {
       console.log('🔍 Getting tokens for sales rep:', salesRepId);
+      
+      if (!salesRepId) {
+        throw new Error('Sales rep ID is required');
+      }
       
       const { data, error } = await supabase
         .from('api_tokens')
@@ -56,7 +82,7 @@ class ApiTokenService {
       
       if (error) {
         console.error('❌ Error getting tokens:', error);
-        throw error;
+        throw new Error(`Erro ao buscar tokens: ${error.message}`);
       }
       
       console.log('✅ Found tokens:', data?.length || 0);
@@ -78,7 +104,12 @@ class ApiTokenService {
       return transformedData;
     } catch (error) {
       console.error('❌ Error in getTokensBySalesRep:', error);
-      throw error;
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Erro desconhecido ao buscar tokens');
     }
   }
 
@@ -105,6 +136,10 @@ class ApiTokenService {
     try {
       console.log('🚫 Revoking token:', tokenId);
       
+      if (!tokenId) {
+        throw new Error('Token ID is required');
+      }
+      
       const { error } = await supabase
         .from('api_tokens')
         .update({ is_active: false })
@@ -112,19 +147,28 @@ class ApiTokenService {
       
       if (error) {
         console.error('❌ Error revoking token:', error);
-        throw error;
+        throw new Error(`Erro ao revogar token: ${error.message}`);
       }
       
       console.log('✅ Token revoked successfully');
     } catch (error) {
       console.error('❌ Error in revokeToken:', error);
-      throw error;
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Erro desconhecido ao revogar token');
     }
   }
 
   async deleteToken(tokenId: string): Promise<void> {
     try {
       console.log('🗑️ Deleting token:', tokenId);
+      
+      if (!tokenId) {
+        throw new Error('Token ID is required');
+      }
       
       const { error } = await supabase
         .from('api_tokens')
@@ -133,19 +177,29 @@ class ApiTokenService {
       
       if (error) {
         console.error('❌ Error deleting token:', error);
-        throw error;
+        throw new Error(`Erro ao excluir token: ${error.message}`);
       }
       
       console.log('✅ Token deleted successfully');
     } catch (error) {
       console.error('❌ Error in deleteToken:', error);
-      throw error;
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Erro desconhecido ao excluir token');
     }
   }
 
   async validateToken(token: string): Promise<string | null> {
     try {
       console.log('🔍 Validating token');
+      
+      if (!token) {
+        console.log('❌ No token provided');
+        return null;
+      }
       
       const { data, error } = await supabase.rpc('validate_api_token', {
         token_value: token
