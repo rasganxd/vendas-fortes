@@ -30,73 +30,53 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
   if (!value) {
     return (
-      <div className="flex items-center justify-center w-full h-full min-h-[200px] bg-gray-100 rounded-lg">
-        <p className="text-gray-500">Carregando...</p>
+      <div className="flex items-center justify-center w-full h-full min-h-[150px] sm:min-h-[200px] bg-gray-100 rounded-lg">
+        <p className="text-gray-500 text-sm">Carregando...</p>
       </div>
     );
   }
 
+  // Calculate responsive QR code size
+  const qrSize = Math.min(size, window.innerWidth < 640 ? 150 : 200);
+
   return (
-    <div className="space-y-4">
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+    <div className="space-y-3">
+      <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border border-blue-100 flex justify-center">
         <QRCodeSVG
           value={value}
-          size={size}
-          level={"H"} // High error correction
+          size={qrSize}
+          level={"H"}
           bgColor={"#FFFFFF"}
-          fgColor={"#4a86e8"} // Use the soft blue color from our theme
+          fgColor={"#4a86e8"}
           includeMargin={true}
         />
       </div>
       
       {showConnectionInfo && connectionData && (
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <h4 className="font-medium text-blue-800 mb-3">📱 Informações da API Móvel</h4>
-          <div className="space-y-2 text-sm text-blue-700">
-            <div><strong>Tipo:</strong> {connectionData.type || 'Sincronização Móvel'}</div>
-            <div><strong>Servidor:</strong> {connectionData.server?.name || connectionData.serverUrl}</div>
-            
-            {connectionData.server?.localIp && (
-              <div><strong>IP Local:</strong> {connectionData.server.localIp}</div>
-            )}
-            {connectionData.server?.publicIp && (
-              <div><strong>IP Público:</strong> {connectionData.server.publicIp}</div>
-            )}
-            {connectionData.server?.port && (
-              <div><strong>Porta:</strong> {connectionData.server.port}</div>
-            )}
-            
-            {connectionData.authentication?.token && (
-              <div><strong>Token:</strong> {connectionData.authentication.token.substring(0, 16)}...</div>
-            )}
-            
-            {connectionData.authentication?.expiresAt && (
-              <div><strong>Expira em:</strong> {new Date(connectionData.authentication.expiresAt).toLocaleString()}</div>
-            )}
+        <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+          <h4 className="font-medium text-blue-800 mb-2 text-sm sm:text-base">📱 API Móvel</h4>
+          <div className="space-y-1 text-xs sm:text-sm text-blue-700">
+            <div className="grid grid-cols-1 gap-1">
+              <div><strong>Servidor:</strong> <span className="break-all">{connectionData.server?.name || connectionData.serverUrl}</span></div>
+              
+              {connectionData.server?.localIp && (
+                <div><strong>IP Local:</strong> {connectionData.server.localIp}</div>
+              )}
+              
+              {connectionData.authentication?.token && (
+                <div><strong>Token:</strong> <span className="font-mono">{connectionData.authentication.token.substring(0, 12)}...</span></div>
+              )}
+              
+              {connectionData.authentication?.expiresAt && (
+                <div><strong>Expira:</strong> {new Date(connectionData.authentication.expiresAt).toLocaleTimeString()}</div>
+              )}
+            </div>
 
             {connectionData.dataTypes && (
-              <div className="mt-3 pt-2 border-t border-blue-200">
-                <div><strong>Dados para Download:</strong></div>
-                <div className="ml-2 text-xs">
-                  {connectionData.dataTypes.download?.join(', ') || 'clientes, produtos, rotas'}
-                </div>
-                <div className="mt-1"><strong>Dados para Upload:</strong></div>
-                <div className="ml-2 text-xs">
-                  {connectionData.dataTypes.upload?.join(', ') || 'atualizações de clientes, estoque, progresso'}
-                </div>
-              </div>
-            )}
-
-            {connectionData.api?.endpoints && (
-              <div className="mt-3 pt-2 border-t border-blue-200">
-                <div><strong>Endpoints da API:</strong></div>
-                <div className="ml-2 text-xs space-y-1">
-                  {connectionData.api.endpoints.downloadData && (
-                    <div>Download: .../{connectionData.authentication?.token?.substring(-8)}</div>
-                  )}
-                  {connectionData.api.endpoints.uploadData && (
-                    <div>Upload: .../{connectionData.authentication?.token?.substring(-8)}</div>
-                  )}
+              <div className="mt-2 pt-2 border-t border-blue-200">
+                <div className="text-xs">
+                  <div><strong>Download:</strong> {connectionData.dataTypes.download?.join(', ') || 'clientes, produtos'}</div>
+                  <div><strong>Upload:</strong> {connectionData.dataTypes.upload?.join(', ') || 'atualizações'}</div>
                 </div>
               </div>
             )}

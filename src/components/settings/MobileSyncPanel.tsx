@@ -74,10 +74,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
     try {
       console.log('📱 Generating mobile API QR Code...');
       
-      // Generate connection data with API endpoints
       const connData = await mobileSyncService.generateConnectionData(salesRepId);
-      
-      // Create mobile API discovery data
       const apiDiscoveryData = await mobileSyncService.createMobileApiDiscovery(connData);
       setConnectionData(JSON.parse(apiDiscoveryData));
       
@@ -107,18 +104,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
                   `Servidor: ${connectionData.server?.name || connectionData.serverUrl || 'N/A'}\n` +
                   `URL Base: ${connectionData.server?.url || connectionData.serverUrl || 'N/A'}\n` +
                   `IP Local: ${connectionData.server?.localIp || connectionData.localIp || 'N/A'}\n` +
-                  `IP Público: ${connectionData.server?.publicIp || connectionData.serverIp || 'N/A'}\n` +
-                  `Porta: ${connectionData.server?.port || connectionData.port || 'N/A'}\n\n` +
-                  `=== AUTENTICAÇÃO ===\n` +
-                  `Token: ${connectionData.authentication?.token || connectionData.token || 'N/A'}\n` +
-                  `Expira: ${connectionData.authentication?.expiresAt ? new Date(connectionData.authentication.expiresAt).toLocaleString() : 'N/A'}\n\n` +
-                  `=== ENDPOINTS DA API ===\n` +
-                  `Download: ${connectionData.api?.endpoints?.downloadData || connectionData.apiEndpoints?.download || 'N/A'}\n` +
-                  `Upload: ${connectionData.api?.endpoints?.uploadData || connectionData.apiEndpoints?.upload || 'N/A'}\n` +
-                  `Status: ${connectionData.api?.endpoints?.checkStatus || connectionData.apiEndpoints?.status || 'N/A'}\n\n` +
-                  `=== DADOS DISPONÍVEIS ===\n` +
-                  `Download: ${connectionData.dataTypes?.download?.join(', ') || 'clientes, produtos, rotas'}\n` +
-                  `Upload: ${connectionData.dataTypes?.upload?.join(', ') || 'atualizações'}`;
+                  `Token: ${connectionData.authentication?.token || connectionData.token || 'N/A'}\n`;
       
       navigator.clipboard.writeText(info);
       toast({
@@ -137,125 +123,138 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   const getStatusIcon = (eventType: 'upload' | 'download' | 'error') => {
     switch (eventType) {
       case 'upload':
-        return <CheckCircle className="text-green-500 h-5 w-5" />;
+        return <CheckCircle className="text-green-500 h-4 w-4 sm:h-5 sm:w-5" />;
       case 'download':
-        return <CheckCircle className="text-blue-500 h-5 w-5" />;
+        return <CheckCircle className="text-blue-500 h-4 w-4 sm:h-5 sm:w-5" />;
       case 'error':
-        return <AlertCircle className="text-red-500 h-5 w-5" />;
+        return <AlertCircle className="text-red-500 h-4 w-4 sm:h-5 sm:w-5" />;
       default:
         return null;
     }
   };
 
-  // Ensure created_at is properly formatted when passing to formatDate
   const formatSyncDate = (dateValue: string | Date): string => {
     return formatDate(dateValue);
   };
 
   return (
-    <div className="p-6 bg-white">
+    <div className="p-3 sm:p-6 bg-white">
       {statusMessage && (
-        <Alert className={`mb-6 ${statusType === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
-          <AlertDescription>{statusMessage}</AlertDescription>
+        <Alert className={`mb-4 sm:mb-6 ${statusType === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
+          <AlertDescription className="text-sm">{statusMessage}</AlertDescription>
         </Alert>
       )}
 
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-medium text-blue-800">Último sincronizado:</span>
-          <span className="text-blue-700">{lastSynced || 'Nunca'}</span>
+      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-100">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2">
+          <span className="font-medium text-blue-800 text-sm sm:text-base">Último sincronizado:</span>
+          <span className="text-blue-700 text-xs sm:text-sm break-all">{lastSynced || 'Nunca'}</span>
         </div>
         
-        <div className="flex justify-end mt-4 space-x-2">
+        <div className="flex flex-col sm:flex-row justify-end mt-3 sm:mt-4 space-y-2 sm:space-y-0 sm:space-x-2">
           <Button 
             variant="outline" 
             onClick={() => loadSyncLogs()}
             disabled={isLoading}
-            className="border-blue-200 text-blue-700 hover:bg-blue-100"
+            className="border-blue-200 text-blue-700 hover:bg-blue-100 text-sm w-full sm:w-auto"
+            size="sm"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`mr-2 h-3 w-3 sm:h-4 sm:w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
           
-          <Button onClick={generateQRCode} className="bg-blue-600 hover:bg-blue-700">
-            <Wifi className="mr-2 h-4 w-4" />
+          <Button 
+            onClick={generateQRCode} 
+            className="bg-blue-600 hover:bg-blue-700 text-sm w-full sm:w-auto"
+            size="sm"
+          >
+            <Wifi className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             Gerar API Móvel
           </Button>
         </div>
       </div>
 
-      <h3 className="text-lg font-medium mb-4 text-blue-800">Histórico de Sincronização</h3>
+      <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4 text-blue-800">Histórico de Sincronização</h3>
       
       {isLoading ? (
         <div className="flex items-center justify-center py-6">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+          <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-blue-600" />
         </div>
       ) : syncLogs.length > 0 ? (
         <div className="rounded-lg border border-blue-100 overflow-hidden">
-          <Table>
-            <TableHeader className="bg-blue-50">
-              <TableRow>
-                <TableHead className="text-blue-800">Status</TableHead>
-                <TableHead className="text-blue-800">Tipo</TableHead>
-                <TableHead className="text-blue-800">Dispositivo</TableHead>
-                <TableHead className="text-blue-800">IP</TableHead>
-                <TableHead className="text-blue-800">Data</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {syncLogs.map((log) => (
-                <TableRow key={log.id} className="border-blue-100">
-                  <TableCell>{getStatusIcon(log.event_type)}</TableCell>
-                  <TableCell>
-                    {log.event_type === 'upload' ? 'Envio' : 
-                     log.event_type === 'download' ? 'Recebimento' : 'Erro'}
-                  </TableCell>
-                  <TableCell>{log.device_id}</TableCell>
-                  <TableCell>{log.device_ip || '—'}</TableCell>
-                  <TableCell>{formatSyncDate(log.created_at)}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-blue-50">
+                <TableRow>
+                  <TableHead className="text-blue-800 text-xs sm:text-sm">Status</TableHead>
+                  <TableHead className="text-blue-800 text-xs sm:text-sm">Tipo</TableHead>
+                  <TableHead className="text-blue-800 text-xs sm:text-sm">Dispositivo</TableHead>
+                  <TableHead className="text-blue-800 text-xs sm:text-sm hidden sm:table-cell">IP</TableHead>
+                  <TableHead className="text-blue-800 text-xs sm:text-sm">Data</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {syncLogs.map((log) => (
+                  <TableRow key={log.id} className="border-blue-100">
+                    <TableCell className="py-2">{getStatusIcon(log.event_type)}</TableCell>
+                    <TableCell className="text-xs sm:text-sm py-2">
+                      {log.event_type === 'upload' ? 'Envio' : 
+                       log.event_type === 'download' ? 'Recebimento' : 'Erro'}
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm py-2 break-all max-w-[100px] sm:max-w-none">{log.device_id}</TableCell>
+                    <TableCell className="text-xs sm:text-sm py-2 hidden sm:table-cell">{log.device_ip || '—'}</TableCell>
+                    <TableCell className="text-xs sm:text-sm py-2">{formatSyncDate(log.created_at)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
-          <Smartphone className="h-10 w-10 mx-auto mb-3 text-blue-400 opacity-70" />
-          <p>Nenhum registro de sincronização encontrado</p>
-          <p className="text-sm mt-2">Quando um dispositivo móvel sincronizar dados, o histórico aparecerá aqui.</p>
+        <div className="text-center py-6 sm:py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+          <Smartphone className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-3 text-blue-400 opacity-70" />
+          <p className="text-sm sm:text-base">Nenhum registro de sincronização encontrado</p>
+          <p className="text-xs sm:text-sm mt-2">Quando um dispositivo móvel sincronizar dados, o histórico aparecerá aqui.</p>
         </div>
       )}
       
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Wifi className="h-5 w-5" />
-              API Móvel - Sincronização de Dados
+        <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Wifi className="h-4 w-4 sm:h-5 sm:w-5" />
+              API Móvel - Sincronização
             </DialogTitle>
-            <DialogDescription>
-              Escaneie este QR code no aplicativo móvel para configurar a sincronização de clientes, produtos e rotas.
+            <DialogDescription className="text-xs sm:text-sm">
+              Escaneie este QR code no aplicativo móvel para configurar a sincronização de dados.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center py-2 sm:py-4">
             {connectionData && (
               <QRCodeDisplay 
                 value={JSON.stringify(connectionData)} 
                 showConnectionInfo={true}
+                size={150}
               />
             )}
           </div>
           
-          <div className="flex justify-center space-x-2">
-            <Button variant="outline" onClick={copyConnectionInfo} disabled={!connectionData}>
-              <Copy className="mr-2 h-4 w-4" />
+          <div className="flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={copyConnectionInfo} 
+              disabled={!connectionData}
+              className="text-xs sm:text-sm w-full sm:w-auto"
+              size="sm"
+            >
+              <Copy className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               Copiar Info da API
             </Button>
           </div>
           
-          <div className="text-center text-sm text-gray-500 mt-2">
-            <p>📱 Use para conectar o app móvel que terá clientes, produtos e rotas</p>
+          <div className="text-center text-xs text-gray-500 mt-2 space-y-1">
+            <p>📱 Use para conectar o app móvel</p>
             <p>🔑 Token válido por 10 minutos</p>
             <p>📊 Permite download e upload de dados</p>
           </div>
