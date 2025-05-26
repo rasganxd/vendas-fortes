@@ -51,43 +51,34 @@ export const useAppSettings = () => {
   const updateSettings = useCallback(async (newSettings: Partial<AppSettings>) => {
     try {
       console.log('updateSettings called with:', newSettings);
+      setError(null);
       
-      // Wait for settings to be loaded if they're not ready yet
-      let currentSettings = settings;
-      if (!currentSettings && !isLoading) {
-        console.log('Settings not loaded, fetching first...');
-        await fetchSettings();
-        // After fetching, we need to get the updated settings from state
-        // Since this is async, we'll refetch from the service directly
-        currentSettings = await fetchSettingsFromSupabase();
+      // Ensure we have settings loaded
+      if (!settings) {
+        console.log('No settings available, cannot update');
+        throw new Error('Configurações não carregadas. Tente novamente.');
       }
       
-      // If still no settings after fetch, create defaults
-      if (!currentSettings) {
-        console.log('No settings found, creating defaults...');
-        currentSettings = await createDefaultSettings();
-      }
-      
-      console.log('Using current settings for update:', currentSettings);
+      console.log('Using current settings for update:', settings);
       
       // Update in Supabase
-      const success = await updateSettingsInSupabase(currentSettings, newSettings);
+      const success = await updateSettingsInSupabase(settings, newSettings);
       
       if (success) {
-        // Update local state
-        const updatedSettings = { ...currentSettings, ...newSettings } as AppSettings;
+        // Update local state immediately
+        const updatedSettings = { ...settings, ...newSettings } as AppSettings;
         setSettings(updatedSettings);
         console.log('Settings updated successfully in hook');
         return true;
       } else {
-        throw new Error('Failed to update settings in Supabase');
+        throw new Error('Falha ao salvar as configurações no banco de dados');
       }
     } catch (err) {
       console.error('Error updating settings:', err);
       setError(err as Error);
       throw err;
     }
-  }, [settings, isLoading, fetchSettings]);
+  }, [settings]);
 
   // Load settings on mount
   useEffect(() => {

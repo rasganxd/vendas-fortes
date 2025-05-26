@@ -10,19 +10,15 @@ export const fetchSettingsFromSupabase = async (): Promise<AppSettings | null> =
   try {
     console.log('Fetching settings from Supabase...');
     
-    // Use .limit(1).single() to get only the first row
+    // Get the most recent settings entry
     const { data, error } = await supabase
       .from('app_settings')
       .select('*')
+      .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
     
     if (error) {
-      // If no data found, that's okay - we'll create defaults
-      if (error.code === 'PGRST116') {
-        console.log('No settings found in database');
-        return null;
-      }
       console.error('Error fetching app settings:', error);
       return null;
     }
@@ -74,17 +70,8 @@ export const createDefaultSettings = async (): Promise<AppSettings> => {
   try {
     console.log('Creating default settings...');
     
-    // First check if settings already exist to avoid duplicates
-    const existingSettings = await supabase
-      .from('app_settings')
-      .select('id')
-      .limit(1)
-      .maybeSingle();
-    
-    if (existingSettings.data) {
-      console.log('Settings already exist, fetching existing ones...');
-      return await fetchSettingsFromSupabase() || createFallbackSettings();
-    }
+    // First delete any existing settings to avoid duplicates
+    await supabase.from('app_settings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
     const defaultCompany = {
       name: 'Minha Empresa',
@@ -164,16 +151,16 @@ export const updateSettingsInSupabase = async (
   try {
     console.log('updateSettingsInSupabase called with:', { currentSettings, newSettings });
     
-    // Get the settings ID
     let settingsId = currentSettings?.id;
     
+    // If no valid ID, get the most recent settings
     if (!settingsId || settingsId === 'local-fallback') {
-      console.log('No valid settings ID, fetching or creating...');
+      console.log('No valid settings ID, fetching most recent...');
       
-      // Try to get existing settings first
       const { data: existingData } = await supabase
         .from('app_settings')
         .select('id')
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       
