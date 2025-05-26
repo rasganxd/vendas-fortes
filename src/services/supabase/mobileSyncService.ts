@@ -3,6 +3,49 @@ import { supabase } from '@/integrations/supabase/client';
 import { Customer, Product, Order } from '@/types';
 
 /**
+ * Interfaces for mobile sync functionality
+ */
+export interface SyncLogEntry {
+  id: string;
+  sales_rep_id: string;
+  event_type: 'upload' | 'download' | 'error';
+  device_id?: string;
+  device_ip?: string;
+  data_type?: string;
+  records_count?: number;
+  status: string;
+  error_message?: string;
+  metadata?: any;
+  created_at: string;
+}
+
+export interface ConnectionData {
+  serverUrl: string;
+  localIp?: string;
+  serverIp?: string;
+  token: string;
+  salesRepId: string;
+  apiEndpoints?: {
+    download: string;
+    upload: string;
+    status: string;
+  };
+}
+
+export interface SimplifiedMobileData {
+  serverUrl: string;
+  localIp?: string;
+  serverIp?: string;
+  token: string;
+  salesRepId: string;
+  endpoints: {
+    download: string;
+    upload: string;
+    status: string;
+  };
+}
+
+/**
  * Mobile sync service for authenticated sales reps
  * Uses RLS policies to automatically filter data by sales_rep_id = auth.uid()
  */
@@ -149,11 +192,15 @@ class MobileSyncService {
         salesRepId: order.sales_rep_id || '',
         salesRepName: order.sales_rep_name || '',
         date: new Date(order.date),
+        dueDate: order.due_date ? new Date(order.due_date) : new Date(),
         deliveryDate: order.delivery_date ? new Date(order.delivery_date) : undefined,
         status: order.status,
         paymentStatus: order.payment_status || 'pending',
-        paymentMethod: order.payment_method || undefined,
+        paymentMethod: order.payment_method || '',
+        paymentMethodId: order.payment_method_id || '',
+        paymentTableId: order.payment_table_id || '',
         paymentTable: order.payment_table || undefined,
+        payments: order.payments || [],
         total: order.total,
         discount: order.discount || 0,
         notes: order.notes || '',
@@ -161,6 +208,7 @@ class MobileSyncService {
         deliveryCity: order.delivery_city || '',
         deliveryState: order.delivery_state || '',
         deliveryZip: order.delivery_zip || '',
+        archived: order.archived || false,
         createdAt: new Date(order.created_at),
         updatedAt: new Date(order.updated_at),
         items: (order.order_items || []).map((item: any) => ({
@@ -213,6 +261,150 @@ class MobileSyncService {
       
     } catch (error) {
       console.error('❌ Error in syncAllData:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get sync logs for a specific sales rep
+   */
+  async getSyncLogs(salesRepId: string): Promise<SyncLogEntry[]> {
+    try {
+      const { data, error } = await supabase
+        .from('sync_logs')
+        .select('*')
+        .eq('sales_rep_id', salesRepId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Error fetching sync logs:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getSyncLogs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear sync logs for a specific sales rep
+   */
+  async clearSyncLogs(salesRepId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('sync_logs')
+        .delete()
+        .eq('sales_rep_id', salesRepId);
+
+      if (error) {
+        console.error('Error clearing sync logs:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in clearSyncLogs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Log a sync event
+   */
+  async logSyncEvent(
+    salesRepId: string,
+    eventType: 'upload' | 'download' | 'error',
+    deviceId?: string,
+    deviceIp?: string,
+    dataType?: string,
+    recordsCount?: number,
+    status: string = 'completed',
+    errorMessage?: string,
+    metadata?: any
+  ): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('sync_logs')
+        .insert({
+          sales_rep_id: salesRepId,
+          event_type: eventType,
+          device_id: deviceId,
+          device_ip: deviceIp,
+          data_type: dataType,
+          records_count: recordsCount,
+          status,
+          error_message: errorMessage,
+          metadata
+        });
+
+      if (error) {
+        console.error('Error logging sync event:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in logSyncEvent:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate connection data for mobile sync
+   */
+  async generateConnectionData(salesRepId: string): Promise<ConnectionData> {
+    try {
+      // Generate a sync token
+      const { data: tokenData, error } = await supabase
+        .rpc('generate_sync_token', {
+          p_sales_rep_id: salesRepId,
+          p_project_type: 'mobile',
+          p_expires_minutes: 10
+        });
+
+      if (error) {
+        console.error('Error generating sync token:', error);
+        throw error;
+      }
+
+      const baseUrl = supabase.supabaseUrl;
+      
+      return {
+        serverUrl: baseUrl,
+        token: tokenData[0]?.token || '',
+        salesRepId,
+        apiEndpoints: {
+          download: `${baseUrl}/rest/v1/`,
+          upload: `${baseUrl}/rest/v1/`,
+          status: `${baseUrl}/rest/v1/sync_logs`
+        }
+      };
+    } catch (error) {
+      console.error('Error in generateConnectionData:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create mobile API discovery data (simplified for QR codes)
+   */
+  async createMobileApiDiscovery(connectionData: ConnectionData): Promise<string> {
+    try {
+      const simplifiedData: SimplifiedMobileData = {
+        serverUrl: connectionData.serverUrl,
+        localIp: connectionData.localIp,
+        serverIp: connectionData.serverIp,
+        token: connectionData.token,
+        salesRepId: connectionData.salesRepId,
+        endpoints: {
+          download: connectionData.apiEndpoints?.download || '',
+          upload: connectionData.apiEndpoints?.upload || '',
+          status: connectionData.apiEndpoints?.status || ''
+        }
+      };
+
+      return JSON.stringify(simplifiedData);
+    } catch (error) {
+      console.error('Error in createMobileApiDiscovery:', error);
       throw error;
     }
   }

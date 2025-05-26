@@ -14,6 +14,7 @@ export interface Order {
   salesRepName: string;
   date: Date;
   dueDate: Date;
+  deliveryDate?: Date;
   items: OrderItem[];
   total: number;
   discount: number;
@@ -22,6 +23,7 @@ export interface Order {
   paymentMethod: string;
   paymentMethodId: string;
   paymentTableId: string;
+  paymentTable?: string;
   payments: any[];
   notes: string;
   createdAt: Date;
