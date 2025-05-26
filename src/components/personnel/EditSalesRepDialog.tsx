@@ -59,17 +59,19 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Nome</Label>
+            <Label htmlFor="name">Nome *</Label>
             <Input
               id="name"
               name="name"
               value={salesRep.name || ''}
               onChange={handleChange}
+              placeholder="Nome completo do vendedor"
+              required
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               name="email"
@@ -77,6 +79,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
               value={salesRep.email || ''}
               onChange={handleChange}
               placeholder="vendedor@empresa.com"
+              required
             />
           </div>
 
@@ -87,6 +90,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
               name="phone"
               value={salesRep.phone || ''}
               onChange={handleChange}
+              placeholder="(11) 99999-9999"
             />
           </div>
 
@@ -104,7 +108,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={onSave}>
+          <Button onClick={onSave} disabled={!salesRep.name || !salesRep.email}>
             Salvar
           </Button>
         </DialogFooter>

@@ -62,6 +62,16 @@ export const useSalesReps = () => {
         });
         return "";
       }
+
+      if (!salesRep.email || salesRep.email.trim() === '') {
+        console.error("❌ Validation failed: Email is required");
+        toast({
+          title: "Erro de validação",
+          description: "Email é obrigatório",
+          variant: "destructive"
+        });
+        return "";
+      }
       
       if (!salesRep.code) {
         console.error("❌ Validation failed: Code is required");
@@ -84,12 +94,25 @@ export const useSalesReps = () => {
         });
         return "";
       }
+
+      // Check for duplicate email
+      const existingWithSameEmail = salesReps.find(rep => rep.email === salesRep.email.trim());
+      if (existingWithSameEmail) {
+        console.error("❌ Validation failed: Email already exists");
+        toast({
+          title: "Erro de validação",
+          description: `Email ${salesRep.email} já está em uso`,
+          variant: "destructive"
+        });
+        return "";
+      }
       
       // Prepare clean data for insertion with all required fields
       const cleanSalesRep: Omit<SalesRep, 'id'> = {
         code: typeof salesRep.code === 'string' ? parseInt(salesRep.code, 10) : salesRep.code,
         name: salesRep.name.trim(),
         phone: salesRep.phone || '',
+        email: salesRep.email.trim(),
         active: salesRep.active ?? true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -147,9 +170,38 @@ export const useSalesReps = () => {
       console.log("=== UPDATING SALES REP ===");
       console.log("ID:", id, "Data:", salesRep);
       
+      // Validation for updates
+      if (salesRep.name !== undefined && (!salesRep.name || salesRep.name.trim() === '')) {
+        toast({
+          title: "Erro de validação",
+          description: "Nome é obrigatório",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (salesRep.email !== undefined && (!salesRep.email || salesRep.email.trim() === '')) {
+        toast({
+          title: "Erro de validação",
+          description: "Email é obrigatório",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Ensure code is a number if present
       if (salesRep.code && typeof salesRep.code === 'string') {
         salesRep.code = parseInt(salesRep.code, 10);
+      }
+
+      // Trim email if present
+      if (salesRep.email) {
+        salesRep.email = salesRep.email.trim();
+      }
+
+      // Trim name if present
+      if (salesRep.name) {
+        salesRep.name = salesRep.name.trim();
       }
       
       console.log("🚀 Calling salesRepService.update...");
