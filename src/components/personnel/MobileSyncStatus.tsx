@@ -77,7 +77,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     
     try {
       console.log(`MobileSyncStatus: Loading sync logs for sales rep ID ${salesRepId}`);
-      const data = await mobileSyncService.getSyncLogs(salesRepId);
+      const data = await mobileSyncService.getSyncLogs();
       
       // Filter out temporary documents
       const filteredData = filterTemporaryDocs(data || []);
@@ -122,7 +122,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     setIsClearing(true);
     
     try {
-      await mobileSyncService.clearSyncLogs(salesRepId);
+      await mobileSyncService.clearSyncLogs();
       setSyncLogs([]);
       setLastSynced(null);
       setStatusMessage("Histórico de sincronização limpo com sucesso.");

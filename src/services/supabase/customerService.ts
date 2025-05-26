@@ -7,11 +7,49 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     super('customers');
   }
 
+  // Override getAll to include sales rep name
+  async getAll(): Promise<Customer[]> {
+    try {
+      console.log(`📋 Getting all records from ${this.tableName} with sales rep info`);
+      
+      const { data, error } = await this.supabase
+        .from(this.tableName as any)
+        .select(`
+          *,
+          sales_reps!sales_rep_id (
+            name
+          )
+        `)
+        .order('name');
+      
+      if (error) {
+        console.error(`❌ Supabase error getting from ${this.tableName}:`, error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.log(`📋 No data found in ${this.tableName}`);
+        return [];
+      }
+      
+      // Transform data to include sales rep name
+      const transformedData = data.map(item => this.transformFromDB(item));
+      console.log(`✅ Retrieved ${transformedData.length} records from ${this.tableName}`);
+      return transformedData;
+    } catch (error) {
+      console.error(`❌ Critical error getting from ${this.tableName}:`, error);
+      throw error;
+    }
+  }
+
   // Override the transformFromDB method to map database fields to TypeScript interface
   protected transformFromDB(dbRecord: any): Customer {
     if (!dbRecord) return dbRecord;
     
     const baseTransformed = super.transformFromDB(dbRecord);
+    
+    // Extract sales rep name from the joined data
+    const salesRepName = dbRecord.sales_reps?.name || undefined;
     
     // Map database snake_case fields to TypeScript camelCase
     return {
@@ -21,7 +59,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       visitFrequency: dbRecord.visit_frequency || '',
       visitSequence: dbRecord.visit_sequence || 0,
       salesRepId: dbRecord.sales_rep_id || undefined,
-      salesRepName: dbRecord.sales_rep_name || undefined,
+      salesRepName: salesRepName,
       deliveryRouteId: dbRecord.delivery_route_id || undefined,
       zipCode: dbRecord.zip_code || '',
       // Ensure zip is set from zip_code for consistency

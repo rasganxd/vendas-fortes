@@ -13,7 +13,7 @@ export const useSystemOperations = () => {
 
   const syncMobileData = async (salesRepId: string, deviceIp?: string) => {
     try {
-      await mobileSyncService.logSyncEvent(salesRepId, 'download', 'web-admin', deviceIp);
+      await mobileSyncService.logSyncEvent('download', 'web-admin', deviceIp);
       notification.success('Dados sincronizados com sucesso');
     } catch (error) {
       console.error('Error syncing mobile data:', error);
