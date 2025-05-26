@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Customer, Product, Order } from '@/types';
+import { Customer, Product, Order, OrderStatus, PaymentStatus } from '@/types';
 
 /**
  * Interfaces for mobile sync functionality
@@ -90,7 +90,7 @@ class MobileSyncService {
         email: customer.email || '',
         notes: customer.notes || '',
         salesRepId: customer.sales_rep_id,
-        salesRepName: customer.sales_rep_name || undefined,
+        salesRepName: undefined, // Not available in database schema
         deliveryRouteId: customer.delivery_route_id || undefined,
         visitDays: customer.visit_days || [],
         visitFrequency: customer.visit_frequency || '',
@@ -194,8 +194,8 @@ class MobileSyncService {
         date: new Date(order.date),
         dueDate: order.due_date ? new Date(order.due_date) : new Date(),
         deliveryDate: order.delivery_date ? new Date(order.delivery_date) : undefined,
-        status: order.status,
-        paymentStatus: order.payment_status || 'pending',
+        status: order.status as OrderStatus,
+        paymentStatus: (order.payment_status || 'pending') as PaymentStatus,
         paymentMethod: order.payment_method || '',
         paymentMethodId: order.payment_method_id || '',
         paymentTableId: order.payment_table_id || '',
@@ -282,7 +282,11 @@ class MobileSyncService {
         throw error;
       }
 
-      return data || [];
+      // Cast event_type to the correct union type
+      return (data || []).map(log => ({
+        ...log,
+        event_type: log.event_type as 'upload' | 'download' | 'error'
+      }));
     } catch (error) {
       console.error('Error in getSyncLogs:', error);
       throw error;
@@ -366,7 +370,8 @@ class MobileSyncService {
         throw error;
       }
 
-      const baseUrl = supabase.supabaseUrl;
+      // Use the public URL directly instead of accessing protected property
+      const baseUrl = 'https://ufvnubabpcyimahbubkd.supabase.co';
       
       return {
         serverUrl: baseUrl,
