@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ApiToken {
@@ -60,14 +61,18 @@ class ApiTokenService {
       
       console.log('✅ Found tokens:', data?.length || 0);
       
-      // Transform data to match ApiToken interface
-      const transformedData = data?.map(token => ({
-        ...token,
-        permissions: Array.isArray(token.permissions) 
-          ? token.permissions 
-          : typeof token.permissions === 'string'
-            ? [token.permissions]
-            : ['read', 'write']
+      // Transform data to match ApiToken interface with proper type handling
+      const transformedData: ApiToken[] = data?.map(token => ({
+        id: token.id,
+        token: token.token,
+        sales_rep_id: token.sales_rep_id || '',
+        name: token.name,
+        expires_at: token.expires_at || undefined,
+        last_used_at: token.last_used_at || undefined,
+        is_active: token.is_active || false,
+        created_at: token.created_at || '',
+        updated_at: token.updated_at || '',
+        permissions: this.parsePermissions(token.permissions)
       })) || [];
       
       return transformedData;
@@ -75,6 +80,25 @@ class ApiTokenService {
       console.error('❌ Error in getTokensBySalesRep:', error);
       throw error;
     }
+  }
+
+  private parsePermissions(permissions: any): string[] {
+    // Handle different permission formats from database
+    if (Array.isArray(permissions)) {
+      return permissions.map(p => String(p));
+    }
+    
+    if (typeof permissions === 'string') {
+      try {
+        const parsed = JSON.parse(permissions);
+        return Array.isArray(parsed) ? parsed.map(p => String(p)) : [String(permissions)];
+      } catch {
+        return [permissions];
+      }
+    }
+    
+    // Default permissions if none specified
+    return ['read', 'write'];
   }
 
   async revokeToken(tokenId: string): Promise<void> {

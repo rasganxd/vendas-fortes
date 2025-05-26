@@ -64,13 +64,25 @@ export const useSalesRepAuth = () => {
 
   const loadSalesRepData = async (userId: string) => {
     try {
-      const { data: salesRep, error } = await supabase
+      const { data: salesRepData, error } = await supabase
         .from('sales_reps')
         .select('*')
         .eq('id', userId)
         .single();
 
       if (error) throw error;
+
+      // Transform snake_case to camelCase to match SalesRep interface
+      const salesRep: SalesRep = {
+        id: salesRepData.id,
+        code: salesRepData.code,
+        name: salesRepData.name,
+        phone: salesRepData.phone || '',
+        email: salesRepData.email || '',
+        active: salesRepData.active,
+        createdAt: new Date(salesRepData.created_at),
+        updatedAt: new Date(salesRepData.updated_at)
+      };
 
       setSession({
         salesRep,
