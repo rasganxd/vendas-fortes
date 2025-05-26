@@ -200,7 +200,7 @@ class MobileSyncService {
         paymentMethodId: order.payment_method_id || '',
         paymentTableId: order.payment_table_id || '',
         paymentTable: order.payment_table || undefined,
-        payments: order.payments || [],
+        payments: Array.isArray(order.payments) ? order.payments : [],
         total: order.total,
         discount: order.discount || 0,
         notes: order.notes || '',
