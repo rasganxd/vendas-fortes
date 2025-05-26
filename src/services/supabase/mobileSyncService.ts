@@ -33,10 +33,15 @@ export interface SimplifiedMobileData {
   token: string;
   serverUrl: string;
   salesRepId: string;
+  localIp?: string;
+  serverIp?: string;
   endpoints: {
     sync: string;
     discovery: string;
     health: string;
+    download?: string;
+    upload?: string;
+    status?: string;
   };
   salesRep?: {
     id: string;
@@ -47,6 +52,7 @@ export interface SimplifiedMobileData {
 }
 
 export interface SyncSettings {
+  id?: string;
   auto_sync_enabled: boolean;
   sync_interval_minutes: number;
   max_offline_days: number;
@@ -144,7 +150,18 @@ export class MobileSyncService {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(item => ({
+        id: item.id,
+        sales_rep_id: item.sales_rep_id,
+        event_type: item.event_type as 'upload' | 'download' | 'error' | 'connect' | 'disconnect',
+        device_id: item.device_id || '',
+        device_ip: item.device_ip,
+        data_type: item.data_type,
+        records_count: item.records_count,
+        status: item.status,
+        error_message: item.error_message,
+        created_at: item.created_at
+      }));
     } catch (error) {
       console.error('Error in getSyncLogs:', error);
       return [];
@@ -215,7 +232,14 @@ export class MobileSyncService {
         return null;
       }
 
-      return data;
+      return {
+        id: data.id,
+        auto_sync_enabled: data.auto_sync_enabled,
+        sync_interval_minutes: data.sync_interval_minutes,
+        max_offline_days: data.max_offline_days,
+        require_admin_approval: data.require_admin_approval,
+        allowed_data_types: data.allowed_data_types
+      };
     } catch (error) {
       console.error('Error in getSyncSettings:', error);
       return null;
@@ -224,13 +248,18 @@ export class MobileSyncService {
 
   async updateSyncSettings(settings: Partial<SyncSettings>): Promise<void> {
     try {
+      const currentSettings = await this.getSyncSettings();
+      if (!currentSettings?.id) {
+        throw new Error('No sync settings found to update');
+      }
+
       const { error } = await supabase
         .from('sync_settings')
         .update({
           ...settings,
           updated_at: new Date().toISOString()
         })
-        .eq('id', (await this.getSyncSettings())?.id);
+        .eq('id', currentSettings.id);
 
       if (error) {
         console.error('Error updating sync settings:', error);
@@ -291,10 +320,15 @@ export class MobileSyncService {
         token: tokenData.token,
         serverUrl: connectionData.serverUrl,
         salesRepId: connectionData.salesRepId,
+        localIp: connectionData.localIp,
+        serverIp: connectionData.serverIp,
         endpoints: {
           sync: `${connectionData.serverUrl}/functions/v1/mobile-sync`,
           discovery: `${connectionData.serverUrl}/functions/v1/mobile-discovery`,
-          health: `${connectionData.serverUrl}/functions/v1/mobile-health`
+          health: `${connectionData.serverUrl}/functions/v1/mobile-health`,
+          download: `${connectionData.serverUrl}/functions/v1/mobile-sync`,
+          upload: `${connectionData.serverUrl}/functions/v1/mobile-sync`,
+          status: `${connectionData.serverUrl}/functions/v1/mobile-health`
         },
         salesRep: {
           id: salesRep.id,
