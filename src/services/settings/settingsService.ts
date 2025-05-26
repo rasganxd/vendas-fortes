@@ -12,13 +12,9 @@ export const fetchSettingsFromSupabase = async (): Promise<AppSettings | null> =
     const { data, error } = await supabase
       .from('app_settings')
       .select('*')
-      .single();
+      .maybeSingle();
     
     if (error) {
-      if (error.code === 'PGRST116') {
-        console.log('No settings found, will create default');
-        return null;
-      }
       console.error('Error fetching app settings:', error);
       return null;
     }
@@ -136,9 +132,21 @@ export const updateSettingsInSupabase = async (
   newSettings: Partial<AppSettings>
 ): Promise<boolean> => {
   try {
-    if (!currentSettings?.id || currentSettings.id === 'local-fallback') {
-      // If no current settings, create default ones first
-      await createDefaultSettings();
+    console.log('Updating settings in Supabase...', { currentSettings, newSettings });
+    
+    // If no current settings or using fallback, fetch/create real settings first
+    let settingsId = currentSettings?.id;
+    
+    if (!settingsId || settingsId === 'local-fallback') {
+      console.log('No valid settings ID, fetching or creating...');
+      const existingSettings = await fetchSettingsFromSupabase();
+      
+      if (existingSettings) {
+        settingsId = existingSettings.id;
+      } else {
+        const defaultSettings = await createDefaultSettings();
+        settingsId = defaultSettings.id;
+      }
     }
     
     // Prepare update data
@@ -153,11 +161,13 @@ export const updateSettingsInSupabase = async (
       updateData.primary_color = newSettings.theme.primaryColor;
     }
     
+    console.log('Updating with data:', updateData, 'for ID:', settingsId);
+    
     // Update in Supabase
     const { error } = await supabase
       .from('app_settings')
       .update(updateData)
-      .eq('id', currentSettings?.id);
+      .eq('id', settingsId);
     
     if (error) {
       console.error('Error updating settings:', error);

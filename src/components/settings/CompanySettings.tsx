@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Building } from "lucide-react";
-import { useAppContext } from '@/hooks/useAppContext';
+import { useAppSettings } from '@/hooks/useAppSettings';
 
 interface CompanyData {
   name: string;
@@ -21,7 +21,7 @@ interface CompanyData {
 
 export default function CompanySettings() {
   const { toast } = useToast();
-  const { settings, updateSettings } = useAppContext();
+  const { settings, updateSettings, isLoading } = useAppSettings();
 
   const [companyData, setCompanyData] = useState<CompanyData>(
     settings?.company || {
@@ -37,6 +37,13 @@ export default function CompanySettings() {
   
   const [isSaving, setIsSaving] = useState(false);
 
+  // Update local state when settings are loaded
+  React.useEffect(() => {
+    if (settings?.company) {
+      setCompanyData(settings.company);
+    }
+  }, [settings]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setCompanyData((prev) => ({
@@ -50,23 +57,35 @@ export default function CompanySettings() {
     setIsSaving(true);
 
     try {
-      // Update company data in app context/settings
+      console.log('Saving company data:', companyData);
       await updateSettings({ company: companyData });
       toast({
         title: "Dados salvos com sucesso",
         description: "Os dados da empresa foram atualizados."
       });
     } catch (error) {
+      console.error('Error saving company data:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar dados",
         description: "Ocorreu um erro ao salvar os dados da empresa."
       });
-      console.error(error);
     } finally {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="text-gray-500">Carregando configurações...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
