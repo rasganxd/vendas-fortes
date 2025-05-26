@@ -13,11 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { UserPlus, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageLayout from '@/components/layout/PageLayout';
+import { UserRole } from '@/types/auth';
 
 interface UserProfile {
   id: string;
   user_id: string;
-  role: 'admin' | 'manager' | 'vendedor';
+  role: UserRole;
   name: string;
   email: string;
   phone?: string;
@@ -38,7 +39,7 @@ export default function UserManagement() {
     name: '',
     email: '',
     phone: '',
-    role: 'vendedor' as const,
+    role: 'vendedor' as UserRole,
     active: true
   });
 
@@ -213,7 +214,7 @@ export default function UserManagement() {
                 </div>
                 <div>
                   <Label htmlFor="role">Papel</Label>
-                  <Select value={formData.role} onValueChange={(value: any) => setFormData({...formData, role: value})}>
+                  <Select value={formData.role} onValueChange={(value: UserRole) => setFormData({...formData, role: value})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -301,7 +302,7 @@ export default function UserManagement() {
               </div>
               <div>
                 <Label htmlFor="edit-role">Papel</Label>
-                <Select value={formData.role} onValueChange={(value: any) => setFormData({...formData, role: value})}>
+                <Select value={formData.role} onValueChange={(value: UserRole) => setFormData({...formData, role: value})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
