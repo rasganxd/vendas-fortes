@@ -331,7 +331,6 @@ export type Database = {
           discount: number | null
           due_date: string | null
           id: string
-          mobile_order_id: string | null
           notes: string | null
           payment_method: string | null
           payment_method_id: string | null
@@ -341,7 +340,6 @@ export type Database = {
           payments: Json | null
           sales_rep_id: string | null
           sales_rep_name: string | null
-          source_project: string
           status: string
           sync_status: string | null
           total: number
@@ -362,7 +360,6 @@ export type Database = {
           discount?: number | null
           due_date?: string | null
           id?: string
-          mobile_order_id?: string | null
           notes?: string | null
           payment_method?: string | null
           payment_method_id?: string | null
@@ -372,7 +369,6 @@ export type Database = {
           payments?: Json | null
           sales_rep_id?: string | null
           sales_rep_name?: string | null
-          source_project?: string
           status?: string
           sync_status?: string | null
           total?: number
@@ -393,7 +389,6 @@ export type Database = {
           discount?: number | null
           due_date?: string | null
           id?: string
-          mobile_order_id?: string | null
           notes?: string | null
           payment_method?: string | null
           payment_method_id?: string | null
@@ -403,7 +398,6 @@ export type Database = {
           payments?: Json | null
           sales_rep_id?: string | null
           sales_rep_name?: string | null
-          source_project?: string
           status?: string
           sync_status?: string | null
           total?: number
@@ -806,145 +800,41 @@ export type Database = {
         }
         Relationships: []
       }
-      sync_logs: {
-        Row: {
-          created_at: string
-          data_type: string | null
-          device_id: string | null
-          device_ip: string | null
-          error_message: string | null
-          event_type: string
-          id: string
-          metadata: Json | null
-          records_count: number | null
-          sales_rep_id: string | null
-          status: string
-          sync_token_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          data_type?: string | null
-          device_id?: string | null
-          device_ip?: string | null
-          error_message?: string | null
-          event_type: string
-          id?: string
-          metadata?: Json | null
-          records_count?: number | null
-          sales_rep_id?: string | null
-          status: string
-          sync_token_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          data_type?: string | null
-          device_id?: string | null
-          device_ip?: string | null
-          error_message?: string | null
-          event_type?: string
-          id?: string
-          metadata?: Json | null
-          records_count?: number | null
-          sales_rep_id?: string | null
-          status?: string
-          sync_token_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sync_logs_sales_rep_id_fkey"
-            columns: ["sales_rep_id"]
-            isOneToOne: false
-            referencedRelation: "sales_reps"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sync_logs_sync_token_id_fkey"
-            columns: ["sync_token_id"]
-            isOneToOne: false
-            referencedRelation: "sync_tokens"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sync_settings: {
-        Row: {
-          allowed_data_types: string[]
-          auto_sync_enabled: boolean
-          created_at: string
-          id: string
-          max_offline_days: number
-          require_admin_approval: boolean
-          sync_interval_minutes: number
-          updated_at: string
-        }
-        Insert: {
-          allowed_data_types?: string[]
-          auto_sync_enabled?: boolean
-          created_at?: string
-          id?: string
-          max_offline_days?: number
-          require_admin_approval?: boolean
-          sync_interval_minutes?: number
-          updated_at?: string
-        }
-        Update: {
-          allowed_data_types?: string[]
-          auto_sync_enabled?: boolean
-          created_at?: string
-          id?: string
-          max_offline_days?: number
-          require_admin_approval?: boolean
-          sync_interval_minutes?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      sync_tokens: {
+      user_profiles: {
         Row: {
           active: boolean
           created_at: string
-          device_id: string | null
-          device_ip: string | null
-          expires_at: string
+          email: string
           id: string
-          project_type: string
-          sales_rep_id: string | null
-          token: string
+          name: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
           updated_at: string
+          user_id: string
         }
         Insert: {
           active?: boolean
           created_at?: string
-          device_id?: string | null
-          device_ip?: string | null
-          expires_at: string
+          email: string
           id?: string
-          project_type: string
-          sales_rep_id?: string | null
-          token: string
+          name: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          user_id: string
         }
         Update: {
           active?: boolean
           created_at?: string
-          device_id?: string | null
-          device_ip?: string | null
-          expires_at?: string
+          email?: string
           id?: string
-          project_type?: string
-          sales_rep_id?: string | null
-          token?: string
+          name?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "sync_tokens_sales_rep_id_fkey"
-            columns: ["sales_rep_id"]
-            isOneToOne: false
-            referencedRelation: "sales_reps"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       vehicles: {
         Row: {
@@ -1002,23 +892,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_expired_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      generate_sync_token: {
-        Args: {
-          p_sales_rep_id: string
-          p_project_type?: string
-          p_device_id?: string
-          p_device_ip?: string
-          p_expires_minutes?: number
-        }
-        Returns: {
-          token: string
-          expires_at: string
-        }[]
-      }
       get_next_customer_code: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -1041,7 +914,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "manager" | "vendedor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1156,6 +1029,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "manager", "vendedor"],
+    },
   },
 } as const

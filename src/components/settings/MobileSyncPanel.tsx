@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -128,16 +129,12 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
     }
   }, [salesRepId]);
 
-  const getStatusIcon = (eventType: 'upload' | 'download' | 'error' | 'connect' | 'disconnect') => {
+  const getStatusIcon = (eventType: 'upload' | 'download' | 'error') => {
     switch (eventType) {
       case 'upload':
         return <CheckCircle className="text-green-500 h-4 w-4 sm:h-5 sm:w-5" />;
       case 'download':
         return <CheckCircle className="text-blue-500 h-4 w-4 sm:h-5 sm:w-5" />;
-      case 'connect':
-        return <Wifi className="text-blue-500 h-4 w-4 sm:h-5 sm:w-5" />;
-      case 'disconnect':
-        return <AlertCircle className="text-orange-500 h-4 w-4 sm:h-5 sm:w-5" />;
       case 'error':
         return <AlertCircle className="text-red-500 h-4 w-4 sm:h-5 sm:w-5" />;
       default:
