@@ -14,13 +14,9 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   size = 200,
   showConnectionInfo = false
 }) => {
-  const [logoSize, setLogoSize] = useState(50);
   const [connectionData, setConnectionData] = useState<any | null>(null);
 
   useEffect(() => {
-    // Adjust logo size based on QR code size
-    setLogoSize(Math.floor(size * 0.25));
-    
     // Parse connection data if showing connection info
     if (showConnectionInfo && value) {
       try {
@@ -30,7 +26,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         console.error('Error parsing connection data:', error);
       }
     }
-  }, [size, value, showConnectionInfo]);
+  }, [value, showConnectionInfo]);
 
   if (!value) {
     return (
@@ -50,14 +46,6 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           bgColor={"#FFFFFF"}
           fgColor={"#4a86e8"} // Use the soft blue color from our theme
           includeMargin={true}
-          imageSettings={{
-            src: "/lovable-uploads/1441adec-113e-43a8-998a-fead623a5380.png",
-            x: undefined,
-            y: undefined,
-            height: logoSize,
-            width: logoSize,
-            excavate: true,
-          }}
         />
       </div>
       
