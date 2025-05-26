@@ -85,7 +85,12 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   // Build the full context value combining all data sources
   const contextValue = {
     // Core data from app operations
-    ...appOperations,
+    customers: appOperations.customers,
+    isLoadingCustomers: appOperations.isLoading,
+    addCustomer: appOperations.addCustomer,
+    updateCustomer: appOperations.updateCustomer,
+    deleteCustomer: appOperations.deleteCustomer,
+    generateNextCustomerCode: appOperations.generateNextCustomerCode,
     
     // Products data (override with direct state)
     products,
@@ -102,6 +107,82 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     updateOrder,
     deleteOrder,
     refreshOrders,
+    
+    // Product operations from appOperations
+    productBrands: appOperations.productBrands,
+    isLoadingProductBrands: appOperations.isLoadingProductBrands,
+    addProductBrand: appOperations.addProductBrand,
+    updateProductBrand: appOperations.updateProductBrand,
+    deleteProductBrand: appOperations.deleteProductBrand,
+    
+    productCategories: appOperations.productCategories,
+    isLoadingProductCategories: appOperations.isLoadingProductCategories,
+    addProductCategory: appOperations.addProductCategory,
+    updateProductCategory: appOperations.updateProductCategory,
+    deleteProductCategory: appOperations.deleteProductCategory,
+    
+    productGroups: appOperations.productGroups,
+    isLoadingProductGroups: appOperations.isLoadingProductGroups,
+    addProductGroup: appOperations.addProductGroup,
+    updateProductGroup: appOperations.updateProductGroup,
+    deleteProductGroup: appOperations.deleteProductGroup,
+    
+    // Sales reps operations
+    salesReps: appOperations.salesReps,
+    isLoadingSalesReps: appOperations.isLoadingSalesReps,
+    addSalesRep: appOperations.addSalesRep,
+    updateSalesRep: appOperations.updateSalesRep,
+    deleteSalesRep: appOperations.deleteSalesRep,
+    
+    // Vehicle operations
+    vehicles: appOperations.vehicles,
+    isLoadingVehicles: appOperations.isLoadingVehicles,
+    addVehicle: appOperations.addVehicle,
+    updateVehicle: appOperations.updateVehicle,
+    deleteVehicle: appOperations.deleteVehicle,
+    
+    // Delivery routes operations
+    deliveryRoutes: appOperations.deliveryRoutes,
+    isLoadingDeliveryRoutes: appOperations.isLoadingDeliveryRoutes,
+    addDeliveryRoute: appOperations.addDeliveryRoute,
+    updateDeliveryRoute: appOperations.updateDeliveryRoute,
+    deleteDeliveryRoute: appOperations.deleteDeliveryRoute,
+    
+    // Load operations
+    loads: appOperations.loads,
+    isLoadingLoads: appOperations.isLoadingLoads,
+    addLoad: appOperations.addLoad,
+    updateLoad: appOperations.updateLoad,
+    deleteLoad: appOperations.deleteLoad,
+    
+    // Payment operations
+    payments: appOperations.payments,
+    isLoadingPayments: appOperations.isLoadingPayments,
+    addPayment: appOperations.addPayment,
+    updatePayment: appOperations.updatePayment,
+    deletePayment: appOperations.deletePayment,
+    createAutomaticPaymentRecord: hookOperations.createAutomaticPaymentRecord,
+    
+    // Payment method operations
+    paymentMethods: appOperations.paymentMethods,
+    isLoadingPaymentMethods: appOperations.isLoadingPaymentMethods,
+    addPaymentMethod: appOperations.addPaymentMethod,
+    updatePaymentMethod: appOperations.updatePaymentMethod,
+    deletePaymentMethod: appOperations.deletePaymentMethod,
+    
+    // Payment table operations
+    paymentTables: appOperations.paymentTables,
+    isLoadingPaymentTables: appOperations.isLoadingPaymentTables,
+    addPaymentTable: appOperations.addPaymentTable,
+    updatePaymentTable: appOperations.updatePaymentTable,
+    deletePaymentTable: appOperations.deletePaymentTable,
+    
+    // Routes operations from hook operations
+    routes: hookOperations.routes,
+    isLoadingRoutes: hookOperations.isLoadingRoutes,
+    addRoute: hookOperations.addRoute,
+    updateRoute: hookOperations.updateRoute,
+    deleteRoute: hookOperations.deleteRoute,
     
     // Hook operations that might not be in appOperations
     getOrderById: hookOperations.getOrderById,
@@ -136,13 +217,7 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     setDeliveryRoutes: () => {},
     setBackups: () => {},
     
-    // Required operations that might be missing
-    routes: appOperations.routes || [],
-    isLoadingRoutes: appOperations.isLoadingRoutes || false,
-    addRoute: appOperations.addRoute || (async () => ''),
-    updateRoute: appOperations.updateRoute || (async () => {}),
-    deleteRoute: appOperations.deleteRoute || (async () => {}),
-    
+    // Backup operations (placeholders)
     backups: [],
     isLoadingBackups: false,
     createBackup: async () => '',
@@ -165,11 +240,7 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     updateSettings: async () => {},
     
     // Required but not used properties
-    isUsingMockData: false,
-    connectionStatus: connection.connectionStatus,
-    lastConnectAttempt: connection.lastConnectAttempt,
-    reconnectToSupabase: connection.reconnectToSupabase,
-    testConnection: connection.testConnection
+    isUsingMockData: false
   };
   
   return (
