@@ -6,7 +6,7 @@ import defaultContextValues from './defaultContextValues';
 // Define o tipo do status de conexão
 export type ConnectionStatus = 'online' | 'offline' | 'connecting' | 'error';
 
-export type AppContextType = {
+export interface SystemContextType {
   // Dados principais
   customers: Customer[];
   products: Product[];
@@ -150,7 +150,13 @@ export type AppContextType = {
   startNewDay: () => Promise<boolean>;
   clearCache: () => Promise<void>;
   refreshData: () => Promise<boolean>;
-};
+}
 
 // Criar o contexto com valores padrão
 export const AppContext = createContext<AppContextType>(defaultContextValues);
+
+export interface AppContextType extends SystemContextType {
+  // Routes operations
+  generateRouteUpdate: (routeId: string, salesRepId: string) => Promise<number>;
+  getRouteWithCustomers: (routeId: string) => Promise<DeliveryRoute | null>;
+}

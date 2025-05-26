@@ -9,9 +9,11 @@ export const useRoutesPage = () => {
     routes, 
     orders, 
     vehicles, 
+    salesReps,
     updateRoute, 
     addRoute, 
-    deleteRoute 
+    deleteRoute,
+    generateRouteUpdate 
   } = useAppContext();
   
   const [selectedRoute, setSelectedRoute] = useState<DeliveryRoute | null>(null);
@@ -20,6 +22,7 @@ export const useRoutesPage = () => {
   const [isNewRouteDialogOpen, setIsNewRouteDialogOpen] = useState(false);
   const [isEditRouteDialogOpen, setIsEditRouteDialogOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isGenerateUpdateDialogOpen, setIsGenerateUpdateDialogOpen] = useState(false);
   const [routeToDelete, setRouteToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -36,6 +39,11 @@ export const useRoutesPage = () => {
   const handleDeleteRoute = (id: string) => {
     setRouteToDelete(id);
     setIsDeleteConfirmOpen(true);
+  };
+
+  const handleGenerateUpdate = (route: DeliveryRoute) => {
+    setSelectedRoute(route);
+    setIsGenerateUpdateDialogOpen(true);
   };
 
   const confirmDeleteRoute = async () => {
@@ -153,6 +161,22 @@ export const useRoutesPage = () => {
     });
   };
 
+  const handleGenerateRouteUpdate = async (routeId: string, salesRepId: string) => {
+    try {
+      const customersCount = await generateRouteUpdate(routeId, salesRepId);
+      setIsGenerateUpdateDialogOpen(false);
+      return customersCount;
+    } catch (error) {
+      console.error('Error generating route update:', error);
+      toast({
+        title: "Erro ao gerar atualização",
+        description: "Não foi possível gerar a atualização da rota.",
+        variant: "destructive",
+      });
+      return 0;
+    }
+  };
+
   const getUnassignedOrders = () => {
     if (!selectedRoute) return [];
     
@@ -168,6 +192,7 @@ export const useRoutesPage = () => {
   return {
     routes,
     vehicles,
+    salesReps,
     selectedRoute,
     isViewDialogOpen,
     setIsViewDialogOpen,
@@ -179,16 +204,20 @@ export const useRoutesPage = () => {
     setIsEditRouteDialogOpen,
     isDeleteConfirmOpen,
     setIsDeleteConfirmOpen,
+    isGenerateUpdateDialogOpen,
+    setIsGenerateUpdateDialogOpen,
     isDeleting,
     handleViewRoute,
     handleEditRoute,
     handleDeleteRoute,
+    handleGenerateUpdate,
     confirmDeleteRoute,
     handleAddOrderToRoute,
     addOrderToRoute,
     removeOrderFromRoute,
     handleCreateNewRoute,
     handleSaveRouteChanges,
+    handleGenerateRouteUpdate,
     getUnassignedOrders
   };
 };

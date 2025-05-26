@@ -107,12 +107,56 @@ export const useDeliveryRoutes = () => {
     }
   };
 
+  // Generate route update (sync customers to route)
+  const generateRouteUpdate = async (routeId: string, salesRepId: string): Promise<number> => {
+    try {
+      const customersCount = await deliveryRouteService.generateRouteUpdate(routeId, salesRepId);
+      
+      // Refresh routes to get updated data
+      const updatedRoutes = await deliveryRouteService.getAll();
+      setDeliveryRoutes(updatedRoutes);
+      
+      toast({
+        title: "Atualização gerada",
+        description: `${customersCount} clientes foram sincronizados com a rota.`
+      });
+      
+      return customersCount;
+    } catch (error) {
+      console.error("Erro ao gerar atualização da rota:", error);
+      toast({
+        title: "Erro ao gerar atualização",
+        description: "Houve um problema ao gerar a atualização da rota.",
+        variant: "destructive"
+      });
+      return 0;
+    }
+  };
+
+  // Get route with customers
+  const getRouteWithCustomers = async (routeId: string): Promise<DeliveryRoute | null> => {
+    try {
+      const routeWithCustomers = await deliveryRouteService.getRouteWithCustomers(routeId);
+      return routeWithCustomers;
+    } catch (error) {
+      console.error("Erro ao carregar clientes da rota:", error);
+      toast({
+        title: "Erro ao carregar clientes da rota",
+        description: "Houve um problema ao carregar os clientes da rota.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
   return {
     deliveryRoutes,
     isLoading,
     addDeliveryRoute,
     updateDeliveryRoute,
     deleteDeliveryRoute,
+    generateRouteUpdate,
+    getRouteWithCustomers,
     setDeliveryRoutes
   };
 };

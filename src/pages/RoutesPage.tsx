@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { RoutesList } from '@/components/routes/RoutesList';
@@ -27,12 +26,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDateToBR } from '@/lib/date-utils';
-import { MapPin, Truck, Route, Navigation } from 'lucide-react';
+import { MapPin, Truck, Route, Navigation, RefreshCw } from 'lucide-react';
+import { GenerateRouteUpdateDialog } from '@/components/routes/GenerateRouteUpdateDialog';
 
 export default function Routes() {
   const {
     routes,
     vehicles,
+    salesReps,
     selectedRoute,
     isViewDialogOpen,
     setIsViewDialogOpen,
@@ -44,16 +45,20 @@ export default function Routes() {
     setIsEditRouteDialogOpen,
     isDeleteConfirmOpen,
     setIsDeleteConfirmOpen,
+    isGenerateUpdateDialogOpen,
+    setIsGenerateUpdateDialogOpen,
     isDeleting,
     handleViewRoute,
     handleEditRoute,
     handleDeleteRoute,
+    handleGenerateUpdate,
     confirmDeleteRoute,
     handleAddOrderToRoute,
     addOrderToRoute,
     removeOrderFromRoute,
     handleCreateNewRoute,
     handleSaveRouteChanges,
+    handleGenerateRouteUpdate,
     getUnassignedOrders
   } = useRoutesPage();
 
@@ -98,6 +103,7 @@ export default function Routes() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Vendedor</TableHead>
                     <TableHead>Veículo</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Status</TableHead>
@@ -113,6 +119,20 @@ export default function Routes() {
                             <Route size={16} className="mr-2 text-sales-800" />
                             {route.name}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {route.salesRepName ? (
+                            <div className="flex items-center">
+                              <span className="text-sm">{route.salesRepName}</span>
+                              {route.lastUpdated && (
+                                <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                                  Atualizado
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Não atribuído</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {route.vehicleName ? (
@@ -149,6 +169,15 @@ export default function Routes() {
                             <Button 
                               variant="outline" 
                               size="sm"
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                              onClick={() => handleGenerateUpdate(route)}
+                            >
+                              <RefreshCw size={14} className="mr-1" />
+                              Gerar Atualização
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
                               className="text-destructive hover:text-destructive"
                               onClick={() => handleDeleteRoute(route.id)}
                             >
@@ -160,7 +189,7 @@ export default function Routes() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
+                      <TableCell colSpan={6} className="h-24 text-center">
                         <div className="flex flex-col items-center justify-center text-gray-500">
                           <MapPin size={24} className="mb-2" />
                           <p>Nenhuma rota cadastrada</p>
@@ -268,6 +297,15 @@ export default function Routes() {
         onOpenChange={setIsDeleteConfirmOpen}
         onConfirm={confirmDeleteRoute}
         isDeleting={isDeleting}
+      />
+
+      <GenerateRouteUpdateDialog
+        open={isGenerateUpdateDialogOpen}
+        onOpenChange={setIsGenerateUpdateDialogOpen}
+        routeId={selectedRoute?.id || ''}
+        routeName={selectedRoute?.name || ''}
+        salesReps={salesReps}
+        onGenerateUpdate={handleGenerateRouteUpdate}
       />
     </PageLayout>
   );

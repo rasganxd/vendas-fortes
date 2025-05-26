@@ -15,6 +15,27 @@ export interface DeliveryRoute {
   stops: RouteStop[];
   createdAt: Date;
   updatedAt: Date;
+  salesRepId?: string;
+  salesRepName?: string;
+  lastUpdated?: Date;
+  customers?: Customer[];
+}
+
+// Import Customer type from customer.ts
+interface Customer {
+  id: string;
+  code: number;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  email: string;
+  notes: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deliveryRouteId?: string;
 }
 
 export interface RouteStop {

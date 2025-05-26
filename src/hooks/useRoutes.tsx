@@ -90,12 +90,54 @@ export const useRoutes = () => {
     }
   };
 
+  const generateRouteUpdate = async (routeId: string, salesRepId: string) => {
+    try {
+      const customersCount = await deliveryRouteService.generateRouteUpdate(routeId, salesRepId);
+      
+      // Refresh routes to get updated data
+      const updatedRoutes = await deliveryRouteService.getAll();
+      setRoutes(updatedRoutes);
+      
+      toast({
+        title: "Atualização gerada",
+        description: `${customersCount} clientes foram sincronizados com a rota.`
+      });
+      
+      return customersCount;
+    } catch (error) {
+      console.error('Error generating route update:', error);
+      toast({
+        title: "Erro ao gerar atualização",
+        description: "Houve um problema ao gerar a atualização da rota.",
+        variant: "destructive"
+      });
+      return 0;
+    }
+  };
+
+  const getRouteWithCustomers = async (routeId: string) => {
+    try {
+      const routeWithCustomers = await deliveryRouteService.getRouteWithCustomers(routeId);
+      return routeWithCustomers;
+    } catch (error) {
+      console.error('Error getting route with customers:', error);
+      toast({
+        title: "Erro ao carregar clientes da rota",
+        description: "Houve um problema ao carregar os clientes da rota.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
   return {
     routes,
     isLoading,
     addRoute,
     updateRoute,
     deleteRoute,
-    setRoutes
+    setRoutes,
+    generateRouteUpdate,
+    getRouteWithCustomers
   };
 };
