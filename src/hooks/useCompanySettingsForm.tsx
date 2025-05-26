@@ -57,6 +57,7 @@ export const useCompanySettingsForm = () => {
 
     try {
       console.log('Saving company data:', companyData);
+      console.log('Current settings before save:', settings);
       
       if (!updateSettings) {
         console.error('updateSettings function not available');
@@ -66,15 +67,26 @@ export const useCompanySettingsForm = () => {
       const result = await updateSettings({ company: companyData });
       console.log('Save result:', result);
       
-      // Trigger success state
-      setSaveSuccess(true);
-      
-      toast({
-        title: "Dados salvos com sucesso",
-        description: "Os dados da empresa foram atualizados."
-      });
+      if (result) {
+        console.log('✅ Company data saved successfully to database');
+        // Trigger success state
+        setSaveSuccess(true);
+        
+        // Auto-hide success message after 3 seconds
+        setTimeout(() => {
+          setSaveSuccess(false);
+        }, 3000);
+        
+        toast({
+          title: "Dados salvos com sucesso",
+          description: "Os dados da empresa foram atualizados na database."
+        });
+      } else {
+        throw new Error('Falha ao salvar os dados');
+      }
     } catch (error) {
-      console.error('Error saving company data:', error);
+      console.error('❌ Error saving company data:', error);
+      setSaveSuccess(false);
       toast({
         variant: "destructive",
         title: "Erro ao salvar dados",
@@ -86,7 +98,8 @@ export const useCompanySettingsForm = () => {
   };
 
   const handleSaveSuccess = () => {
-    setSaveSuccess(true);
+    console.log('Save success callback triggered');
+    setSaveSuccess(false);
   };
 
   return {

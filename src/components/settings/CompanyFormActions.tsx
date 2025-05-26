@@ -17,20 +17,18 @@ export const CompanyFormActions: React.FC<CompanyFormActionsProps> = ({
 
   useEffect(() => {
     if (onSaveSuccess) {
+      setShowSuccess(true);
+      console.log('Success message displayed');
+      
       const timeoutId = setTimeout(() => {
         setShowSuccess(false);
+        onSaveSuccess();
+        console.log('Success message hidden');
       }, 3000);
 
       return () => clearTimeout(timeoutId);
     }
   }, [onSaveSuccess]);
-
-  const handleSaveSuccess = () => {
-    setShowSuccess(true);
-    if (onSaveSuccess) {
-      onSaveSuccess();
-    }
-  };
 
   return (
     <div className="flex justify-between items-center">
@@ -40,7 +38,7 @@ export const CompanyFormActions: React.FC<CompanyFormActionsProps> = ({
         {showSuccess && (
           <div className="flex items-center space-x-2 text-green-600 animate-fade-in">
             <Check className="h-4 w-4" />
-            <span className="text-sm font-medium">Dados salvos com sucesso!</span>
+            <span className="text-sm font-medium">Dados salvos na database!</span>
           </div>
         )}
       </div>

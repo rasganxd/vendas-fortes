@@ -84,7 +84,10 @@ export const updateSettingsInSupabase = async (
   newSettings: Partial<AppSettings>
 ): Promise<boolean> => {
   try {
-    console.log('updateSettingsInSupabase called with:', { currentSettings, newSettings });
+    console.log('🔄 updateSettingsInSupabase called with:', { 
+      currentSettingsId: currentSettings?.id, 
+      newSettings 
+    });
     
     let settingsId = currentSettings?.id;
     
@@ -107,20 +110,20 @@ export const updateSettingsInSupabase = async (
     
     // Prepare update data
     const updateData = prepareUpdateData(newSettings);
-    console.log('Final update data:', updateData, 'for ID:', settingsId);
+    console.log('📝 Final update data:', updateData, 'for ID:', settingsId);
     
     // Update in Supabase
     const data = await updateSettingsRow(settingsId, updateData);
     
     if (!data) {
-      console.error('Failed to update settings');
+      console.error('❌ Failed to update settings in database');
       return false;
     }
     
-    console.log('Settings updated successfully:', data);
+    console.log('✅ Settings updated successfully in database:', data);
     return true;
   } catch (error) {
-    console.error('Error in updateSettingsInSupabase:', error);
+    console.error('❌ Error in updateSettingsInSupabase:', error);
     return false;
   }
 };
