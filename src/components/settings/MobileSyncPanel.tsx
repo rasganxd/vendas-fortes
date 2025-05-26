@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -27,7 +28,7 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'error' | 'info'>('info');
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
-  const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
+  const [connectionData, setConnectionData] = useState<any | null>(null);
 
   // Clear status message after 5 seconds
   useEffect(() => {
@@ -103,18 +104,18 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   const copyConnectionInfo = () => {
     if (connectionData) {
       const info = `=== API MÓVEL - INFORMAÇÕES DE CONEXÃO ===\n\n` +
-                  `Servidor: ${connectionData.server?.name || connectionData.serverUrl}\n` +
-                  `URL Base: ${connectionData.server?.url || connectionData.serverUrl}\n` +
-                  `IP Local: ${connectionData.server?.localIp || 'N/A'}\n` +
-                  `IP Público: ${connectionData.server?.publicIp || 'N/A'}\n` +
-                  `Porta: ${connectionData.server?.port || 'N/A'}\n\n` +
+                  `Servidor: ${connectionData.server?.name || connectionData.serverUrl || 'N/A'}\n` +
+                  `URL Base: ${connectionData.server?.url || connectionData.serverUrl || 'N/A'}\n` +
+                  `IP Local: ${connectionData.server?.localIp || connectionData.localIp || 'N/A'}\n` +
+                  `IP Público: ${connectionData.server?.publicIp || connectionData.serverIp || 'N/A'}\n` +
+                  `Porta: ${connectionData.server?.port || connectionData.port || 'N/A'}\n\n` +
                   `=== AUTENTICAÇÃO ===\n` +
-                  `Token: ${connectionData.authentication?.token || 'N/A'}\n` +
+                  `Token: ${connectionData.authentication?.token || connectionData.token || 'N/A'}\n` +
                   `Expira: ${connectionData.authentication?.expiresAt ? new Date(connectionData.authentication.expiresAt).toLocaleString() : 'N/A'}\n\n` +
                   `=== ENDPOINTS DA API ===\n` +
-                  `Download: ${connectionData.api?.endpoints?.downloadData || 'N/A'}\n` +
-                  `Upload: ${connectionData.api?.endpoints?.uploadData || 'N/A'}\n` +
-                  `Status: ${connectionData.api?.endpoints?.checkStatus || 'N/A'}\n\n` +
+                  `Download: ${connectionData.api?.endpoints?.downloadData || connectionData.apiEndpoints?.download || 'N/A'}\n` +
+                  `Upload: ${connectionData.api?.endpoints?.uploadData || connectionData.apiEndpoints?.upload || 'N/A'}\n` +
+                  `Status: ${connectionData.api?.endpoints?.checkStatus || connectionData.apiEndpoints?.status || 'N/A'}\n\n` +
                   `=== DADOS DISPONÍVEIS ===\n` +
                   `Download: ${connectionData.dataTypes?.download?.join(', ') || 'clientes, produtos, rotas'}\n` +
                   `Upload: ${connectionData.dataTypes?.upload?.join(', ') || 'atualizações'}`;
