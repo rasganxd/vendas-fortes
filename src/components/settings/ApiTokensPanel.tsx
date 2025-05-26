@@ -31,6 +31,7 @@ import { Copy, Key, Plus, Trash2, AlertCircle, CheckCircle } from "lucide-react"
 import { toast } from "@/components/ui/use-toast";
 import { apiTokenService, ApiToken, CreateTokenRequest } from '@/services/supabase/apiTokenService';
 import { useSalesReps } from '@/hooks/useSalesReps';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const ApiTokensPanel: React.FC = () => {
   const [tokens, setTokens] = useState<ApiToken[]>([]);
@@ -42,7 +43,16 @@ const ApiTokensPanel: React.FC = () => {
   const [generatedToken, setGeneratedToken] = useState<string>('');
   const [showTokenDialog, setShowTokenDialog] = useState(false);
 
-  const { salesReps } = useSalesReps();
+  const { salesReps, isLoading: salesRepsLoading } = useSalesReps();
+
+  // Debug logging for sales reps
+  useEffect(() => {
+    console.log("=== API TOKENS PANEL DEBUG ===");
+    console.log("Sales reps loading:", salesRepsLoading);
+    console.log("Sales reps data:", salesReps);
+    console.log("Sales reps count:", salesReps?.length || 0);
+    console.log("Sales reps with valid data:", salesReps?.filter(rep => rep.id && rep.name) || []);
+  }, [salesReps, salesRepsLoading]);
 
   const loadTokens = async () => {
     if (!selectedSalesRep) {
@@ -52,7 +62,9 @@ const ApiTokensPanel: React.FC = () => {
 
     setIsLoading(true);
     try {
+      console.log("Loading tokens for sales rep:", selectedSalesRep);
       const data = await apiTokenService.getTokensBySalesRep(selectedSalesRep);
+      console.log("Loaded tokens:", data);
       setTokens(data);
     } catch (error) {
       console.error('Error loading tokens:', error);
@@ -81,6 +93,7 @@ const ApiTokensPanel: React.FC = () => {
     }
 
     try {
+      console.log("Creating token for sales rep:", selectedSalesRep, "with name:", newTokenName);
       const request: CreateTokenRequest = {
         sales_rep_id: selectedSalesRep,
         name: newTokenName.trim(),
@@ -88,6 +101,7 @@ const ApiTokensPanel: React.FC = () => {
       };
 
       const token = await apiTokenService.generateToken(request);
+      console.log("Token created successfully:", token ? "token generated" : "no token");
       setGeneratedToken(token);
       setShowTokenDialog(true);
       setIsDialogOpen(false);
@@ -166,6 +180,17 @@ const ApiTokensPanel: React.FC = () => {
     return new Date(expiresAt) < new Date();
   };
 
+  // Filter valid sales reps with proper validation
+  const validSalesReps = salesReps?.filter(rep => {
+    const isValid = rep.id && rep.id.trim() !== '' && rep.name && rep.name.trim() !== '';
+    if (!isValid) {
+      console.log("Filtering out invalid sales rep:", rep);
+    }
+    return isValid;
+  }) || [];
+
+  console.log("Valid sales reps for dropdown:", validSalesReps);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -182,23 +207,40 @@ const ApiTokensPanel: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <Label htmlFor="salesRep">Vendedor</Label>
-              <Select value={selectedSalesRep} onValueChange={setSelectedSalesRep}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um vendedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {salesReps.map((rep) => (
-                    <SelectItem key={rep.id} value={rep.id}>
-                      {rep.name} (#{rep.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {salesRepsLoading ? (
+                <div className="flex items-center justify-center p-3 border rounded">
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Carregando vendedores...
+                </div>
+              ) : validSalesReps.length === 0 ? (
+                <div className="p-3 border rounded bg-yellow-50 text-yellow-800">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Nenhum vendedor encontrado. Cadastre vendedores primeiro.</span>
+                  </div>
+                </div>
+              ) : (
+                <Select value={selectedSalesRep} onValueChange={setSelectedSalesRep}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um vendedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validSalesReps.map((rep) => {
+                      console.log(`Rendering sales rep: ${rep.name} (ID: ${rep.id}, Code: ${rep.code})`);
+                      return (
+                        <SelectItem key={rep.id} value={rep.id}>
+                          {rep.name} (#{rep.code})
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="flex items-end">
               <Button 
                 onClick={() => setIsDialogOpen(true)}
-                disabled={!selectedSalesRep}
+                disabled={!selectedSalesRep || salesRepsLoading}
                 className="w-full sm:w-auto"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -224,6 +266,7 @@ const ApiTokensPanel: React.FC = () => {
                   {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8">
+                        <LoadingSpinner size="sm" className="mr-2" />
                         Carregando tokens...
                       </TableCell>
                     </TableRow>
