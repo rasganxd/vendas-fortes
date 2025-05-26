@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -55,7 +54,7 @@ import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Vehicle } from '@/types';
+import { Vehicle } from '@/types/vehicle';
 
 // Form schema - update to match the type requirements
 const vehicleFormSchema = z.object({
@@ -81,7 +80,7 @@ export default function Vehicles() {
     defaultValues: {
       name: "",
       licensePlate: "",
-      type: "car" as const,
+      type: "car" as const, // Fixed: using "car" which is a valid enum value
       model: "",
       capacity: 0,
       driverName: "",
@@ -108,7 +107,7 @@ export default function Vehicles() {
     form.reset({
       name: "",
       licensePlate: "",
-      type: "van", // Changed from "car" to "van" which is a valid value
+      type: "car" as const, // Fixed: using "car" which is a valid enum value
       model: "",
       capacity: 0,
       driverName: "",
