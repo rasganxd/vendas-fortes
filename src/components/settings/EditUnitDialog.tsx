@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -12,20 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Unit } from '@/types/unit';
+import { toast } from "sonner";
 
 interface EditUnitDialogProps {
   unit: Unit | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedUnit: Unit) => void;
+  onSave: (unit: Unit) => void;
   baseUnits: Unit[];
 }
 
@@ -34,43 +27,27 @@ export default function EditUnitDialog({
   isOpen,
   onClose,
   onSave,
-  baseUnits
 }: EditUnitDialogProps) {
-  const [editingUnit, setEditingUnit] = useState({
+  const [editData, setEditData] = useState({
     value: '',
     label: '',
-    conversionRate: 1,
-    baseUnit: '',
-    isBaseUnit: false
+    conversionRate: 1
   });
 
   useEffect(() => {
     if (unit) {
-      setEditingUnit({
+      setEditData({
         value: unit.value,
         label: unit.label,
-        conversionRate: unit.conversionRate || 1,
-        baseUnit: unit.baseUnit || '',
-        isBaseUnit: unit.isBaseUnit || false
+        conversionRate: unit.conversionRate || 1
       });
     }
   }, [unit]);
 
   const handleSave = () => {
-    if (!editingUnit.value || !editingUnit.label) {
+    if (!editData.value || !editData.label) {
       toast("Erro", {
-        description: "Preencha todos os campos",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
-      return;
-    }
-
-    if (!editingUnit.isBaseUnit && !editingUnit.baseUnit) {
-      toast("Erro", {
-        description: "Selecione uma unidade base ou marque como unidade base",
+        description: "Preencha todos os campos obrigatórios",
         style: {
           backgroundColor: 'rgb(239, 68, 68)',
           color: 'white'
@@ -80,13 +57,9 @@ export default function EditUnitDialog({
     }
 
     const updatedUnit: Unit = {
-      value: editingUnit.value.toUpperCase(),
-      label: editingUnit.label,
-      isBaseUnit: editingUnit.isBaseUnit,
-      ...(editingUnit.isBaseUnit ? {} : {
-        baseUnit: editingUnit.baseUnit,
-        conversionRate: editingUnit.conversionRate
-      })
+      value: editData.value.toUpperCase(),
+      label: editData.label,
+      conversionRate: editData.conversionRate
     };
 
     onSave(updatedUnit);
@@ -101,9 +74,9 @@ export default function EditUnitDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Editar Unidade de Medida</DialogTitle>
+          <DialogTitle>Editar Unidade</DialogTitle>
           <DialogDescription>
-            Modifique os dados da unidade de medida
+            Edite os dados da unidade de medida
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -111,77 +84,39 @@ export default function EditUnitDialog({
             <Label htmlFor="editUnitValue">Código da Unidade</Label>
             <Input
               id="editUnitValue"
-              placeholder="Ex: FARDO, DECA, etc."
-              value={editingUnit.value}
-              onChange={(e) => setEditingUnit(prev => ({ ...prev, value: e.target.value }))}
+              value={editData.value}
+              onChange={(e) => setEditData(prev => ({ ...prev, value: e.target.value }))}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="editUnitLabel">Nome Completo</Label>
             <Input
               id="editUnitLabel"
-              placeholder="Ex: Fardo (FARDO), Dezena (DECA)"
-              value={editingUnit.label}
-              onChange={(e) => setEditingUnit(prev => ({ ...prev, label: e.target.value }))}
+              value={editData.label}
+              onChange={(e) => setEditData(prev => ({ ...prev, label: e.target.value }))}
             />
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="editIsBaseUnit"
-              checked={editingUnit.isBaseUnit}
-              onChange={(e) => setEditingUnit(prev => ({ 
+          <div className="space-y-2">
+            <Label htmlFor="editConversionRate">Taxa de Conversão</Label>
+            <Input
+              id="editConversionRate"
+              type="number"
+              value={editData.conversionRate}
+              onChange={(e) => setEditData(prev => ({ 
                 ...prev, 
-                isBaseUnit: e.target.checked,
-                baseUnit: e.target.checked ? '' : prev.baseUnit
+                conversionRate: parseFloat(e.target.value) || 1 
               }))}
+              min="0.001"
+              step="0.001"
             />
-            <Label htmlFor="editIsBaseUnit">Esta é uma unidade base</Label>
           </div>
-          
-          {!editingUnit.isBaseUnit && (
-            <>
-              <div className="space-y-2">
-                <Label>Unidade Base</Label>
-                <Select 
-                  value={editingUnit.baseUnit} 
-                  onValueChange={(value) => setEditingUnit(prev => ({ ...prev, baseUnit: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a unidade base" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {baseUnits.map(unit => (
-                      <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editConversionRate">Taxa de Conversão</Label>
-                <Input
-                  id="editConversionRate"
-                  type="number"
-                  placeholder="Ex: 24 (1 desta unidade = 24 da base)"
-                  value={editingUnit.conversionRate}
-                  onChange={(e) => setEditingUnit(prev => ({ 
-                    ...prev, 
-                    conversionRate: parseFloat(e.target.value) || 1 
-                  }))}
-                  min="0.001"
-                  step="0.001"
-                />
-              </div>
-            </>
-          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button onClick={handleSave}>
-            Salvar Alterações
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>

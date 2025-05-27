@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   code: number;
@@ -7,7 +8,6 @@ export interface Product {
   cost: number;
   stock: number;
   minStock: number;
-  maxDiscountPercentage?: number;
   groupId?: string;
   categoryId?: string;
   brandId?: string;

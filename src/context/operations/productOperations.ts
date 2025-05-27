@@ -1,4 +1,3 @@
-
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -37,15 +36,8 @@ export const addProduct = async (
     console.log("Adding product:", productWithCode);
     
     // Add to Supabase
-    const id = await productService.add(productWithCode);
-    console.log("Product added with ID:", id);
-    
-    if (!id) {
-      throw new Error("Failed to get product ID");
-    }
-    
-    const newProduct = { ...productWithCode, id };
-    console.log("New product with ID:", newProduct);
+    const newProduct = await productService.create(productWithCode);
+    console.log("Product created:", newProduct);
     
     // Atualizar o estado local - ensure we're using the correct setter pattern for state updates
     setProducts(currentProducts => [...currentProducts, newProduct]);
@@ -54,7 +46,7 @@ export const addProduct = async (
       title: "Produto adicionado",
       description: "Produto adicionado com sucesso!"
     });
-    return id;
+    return newProduct.id;
   } catch (error) {
     console.error("Erro ao adicionar produto:", error);
     toast({

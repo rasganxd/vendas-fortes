@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabase/productService';
@@ -121,9 +120,7 @@ export const useProducts = () => {
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
-      const id = await productService.add(product);
-      
-      const newProduct = { ...product, id, createdAt: new Date(), updatedAt: new Date() } as Product;
+      const newProduct = await productService.create(product);
       
       // Update local state immediately
       setProducts((prev) => [...prev, newProduct]);
@@ -138,7 +135,7 @@ export const useProducts = () => {
         description: 'Produto adicionado com sucesso!',
       });
       
-      return id;
+      return newProduct.id;
     } catch (error) {
       console.error('Error adding product:', error);
       toast({

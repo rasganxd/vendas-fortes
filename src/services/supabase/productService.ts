@@ -14,7 +14,24 @@ export const productService = {
       throw error;
     }
     
-    return data || [];
+    // Transform database fields to Product interface
+    return (data || []).map(item => ({
+      id: item.id,
+      code: item.code,
+      name: item.name,
+      description: item.description || '',
+      cost: item.cost || 0,
+      price: item.price || 0,
+      stock: item.stock || 0,
+      minStock: item.min_stock || 0,
+      unit: item.unit || 'UN',
+      categoryId: item.category_id,
+      groupId: item.group_id,
+      brandId: item.brand_id,
+      createdAt: new Date(item.created_at),
+      updatedAt: new Date(item.updated_at),
+      syncStatus: (item.sync_status || 'synced') as 'synced' | 'pending' | 'error'
+    }));
   },
 
   async getById(id: string): Promise<Product | null> {
@@ -29,7 +46,24 @@ export const productService = {
       return null;
     }
     
-    return data;
+    // Transform database fields to Product interface
+    return {
+      id: data.id,
+      code: data.code,
+      name: data.name,
+      description: data.description || '',
+      cost: data.cost || 0,
+      price: data.price || 0,
+      stock: data.stock || 0,
+      minStock: data.min_stock || 0,
+      unit: data.unit || 'UN',
+      categoryId: data.category_id,
+      groupId: data.group_id,
+      brandId: data.brand_id,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+      syncStatus: (data.sync_status || 'synced') as 'synced' | 'pending' | 'error'
+    };
   },
 
   async create(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
@@ -44,7 +78,6 @@ export const productService = {
       price: product.price || 0,
       stock: product.stock || 0,
       min_stock: product.minStock || 0,
-      max_discount_percentage: product.maxDiscountPercentage || 0,
       unit: product.unit || 'UN',
       category_id: product.categoryId || null,
       group_id: product.groupId || null,
@@ -75,14 +108,13 @@ export const productService = {
       price: data.price,
       stock: data.stock,
       minStock: data.min_stock,
-      maxDiscountPercentage: data.max_discount_percentage,
       unit: data.unit,
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
-      syncStatus: data.sync_status
+      syncStatus: (data.sync_status || 'synced') as 'synced' | 'pending' | 'error'
     };
 
     console.log('Created product:', createdProduct);
@@ -100,7 +132,6 @@ export const productService = {
     if (product.price !== undefined) updateData.price = product.price;
     if (product.stock !== undefined) updateData.stock = product.stock;
     if (product.minStock !== undefined) updateData.min_stock = product.minStock;
-    if (product.maxDiscountPercentage !== undefined) updateData.max_discount_percentage = product.maxDiscountPercentage;
     if (product.unit !== undefined) updateData.unit = product.unit;
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
     if (product.groupId !== undefined) updateData.group_id = product.groupId;
@@ -129,14 +160,13 @@ export const productService = {
       price: data.price,
       stock: data.stock,
       minStock: data.min_stock,
-      maxDiscountPercentage: data.max_discount_percentage,
       unit: data.unit,
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
-      syncStatus: data.sync_status
+      syncStatus: (data.sync_status || 'synced') as 'synced' | 'pending' | 'error'
     };
   },
 

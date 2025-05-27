@@ -2,9 +2,7 @@
 export interface Unit {
   value: string;
   label: string;
-  conversionRate?: number;
-  baseUnit?: string;
-  isBaseUnit?: boolean;
+  conversionRate: number;
 }
 
 export interface UnitConversion {
