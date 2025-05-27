@@ -1,22 +1,19 @@
 
 import { useState, useEffect } from 'react';
-
-interface Unit {
-  value: string;
-  label: string;
-}
+import { Unit } from '@/types/unit';
+import { UnitConverter } from '@/utils/unitConverter';
 
 const DEFAULT_UNITS: Unit[] = [
-  { value: 'UN', label: 'Unidade (UN)' },
-  { value: 'KG', label: 'Quilograma (KG)' },
-  { value: 'L', label: 'Litro (L)' },
-  { value: 'ML', label: 'Mililitro (ML)' },
-  { value: 'CX', label: 'Caixa (CX)' },
-  { value: 'PCT', label: 'Pacote (PCT)' },
-  { value: 'PAR', label: 'Par (PAR)' },
-  { value: 'DUZIA', label: 'Dúzia (DZ)' },
-  { value: 'ROLO', label: 'Rolo (RL)' },
-  { value: 'METRO', label: 'Metro (M)' }
+  { value: 'UN', label: 'Unidade (UN)', isBaseUnit: true },
+  { value: 'KG', label: 'Quilograma (KG)', isBaseUnit: true },
+  { value: 'L', label: 'Litro (L)', isBaseUnit: true },
+  { value: 'ML', label: 'Mililitro (ML)', baseUnit: 'L', conversionRate: 0.001 },
+  { value: 'CX', label: 'Caixa (CX)', baseUnit: 'UN', conversionRate: 24 },
+  { value: 'PCT', label: 'Pacote (PCT)', baseUnit: 'UN', conversionRate: 12 },
+  { value: 'PAR', label: 'Par (PAR)', baseUnit: 'UN', conversionRate: 2 },
+  { value: 'DUZIA', label: 'Dúzia (DZ)', baseUnit: 'UN', conversionRate: 12 },
+  { value: 'ROLO', label: 'Rolo (RL)', isBaseUnit: true },
+  { value: 'METRO', label: 'Metro (M)', isBaseUnit: true }
 ];
 
 const STORAGE_KEY = 'product_units';
@@ -25,7 +22,6 @@ export const useProductUnits = () => {
   const [units, setUnits] = useState<Unit[]>(DEFAULT_UNITS);
 
   useEffect(() => {
-    // Carregar unidades do localStorage
     const savedUnits = localStorage.getItem(STORAGE_KEY);
     if (savedUnits) {
       try {
@@ -37,7 +33,6 @@ export const useProductUnits = () => {
       }
     }
 
-    // Escutar mudanças nas unidades
     const handleUnitsUpdated = (event: CustomEvent) => {
       setUnits(event.detail);
     };
@@ -49,8 +44,12 @@ export const useProductUnits = () => {
     };
   }, []);
 
+  const converter = new UnitConverter(units);
+
   return {
     units,
-    defaultUnits: DEFAULT_UNITS
+    defaultUnits: DEFAULT_UNITS,
+    converter,
+    getRelatedUnits: (unit: string) => converter.getRelatedUnits(unit)
   };
 };
