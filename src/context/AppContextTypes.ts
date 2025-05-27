@@ -64,7 +64,7 @@ export interface SystemContextType {
   addCustomer: (customer: Omit<Customer, 'id'>) => Promise<string>;
   updateCustomer: (id: string, customer: Partial<Customer>) => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
-  generateNextCustomerCode: () => number;
+  generateNextCustomerCode: () => Promise<number>; // Changed from number to Promise<number>
   
   // Operações de produto
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>;
