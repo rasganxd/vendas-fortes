@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/appOperations';
@@ -72,11 +73,11 @@ interface AppDataContextType {
   updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
   deleteLoad: (id: string) => Promise<void>;
 
-  // Order data
+  // Order data - updated to Promise<string>
   orders: Order[];
   isLoadingOrders: boolean;
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
-  updateOrder: (id: string, order: Partial<Order>) => Promise<void>;
+  updateOrder: (id: string, order: Partial<Order>) => Promise<string>;
   deleteOrder: (id: string) => Promise<void>;
   refreshOrders: () => Promise<void>;
 
@@ -202,7 +203,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     orders,
     isLoadingOrders,
     addOrder,
-    updateOrder,
+    updateOrder, // This now returns Promise<string>
     deleteOrder,
     refreshOrders,
     

@@ -61,9 +61,10 @@ export default function SalesReps() {
     setShowEditDialog(true);
   };
 
-  const handleSave = async (salesRep: Omit<SalesRep, 'id'>) => {
+  const handleSave = async (salesRep: Omit<SalesRep, 'id'>): Promise<string> => {
     if (editingSalesRep?.id) {
-      return await updateSalesRep(editingSalesRep.id, salesRep);
+      await updateSalesRep(editingSalesRep.id, salesRep);
+      return editingSalesRep.id; // Return the existing ID since updateSalesRep returns void
     } else {
       return await addSalesRep(salesRep);
     }

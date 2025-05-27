@@ -42,8 +42,8 @@ export const useAppDataOperations = (
     return await addOrderHook(order);
   };
 
-  const updateOrder = async (id: string, order: Partial<Order>) => {
-    await updateOrderHook(id, order);
+  const updateOrder = async (id: string, order: Partial<Order>): Promise<string> => {
+    return await updateOrderHook(id, order);
   };
 
   const deleteOrder = async (id: string) => {

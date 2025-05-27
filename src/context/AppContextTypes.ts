@@ -1,3 +1,4 @@
+
 import { Customer, Product, Order, Payment, Vehicle, SalesRep, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 import { Load } from '@/types';
 import { createContext } from 'react';
@@ -74,7 +75,7 @@ export interface SystemContextType {
   getMinimumPrice: (productId: string) => number;
   addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>;
   
-  // Operações de pedido
+  // Operações de pedido - changed to Promise<string>
   getOrderById: (id: string) => Promise<Order | null>;
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<string>;
@@ -90,7 +91,7 @@ export interface SystemContextType {
   updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
   deleteLoad: (id: string) => Promise<void>;
   
-  // Operações de representante de vendas - fix the return type to Promise<void>
+  // Operações de representante de vendas
   addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
   updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => Promise<void>;
   deleteSalesRep: (id: string) => Promise<void>;
