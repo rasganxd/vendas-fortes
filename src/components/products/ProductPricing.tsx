@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -22,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 import { useAppData } from '@/context/providers/AppDataProvider';
-import { ArrowLeft, Loader2, Save, Search, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Search, Calculator } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -41,6 +40,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import PriceValidation from './pricing/PriceValidation';
+import BulkPricingModal from './pricing/BulkPricingModal';
+
+interface BulkPricingChanges {
+  selectedProducts: string[];
+  priceChanges?: {
+    mode: 'percentage' | 'fixed' | 'absolute';
+    value: number;
+  };
+  minPriceChange?: number;
+  maxPriceChange?: number;
+}
 
 const ProductPricing = () => {
   const navigate = useNavigate();
@@ -58,16 +68,13 @@ const ProductPricing = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
-  const [markupMode, setMarkupMode] = useState<string>('percentage');
-  const [bulkValue, setBulkValue] = useState<number>(0);
-  const [bulkMinPrice, setBulkMinPrice] = useState<number>(0);
-  const [bulkMaxPrice, setBulkMaxPrice] = useState<number>(0);
   const [productPrices, setProductPrices] = useState<Record<string, number>>({});
   const [productMinPrices, setProductMinPrices] = useState<Record<string, number>>({});
   const [productMaxPrices, setProductMaxPrices] = useState<Record<string, number>>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [pendingSave, setPendingSave] = useState<any>(null);
+  const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
 
   // Initialize product prices from products
   useEffect(() => {
@@ -152,72 +159,45 @@ const ProductPricing = () => {
     setHasChanges(true);
   };
 
-  const applyBulkPricing = () => {
-    if (bulkValue <= 0) {
-      toast("Valor inválido", {
-        description: "Por favor, insira um valor válido para aplicar em massa.",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
-      return;
-    }
-
+  const handleBulkPricingChanges = (changes: BulkPricingChanges) => {
     const newPrices = { ...productPrices };
+    const newMinPrices = { ...productMinPrices };
+    const newMaxPrices = { ...productMaxPrices };
     
-    selectedProducts.forEach(productId => {
+    changes.selectedProducts.forEach(productId => {
       const product = products.find(p => p.id === productId);
       if (!product) return;
       
-      if (markupMode === 'percentage') {
-        const markup = product.cost * (bulkValue / 100);
-        newPrices[productId] = product.cost + markup;
-      } else if (markupMode === 'fixed') {
-        newPrices[productId] = product.cost + bulkValue;
-      } else if (markupMode === 'absolute') {
-        newPrices[productId] = bulkValue;
+      // Apply price changes
+      if (changes.priceChanges) {
+        const { mode, value } = changes.priceChanges;
+        if (mode === 'percentage') {
+          const markup = product.cost * (value / 100);
+          newPrices[productId] = product.cost + markup;
+        } else if (mode === 'fixed') {
+          newPrices[productId] = product.cost + value;
+        } else if (mode === 'absolute') {
+          newPrices[productId] = value;
+        }
+      }
+      
+      // Apply min/max price changes
+      if (changes.minPriceChange && changes.minPriceChange > 0) {
+        newMinPrices[productId] = changes.minPriceChange;
+      }
+      
+      if (changes.maxPriceChange && changes.maxPriceChange > 0) {
+        newMaxPrices[productId] = changes.maxPriceChange;
       }
     });
 
     setProductPrices(newPrices);
-    setHasChanges(true);
-    
-    toast("Preços atualizados", {
-      description: `Preços de ${selectedProducts.size} produtos atualizados com sucesso.`
-    });
-  };
-
-  const applyBulkMinMaxPrices = () => {
-    if (selectedProducts.size === 0) {
-      toast("Nenhum produto selecionado", {
-        description: "Selecione produtos para aplicar preços mínimo/máximo.",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
-      return;
-    }
-
-    const newMinPrices = { ...productMinPrices };
-    const newMaxPrices = { ...productMaxPrices };
-    
-    selectedProducts.forEach(productId => {
-      if (bulkMinPrice > 0) {
-        newMinPrices[productId] = bulkMinPrice;
-      }
-      if (bulkMaxPrice > 0) {
-        newMaxPrices[productId] = bulkMaxPrice;
-      }
-    });
-
     setProductMinPrices(newMinPrices);
     setProductMaxPrices(newMaxPrices);
     setHasChanges(true);
     
-    toast("Preços mín/máx atualizados", {
-      description: `Preços mínimo/máximo de ${selectedProducts.size} produtos atualizados.`
+    toast("Preços atualizados", {
+      description: `Preços de ${changes.selectedProducts.length} produtos atualizados em massa.`
     });
   };
 
@@ -348,6 +328,13 @@ const ProductPricing = () => {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar para Produtos
             </Button>
+            <Button 
+              onClick={() => setBulkPricingOpen(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Calculator className="mr-2 h-4 w-4" />
+              Precificação em Massa
+            </Button>
           </div>
           <CardTitle>Precificação de Produtos</CardTitle>
           <CardDescription>
@@ -399,89 +386,6 @@ const ProductPricing = () => {
               </Select>
             </div>
             
-            {/* Bulk pricing controls */}
-            <div className="bg-muted p-4 rounded-md space-y-4">
-              <h3 className="text-md font-medium">Precificação em Massa</h3>
-              
-              {/* Preços de venda em massa */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Preços de Venda</h4>
-                <div className="flex flex-col sm:flex-row gap-4 items-end">
-                  <div className="space-y-2 w-full sm:w-48">
-                    <Select
-                      value={markupMode}
-                      onValueChange={setMarkupMode}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Modo de ajuste" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percentage">Markup % sobre custo</SelectItem>
-                        <SelectItem value="fixed">Valor fixo sobre custo</SelectItem>
-                        <SelectItem value="absolute">Preço absoluto</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 w-full sm:w-48">
-                    <Input
-                      type="number"
-                      placeholder={markupMode === 'percentage' ? '% de markup' : 'Valor'}
-                      value={bulkValue || ''}
-                      onChange={(e) => setBulkValue(parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step={markupMode === 'percentage' ? '1' : '0.1'}
-                    />
-                  </div>
-                  <Button 
-                    onClick={applyBulkPricing}
-                    disabled={selectedProducts.size === 0 || bulkValue <= 0}
-                  >
-                    Aplicar aos selecionados ({selectedProducts.size})
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Preços mínimo/máximo em massa */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Preços Mínimo/Máximo</h4>
-                <div className="flex flex-col sm:flex-row gap-4 items-end">
-                  <div className="space-y-2 w-full sm:w-48">
-                    <Input
-                      type="number"
-                      placeholder="Preço mínimo"
-                      value={bulkMinPrice || ''}
-                      onChange={(e) => setBulkMinPrice(parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="space-y-2 w-full sm:w-48">
-                    <Input
-                      type="number"
-                      placeholder="Preço máximo"
-                      value={bulkMaxPrice || ''}
-                      onChange={(e) => setBulkMaxPrice(parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <Button 
-                    onClick={applyBulkMinMaxPrices}
-                    disabled={selectedProducts.size === 0 || (bulkMinPrice <= 0 && bulkMaxPrice <= 0)}
-                  >
-                    Aplicar Limites ({selectedProducts.size})
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSelectedProducts(new Set())}
-                    disabled={selectedProducts.size === 0}
-                  >
-                    Limpar seleção
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
             {/* Products table */}
             <div>
               {isLoadingProducts ? (
@@ -503,17 +407,16 @@ const ProductPricing = () => {
                       <TableHead className="w-20">Código</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead className="w-32">Custo</TableHead>
-                      <TableHead className="w-32">Preço Min</TableHead>
+                      <TableHead className="w-32">Preço Mín</TableHead>
                       <TableHead className="w-32">Preço Venda</TableHead>
-                      <TableHead className="w-32">Preço Max</TableHead>
-                      <TableHead className="w-32">Markup %</TableHead>
+                      <TableHead className="w-32">Preço Máx</TableHead>
                       <TableHead className="w-40">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredProducts.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado com os filtros aplicados'}
                         </TableCell>
                       </TableRow>
@@ -522,9 +425,6 @@ const ProductPricing = () => {
                         const currentPrice = productPrices[product.id] || 0;
                         const minPrice = productMinPrices[product.id] || 0;
                         const maxPrice = productMaxPrices[product.id] || 0;
-                        const markup = product.cost > 0
-                          ? ((currentPrice - product.cost) / product.cost) * 100
-                          : 0;
                         
                         const productWithCurrentPrices = {
                           ...product,
@@ -552,7 +452,7 @@ const ProductPricing = () => {
                                   const newMinPrice = parseFloat(e.target.value) || 0;
                                   handleMinPriceChange(product.id, newMinPrice);
                                 }}
-                                placeholder="Min"
+                                placeholder="0.00"
                                 step="0.01"
                                 min="0"
                                 className="w-24"
@@ -565,6 +465,7 @@ const ProductPricing = () => {
                                   const newPrice = formatPriceInput(e.target.value);
                                   handlePriceChange(product.id, newPrice);
                                 }}
+                                className="w-24"
                               />
                             </TableCell>
                             <TableCell>
@@ -575,14 +476,11 @@ const ProductPricing = () => {
                                   const newMaxPrice = parseFloat(e.target.value) || 0;
                                   handleMaxPriceChange(product.id, newMaxPrice);
                                 }}
-                                placeholder="Max"
+                                placeholder="0.00"
                                 step="0.01"
                                 min="0"
                                 className="w-24"
                               />
-                            </TableCell>
-                            <TableCell className={markup < 0 ? 'text-destructive' : ''}>
-                              {markup.toFixed(2)}%
                             </TableCell>
                             <TableCell>
                               <PriceValidation
@@ -622,12 +520,21 @@ const ProductPricing = () => {
         </CardContent>
       </Card>
 
+      {/* Bulk Pricing Modal */}
+      <BulkPricingModal
+        open={bulkPricingOpen}
+        onOpenChange={setBulkPricingOpen}
+        products={products}
+        productCategories={productCategories}
+        productGroups={productGroups}
+        onApplyChanges={handleBulkPricingChanges}
+      />
+
       {/* Override Dialog */}
       <AlertDialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
-              <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />
               Preços Fora da Faixa Permitida
             </AlertDialogTitle>
             <AlertDialogDescription>
