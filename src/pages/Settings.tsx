@@ -3,7 +3,7 @@ import React from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanySettings from '@/components/settings/CompanySettings';
-import SystemSettings from '@/components/settings/SystemSettings';
+import SalesForceDataGenerator from '@/components/settings/SalesForceDataGenerator';
 import ApiTokensPanel from '@/components/settings/ApiTokensPanel';
 import MobileAuthDocumentation from '@/components/settings/MobileAuthDocumentation';
 import MobileOrderImportPanel from '@/components/settings/MobileOrderImportPanel';
@@ -16,7 +16,7 @@ export default function Settings() {
         <Tabs defaultValue="company" className="w-full">
           <TabsList className="grid w-full grid-cols-6 md:w-auto md:inline-flex">
             <TabsTrigger value="company">Dados da Empresa</TabsTrigger>
-            <TabsTrigger value="system">Sistema</TabsTrigger>
+            <TabsTrigger value="salesforce">Gerar Dados Força de Vendas</TabsTrigger>
             <TabsTrigger value="units">Unidades</TabsTrigger>
             <TabsTrigger value="api">API REST</TabsTrigger>
             <TabsTrigger value="mobile">Mobile Auth</TabsTrigger>
@@ -25,8 +25,8 @@ export default function Settings() {
           <TabsContent value="company" className="mt-4">
             <CompanySettings />
           </TabsContent>
-          <TabsContent value="system" className="mt-4">
-            <SystemSettings />
+          <TabsContent value="salesforce" className="mt-4">
+            <SalesForceDataGenerator />
           </TabsContent>
           <TabsContent value="units" className="mt-4">
             <UnitsPanel />
