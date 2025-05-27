@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Customer, Product, Order } from '@/types';
 import { transformCustomerData, transformProductData, transformOrderData } from '@/utils/dataTransformers';
@@ -20,6 +19,16 @@ export interface SyncLogEntry {
 export interface SyncToken {
   token: string;
   expires_at: string;
+}
+
+export interface OrderImportResponse {
+  success: boolean;
+  message: string;
+  results: {
+    imported: number;
+    failed: number;
+    errors: string[];
+  };
 }
 
 class MobileSyncService {
@@ -74,6 +83,44 @@ class MobileSyncService {
     } catch (error) {
       console.error('❌ Error validating sync token:', error);
       return null;
+    }
+  }
+
+  // Import orders from mobile - NEW METHOD
+  async importOrdersFromMobile(
+    orders: Partial<Order>[], 
+    syncToken: string,
+    deviceId?: string,
+    deviceIp?: string
+  ): Promise<OrderImportResponse> {
+    try {
+      console.log(`📱 Importing ${orders.length} orders from mobile...`);
+
+      // Call the edge function for order import
+      const { data, error } = await supabase.functions.invoke('mobile-orders-import', {
+        body: { orders },
+        headers: {
+          'Authorization': `Bearer ${syncToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error calling import function:', error);
+        throw error;
+      }
+
+      console.log('✅ Orders import response:', data);
+      return data as OrderImportResponse;
+
+    } catch (error) {
+      console.error('❌ Failed to import orders from mobile:', error);
+      
+      // Log the error
+      await this.logSyncEvent('error', 'orders', 0, undefined, deviceId, deviceIp, 
+        error instanceof Error ? error.message : 'Unknown error');
+      
+      throw error;
     }
   }
 
@@ -260,7 +307,7 @@ class MobileSyncService {
     }
   }
 
-  // Upload orders from mobile
+  // Upload orders from mobile - ENHANCED METHOD
   async uploadOrders(orders: Partial<Order>[], salesRepId?: string): Promise<void> {
     try {
       console.log('📤 Uploading orders from mobile:', orders.length);

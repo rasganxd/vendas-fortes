@@ -1,1 +1,9 @@
+
 project_id = "ufvnubabpcyimahbubkd"
+
+[auth]
+enabled = true
+external_url = "https://ufvnubabpcyimahbubkd.supabase.co"
+
+[functions.mobile-orders-import]
+verify_jwt = false

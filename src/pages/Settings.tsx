@@ -6,17 +6,19 @@ import CompanySettings from '@/components/settings/CompanySettings';
 import SystemSettings from '@/components/settings/SystemSettings';
 import ApiTokensPanel from '@/components/settings/ApiTokensPanel';
 import MobileAuthDocumentation from '@/components/settings/MobileAuthDocumentation';
+import MobileOrderImportPanel from '@/components/settings/MobileOrderImportPanel';
 
 export default function Settings() {
   return (
     <PageLayout title="Configurações">
       <div className="space-y-4">
         <Tabs defaultValue="company" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-flex">
+          <TabsList className="grid w-full grid-cols-5 md:w-auto md:inline-flex">
             <TabsTrigger value="company">Dados da Empresa</TabsTrigger>
             <TabsTrigger value="system">Sistema</TabsTrigger>
             <TabsTrigger value="api">API REST</TabsTrigger>
             <TabsTrigger value="mobile">Mobile Auth</TabsTrigger>
+            <TabsTrigger value="import">Importação Mobile</TabsTrigger>
           </TabsList>
           <TabsContent value="company" className="mt-4">
             <CompanySettings />
@@ -29,6 +31,9 @@ export default function Settings() {
           </TabsContent>
           <TabsContent value="mobile" className="mt-4">
             <MobileAuthDocumentation />
+          </TabsContent>
+          <TabsContent value="import" className="mt-4">
+            <MobileOrderImportPanel />
           </TabsContent>
         </Tabs>
       </div>
