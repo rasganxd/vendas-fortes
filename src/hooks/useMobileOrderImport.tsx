@@ -29,15 +29,15 @@ export const useMobileOrderImport = () => {
     }
   }, []);
 
-  const importMobileOrders = useCallback(async (): Promise<MobileOrderImportResult> => {
+  const importMobileOrders = useCallback(async (salesRepId?: string): Promise<MobileOrderImportResult> => {
     try {
       setIsImporting(true);
-      console.log('🚀 Starting mobile order import process...');
+      console.log('🚀 Starting mobile order import process...', salesRepId ? `for sales rep: ${salesRepId}` : 'for all sales reps');
 
       // Get pending orders from Supabase
       const { supabase } = await import('@/integrations/supabase/client');
       
-      const { data: pendingOrders, error: fetchError } = await supabase
+      let query = supabase
         .from('orders')
         .select(`
           *,
@@ -46,6 +46,13 @@ export const useMobileOrderImport = () => {
         .eq('source_project', 'mobile')
         .eq('imported', false)
         .order('created_at', { ascending: false });
+
+      // Filtrar por vendedor se especificado
+      if (salesRepId) {
+        query = query.eq('sales_rep_id', salesRepId);
+      }
+
+      const { data: pendingOrders, error: fetchError } = await query;
 
       if (fetchError) {
         console.error('❌ Error fetching pending orders:', fetchError);
@@ -58,7 +65,9 @@ export const useMobileOrderImport = () => {
           imported: 0,
           failed: 0,
           errors: [],
-          message: 'Nenhum pedido pendente para importação'
+          message: salesRepId 
+            ? 'Nenhum pedido pendente para este vendedor' 
+            : 'Nenhum pedido pendente para importação'
         };
         
         toast.info(result.message);
@@ -80,47 +89,6 @@ export const useMobileOrderImport = () => {
           if (!orderData.customer_id || !orderData.sales_rep_id) {
             throw new Error(`Dados incompletos no pedido ${orderData.code}`);
           }
-
-          // Transform and add to local system
-          const orderToImport = {
-            id: orderData.id,
-            code: orderData.code,
-            customerId: orderData.customer_id,
-            customerName: orderData.customer_name || '',
-            salesRepId: orderData.sales_rep_id,
-            salesRepName: orderData.sales_rep_name || '',
-            date: new Date(orderData.date),
-            dueDate: orderData.due_date ? new Date(orderData.due_date) : new Date(),
-            deliveryDate: orderData.delivery_date ? new Date(orderData.delivery_date) : undefined,
-            items: (orderData.order_items || []).map((item: any) => ({
-              id: item.id,
-              orderId: item.order_id,
-              productId: item.product_id,
-              productName: item.product_name,
-              productCode: item.product_code,
-              quantity: Number(item.quantity),
-              unitPrice: Number(item.unit_price || item.price),
-              price: Number(item.price),
-              discount: Number(item.discount || 0),
-              total: Number(item.total)
-            })),
-            total: Number(orderData.total),
-            discount: Number(orderData.discount || 0),
-            status: orderData.status as any,
-            paymentStatus: orderData.payment_status as any,
-            paymentMethod: orderData.payment_method || '',
-            paymentMethodId: orderData.payment_method_id || '',
-            paymentTableId: orderData.payment_table_id || '',
-            payments: Array.isArray(orderData.payments) ? orderData.payments : [],
-            notes: orderData.notes || '',
-            createdAt: new Date(orderData.created_at),
-            updatedAt: new Date(orderData.updated_at),
-            archived: orderData.archived || false,
-            deliveryAddress: orderData.delivery_address || '',
-            deliveryCity: orderData.delivery_city || '',
-            deliveryState: orderData.delivery_state || '',
-            deliveryZip: orderData.delivery_zip || ''
-          };
 
           // Order is already in Supabase, just need to mark as imported
           const { error: updateError } = await supabase
@@ -147,12 +115,15 @@ export const useMobileOrderImport = () => {
         event_type: 'download',
         data_type: 'orders',
         records_count: imported,
+        sales_rep_id: salesRepId || null,
         status: failed > 0 ? 'partial' : 'completed',
         error_message: failed > 0 ? `${failed} pedidos falharam` : null,
         metadata: {
           imported,
           failed,
-          errors: errors.slice(0, 5) // Log only first 5 errors
+          errors: errors.slice(0, 5), // Log only first 5 errors
+          sales_rep_id: salesRepId,
+          import_type: salesRepId ? 'single_rep' : 'all_reps'
         }
       });
 
@@ -170,7 +141,7 @@ export const useMobileOrderImport = () => {
       // Show appropriate toast
       if (result.success && imported > 0) {
         toast.success('Importação realizada com sucesso!', {
-          description: `${imported} pedidos foram importados`
+          description: `${imported} pedidos foram importados${salesRepId ? ' para o vendedor selecionado' : ''}`
         });
       } else if (failed > 0) {
         toast.warning('Importação parcial', {
@@ -205,8 +176,14 @@ export const useMobileOrderImport = () => {
     }
   }, [checkPendingOrders]);
 
+  const importSalesRepOrders = useCallback(async (salesRepId: string, salesRepName: string): Promise<MobileOrderImportResult> => {
+    console.log(`🎯 Importing orders for sales rep: ${salesRepName} (${salesRepId})`);
+    return await importMobileOrders(salesRepId);
+  }, [importMobileOrders]);
+
   return {
     importMobileOrders,
+    importSalesRepOrders,
     isImporting,
     pendingOrdersCount,
     checkPendingOrders

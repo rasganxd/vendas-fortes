@@ -13,7 +13,8 @@ import {
   XCircle,
   Clock,
   Smartphone,
-  Trash2
+  Trash2,
+  User
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { mobileOrderImportService, ImportLog } from '@/services/supabase/mobileOrderImportService';
@@ -27,6 +28,14 @@ interface ImportStats {
   lastImport: Date | undefined;
 }
 
+interface SalesRepStats {
+  sales_rep_id: string;
+  sales_rep_name: string;
+  pending_orders: number;
+  total_imported: number;
+  last_sync: Date | null;
+}
+
 export default function MobileOrderImportPanel() {
   const [stats, setStats] = useState<ImportStats>({
     totalImported: 0,
@@ -35,6 +44,7 @@ export default function MobileOrderImportPanel() {
     lastImport: undefined
   });
   const [logs, setLogs] = useState<ImportLog[]>([]);
+  const [salesRepStats, setSalesRepStats] = useState<SalesRepStats[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
@@ -50,6 +60,84 @@ export default function MobileOrderImportPanel() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadSalesRepStats = async () => {
+    try {
+      console.log('📊 Loading sales rep statistics...');
+      
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Buscar estatísticas por vendedor
+      const { data: pendingData, error: pendingError } = await supabase
+        .from('orders')
+        .select('sales_rep_id, sales_rep_name, created_at')
+        .eq('source_project', 'mobile')
+        .eq('imported', false)
+        .not('sales_rep_id', 'is', null);
+
+      if (pendingError) throw pendingError;
+
+      const { data: importedData, error: importedError } = await supabase
+        .from('orders')
+        .select('sales_rep_id, sales_rep_name, updated_at')
+        .eq('source_project', 'mobile')
+        .eq('imported', true)
+        .not('sales_rep_id', 'is', null);
+
+      if (importedError) throw importedError;
+
+      // Agrupar por vendedor
+      const statsMap = new Map<string, SalesRepStats>();
+
+      // Processar pedidos pendentes
+      pendingData?.forEach(order => {
+        const key = order.sales_rep_id;
+        if (!statsMap.has(key)) {
+          statsMap.set(key, {
+            sales_rep_id: key,
+            sales_rep_name: order.sales_rep_name || 'Vendedor sem nome',
+            pending_orders: 0,
+            total_imported: 0,
+            last_sync: null
+          });
+        }
+        
+        const stat = statsMap.get(key)!;
+        stat.pending_orders++;
+        
+        const syncDate = new Date(order.created_at);
+        if (!stat.last_sync || syncDate > stat.last_sync) {
+          stat.last_sync = syncDate;
+        }
+      });
+
+      // Processar pedidos importados
+      importedData?.forEach(order => {
+        const key = order.sales_rep_id;
+        if (!statsMap.has(key)) {
+          statsMap.set(key, {
+            sales_rep_id: key,
+            sales_rep_name: order.sales_rep_name || 'Vendedor sem nome',
+            pending_orders: 0,
+            total_imported: 0,
+            last_sync: null
+          });
+        }
+        
+        const stat = statsMap.get(key)!;
+        stat.total_imported++;
+      });
+
+      const statsArray = Array.from(statsMap.values())
+        .sort((a, b) => (b.last_sync?.getTime() || 0) - (a.last_sync?.getTime() || 0));
+
+      setSalesRepStats(statsArray);
+      console.log(`✅ Loaded stats for ${statsArray.length} sales reps`);
+
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas de vendedores:', error);
     }
   };
 
@@ -87,7 +175,7 @@ export default function MobileOrderImportPanel() {
   };
 
   const refreshData = async () => {
-    await Promise.all([loadStats(), loadLogs()]);
+    await Promise.all([loadStats(), loadLogs(), loadSalesRepStats()]);
   };
 
   useEffect(() => {
@@ -141,7 +229,7 @@ export default function MobileOrderImportPanel() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Estatísticas */}
+          {/* Estatísticas gerais */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{stats.totalImported}</div>
@@ -164,6 +252,48 @@ export default function MobileOrderImportPanel() {
                 }
               </div>
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Estatísticas por vendedor */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <User size={20} />
+              Estatísticas por Vendedor
+            </h3>
+            
+            {salesRepStats.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Nenhum vendedor com pedidos mobile encontrado
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {salesRepStats.map((stat) => (
+                  <div key={stat.sales_rep_id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                    <div>
+                      <div className="font-medium">{stat.sales_rep_name}</div>
+                      <div className="text-sm text-gray-500">
+                        {stat.last_sync 
+                          ? `Última sync: ${formatDistanceToNow(stat.last_sync, { addSuffix: true, locale: ptBR })}`
+                          : 'Nunca sincronizado'
+                        }
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {stat.pending_orders > 0 && (
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                          {stat.pending_orders} pendentes
+                        </Badge>
+                      )}
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {stat.total_imported} importados
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <Separator />
