@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Smartphone } from "lucide-react";
-import MobileSyncPanel from './MobileSyncPanel';
+import CompactMobileSyncPanel from './CompactMobileSyncPanel';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { toast } from 'sonner';
 
@@ -60,34 +60,34 @@ export default function SystemSettings() {
   }, [settings]);
   
   return (
-    <div className="space-y-8">
-      {/* Cabeçalho principal com descrição */}
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Configurações do Sistema</h2>
-        <p className="text-muted-foreground">
+    <div className="space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto">
+      {/* Cabeçalho principal com descrição - mais compacto */}
+      <div className="space-y-1">
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900">Configurações do Sistema</h2>
+        <p className="text-sm text-muted-foreground">
           Gerencie as configurações técnicas e sincronização da sua aplicação.
         </p>
       </div>
       
-      {/* Card de sincronização móvel */}
+      {/* Card de sincronização móvel - mais compacto */}
       <Card className="overflow-hidden border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-md">
-        <CardHeader className="border-b pb-6">
+        <CardHeader className="border-b pb-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-primary/10 p-2.5">
-              <Smartphone className="text-primary h-6 w-6" />
+            <div className="rounded-full bg-primary/10 p-2">
+              <Smartphone className="text-primary h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-xl">
+              <CardTitle className="text-lg">
                 Sincronização Móvel
               </CardTitle>
-              <CardDescription className="mt-1.5">
+              <CardDescription className="mt-1">
                 Gerencie a conexão e sincronização com dispositivos móveis.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <MobileSyncPanel salesRepId={defaultSalesRepId} />
+          <CompactMobileSyncPanel salesRepId={defaultSalesRepId} />
         </CardContent>
       </Card>
     </div>

@@ -10,7 +10,7 @@ import MobileAuthDocumentation from '@/components/settings/MobileAuthDocumentati
 export default function Settings() {
   return (
     <PageLayout title="Configurações">
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Tabs defaultValue="company" className="w-full">
           <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-flex">
             <TabsTrigger value="company">Dados da Empresa</TabsTrigger>
@@ -18,16 +18,16 @@ export default function Settings() {
             <TabsTrigger value="api">API REST</TabsTrigger>
             <TabsTrigger value="mobile">Mobile Auth</TabsTrigger>
           </TabsList>
-          <TabsContent value="company" className="mt-6">
+          <TabsContent value="company" className="mt-4">
             <CompanySettings />
           </TabsContent>
-          <TabsContent value="system" className="mt-6">
+          <TabsContent value="system" className="mt-4">
             <SystemSettings />
           </TabsContent>
-          <TabsContent value="api" className="mt-6">
+          <TabsContent value="api" className="mt-4">
             <ApiTokensPanel />
           </TabsContent>
-          <TabsContent value="mobile" className="mt-6">
+          <TabsContent value="mobile" className="mt-4">
             <MobileAuthDocumentation />
           </TabsContent>
         </Tabs>

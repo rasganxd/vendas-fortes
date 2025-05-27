@@ -90,7 +90,7 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     addCustomer: appOperations.addCustomer,
     updateCustomer: appOperations.updateCustomer,
     deleteCustomer: appOperations.deleteCustomer,
-    generateNextCustomerCode: appOperations.generateNextCustomerCode,
+    generateNextCustomerCode: async () => await appOperations.generateNextCustomerCode(),
     
     // Products data (override with direct state)
     products,
