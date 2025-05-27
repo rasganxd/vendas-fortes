@@ -150,17 +150,12 @@ export const validateProductDiscount = (
   const product = products.find(p => p.id === productId);
   if (!product) return true;
   
-  if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) return true;
-  if (product.price <= 0) return false;
-  
-  const discountPercentage = ((product.price - discountedPrice) / product.price) * 100;
-  
-  // Return string message if invalid, otherwise true
-  if (parseFloat(discountPercentage.toFixed(2)) <= parseFloat(product.maxDiscountPercentage.toFixed(2))) {
-    return true;
-  } else {
-    return `O desconto é maior que o máximo permitido (${product.maxDiscountPercentage}%)`;
+  // Simplified validation - just check if price is positive
+  if (discountedPrice <= 0) {
+    return "O preço deve ser maior que zero";
   }
+  
+  return true;
 };
 
 /**
@@ -170,12 +165,8 @@ export const getMinimumPrice = (productId: string, products: Product[]): number 
   const product = products.find(p => p.id === productId);
   if (!product) return 0;
   
-  if (product.maxDiscountPercentage === undefined || product.maxDiscountPercentage === null) {
-    return 0;
-  }
-  
-  const minimumPrice = product.price * (1 - (product.maxDiscountPercentage / 100));
-  return parseFloat(minimumPrice.toFixed(2));
+  // Return 0 as minimum price - no discount restrictions
+  return 0;
 };
 
 /**

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -151,21 +150,7 @@ export default function UnitsPanel() {
   const handleConfirmDelete = () => {
     if (!unitToDelete) return;
 
-    // Não permitir deletar unidades padrão
-    const isDefaultUnit = DEFAULT_UNITS.some(unit => unit.value === unitToDelete.value);
-    if (isDefaultUnit) {
-      toast("Erro", {
-        description: "Não é possível excluir unidades padrão do sistema",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
-      setDeleteDialogOpen(false);
-      setUnitToDelete(null);
-      return;
-    }
-
+    // Remover a proteção contra exclusão de unidades padrão - agora permite excluir qualquer uma
     const updatedUnits = units.filter(unit => unit.value !== unitToDelete.value);
     saveUnits(updatedUnits);
     
@@ -189,7 +174,7 @@ export default function UnitsPanel() {
       <CardHeader>
         <CardTitle>Gerenciar Unidades de Medida</CardTitle>
         <CardDescription>
-          Configure as unidades de medida e suas taxas de conversão. A taxa de conversão indica quantas unidades básicas correspondem a 1 desta unidade.
+          Configure as unidades de medida e suas taxas de conversão. A taxa de conversão indica quantas unidades básicas correspondem a 1 desta unidade. Agora você pode excluir qualquer unidade.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -275,48 +260,39 @@ export default function UnitsPanel() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {units.map((unit) => {
-              const isDefault = DEFAULT_UNITS.some(defaultUnit => defaultUnit.value === unit.value);
-              
-              return (
-                <TableRow key={unit.value}>
-                  <TableCell className="font-medium">{unit.value}</TableCell>
-                  <TableCell>{unit.label}</TableCell>
-                  <TableCell>
-                    <span className="text-sm">
-                      1 = {unit.conversionRate} {unit.conversionRate === 1 ? 'unidade básica' : 'unidades básicas'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditUnit(unit)}
-                        className="text-blue-600 hover:text-blue-700"
-                        title="Editar unidade"
-                      >
-                        <Edit size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteClick(unit)}
-                        className="text-red-600 hover:text-red-700"
-                        disabled={isDefault}
-                        title={
-                          isDefault 
-                            ? 'Não é possível excluir unidades padrão' 
-                            : 'Excluir unidade'
-                        }
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {units.map((unit) => (
+              <TableRow key={unit.value}>
+                <TableCell className="font-medium">{unit.value}</TableCell>
+                <TableCell>{unit.label}</TableCell>
+                <TableCell>
+                  <span className="text-sm">
+                    1 = {unit.conversionRate} {unit.conversionRate === 1 ? 'unidade básica' : 'unidades básicas'}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditUnit(unit)}
+                      className="text-blue-600 hover:text-blue-700"
+                      title="Editar unidade"
+                    >
+                      <Edit size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClick(unit)}
+                      className="text-red-600 hover:text-red-700"
+                      title="Excluir unidade"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
 
@@ -336,7 +312,7 @@ export default function UnitsPanel() {
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
           title="Excluir Unidade"
-          description={`Tem certeza que deseja excluir a unidade "${unitToDelete?.label}"?`}
+          description={`Tem certeza que deseja excluir a unidade "${unitToDelete?.label}"? Esta ação não pode ser desfeita.`}
           actionLabel="Excluir"
           cancelLabel="Cancelar"
         />

@@ -4,16 +4,16 @@ import { Unit } from '@/types/unit';
 import { UnitConverter } from '@/utils/unitConverter';
 
 const DEFAULT_UNITS: Unit[] = [
-  { value: 'UN', label: 'Unidade (UN)', isBaseUnit: true },
-  { value: 'KG', label: 'Quilograma (KG)', isBaseUnit: true },
-  { value: 'L', label: 'Litro (L)', isBaseUnit: true },
-  { value: 'ML', label: 'Mililitro (ML)', baseUnit: 'L', conversionRate: 0.001 },
-  { value: 'CX', label: 'Caixa (CX)', baseUnit: 'UN', conversionRate: 24 },
-  { value: 'PCT', label: 'Pacote (PCT)', baseUnit: 'UN', conversionRate: 12 },
-  { value: 'PAR', label: 'Par (PAR)', baseUnit: 'UN', conversionRate: 2 },
-  { value: 'DUZIA', label: 'Dúzia (DZ)', baseUnit: 'UN', conversionRate: 12 },
-  { value: 'ROLO', label: 'Rolo (RL)', isBaseUnit: true },
-  { value: 'METRO', label: 'Metro (M)', isBaseUnit: true }
+  { value: 'UN', label: 'Unidade (UN)', conversionRate: 1 },
+  { value: 'KG', label: 'Quilograma (KG)', conversionRate: 1 },
+  { value: 'L', label: 'Litro (L)', conversionRate: 1 },
+  { value: 'ML', label: 'Mililitro (ML)', conversionRate: 0.001 },
+  { value: 'CX', label: 'Caixa (CX)', conversionRate: 24 },
+  { value: 'PCT', label: 'Pacote (PCT)', conversionRate: 12 },
+  { value: 'PAR', label: 'Par (PAR)', conversionRate: 2 },
+  { value: 'DUZIA', label: 'Dúzia (DZ)', conversionRate: 12 },
+  { value: 'ROLO', label: 'Rolo (RL)', conversionRate: 1 },
+  { value: 'METRO', label: 'Metro (M)', conversionRate: 1 }
 ];
 
 const STORAGE_KEY = 'product_units';

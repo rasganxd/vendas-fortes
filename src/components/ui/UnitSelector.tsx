@@ -21,25 +21,15 @@ export default function UnitSelector({
   units,
   selectedUnit,
   onUnitChange,
-  productUnit,
   className
 }: UnitSelectorProps) {
-  // Filtrar unidades relacionadas ao produto se especificado
-  const availableUnits = productUnit 
-    ? units.filter(unit => 
-        unit.value === productUnit || 
-        unit.baseUnit === productUnit || 
-        (units.find(u => u.value === productUnit)?.baseUnit === unit.baseUnit)
-      )
-    : units;
-
   return (
     <Select value={selectedUnit} onValueChange={onUnitChange}>
       <SelectTrigger className={className}>
         <SelectValue placeholder="Unidade" />
       </SelectTrigger>
       <SelectContent>
-        {availableUnits.map(unit => (
+        {units.map(unit => (
           <SelectItem key={unit.value} value={unit.value}>
             {unit.value}
             {unit.conversionRate && unit.conversionRate !== 1 && (

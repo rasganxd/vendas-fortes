@@ -19,23 +19,12 @@ export class UnitConverter {
     
     if (!from || !to) return quantity;
     
-    // Se ambas têm a mesma unidade base, converter diretamente
-    if (from.baseUnit === to.baseUnit) {
-      const fromRate = from.conversionRate || 1;
-      const toRate = to.conversionRate || 1;
-      return (quantity * fromRate) / toRate;
-    }
+    // Conversão simples usando taxas de conversão
+    const fromRate = from.conversionRate || 1;
+    const toRate = to.conversionRate || 1;
     
-    // Se uma é base da outra
-    if (from.baseUnit === toUnit) {
-      return quantity * (from.conversionRate || 1);
-    }
-    
-    if (to.baseUnit === fromUnit) {
-      return quantity / (to.conversionRate || 1);
-    }
-    
-    return quantity;
+    // Converter para unidade base e depois para unidade desejada
+    return (quantity * fromRate) / toRate;
   }
   
   /**
@@ -50,13 +39,9 @@ export class UnitConverter {
   }
   
   /**
-   * Obtém unidades relacionadas (mesma base)
+   * Obtém unidades relacionadas (todas as unidades disponíveis)
    */
   getRelatedUnits(unit: string): Unit[] {
-    const unitData = this.units.find(u => u.value === unit);
-    if (!unitData) return [];
-    
-    const baseUnit = unitData.baseUnit || unit;
-    return this.units.filter(u => u.baseUnit === baseUnit || u.value === baseUnit);
+    return this.units;
   }
 }
