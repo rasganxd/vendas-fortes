@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,9 @@ import { useProductBrands } from '@/hooks/useProductBrands';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductGroups } from '@/hooks/useProductGroups';
 import { Link } from 'react-router-dom';
-import { Plus, DollarSign, Tags } from 'lucide-react';
+import { Plus, DollarSign, Tags, Ruler } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import UnitsPanel from '@/components/settings/UnitsPanel';
 
 export default function Products() {
   // Use centralized products from AppData
@@ -168,58 +169,102 @@ export default function Products() {
 
   return (
     <PageLayout title="Produtos">
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
-          <p className="text-sm text-gray-600">
-            {filteredProducts.length} produtos {searchTerm ? 'encontrados' : 'cadastrados'}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/produtos/precificacao">
-            <Button variant="outline">
-              <DollarSign size={16} className="mr-2" />
-              Precificação
-            </Button>
-          </Link>
+      <div className="space-y-4">
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-flex">
+            <TabsTrigger value="products">Lista de Produtos</TabsTrigger>
+            <TabsTrigger value="units">Unidades</TabsTrigger>
+            <TabsTrigger value="pricing">Precificação</TabsTrigger>
+            <TabsTrigger value="classifications">Classificações</TabsTrigger>
+          </TabsList>
           
-          <Link to="/produtos/classificacoes">
-            <Button variant="outline">
-              <Tags size={16} className="mr-2" />
-              Classificações
-            </Button>
-          </Link>
-          
-          <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700">
-            <Plus size={16} className="mr-2" />
-            Novo Produto
-          </Button>
-        </div>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produtos..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="pl-8"
-              />
+          <TabsContent value="products" className="mt-4">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
+                <p className="text-sm text-gray-600">
+                  {filteredProducts.length} produtos {searchTerm ? 'encontrados' : 'cadastrados'}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus size={16} className="mr-2" />
+                  Novo Produto
+                </Button>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ProductsTable 
-            products={filteredProducts} 
-            isLoading={isLoadingProducts} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete} 
-          />
-        </CardContent>
-      </Card>
+            
+            <Card>
+              <CardHeader>
+                <div className="flex items-center space-x-4">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar produtos..."
+                      value={searchTerm}
+                      onChange={handleSearchChange}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ProductsTable 
+                  products={filteredProducts} 
+                  isLoading={isLoadingProducts} 
+                  onEdit={handleEdit} 
+                  onDelete={handleDelete} 
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="units" className="mt-4">
+            <UnitsPanel />
+          </TabsContent>
+          
+          <TabsContent value="pricing" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Precificação</CardTitle>
+                <CardDescription>
+                  Configure as regras de precificação dos seus produtos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <DollarSign size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500">Funcionalidade de precificação</p>
+                  <p className="text-sm text-gray-400">Em desenvolvimento</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="classifications" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Classificações</CardTitle>
+                <CardDescription>
+                  Gerencie as categorias, grupos e marcas dos produtos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Tags size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500">Gerenciamento de classificações</p>
+                  <Link to="/produtos/classificacoes">
+                    <Button variant="outline" className="mt-4">
+                      <Tags size={16} className="mr-2" />
+                      Ir para Classificações
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
       
       <ProductForm 
         open={open} 
