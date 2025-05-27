@@ -34,6 +34,7 @@ import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useProductUnits } from './hooks/useProductUnits';
 
 // Define a schema for the product form
 const productFormSchema = z.object({
@@ -56,20 +57,6 @@ const productFormSchema = z.object({
 
 // Define a type for the form data
 type ProductFormData = z.infer<typeof productFormSchema>;
-
-// Common units for products
-export const PRODUCT_UNITS = [
-  { value: 'UN', label: 'Unidade (UN)' },
-  { value: 'KG', label: 'Quilograma (KG)' },
-  { value: 'L', label: 'Litro (L)' },
-  { value: 'ML', label: 'Mililitro (ML)' },
-  { value: 'CX', label: 'Caixa (CX)' },
-  { value: 'PCT', label: 'Pacote (PCT)' },
-  { value: 'PAR', label: 'Par (PAR)' },
-  { value: 'DUZIA', label: 'Dúzia (DZ)' },
-  { value: 'ROLO', label: 'Rolo (RL)' },
-  { value: 'METRO', label: 'Metro (M)' }
-];
 
 interface ProductFormProps {
   open: boolean;
@@ -95,6 +82,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   onSubmit
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { units } = useProductUnits();
   
   // Add debug logging for classification data
   useEffect(() => {
@@ -254,7 +242,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                           <SelectValue placeholder="Selecione a unidade" />
                         </SelectTrigger>
                         <SelectContent>
-                          {PRODUCT_UNITS.map(unit => (
+                          {units.map(unit => (
                             <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
                           ))}
                         </SelectContent>
@@ -303,7 +291,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                               <SelectValue placeholder="Selecione a subunidade" />
                             </SelectTrigger>
                             <SelectContent>
-                              {PRODUCT_UNITS.map(unit => (
+                              {units.map(unit => (
                                 <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
                               ))}
                             </SelectContent>
