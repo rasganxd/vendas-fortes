@@ -29,6 +29,9 @@ export const productService = {
         categoryId: item.category_id || '',
         groupId: item.group_id || '',
         brandId: item.brand_id || '',
+        hasSubunit: item.has_subunit || false,
+        subunit: item.subunit || '',
+        subunitRatio: item.subunit_ratio || 1,
         syncStatus: (item.sync_status === 'synced' || item.sync_status === 'pending' || item.sync_status === 'error') 
           ? item.sync_status as 'synced' | 'pending' | 'error'
           : 'synced',
@@ -70,6 +73,9 @@ export const productService = {
         categoryId: data.category_id || '',
         groupId: data.group_id || '',
         brandId: data.brand_id || '',
+        hasSubunit: data.has_subunit || false,
+        subunit: data.subunit || '',
+        subunitRatio: data.subunit_ratio || 1,
         syncStatus: (data.sync_status === 'synced' || data.sync_status === 'pending' || data.sync_status === 'error') 
           ? data.sync_status as 'synced' | 'pending' | 'error'
           : 'synced',
@@ -96,6 +102,9 @@ export const productService = {
         category_id: product.categoryId || null,
         group_id: product.groupId || null,
         brand_id: product.brandId || null,
+        has_subunit: product.hasSubunit || false,
+        subunit: product.subunit || null,
+        subunit_ratio: product.subunitRatio || 1,
         sync_status: product.syncStatus || 'synced'
       };
       
@@ -132,6 +141,9 @@ export const productService = {
       if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
       if (product.groupId !== undefined) updateData.group_id = product.groupId;
       if (product.brandId !== undefined) updateData.brand_id = product.brandId;
+      if (product.hasSubunit !== undefined) updateData.has_subunit = product.hasSubunit;
+      if (product.subunit !== undefined) updateData.subunit = product.subunit;
+      if (product.subunitRatio !== undefined) updateData.subunit_ratio = product.subunitRatio;
       if (product.syncStatus !== undefined) updateData.sync_status = product.syncStatus;
       
       updateData.updated_at = new Date().toISOString();
