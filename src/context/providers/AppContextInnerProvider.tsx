@@ -194,7 +194,18 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     reconnectToSupabase: connection.reconnectToSupabase,
     testConnection: connection.testConnection,
     settings: {
-      primaryColor: '#3b82f6'
+      id: 'default',
+      company: {
+        name: 'Minha Empresa',
+        address: '',
+        phone: '',
+        email: '',
+        document: '',
+        footer: ''
+      },
+      theme: {
+        primaryColor: '#6B7280'
+      }
     },
     
     // System operations
