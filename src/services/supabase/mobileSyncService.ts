@@ -118,7 +118,7 @@ class MobileSyncService {
   }
 
   // Clear sync logs
-  async clearSyncLogs(): Promise<void> => {
+  async clearSyncLogs(): Promise<void> {
     try {
       console.log('🗑️ Clearing sync logs...');
       
