@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
@@ -15,6 +14,7 @@ import { useCustomers } from '@/hooks/useCustomers';
 import OrdersActionButtons from '@/components/orders/OrdersActionButtons';
 import OrdersSearchBar from '@/components/orders/OrdersSearchBar';
 import EmptyOrdersState from '@/components/orders/EmptyOrdersState';
+import MobileOrderImportButton from '@/components/orders/MobileOrderImportButton';
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -172,6 +172,12 @@ const Orders = () => {
   // Log filtered and sorted orders
   console.log(`Orders Page: Displaying ${sortedOrders.length} orders (filtered from ${orders?.length || 0})`);
 
+  // Handle order import completion
+  const handleImportComplete = () => {
+    console.log("Orders Page: Import completed, refreshing data");
+    // The hook already dispatches the ordersUpdated event, so orders will refresh automatically
+  };
+
   return (
     <PageLayout 
       title="Pedidos" 
@@ -181,6 +187,7 @@ const Orders = () => {
         handleNewOrder={handleNewOrder}
         handlePrintOrders={handlePrintOrders}
         selectedOrderCount={selectedOrderIds.length}
+        importButton={<MobileOrderImportButton onImportComplete={handleImportComplete} />}
       />
       
       <OrdersSearchBar 

@@ -1,41 +1,47 @@
 
 import React from 'react';
-import { Plus, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Plus, Printer } from 'lucide-react';
 
 interface OrdersActionButtonsProps {
   handleNewOrder: () => void;
   handlePrintOrders: () => void;
   selectedOrderCount: number;
+  importButton?: React.ReactNode;
 }
 
-const OrdersActionButtons: React.FC<OrdersActionButtonsProps> = ({
-  handleNewOrder,
-  handlePrintOrders,
-  selectedOrderCount
-}) => {
+export default function OrdersActionButtons({ 
+  handleNewOrder, 
+  handlePrintOrders, 
+  selectedOrderCount,
+  importButton 
+}: OrdersActionButtonsProps) {
   return (
-    <div className="flex gap-2 mb-4">
-      <Button 
-        onClick={handleNewOrder} 
-        variant="default"
-      >
-        <Plus className="h-4 w-4 mr-2" /> Novo Pedido
-      </Button>
-      <Button
-        onClick={handlePrintOrders}
-        variant="outline"
-        disabled={selectedOrderCount === 0}
-      >
-        <Clipboard className="h-4 w-4 mr-2" /> Imprimir
-        {selectedOrderCount > 0 && (
-          <span className="ml-2 bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 text-xs font-medium">
-            {selectedOrderCount}
-          </span>
-        )}
-      </Button>
+    <div className="flex justify-between items-center mb-4">
+      <div>
+        <h2 className="text-lg font-medium">Lista de Pedidos</h2>
+        <p className="text-sm text-gray-600">
+          Gerencie todos os pedidos do sistema
+        </p>
+      </div>
+      
+      <div className="flex gap-2">
+        {importButton}
+        
+        <Button
+          variant="outline"
+          onClick={handlePrintOrders}
+          disabled={selectedOrderCount === 0}
+        >
+          <Printer size={16} className="mr-2" />
+          Imprimir ({selectedOrderCount})
+        </Button>
+        
+        <Button onClick={handleNewOrder} className="bg-blue-600 hover:bg-blue-700">
+          <Plus size={16} className="mr-2" />
+          Novo Pedido
+        </Button>
+      </div>
     </div>
   );
-};
-
-export default OrdersActionButtons;
+}
