@@ -2,6 +2,8 @@
  * Transforms data from snake_case to camelCase or vice versa
  */
 
+import { SalesRep } from '@/types/personnel';
+
 type CamelCase<T extends string> = T extends `${infer First}_${infer Rest}`
   ? `${First}${Capitalize<CamelCase<Rest>>}`
   : T;

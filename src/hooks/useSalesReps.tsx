@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -130,7 +129,7 @@ export const useSalesReps = () => {
     }
   };
 
-  const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): Promise<string> => {
+  const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): Promise<void> => {
     try {
       console.log("=== UPDATING SALES REP ===");
       console.log("ID:", id, "Data:", salesRep);
@@ -162,7 +161,7 @@ export const useSalesReps = () => {
       });
       
       console.log("=== SALES REP UPDATE COMPLETED ===");
-      return id;
+      // No return value needed for Promise<void>
     } catch (error) {
       console.error("❌ Error updating sales rep:", error);
       toast({
@@ -170,7 +169,6 @@ export const useSalesReps = () => {
         description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive"
       });
-      return "";
     }
   };
 

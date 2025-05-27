@@ -90,7 +90,7 @@ export interface SystemContextType {
   updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
   deleteLoad: (id: string) => Promise<void>;
   
-  // Operações de representante de vendas
+  // Operações de representante de vendas - fix the return type to Promise<void>
   addSalesRep: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
   updateSalesRep: (id: string, salesRep: Partial<SalesRep>) => Promise<void>;
   deleteSalesRep: (id: string) => Promise<void>;

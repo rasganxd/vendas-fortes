@@ -60,8 +60,8 @@ export const useOrdersOperations = (
     }
   };
 
-  // Update an existing order
-  const updateOrder = async (id: string, order: Partial<Order>) => {
+  // Update an existing order - now returns Promise<string>
+  const updateOrder = async (id: string, order: Partial<Order>): Promise<string> => {
     try {
       await orderService.update(id, order);
       
@@ -86,6 +86,8 @@ export const useOrdersOperations = (
         refreshOrders();
       }, 2000);
       
+      return id; // Return the id instead of void
+      
     } catch (error) {
       console.error("Erro ao atualizar pedido:", error);
       toast({
@@ -93,6 +95,7 @@ export const useOrdersOperations = (
         description: "Houve um problema ao atualizar o pedido.",
         variant: "destructive"
       });
+      return ""; // Return empty string on error
     }
   };
 
