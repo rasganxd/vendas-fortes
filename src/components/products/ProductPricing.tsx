@@ -19,9 +19,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
-import { useAppContext } from '@/hooks/useAppContext';
+import { useAppData } from '@/context/providers/AppDataProvider';
 import { ArrowLeft, Loader2, Save, Search } from 'lucide-react';
 import {
   Select,
@@ -33,7 +33,14 @@ import {
 
 const ProductPricing = () => {
   const navigate = useNavigate();
-  const { products, productCategories, productGroups, updateProduct } = useAppContext();
+  const { 
+    products, 
+    productCategories, 
+    productGroups, 
+    updateProduct,
+    isLoadingProducts 
+  } = useAppData();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [filteredProducts, setFilteredProducts] = useState(products);
@@ -79,10 +86,8 @@ const ProductPricing = () => {
 
   const handleSelectAll = () => {
     if (selectedProducts.size === filteredProducts.length) {
-      // If all are selected, unselect all
       setSelectedProducts(new Set());
     } else {
-      // Select all filtered products
       const allIds = new Set(filteredProducts.map(product => product.id));
       setSelectedProducts(allIds);
     }
@@ -108,10 +113,12 @@ const ProductPricing = () => {
 
   const applyBulkPricing = () => {
     if (bulkValue <= 0) {
-      toast({
-        title: "Valor inválido",
+      toast("Valor inválido", {
         description: "Por favor, insira um valor válido para aplicar em massa.",
-        variant: "destructive"
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
       });
       return;
     }
@@ -123,14 +130,11 @@ const ProductPricing = () => {
       if (!product) return;
       
       if (markupMode === 'percentage') {
-        // Add percentage to cost
         const markup = product.cost * (bulkValue / 100);
         newPrices[productId] = product.cost + markup;
       } else if (markupMode === 'fixed') {
-        // Add fixed amount to cost
         newPrices[productId] = product.cost + bulkValue;
       } else if (markupMode === 'absolute') {
-        // Set absolute price
         newPrices[productId] = bulkValue;
       }
     });
@@ -138,8 +142,7 @@ const ProductPricing = () => {
     setProductPrices(newPrices);
     setHasChanges(true);
     
-    toast({
-      title: "Preços atualizados",
+    toast("Preços atualizados", {
       description: `Preços de ${selectedProducts.size} produtos atualizados com sucesso.`
     });
   };
@@ -165,29 +168,28 @@ const ProductPricing = () => {
       }
       
       if (updates.length > 0) {
-        // Update products one by one
         for (const update of updates) {
           await updateProduct(update.id, update.updates);
         }
         
-        toast({
-          title: "Preços salvos",
+        toast("Preços salvos", {
           description: `Preços de ${updates.length} produtos foram salvos com sucesso.`
         });
         
         setHasChanges(false);
       } else {
-        toast({
-          title: "Nenhuma alteração",
+        toast("Nenhuma alteração", {
           description: "Não há alterações para salvar."
         });
       }
     } catch (error) {
       console.error("Erro ao salvar preços:", error);
-      toast({
-        title: "Erro ao salvar",
+      toast("Erro ao salvar", {
         description: "Ocorreu um erro ao salvar os preços dos produtos.",
-        variant: "destructive"
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
       });
     } finally {
       setIsLoading(false);
@@ -198,6 +200,11 @@ const ProductPricing = () => {
     const numericValue = value.replace(/\D/g, '');
     return parseFloat(numericValue) / 100 || 0;
   };
+
+  // Debug logging
+  console.log("ProductPricing - products:", products.length);
+  console.log("ProductPricing - filteredProducts:", filteredProducts.length);
+  console.log("ProductPricing - isLoadingProducts:", isLoadingProducts);
 
   return (
     <Card className="w-full">
@@ -215,7 +222,7 @@ const ProductPricing = () => {
         </div>
         <CardTitle>Precificação de Produtos</CardTitle>
         <CardDescription>
-          Configure os preços de venda dos seus produtos
+          Configure os preços de venda dos seus produtos ({products.length} produtos carregados)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -310,67 +317,74 @@ const ProductPricing = () => {
           
           {/* Products table */}
           <div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox 
-                      checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Selecionar todos"
-                    />
-                  </TableHead>
-                  <TableHead className="w-20">Código</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="w-32">Custo</TableHead>
-                  <TableHead className="w-32">Preço Venda</TableHead>
-                  <TableHead className="w-32">Markup %</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.length === 0 ? (
+            {isLoadingProducts ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2">Carregando produtos...</span>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Nenhum produto encontrado
-                    </TableCell>
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Selecionar todos"
+                      />
+                    </TableHead>
+                    <TableHead className="w-20">Código</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="w-32">Custo</TableHead>
+                    <TableHead className="w-32">Preço Venda</TableHead>
+                    <TableHead className="w-32">Markup %</TableHead>
                   </TableRow>
-                ) : (
-                  filteredProducts.map((product) => {
-                    const currentPrice = productPrices[product.id] || 0;
-                    const markup = product.cost > 0
-                      ? ((currentPrice - product.cost) / product.cost) * 100
-                      : 0;
-                    
-                    return (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <Checkbox 
-                            checked={selectedProducts.has(product.id)}
-                            onCheckedChange={() => handleSelectProduct(product.id)}
-                            aria-label={`Selecionar ${product.name}`}
-                          />
-                        </TableCell>
-                        <TableCell>{product.code}</TableCell>
-                        <TableCell>{product.name}</TableCell>
-                        <TableCell>{formatCurrency(product.cost)}</TableCell>
-                        <TableCell>
-                          <Input
-                            value={formatCurrency(currentPrice)}
-                            onChange={(e) => {
-                              const newPrice = formatPriceInput(e.target.value);
-                              handlePriceChange(product.id, newPrice);
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className={markup < 0 ? 'text-destructive' : ''}>
-                          {markup.toFixed(2)}%
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado com os filtros aplicados'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredProducts.map((product) => {
+                      const currentPrice = productPrices[product.id] || 0;
+                      const markup = product.cost > 0
+                        ? ((currentPrice - product.cost) / product.cost) * 100
+                        : 0;
+                      
+                      return (
+                        <TableRow key={product.id}>
+                          <TableCell>
+                            <Checkbox 
+                              checked={selectedProducts.has(product.id)}
+                              onCheckedChange={() => handleSelectProduct(product.id)}
+                              aria-label={`Selecionar ${product.name}`}
+                            />
+                          </TableCell>
+                          <TableCell>{product.code}</TableCell>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>{formatCurrency(product.cost)}</TableCell>
+                          <TableCell>
+                            <Input
+                              value={formatCurrency(currentPrice)}
+                              onChange={(e) => {
+                                const newPrice = formatPriceInput(e.target.value);
+                                handlePriceChange(product.id, newPrice);
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className={markup < 0 ? 'text-destructive' : ''}>
+                            {markup.toFixed(2)}%
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
 
           {/* Save button */}

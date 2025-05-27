@@ -5,7 +5,7 @@ import ProductPricing from '@/components/products/ProductPricing';
 import { useAppData } from '@/context/providers/AppDataProvider';
 
 const ProductPricingPage = () => {
-  const { refreshProducts } = useAppData();
+  const { refreshProducts, products } = useAppData();
 
   // Listen for product updates to refresh pricing
   useEffect(() => {
@@ -20,6 +20,9 @@ const ProductPricingPage = () => {
       window.removeEventListener('productsUpdated', handleProductsUpdated);
     };
   }, []);
+
+  // Debug logging
+  console.log("ProductPricingPage - products count:", products.length);
 
   return (
     <PageLayout title="Precificação de Produtos">
