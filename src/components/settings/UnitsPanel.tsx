@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trash2, Plus, Link } from 'lucide-react';
+import { Trash2, Plus, Link, Edit } from 'lucide-react';
 import { toast } from "sonner";
 import {
   Table,
@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Unit } from '@/types/unit';
+import EditUnitDialog from './EditUnitDialog';
 
 const DEFAULT_UNITS: Unit[] = [
   { value: 'UN', label: 'Unidade (UN)', isBaseUnit: true },
@@ -49,6 +50,8 @@ const STORAGE_KEY = 'product_units';
 export default function UnitsPanel() {
   const [units, setUnits] = useState<Unit[]>(DEFAULT_UNITS);
   const [isOpen, setIsOpen] = useState(false);
+  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newUnit, setNewUnit] = useState({ 
     value: '', 
     label: '', 
@@ -132,6 +135,32 @@ export default function UnitsPanel() {
     toast("Unidade adicionada", {
       description: "A nova unidade foi adicionada com sucesso"
     });
+  };
+
+  const handleEditUnit = (unit: Unit) => {
+    setEditingUnit(unit);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEditedUnit = (updatedUnit: Unit) => {
+    // Verificar se o código da unidade já existe (exceto a própria unidade sendo editada)
+    const existingUnit = units.find(u => u.value.toLowerCase() === updatedUnit.value.toLowerCase() && u.value !== editingUnit?.value);
+    if (existingUnit) {
+      toast("Erro", {
+        description: "Já existe uma unidade com este código",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+      return;
+    }
+
+    const updatedUnits = units.map(unit => 
+      unit.value === editingUnit?.value ? updatedUnit : unit
+    );
+    saveUnits(updatedUnits);
+    setEditingUnit(null);
   };
 
   const handleDeleteUnit = (valueToDelete: string) => {
@@ -301,7 +330,7 @@ export default function UnitsPanel() {
               <TableHead>Nome Completo</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Conversão</TableHead>
-              <TableHead className="w-[100px]">Ações</TableHead>
+              <TableHead className="w-[140px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -333,24 +362,46 @@ export default function UnitsPanel() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {!isDefault && (
+                    <div className="flex gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteUnit(unit.value)}
-                        className="text-red-600 hover:text-red-700"
-                        disabled={dependentCount > 0}
-                        title={dependentCount > 0 ? `${dependentCount} unidade(s) dependem desta` : ''}
+                        onClick={() => handleEditUnit(unit)}
+                        className="text-blue-600 hover:text-blue-700"
+                        title="Editar unidade"
                       >
-                        <Trash2 size={16} />
+                        <Edit size={16} />
                       </Button>
-                    )}
+                      {!isDefault && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteUnit(unit.value)}
+                          className="text-red-600 hover:text-red-700"
+                          disabled={dependentCount > 0}
+                          title={dependentCount > 0 ? `${dependentCount} unidade(s) dependem desta` : 'Excluir unidade'}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
+
+        <EditUnitDialog
+          unit={editingUnit}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingUnit(null);
+          }}
+          onSave={handleSaveEditedUnit}
+          baseUnits={baseUnits}
+        />
       </CardContent>
     </Card>
   );
