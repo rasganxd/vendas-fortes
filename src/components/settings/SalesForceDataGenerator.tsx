@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Users, User, CheckCircle, AlertCircle } from 'lucide-react';
+import { Download, Users, User, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import { toast } from "sonner";
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { Badge } from '@/components/ui/badge';
+import { syncUpdatesService } from '@/services/supabase/syncUpdatesService';
 import {
   Table,
   TableBody,
@@ -26,6 +27,7 @@ export default function SalesForceDataGenerator() {
   const { salesReps, isLoading } = useSalesReps();
   const [generationStatus, setGenerationStatus] = useState<Record<string, SalesRepDataStatus>>({});
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [isActivatingSync, setIsActivatingSync] = useState(false);
 
   const generateDataForSalesRep = async (salesRepId: string) => {
     console.log('🔄 Gerando dados para vendedor:', salesRepId);
@@ -109,6 +111,39 @@ export default function SalesForceDataGenerator() {
     }
   };
 
+  const activateSyncUpdate = async () => {
+    console.log('🚀 Ativando atualização de sincronização');
+    setIsActivatingSync(true);
+    
+    try {
+      await syncUpdatesService.createSyncUpdate(
+        'Dados da força de vendas atualizados - Desktop',
+        ['customers', 'products', 'payment_tables'],
+        'Desktop User'
+      );
+      
+      toast("Sincronização ativada!", {
+        description: "Dispositivos móveis podem agora sincronizar os dados atualizados",
+        style: {
+          backgroundColor: 'rgb(34, 197, 94)',
+          color: 'white'
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Erro ao ativar sincronização:', error);
+      toast("Erro", {
+        description: "Falha ao ativar sincronização para dispositivos móveis",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsActivatingSync(false);
+    }
+  };
+
   const getStatusBadge = (status: SalesRepDataStatus) => {
     switch (status.status) {
       case 'generating':
@@ -155,20 +190,31 @@ export default function SalesForceDataGenerator() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <p className="text-sm text-gray-600">
               {salesReps.length} vendedores cadastrados
             </p>
           </div>
-          <Button 
-            onClick={generateDataForAllSalesReps}
-            disabled={isGeneratingAll || salesReps.length === 0}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Users size={16} className="mr-2" />
-            {isGeneratingAll ? 'Gerando para Todos...' : 'Gerar para Todos'}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button 
+              onClick={generateDataForAllSalesReps}
+              disabled={isGeneratingAll || salesReps.length === 0}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Users size={16} className="mr-2" />
+              {isGeneratingAll ? 'Gerando para Todos...' : 'Gerar para Todos'}
+            </Button>
+            
+            <Button 
+              onClick={activateSyncUpdate}
+              disabled={isActivatingSync || isGeneratingAll}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Zap size={16} className={`mr-2 ${isActivatingSync ? 'animate-spin' : ''}`} />
+              {isActivatingSync ? 'Ativando...' : 'Ativar Sincronização Mobile'}
+            </Button>
+          </div>
         </div>
 
         {salesReps.length === 0 ? (
@@ -231,11 +277,12 @@ export default function SalesForceDataGenerator() {
         )}
 
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-medium text-blue-900 mb-2">Como funciona:</h4>
+          <h4 className="font-medium text-blue-900 mb-2">Como funciona o controle de sincronização:</h4>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• <strong>Gerar Individual:</strong> Atualiza os dados apenas para o vendedor selecionado</li>
-            <li>• <strong>Gerar para Todos:</strong> Atualiza os dados para todos os vendedores cadastrados</li>
-            <li>• <strong>Status:</strong> Acompanhe o progresso da geração em tempo real</li>
+            <li>• <strong>Gerar Individual/Todos:</strong> Atualiza os dados para vendedores específicos ou todos</li>
+            <li>• <strong>Ativar Sincronização Mobile:</strong> Libera os dados atualizados para dispositivos móveis</li>
+            <li>• <strong>Controle de Acesso:</strong> Mobile só recebe dados quando Desktop ativa uma sincronização</li>
+            <li>• <strong>Status em Tempo Real:</strong> Acompanhe o progresso da geração e ativação</li>
           </ul>
         </div>
       </CardContent>

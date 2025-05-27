@@ -9,9 +9,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, Trash2, Download } from "lucide-react";
+import { Loader2, RefreshCw, Smartphone, CheckCircle, AlertCircle, Trash2, Download, Zap } from "lucide-react";
 import { mobileSyncService, SyncLogEntry } from '@/services/supabase/mobileSyncService';
+import { syncUpdatesService, SyncUpdate } from '@/services/supabase/syncUpdatesService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/utils/date-format';
 import { toast } from '@/components/ui/use-toast';
 
@@ -21,9 +23,12 @@ interface MobileSyncPanelProps {
 
 const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
   const [syncLogs, setSyncLogs] = useState<SyncLogEntry[]>([]);
+  const [syncUpdates, setSyncUpdates] = useState<SyncUpdate[]>([]);
+  const [activeUpdate, setActiveUpdate] = useState<SyncUpdate | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'error' | 'info'>('info');
@@ -66,6 +71,54 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
     }
   };
 
+  const loadSyncUpdates = async () => {
+    try {
+      const updates = await syncUpdatesService.getSyncUpdatesHistory(5);
+      setSyncUpdates(updates);
+      
+      const active = await syncUpdatesService.checkForActiveUpdates();
+      setActiveUpdate(active);
+    } catch (error) {
+      console.error("Error loading sync updates:", error);
+    }
+  };
+
+  const checkForUpdates = async () => {
+    setIsCheckingUpdates(true);
+    try {
+      const updateCheck = await mobileSyncService.checkForUpdates();
+      
+      if (updateCheck.hasUpdates) {
+        setStatusMessage(`✅ ${updateCheck.message}`);
+        setStatusType('info');
+        setActiveUpdate(updateCheck.updateInfo || null);
+      } else {
+        setStatusMessage(`ℹ️ ${updateCheck.message}`);
+        setStatusType('info');
+        setActiveUpdate(null);
+      }
+      
+      toast({
+        title: "Verificação de atualizações",
+        description: updateCheck.message,
+      });
+      
+      await loadSyncUpdates();
+    } catch (error) {
+      console.error("Error checking for updates:", error);
+      setStatusMessage("Erro ao verificar atualizações disponíveis.");
+      setStatusType('error');
+      
+      toast({
+        title: "Erro",
+        description: "Não foi possível verificar atualizações.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCheckingUpdates(false);
+    }
+  };
+
   const clearSyncLogs = async () => {
     setIsClearing(true);
     try {
@@ -94,23 +147,35 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
     }
   };
 
-  const triggerSync = async () => {
+  const triggerControlledSync = async () => {
     setIsSyncing(true);
     try {
-      await mobileSyncService.syncAllData();
-      setStatusMessage("Sincronização manual executada com sucesso.");
-      setStatusType('info');
+      const result = await mobileSyncService.syncAllDataWithUpdateCheck();
       
-      toast({
-        title: "Sincronização concluída",
-        description: "Dados sincronizados com sucesso!",
-      });
+      if (result.success) {
+        setStatusMessage("✅ Sincronização controlada executada com sucesso.");
+        setStatusType('info');
+        setActiveUpdate(null); // Clear active update after successful sync
+        
+        toast({
+          title: "Sincronização concluída",
+          description: result.message,
+        });
+      } else {
+        setStatusMessage(`ℹ️ ${result.message}`);
+        setStatusType('info');
+        
+        toast({
+          title: "Sincronização",
+          description: result.message,
+        });
+      }
       
-      // Reload logs to show the new sync event
-      await loadSyncLogs();
+      // Reload logs and updates to show the new sync event
+      await Promise.all([loadSyncLogs(), loadSyncUpdates()]);
     } catch (error) {
-      console.error("Error during manual sync:", error);
-      setStatusMessage("Erro durante sincronização manual.");
+      console.error("Error during controlled sync:", error);
+      setStatusMessage("Erro durante sincronização controlada.");
       setStatusType('error');
       
       toast({
@@ -125,6 +190,8 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
 
   useEffect(() => {
     loadSyncLogs();
+    loadSyncUpdates();
+    checkForUpdates();
   }, []);
 
   const getStatusIcon = (eventType: 'upload' | 'download' | 'error') => {
@@ -152,7 +219,30 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
         </Alert>
       )}
 
-      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-100">
+      {/* Update Status Section */}
+      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-100">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2">
+          <span className="font-medium text-blue-800 text-sm sm:text-base">Status de Atualizações:</span>
+          <div className="flex items-center gap-2 mt-2 sm:mt-0">
+            {activeUpdate ? (
+              <Badge className="bg-green-100 text-green-700 border-green-200">
+                <Zap className="w-3 h-3 mr-1" />
+                Atualização Disponível
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-gray-300">
+                Nenhuma Atualização
+              </Badge>
+            )}
+          </div>
+        </div>
+        
+        {activeUpdate && (
+          <div className="text-sm text-green-700 mb-2">
+            📅 {activeUpdate.description} • Criada em {formatSyncDate(activeUpdate.created_at)}
+          </div>
+        )}
+        
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2">
           <span className="font-medium text-blue-800 text-sm sm:text-base">Último sincronizado:</span>
           <span className="text-blue-700 text-xs sm:text-sm break-all">{lastSynced || 'Nunca'}</span>
@@ -161,13 +251,28 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
         <div className="flex flex-col sm:flex-row justify-end mt-3 sm:mt-4 space-y-2 sm:space-y-0 sm:space-x-2">
           <Button 
             variant="outline" 
-            onClick={triggerSync}
-            disabled={isLoading || isSyncing}
+            onClick={checkForUpdates}
+            disabled={isCheckingUpdates}
             className="border-blue-200 text-blue-700 hover:bg-blue-100 text-sm w-full sm:w-auto"
             size="sm"
           >
+            <Zap className={`mr-2 h-3 w-3 sm:h-4 sm:w-4 ${isCheckingUpdates ? 'animate-spin' : ''}`} />
+            Verificar Atualizações
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={triggerControlledSync}
+            disabled={isLoading || isSyncing}
+            className={`text-sm w-full sm:w-auto ${
+              activeUpdate 
+                ? 'border-green-200 text-green-700 hover:bg-green-100' 
+                : 'border-gray-200 text-gray-500'
+            }`}
+            size="sm"
+          >
             <Download className={`mr-2 h-3 w-3 sm:h-4 sm:w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            Sincronizar Agora
+            Sincronizar Dados
           </Button>
           
           <Button 
@@ -195,13 +300,35 @@ const MobileSyncPanel: React.FC<MobileSyncPanelProps> = ({ salesRepId }) => {
         
         <div className="mt-3 pt-2 border-t border-blue-200 text-xs text-blue-600">
           <div className="bg-blue-100 p-2 rounded text-center">
-            <p><strong>Configuração API Móvel:</strong></p>
-            <p>URL: https://ufvnubabpcyimahbubkd.supabase.co</p>
-            <p>Chave: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdm51YmFicGN5aW1haGJ1YmtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MzQ1NzIsImV4cCI6MjA2MzQxMDU3Mn0.rL_UAaLky3SaSAigQPrWAZjhkM8FBmeO0w-pEiB5aro</p>
-            <p className="text-xs">Configure o app móvel com essas informações para sincronização direta</p>
+            <p><strong>Sistema de Controle de Sincronização Ativo</strong></p>
+            <p>✅ Mobile só sincroniza quando Desktop libera atualizações</p>
+            <p>🔄 Verificação automática de atualizações disponíveis</p>
+            <p className="text-xs mt-1">Configure o app móvel com URL: https://ufvnubabpcyimahbubkd.supabase.co</p>
           </div>
         </div>
       </div>
+
+      {/* Recent Sync Updates */}
+      {syncUpdates.length > 0 && (
+        <div className="mb-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Atualizações Recentes:</h4>
+          <div className="space-y-1">
+            {syncUpdates.slice(0, 3).map((update) => (
+              <div key={update.id} className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded">
+                <span>{update.description}</span>
+                <div className="flex items-center gap-2">
+                  {update.is_active ? (
+                    <Badge className="bg-green-100 text-green-700 text-xs">Ativa</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">Concluída</Badge>
+                  )}
+                  <span className="text-gray-500">{formatSyncDate(update.created_at)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4 text-blue-800">Histórico de Sincronização</h3>
       
