@@ -1,16 +1,16 @@
 
+
 import React, { useState } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Edit, Trash2, Key, Smartphone, Link } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, Key, Link } from 'lucide-react';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { SalesRep } from '@/types';
 import { EditSalesRepDialog } from '@/components/personnel/EditSalesRepDialog';
 import DeleteSalesRepDialog from '@/components/personnel/DeleteSalesRepDialog';
 import SalesRepCredentialsDialog from '@/components/personnel/SalesRepCredentialsDialog';
-import MobileSyncStatus from '@/components/personnel/MobileSyncStatus';
 
 export default function SalesReps() {
   const {
@@ -149,8 +149,6 @@ export default function SalesReps() {
                     )}
                   </div>
 
-                  <MobileSyncStatus salesRepId={salesRep.id} />
-
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
@@ -209,3 +207,4 @@ export default function SalesReps() {
     </PageLayout>
   );
 }
+

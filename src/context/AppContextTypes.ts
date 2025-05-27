@@ -1,4 +1,5 @@
 
+
 import { Customer, Product, Order, Payment, Vehicle, SalesRep, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 import { Load } from '@/types';
 import { createContext } from 'react';
@@ -105,7 +106,7 @@ export interface SystemContextType {
   addPayment: (payment: Omit<Payment, 'id'>) => Promise<string>;
   updatePayment: (id: string, payment: Partial<Payment>) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
-  createAutomaticPaymentRecord: (order: Order) => Promise<string | undefined>;
+  createAutomaticPaymentRecord: (order: Order) => Promise<string>;
   
   // Operações de método de pagamento
   addPaymentMethod: (method: Omit<PaymentMethod, 'id'>) => Promise<string>;
@@ -161,3 +162,4 @@ export interface AppContextType extends SystemContextType {
   generateRouteUpdate: (routeId: string, salesRepId: string) => Promise<number>;
   getRouteWithCustomers: (routeId: string) => Promise<DeliveryRoute | null>;
 }
+
