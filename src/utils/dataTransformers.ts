@@ -164,26 +164,25 @@ export const transformProductCategoryData = (data: any) => {
 /**
  * Transform a Supabase sales rep record to our internal SalesRep type
  */
-export const transformSalesRepData = (data: any) => {
-  if (!data) return null;
+export const transformSalesRepData = (supabaseData: any): SalesRep | null => {
+  if (!supabaseData) return null;
   
-  const transformed = toCamelCase(data);
-  
-  if (!transformed.name) {
-    console.error('Sales rep data missing required name:', data);
+  try {
+    return {
+      id: supabaseData.id,
+      code: supabaseData.code,
+      name: supabaseData.name,
+      phone: supabaseData.phone || '',
+      email: supabaseData.email || '',
+      authUserId: supabaseData.auth_user_id || undefined,
+      active: supabaseData.active,
+      createdAt: new Date(supabaseData.created_at),
+      updatedAt: new Date(supabaseData.updated_at)
+    };
+  } catch (error) {
+    console.error('Error transforming sales rep data:', error);
     return null;
   }
-  
-  return {
-    id: data.id || '',
-    name: transformed.name || '',
-    phone: transformed.phone || '',
-    email: transformed.email || '',
-    active: transformed.active !== false,
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-    code: data.code || 0,
-  };
 };
 
 /**

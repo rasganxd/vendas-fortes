@@ -4,10 +4,10 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Edit, Trash2, Key, Smartphone } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, Key, Smartphone, Link } from 'lucide-react';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { SalesRep } from '@/types';
-import EditSalesRepDialog from '@/components/personnel/EditSalesRepDialog';
+import { EditSalesRepDialog } from '@/components/personnel/EditSalesRepDialog';
 import DeleteSalesRepDialog from '@/components/personnel/DeleteSalesRepDialog';
 import SalesRepCredentialsDialog from '@/components/personnel/SalesRepCredentialsDialog';
 import MobileSyncStatus from '@/components/personnel/MobileSyncStatus';
@@ -61,6 +61,14 @@ export default function SalesReps() {
     setShowEditDialog(true);
   };
 
+  const handleSave = async (salesRep: Omit<SalesRep, 'id'>) => {
+    if (editingSalesRep?.id) {
+      return await updateSalesRep(editingSalesRep.id, salesRep);
+    } else {
+      return await addSalesRep(salesRep);
+    }
+  };
+
   if (isLoading) {
     return (
       <PageLayout title="Vendedores">
@@ -111,9 +119,17 @@ export default function SalesReps() {
                       <CardTitle className="text-lg">{salesRep.name}</CardTitle>
                       <p className="text-sm text-gray-500">Código: {salesRep.code}</p>
                     </div>
-                    <Badge variant={salesRep.active ? "default" : "secondary"}>
-                      {salesRep.active ? "Ativo" : "Inativo"}
-                    </Badge>
+                    <div className="flex gap-1">
+                      <Badge variant={salesRep.active ? "default" : "secondary"}>
+                        {salesRep.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                      {salesRep.authUserId && (
+                        <Badge variant="outline" className="text-green-600">
+                          <Link className="h-3 w-3 mr-1" />
+                          Vinculado
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 
@@ -124,6 +140,11 @@ export default function SalesReps() {
                     )}
                     {salesRep.email && (
                       <p><span className="font-medium">Email:</span> {salesRep.email}</p>
+                    )}
+                    {salesRep.authUserId && (
+                      <p className="text-green-600">
+                        <span className="font-medium">Auth ID:</span> {salesRep.authUserId.substring(0, 8)}...
+                      </p>
                     )}
                   </div>
 
@@ -167,7 +188,7 @@ export default function SalesReps() {
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
           salesRep={editingSalesRep}
-          onSave={editingSalesRep?.id ? updateSalesRep : addSalesRep}
+          onSave={handleSave}
           onRefresh={refreshSalesReps}
         />
 

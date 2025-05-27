@@ -6,6 +6,7 @@ export interface SalesRep {
   phone: string;
   email?: string;
   active: boolean;
+  authUserId?: string; // Novo campo para vincular ao Supabase Auth
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +16,7 @@ export type SalesRepFormValues = {
   name: string;
   phone: string;
   email?: string;
+  authUserId?: string;
   active: boolean;
 };
 

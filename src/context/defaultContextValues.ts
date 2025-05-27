@@ -1,4 +1,3 @@
-
 import { AppContextType } from './AppContextTypes';
 
 const defaultContextValues: AppContextType = {
@@ -69,7 +68,7 @@ const defaultContextValues: AppContextType = {
   // Order operations
   getOrderById: async () => null,
   addOrder: async () => '',
-  updateOrder: async () => '', // Fixed: return Promise<string>
+  updateOrder: async () => '', // Fixed: return Promise<string> instead of Promise<void>
   deleteOrder: async () => {},
   
   // Route operations

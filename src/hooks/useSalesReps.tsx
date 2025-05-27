@@ -91,6 +91,7 @@ export const useSalesReps = () => {
           code: salesRep.code,
           phone: salesRep.phone || '',
           email: salesRep.email || '',
+          auth_user_id: salesRep.authUserId || null,
           active: salesRep.active,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -129,7 +130,7 @@ export const useSalesReps = () => {
     }
   };
 
-  const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>) => {
+  const updateSalesRep = async (id: string, salesRep: Partial<SalesRep>): Promise<string> => {
     try {
       console.log("=== UPDATING SALES REP ===");
       console.log("ID:", id, "Data:", salesRep);
@@ -141,6 +142,7 @@ export const useSalesReps = () => {
           code: salesRep.code,
           phone: salesRep.phone,
           email: salesRep.email,
+          auth_user_id: salesRep.authUserId || null,
           active: salesRep.active,
           updated_at: new Date().toISOString()
         })
@@ -160,6 +162,7 @@ export const useSalesReps = () => {
       });
       
       console.log("=== SALES REP UPDATE COMPLETED ===");
+      return id;
     } catch (error) {
       console.error("❌ Error updating sales rep:", error);
       toast({
@@ -167,6 +170,7 @@ export const useSalesReps = () => {
         description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive"
       });
+      return "";
     }
   };
 
