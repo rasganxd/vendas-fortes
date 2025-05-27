@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -14,8 +13,7 @@ import {
   UserRound,
   LucideIcon,
   ChevronRight,
-  PlusCircle,
-  Tags
+  PlusCircle
 } from "lucide-react";
 
 import { 
@@ -34,7 +32,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useAppContext } from "@/hooks/useAppContext";
 import { useEffect } from "react";
 
-// Define navigation items
+// Define navigation items - removido o item "Classificações"
 const navigation: NavItem[] = [
   {
     title: "Dashboard",
@@ -52,12 +50,6 @@ const navigation: NavItem[] = [
     title: "Produtos",
     href: "/produtos",
     icon: Package,
-    group: "cadastro"
-  },
-  {
-    title: "Classificações",
-    href: "/produtos/classificacoes",
-    icon: Tags,
     group: "cadastro"
   },
   {
