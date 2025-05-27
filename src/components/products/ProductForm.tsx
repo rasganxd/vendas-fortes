@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -50,9 +49,6 @@ const productFormSchema = z.object({
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
   brandId: z.string().optional(),
-  hasSubunit: z.boolean().optional(),
-  subunit: z.string().optional(),
-  subunitRatio: z.number().optional(),
 });
 
 // Define a type for the form data
@@ -116,14 +112,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
       categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
       groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
       brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
-      hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
-      subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
-      subunitRatio: isEditing && selectedProduct ? selectedProduct.subunitRatio || 1 : 1,
     },
   });
-  
-  // Watch hasSubunit to show/hide subunit fields
-  const hasSubunit = form.watch('hasSubunit');
   
   // Update form values when selected product changes
   useEffect(() => {
@@ -137,9 +127,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
         categoryId: selectedProduct.categoryId || "",
         groupId: selectedProduct.groupId || "",
         brandId: selectedProduct.brandId || "",
-        hasSubunit: selectedProduct.hasSubunit || false,
-        subunit: selectedProduct.subunit || "",
-        subunitRatio: selectedProduct.subunitRatio || 1,
       });
     }
   }, [selectedProduct, isEditing, form]);
@@ -168,7 +155,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar" : "Adicionar"} Produto</DialogTitle>
           <DialogDescription>
@@ -235,7 +222,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 name="unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Unidade Principal</FormLabel>
+                    <FormLabel>Unidade</FormLabel>
                     <FormControl>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger>
@@ -253,76 +240,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 )}
               />
             </div>
-
-            {/* Sistema de Subunidades */}
-            <div className="border border-gray-200 rounded-lg p-4 space-y-4">
-              <FormField
-                control={form.control}
-                name="hasSubunit"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Sistema de Subunidades</FormLabel>
-                      <div className="text-sm text-gray-500">
-                        Ative para permitir unidade principal e subunidade (ex: CAIXA e UN)
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              {hasSubunit && (
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                  <FormField
-                    control={form.control}
-                    name="subunit"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subunidade</FormLabel>
-                        <FormControl>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione a subunidade" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {units.map(unit => (
-                                <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="subunitRatio"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Proporção (1 unidade principal = ? subunidades)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Ex: 24" 
-                            min="1"
-                            {...field} 
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
             
             <div className="grid grid-cols-1 gap-4">
               <FormField
@@ -330,7 +247,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 name="stock"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estoque {hasSubunit ? '(em unidade principal)' : ''}</FormLabel>
+                    <FormLabel>Estoque</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="Estoque" {...field} 
                         onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)} />

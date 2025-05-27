@@ -128,10 +128,7 @@ export default function Products() {
         groupId: data.groupId && data.groupId !== "none" ? data.groupId : null,
         brandId: data.brandId && data.brandId !== "none" ? data.brandId : null,
         stock: data.stock || 0,
-        minStock: 0,
-        hasSubunit: data.hasSubunit || false,
-        subunit: data.hasSubunit && data.subunit ? data.subunit : null,
-        subunitRatio: data.hasSubunit && data.subunitRatio ? data.subunitRatio : 1
+        minStock: 0
       };
 
       if (isEditing && selectedProduct) {
