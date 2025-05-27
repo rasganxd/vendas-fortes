@@ -19,7 +19,7 @@ export default function SalesReps() {
     addSalesRep,
     updateSalesRep,
     deleteSalesRep,
-    generateNextSalesRepCode, // Fixed: use correct property name
+    generateNextSalesRepCode,
     refreshSalesReps
   } = useSalesReps();
 

@@ -11,36 +11,33 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { SalesRep } from '@/types';
-import { salesRepService } from '@/services/supabase/salesRepService';
 import { toast } from '@/hooks/use-toast';
 
 interface DeleteSalesRepDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  salesRep: SalesRep;
-  setSalesReps: (callback: (salesReps: SalesRep[]) => SalesRep[]) => void;
+  salesRep: SalesRep | null;
+  onDelete: (id: string) => Promise<void>;
 }
 
 export const DeleteSalesRepDialog: React.FC<DeleteSalesRepDialogProps> = ({
   open,
   onOpenChange,
   salesRep,
-  setSalesReps
+  onDelete
 }) => {
   const handleDelete = async () => {
+    if (!salesRep?.id) return;
+    
     try {
       console.log(`Deleting sales rep with ID: ${salesRep.id}`);
       
-      // Use Supabase service
-      await salesRepService.delete(salesRep.id);
-      
-      setSalesReps(currentSalesReps => 
-        currentSalesReps.filter(sr => sr.id !== salesRep.id)
-      );
+      await onDelete(salesRep.id);
       
       onOpenChange(false);
       
-      toast("Representante excluído", {
+      toast({
+        title: "Representante excluído",
         description: "Representante excluído com sucesso!"
       });
     } catch (error) {
@@ -52,6 +49,8 @@ export const DeleteSalesRepDialog: React.FC<DeleteSalesRepDialogProps> = ({
       });
     }
   };
+
+  if (!salesRep) return null;
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

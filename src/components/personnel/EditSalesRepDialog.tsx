@@ -16,34 +16,74 @@ import { Switch } from '../ui/switch';
 interface EditSalesRepDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  salesRep: Partial<SalesRep>;
-  setSalesRep: (salesRep: any) => void;
-  onSave?: () => void;
-  title: string;
+  salesRep: Partial<SalesRep> | null;
+  onSave?: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
+  onRefresh?: () => void;
 }
 
 export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
   open,
   onOpenChange,
   salesRep,
-  setSalesRep,
   onSave,
-  title
+  onRefresh
 }) => {
+  const [formData, setFormData] = React.useState<Partial<SalesRep>>({
+    code: 0,
+    name: '',
+    phone: '',
+    email: '',
+    active: true
+  });
+
+  React.useEffect(() => {
+    if (salesRep) {
+      setFormData(salesRep);
+    }
+  }, [salesRep]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setSalesRep({ ...salesRep, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSwitchChange = (checked: boolean) => {
-    setSalesRep({ ...salesRep, active: checked });
+    setFormData(prev => ({ ...prev, active: checked }));
+  };
+
+  const handleSave = async () => {
+    if (!formData.name || !formData.email) return;
+    
+    try {
+      if (onSave) {
+        await onSave({
+          code: formData.code || 0,
+          name: formData.name,
+          phone: formData.phone || '',
+          email: formData.email,
+          active: formData.active ?? true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+      
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving sales rep:', error);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>
+            {salesRep?.id ? 'Editar Vendedor' : 'Novo Vendedor'}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 py-4">
@@ -52,8 +92,8 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
             <Input
               id="code"
               name="code"
-              value={salesRep.code || ''}
-              onChange={(e) => setSalesRep({ ...salesRep, code: parseInt(e.target.value) || 0 })}
+              value={formData.code || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, code: parseInt(e.target.value) || 0 }))}
               type="number"
             />
           </div>
@@ -63,7 +103,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
             <Input
               id="name"
               name="name"
-              value={salesRep.name || ''}
+              value={formData.name || ''}
               onChange={handleChange}
               placeholder="Nome completo do vendedor"
               required
@@ -76,7 +116,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
               id="email"
               name="email"
               type="email"
-              value={salesRep.email || ''}
+              value={formData.email || ''}
               onChange={handleChange}
               placeholder="vendedor@empresa.com"
               required
@@ -88,7 +128,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
             <Input
               id="phone"
               name="phone"
-              value={salesRep.phone || ''}
+              value={formData.phone || ''}
               onChange={handleChange}
               placeholder="(11) 99999-9999"
             />
@@ -96,7 +136,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
 
           <div className="flex items-center space-x-2">
             <Switch 
-              checked={salesRep.active ?? true} 
+              checked={formData.active ?? true} 
               onCheckedChange={handleSwitchChange} 
               id="active"
             />
@@ -108,7 +148,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={onSave} disabled={!salesRep.name || !salesRep.email}>
+          <Button onClick={handleSave} disabled={!formData.name || !formData.email}>
             Salvar
           </Button>
         </DialogFooter>
@@ -116,3 +156,5 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
     </Dialog>
   );
 };
+
+export default EditSalesRepDialog;

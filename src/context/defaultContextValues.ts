@@ -1,3 +1,4 @@
+
 import { AppContextType } from './AppContextTypes';
 
 const defaultContextValues: AppContextType = {
@@ -55,7 +56,7 @@ const defaultContextValues: AppContextType = {
   addCustomer: async () => '',
   updateCustomer: async () => {},
   deleteCustomer: async () => {},
-  generateNextCustomerCode: async () => 1, // Fixed: return Promise<number>
+  generateNextCustomerCode: async () => 1,
   
   // Product operations
   addProduct: async () => '',
@@ -132,9 +133,20 @@ const defaultContextValues: AppContextType = {
   restoreBackup: async () => false,
   deleteBackup: async () => false,
   
-  // Settings
+  // Settings - Fixed structure
   settings: {
-    primaryColor: '#3b82f6'
+    id: '',
+    company: {
+      name: 'Minha Empresa',
+      address: '',
+      phone: '',
+      email: '',
+      document: '',
+      footer: ''
+    },
+    theme: {
+      primaryColor: '#3b82f6'
+    }
   },
   updateSettings: async () => {},
   
