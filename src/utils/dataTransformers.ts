@@ -117,8 +117,8 @@ export const transformCustomerData = (data: any) => {
     visitDays: transformed.visitDays || data.visit_days || [],
     visitFrequency: transformed.visitFrequency || data.visit_frequency || '',
     visitSequence: transformed.visitSequence || data.visit_sequence || 0,
-    sales_rep_id: data.sales_rep_id || transformed.salesRepId || undefined,
-    sales_rep_name: data.sales_rep_name || transformed.salesRepName || undefined,
+    salesRepId: data.sales_rep_id || transformed.salesRepId || undefined,
+    deliveryRouteId: data.delivery_route_id || transformed.deliveryRouteId || undefined,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
   };
@@ -128,9 +128,22 @@ export const transformCustomerData = (data: any) => {
  * Transform a Supabase product record to our internal Product type
  */
 export const transformProductData = (data: any) => {
+  if (!data) return null;
+  
   const transformed = toCamelCase(data);
   return {
-    ...transformed,
+    id: data.id || '',
+    code: data.code || 0,
+    name: transformed.name || '',
+    description: transformed.description || '',
+    price: transformed.price || 0,
+    cost: transformed.cost || 0,
+    stock: transformed.stock || 0,
+    minStock: data.min_stock || transformed.minStock || 0,
+    unit: transformed.unit || '',
+    groupId: data.group_id || transformed.groupId || undefined,
+    categoryId: data.category_id || transformed.categoryId || undefined,
+    brandId: data.brand_id || transformed.brandId || undefined,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
   };
@@ -158,12 +171,14 @@ export const transformSalesRepData = (data: any) => {
   
   if (!transformed.name) {
     console.error('Sales rep data missing required name:', data);
+    return null;
   }
   
   return {
     id: data.id || '',
     name: transformed.name || '',
     phone: transformed.phone || '',
+    email: transformed.email || '',
     active: transformed.active !== false,
     createdAt: data.created_at ? new Date(data.created_at) : new Date(),
     updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),

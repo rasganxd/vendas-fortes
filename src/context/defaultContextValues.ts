@@ -1,8 +1,5 @@
-
 import { AppContextType } from './AppContextTypes';
 
-// This file will only contain part of the defaultContextValues to add the connectionStatus
-// The rest of the file will stay the same
 const defaultContextValues: AppContextType = {
   customers: [],
   products: [],
@@ -19,8 +16,8 @@ const defaultContextValues: AppContextType = {
   productBrands: [],
   deliveryRoutes: [],
   backups: [],
-  connectionStatus: 'online', // Default to online
-  isUsingMockData: false, // Added this property set to false
+  connectionStatus: 'offline',
+  isUsingMockData: false,
   
   isLoadingCustomers: false,
   isLoadingProducts: false,
@@ -54,14 +51,13 @@ const defaultContextValues: AppContextType = {
   setDeliveryRoutes: () => {},
   setBackups: () => {},
   
-  addRoute: async () => '',
-  updateRoute: async () => {},
-  deleteRoute: async () => {},
+  // Customer operations
   addCustomer: async () => '',
   updateCustomer: async () => {},
   deleteCustomer: async () => {},
-  generateNextCustomerCode: () => 1,
+  generateNextCustomerCode: async () => 1, // Fixed: return Promise<number>
   
+  // Product operations
   addProduct: async () => '',
   updateProduct: async () => {},
   deleteProduct: async () => {},
@@ -69,72 +65,88 @@ const defaultContextValues: AppContextType = {
   getMinimumPrice: () => 0,
   addBulkProducts: async () => [],
   
+  // Order operations
   getOrderById: async () => null,
   addOrder: async () => '',
-  updateOrder: async () => '',
+  updateOrder: async () => '', // Fixed: return Promise<string>
   deleteOrder: async () => {},
+  
+  // Route operations
+  addRoute: async () => '',
+  updateRoute: async () => {},
+  deleteRoute: async () => {},
+  
+  // Load operations
+  addLoad: async () => '',
+  updateLoad: async () => {},
+  deleteLoad: async () => {},
+  
+  // Sales rep operations
+  addSalesRep: async () => '',
+  updateSalesRep: async () => {},
+  deleteSalesRep: async () => {},
+  
+  // Vehicle operations
   addVehicle: async () => '',
   updateVehicle: async () => {},
   deleteVehicle: async () => {},
+  
+  // Payment operations
   addPayment: async () => '',
   updatePayment: async () => {},
   deletePayment: async () => {},
   createAutomaticPaymentRecord: async () => '',
   
+  // Payment method operations
   addPaymentMethod: async () => '',
   updatePaymentMethod: async () => {},
   deletePaymentMethod: async () => {},
   
-  addLoad: async () => '',
-  updateLoad: async () => {},
-  deleteLoad: async () => {},
-  addSalesRep: async () => '',
-  updateSalesRep: async () => {},
-  deleteSalesRep: async () => {},
+  // Payment table operations
   addPaymentTable: async () => '',
   updatePaymentTable: async () => {},
   deletePaymentTable: async () => {},
+  
+  // Product group operations
   addProductGroup: async () => '',
   updateProductGroup: async () => {},
   deleteProductGroup: async () => {},
+  
+  // Product category operations
   addProductCategory: async () => '',
   updateProductCategory: async () => {},
   deleteProductCategory: async () => {},
+  
+  // Product brand operations
   addProductBrand: async () => '',
   updateProductBrand: async () => {},
   deleteProductBrand: async () => {},
+  
+  // Delivery route operations
   addDeliveryRoute: async () => '',
   updateDeliveryRoute: async () => {},
   deleteDeliveryRoute: async () => {},
   
+  // Backup operations
   createBackup: async () => '',
-  restoreBackup: async () => true,
-  deleteBackup: async () => true,
+  restoreBackup: async () => false,
+  deleteBackup: async () => false,
   
+  // Settings
   settings: {
-    id: 'default',
-    company: {
-      name: 'Minha Empresa',
-      address: '',
-      phone: '',
-      email: '',
-      document: '',
-      footer: ''
-    },
-    theme: {
-      primaryColor: '#6B7280'
-    }
+    primaryColor: '#3b82f6'
   },
   updateSettings: async () => {},
   
-  startNewMonth: async () => true,
-  startNewDay: async () => true,
+  // System operations
+  startNewMonth: async () => false,
+  startNewDay: async () => false,
   clearCache: async () => {},
-  refreshData: async () => true,
+  refreshData: async () => false,
   
-  // Add the missing route operations
+  // Route specific operations
   generateRouteUpdate: async () => 0,
-  getRouteWithCustomers: async () => null,
+  getRouteWithCustomers: async () => null
 };
 
 export default defaultContextValues;

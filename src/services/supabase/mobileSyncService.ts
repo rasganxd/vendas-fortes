@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Customer, Product, Order } from '@/types';
+import { transformCustomerData, transformProductData, transformOrderData } from '@/utils/dataTransformers';
 
 export interface SyncLogEntry {
   id: string;
@@ -93,7 +94,23 @@ class MobileSyncService {
       }
 
       console.log(`✅ Retrieved ${data?.length || 0} sync logs`);
-      return data || [];
+      
+      // Transform and validate data
+      const transformedLogs: SyncLogEntry[] = (data || []).map(log => ({
+        id: log.id,
+        sales_rep_id: log.sales_rep_id,
+        event_type: log.event_type as 'upload' | 'download' | 'error',
+        device_id: log.device_id,
+        device_ip: log.device_ip,
+        data_type: log.data_type,
+        records_count: log.records_count,
+        status: log.status,
+        error_message: log.error_message,
+        metadata: log.metadata,
+        created_at: log.created_at
+      }));
+      
+      return transformedLogs;
     } catch (error) {
       console.error('❌ Failed to fetch sync logs:', error);
       throw error;
@@ -101,7 +118,7 @@ class MobileSyncService {
   }
 
   // Clear sync logs
-  async clearSyncLogs(): Promise<void> {
+  async clearSyncLogs(): Promise<void> => {
     try {
       console.log('🗑️ Clearing sync logs...');
       
@@ -209,7 +226,10 @@ class MobileSyncService {
       }
 
       await this.logSyncEvent('download', 'customers', data?.length || 0, salesRepId);
-      return data || [];
+      
+      // Transform data to match Customer interface
+      const transformedCustomers = (data || []).map(transformCustomerData).filter(Boolean) as Customer[];
+      return transformedCustomers;
     } catch (error) {
       console.error('❌ Failed to get customers for sync:', error);
       throw error;
@@ -230,7 +250,10 @@ class MobileSyncService {
       }
 
       await this.logSyncEvent('download', 'products', data?.length || 0);
-      return data || [];
+      
+      // Transform data to match Product interface
+      const transformedProducts = (data || []).map(transformProductData).filter(Boolean) as Product[];
+      return transformedProducts;
     } catch (error) {
       console.error('❌ Failed to get products for sync:', error);
       throw error;
@@ -246,14 +269,30 @@ class MobileSyncService {
         return;
       }
 
+      // Transform orders to match database schema
+      const dbOrders = orders.map(order => ({
+        code: order.code || 0,
+        customer_id: order.customerId,
+        customer_name: order.customerName,
+        sales_rep_id: salesRepId || order.salesRepId,
+        sales_rep_name: order.salesRepName,
+        date: order.date ? order.date.toISOString() : new Date().toISOString(),
+        due_date: order.dueDate ? order.dueDate.toISOString() : null,
+        total: order.total || 0,
+        discount: order.discount || 0,
+        status: order.status || 'pending',
+        payment_status: order.paymentStatus || 'pending',
+        payment_method: order.paymentMethod,
+        payment_method_id: order.paymentMethodId,
+        payment_table_id: order.paymentTableId,
+        notes: order.notes,
+        source_project: 'mobile',
+        sync_status: 'synced'
+      }));
+
       const { error } = await supabase
         .from('orders')
-        .insert(orders.map(order => ({
-          ...order,
-          source_project: 'mobile',
-          sync_status: 'synced',
-          sales_rep_id: salesRepId || order.sales_rep_id
-        })));
+        .insert(dbOrders);
 
       if (error) {
         console.error('❌ Error uploading orders:', error);
@@ -279,12 +318,29 @@ class MobileSyncService {
         return;
       }
 
+      // Transform customers to match database schema
+      const dbCustomers = customers.map(customer => ({
+        code: customer.code,
+        name: customer.name,
+        company_name: customer.companyName,
+        phone: customer.phone,
+        email: customer.email,
+        address: customer.address,
+        city: customer.city,
+        state: customer.state,
+        zip_code: customer.zipCode || customer.zip,
+        document: customer.document,
+        notes: customer.notes,
+        visit_frequency: customer.visitFrequency,
+        visit_days: customer.visitDays,
+        visit_sequence: customer.visitSequence,
+        sales_rep_id: salesRepId || customer.salesRepId,
+        delivery_route_id: customer.deliveryRouteId
+      }));
+
       const { error } = await supabase
         .from('customers')
-        .insert(customers.map(customer => ({
-          ...customer,
-          sales_rep_id: salesRepId || customer.sales_rep_id
-        })));
+        .insert(dbCustomers);
 
       if (error) {
         console.error('❌ Error uploading customers:', error);

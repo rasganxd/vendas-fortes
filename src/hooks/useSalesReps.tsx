@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { transformSalesRepData } from '@/utils/dataTransformers';
 
 export const useSalesReps = () => {
   const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
@@ -29,7 +30,10 @@ export const useSalesReps = () => {
       }
 
       console.log("✅ Successfully loaded sales reps:", data?.length || 0, "items");
-      setSalesReps(data || []);
+      
+      // Transform the data to match SalesRep interface
+      const transformedData = (data || []).map(transformSalesRepData).filter(Boolean) as SalesRep[];
+      setSalesReps(transformedData);
     } catch (error) {
       console.error('❌ Error loading sales reps:', error);
       toast({
@@ -42,7 +46,7 @@ export const useSalesReps = () => {
     }
   };
 
-  const addSalesRep = async (salesRep: Omit<SalesRep, 'id'>) => {
+  const addSalesRep = async (salesRep: Omit<SalesRep, 'id'>): Promise<string> => {
     try {
       console.log("=== ADDING NEW SALES REP ===");
       console.log("Input data:", salesRep);
@@ -83,7 +87,11 @@ export const useSalesReps = () => {
       const { data, error } = await supabase
         .from('sales_reps')
         .insert({
-          ...salesRep,
+          name: salesRep.name,
+          code: salesRep.code,
+          phone: salesRep.phone || '',
+          email: salesRep.email || '',
+          active: salesRep.active,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -95,16 +103,20 @@ export const useSalesReps = () => {
         throw error;
       }
 
-      const newSalesRep = data as SalesRep;
-      setSalesReps([...salesReps, newSalesRep]);
+      const newSalesRep = transformSalesRepData(data);
+      if (newSalesRep) {
+        setSalesReps([...salesReps, newSalesRep]);
+        
+        toast({
+          title: "✅ Vendedor adicionado",
+          description: `${newSalesRep.name} foi adicionado com sucesso!`
+        });
+        
+        console.log("=== SALES REP ADDITION COMPLETED SUCCESSFULLY ===");
+        return newSalesRep.id;
+      }
       
-      toast({
-        title: "✅ Vendedor adicionado",
-        description: `${newSalesRep.name} foi adicionado com sucesso!`
-      });
-      
-      console.log("=== SALES REP ADDITION COMPLETED SUCCESSFULLY ===");
-      return newSalesRep.id;
+      return "";
     } catch (error) {
       console.error("❌ CRITICAL ERROR adding sales rep:", error);
       
@@ -125,7 +137,11 @@ export const useSalesReps = () => {
       const { error } = await supabase
         .from('sales_reps')
         .update({
-          ...salesRep,
+          name: salesRep.name,
+          code: salesRep.code,
+          phone: salesRep.phone,
+          email: salesRep.email,
+          active: salesRep.active,
           updated_at: new Date().toISOString()
         })
         .eq('id', id);

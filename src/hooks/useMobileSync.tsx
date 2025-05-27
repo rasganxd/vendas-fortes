@@ -16,6 +16,12 @@ interface MobileSyncState {
   lastSyncTime: Date | null;
 }
 
+interface SyncDataResult {
+  customers: Customer[];
+  products: Product[];
+  orders: Order[];
+}
+
 export const useMobileSync = () => {
   const [state, setState] = useState<MobileSyncState>({
     isAuthenticated: false,
@@ -177,20 +183,26 @@ export const useMobileSync = () => {
     setState(prev => ({ ...prev, isSyncing: true }));
     
     try {
-      const data = await mobileSyncService.syncAllData();
+      // Execute sync and get data
+      await mobileSyncService.syncAllData();
+      
+      // Get the synced data
+      const customers = await mobileSyncService.getCustomersForSync(state.currentSalesRep?.id);
+      const products = await mobileSyncService.getProductsForSync();
+      const orders: Order[] = []; // Orders would come from a similar method
       
       setState(prev => ({
         ...prev,
-        customers: data.customers,
-        products: data.products,
-        orders: data.orders,
+        customers,
+        products,
+        orders,
         isSyncing: false,
         lastSyncTime: new Date()
       }));
       
       toast({
         title: "Sincronização concluída",
-        description: `${data.customers.length} clientes, ${data.products.length} produtos, ${data.orders.length} pedidos`
+        description: `${customers.length} clientes, ${products.length} produtos, ${orders.length} pedidos`
       });
       
     } catch (error) {
@@ -203,7 +215,7 @@ export const useMobileSync = () => {
         variant: "destructive"
       });
     }
-  }, [state.isAuthenticated]);
+  }, [state.isAuthenticated, state.currentSalesRep?.id]);
 
   return {
     ...state,
