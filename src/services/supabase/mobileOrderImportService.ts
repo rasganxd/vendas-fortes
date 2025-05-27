@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem } from '@/types';
 
@@ -45,8 +44,23 @@ class MobileOrderImportService {
         throw error;
       }
 
-      console.log(`✅ Retrieved ${data?.length || 0} import logs`);
-      return data || [];
+      // Transform data to match ImportLog interface
+      const transformedLogs: ImportLog[] = (data || []).map(log => ({
+        id: log.id,
+        sales_rep_id: log.sales_rep_id,
+        event_type: log.event_type as 'upload' | 'download' | 'error',
+        device_id: log.device_id,
+        device_ip: log.device_ip,
+        data_type: log.data_type,
+        records_count: log.records_count,
+        status: log.status,
+        error_message: log.error_message,
+        metadata: log.metadata,
+        created_at: log.created_at
+      }));
+
+      console.log(`✅ Retrieved ${transformedLogs.length} import logs`);
+      return transformedLogs;
     } catch (error) {
       console.error('❌ Failed to fetch import logs:', error);
       throw error;
@@ -81,7 +95,7 @@ class MobileOrderImportService {
       }
 
       // Transform data to match Order interface
-      const transformedOrders = (data || []).map(orderData => ({
+      const transformedOrders: Order[] = (data || []).map(orderData => ({
         id: orderData.id,
         code: orderData.code,
         customerId: orderData.customer_id,
@@ -110,7 +124,7 @@ class MobileOrderImportService {
         paymentMethod: orderData.payment_method || '',
         paymentMethodId: orderData.payment_method_id || '',
         paymentTableId: orderData.payment_table_id || '',
-        payments: orderData.payments || [],
+        payments: Array.isArray(orderData.payments) ? orderData.payments : [],
         notes: orderData.notes || '',
         createdAt: new Date(orderData.created_at),
         updatedAt: new Date(orderData.updated_at),
@@ -136,7 +150,7 @@ class MobileOrderImportService {
     totalImported: number;
     todayImported: number;
     failedImports: number;
-    lastImport?: Date;
+    lastImport: Date | undefined;
   }> {
     try {
       console.log('📊 Fetching import statistics...');

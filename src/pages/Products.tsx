@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import { toast } from "sonner";
 import { Product } from '@/types';
 import { useAppData } from '@/context/providers/AppDataProvider';
@@ -39,6 +41,22 @@ export default function Products() {
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+
+  // Filter products based on search term
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.unit && product.unit.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts(products);
+    }
+  }, [products, searchTerm]);
 
   // Listen for product updates to refresh the list
   useEffect(() => {
@@ -141,13 +159,17 @@ export default function Products() {
     return await refreshProducts();
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
   return (
     <PageLayout title="Produtos">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
           <p className="text-sm text-gray-600">
-            {products.length} produtos cadastrados
+            {filteredProducts.length} produtos {searchTerm ? 'encontrados' : 'cadastrados'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -173,9 +195,22 @@ export default function Products() {
       </div>
       
       <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produtos..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="pl-8"
+              />
+            </div>
+          </div>
+        </CardHeader>
         <CardContent>
           <ProductsTable 
-            products={products} 
+            products={filteredProducts} 
             isLoading={isLoadingProducts} 
             onEdit={handleEdit} 
             onDelete={handleDelete} 

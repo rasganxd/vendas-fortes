@@ -3,389 +3,239 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, CheckCircle, Download, Trash2, RefreshCw, Eye, X } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Download, 
+  Upload, 
+  RefreshCw, 
+  AlertCircle, 
+  CheckCircle, 
+  XCircle,
+  Clock,
+  Smartphone,
+  Trash2
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { mobileOrderImportService, ImportLog } from '@/services/supabase/mobileOrderImportService';
-import { Order } from '@/types';
-import { formatDateToBR } from '@/lib/date-utils';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface ImportStats {
+  totalImported: number;
+  todayImported: number;
+  failedImports: number;
+  lastImport: Date | undefined;
+}
 
 export default function MobileOrderImportPanel() {
-  const [importLogs, setImportLogs] = useState<ImportLog[]>([]);
-  const [mobileOrders, setMobileOrders] = useState<Order[]>([]);
-  const [importStats, setImportStats] = useState({
+  const [stats, setStats] = useState<ImportStats>({
     totalImported: 0,
     todayImported: 0,
     failedImports: 0,
-    lastImport: undefined as Date | undefined
+    lastImport: undefined
   });
+  const [logs, setLogs] = useState<ImportLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadStats = async () => {
     try {
-      const [logs, orders, stats] = await Promise.all([
-        mobileOrderImportService.getImportLogs(),
-        mobileOrderImportService.getMobileOrders(),
-        mobileOrderImportService.getImportStats()
-      ]);
-
-      setImportLogs(logs);
-      setMobileOrders(orders);
-      setImportStats(stats);
+      setIsLoading(true);
+      const importStats = await mobileOrderImportService.getImportStats();
+      setStats(importStats);
     } catch (error) {
-      console.error('Error loading import data:', error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar os dados de importação.",
-        variant: "destructive"
+      console.error('Erro ao carregar estatísticas:', error);
+      toast('Erro ao carregar estatísticas', {
+        description: 'Não foi possível carregar as estatísticas de importação'
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleApproveOrder = async (orderId: string) => {
+  const loadLogs = async () => {
     try {
-      await mobileOrderImportService.approveOrder(orderId);
-      toast({
-        title: "Pedido aprovado",
-        description: "O pedido foi aprovado com sucesso."
-      });
-      loadData();
+      setIsLoadingLogs(true);
+      const importLogs = await mobileOrderImportService.getImportLogs(20);
+      setLogs(importLogs);
     } catch (error) {
-      toast({
-        title: "Erro ao aprovar pedido",
-        description: "Não foi possível aprovar o pedido.",
-        variant: "destructive"
+      console.error('Erro ao carregar logs:', error);
+      toast('Erro ao carregar logs', {
+        description: 'Não foi possível carregar os logs de importação'
       });
+    } finally {
+      setIsLoadingLogs(false);
     }
   };
 
-  const handleRejectOrder = async (orderId: string) => {
+  const clearLogs = async () => {
     try {
-      await mobileOrderImportService.rejectOrder(orderId);
-      toast({
-        title: "Pedido rejeitado",
-        description: "O pedido foi rejeitado e removido."
-      });
-      loadData();
-    } catch (error) {
-      toast({
-        title: "Erro ao rejeitar pedido",
-        description: "Não foi possível rejeitar o pedido.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleClearLogs = async () => {
-    try {
+      setIsLoading(true);
       await mobileOrderImportService.clearImportLogs();
-      toast({
-        title: "Logs limpos",
-        description: "Todos os logs de importação foram removidos."
+      setLogs([]);
+      toast('Logs limpos', {
+        description: 'Todos os logs de importação foram removidos'
       });
-      loadData();
     } catch (error) {
-      toast({
-        title: "Erro ao limpar logs",
-        description: "Não foi possível limpar os logs.",
-        variant: "destructive"
+      console.error('Erro ao limpar logs:', error);
+      toast('Erro ao limpar logs', {
+        description: 'Não foi possível limpar os logs'
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Sucesso</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Falha</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+  const refreshData = async () => {
+    await Promise.all([loadStats(), loadLogs()]);
   };
 
-  const getEventTypeBadge = (eventType: string) => {
+  useEffect(() => {
+    refreshData();
+  }, []);
+
+  const getStatusBadge = (status: string, eventType: string) => {
+    if (status === 'completed') {
+      return <Badge variant="secondary" className="bg-green-100 text-green-800">Concluído</Badge>;
+    }
+    if (status === 'failed') {
+      return <Badge variant="destructive">Falhou</Badge>;
+    }
+    if (eventType === 'error') {
+      return <Badge variant="destructive">Erro</Badge>;
+    }
+    return <Badge variant="outline">{status}</Badge>;
+  };
+
+  const getEventIcon = (eventType: string) => {
     switch (eventType) {
       case 'upload':
-        return <Badge variant="outline"><Download className="w-3 h-3 mr-1" />Upload</Badge>;
+        return <Upload size={16} className="text-blue-600" />;
+      case 'download':
+        return <Download size={16} className="text-green-600" />;
       case 'error':
-        return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />Erro</Badge>;
+        return <AlertCircle size={16} className="text-red-600" />;
       default:
-        return <Badge variant="secondary">{eventType}</Badge>;
-    }
-  };
-
-  const getOrderStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
-      case 'confirmed':
-        return <Badge className="bg-blue-500">Confirmado</Badge>;
-      case 'approved':
-        return <Badge className="bg-green-500">Aprovado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Clock size={16} className="text-gray-600" />;
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Importado</p>
-                <p className="text-2xl font-bold text-green-600">{importStats.totalImported}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Hoje</p>
-                <p className="text-2xl font-bold text-blue-600">{importStats.todayImported}</p>
-              </div>
-              <Download className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Falhas</p>
-                <p className="text-2xl font-bold text-red-600">{importStats.failedImports}</p>
-              </div>
-              <AlertCircle className="h-8 w-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Última Importação</p>
-                <p className="text-sm font-bold text-gray-800">
-                  {importStats.lastImport ? formatDateToBR(importStats.lastImport) : 'Nunca'}
-                </p>
-              </div>
-              <RefreshCw className="h-8 w-8 text-gray-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content */}
-      <Tabs defaultValue="orders" className="w-full">
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="orders">Pedidos Importados</TabsTrigger>
-            <TabsTrigger value="logs">Logs de Importação</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex gap-2">
-            <Button onClick={loadData} variant="outline" disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Smartphone size={20} />
+              Importação de Pedidos Mobile
+            </CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refreshData}
+              disabled={isLoading}
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
               Atualizar
             </Button>
           </div>
-        </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Estatísticas */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{stats.totalImported}</div>
+              <div className="text-sm text-gray-600">Total Importado</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{stats.todayImported}</div>
+              <div className="text-sm text-gray-600">Hoje</div>
+            </div>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <div className="text-2xl font-bold text-red-600">{stats.failedImports}</div>
+              <div className="text-sm text-gray-600">Falharam</div>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm font-medium text-gray-600">Última Importação</div>
+              <div className="text-sm text-gray-500">
+                {stats.lastImport 
+                  ? formatDistanceToNow(stats.lastImport, { addSuffix: true, locale: ptBR })
+                  : 'Nunca'
+                }
+              </div>
+            </div>
+          </div>
 
-        <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pedidos Importados do Mobile</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {mobileOrders.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Nenhum pedido importado do mobile encontrado.</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Vendedor</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mobileOrders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">#{order.code}</TableCell>
-                        <TableCell>{order.customerName}</TableCell>
-                        <TableCell>{order.salesRepName}</TableCell>
-                        <TableCell>R$ {order.total.toFixed(2)}</TableCell>
-                        <TableCell>{getOrderStatusBadge(order.status)}</TableCell>
-                        <TableCell>{formatDateToBR(order.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSelectedOrder(order)}
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            {order.status === 'pending' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  className="bg-green-500 hover:bg-green-600"
-                                  onClick={() => handleApproveOrder(order.id)}
-                                >
-                                  <CheckCircle className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleRejectOrder(order.id)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <Separator />
 
-        <TabsContent value="logs">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Logs de Importação</CardTitle>
-                <Button onClick={handleClearLogs} variant="outline" size="sm">
-                  <Trash2 className="h-4 w-4 mr-2" />
+          {/* Logs de Importação */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Histórico de Importações</h3>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={loadLogs}
+                  disabled={isLoadingLogs}
+                >
+                  <RefreshCw size={16} className={isLoadingLogs ? 'animate-spin' : ''} />
+                  Recarregar
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={clearLogs}
+                  disabled={isLoading || logs.length === 0}
+                >
+                  <Trash2 size={16} />
                   Limpar Logs
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              {importLogs.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Nenhum log de importação encontrado.</p>
+            </div>
+
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {logs.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  Nenhum log de importação encontrado
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Registros</TableHead>
-                      <TableHead>Vendedor</TableHead>
-                      <TableHead>Erro</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {importLogs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell>{formatDateToBR(new Date(log.created_at))}</TableCell>
-                        <TableCell>{getEventTypeBadge(log.event_type)}</TableCell>
-                        <TableCell>{getStatusBadge(log.status)}</TableCell>
-                        <TableCell>{log.records_count || 0}</TableCell>
-                        <TableCell className="text-sm">
-                          {log.sales_rep_id ? log.sales_rep_id.substring(0, 8) + '...' : '-'}
-                        </TableCell>
-                        <TableCell className="text-sm text-red-600">
-                          {log.error_message && (
-                            <span title={log.error_message}>
-                              {log.error_message.length > 50 
-                                ? log.error_message.substring(0, 50) + '...'
-                                : log.error_message
-                              }
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                logs.map((log) => (
+                  <div key={log.id} className="p-3 border rounded-lg bg-white">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {getEventIcon(log.event_type)}
+                        <div>
+                          <div className="font-medium capitalize">
+                            {log.event_type === 'upload' ? 'Upload' : 
+                             log.event_type === 'download' ? 'Download' : 'Erro'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {log.records_count} registro(s)
+                            {log.sales_rep_id && ` • Vendedor: ${log.sales_rep_id}`}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {getStatusBadge(log.status, log.event_type)}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {log.error_message && (
+                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                        <strong>Erro:</strong> {log.error_message}
+                      </div>
+                    )}
+                  </div>
+                ))
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Order Detail Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Detalhes do Pedido #{selectedOrder.code}</h2>
-              <Button variant="outline" onClick={() => setSelectedOrder(null)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <p><strong>Cliente:</strong> {selectedOrder.customerName}</p>
-                <p><strong>Vendedor:</strong> {selectedOrder.salesRepName}</p>
-                <p><strong>Status:</strong> {getOrderStatusBadge(selectedOrder.status)}</p>
-              </div>
-              <div>
-                <p><strong>Total:</strong> R$ {selectedOrder.total.toFixed(2)}</p>
-                <p><strong>Data:</strong> {formatDateToBR(selectedOrder.createdAt)}</p>
-                <p><strong>Pagamento:</strong> {selectedOrder.paymentMethod}</p>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-bold mb-2">Itens do Pedido</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Quantidade</TableHead>
-                    <TableHead>Preço Unit.</TableHead>
-                    <TableHead>Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedOrder.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.productName}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>R$ {item.unitPrice.toFixed(2)}</TableCell>
-                      <TableCell>R$ {item.total.toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             </div>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
