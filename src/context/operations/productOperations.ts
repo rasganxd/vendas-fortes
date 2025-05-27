@@ -1,3 +1,4 @@
+
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -150,9 +151,19 @@ export const validateProductDiscount = (
   const product = products.find(p => p.id === productId);
   if (!product) return true;
   
-  // Simplified validation - just check if price is positive
+  // Check if price is positive
   if (discountedPrice <= 0) {
     return "O preço deve ser maior que zero";
+  }
+  
+  // Check minimum price if defined
+  if (product.minPrice && discountedPrice < product.minPrice) {
+    return `O preço não pode ser menor que R$ ${product.minPrice.toFixed(2)}`;
+  }
+  
+  // Check maximum price if defined
+  if (product.maxPrice && discountedPrice > product.maxPrice) {
+    return `O preço não pode ser maior que R$ ${product.maxPrice.toFixed(2)}`;
   }
   
   return true;
@@ -165,8 +176,31 @@ export const getMinimumPrice = (productId: string, products: Product[]): number 
   const product = products.find(p => p.id === productId);
   if (!product) return 0;
   
-  // Return 0 as minimum price - no discount restrictions
-  return 0;
+  // Return the defined minimum price or 0
+  return product.minPrice || 0;
+};
+
+/**
+ * Gets the maximum price for a product
+ */
+export const getMaximumPrice = (productId: string, products: Product[]): number => {
+  const product = products.find(p => p.id === productId);
+  if (!product) return 0;
+  
+  // Return the defined maximum price or 0 (no limit)
+  return product.maxPrice || 0;
+};
+
+/**
+ * Validates if a price is within the defined range for a product
+ */
+export const isPriceWithinRange = (
+  productId: string,
+  price: number,
+  products: Product[]
+): boolean => {
+  const validation = validateProductDiscount(productId, price, products);
+  return validation === true;
 };
 
 /**

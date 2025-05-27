@@ -8,6 +8,8 @@ export interface Product {
   cost: number;
   stock: number;
   minStock: number;
+  minPrice?: number;
+  maxPrice?: number;
   groupId?: string;
   categoryId?: string;
   brandId?: string;

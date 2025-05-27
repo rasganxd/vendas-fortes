@@ -24,6 +24,8 @@ export const productService = {
       price: item.price || 0,
       stock: item.stock || 0,
       minStock: item.min_stock || 0,
+      minPrice: item.min_price || undefined,
+      maxPrice: item.max_price || undefined,
       unit: item.unit || 'UN',
       categoryId: item.category_id,
       groupId: item.group_id,
@@ -56,6 +58,8 @@ export const productService = {
       price: data.price || 0,
       stock: data.stock || 0,
       minStock: data.min_stock || 0,
+      minPrice: data.min_price || undefined,
+      maxPrice: data.max_price || undefined,
       unit: data.unit || 'UN',
       categoryId: data.category_id,
       groupId: data.group_id,
@@ -78,6 +82,8 @@ export const productService = {
       price: product.price || 0,
       stock: product.stock || 0,
       min_stock: product.minStock || 0,
+      min_price: product.minPrice || null,
+      max_price: product.maxPrice || null,
       unit: product.unit || 'UN',
       category_id: product.categoryId || null,
       group_id: product.groupId || null,
@@ -108,6 +114,8 @@ export const productService = {
       price: data.price,
       stock: data.stock,
       minStock: data.min_stock,
+      minPrice: data.min_price || undefined,
+      maxPrice: data.max_price || undefined,
       unit: data.unit,
       categoryId: data.category_id,
       groupId: data.group_id,
@@ -132,6 +140,8 @@ export const productService = {
     if (product.price !== undefined) updateData.price = product.price;
     if (product.stock !== undefined) updateData.stock = product.stock;
     if (product.minStock !== undefined) updateData.min_stock = product.minStock;
+    if (product.minPrice !== undefined) updateData.min_price = product.minPrice;
+    if (product.maxPrice !== undefined) updateData.max_price = product.maxPrice;
     if (product.unit !== undefined) updateData.unit = product.unit;
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
     if (product.groupId !== undefined) updateData.group_id = product.groupId;
@@ -160,6 +170,8 @@ export const productService = {
       price: data.price,
       stock: data.stock,
       minStock: data.min_stock,
+      minPrice: data.min_price || undefined,
+      maxPrice: data.max_price || undefined,
       unit: data.unit,
       categoryId: data.category_id,
       groupId: data.group_id,

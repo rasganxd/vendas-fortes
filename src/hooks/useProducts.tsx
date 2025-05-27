@@ -72,9 +72,9 @@ export const useProducts = () => {
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
-      const id = await productService.add(product);
+      // CORRIGIDO: usar create() ao invés de add()
+      const newProduct = await productService.create(product);
       
-      const newProduct = { ...product, id } as Product;
       setProducts((prev) => [...prev, newProduct]);
       
       // Update cache
@@ -87,7 +87,7 @@ export const useProducts = () => {
         description: 'Produto adicionado com sucesso!',
       });
       
-      return id;
+      return newProduct.id;
     } catch (error) {
       console.error('Error adding product:', error);
       toast({
