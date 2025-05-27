@@ -49,7 +49,7 @@ export default function Products() {
     if (searchTerm) {
       const filtered = products.filter(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.code.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.unit && product.unit.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredProducts(filtered);
