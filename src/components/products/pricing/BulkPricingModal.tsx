@@ -41,7 +41,6 @@ interface BulkPricingChanges {
     value: number;
   };
   minPriceChange?: number;
-  maxPriceChange?: number;
 }
 
 interface ProductPreview {
@@ -51,8 +50,7 @@ interface ProductPreview {
   newPrice: number;
   currentMinPrice?: number;
   newMinPrice?: number;
-  currentMaxPrice?: number;
-  newMaxPrice?: number;
+  markup?: number;
 }
 
 export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
@@ -69,7 +67,6 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
   const [markupMode, setMarkupMode] = useState<string>('percentage');
   const [bulkValue, setBulkValue] = useState<number>(0);
   const [bulkMinPrice, setBulkMinPrice] = useState<number>(0);
-  const [bulkMaxPrice, setBulkMaxPrice] = useState<number>(0);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [productPreviews, setProductPreviews] = useState<ProductPreview[]>([]);
@@ -106,6 +103,11 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
       newSelected.add(id);
     }
     setSelectedProducts(newSelected);
+  };
+
+  const calculateMarkup = (cost: number, price: number): number => {
+    if (cost === 0) return 0;
+    return ((price - cost) / cost) * 100;
   };
 
   const generatePreview = () => {
@@ -146,8 +148,7 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
         newPrice: newPrice,
         currentMinPrice: product.minPrice,
         newMinPrice: bulkMinPrice > 0 ? bulkMinPrice : product.minPrice,
-        currentMaxPrice: product.maxPrice,
-        newMaxPrice: bulkMaxPrice > 0 ? bulkMaxPrice : product.maxPrice
+        markup: calculateMarkup(product.cost, newPrice)
       });
     });
 
@@ -171,10 +172,6 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
       changes.minPriceChange = bulkMinPrice;
     }
 
-    if (bulkMaxPrice > 0) {
-      changes.maxPriceChange = bulkMaxPrice;
-    }
-
     onApplyChanges(changes);
     onOpenChange(false);
     
@@ -182,7 +179,6 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
     setSelectedProducts(new Set());
     setBulkValue(0);
     setBulkMinPrice(0);
-    setBulkMaxPrice(0);
     setShowPreview(false);
   };
 
@@ -298,7 +294,7 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
             </div>
 
             <Separator />
-            <h3 className="text-lg font-medium">Preços Mínimo e Máximo</h3>
+            <h3 className="text-lg font-medium">Preço Mínimo</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -308,16 +304,6 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
                   value={bulkMinPrice || ''}
                   onChange={(e) => setBulkMinPrice(parseFloat(e.target.value) || 0)}
                   placeholder="Ex: 5.00"
-                  step="0.01"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Preço Máximo (R$)</Label>
-                <Input
-                  type="number"
-                  value={bulkMaxPrice || ''}
-                  onChange={(e) => setBulkMaxPrice(parseFloat(e.target.value) || 0)}
-                  placeholder="Ex: 100.00"
                   step="0.01"
                 />
               </div>
@@ -339,14 +325,12 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
                         <div>
                           Preço: {formatCurrency(preview.currentPrice)} → {formatCurrency(preview.newPrice)}
                         </div>
+                        <div>
+                          Markup: {preview.markup?.toFixed(1)}%
+                        </div>
                         {preview.newMinPrice !== preview.currentMinPrice && (
                           <div>
                             Min: {formatCurrency(preview.currentMinPrice || 0)} → {formatCurrency(preview.newMinPrice || 0)}
-                          </div>
-                        )}
-                        {preview.newMaxPrice !== preview.currentMaxPrice && (
-                          <div>
-                            Max: {formatCurrency(preview.currentMaxPrice || 0)} → {formatCurrency(preview.newMaxPrice || 0)}
                           </div>
                         )}
                       </div>
@@ -376,7 +360,7 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
           </Button>
           <Button 
             onClick={applyChanges}
-            disabled={selectedProducts.size === 0 || (bulkValue <= 0 && bulkMinPrice <= 0 && bulkMaxPrice <= 0)}
+            disabled={selectedProducts.size === 0 || (bulkValue <= 0 && bulkMinPrice <= 0)}
           >
             Aplicar Alterações
           </Button>
