@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Unit } from '@/types/unit';
 import EditUnitDialog from './EditUnitDialog';
+import { DeleteDialog } from '@/components/ui/DeleteDialog';
 
 const DEFAULT_UNITS: Unit[] = [
   { value: 'UN', label: 'Unidade (UN)', isBaseUnit: true },
@@ -52,6 +54,8 @@ export default function UnitsPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
   const [newUnit, setNewUnit] = useState({ 
     value: '', 
     label: '', 
@@ -163,9 +167,16 @@ export default function UnitsPanel() {
     setEditingUnit(null);
   };
 
-  const handleDeleteUnit = (valueToDelete: string) => {
+  const handleDeleteClick = (unit: Unit) => {
+    setUnitToDelete(unit);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!unitToDelete) return;
+
     // Não permitir deletar unidades padrão
-    const isDefaultUnit = DEFAULT_UNITS.some(unit => unit.value === valueToDelete);
+    const isDefaultUnit = DEFAULT_UNITS.some(unit => unit.value === unitToDelete.value);
     if (isDefaultUnit) {
       toast("Erro", {
         description: "Não é possível excluir unidades padrão do sistema",
@@ -174,11 +185,13 @@ export default function UnitsPanel() {
           color: 'white'
         }
       });
+      setDeleteDialogOpen(false);
+      setUnitToDelete(null);
       return;
     }
 
     // Verificar se alguma unidade depende desta como base
-    const dependentUnits = units.filter(unit => unit.baseUnit === valueToDelete);
+    const dependentUnits = units.filter(unit => unit.baseUnit === unitToDelete.value);
     if (dependentUnits.length > 0) {
       toast("Erro", {
         description: `Não é possível excluir esta unidade pois ${dependentUnits.length} unidade(s) dependem dela`,
@@ -187,15 +200,20 @@ export default function UnitsPanel() {
           color: 'white'
         }
       });
+      setDeleteDialogOpen(false);
+      setUnitToDelete(null);
       return;
     }
 
-    const updatedUnits = units.filter(unit => unit.value !== valueToDelete);
+    const updatedUnits = units.filter(unit => unit.value !== unitToDelete.value);
     saveUnits(updatedUnits);
     
     toast("Unidade removida", {
       description: "A unidade foi removida com sucesso"
     });
+
+    setDeleteDialogOpen(false);
+    setUnitToDelete(null);
   };
 
   const handleResetToDefault = () => {
@@ -372,18 +390,22 @@ export default function UnitsPanel() {
                       >
                         <Edit size={16} />
                       </Button>
-                      {!isDefault && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteUnit(unit.value)}
-                          className="text-red-600 hover:text-red-700"
-                          disabled={dependentCount > 0}
-                          title={dependentCount > 0 ? `${dependentCount} unidade(s) dependem desta` : 'Excluir unidade'}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteClick(unit)}
+                        className="text-red-600 hover:text-red-700"
+                        disabled={isDefault || dependentCount > 0}
+                        title={
+                          isDefault 
+                            ? 'Não é possível excluir unidades padrão' 
+                            : dependentCount > 0 
+                              ? `${dependentCount} unidade(s) dependem desta` 
+                              : 'Excluir unidade'
+                        }
+                      >
+                        <Trash2 size={16} />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -401,6 +423,16 @@ export default function UnitsPanel() {
           }}
           onSave={handleSaveEditedUnit}
           baseUnits={baseUnits}
+        />
+
+        <DeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleConfirmDelete}
+          title="Excluir Unidade"
+          description={`Tem certeza que deseja excluir a unidade "${unitToDelete?.label}"?`}
+          actionLabel="Excluir"
+          cancelLabel="Cancelar"
         />
       </CardContent>
     </Card>
