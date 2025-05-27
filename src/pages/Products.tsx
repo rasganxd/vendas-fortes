@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, DollarSign } from 'lucide-react';
 import { toast } from "sonner";
 import { Product } from '@/types';
 import { useAppData } from '@/context/providers/AppDataProvider';
@@ -14,8 +14,8 @@ import { useConnection } from '@/context/providers/ConnectionProvider';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductGroups } from '@/hooks/useProductGroups';
-import { Link } from 'react-router-dom';
-import { Plus, DollarSign, Tags, Ruler } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Tags, Ruler } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UnitsPanel from '@/components/settings/UnitsPanel';
 import { CategoryTable } from '@/components/products/CategoryTable';
@@ -27,8 +27,11 @@ import { BrandDialog } from '@/components/products/BrandDialog';
 import { DeleteConfirmationDialog } from '@/components/products/DeleteConfirmationDialog';
 import { useProductClassification } from '@/hooks/useProductClassification';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
+import ProductPricing from '@/components/products/ProductPricing';
 
 export default function Products() {
+  const navigate = useNavigate();
+  
   // Use centralized products from AppData
   const {
     products,
@@ -341,21 +344,7 @@ export default function Products() {
           </TabsContent>
           
           <TabsContent value="pricing" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Precificação</CardTitle>
-                <CardDescription>
-                  Configure as regras de precificação dos seus produtos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <DollarSign size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">Funcionalidade de precificação</p>
-                  <p className="text-sm text-gray-400">Em desenvolvimento</p>
-                </div>
-              </CardContent>
-            </Card>
+            <ProductPricing />
           </TabsContent>
           
           <TabsContent value="classifications" className="mt-4">
