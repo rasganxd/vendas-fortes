@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -27,7 +26,7 @@ export default function PageLayout({
   return (
     <div className="flex-1 bg-background w-full min-h-screen">
       <div className={cn(
-        fullWidth ? "w-full px-6 py-5" : "container mx-auto px-4 py-5"
+        fullWidth ? "w-full px-2 py-5" : "container mx-auto px-2 py-5"
       )}>
         {title && (
           <div className="mb-8">
