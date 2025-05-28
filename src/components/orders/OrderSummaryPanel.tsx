@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { OrderItem, Customer, SalesRep } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, User, UserCheck, CreditCard, Package, Calculator } from 'lucide-react';
-
 interface OrderSummaryPanelProps {
   orderItems: OrderItem[];
   selectedCustomer: Customer | null;
@@ -14,7 +12,6 @@ interface OrderSummaryPanelProps {
   calculateTotal: () => number;
   isEditMode: boolean;
 }
-
 export default function OrderSummaryPanel({
   orderItems,
   selectedCustomer,
@@ -26,9 +23,7 @@ export default function OrderSummaryPanel({
   const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = calculateTotal();
   const averageItemValue = orderItems.length > 0 ? totalValue / orderItems.length : 0;
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       {/* Order Status */}
       <Card className="shadow-sm border-gray-200">
         <CardHeader className="pb-3">
@@ -62,18 +57,22 @@ export default function OrderSummaryPanel({
             <div className="flex items-center justify-between">
               <span className="font-medium text-gray-800">Valor Total:</span>
               <span className="text-xl font-bold text-green-600">
-                {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                {totalValue.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              })}
               </span>
             </div>
             
-            {orderItems.length > 0 && (
-              <div className="flex items-center justify-between text-xs text-gray-500">
+            {orderItems.length > 0 && <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>Valor médio por item:</span>
                 <span>
-                  {averageItemValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {averageItemValue.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              })}
                 </span>
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
       </Card>
@@ -89,34 +88,24 @@ export default function OrderSummaryPanel({
         <CardContent className="space-y-3">
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Cliente</label>
-            {selectedCustomer ? (
-              <div className="mt-1">
+            {selectedCustomer ? <div className="mt-1">
                 <div className="font-medium text-gray-900">{selectedCustomer.name}</div>
                 <div className="text-sm text-gray-500">Cód: {selectedCustomer.code}</div>
-                {selectedCustomer.phone && (
-                  <div className="text-sm text-gray-500">{selectedCustomer.phone}</div>
-                )}
-              </div>
-            ) : (
-              <div className="mt-1 text-sm text-gray-400 italic">Nenhum cliente selecionado</div>
-            )}
+                {selectedCustomer.phone && <div className="text-sm text-gray-500">{selectedCustomer.phone}</div>}
+              </div> : <div className="mt-1 text-sm text-gray-400 italic">Nenhum cliente selecionado</div>}
           </div>
 
           <Separator />
 
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Vendedor</label>
-            {selectedSalesRep ? (
-              <div className="mt-1">
+            {selectedSalesRep ? <div className="mt-1">
                 <div className="font-medium text-gray-900 flex items-center gap-2">
                   <UserCheck size={16} />
                   {selectedSalesRep.name}
                 </div>
                 <div className="text-sm text-gray-500">Cód: {selectedSalesRep.code}</div>
-              </div>
-            ) : (
-              <div className="mt-1 text-sm text-gray-400 italic">Nenhum vendedor selecionado</div>
-            )}
+              </div> : <div className="mt-1 text-sm text-gray-400 italic">Nenhum vendedor selecionado</div>}
           </div>
 
           <Separator />
@@ -173,18 +162,8 @@ export default function OrderSummaryPanel({
 
       {/* Keyboard shortcuts help */}
       <Card className="shadow-sm border-gray-200">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Atalhos do Teclado</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <div className="text-xs space-y-1">
-            <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">F2</kbd> Buscar produto</div>
-            <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">F3</kbd> Buscar cliente</div>
-            <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">F4</kbd> Buscar vendedor</div>
-            <div><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">Ctrl+Enter</kbd> Finalizar pedido</div>
-          </div>
-        </CardContent>
+        
+        
       </Card>
-    </div>
-  );
+    </div>;
 }
