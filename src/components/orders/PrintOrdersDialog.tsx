@@ -17,29 +17,37 @@ interface PrintOrdersDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   orders: Order[];
-  customers?: Customer[]; // Make optional
+  customers?: Customer[];
   selectedOrderIds: string[];
-  setSelectedOrderIds?: (ids: string[]) => void; // Make optional
-  filteredOrders?: Order[]; // Make optional
-  formatCurrency?: (value: number | undefined) => string; // Make optional
-  clearSelection?: () => void; // Added optional clearSelection prop
+  setSelectedOrderIds?: (ids: string[]) => void;
+  filteredOrders?: Order[];
+  formatCurrency?: (value: number | undefined) => string;
+  clearSelection?: () => void;
 }
 
 const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
   isOpen,
   onOpenChange,
-  orders = [], // Default to empty array
-  customers = [], // Default to empty array
-  selectedOrderIds = [], // Default to empty array
-  setSelectedOrderIds = () => {}, // Default no-op function
-  filteredOrders = [], // Default to empty array
-  formatCurrency = (value) => `R$ ${value?.toFixed(2) || '0.00'}`, // Default formatter
-  clearSelection = () => {} // Default no-op function
+  orders = [],
+  customers = [],
+  selectedOrderIds = [],
+  setSelectedOrderIds = () => {},
+  filteredOrders = [],
+  formatCurrency = (value) => `R$ ${value?.toFixed(2) || '0.00'}`,
+  clearSelection = () => {}
 }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [ordersToPrint, setOrdersToPrint] = useState<Order[]>([]);
   const { settings } = useAppContext();
   const companyData = settings?.company;
+  
+  // Debug company data for bulk printing
+  console.log('🖨️ PrintOrdersDialog - Company data for bulk printing:', {
+    settingsExists: !!settings,
+    companyExists: !!companyData,
+    companyName: companyData?.name,
+    isLoadingState: settings?.id === 'loading'
+  });
   
   // Ensure arrays are valid
   const safeOrders = Array.isArray(orders) ? orders : [];
@@ -51,7 +59,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     if (selectedOrderIds.length > 0) {
       setOrdersToPrint(safeOrders.filter(order => selectedOrderIds.includes(order.id)));
     } else {
-      // Use the filteredOrders safely here
       const filtered = selectedCustomerId === "all" 
         ? safeFilteredOrders 
         : safeFilteredOrders.filter(order => order.customerId === selectedCustomerId);
@@ -70,6 +77,12 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
   
   // Function to print in a new window with 2 orders per page layout
   const handlePrintInNewWindow = () => {
+    // Don't print if settings are still loading
+    if (!settings || settings.id === 'loading') {
+      console.warn('⚠️ Settings still loading, skipping print');
+      return;
+    }
+
     // Create a new window
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) return;
@@ -256,15 +269,17 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         }
       }`;
 
-    // Generate order HTML function
+    // Generate order HTML function - with real company data
     const generateOrderHTML = (order: Order) => {
       const orderCustomer = validCustomers.find(c => c.id === order.customerId);
       return `
         <div class="print-page">
-          ${companyData?.name ? `
+          ${companyData?.name && companyData.name !== 'Carregando...' ? `
           <div class="company-header">
             <h2>${companyData.name}</h2>
             ${companyData.document ? `<p>CNPJ: ${companyData.document}</p>` : ''}
+            ${companyData.address ? `<p>${companyData.address}</p>` : ''}
+            ${companyData.phone ? `<p>Tel: ${companyData.phone}</p>` : ''}
           </div>
           ` : ''}
           
@@ -342,7 +357,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             ${companyData?.footer ? `
               <p>${companyData.footer}</p>
             ` : `
-              <p>${companyData?.name || 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
+              <p>${companyData?.name && companyData.name !== 'Carregando...' ? companyData.name : 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
             `}
           </div>
         </div>
@@ -404,7 +419,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           <PrintDialogActions
             handleBulkPrint={handlePrintInNewWindow}
             onOpenChange={onOpenChange}
-            isPrintDisabled={ordersToPrint.length === 0}
+            isPrintDisabled={ordersToPrint.length === 0 || !settings || settings.id === 'loading'}
           />
         </DialogFooter>
       </DialogContent>

@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Order, Customer } from '@/types';
@@ -34,6 +33,14 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
   const { settings } = useAppContext();
   const companyData = settings?.company;
   
+  // Debug company data
+  console.log('🖨️ OrderDetailDialog - Company data for printing:', {
+    settingsExists: !!settings,
+    companyExists: !!companyData,
+    companyName: companyData?.name,
+    fullCompanyData: companyData
+  });
+  
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     documentTitle: `Pedido-${selectedOrder?.customerName}`,
@@ -41,6 +48,22 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
   });
 
   if (!selectedOrder) return null;
+
+  // Show loading state if settings are still loading
+  if (!settings || settings.id === 'loading') {
+    return (
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Carregando...</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 text-center">
+            <p>Carregando configurações da empresa...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -66,11 +89,17 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
         </DialogHeader>
         
         <div ref={printRef} className="p-4">
-          {companyData?.name && (
+          {companyData?.name && companyData.name !== 'Carregando...' && (
             <div className="text-center mb-4">
               <h2 className="font-bold text-xl">{companyData.name}</h2>
               {companyData.document && (
                 <p className="text-sm text-gray-600">CNPJ: {companyData.document}</p>
+              )}
+              {companyData.address && (
+                <p className="text-sm text-gray-600">{companyData.address}</p>
+              )}
+              {companyData.phone && (
+                <p className="text-sm text-gray-600">Tel: {companyData.phone}</p>
               )}
             </div>
           )}
@@ -164,7 +193,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
               <p>{companyData.footer}</p>
             ) : (
               <>
-                <p>{companyData?.name || 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
+                <p>{companyData?.name && companyData.name !== 'Carregando...' ? companyData.name : 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
                 <p>Para qualquer suporte: {companyData?.phone || '(11) 9999-8888'}</p>
               </>
             )}

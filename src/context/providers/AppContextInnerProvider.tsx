@@ -8,6 +8,7 @@ import { useAppOperations } from '@/context/operations/appOperations';
 import { useAppDataState } from './appData/useAppDataState';
 import { useAppDataOperations } from './appData/useAppDataOperations';
 import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
+import { useAppSettings } from '@/hooks/useAppSettings';
 
 /**
  * Inner provider for the AppContext
@@ -22,6 +23,9 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   
   // Get hooks for various data operations
   const hookOperations = useAppContextHooks();
+
+  // Get real settings from the database
+  const { settings, updateSettings, isLoading: isLoadingSettings } = useAppSettings();
 
   // Get app data state directly (products, orders)
   const {
@@ -79,9 +83,16 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
 
   useAppDataEventHandlers(refreshData, markOrderAsBeingEdited, unmarkOrderAsBeingEdited);
   
-  // Initialize theme
-  useThemeInitializer('#3b82f6');
+  // Initialize theme with the real primary color or fallback
+  useThemeInitializer(settings?.theme?.primaryColor || '#3b82f6');
   
+  // Log current settings state for debugging
+  console.log('🏢 Current settings in context:', {
+    settingsLoaded: !!settings,
+    companyName: settings?.company?.name,
+    isLoadingSettings
+  });
+
   // Build the full context value combining all data sources
   const contextValue = {
     // Core data from app operations
@@ -188,15 +199,17 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     getOrderById: hookOperations.getOrderById,
     generateNextOrderCode: hookOperations.generateNextOrderCode,
     
-    // Connection and settings - fix the connectionStatus type
+    // Connection and settings - use real settings
     connectionStatus: connection.connectionStatus as 'online' | 'offline' | 'connecting' | 'error',
     lastConnectAttempt: connection.lastConnectAttempt,
     reconnectToSupabase: connection.reconnectToSupabase,
     testConnection: connection.testConnection,
-    settings: {
-      id: 'default',
+    
+    // Use real settings from database, with fallback only if completely unavailable
+    settings: settings || {
+      id: 'loading',
       company: {
-        name: 'Minha Empresa',
+        name: 'Carregando...',
         address: '',
         phone: '',
         email: '',
@@ -207,6 +220,9 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
         primaryColor: '#6B7280'
       }
     },
+    
+    // Settings operations
+    updateSettings,
     
     // System operations
     refreshData,
@@ -248,7 +264,6 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     startNewMonth: async () => false,
     startNewDay: async () => false,
     clearCache: async () => {},
-    updateSettings: async () => {},
     
     // Required but not used properties
     isUsingMockData: false
