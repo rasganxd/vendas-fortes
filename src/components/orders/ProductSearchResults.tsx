@@ -23,8 +23,8 @@ export default function ProductSearchResults({
       const parentRect = resultsRef.current.parentElement.getBoundingClientRect();
       
       setPosition({
-        top: parentRect.bottom,
-        left: parentRect.left,
+        top: parentRect.bottom + window.scrollY,
+        left: parentRect.left + window.scrollX,
         width: parentRect.width
       });
     }
@@ -33,7 +33,7 @@ export default function ProductSearchResults({
   return (
     <div 
       ref={resultsRef}
-      className="fixed z-[9999] overflow-auto bg-white border rounded-md shadow-xl"
+      className="fixed z-[999999] overflow-auto bg-white border border-gray-300 rounded-lg shadow-2xl"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
