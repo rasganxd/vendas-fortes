@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Eye, EyeOff } from "lucide-react"
@@ -161,16 +160,13 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
     const labelClasses = cn(
       "text-sm font-medium transition-all duration-200",
       {
-        // Default variant
-        "text-gray-700 mb-2 block": variant === 'default',
+        // Default and outlined variants
+        "text-gray-700 mb-2 block": variant === 'default' || variant === 'outlined',
         
         // Floating variant
         "absolute left-3 transition-all duration-200 pointer-events-none": variant === 'floating',
         "top-2 text-xs text-blue-600": variant === 'floating' && (isFocused || hasValue),
         "top-3 text-gray-500": variant === 'floating' && !isFocused && !hasValue,
-        
-        // Outlined variant
-        "text-gray-700 mb-2 block": variant === 'outlined',
         
         // Error state
         "text-red-600": error,
