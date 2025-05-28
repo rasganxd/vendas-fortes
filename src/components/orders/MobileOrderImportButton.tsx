@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,85 +5,64 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Smartphone, Download, RefreshCw } from 'lucide-react';
 import { useMobileOrderImport } from '@/hooks/useMobileOrderImport';
 import SalesRepImportSelector from './SalesRepImportSelector';
-
 interface MobileOrderImportButtonProps {
   onImportComplete?: () => void;
 }
-
-export default function MobileOrderImportButton({ onImportComplete }: MobileOrderImportButtonProps) {
-  const { importMobileOrders, importSalesRepOrders, isImporting, pendingOrdersCount, checkPendingOrders } = useMobileOrderImport();
+export default function MobileOrderImportButton({
+  onImportComplete
+}: MobileOrderImportButtonProps) {
+  const {
+    importMobileOrders,
+    importSalesRepOrders,
+    isImporting,
+    pendingOrdersCount,
+    checkPendingOrders
+  } = useMobileOrderImport();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   useEffect(() => {
     // Check for pending orders on mount
     checkPendingOrders();
-    
+
     // Set up interval to check periodically
     const interval = setInterval(checkPendingOrders, 30000); // Check every 30 seconds
-    
+
     return () => clearInterval(interval);
   }, [checkPendingOrders]);
-
   const handleImportAll = async () => {
     const result = await importMobileOrders();
-    
     if (result.success && onImportComplete) {
       onImportComplete();
     }
-    
+
     // Fechar dialog após importação bem-sucedida
     if (result.success) {
       setIsDialogOpen(false);
     }
   };
-
   const handleImportSalesRep = async (salesRepId: string, salesRepName: string) => {
     const result = await importSalesRepOrders(salesRepId, salesRepName);
-    
     if (result.success && onImportComplete) {
       onImportComplete();
     }
-    
+
     // Fechar dialog após importação bem-sucedida
     if (result.success) {
       setIsDialogOpen(false);
     }
   };
-
   if (pendingOrdersCount === 0) {
     return null; // Don't show button if no pending orders
   }
-
-  return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  return <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <div className="relative">
-          <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            disabled={isImporting}
-          >
-            {isImporting ? (
-              <RefreshCw size={16} className="animate-spin" />
-            ) : (
-              <Smartphone size={16} />
-            )}
-            Importar Pedidos Mobile
-            
-            {pendingOrdersCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {pendingOrdersCount}
-              </Badge>
-            )}
-          </Button>
           
-          {pendingOrdersCount > 0 && !isImporting && (
-            <div className="absolute -top-2 -right-2">
+          
+          {pendingOrdersCount > 0 && !isImporting && <div className="absolute -top-2 -right-2">
               <div className="bg-blue-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
                 {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </DialogTrigger>
       
@@ -96,12 +74,7 @@ export default function MobileOrderImportButton({ onImportComplete }: MobileOrde
           </DialogTitle>
         </DialogHeader>
         
-        <SalesRepImportSelector
-          onImportSalesRep={handleImportSalesRep}
-          onImportAll={handleImportAll}
-          isImporting={isImporting}
-        />
+        <SalesRepImportSelector onImportSalesRep={handleImportSalesRep} onImportAll={handleImportAll} isImporting={isImporting} />
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
