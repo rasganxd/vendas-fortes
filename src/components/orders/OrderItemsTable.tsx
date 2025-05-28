@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OrderItem } from '@/types';
 import { Button } from "@/components/ui/button";
@@ -23,8 +22,8 @@ export default function OrderItemsTable({
     if (item.id) {
       return item.id;
     }
-    // Otherwise use a composite key with productId and index
-    return `${item.productId}-${index}`;
+    // Otherwise use a composite key with productId, unit and index
+    return `${item.productId}-${item.unit || 'UN'}-${index}`;
   };
 
   const handleRemoveClick = (item: OrderItem, index: number) => {
@@ -33,6 +32,7 @@ export default function OrderItemsTable({
       id: item.id,
       productId: item.productId,
       productName: item.productName,
+      unit: item.unit,
       index: index
     });
     
@@ -80,7 +80,7 @@ export default function OrderItemsTable({
                   <td className="px-4 py-3 text-gray-800">{item.productCode || '—'}</td>
                   <td className="px-4 py-3 text-gray-800 font-medium">{item.productName}</td>
                   <td className="px-4 py-3 text-center text-gray-800">{item.quantity}</td>
-                  <td className="px-4 py-3 text-center text-gray-600">un</td>
+                  <td className="px-4 py-3 text-center text-gray-600">{item.unit || 'UN'}</td>
                   <td className="px-4 py-3 text-right text-gray-800">
                     {(item.unitPrice || item.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </td>
@@ -94,7 +94,7 @@ export default function OrderItemsTable({
                       onClick={() => handleRemoveClick(item, index)}
                       type="button"
                       className="hover:bg-red-50 hover:text-red-600 transition-colors"
-                      title={`Remover ${item.productName} do pedido`}
+                      title={`Remover ${item.productName} (${item.unit || 'UN'}) do pedido`}
                     >
                       <Trash2 size={16} className="text-red-500 hover:text-red-600" />
                     </Button>

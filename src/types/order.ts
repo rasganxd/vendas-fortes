@@ -49,6 +49,7 @@ export interface OrderItem {
   price: number;
   discount?: number;
   total: number;
+  unit?: string; // Added unit field to differentiate items by unit
 }
 
 /**

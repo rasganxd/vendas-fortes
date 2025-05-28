@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { OrderItem } from '@/types';
 
@@ -17,6 +16,7 @@ class OrderItemService {
         unit_price: item.unitPrice || item.price,
         total: item.total,
         discount: item.discount || 0,
+        unit: item.unit || 'UN', // Store the unit
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -43,7 +43,8 @@ class OrderItemService {
         unitPrice: data.unit_price,
         price: data.price,
         discount: data.discount || 0,
-        total: data.total
+        total: data.total,
+        unit: data.unit || 'UN'
       };
       
       console.log('✅ Item added to order successfully:', newItem.id);
@@ -86,6 +87,7 @@ class OrderItemService {
         unit_price: updates.unitPrice || updates.price,
         total: updates.total,
         discount: updates.discount,
+        unit: updates.unit,
         updated_at: new Date().toISOString()
       };
       

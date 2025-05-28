@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -79,6 +80,7 @@ export default function ProductSearchInput({
   const handleUnitChange = (unit: string) => {
     setSelectedUnit(unit);
     if (selectedProduct) {
+      // Always use product.price (sale price) as base, never product.cost
       let convertedPrice = selectedProduct.price;
       
       // If product has subunit and selected unit is the subunit
@@ -98,7 +100,7 @@ export default function ProductSearchInput({
   const handleAddToOrder = () => {
     if (selectedProduct && quantity && quantity > 0) {
       // Always use the exact quantity entered by the user
-      // No conversion needed - if selling 5 units, record 5 units
+      // Pass the selected unit to differentiate items
       addItemToOrder(selectedProduct, quantity, price, selectedUnit);
     }
   };

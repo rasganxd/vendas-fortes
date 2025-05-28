@@ -14,9 +14,10 @@ export const useOrderFormItemOperations = (
   lastOperation: string,
   setLastOperation: React.Dispatch<React.SetStateAction<string>>
 ) => {
-  const handleAddItem = async (product: any, quantity: number, price: number) => {
+  const handleAddItem = async (product: any, quantity: number, price: number, unit?: string) => {
     const operationId = `add-${Date.now()}`;
     console.log("🛒 === STARTING ADD ITEM PROCESS ===", operationId);
+    console.log("🛒 Product:", product.name, "Unit:", unit, "Quantity:", quantity, "Price:", price);
     
     if (isProcessingItem || lastOperation === operationId) {
       console.log("⚠️ Operation blocked - already processing or duplicate");
@@ -37,7 +38,10 @@ export const useOrderFormItemOperations = (
       setLastOperation(operationId);
       
       setOrderItems(currentItems => {
-        const existingItemIndex = currentItems.findIndex(item => item.productId === product.id);
+        // Find existing item with same product AND unit
+        const existingItemIndex = currentItems.findIndex(item => 
+          item.productId === product.id && item.unit === unit
+        );
         
         if (existingItemIndex !== -1) {
           const existingItem = currentItems[existingItemIndex];
@@ -69,7 +73,7 @@ export const useOrderFormItemOperations = (
           
           toast({
             title: "Item atualizado",
-            description: `${quantity}x ${product.name} adicionado ao item existente (total: ${newQuantity})`
+            description: `${quantity}x ${product.name} (${unit}) adicionado ao item existente (total: ${newQuantity})`
           });
           
           return updatedItems;
@@ -84,7 +88,8 @@ export const useOrderFormItemOperations = (
             price: price,
             unitPrice: price,
             discount: 0,
-            total: price * quantity
+            total: price * quantity,
+            unit: unit || product.unit || 'UN' // Store the unit used
           };
           
           const updatedItems = [...currentItems, newItem];
@@ -111,7 +116,7 @@ export const useOrderFormItemOperations = (
           
           toast({
             title: "Item adicionado",
-            description: `${quantity}x ${product.name} adicionado ao pedido`
+            description: `${quantity}x ${product.name} (${unit}) adicionado ao pedido`
           });
           
           return updatedItems;
@@ -122,6 +127,7 @@ export const useOrderFormItemOperations = (
         detail: { 
           action: 'add', 
           product: product,
+          unit: unit,
           orderId: currentOrderId 
         } 
       }));
