@@ -1,5 +1,6 @@
 
 export interface Unit {
+  id?: string;
   value: string;
   label: string;
   conversionRate: number;

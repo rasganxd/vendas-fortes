@@ -93,12 +93,7 @@ export const useProductUnits = () => {
     try {
       console.log("Updating unit:", value, updates);
       
-      const unit = units.find(u => u.value === value);
-      if (!unit?.id) {
-        throw new Error('Unit not found');
-      }
-      
-      await productUnitsService.update(unit.id, updates);
+      await productUnitsService.update(value, updates);
       
       setUnits(prev => prev.map(u => 
         u.value === value ? { ...u, ...updates } : u
@@ -119,12 +114,7 @@ export const useProductUnits = () => {
     try {
       console.log("Deleting unit:", value);
       
-      const unit = units.find(u => u.value === value);
-      if (!unit?.id) {
-        throw new Error('Unit not found');
-      }
-      
-      await productUnitsService.delete(unit.id);
+      await productUnitsService.remove(value);
       
       setUnits(prev => prev.filter(u => u.value !== value));
       
@@ -145,9 +135,7 @@ export const useProductUnits = () => {
       
       // Clear existing units
       for (const unit of units) {
-        if (unit.id) {
-          await productUnitsService.delete(unit.id);
-        }
+        await productUnitsService.remove(unit.value);
       }
       
       // Add default units

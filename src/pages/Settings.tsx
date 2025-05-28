@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,10 +6,9 @@ import CompanySettings from '@/components/settings/CompanySettings';
 import ApiTokensPanel from '@/components/settings/ApiTokensPanel';
 import MobileSyncPanel from '@/components/settings/MobileSyncPanel';
 import MobileOrderImportPanel from '@/components/settings/MobileOrderImportPanel';
-import UnitsPanel from '@/components/settings/UnitsPanel';
 import SyncUpdateMonitor from '@/components/settings/SyncUpdateMonitor';
 import PageLayout from '@/components/layout/PageLayout';
-import { Settings as SettingsIcon, Building, Smartphone, Download, Package, Activity } from 'lucide-react';
+import { Settings as SettingsIcon, Building, Smartphone, Download, Activity } from 'lucide-react';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('company');
@@ -17,14 +17,10 @@ export default function Settings() {
     <PageLayout title="Configurações do Sistema">
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building className="h-4 w-4" />
               Empresa
-            </TabsTrigger>
-            <TabsTrigger value="units" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Unidades
             </TabsTrigger>
             <TabsTrigger value="mobile-sync" className="flex items-center gap-2">
               <Smartphone className="h-4 w-4" />
@@ -54,20 +50,6 @@ export default function Settings() {
               </CardHeader>
               <CardContent>
                 <CompanySettings />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="units" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Unidades de Medida</CardTitle>
-                <CardDescription>
-                  Gerencie as unidades de medida disponíveis no sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <UnitsPanel />
               </CardContent>
             </Card>
           </TabsContent>

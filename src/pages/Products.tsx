@@ -9,6 +9,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useAppContext } from '@/hooks/useAppContext';
 import ProductForm from '@/components/products/ProductForm';
 import EnhancedProductsTable from '@/components/products/EnhancedProductsTable';
+import ProductsActionButtons from '@/components/products/ProductsActionButtons';
 import { DeleteConfirmationDialog } from '@/components/products/DeleteConfirmationDialog';
 import BulkProductUpload from '@/components/products/BulkProductUpload';
 import { Product } from '@/types';
@@ -86,6 +87,9 @@ export default function Products() {
       description="Controle seu estoque, preços e informações dos produtos"
     >
       <div className="space-y-6">
+        {/* Action Buttons */}
+        <ProductsActionButtons onAddProduct={handleNewProduct} />
+
         {/* Header Actions */}
         <EnhancedCard variant="glass">
           <EnhancedCardHeader>

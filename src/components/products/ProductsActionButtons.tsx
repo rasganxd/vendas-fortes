@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Plus, DollarSign, Tags } from 'lucide-react';
+import { Plus, DollarSign, Tags, Package } from 'lucide-react';
 
 interface ProductsActionButtonsProps {
   onAddProduct: () => void;
@@ -18,10 +18,10 @@ const ProductsActionButtons: React.FC<ProductsActionButtonsProps> = ({
         Adicionar Produto
       </Button>
       
-      <Link to="/produtos/precificacao">
+      <Link to="/produtos/unidades">
         <Button variant="outline">
-          <DollarSign size={16} className="mr-2" />
-          Precificação
+          <Package size={16} className="mr-2" />
+          Unidades
         </Button>
       </Link>
       
@@ -29,6 +29,13 @@ const ProductsActionButtons: React.FC<ProductsActionButtonsProps> = ({
         <Button variant="outline">
           <Tags size={16} className="mr-2" />
           Classificações
+        </Button>
+      </Link>
+      
+      <Link to="/produtos/precificacao">
+        <Button variant="outline">
+          <DollarSign size={16} className="mr-2" />
+          Precificação
         </Button>
       </Link>
     </div>
