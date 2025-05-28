@@ -63,10 +63,15 @@ export default function Products() {
     setProductToDelete(null);
   };
 
-  const handleProductSaved = () => {
-    setIsProductFormOpen(false);
-    setEditingProduct(null);
-    refreshData();
+  const handleProductSaved = async (data: any) => {
+    try {
+      // Lógica para salvar o produto aqui
+      setIsProductFormOpen(false);
+      setEditingProduct(null);
+      refreshData();
+    } catch (error) {
+      console.error('Erro ao salvar produto:', error);
+    }
   };
 
   const handleNewProduct = () => {
@@ -154,8 +159,13 @@ export default function Products() {
             setIsProductFormOpen(open);
             if (!open) setEditingProduct(null);
           }}
-          onSuccess={handleProductSaved}
-          editingProduct={editingProduct}
+          onSubmit={handleProductSaved}
+          isEditing={!!editingProduct}
+          selectedProduct={editingProduct}
+          products={products}
+          productCategories={[]}
+          productGroups={[]}
+          productBrands={[]}
         />
 
         <DeleteConfirmationDialog
