@@ -10,11 +10,19 @@ import {
   CheckCircle, 
   AlertTriangle, 
   Clock,
-  Smartphone
+  Smartphone,
+  Database,
+  Users,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { syncUpdateService, SyncUpdate } from '@/services/supabase/syncUpdateService';
+import { useSalesReps } from '@/hooks/useSalesReps';
+import { useSalesRepSyncStatus } from '@/hooks/useSalesRepSyncStatus';
+import { GenerateSyncUpdateDialog } from './GenerateSyncUpdateDialog';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const SyncUpdateMonitor: React.FC = () => {
   const [syncUpdates, setSyncUpdates] = useState<SyncUpdate[]>([]);
@@ -25,6 +33,10 @@ const SyncUpdateMonitor: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+
+  const { salesReps } = useSalesReps();
+  const { syncStatuses, isLoading: statusLoading, refreshStatuses } = useSalesRepSyncStatus(salesReps);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -36,6 +48,7 @@ const SyncUpdateMonitor: React.FC = () => {
       
       setSyncUpdates(updates);
       setStats(statsData);
+      refreshStatuses();
     } catch (error) {
       console.error('Error loading sync data:', error);
     } finally {
@@ -49,25 +62,63 @@ const SyncUpdateMonitor: React.FC = () => {
       const reactivatedCount = await syncUpdateService.reactivateOrphanedUpdates(1); // 1 hora
       
       if (reactivatedCount > 0) {
+        toast.success(`${reactivatedCount} atualizações reativadas`);
         await loadData(); // Recarregar dados
+      } else {
+        toast.info('Nenhuma atualização órfã encontrada');
       }
     } catch (error) {
       console.error('Error reactivating orphaned updates:', error);
+      toast.error('Erro ao reativar atualizações órfãs');
     } finally {
       setIsReactivating(false);
     }
   };
 
-  const handleCreateTestUpdate = async () => {
+  const handleGenerateUpdate = async (salesRepId: string | null, dataTypes: string[], description: string) => {
     try {
-      await syncUpdateService.createSyncUpdate(
-        ['products', 'customers'],
-        'Atualização de teste para mobile',
-        'monitor'
+      const result = await syncUpdateService.createSyncUpdate(
+        dataTypes,
+        description,
+        'desktop'
       );
-      await loadData();
+      
+      if (result.success) {
+        toast.success('Atualização gerada com sucesso!');
+        await loadData();
+      } else {
+        toast.error('Erro ao gerar atualização: ' + result.error);
+      }
     } catch (error) {
-      console.error('Error creating test update:', error);
+      console.error('Error generating update:', error);
+      toast.error('Erro ao gerar atualização');
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'online': return 'text-green-600 bg-green-100';
+      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'error': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'online': return <Wifi className="h-4 w-4" />;
+      case 'pending': return <Clock className="h-4 w-4" />;
+      case 'error': return <AlertTriangle className="h-4 w-4" />;
+      default: return <WifiOff className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'online': return 'Online';
+      case 'pending': return 'Sync Pendente';
+      case 'error': return 'Erro';
+      default: return 'Offline';
     }
   };
 
@@ -94,12 +145,12 @@ const SyncUpdateMonitor: React.FC = () => {
             Atualizar
           </Button>
           <Button
-            variant="outline"
             size="sm"
-            onClick={handleCreateTestUpdate}
+            onClick={() => setGenerateDialogOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            <Smartphone className="mr-2 h-4 w-4" />
-            Criar Teste
+            <Database className="mr-2 h-4 w-4" />
+            Gerar Atualização
           </Button>
         </div>
       </div>
@@ -142,6 +193,69 @@ const SyncUpdateMonitor: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Status dos Vendedores */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Status dos Vendedores
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {statusLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+            </div>
+          ) : syncStatuses.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum vendedor cadastrado</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {syncStatuses.map((statusInfo) => (
+                <div 
+                  key={statusInfo.salesRep.id} 
+                  className="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{statusInfo.salesRep.name}</h4>
+                      <p className="text-sm text-gray-500">Código: {statusInfo.salesRep.code}</p>
+                    </div>
+                    <Badge className={`${getStatusColor(statusInfo.status)} border-0`}>
+                      <div className="flex items-center gap-1">
+                        {getStatusIcon(statusInfo.status)}
+                        {getStatusLabel(statusInfo.status)}
+                      </div>
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm">
+                    {statusInfo.lastSyncAt ? (
+                      <p className="text-gray-600">
+                        Última sync: {formatDistanceToNow(new Date(statusInfo.lastSyncAt), { 
+                          addSuffix: true, 
+                          locale: ptBR 
+                        })}
+                      </p>
+                    ) : (
+                      <p className="text-gray-500 italic">Nunca sincronizou</p>
+                    )}
+                    
+                    {statusInfo.pendingUpdatesCount > 0 && (
+                      <p className="text-yellow-600 font-medium">
+                        {statusInfo.pendingUpdatesCount} atualização(ões) pendente(s)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Alerta para atualizações órfãs */}
       {stats.orphanedUpdates > 0 && (
@@ -216,6 +330,14 @@ const SyncUpdateMonitor: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para gerar atualizações */}
+      <GenerateSyncUpdateDialog
+        open={generateDialogOpen}
+        onOpenChange={setGenerateDialogOpen}
+        salesReps={salesReps}
+        onGenerateUpdate={handleGenerateUpdate}
+      />
     </div>
   );
 };
