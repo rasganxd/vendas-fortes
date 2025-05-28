@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trash2, Plus, Edit } from 'lucide-react';
+import { Trash2, Plus, Edit, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
 import {
   Table,
@@ -25,58 +26,53 @@ import {
 import { Unit } from '@/types/unit';
 import EditUnitDialog from './EditUnitDialog';
 import { DeleteDialog } from '@/components/ui/DeleteDialog';
-
-const DEFAULT_UNITS: Unit[] = [
-  { value: 'UN', label: 'Unidade (UN)', conversionRate: 1 },
-  { value: 'KG', label: 'Quilograma (KG)', conversionRate: 1 },
-  { value: 'L', label: 'Litro (L)', conversionRate: 1 },
-  { value: 'ML', label: 'Mililitro (ML)', conversionRate: 0.001 },
-  { value: 'CX', label: 'Caixa (CX)', conversionRate: 24 },
-  { value: 'PCT', label: 'Pacote (PCT)', conversionRate: 12 },
-  { value: 'PAR', label: 'Par (PAR)', conversionRate: 2 },
-  { value: 'DUZIA', label: 'Dúzia (DZ)', conversionRate: 12 },
-  { value: 'ROLO', label: 'Rolo (RL)', conversionRate: 1 },
-  { value: 'METRO', label: 'Metro (M)', conversionRate: 1 }
-];
-
-const STORAGE_KEY = 'product_units';
+import { productUnitsService } from '@/services/supabase/productUnitsService';
 
 export default function UnitsPanel() {
-  const [units, setUnits] = useState<Unit[]>(DEFAULT_UNITS);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newUnit, setNewUnit] = useState({ 
     value: '', 
     label: '', 
     conversionRate: 1
   });
 
-  // Carregar unidades do localStorage
-  useEffect(() => {
-    const savedUnits = localStorage.getItem(STORAGE_KEY);
-    if (savedUnits) {
-      try {
-        const parsedUnits = JSON.parse(savedUnits);
-        setUnits(parsedUnits);
-      } catch (error) {
-        console.error('Erro ao carregar unidades:', error);
-      }
+  // Carregar unidades do banco de dados
+  const loadUnits = async () => {
+    try {
+      setIsLoading(true);
+      const data = await productUnitsService.getAll();
+      setUnits(data);
+    } catch (error) {
+      console.error('Erro ao carregar unidades:', error);
+      toast("Erro", {
+        description: "Erro ao carregar unidades do banco de dados",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadUnits();
   }, []);
 
-  // Salvar unidades no localStorage
-  const saveUnits = (newUnits: Unit[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUnits));
-    setUnits(newUnits);
-    
-    // Disparar evento para atualizar outros componentes
+  // Disparar evento para atualizar outros componentes
+  const notifyUnitsUpdated = (newUnits: Unit[]) => {
     window.dispatchEvent(new CustomEvent('unitsUpdated', { detail: newUnits }));
   };
 
-  const handleAddUnit = () => {
+  const handleAddUnit = async () => {
     if (!newUnit.value || !newUnit.label) {
       toast("Erro", {
         description: "Preencha todos os campos",
@@ -100,20 +96,32 @@ export default function UnitsPanel() {
       return;
     }
 
-    const unitToAdd: Unit = {
-      value: newUnit.value.toUpperCase(),
-      label: newUnit.label,
-      conversionRate: newUnit.conversionRate
-    };
-    
-    const updatedUnits = [...units, unitToAdd];
-    saveUnits(updatedUnits);
-    setNewUnit({ value: '', label: '', conversionRate: 1 });
-    setIsOpen(false);
-    
-    toast("Unidade adicionada", {
-      description: "A nova unidade foi adicionada com sucesso"
-    });
+    try {
+      setIsSubmitting(true);
+      await productUnitsService.add(newUnit);
+      
+      // Recarregar unidades
+      await loadUnits();
+      notifyUnitsUpdated(units);
+      
+      setNewUnit({ value: '', label: '', conversionRate: 1 });
+      setIsOpen(false);
+      
+      toast("Unidade adicionada", {
+        description: "A nova unidade foi adicionada com sucesso"
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar unidade:', error);
+      toast("Erro", {
+        description: "Erro ao adicionar unidade",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEditUnit = (unit: Unit) => {
@@ -121,9 +129,11 @@ export default function UnitsPanel() {
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveEditedUnit = (updatedUnit: Unit) => {
+  const handleSaveEditedUnit = async (updatedUnit: Unit) => {
+    if (!editingUnit) return;
+
     // Verificar se o código da unidade já existe (exceto a própria unidade sendo editada)
-    const existingUnit = units.find(u => u.value.toLowerCase() === updatedUnit.value.toLowerCase() && u.value !== editingUnit?.value);
+    const existingUnit = units.find(u => u.value.toLowerCase() === updatedUnit.value.toLowerCase() && u.value !== editingUnit.value);
     if (existingUnit) {
       toast("Erro", {
         description: "Já existe uma unidade com este código",
@@ -135,11 +145,31 @@ export default function UnitsPanel() {
       return;
     }
 
-    const updatedUnits = units.map(unit => 
-      unit.value === editingUnit?.value ? updatedUnit : unit
-    );
-    saveUnits(updatedUnits);
-    setEditingUnit(null);
+    try {
+      setIsSubmitting(true);
+      await productUnitsService.update(editingUnit.value, updatedUnit);
+      
+      // Recarregar unidades
+      await loadUnits();
+      notifyUnitsUpdated(units);
+      
+      setEditingUnit(null);
+      
+      toast("Unidade atualizada", {
+        description: "A unidade foi atualizada com sucesso"
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar unidade:', error);
+      toast("Erro", {
+        description: "Erro ao atualizar unidade",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDeleteClick = (unit: Unit) => {
@@ -147,34 +177,79 @@ export default function UnitsPanel() {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!unitToDelete) return;
 
-    // Remover a proteção contra exclusão de unidades padrão - agora permite excluir qualquer uma
-    const updatedUnits = units.filter(unit => unit.value !== unitToDelete.value);
-    saveUnits(updatedUnits);
-    
-    toast("Unidade removida", {
-      description: "A unidade foi removida com sucesso"
-    });
-
-    setDeleteDialogOpen(false);
-    setUnitToDelete(null);
+    try {
+      setIsSubmitting(true);
+      await productUnitsService.remove(unitToDelete.value);
+      
+      // Recarregar unidades
+      await loadUnits();
+      notifyUnitsUpdated(units);
+      
+      toast("Unidade removida", {
+        description: "A unidade foi removida com sucesso"
+      });
+    } catch (error) {
+      console.error('Erro ao remover unidade:', error);
+      toast("Erro", {
+        description: "Erro ao remover unidade",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsSubmitting(false);
+      setDeleteDialogOpen(false);
+      setUnitToDelete(null);
+    }
   };
 
-  const handleResetToDefault = () => {
-    saveUnits(DEFAULT_UNITS);
-    toast("Unidades restauradas", {
-      description: "As unidades foram restauradas para o padrão"
-    });
+  const handleResetToDefault = async () => {
+    try {
+      setIsSubmitting(true);
+      await productUnitsService.resetToDefault();
+      
+      // Recarregar unidades
+      await loadUnits();
+      notifyUnitsUpdated(units);
+      
+      toast("Unidades restauradas", {
+        description: "As unidades foram restauradas para o padrão"
+      });
+    } catch (error) {
+      console.error('Erro ao restaurar unidades:', error);
+      toast("Erro", {
+        description: "Erro ao restaurar unidades padrão",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="ml-2">Carregando unidades...</span>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Gerenciar Unidades de Medida</CardTitle>
         <CardDescription>
-          Configure as unidades de medida e suas taxas de conversão. A taxa de conversão indica quantas unidades básicas correspondem a 1 desta unidade. Agora você pode excluir qualquer unidade.
+          Configure as unidades de medida e suas taxas de conversão. A taxa de conversão indica quantas unidades básicas correspondem a 1 desta unidade. As configurações são salvas no banco de dados.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -185,7 +260,12 @@ export default function UnitsPanel() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleResetToDefault}>
+            <Button 
+              variant="outline" 
+              onClick={handleResetToDefault}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Restaurar Padrão
             </Button>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -241,7 +321,8 @@ export default function UnitsPanel() {
                   <Button variant="outline" onClick={() => setIsOpen(false)}>
                     Cancelar
                   </Button>
-                  <Button onClick={handleAddUnit}>
+                  <Button onClick={handleAddUnit} disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Adicionar
                   </Button>
                 </DialogFooter>
@@ -277,6 +358,7 @@ export default function UnitsPanel() {
                       onClick={() => handleEditUnit(unit)}
                       className="text-blue-600 hover:text-blue-700"
                       title="Editar unidade"
+                      disabled={isSubmitting}
                     >
                       <Edit size={16} />
                     </Button>
@@ -286,6 +368,7 @@ export default function UnitsPanel() {
                       onClick={() => handleDeleteClick(unit)}
                       className="text-red-600 hover:text-red-700"
                       title="Excluir unidade"
+                      disabled={isSubmitting}
                     >
                       <Trash2 size={16} />
                     </Button>

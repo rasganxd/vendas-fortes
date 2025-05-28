@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Unit } from '@/types/unit';
 import { UnitConverter } from '@/utils/unitConverter';
+import { productUnitsService } from '@/services/supabase/productUnitsService';
 
 const DEFAULT_UNITS: Unit[] = [
   { value: 'UN', label: 'Unidade (UN)', conversionRate: 1 },
@@ -16,23 +17,31 @@ const DEFAULT_UNITS: Unit[] = [
   { value: 'METRO', label: 'Metro (M)', conversionRate: 1 }
 ];
 
-const STORAGE_KEY = 'product_units';
-
 export const useProductUnits = () => {
   const [units, setUnits] = useState<Unit[]>(DEFAULT_UNITS);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Carregar unidades do banco de dados
+  const loadUnits = async () => {
+    try {
+      setIsLoading(true);
+      const databaseUnits = await productUnitsService.getAll();
+      setUnits(databaseUnits);
+      
+      // Disparar evento para notificar outros componentes
+      window.dispatchEvent(new CustomEvent('unitsUpdated', { detail: databaseUnits }));
+    } catch (error) {
+      console.error('Erro ao carregar unidades, usando padrão:', error);
+      setUnits(DEFAULT_UNITS);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const savedUnits = localStorage.getItem(STORAGE_KEY);
-    if (savedUnits) {
-      try {
-        const parsedUnits = JSON.parse(savedUnits);
-        setUnits(parsedUnits);
-      } catch (error) {
-        console.error('Erro ao carregar unidades:', error);
-        setUnits(DEFAULT_UNITS);
-      }
-    }
+    loadUnits();
 
+    // Escutar eventos de atualização de unidades
     const handleUnitsUpdated = (event: CustomEvent) => {
       setUnits(event.detail);
     };
@@ -48,8 +57,10 @@ export const useProductUnits = () => {
 
   return {
     units,
+    isLoading,
     defaultUnits: DEFAULT_UNITS,
     converter,
+    refreshUnits: loadUnits,
     getRelatedUnits: (unit: string) => converter.getRelatedUnits(unit)
   };
 };

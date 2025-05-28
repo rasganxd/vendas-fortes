@@ -6,20 +6,25 @@ import CompanySettings from '@/components/settings/CompanySettings';
 import SalesForceDataGenerator from '@/components/settings/SalesForceDataGenerator';
 import ApiTokensPanel from '@/components/settings/ApiTokensPanel';
 import MobileOrderImportPanel from '@/components/settings/MobileOrderImportPanel';
+import UnitsPanel from '@/components/settings/UnitsPanel';
 
 export default function Settings() {
   return (
     <PageLayout title="Configurações">
       <div className="space-y-4">
         <Tabs defaultValue="company" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-flex">
+          <TabsList className="grid w-full grid-cols-5 md:w-auto md:inline-flex">
             <TabsTrigger value="company">Dados da Empresa</TabsTrigger>
+            <TabsTrigger value="units">Unidades</TabsTrigger>
             <TabsTrigger value="salesforce">Gerar Dados Força de Vendas</TabsTrigger>
             <TabsTrigger value="api">API REST & Mobile</TabsTrigger>
             <TabsTrigger value="import">Importação Mobile</TabsTrigger>
           </TabsList>
           <TabsContent value="company" className="mt-4">
             <CompanySettings />
+          </TabsContent>
+          <TabsContent value="units" className="mt-4">
+            <UnitsPanel />
           </TabsContent>
           <TabsContent value="salesforce" className="mt-4">
             <SalesForceDataGenerator />
