@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Eye, EyeOff } from "lucide-react"
@@ -126,20 +125,19 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
       "focus-visible:ring-blue-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
       getPaddingClasses(),
       {
-        // Default variant - consolidated border styles
+        // Default variant styles
         "border-gray-200 hover:border-gray-300": variant === 'default' && !error && !isFocused,
+        "border-blue-500 bg-blue-50/30": variant === 'default' && isFocused && !error,
         
-        // Floating label variant
-        "border-gray-200 pt-6 pb-2": variant === 'floating',
+        // Floating label variant styles
+        "border-gray-200 pt-6 pb-2": variant === 'floating' && !error && !isFocused,
+        "border-blue-500 bg-blue-50/30 pt-6 pb-2": variant === 'floating' && isFocused && !error,
         
-        // Outlined variant - consolidated border styles
+        // Outlined variant styles
         "border-2 border-gray-200": variant === 'outlined' && !error && !isFocused,
         "border-2 border-blue-500": variant === 'outlined' && isFocused && !error,
         
-        // Focused states
-        "border-blue-500 bg-blue-50/30": (variant === 'default' || variant === 'floating') && isFocused && !error,
-        
-        // Error states
+        // Error states for all variants
         "border-red-500 bg-red-50/30 focus-visible:ring-red-500": error,
       },
       className
