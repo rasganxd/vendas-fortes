@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import OrderFormHeader from './OrderFormHeader';
@@ -7,6 +8,7 @@ import EnhancedProductSearch from './EnhancedProductSearch';
 import OrderSummaryPanel from './OrderSummaryPanel';
 import EnhancedOrderItemsTable from './EnhancedOrderItemsTable';
 import { OrderFormLayoutProps } from './types';
+
 export default function OrderFormTwoColumnLayout({
   // Form state
   customers,
@@ -73,53 +75,122 @@ export default function OrderFormTwoColumnLayout({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedCustomer, selectedSalesRep, orderItems, handleCreateOrder, productInputRef, customerInputRef, salesRepInputRef]);
-  return <div className="w-full space-y-4">
-      {/* Header */}
-      
 
-      {/* Expanded Two Column Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Left Column - Form Fields (3/4 width on XL screens) */}
-        <div className="xl:col-span-3 space-y-4">
-          {/* Order Form Fields */}
-          <Card className="shadow-sm border-gray-200">
-            <CardContent className="pt-4 pb-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-800">Dados do Pedido</h3>
-                  <div className="text-xs text-gray-500 space-x-4">
-                    <span>F3: Cliente</span>
-                    <span>F4: Vendedor</span>
-                    <span>F2: Produto</span>
+  return (
+    <div className="w-full h-screen flex flex-col">
+      {/* Fixed Action Bar for Mobile */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg p-4">
+        <OrderFormActions 
+          selectedCustomer={selectedCustomer}
+          selectedSalesRep={selectedSalesRep}
+          orderItems={orderItems}
+          isSubmitting={isSubmitting}
+          isEditMode={isEditMode}
+          connectionStatus={connectionStatus}
+          handleViewRecentPurchases={handleViewRecentPurchases}
+          handleCreateOrder={handleCreateOrder}
+        />
+      </div>
+
+      {/* Main Content with controlled height */}
+      <div className="flex-1 overflow-hidden">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-full">
+          {/* Left Column - Form Fields (3/4 width on XL screens) */}
+          <div className="xl:col-span-3 flex flex-col space-y-4 overflow-hidden pb-20 lg:pb-4">
+            {/* Order Form Fields */}
+            <Card className="shadow-sm border-gray-200 flex-shrink-0">
+              <CardContent className="pt-4 pb-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-800">Dados do Pedido</h3>
+                    <div className="text-xs text-gray-500 space-x-4">
+                      <span>F3: Cliente</span>
+                      <span>F4: Vendedor</span>
+                      <span>F2: Produto</span>
+                    </div>
                   </div>
+                  
+                  <OrderFormFields 
+                    customers={customers}
+                    salesReps={salesReps}
+                    paymentTables={paymentTables}
+                    selectedCustomer={selectedCustomer}
+                    setSelectedCustomer={setSelectedCustomer}
+                    selectedSalesRep={selectedSalesRep}
+                    setSelectedSalesRep={setSelectedSalesRep}
+                    selectedPaymentTable={selectedPaymentTable}
+                    setSelectedPaymentTable={setSelectedPaymentTable}
+                    customerInputValue={customerInputValue}
+                    salesRepInputValue={salesRepInputValue}
+                    isEditMode={isEditMode}
+                    salesRepInputRef={salesRepInputRef}
+                    customerInputRef={customerInputRef}
+                    paymentTableRef={paymentTableRef}
+                    onSalesRepNext={onSalesRepNext}
+                    onCustomerNext={onCustomerNext}
+                    onPaymentNext={onPaymentNext}
+                  />
                 </div>
-                
-                <OrderFormFields customers={customers} salesReps={salesReps} paymentTables={paymentTables} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} selectedSalesRep={selectedSalesRep} setSelectedSalesRep={setSelectedSalesRep} selectedPaymentTable={selectedPaymentTable} setSelectedPaymentTable={setSelectedPaymentTable} customerInputValue={customerInputValue} salesRepInputValue={salesRepInputValue} isEditMode={isEditMode} salesRepInputRef={salesRepInputRef} customerInputRef={customerInputRef} paymentTableRef={paymentTableRef} onSalesRepNext={onSalesRepNext} onCustomerNext={onCustomerNext} onPaymentNext={onPaymentNext} />
+              </CardContent>
+            </Card>
+
+            {/* Enhanced Product Search */}
+            <Card className="shadow-sm border-gray-200 relative z-10 flex-shrink-0">
+              <CardContent className="pt-4 pb-4 relative">
+                <EnhancedProductSearch 
+                  products={products}
+                  handleAddItem={handleAddItem}
+                  productInputRef={productInputRef}
+                  isEditMode={isEditMode}
+                  selectedCustomer={selectedCustomer}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Order Items Table with controlled height and scroll */}
+            <Card className="shadow-sm border-gray-200 flex-1 flex flex-col overflow-hidden">
+              <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-y-auto">
+                  <EnhancedOrderItemsTable 
+                    orderItems={orderItems}
+                    handleRemoveItem={handleRemoveItem}
+                    calculateTotal={calculateTotal}
+                    isEditMode={isEditMode}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Summary Panel with sticky positioning */}
+          <div className="xl:col-span-1 hidden lg:block">
+            <div className="sticky top-4 space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+              <OrderSummaryPanel 
+                orderItems={orderItems}
+                selectedCustomer={selectedCustomer}
+                selectedSalesRep={selectedSalesRep}
+                selectedPaymentTable={selectedPaymentTable}
+                calculateTotal={calculateTotal}
+                isEditMode={isEditMode}
+              />
+
+              {/* Actions always visible on desktop */}
+              <div className="bg-white rounded-lg border shadow-sm p-4 sticky bottom-0">
+                <OrderFormActions 
+                  selectedCustomer={selectedCustomer}
+                  selectedSalesRep={selectedSalesRep}
+                  orderItems={orderItems}
+                  isSubmitting={isSubmitting}
+                  isEditMode={isEditMode}
+                  connectionStatus={connectionStatus}
+                  handleViewRecentPurchases={handleViewRecentPurchases}
+                  handleCreateOrder={handleCreateOrder}
+                />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Enhanced Product Search - Increased z-index and relative positioning */}
-          <Card className="shadow-sm border-gray-200 relative z-10">
-            <CardContent className="pt-4 pb-4 relative">
-              <EnhancedProductSearch products={products} handleAddItem={handleAddItem} productInputRef={productInputRef} isEditMode={isEditMode} selectedCustomer={selectedCustomer} />
-            </CardContent>
-          </Card>
-
-          {/* Order Items Table */}
-          <Card className="shadow-sm border-gray-200">
-            <CardContent className="p-0">
-              <EnhancedOrderItemsTable orderItems={orderItems} handleRemoveItem={handleRemoveItem} calculateTotal={calculateTotal} isEditMode={isEditMode} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column - Summary Panel (1/4 width on XL screens) */}
-        <div className="xl:col-span-1 space-y-4">
-          <OrderSummaryPanel orderItems={orderItems} selectedCustomer={selectedCustomer} selectedSalesRep={selectedSalesRep} selectedPaymentTable={selectedPaymentTable} calculateTotal={calculateTotal} isEditMode={isEditMode} />
-
-          <OrderFormActions selectedCustomer={selectedCustomer} selectedSalesRep={selectedSalesRep} orderItems={orderItems} isSubmitting={isSubmitting} isEditMode={isEditMode} connectionStatus={connectionStatus} handleViewRecentPurchases={handleViewRecentPurchases} handleCreateOrder={handleCreateOrder} />
+            </div>
+          </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }
