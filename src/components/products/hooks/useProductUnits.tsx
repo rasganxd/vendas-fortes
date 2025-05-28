@@ -21,7 +21,7 @@ const DEFAULT_UNITS: Unit[] = [
 export const useProductUnits = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [converter] = useState(new UnitConverter());
+  const [converter] = useState(new UnitConverter(DEFAULT_UNITS));
 
   // Load units from database or use defaults
   const loadUnits = async () => {

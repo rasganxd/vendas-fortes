@@ -10,6 +10,7 @@ import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
 import Products from '@/pages/Products';
+import ProductUnits from '@/pages/ProductUnits';
 import ProductPricingPage from '@/pages/ProductPricing';
 import ProductClassifications from '@/pages/ProductClassifications';
 import Orders from '@/pages/Orders';
@@ -59,6 +60,7 @@ function App() {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/clientes" element={<Customers />} />
                   <Route path="/produtos" element={<Products />} />
+                  <Route path="/produtos/unidades" element={<ProductUnits />} />
                   <Route path="/produtos/precificacao" element={<ProductPricingPage />} />
                   <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
                   <Route path="/pedidos" element={<Orders />} />
