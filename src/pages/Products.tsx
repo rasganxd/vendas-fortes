@@ -154,7 +154,7 @@ export default function Products() {
             setIsProductFormOpen(open);
             if (!open) setEditingProduct(null);
           }}
-          onSaved={handleProductSaved}
+          onSuccess={handleProductSaved}
           editingProduct={editingProduct}
         />
 
