@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import OrderFormHeader from './OrderFormHeader';
@@ -8,7 +7,6 @@ import EnhancedProductSearch from './EnhancedProductSearch';
 import OrderSummaryPanel from './OrderSummaryPanel';
 import EnhancedOrderItemsTable from './EnhancedOrderItemsTable';
 import { OrderFormLayoutProps } from './types';
-
 export default function OrderFormTwoColumnLayout({
   // Form state
   customers,
@@ -27,26 +25,22 @@ export default function OrderFormTwoColumnLayout({
   isEditMode,
   isSubmitting,
   connectionStatus,
-  
   // Handlers
   handleCreateOrder,
   handleViewRecentPurchases,
   handleAddItem,
   handleRemoveItem,
   calculateTotal,
-  
   // Refs
   salesRepInputRef,
   customerInputRef,
   paymentTableRef,
   productInputRef,
-  
   // Navigation handlers
   onSalesRepNext,
   onCustomerNext,
   onPaymentNext
 }: OrderFormLayoutProps) {
-  
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -55,19 +49,19 @@ export default function OrderFormTwoColumnLayout({
         e.preventDefault();
         productInputRef.current?.focus();
       }
-      
+
       // F3 - Focus on customer search
       if (e.key === 'F3') {
         e.preventDefault();
         customerInputRef.current?.focus();
       }
-      
+
       // F4 - Focus on sales rep search
       if (e.key === 'F4') {
         e.preventDefault();
         salesRepInputRef.current?.focus();
       }
-      
+
       // Ctrl+Enter - Submit order
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
@@ -76,19 +70,12 @@ export default function OrderFormTwoColumnLayout({
         }
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedCustomer, selectedSalesRep, orderItems, handleCreateOrder, productInputRef, customerInputRef, salesRepInputRef]);
-
-  return (
-    <div className="w-full space-y-4">
+  return <div className="w-full space-y-4">
       {/* Header */}
-      <Card className="shadow-sm border-gray-200">
-        <CardContent className="pt-3 pb-3">
-          <OrderFormHeader isEditMode={isEditMode} />
-        </CardContent>
-      </Card>
+      
 
       {/* Expanded Two Column Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
@@ -107,26 +94,7 @@ export default function OrderFormTwoColumnLayout({
                   </div>
                 </div>
                 
-                <OrderFormFields
-                  customers={customers}
-                  salesReps={salesReps}
-                  paymentTables={paymentTables}
-                  selectedCustomer={selectedCustomer}
-                  setSelectedCustomer={setSelectedCustomer}
-                  selectedSalesRep={selectedSalesRep}
-                  setSelectedSalesRep={setSelectedSalesRep}
-                  selectedPaymentTable={selectedPaymentTable}
-                  setSelectedPaymentTable={setSelectedPaymentTable}
-                  customerInputValue={customerInputValue}
-                  salesRepInputValue={salesRepInputValue}
-                  isEditMode={isEditMode}
-                  salesRepInputRef={salesRepInputRef}
-                  customerInputRef={customerInputRef}
-                  paymentTableRef={paymentTableRef}
-                  onSalesRepNext={onSalesRepNext}
-                  onCustomerNext={onCustomerNext}
-                  onPaymentNext={onPaymentNext}
-                />
+                <OrderFormFields customers={customers} salesReps={salesReps} paymentTables={paymentTables} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} selectedSalesRep={selectedSalesRep} setSelectedSalesRep={setSelectedSalesRep} selectedPaymentTable={selectedPaymentTable} setSelectedPaymentTable={setSelectedPaymentTable} customerInputValue={customerInputValue} salesRepInputValue={salesRepInputValue} isEditMode={isEditMode} salesRepInputRef={salesRepInputRef} customerInputRef={customerInputRef} paymentTableRef={paymentTableRef} onSalesRepNext={onSalesRepNext} onCustomerNext={onCustomerNext} onPaymentNext={onPaymentNext} />
               </div>
             </CardContent>
           </Card>
@@ -134,52 +102,24 @@ export default function OrderFormTwoColumnLayout({
           {/* Enhanced Product Search - Increased z-index and relative positioning */}
           <Card className="shadow-sm border-gray-200 relative z-10">
             <CardContent className="pt-4 pb-4 relative">
-              <EnhancedProductSearch
-                products={products}
-                handleAddItem={handleAddItem}
-                productInputRef={productInputRef}
-                isEditMode={isEditMode}
-                selectedCustomer={selectedCustomer}
-              />
+              <EnhancedProductSearch products={products} handleAddItem={handleAddItem} productInputRef={productInputRef} isEditMode={isEditMode} selectedCustomer={selectedCustomer} />
             </CardContent>
           </Card>
 
           {/* Order Items Table */}
           <Card className="shadow-sm border-gray-200">
             <CardContent className="p-0">
-              <EnhancedOrderItemsTable
-                orderItems={orderItems}
-                handleRemoveItem={handleRemoveItem}
-                calculateTotal={calculateTotal}
-                isEditMode={isEditMode}
-              />
+              <EnhancedOrderItemsTable orderItems={orderItems} handleRemoveItem={handleRemoveItem} calculateTotal={calculateTotal} isEditMode={isEditMode} />
             </CardContent>
           </Card>
         </div>
 
         {/* Right Column - Summary Panel (1/4 width on XL screens) */}
         <div className="xl:col-span-1 space-y-4">
-          <OrderSummaryPanel
-            orderItems={orderItems}
-            selectedCustomer={selectedCustomer}
-            selectedSalesRep={selectedSalesRep}
-            selectedPaymentTable={selectedPaymentTable}
-            calculateTotal={calculateTotal}
-            isEditMode={isEditMode}
-          />
+          <OrderSummaryPanel orderItems={orderItems} selectedCustomer={selectedCustomer} selectedSalesRep={selectedSalesRep} selectedPaymentTable={selectedPaymentTable} calculateTotal={calculateTotal} isEditMode={isEditMode} />
 
-          <OrderFormActions
-            selectedCustomer={selectedCustomer}
-            selectedSalesRep={selectedSalesRep}
-            orderItems={orderItems}
-            isSubmitting={isSubmitting}
-            isEditMode={isEditMode}
-            connectionStatus={connectionStatus}
-            handleViewRecentPurchases={handleViewRecentPurchases}
-            handleCreateOrder={handleCreateOrder}
-          />
+          <OrderFormActions selectedCustomer={selectedCustomer} selectedSalesRep={selectedSalesRep} orderItems={orderItems} isSubmitting={isSubmitting} isEditMode={isEditMode} connectionStatus={connectionStatus} handleViewRecentPurchases={handleViewRecentPurchases} handleCreateOrder={handleCreateOrder} />
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
