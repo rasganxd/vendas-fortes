@@ -99,7 +99,11 @@ export default function ProductForm({
         subunitRatio: formData.hasSubunit ? parseFloat(formData.subunitRatio) || 1 : null,
         hasSubunit: formData.hasSubunit,
         stock: parseFloat(formData.stock) || 0,
-        minStock: parseFloat(formData.minStock) || 0
+        minStock: parseFloat(formData.minStock) || 0,
+        // Add missing required properties for creating new products
+        code: editingProduct?.code || Date.now(), // Generate code if creating new product
+        createdAt: editingProduct?.createdAt || new Date(),
+        updatedAt: new Date()
       };
 
       if (editingProduct) {
