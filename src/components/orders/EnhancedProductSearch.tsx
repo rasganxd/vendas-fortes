@@ -1,259 +1,250 @@
 
-import React, { useState, useEffect } from 'react';
-import { Product, Customer } from '@/types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Search, ShoppingCart, Clock, Star, Barcode } from 'lucide-react';
-import { useProductSearch } from '@/hooks/useProductSearch';
-import ProductSearchResults from './ProductSearchResults';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Search, Package, Plus, Barcode } from 'lucide-react';
+import { useProducts } from '@/hooks/useProducts';
 import QuantityInput from './QuantityInput';
-import UnitSelector from '@/components/ui/UnitSelector';
-import { useAppData } from '@/context/providers/AppDataProvider';
-import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 
 interface EnhancedProductSearchProps {
   products: Product[];
-  handleAddItem: (product: Product, quantity: number, price: number, unit?: string) => void;
+  handleAddItem: (product: Product, quantity: number, price: number) => void;
   productInputRef: React.RefObject<HTMLInputElement>;
   isEditMode: boolean;
-  selectedCustomer: Customer | null;
+  selectedCustomer: any;
 }
 
 export default function EnhancedProductSearch({
-  products: propProducts,
+  products,
   handleAddItem,
   productInputRef,
   isEditMode,
   selectedCustomer
 }: EnhancedProductSearchProps) {
-  const { products: centralizedProducts } = useAppData();
-  const { units } = useProductUnits();
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
-  const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [price, setPrice] = useState(0);
+  const [showResults, setShowResults] = useState(false);
+  const quantityInputRef = useRef<HTMLInputElement>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
   
-  const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
+  const { getProductsByCustomer } = useProducts();
 
-  const {
-    searchTerm,
-    selectedProduct,
-    quantity,
-    price,
-    showResults,
-    sortedProducts,
-    resultsRef,
-    quantityInputRef,
-    priceInputRef,
-    isAddingItem,
-    handleSearch,
-    handleSearchKeyDown,
-    handleProductSelect: originalHandleProductSelect,
-    handleQuantityChange,
-    handlePriceChange: originalHandlePriceChange,
-    incrementQuantity,
-    decrementQuantity
-  } = useProductSearch({
-    products,
-    addItemToOrder: (product, qty, prc) => handleAddItem(product, qty, prc, selectedUnit),
-    inputRef: productInputRef
-  });
+  // Filter products based on search term
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
+  ).slice(0, 8); // Limit to 8 results
 
-  // Load recent and popular products
+  // Get customer's recent products
+  const customerProducts = selectedCustomer ? getProductsByCustomer(selectedCustomer.id).slice(0, 5) : [];
+
   useEffect(() => {
-    // Simulate recent products (could come from localStorage or API)
-    const recent = products.slice(0, 5);
-    setRecentProducts(recent);
-    
-    // Simulate popular products (could come from sales data)
-    const popular = products.slice(5, 10);
-    setPopularProducts(popular);
-  }, [products]);
+    if (selectedProduct) {
+      setPrice(selectedProduct.price || 0);
+    }
+  }, [selectedProduct]);
 
   const handleProductSelect = (product: Product) => {
-    originalHandleProductSelect(product);
-    setSelectedUnit(product.unit || 'UN');
-  };
-
-  const handleUnitChange = (unit: string) => {
-    setSelectedUnit(unit);
-    if (selectedProduct) {
-      let convertedPrice = selectedProduct.price;
-      
-      if (selectedProduct.hasSubunit && selectedProduct.subunit === unit) {
-        const mainUnitData = units.find(u => u.value === selectedProduct.unit);
-        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
-        convertedPrice = selectedProduct.price / mainUnitConversionRate;
-      }
-      
-      originalHandlePriceChange({ target: { value: convertedPrice.toFixed(2).replace('.', ',') } } as any);
-    }
-  };
-
-  const handleAddToOrder = () => {
-    if (selectedProduct && quantity && quantity > 0) {
-      handleAddItem(selectedProduct, quantity, price, selectedUnit);
-    }
-  };
-
-  const handleQuickAdd = (product: Product) => {
-    handleProductSelect(product);
-    // Auto-add with quantity 1 after a brief delay
+    setSelectedProduct(product);
+    setSearchTerm(product.name);
+    setPrice(product.price || 0);
+    setShowResults(false);
+    
+    // Focus on quantity input
     setTimeout(() => {
-      handleAddItem(product, 1, product.price, product.unit || 'UN');
+      quantityInputRef.current?.focus();
     }, 100);
   };
-  
-  const formatPriceDisplay = (value: number): string => {
-    if (value === 0) return '';
-    return value.toFixed(2).replace('.', ',');
+
+  const handleAdd = () => {
+    if (selectedProduct && quantity > 0) {
+      handleAddItem(selectedProduct, quantity, price);
+      
+      // Reset form
+      setSelectedProduct(null);
+      setSearchTerm('');
+      setQuantity(1);
+      setPrice(0);
+      
+      // Focus back on search
+      productInputRef.current?.focus();
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredProducts.length > 0) {
+        handleProductSelect(filteredProducts[0]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setShowResults(true);
+    }
+  };
+
+  const handleQuantityKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <ShoppingCart size={20} />
-          Adicionar Produtos
+          <Package size={20} />
+          Busca de Produtos
         </h3>
-        <Badge variant="outline" className="text-xs">
-          <Barcode size={12} className="mr-1" />
-          Digite código ou nome
-        </Badge>
+        <div className="text-xs text-gray-500">
+          F2: Buscar produto
+        </div>
       </div>
 
-      {/* Enhanced Search Bar */}
+      {/* Search Input */}
       <div className="relative">
-        <div className="flex items-center space-x-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
-            <Input
-              ref={productInputRef}
-              type="text"
-              className="pl-10 h-12 text-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Buscar produto pelo nome ou código..."
-              value={searchTerm}
-              onChange={handleSearch}
-              onKeyDown={handleSearchKeyDown}
-              autoComplete="off"
-              disabled={isAddingItem}
-            />
-            
-            {showResults && (
-              <ProductSearchResults
-                products={sortedProducts.slice(0, 8)}
-                resultsRef={resultsRef}
-                onSelectProduct={handleProductSelect}
-              />
-            )}
-          </div>
-          
-          <QuantityInput
-            quantity={quantity}
-            onQuantityChange={handleQuantityChange}
-            onIncrement={incrementQuantity}
-            onDecrement={decrementQuantity}
-            inputRef={quantityInputRef}
-            onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
-            className="h-12 w-24"
-          />
-          
-          <UnitSelector
-            selectedUnit={selectedUnit}
-            onUnitChange={handleUnitChange}
-            product={selectedProduct}
-            className="h-12 w-20"
-          />
-          
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            ref={priceInputRef}
+            ref={productInputRef}
             type="text"
-            className="h-12 text-center w-32 border-gray-300"
-            placeholder="Preço"
-            value={formatPriceDisplay(price)}
-            onChange={originalHandlePriceChange}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
-            disabled={isAddingItem}
+            placeholder="Buscar por nome, código ou código de barras..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setShowResults(e.target.value.length > 0);
+            }}
+            onKeyDown={handleSearchKeyDown}
+            onFocus={() => setShowResults(searchTerm.length > 0)}
+            className="pl-10 pr-4 h-11 text-base"
+            disabled={isEditMode}
           />
-          
-          <Button 
-            type="button"
-            className="h-12 w-36 bg-green-600 hover:bg-green-700 text-white font-medium"
-            disabled={!selectedProduct || quantity === null || quantity <= 0 || isAddingItem}
-            onClick={handleAddToOrder}
-          >
-            <ShoppingCart size={18} className="mr-2" />
-            {isAddingItem ? 'Adicionando...' : 'Adicionar'}
-          </Button>
+          <Barcode className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         </div>
+
+        {/* Search Results */}
+        {showResults && filteredProducts.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                onClick={() => handleProductSelect(product)}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{product.name}</div>
+                    <div className="text-sm text-gray-500">Cód: {product.code}</div>
+                    {product.barcode && (
+                      <div className="text-xs text-gray-400">Barras: {product.barcode}</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-green-600">
+                      {product.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </div>
+                    <div className="text-xs text-gray-500">{product.unit}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Quick Access Products */}
-      {!searchTerm && (recentProducts.length > 0 || popularProducts.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Recent Products */}
-          {recentProducts.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Clock size={16} />
-                  Produtos Recentes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {recentProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
-                      onClick={() => handleQuickAdd(product)}
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-sm truncate">{product.name}</div>
-                        <div className="text-xs text-gray-500">Cód: {product.code}</div>
-                      </div>
-                      <div className="text-sm font-medium">
-                        {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </div>
-                    </div>
-                  ))}
+      {/* Product Addition Form */}
+      {selectedProduct && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-gray-900">{selectedProduct.name}</div>
+                  <div className="text-sm text-gray-500">Cód: {selectedProduct.code}</div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <Badge variant="outline" className="bg-white">
+                  {selectedProduct.unit}
+                </Badge>
+              </div>
 
-          {/* Popular Products */}
-          {popularProducts.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Star size={16} />
-                  Produtos Populares
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {popularProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
-                      onClick={() => handleQuickAdd(product)}
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-sm truncate">{product.name}</div>
-                        <div className="text-xs text-gray-500">Cód: {product.code}</div>
-                      </div>
-                      <div className="text-sm font-medium">
-                        {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </div>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Quantidade</label>
+                  <QuantityInput
+                    quantity={quantity}
+                    onQuantityChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    onIncrement={() => setQuantity(prev => prev + 1)}
+                    onDecrement={() => setQuantity(prev => Math.max(1, prev - 1))}
+                    inputRef={quantityInputRef}
+                    onKeyDown={handleQuantityKeyDown}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Preço Unitário</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={price}
+                    onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+                    className="h-10"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <Button
+                    ref={addButtonRef}
+                    onClick={handleAdd}
+                    className="w-full h-10 bg-green-600 hover:bg-green-700"
+                    disabled={!selectedProduct || quantity <= 0}
+                  >
+                    <Plus size={16} className="mr-2" />
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Total:</span>
+                <span className="font-bold text-green-600 text-lg">
+                  {(quantity * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Customer's Recent Products */}
+      {selectedCustomer && customerProducts.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Produtos Recentes - {selectedCustomer.name}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-1">
+              {customerProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex justify-between items-center p-2 hover:bg-white rounded cursor-pointer"
+                  onClick={() => handleProductSelect(product)}
+                >
+                  <span className="text-sm font-medium">{product.name}</span>
+                  <span className="text-sm text-blue-600">
+                    {product.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
