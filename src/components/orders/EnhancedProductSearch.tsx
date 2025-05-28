@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -184,9 +183,18 @@ export default function EnhancedProductSearch({
           />
         </div>
 
-        {/* Search Results - Only show for name search with improved z-index */}
+        {/* Search Results - POSICIONAMENTO CORRIGIDO */}
         {showResults && !isCodeSearch && filteredProducts.length > 0 && (
-          <div className="absolute z-[999999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-64 overflow-y-auto">
+          <div 
+            className="absolute w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
+            style={{ 
+              zIndex: 999999,
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0
+            }}
+          >
             {filteredProducts.map(product => (
               <div
                 key={product.id}

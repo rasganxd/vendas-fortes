@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { OrderItem } from '@/types';
 import { Button } from "@/components/ui/button";
@@ -100,8 +99,8 @@ export default function EnhancedOrderItemsTable({
         )}
       </div>
 
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Scrollable content area - MELHORADO overflow */}
+      <div className="flex-1" style={{ overflowY: 'auto', overflowX: 'visible' }}>
         {filteredItems.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             {searchFilter ? (
@@ -117,7 +116,7 @@ export default function EnhancedOrderItemsTable({
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
             <table className="w-full border-collapse">
               <thead className="sticky top-0 bg-gray-50 z-10">
                 <tr className="text-left">

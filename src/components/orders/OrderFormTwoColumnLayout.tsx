@@ -89,7 +89,7 @@ export default function OrderFormTwoColumnLayout({
       <div className="flex-1 overflow-hidden">
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-full">
           {/* Left Column - Form Fields (3/4 width on XL screens) */}
-          <div className="xl:col-span-3 flex flex-col space-y-4 overflow-hidden pb-20 lg:pb-4">
+          <div className="xl:col-span-3 flex flex-col space-y-4 pb-20 lg:pb-4" style={{ overflow: 'visible' }}>
             {/* Order Form Fields */}
             <Card className="shadow-sm border-gray-200 flex-shrink-0">
               <CardContent className="pt-4 pb-4">
@@ -127,9 +127,9 @@ export default function OrderFormTwoColumnLayout({
               </CardContent>
             </Card>
 
-            {/* Enhanced Product Search */}
-            <Card className="shadow-sm border-gray-200 relative z-10 flex-shrink-0">
-              <CardContent className="pt-4 pb-4 relative">
+            {/* Enhanced Product Search - REMOVIDO relative z-10 */}
+            <Card className="shadow-sm border-gray-200 flex-shrink-0">
+              <CardContent className="pt-4 pb-4">
                 <EnhancedProductSearch 
                   products={products}
                   handleAddItem={handleAddItem}
@@ -140,10 +140,10 @@ export default function OrderFormTwoColumnLayout({
               </CardContent>
             </Card>
 
-            {/* Order Items Table with controlled height and scroll */}
-            <Card className="shadow-sm border-gray-200 flex-1 flex flex-col overflow-hidden">
-              <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                <div className="flex-1 overflow-y-auto">
+            {/* Order Items Table with better overflow handling */}
+            <Card className="shadow-sm border-gray-200 flex-1 flex flex-col min-h-0">
+              <CardContent className="p-0 flex-1 flex flex-col min-h-0">
+                <div className="flex-1" style={{ overflow: 'visible' }}>
                   <EnhancedOrderItemsTable 
                     orderItems={orderItems}
                     handleRemoveItem={handleRemoveItem}
@@ -158,7 +158,7 @@ export default function OrderFormTwoColumnLayout({
           {/* Right Column - Reorganized with Actions on top */}
           <div className="xl:col-span-1 hidden lg:block">
             <div className="sticky top-4 space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
-              {/* Summary Panel - Financial info only */}
+              {/* Compact Summary - Financial info only */}
               <Card className="shadow-sm border-gray-200">
                 <CardContent className="pt-4 pb-4">
                   <OrderSummaryPanel 
@@ -173,7 +173,7 @@ export default function OrderFormTwoColumnLayout({
                 </CardContent>
               </Card>
 
-              {/* Actions moved up - right after summary */}
+              {/* Actions - Now positioned higher */}
               <Card className="shadow-sm border-gray-200">
                 <CardContent className="pt-4 pb-4">
                   <OrderFormActions 
