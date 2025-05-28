@@ -89,7 +89,93 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
           </div>
         </DialogHeader>
         
-        <div ref={printRef} className="p-4">
+        {/* Layout simples para visualização na tela */}
+        <div className="p-4 space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-semibold mb-2">Dados do Cliente</h3>
+              <p><strong>Nome:</strong> {selectedCustomer?.name}</p>
+              <p><strong>Telefone:</strong> {selectedCustomer?.phone}</p>
+              {selectedCustomer?.document && (
+                <p><strong>CPF/CNPJ:</strong> {selectedCustomer.document}</p>
+              )}
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-2">Informações do Pedido</h3>
+              <p><strong>Código:</strong> {selectedOrder.code || 'N/A'}</p>
+              <p><strong>Data:</strong> {formatDateToBR(selectedOrder.createdAt)}</p>
+              {selectedOrder.paymentMethod && (
+                <p><strong>Pagamento:</strong> {selectedOrder.paymentMethod}</p>
+              )}
+            </div>
+          </div>
+
+          {selectedCustomer?.address && (
+            <div>
+              <h3 className="font-semibold mb-2">Endereço de Entrega</h3>
+              <p>{selectedCustomer.address}</p>
+              <p>{selectedCustomer.city} - {selectedCustomer.state}, {selectedCustomer.zipCode}</p>
+            </div>
+          )}
+
+          <div>
+            <h3 className="font-semibold mb-2">Itens do Pedido</h3>
+            <div className="border rounded-lg">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="text-left p-3">Produto</th>
+                    <th className="text-center p-3">Qtd</th>
+                    <th className="text-right p-3">Preço Unit.</th>
+                    <th className="text-right p-3">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrder?.items && selectedOrder.items.length > 0 ? (
+                    selectedOrder.items.map((item, index) => (
+                      <tr key={item.id || index} className="border-b">
+                        <td className="p-3">{item.productName}</td>
+                        <td className="text-center p-3">{item.quantity}</td>
+                        <td className="text-right p-3">{formatCurrency(item.unitPrice)}</td>
+                        <td className="text-right p-3 font-semibold">{formatCurrency(item.total)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="text-center p-4 text-gray-500">
+                        Nenhum item encontrado
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center border-t pt-4">
+            <div>
+              {selectedOrder.paymentStatus !== 'pending' && (
+                <p><strong>Status:</strong> {selectedOrder?.paymentStatus}</p>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-bold text-green-600">
+                Total: {formatCurrency(selectedOrder?.total)}
+              </p>
+            </div>
+          </div>
+
+          {selectedOrder?.notes && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Observações</h3>
+              <p>{selectedOrder.notes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Layout profissional APENAS para impressão */}
+        <div ref={printRef} className="hidden print:block">
           <style>
             {`
               @media print {
