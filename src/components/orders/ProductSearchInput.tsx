@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -98,19 +97,9 @@ export default function ProductSearchInput({
 
   const handleAddToOrder = () => {
     if (selectedProduct && quantity && quantity > 0) {
-      let finalQuantity = quantity;
-      
-      // If using subunit, convert quantity to main unit equivalent
-      if (selectedUnit === selectedProduct.subunit && selectedProduct.hasSubunit) {
-        // Get the main unit's conversion rate
-        const mainUnitData = units.find(u => u.value === selectedProduct.unit);
-        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
-        
-        // Final quantity = subunit quantity * main unit conversion rate
-        finalQuantity = quantity * mainUnitConversionRate;
-      }
-      
-      addItemToOrder(selectedProduct, finalQuantity, price, selectedUnit);
+      // Always use the exact quantity entered by the user
+      // No conversion needed - if selling 5 units, record 5 units
+      addItemToOrder(selectedProduct, quantity, price, selectedUnit);
     }
   };
   
@@ -130,7 +119,8 @@ export default function ProductSearchInput({
       const mainUnitData = units.find(u => u.value === selectedProduct.unit);
       const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
       
-      const mainUnitQty = (quantity || 0) * mainUnitConversionRate;
+      // Show how many main units this subunit quantity represents
+      const mainUnitQty = (quantity || 0) / mainUnitConversionRate;
       return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }
     
