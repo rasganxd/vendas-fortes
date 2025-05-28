@@ -24,7 +24,6 @@ const CompactMobileSyncPanel: React.FC<CompactMobileSyncPanelProps> = ({ salesRe
   const [syncLogs, setSyncLogs] = useState<SyncLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'error' | 'info'>('info');
@@ -95,35 +94,6 @@ const CompactMobileSyncPanel: React.FC<CompactMobileSyncPanelProps> = ({ salesRe
     }
   };
 
-  const triggerSync = async () => {
-    setIsSyncing(true);
-    try {
-      await mobileSyncService.syncAllData();
-      setStatusMessage("Sincronização manual executada com sucesso.");
-      setStatusType('info');
-      
-      toast({
-        title: "Sincronização concluída",
-        description: "Dados sincronizados com sucesso!",
-      });
-      
-      // Reload logs to show the new sync event
-      await loadSyncLogs();
-    } catch (error) {
-      console.error("Error during manual sync:", error);
-      setStatusMessage("Erro durante sincronização manual.");
-      setStatusType('error');
-      
-      toast({
-        title: "Erro na sincronização",
-        description: "Não foi possível executar a sincronização.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   useEffect(() => {
     loadSyncLogs();
   }, []);
@@ -160,17 +130,6 @@ const CompactMobileSyncPanel: React.FC<CompactMobileSyncPanelProps> = ({ salesRe
         </div>
         
         <div className="flex flex-wrap gap-2 mt-3">
-          <Button 
-            variant="outline" 
-            onClick={triggerSync}
-            disabled={isLoading || isSyncing}
-            className="border-blue-200 text-blue-700 hover:bg-blue-100 text-xs h-8"
-            size="sm"
-          >
-            <Download className={`mr-1 h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-            Sincronizar
-          </Button>
-          
           <Button 
             variant="outline" 
             onClick={() => loadSyncLogs()}
