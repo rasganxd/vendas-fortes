@@ -124,40 +124,8 @@ export default function OrderSummaryPanel({
 
       {/* Order Validation */}
       <Card className="shadow-sm border-gray-200">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Status de Validação</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Vendedor:</span>
-            <Badge variant={selectedSalesRep ? "default" : "destructive"}>
-              {selectedSalesRep ? "✓" : "✗"}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Cliente:</span>
-            <Badge variant={selectedCustomer ? "default" : "destructive"}>
-              {selectedCustomer ? "✓" : "✗"}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Itens:</span>
-            <Badge variant={orderItems.length > 0 ? "default" : "destructive"}>
-              {orderItems.length > 0 ? "✓" : "✗"}
-            </Badge>
-          </div>
-          
-          <Separator />
-          
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Pronto para finalizar:</span>
-            <Badge variant={selectedSalesRep && selectedCustomer && orderItems.length > 0 ? "default" : "secondary"}>
-              {selectedSalesRep && selectedCustomer && orderItems.length > 0 ? "SIM" : "NÃO"}
-            </Badge>
-          </div>
-        </CardContent>
+        
+        
       </Card>
 
       {/* Keyboard shortcuts help */}
