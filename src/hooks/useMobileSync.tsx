@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { mobileSyncService } from '@/services/supabase/mobileSyncService';
 import { mobileAuthService } from '@/services/supabase/mobileAuthService';
@@ -14,14 +13,6 @@ interface MobileSyncState {
   isLoading: boolean;
   isSyncing: boolean;
   lastSyncTime: Date | null;
-  updateAvailable: boolean;
-  updateMessage: string;
-}
-
-interface SyncDataResult {
-  customers: Customer[];
-  products: Product[];
-  orders: Order[];
 }
 
 export const useMobileSync = () => {
@@ -33,9 +24,7 @@ export const useMobileSync = () => {
     orders: [],
     isLoading: false,
     isSyncing: false,
-    lastSyncTime: null,
-    updateAvailable: false,
-    updateMessage: 'Verificando atualizações...'
+    lastSyncTime: null
   });
 
   /**
@@ -76,9 +65,6 @@ export const useMobileSync = () => {
         description: `Bem-vindo, ${result.salesRep.name}!`
       });
       
-      // Check for updates after login
-      await checkForUpdates();
-      
       return true;
       
     } catch (error) {
@@ -116,9 +102,6 @@ export const useMobileSync = () => {
           currentSalesRep: result.salesRep,
           isLoading: false
         }));
-        
-        // Check for updates after session verification
-        await checkForUpdates();
         
         return true;
       } else {
@@ -160,9 +143,7 @@ export const useMobileSync = () => {
         orders: [],
         isLoading: false,
         isSyncing: false,
-        lastSyncTime: null,
-        updateAvailable: false,
-        updateMessage: 'Verificando atualizações...'
+        lastSyncTime: null
       });
       
       toast({
@@ -181,37 +162,7 @@ export const useMobileSync = () => {
   }, []);
 
   /**
-   * Check for available updates
-   */
-  const checkForUpdates = useCallback(async () => {
-    if (!state.isAuthenticated) {
-      console.log('Not authenticated, skipping update check');
-      return;
-    }
-    
-    try {
-      const updateCheck = await mobileSyncService.checkForUpdates();
-      
-      setState(prev => ({
-        ...prev,
-        updateAvailable: updateCheck.hasUpdates,
-        updateMessage: updateCheck.message
-      }));
-      
-      console.log('Update check result:', updateCheck);
-      
-    } catch (error) {
-      console.error('Error checking for updates:', error);
-      setState(prev => ({
-        ...prev,
-        updateAvailable: false,
-        updateMessage: 'Erro ao verificar atualizações'
-      }));
-    }
-  }, [state.isAuthenticated]);
-
-  /**
-   * Sync data with update control
+   * Sync data
    */
   const syncData = useCallback(async () => {
     if (!state.isAuthenticated) {
@@ -222,28 +173,7 @@ export const useMobileSync = () => {
     setState(prev => ({ ...prev, isSyncing: true }));
     
     try {
-      // Use the new controlled sync method
-      const result = await mobileSyncService.syncAllDataWithUpdateCheck();
-      
-      if (!result.success) {
-        // No updates available or error
-        toast({
-          title: "Sincronização",
-          description: result.message,
-          variant: result.message.includes('Erro') ? "destructive" : "default"
-        });
-        
-        setState(prev => ({ 
-          ...prev, 
-          isSyncing: false,
-          updateAvailable: false,
-          updateMessage: result.message
-        }));
-        
-        return;
-      }
-      
-      // Successful sync - get the actual data
+      // Get the actual data
       const customers = await mobileSyncService.getCustomersForSync(state.currentSalesRep?.id);
       const products = await mobileSyncService.getProductsForSync();
       const orders: Order[] = []; // Orders would come from a similar method
@@ -254,9 +184,7 @@ export const useMobileSync = () => {
         products,
         orders,
         isSyncing: false,
-        lastSyncTime: new Date(),
-        updateAvailable: false,
-        updateMessage: 'Dados sincronizados com sucesso'
+        lastSyncTime: new Date()
       }));
       
       toast({
@@ -281,7 +209,6 @@ export const useMobileSync = () => {
     login,
     logout,
     checkSession,
-    syncData,
-    checkForUpdates
+    syncData
   };
 };

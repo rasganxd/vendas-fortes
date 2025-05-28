@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Customer, Product, Order } from '@/types';
 import { transformCustomerData, transformProductData, transformOrderData } from '@/utils/dataTransformers';
-import { syncUpdatesService, SyncUpdate } from './syncUpdatesService';
 
 export interface SyncLogEntry {
   id: string;
@@ -33,120 +32,7 @@ export interface OrderImportResponse {
   };
 }
 
-export interface SyncCheckResult {
-  hasUpdates: boolean;
-  updateInfo?: SyncUpdate;
-  message: string;
-}
-
 class MobileSyncService {
-  // Check for available updates before syncing
-  async checkForUpdates(): Promise<SyncCheckResult> {
-    try {
-      console.log('📱 Checking for available sync updates...');
-      
-      const activeUpdate = await syncUpdatesService.checkForActiveUpdates();
-      
-      if (activeUpdate) {
-        return {
-          hasUpdates: true,
-          updateInfo: activeUpdate,
-          message: `Atualização disponível: ${activeUpdate.description || 'Dados atualizados'}`
-        };
-      } else {
-        return {
-          hasUpdates: false,
-          message: 'Nenhuma atualização disponível.'
-        };
-      }
-    } catch (error) {
-      console.error('❌ Error checking for updates:', error);
-      return {
-        hasUpdates: false,
-        message: 'Erro ao verificar atualizações disponíveis.'
-      };
-    }
-  }
-
-  // Enhanced sync method that checks for updates first
-  async syncAllDataWithUpdateCheck(): Promise<{ success: boolean; message: string; data?: any }> {
-    try {
-      console.log('📱 Starting controlled sync process...');
-      
-      // First check if there are any active updates
-      const updateCheck = await this.checkForUpdates();
-      
-      if (!updateCheck.hasUpdates) {
-        console.log('ℹ️ No active updates found, skipping sync');
-        return {
-          success: false,
-          message: updateCheck.message
-        };
-      }
-      
-      console.log('✅ Active update found, proceeding with sync...');
-      
-      // Proceed with actual data sync
-      const syncResult = await this.performDataSync();
-      
-      // Mark the update as completed after successful sync
-      if (syncResult.success && updateCheck.updateInfo) {
-        await syncUpdatesService.completeSyncUpdate(updateCheck.updateInfo.id);
-        console.log('✅ Sync update marked as completed');
-      }
-      
-      return {
-        success: true,
-        message: 'Sincronização concluída com sucesso!',
-        data: syncResult.data
-      };
-      
-    } catch (error) {
-      console.error('❌ Error in controlled sync process:', error);
-      return {
-        success: false,
-        message: 'Erro durante o processo de sincronização.'
-      };
-    }
-  }
-
-  // Internal method to perform the actual data sync
-  private async performDataSync(): Promise<{ success: boolean; data?: any }> {
-    try {
-      // Get current data counts
-      const [customersResult, productsResult, ordersResult] = await Promise.all([
-        supabase.from('customers').select('id', { count: 'exact', head: true }),
-        supabase.from('products').select('id', { count: 'exact', head: true }),
-        supabase.from('orders').select('id', { count: 'exact', head: true })
-      ]);
-
-      const customerCount = customersResult.count || 0;
-      const productCount = productsResult.count || 0;
-      const orderCount = ordersResult.count || 0;
-
-      // Log sync events
-      await Promise.all([
-        this.logSyncEvent('download', 'customers', customerCount),
-        this.logSyncEvent('download', 'products', productCount),
-        this.logSyncEvent('download', 'orders', orderCount)
-      ]);
-
-      console.log('✅ Data sync completed successfully');
-      
-      return {
-        success: true,
-        data: {
-          customerCount,
-          productCount,
-          orderCount
-        }
-      };
-    } catch (error) {
-      console.error('❌ Error in data sync:', error);
-      throw error;
-    }
-  }
-
   // Generate sync token for mobile authentication
   async generateSyncToken(
     salesRepId: string, 
@@ -201,7 +87,7 @@ class MobileSyncService {
     }
   }
 
-  // Import orders from mobile - NEW METHOD
+  // Import orders from mobile
   async importOrdersFromMobile(
     orders: Partial<Order>[], 
     syncToken: string,
@@ -336,25 +222,6 @@ class MobileSyncService {
     }
   }
 
-  // Sync all data (manual trigger) - DEPRECATED, use syncAllDataWithUpdateCheck instead
-  async syncAllData(): Promise<void> {
-    try {
-      console.log('🔄 Starting manual sync...');
-      
-      const result = await this.syncAllDataWithUpdateCheck();
-      
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-      
-    } catch (error) {
-      console.error('❌ Manual sync failed:', error);
-      await this.logSyncEvent('error', 'manual_sync', 0, undefined, undefined, undefined, 
-        error instanceof Error ? error.message : 'Unknown error');
-      throw error;
-    }
-  }
-
   // Get customers for mobile sync
   async getCustomersForSync(salesRepId?: string): Promise<Customer[]> {
     try {
@@ -409,7 +276,7 @@ class MobileSyncService {
     }
   }
 
-  // Upload orders from mobile - ENHANCED METHOD
+  // Upload orders from mobile
   async uploadOrders(orders: Partial<Order>[], salesRepId?: string): Promise<void> {
     try {
       console.log('📤 Uploading orders from mobile:', orders.length);
