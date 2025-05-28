@@ -8,21 +8,29 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, mask, onChange, value, ...props }, ref) => {
-    // Handle input masking for CPF/CNPJ
+    // Handle input masking for CPF/CNPJ and price
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (mask) {
         if (mask === 'price') {
-          // Price mask formatting
-          let inputValue = e.target.value.replace(/\D/g, '');
+          // Price mask formatting - improved for Brazilian currency
+          let inputValue = e.target.value;
           
-          // Convert to number and divide by 100 to get decimal value
-          const numValue = parseInt(inputValue || '0') / 100;
+          // Remove all non-digit characters except comma and dot
+          inputValue = inputValue.replace(/[^\d,]/g, '');
           
-          // Format as Brazilian currency
-          inputValue = numValue.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          });
+          // Replace dot with comma if present
+          inputValue = inputValue.replace(/\./g, ',');
+          
+          // Ensure only one comma
+          const parts = inputValue.split(',');
+          if (parts.length > 2) {
+            inputValue = parts[0] + ',' + parts.slice(1).join('');
+          }
+          
+          // Limit decimal places to 2
+          if (parts.length === 2 && parts[1].length > 2) {
+            inputValue = parts[0] + ',' + parts[1].substring(0, 2);
+          }
           
           const newEvent = {
             ...e,

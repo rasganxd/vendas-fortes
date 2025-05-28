@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Package, Plus, Barcode } from 'lucide-react';
 import QuantityInput from './QuantityInput';
+import UnitSelector from '@/components/ui/UnitSelector';
+import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
 
 interface EnhancedProductSearchProps {
   products: Product[];
-  handleAddItem: (product: Product, quantity: number, price: number) => void;
+  handleAddItem: (product: Product, quantity: number, price: number, unit?: string) => void;
   productInputRef: React.RefObject<HTMLInputElement>;
   isEditMode: boolean;
   selectedCustomer: any;
@@ -27,7 +29,9 @@ export default function EnhancedProductSearch({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
+  const [selectedUnit, setSelectedUnit] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [priceDisplayValue, setPriceDisplayValue] = useState('');
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -50,7 +54,10 @@ export default function EnhancedProductSearch({
 
   useEffect(() => {
     if (selectedProduct) {
+      const mainUnit = selectedProduct.unit || 'UN';
+      setSelectedUnit(mainUnit);
       setPrice(selectedProduct.price || 0);
+      setPriceDisplayValue(formatBrazilianPrice(selectedProduct.price || 0));
     }
   }, [selectedProduct]);
 
@@ -59,7 +66,6 @@ export default function EnhancedProductSearch({
     if (isCodeSearch && filteredProducts.length === 1 && !selectedProduct) {
       const product = filteredProducts[0];
       setSelectedProduct(product);
-      setPrice(product.price || 0);
       setShowResults(false);
       
       // Focus on quantity input
@@ -72,7 +78,6 @@ export default function EnhancedProductSearch({
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
     setSearchTerm(product.name);
-    setPrice(product.price || 0);
     setShowResults(false);
     
     // Focus on quantity input
@@ -81,15 +86,44 @@ export default function EnhancedProductSearch({
     }, 100);
   };
 
+  const handleUnitChange = (unit: string) => {
+    if (!selectedProduct) return;
+    
+    const currentUnit = selectedUnit;
+    setSelectedUnit(unit);
+    
+    // Convert price between units
+    const conversion = convertPriceBetweenUnits(
+      selectedProduct,
+      currentUnit,
+      unit,
+      price
+    );
+    
+    setPrice(conversion.price);
+    setPriceDisplayValue(formatBrazilianPrice(conversion.price));
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const displayValue = e.target.value;
+    setPriceDisplayValue(displayValue);
+    
+    // Convert to number for calculations
+    const numericPrice = parseBrazilianPrice(displayValue);
+    setPrice(numericPrice);
+  };
+
   const handleAdd = () => {
     if (selectedProduct && quantity > 0) {
-      handleAddItem(selectedProduct, quantity, price);
+      handleAddItem(selectedProduct, quantity, price, selectedUnit);
       
       // Reset form
       setSelectedProduct(null);
       setSearchTerm('');
       setQuantity(1);
       setPrice(0);
+      setPriceDisplayValue('');
+      setSelectedUnit('');
       
       // Focus back on search
       productInputRef.current?.focus();
@@ -131,11 +165,27 @@ export default function EnhancedProductSearch({
     if (selectedProduct && selectedProduct.name !== value) {
       setSelectedProduct(null);
       setPrice(0);
+      setPriceDisplayValue('');
+      setSelectedUnit('');
     }
     
     // Show results only for name search (not code search) and when there's input
     const isCode = /^\d+$/.test(value.trim());
     setShowResults(!isCode && value.length > 0);
+  };
+
+  // Get quantity conversion display
+  const getQuantityConversion = () => {
+    if (!selectedProduct || !selectedProduct.hasSubunit || !selectedUnit) {
+      return '';
+    }
+    
+    return calculateQuantityConversion(
+      selectedProduct,
+      quantity,
+      selectedUnit,
+      selectedProduct.unit || 'UN'
+    );
   };
 
   return (
@@ -210,11 +260,11 @@ export default function EnhancedProductSearch({
                   <div className="text-sm text-gray-500">Cód: {selectedProduct.code}</div>
                 </div>
                 <Badge variant="outline" className="bg-white">
-                  {selectedProduct.unit}
+                  {selectedUnit || selectedProduct.unit}
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Quantidade</label>
                   <QuantityInput
@@ -228,12 +278,23 @@ export default function EnhancedProductSearch({
                 </div>
 
                 <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Unidade</label>
+                  <UnitSelector
+                    selectedUnit={selectedUnit}
+                    onUnitChange={handleUnitChange}
+                    product={selectedProduct}
+                    className="h-10"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Preço Unitário</label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={price}
-                    onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+                    type="text"
+                    mask="price"
+                    value={priceDisplayValue}
+                    onChange={handlePriceChange}
+                    placeholder="0,00"
                     className="h-10"
                   />
                 </div>
@@ -250,6 +311,13 @@ export default function EnhancedProductSearch({
                   </Button>
                 </div>
               </div>
+
+              {/* Quantity conversion display */}
+              {getQuantityConversion() && (
+                <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                  Conversão: {getQuantityConversion()}
+                </div>
+              )}
 
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Total:</span>
