@@ -7,6 +7,7 @@ import { Plus, Search, Filter, Download, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useProducts } from '@/hooks/useProducts';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useProductClassification } from '@/hooks/useProductClassification';
 import ProductForm from '@/components/products/ProductForm';
 import EnhancedProductsTable from '@/components/products/EnhancedProductsTable';
 import ProductsActionButtons from '@/components/products/ProductsActionButtons';
@@ -19,12 +20,34 @@ export default function Products() {
   const { products, isLoading, deleteProduct } = useProducts();
   const { refreshData } = useAppContext();
   
+  // Use the product classification hook to get categories, groups, and brands
+  const {
+    productCategories,
+    productGroups,
+    productBrands,
+    isLoadingCategories,
+    isLoadingGroups,
+    isLoadingBrands
+  } = useProductClassification();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+
+  // Debug log to verify data loading
+  useEffect(() => {
+    console.log("Products page - Classification data loaded:", {
+      categories: productCategories?.length || 0,
+      groups: productGroups?.length || 0,
+      brands: productBrands?.length || 0,
+      loadingCategories: isLoadingCategories,
+      loadingGroups: isLoadingGroups,
+      loadingBrands: isLoadingBrands
+    });
+  }, [productCategories, productGroups, productBrands, isLoadingCategories, isLoadingGroups, isLoadingBrands]);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -80,6 +103,9 @@ export default function Products() {
     setIsProductFormOpen(true);
   };
 
+  // Check if any classification data is still loading
+  const isClassificationLoading = isLoadingCategories || isLoadingGroups || isLoadingBrands;
+
   return (
     <PageLayout 
       title="Gerenciar Produtos" 
@@ -115,6 +141,7 @@ export default function Products() {
                 <Button 
                   onClick={handleNewProduct}
                   className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                  disabled={isClassificationLoading}
                 >
                   <Plus className="h-4 w-4" />
                   Novo Produto
@@ -167,9 +194,9 @@ export default function Products() {
           isEditing={!!editingProduct}
           selectedProduct={editingProduct}
           products={products}
-          productCategories={[]}
-          productGroups={[]}
-          productBrands={[]}
+          productCategories={productCategories || []}
+          productGroups={productGroups || []}
+          productBrands={productBrands || []}
         />
 
         <DeleteConfirmationDialog
