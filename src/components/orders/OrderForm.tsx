@@ -24,7 +24,7 @@ interface OrderFormProps {
   handleViewRecentPurchases: () => void;
   customerInputValue: string;
   salesRepInputValue?: string;
-  handleAddItem: (product: Product, quantity: number, price: number) => void;
+  handleAddItem: (product: Product, quantity: number, price: number, unit?: string) => void;
   handleRemoveItem: (productId: string) => void;
   connectionStatus?: ConnectionStatusType;
 }
