@@ -16,6 +16,7 @@ import { Product } from '@/types';
 interface BulkProductUploadProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
 const SAMPLE_DATA = `Código;Nome;Custo;Preço;Unidade
@@ -23,7 +24,7 @@ const SAMPLE_DATA = `Código;Nome;Custo;Preço;Unidade
 2;Biscoito Cream Cracker 400g;2.30;4.50;PCT
 3;Detergente Líquido 500ml;1.75;3.99;UN`;
 
-const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChange }) => {
+const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChange, onSuccess }) => {
   const { addBulkProducts } = useAppContext();
   const [csvData, setCsvData] = useState(SAMPLE_DATA);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -100,6 +101,7 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       console.log("Product IDs after upload:", ids);
       
       toast.success(`${ids.length} produtos importados com sucesso!`);
+      onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Error uploading bulk products:", error);
