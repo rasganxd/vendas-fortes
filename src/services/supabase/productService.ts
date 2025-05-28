@@ -27,6 +27,9 @@ export const productService = {
       minPrice: item.min_price || undefined,
       maxPrice: item.max_price || undefined,
       unit: item.unit || 'UN',
+      subunit: item.subunit || undefined,
+      hasSubunit: item.has_subunit || false,
+      subunitRatio: item.subunit_ratio || 1,
       categoryId: item.category_id,
       groupId: item.group_id,
       brandId: item.brand_id,
@@ -61,6 +64,9 @@ export const productService = {
       minPrice: data.min_price || undefined,
       maxPrice: data.max_price || undefined,
       unit: data.unit || 'UN',
+      subunit: data.subunit || undefined,
+      hasSubunit: data.has_subunit || false,
+      subunitRatio: data.subunit_ratio || 1,
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,
@@ -85,6 +91,9 @@ export const productService = {
       min_price: product.minPrice || null,
       max_price: product.maxPrice || null,
       unit: product.unit || 'UN',
+      subunit: product.subunit || null,
+      has_subunit: product.hasSubunit || false,
+      subunit_ratio: product.subunitRatio || 1,
       category_id: product.categoryId || null,
       group_id: product.groupId || null,
       brand_id: product.brandId || null,
@@ -117,6 +126,9 @@ export const productService = {
       minPrice: data.min_price || undefined,
       maxPrice: data.max_price || undefined,
       unit: data.unit,
+      subunit: data.subunit || undefined,
+      hasSubunit: data.has_subunit || false,
+      subunitRatio: data.subunit_ratio || 1,
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,
@@ -143,6 +155,9 @@ export const productService = {
     if (product.minPrice !== undefined) updateData.min_price = product.minPrice;
     if (product.maxPrice !== undefined) updateData.max_price = product.maxPrice;
     if (product.unit !== undefined) updateData.unit = product.unit;
+    if (product.subunit !== undefined) updateData.subunit = product.subunit;
+    if (product.hasSubunit !== undefined) updateData.has_subunit = product.hasSubunit;
+    if (product.subunitRatio !== undefined) updateData.subunit_ratio = product.subunitRatio;
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
     if (product.groupId !== undefined) updateData.group_id = product.groupId;
     if (product.brandId !== undefined) updateData.brand_id = product.brandId;
@@ -173,6 +188,9 @@ export const productService = {
       minPrice: data.min_price || undefined,
       maxPrice: data.max_price || undefined,
       unit: data.unit,
+      subunit: data.subunit || undefined,
+      hasSubunit: data.has_subunit || false,
+      subunitRatio: data.subunit_ratio || 1,
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,

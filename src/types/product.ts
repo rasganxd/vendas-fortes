@@ -14,6 +14,9 @@ export interface Product {
   categoryId?: string;
   brandId?: string;
   unit?: string;
+  subunit?: string;
+  hasSubunit?: boolean;
+  subunitRatio?: number;
   createdAt: Date;
   updatedAt: Date;
   syncStatus?: 'synced' | 'pending' | 'error';

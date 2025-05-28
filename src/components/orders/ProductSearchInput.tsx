@@ -9,7 +9,6 @@ import ProductSearchResults from './ProductSearchResults';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import { useAppData } from '@/context/providers/AppDataProvider';
-import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -25,7 +24,6 @@ export default function ProductSearchInput({
   inputRef
 }: ProductSearchInputProps) {
   const { products: centralizedProducts, refreshProducts } = useAppData();
-  const { units, converter } = useProductUnits();
   const [selectedUnit, setSelectedUnit] = useState<string>('');
   
   const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
@@ -69,37 +67,58 @@ export default function ProductSearchInput({
     inputRef
   });
 
-  // Atualizar unidade selecionada quando produto muda
+  // Update selected unit when product changes
   const handleProductSelect = (product: Product) => {
     originalHandleProductSelect(product);
+    // Set default unit to product's main unit
     setSelectedUnit(product.unit || 'UN');
   };
 
-  // Recalcular preço quando unidade muda
+  // Calculate price when unit changes
   const handleUnitChange = (unit: string) => {
     setSelectedUnit(unit);
     if (selectedProduct) {
-      const convertedPrice = converter.calculateUnitPrice(
-        selectedProduct.price,
-        1,
-        unit,
-        selectedProduct.unit || 'UN'
-      );
+      let convertedPrice = selectedProduct.price;
+      
+      // If product has subunit and selected unit is the subunit
+      if (selectedProduct.hasSubunit && selectedProduct.subunit === unit && selectedProduct.subunitRatio) {
+        convertedPrice = selectedProduct.price / selectedProduct.subunitRatio;
+      }
+      
       originalHandlePriceChange({ target: { value: convertedPrice.toFixed(2).replace('.', ',') } } as any);
     }
   };
 
   const handleAddToOrder = () => {
     if (selectedProduct && quantity && quantity > 0) {
-      // Converter quantidade para unidade base do produto
-      const baseQuantity = converter.convert(quantity, selectedUnit, selectedProduct.unit || 'UN');
-      addItemToOrder(selectedProduct, baseQuantity, price, selectedUnit);
+      let finalQuantity = quantity;
+      
+      // If using subunit, convert to main unit for storage
+      if (selectedUnit === selectedProduct.subunit && selectedProduct.subunitRatio) {
+        finalQuantity = quantity / selectedProduct.subunitRatio;
+      }
+      
+      addItemToOrder(selectedProduct, finalQuantity, price, selectedUnit);
     }
   };
   
   const formatPriceDisplay = (value: number): string => {
     if (value === 0) return '';
     return value.toFixed(2).replace('.', ',');
+  };
+  
+  // Calculate unit conversion display
+  const getConversionDisplay = () => {
+    if (!selectedProduct || !selectedUnit || selectedUnit === selectedProduct.unit) {
+      return null;
+    }
+    
+    if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
+      const mainUnitQty = (quantity || 0) / selectedProduct.subunitRatio;
+      return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
+    }
+    
+    return null;
   };
   
   return (
@@ -146,10 +165,9 @@ export default function ProductSearchInput({
           
           <div className="flex-none">
             <UnitSelector
-              units={units}
               selectedUnit={selectedUnit}
               onUnitChange={handleUnitChange}
-              productUnit={selectedProduct?.unit}
+              product={selectedProduct}
               className="h-11 w-20"
             />
           </div>
@@ -179,9 +197,9 @@ export default function ProductSearchInput({
         </div>
       </div>
       
-      {selectedProduct && selectedUnit && selectedUnit !== selectedProduct.unit && (
+      {getConversionDisplay() && (
         <div className="mt-2 text-xs text-gray-500">
-          {quantity} {selectedUnit} = {converter.convert(quantity || 0, selectedUnit, selectedProduct.unit || 'UN').toFixed(3)} {selectedProduct.unit}
+          {getConversionDisplay()}
         </div>
       )}
     </div>

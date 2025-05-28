@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Form,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -45,6 +45,9 @@ const productFormSchema = z.object({
   }),
   cost: z.number(),
   unit: z.string(),
+  hasSubunit: z.boolean().optional(),
+  subunit: z.string().optional(),
+  subunitRatio: z.number().optional(),
   stock: z.number().optional(),
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
@@ -108,12 +111,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
       name: isEditing && selectedProduct ? selectedProduct.name : "",
       cost: isEditing && selectedProduct ? selectedProduct.cost : 0,
       unit: isEditing && selectedProduct ? selectedProduct.unit || "UN" : "UN",
+      hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
+      subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
+      subunitRatio: isEditing && selectedProduct ? selectedProduct.subunitRatio || 1 : 1,
       stock: isEditing && selectedProduct ? selectedProduct.stock : 0,
       categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
       groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
       brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
     },
   });
+  
+  // Watch hasSubunit to show/hide subunit fields
+  const hasSubunit = form.watch("hasSubunit");
   
   // Update form values when selected product changes
   useEffect(() => {
@@ -123,6 +132,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
         name: selectedProduct.name,
         cost: selectedProduct.cost,
         unit: selectedProduct.unit || "UN",
+        hasSubunit: selectedProduct.hasSubunit || false,
+        subunit: selectedProduct.subunit || "",
+        subunitRatio: selectedProduct.subunitRatio || 1,
         stock: selectedProduct.stock,
         categoryId: selectedProduct.categoryId || "",
         groupId: selectedProduct.groupId || "",
@@ -222,7 +234,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 name="unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Unidade</FormLabel>
+                    <FormLabel>Unidade Principal</FormLabel>
                     <FormControl>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger>
@@ -239,6 +251,80 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Subunit Configuration */}
+            <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+              <FormField
+                control={form.control}
+                name="hasSubunit"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Este produto tem sub-unidade?
+                      </FormLabel>
+                      <p className="text-sm text-gray-600">
+                        Ex: Produto vendido em caixas que contêm unidades
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {hasSubunit && (
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="subunit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sub-unidade</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a sub-unidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {units.map(unit => (
+                                <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subunitRatio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Proporção</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="Ex: 24" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-gray-600">
+                          Quantas sub-unidades em 1 unidade principal
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
             </div>
             
             <div className="grid grid-cols-1 gap-4">
