@@ -161,9 +161,6 @@ export default function OrderSummaryPanel({
       </Card>
 
       {/* Keyboard shortcuts help */}
-      <Card className="shadow-sm border-gray-200">
-        
-        
-      </Card>
+      
     </div>;
 }
