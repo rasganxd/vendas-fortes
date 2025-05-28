@@ -1,294 +1,460 @@
-
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { useProducts } from '@/hooks/useProducts';
-import { useAppContext } from '@/hooks/useAppContext';
-import { Product } from '@/types';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { 
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Loader2 } from 'lucide-react';
+import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
+import { formatCurrency } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { useProductUnits } from './hooks/useProductUnits';
+
+// Define a schema for the product form
+const productFormSchema = z.object({
+  code: z.number().min(1, {
+    message: "Código deve ser maior que zero.",
+  }),
+  name: z.string().min(2, {
+    message: "Nome deve ter pelo menos 2 caracteres.",
+  }),
+  cost: z.number(),
+  unit: z.string(),
+  hasSubunit: z.boolean().optional(),
+  subunit: z.string().optional(),
+  stock: z.number().optional(),
+  categoryId: z.string().optional(),
+  groupId: z.string().optional(),
+  brandId: z.string().optional(),
+});
+
+// Define a type for the form data
+type ProductFormData = z.infer<typeof productFormSchema>;
 
 interface ProductFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-  editingProduct?: Product | null;
+  isEditing: boolean;
+  selectedProduct: Product | null;
+  products: Product[];
+  productCategories: ProductCategory[];
+  productGroups: ProductGroup[];
+  productBrands: ProductBrand[];
+  onSubmit: (data: ProductFormData) => Promise<void>;
 }
 
-export default function ProductForm({ 
-  open, 
-  onOpenChange, 
-  onSuccess, 
-  editingProduct 
-}: ProductFormProps) {
-  const { addProduct, updateProduct } = useProducts();
-  const { refreshData } = useAppContext();
+const ProductForm: React.FC<ProductFormProps> = ({
+  open,
+  onOpenChange,
+  isEditing,
+  selectedProduct,
+  products,
+  productCategories,
+  productGroups,
+  productBrands,
+  onSubmit
+}) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { units } = useProductUnits();
   
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    cost: '',
-    price: '',
-    unit: 'UN',
-    subunit: '',
-    subunitRatio: '1',
-    hasSubunit: false,
-    stock: '0',
-    minStock: '0'
+  // Add debug logging for classification data
+  useEffect(() => {
+    console.log("ProductForm received productCategories:", productCategories?.length || 0, "items");
+    console.log("ProductForm received productGroups:", productGroups?.length || 0, "items");
+    console.log("ProductForm received productBrands:", productBrands?.length || 0, "items");
+    
+    // Log the actual data for debugging
+    if (productGroups?.length === 0) {
+      console.log("No product groups received");
+    } else {
+      console.log("First few product groups:", productGroups?.slice(0, 3));
+    }
+    
+    if (productBrands?.length === 0) {
+      console.log("No product brands received");
+    } else {
+      console.log("First few product brands:", productBrands?.slice(0, 3));
+    }
+  }, [productCategories, productGroups, productBrands]);
+  
+  const form = useForm<ProductFormData>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues: {
+      code: isEditing && selectedProduct ? selectedProduct.code : 
+        Math.max(...products.map(p => p.code || 0), 0) + 1,
+      name: isEditing && selectedProduct ? selectedProduct.name : "",
+      cost: isEditing && selectedProduct ? selectedProduct.cost : 0,
+      unit: isEditing && selectedProduct ? selectedProduct.unit || "UN" : "UN",
+      hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
+      subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
+      stock: isEditing && selectedProduct ? selectedProduct.stock : 0,
+      categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
+      groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
+      brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
+    },
   });
   
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Load data when editing
+  // Watch hasSubunit to show/hide subunit fields
+  const hasSubunit = form.watch("hasSubunit");
+  const selectedUnit = form.watch("unit");
+  const selectedSubunit = form.watch("subunit");
+  
+  // Get conversion rate for subunit
+  const getSubunitConversionRate = () => {
+    if (!selectedSubunit) return 1;
+    const subunitData = units.find(u => u.value === selectedSubunit);
+    return subunitData?.conversionRate || 1;
+  };
+  
+  // Update form values when selected product changes
   useEffect(() => {
-    if (editingProduct) {
-      setFormData({
-        name: editingProduct.name || '',
-        description: editingProduct.description || '',
-        cost: editingProduct.cost?.toString() || '',
-        price: editingProduct.price?.toString() || '',
-        unit: editingProduct.unit || 'UN',
-        subunit: editingProduct.subunit || '',
-        subunitRatio: editingProduct.subunitRatio?.toString() || '1',
-        hasSubunit: editingProduct.hasSubunit || false,
-        stock: editingProduct.stock?.toString() || '0',
-        minStock: editingProduct.minStock?.toString() || '0'
-      });
-    } else {
-      // Reset form for new product
-      setFormData({
-        name: '',
-        description: '',
-        cost: '',
-        price: '',
-        unit: 'UN',
-        subunit: '',
-        subunitRatio: '1',
-        hasSubunit: false,
-        stock: '0',
-        minStock: '0'
+    if (isEditing && selectedProduct) {
+      form.reset({
+        code: selectedProduct.code,
+        name: selectedProduct.name,
+        cost: selectedProduct.cost,
+        unit: selectedProduct.unit || "UN",
+        hasSubunit: selectedProduct.hasSubunit || false,
+        subunit: selectedProduct.subunit || "",
+        stock: selectedProduct.stock,
+        categoryId: selectedProduct.categoryId || "",
+        groupId: selectedProduct.groupId || "",
+        brandId: selectedProduct.brandId || "",
       });
     }
-  }, [editingProduct, open]);
+  }, [selectedProduct, isEditing, form]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const handleSubmit = async (data: ProductFormData) => {
+    setIsSubmitting(true);
     try {
-      const productData = {
-        name: formData.name,
-        description: formData.description,
-        cost: parseFloat(formData.cost) || 0,
-        price: parseFloat(formData.price) || 0,
-        unit: formData.unit,
-        subunit: formData.hasSubunit ? formData.subunit : null,
-        subunitRatio: formData.hasSubunit ? parseFloat(formData.subunitRatio) || 1 : null,
-        hasSubunit: formData.hasSubunit,
-        stock: parseFloat(formData.stock) || 0,
-        minStock: parseFloat(formData.minStock) || 0,
-        // Add missing required properties for creating new products
-        code: editingProduct?.code || Date.now(), // Generate code if creating new product
-        createdAt: editingProduct?.createdAt || new Date(),
-        updatedAt: new Date()
+      console.log("Submitting form data:", data);
+      
+      // Adicionar a taxa de conversão automaticamente baseada na sub-unidade selecionada
+      const formDataWithConversion = {
+        ...data,
+        subunitRatio: hasSubunit && data.subunit ? getSubunitConversionRate() : undefined
       };
-
-      if (editingProduct) {
-        await updateProduct(editingProduct.id, productData);
-        toast.success('Produto atualizado com sucesso!');
-      } else {
-        await addProduct(productData);
-        toast.success('Produto criado com sucesso!');
-      }
-
-      refreshData();
-      onSuccess();
-      onOpenChange(false);
+      
+      await onSubmit(formDataWithConversion);
+      toast("Produto salvo com sucesso!");
     } catch (error) {
-      console.error('Error saving product:', error);
-      toast.error('Erro ao salvar produto');
+      console.error("Erro ao salvar produto:", error);
+      toast("Erro ao salvar produto. Tente novamente.");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const availableUnits = units.map(unit => ({
-    value: unit.value,
-    label: unit.label
-  }));
+  // Check if classifications data is available
+  const hasCategories = Array.isArray(productCategories) && productCategories.length > 0;
+  const hasGroups = Array.isArray(productGroups) && productGroups.length > 0;
+  const hasBrands = Array.isArray(productBrands) && productBrands.length > 0;
+  
+  // Loading state for classifications
+  const isLoadingClassifications = productCategories === undefined || productGroups === undefined || productBrands === undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {editingProduct ? 'Editar Produto' : 'Novo Produto'}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? "Editar" : "Adicionar"} Produto</DialogTitle>
+          <DialogDescription>
+            {isEditing ? "Edite os dados do produto abaixo" : "Preencha os dados do novo produto abaixo"}
+          </DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="name">Nome do Produto</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Código do produto" {...field} 
+                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div>
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome do produto" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="cost">Custo</Label>
-                <Input
-                  id="cost"
-                  type="number"
-                  step="0.01"
-                  value={formData.cost}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cost: e.target.value }))}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="price">Preço de Venda</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                  required
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="unit">Unidade Principal</Label>
-              <Select value={formData.unit} onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a unidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableUnits.map(unit => (
-                    <SelectItem key={unit.value} value={unit.value}>
-                      {unit.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="hasSubunit"
-                checked={formData.hasSubunit}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, hasSubunit: checked }))}
+              <FormField
+                control={form.control}
+                name="cost"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preço de Custo</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Preço de custo" 
+                        value={formatCurrency(field.value)} 
+                        onChange={(e) => {
+                          // Remove all non-numeric characters
+                          const numericValue = e.target.value.replace(/\D/g, '');
+                          // Convert to number and divide by 100 to get decimal value
+                          field.onChange(parseFloat(numericValue) / 100 || 0);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <Label htmlFor="hasSubunit">Produto possui subunidade</Label>
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unidade Principal</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a unidade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {units.map(unit => (
+                            <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            
-            {formData.hasSubunit && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="subunit">Subunidade</Label>
-                  <Select value={formData.subunit} onValueChange={(value) => setFormData(prev => ({ ...prev, subunit: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a subunidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableUnits.map(unit => (
-                        <SelectItem key={unit.value} value={unit.value}>
-                          {unit.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="subunitRatio">Quantidade por {formData.unit}</Label>
-                  <Input
-                    id="subunitRatio"
-                    type="number"
-                    step="0.01"
-                    value={formData.subunitRatio}
-                    onChange={(e) => setFormData(prev => ({ ...prev, subunitRatio: e.target.value }))}
+
+            {/* Subunit Configuration */}
+            <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+              <FormField
+                control={form.control}
+                name="hasSubunit"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Este produto tem sub-unidade?
+                      </FormLabel>
+                      <p className="text-sm text-gray-600">
+                        Ex: Produto vendido em caixas que contêm unidades
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {hasSubunit && (
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="subunit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sub-unidade</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a sub-unidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {units.map(unit => (
+                                <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
+                  
+                  {selectedSubunit && (
+                    <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded-md">
+                      <p className="font-medium">Taxa de Conversão:</p>
+                      <p>1 {selectedUnit} = {getSubunitConversionRate()} {selectedSubunit}</p>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="stock">Estoque Atual</Label>
-                <Input
-                  id="stock"
-                  type="number"
-                  step="0.01"
-                  value={formData.stock}
-                  onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="minStock">Estoque Mínimo</Label>
-                <Input
-                  id="minStock"
-                  type="number"
-                  step="0.01"
-                  value={formData.minStock}
-                  onChange={(e) => setFormData(prev => ({ ...prev, minStock: e.target.value }))}
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                editingProduct ? 'Atualizar' : 'Criar'
               )}
-            </Button>
-          </div>
-        </form>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <FormField
+                control={form.control}
+                name="stock"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estoque</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Estoque" {...field} 
+                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoria</FormLabel>
+                    <FormControl>
+                      {isLoadingClassifications ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhuma</SelectItem>
+                            {hasCategories ? (
+                              productCategories.map(category => (
+                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-categories" disabled>Nenhuma categoria cadastrada</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="groupId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grupo</FormLabel>
+                    <FormControl>
+                      {isLoadingClassifications ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Grupo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum</SelectItem>
+                            {hasGroups ? (
+                              productGroups.map(group => (
+                                <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-groups" disabled>Nenhum grupo cadastrado</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="brandId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Marca</FormLabel>
+                    <FormControl>
+                      {isLoadingClassifications ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Marca" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhuma</SelectItem>
+                            {hasBrands ? (
+                              productBrands.map(brand => (
+                                <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-brands" disabled>Nenhuma marca cadastrada</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  "Salvar"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default ProductForm;

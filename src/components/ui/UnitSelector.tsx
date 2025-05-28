@@ -44,7 +44,7 @@ export default function UnitSelector({
       
       // Add subunit if exists
       if (product.hasSubunit && product.subunit) {
-        // Get the main unit's conversion rate to calculate subunit price display
+        // Get the main unit's conversion rate to calculate subunit info
         const mainUnitData = allUnits.find(u => u.value === product.unit);
         const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
         
@@ -53,7 +53,7 @@ export default function UnitSelector({
         
         productUnits.push({
           value: product.subunit,
-          label: `${product.subunit} (${pricePerSubunit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`,
+          label: `${product.subunit} (R$ ${pricePerSubunit.toFixed(2).replace('.', ',')})`,
           conversionRate: mainUnitConversionRate
         });
       }
@@ -70,7 +70,7 @@ export default function UnitSelector({
       <SelectTrigger className={className}>
         <SelectValue placeholder="Unidade" />
       </SelectTrigger>
-      <SelectContent className="z-[9999]">
+      <SelectContent>
         {availableUnits.map(unit => (
           <SelectItem key={unit.value} value={unit.value}>
             {unit.label || unit.value}
