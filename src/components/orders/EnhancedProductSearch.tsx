@@ -31,11 +31,19 @@ export default function EnhancedProductSearch({
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Check if search term is a product code (numeric)
+  const isCodeSearch = /^\d+$/.test(searchTerm.trim());
+
   // Filter products based on search term
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.code.toString().toLowerCase().includes(searchTerm.toLowerCase())
-  ).slice(0, 8); // Limit to 8 results
+  const filteredProducts = products.filter(product => {
+    if (isCodeSearch) {
+      // For code search, match exact code
+      return product.code.toString() === searchTerm.trim();
+    } else {
+      // For name search, match name containing the search term
+      return product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    }
+  }).slice(0, 8); // Limit to 8 results
 
   // Get customer's recent products (simplified - just show first 5 products for now)
   const customerProducts = selectedCustomer ? products.slice(0, 5) : [];
@@ -45,6 +53,21 @@ export default function EnhancedProductSearch({
       setPrice(selectedProduct.price || 0);
     }
   }, [selectedProduct]);
+
+  // Auto-select product when searching by code
+  useEffect(() => {
+    if (isCodeSearch && filteredProducts.length === 1 && !selectedProduct) {
+      const product = filteredProducts[0];
+      setSelectedProduct(product);
+      setPrice(product.price || 0);
+      setShowResults(false);
+      
+      // Focus on quantity input
+      setTimeout(() => {
+        quantityInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isCodeSearch, filteredProducts, selectedProduct]);
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
@@ -76,12 +99,20 @@ export default function EnhancedProductSearch({
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (filteredProducts.length > 0) {
+      if (isCodeSearch) {
+        // For code search, if we found a product, it's already selected by useEffect
+        if (selectedProduct) {
+          quantityInputRef.current?.focus();
+        }
+      } else if (filteredProducts.length > 0) {
+        // For name search, select first result
         handleProductSelect(filteredProducts[0]);
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setShowResults(true);
+      if (!isCodeSearch) {
+        setShowResults(true);
+      }
     }
   };
 
@@ -90,6 +121,21 @@ export default function EnhancedProductSearch({
       e.preventDefault();
       handleAdd();
     }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Reset selected product when search changes
+    if (selectedProduct && selectedProduct.name !== value) {
+      setSelectedProduct(null);
+      setPrice(0);
+    }
+    
+    // Show results only for name search (not code search) and when there's input
+    const isCode = /^\d+$/.test(value.trim());
+    setShowResults(!isCode && value.length > 0);
   };
 
   return (
@@ -113,21 +159,22 @@ export default function EnhancedProductSearch({
             type="text"
             placeholder="Buscar por nome ou código..."
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setShowResults(e.target.value.length > 0);
-            }}
+            onChange={handleSearchChange}
             onKeyDown={handleSearchKeyDown}
-            onFocus={() => setShowResults(searchTerm.length > 0)}
+            onFocus={() => {
+              if (!isCodeSearch && searchTerm.length > 0) {
+                setShowResults(true);
+              }
+            }}
             className="pl-10 pr-4 h-11 text-base"
             disabled={isEditMode}
           />
           <Barcode className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         </div>
 
-        {/* Search Results */}
-        {showResults && filteredProducts.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        {/* Search Results - Only show for name search */}
+        {showResults && !isCodeSearch && filteredProducts.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
