@@ -151,7 +151,7 @@ export default function EnhancedProductSearch({
       </div>
 
       {/* Search Input */}
-      <div className="relative">
+      <div className="relative z-[100]">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
@@ -174,7 +174,7 @@ export default function EnhancedProductSearch({
 
         {/* Search Results - Only show for name search */}
         {showResults && !isCodeSearch && filteredProducts.length > 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+          <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
             {filteredProducts.map((product) => (
               <div
                 key={product.id}

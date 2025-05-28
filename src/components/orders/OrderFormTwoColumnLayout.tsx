@@ -131,9 +131,9 @@ export default function OrderFormTwoColumnLayout({
             </CardContent>
           </Card>
 
-          {/* Enhanced Product Search */}
-          <Card className="shadow-sm border-gray-200">
-            <CardContent className="pt-4 pb-4">
+          {/* Enhanced Product Search - Increased z-index and relative positioning */}
+          <Card className="shadow-sm border-gray-200 relative z-10">
+            <CardContent className="pt-4 pb-4 relative">
               <EnhancedProductSearch
                 products={products}
                 handleAddItem={handleAddItem}
