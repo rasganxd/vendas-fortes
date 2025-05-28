@@ -187,7 +187,7 @@ class MobileSyncService {
     }
   }
 
-  // Log sync event
+  // Log sync event - MELHORADO para garantir que logs sejam criados
   async logSyncEvent(
     eventType: 'upload' | 'download' | 'error',
     dataType: string,
@@ -199,32 +199,44 @@ class MobileSyncService {
     metadata?: any
   ): Promise<void> {
     try {
-      const { error } = await supabase
+      console.log(`📝 Logging sync event: ${eventType} - ${dataType} for sales rep: ${salesRepId}`);
+      
+      const logEntry = {
+        sales_rep_id: salesRepId || null,
+        event_type: eventType,
+        device_id: deviceId || null,
+        device_ip: deviceIp || null,
+        data_type: dataType,
+        records_count: recordsCount,
+        status: eventType === 'error' ? 'failed' : 'completed',
+        error_message: errorMessage || null,
+        metadata: metadata || null
+      };
+
+      console.log('📝 Creating log entry:', logEntry);
+
+      const { data, error } = await supabase
         .from('sync_logs')
-        .insert({
-          sales_rep_id: salesRepId || null,
-          event_type: eventType,
-          device_id: deviceId,
-          device_ip: deviceIp,
-          data_type: dataType,
-          records_count: recordsCount,
-          status: eventType === 'error' ? 'failed' : 'completed',
-          error_message: errorMessage,
-          metadata: metadata
-        });
+        .insert(logEntry)
+        .select();
 
       if (error) {
         console.error('❌ Error logging sync event:', error);
         throw error;
       }
+
+      console.log('✅ Sync event logged successfully:', data);
     } catch (error) {
       console.error('❌ Failed to log sync event:', error);
+      // Não fazer throw aqui para não quebrar outras operações
     }
   }
 
   // Get customers for mobile sync
   async getCustomersForSync(salesRepId?: string): Promise<Customer[]> {
     try {
+      console.log(`📱 Getting customers for sync, sales rep: ${salesRepId}`);
+      
       let query = supabase
         .from('customers')
         .select('*')
@@ -241,6 +253,9 @@ class MobileSyncService {
         throw error;
       }
 
+      console.log(`✅ Found ${data?.length || 0} customers for sync`);
+
+      // Log the sync event
       await this.logSyncEvent('download', 'customers', data?.length || 0, salesRepId);
       
       // Transform data to match Customer interface
@@ -253,8 +268,10 @@ class MobileSyncService {
   }
 
   // Get products for mobile sync
-  async getProductsForSync(): Promise<Product[]> {
+  async getProductsForSync(salesRepId?: string): Promise<Product[]> {
     try {
+      console.log(`📱 Getting products for sync, sales rep: ${salesRepId}`);
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -265,7 +282,10 @@ class MobileSyncService {
         throw error;
       }
 
-      await this.logSyncEvent('download', 'products', data?.length || 0);
+      console.log(`✅ Found ${data?.length || 0} products for sync`);
+
+      // Log the sync event
+      await this.logSyncEvent('download', 'products', data?.length || 0, salesRepId);
       
       // Transform data to match Product interface
       const transformedProducts = (data || []).map(transformProductData).filter(Boolean) as Product[];
@@ -317,6 +337,7 @@ class MobileSyncService {
         throw error;
       }
 
+      // Log successful upload
       await this.logSyncEvent('upload', 'orders', orders.length, salesRepId);
       console.log('✅ Orders uploaded successfully');
     } catch (error) {
@@ -365,6 +386,7 @@ class MobileSyncService {
         throw error;
       }
 
+      // Log successful upload
       await this.logSyncEvent('upload', 'customers', customers.length, salesRepId);
       console.log('✅ Customers uploaded successfully');
     } catch (error) {
