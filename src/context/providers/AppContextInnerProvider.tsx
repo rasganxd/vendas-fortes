@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
@@ -25,7 +24,12 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   const hookOperations = useAppContextHooks();
 
   // Get real settings from the database
-  const { settings, updateSettings, isLoading: isLoadingSettings } = useAppSettings();
+  const { settings, updateSettings: updateSettingsHook, isLoading: isLoadingSettings } = useAppSettings();
+
+  // Wrap updateSettings to match the expected return type (Promise<void>)
+  const updateSettings = async (newSettings: Partial<typeof settings>) => {
+    await updateSettingsHook(newSettings);
+  };
 
   // Get app data state directly (products, orders)
   const {
