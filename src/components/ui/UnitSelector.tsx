@@ -38,23 +38,19 @@ export default function UnitSelector({
         productUnits.push({
           value: product.unit,
           label: product.unit,
-          conversionRate: 1 // Main unit is always 1
+          conversionRate: 1
         });
       }
       
       // Add subunit if exists
-      if (product.hasSubunit && product.subunit) {
-        // Get the main unit's conversion rate to calculate subunit info
-        const mainUnitData = allUnits.find(u => u.value === product.unit);
-        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
-        
-        // Calculate price per subunit for display
-        const pricePerSubunit = product.price / mainUnitConversionRate;
+      if (product.hasSubunit && product.subunit && product.subunitRatio) {
+        // Calculate price per subunit using the product's subunitRatio
+        const pricePerSubunit = product.price / product.subunitRatio;
         
         productUnits.push({
           value: product.subunit,
           label: `${product.subunit} (R$ ${pricePerSubunit.toFixed(2).replace('.', ',')})`,
-          conversionRate: mainUnitConversionRate
+          conversionRate: product.subunitRatio
         });
       }
       
@@ -63,14 +59,14 @@ export default function UnitSelector({
     
     // Fallback to generic units if no product specified
     return units;
-  }, [product, units, allUnits]);
+  }, [product, units]);
 
   return (
     <Select value={selectedUnit} onValueChange={onUnitChange}>
       <SelectTrigger className={className}>
         <SelectValue placeholder="Unidade" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="z-[9999] bg-white">
         {availableUnits.map(unit => (
           <SelectItem key={unit.value} value={unit.value}>
             {unit.label || unit.value}

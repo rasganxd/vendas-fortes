@@ -34,7 +34,6 @@ export default function ProductSearchInput({
   useEffect(() => {
     const handleProductsUpdated = () => {
       console.log("Products updated event received in ProductSearchInput");
-      // Products will be automatically updated via centralized hook
     };
 
     window.addEventListener('productsUpdated', handleProductsUpdated);
@@ -80,17 +79,12 @@ export default function ProductSearchInput({
   const handleUnitChange = (unit: string) => {
     setSelectedUnit(unit);
     if (selectedProduct) {
-      // Always use product.price (sale price) as base, never product.cost
       let convertedPrice = selectedProduct.price;
       
       // If product has subunit and selected unit is the subunit
-      if (selectedProduct.hasSubunit && selectedProduct.subunit === unit) {
-        // Get the main unit's conversion rate
-        const mainUnitData = units.find(u => u.value === selectedProduct.unit);
-        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
-        
-        // Price per subunit = main unit price / main unit conversion rate
-        convertedPrice = selectedProduct.price / mainUnitConversionRate;
+      if (selectedProduct.hasSubunit && selectedProduct.subunit === unit && selectedProduct.subunitRatio) {
+        // Price per subunit = main unit price / subunit ratio
+        convertedPrice = selectedProduct.price / selectedProduct.subunitRatio;
       }
       
       originalHandlePriceChange({ target: { value: convertedPrice.toFixed(2).replace('.', ',') } } as any);
@@ -99,8 +93,6 @@ export default function ProductSearchInput({
 
   const handleAddToOrder = () => {
     if (selectedProduct && quantity && quantity > 0) {
-      // Always use the exact quantity entered by the user
-      // Pass the selected unit to differentiate items
       addItemToOrder(selectedProduct, quantity, price, selectedUnit);
     }
   };
@@ -116,13 +108,9 @@ export default function ProductSearchInput({
       return null;
     }
     
-    if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit) {
-      // Get the main unit's conversion rate  
-      const mainUnitData = units.find(u => u.value === selectedProduct.unit);
-      const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
-      
+    if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
       // Show how many main units this subunit quantity represents
-      const mainUnitQty = (quantity || 0) / mainUnitConversionRate;
+      const mainUnitQty = (quantity || 0) / selectedProduct.subunitRatio;
       return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }
     
@@ -130,7 +118,7 @@ export default function ProductSearchInput({
   };
   
   return (
-    <div className="relative w-full">
+    <div className="relative w-full z-10">
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
         <div className="relative flex-1 w-full">
           <div className="flex items-center">
