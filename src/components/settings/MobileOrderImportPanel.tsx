@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Download, 
   Upload, 
@@ -14,7 +14,8 @@ import {
   Clock,
   Smartphone,
   Trash2,
-  User
+  User,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { mobileOrderImportService, ImportLog } from '@/services/supabase/mobileOrderImportService';
@@ -36,6 +37,18 @@ interface SalesRepStats {
   last_sync: Date | null;
 }
 
+interface OrphanOrder {
+  id: string;
+  code: number;
+  customer_name: string;
+  sales_rep_id: string;
+  sales_rep_name: string;
+  total: number;
+  created_at: string;
+  source_project: string;
+  imported: boolean;
+}
+
 export default function MobileOrderImportPanel() {
   const [stats, setStats] = useState<ImportStats>({
     totalImported: 0,
@@ -45,8 +58,10 @@ export default function MobileOrderImportPanel() {
   });
   const [logs, setLogs] = useState<ImportLog[]>([]);
   const [salesRepStats, setSalesRepStats] = useState<SalesRepStats[]>([]);
+  const [orphanOrders, setOrphanOrders] = useState<OrphanOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [isFixingOrphans, setIsFixingOrphans] = useState(false);
 
   const loadStats = async () => {
     try {
@@ -60,6 +75,61 @@ export default function MobileOrderImportPanel() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadOrphanOrders = async () => {
+    try {
+      console.log('🔍 Verificando pedidos órfãos (imported=true mas source_project=mobile)...');
+      
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Buscar pedidos que estão marcados como importados mas vieram do mobile
+      // Isso indica que foram criados diretamente pelo mobile, não pelo processo de importação
+      const { data: orphans, error } = await supabase
+        .from('orders')
+        .select('id, code, customer_name, sales_rep_id, sales_rep_name, total, created_at, source_project, imported')
+        .eq('source_project', 'mobile')
+        .eq('imported', true); // Estes são órfãos - não deveriam estar importados automaticamente
+
+      if (error) throw error;
+
+      setOrphanOrders(orphans || []);
+      console.log(`⚠️ Encontrados ${orphans?.length || 0} pedidos órfãos`);
+
+    } catch (error) {
+      console.error('Erro ao verificar pedidos órfãos:', error);
+    }
+  };
+
+  const fixOrphanOrders = async () => {
+    try {
+      setIsFixingOrphans(true);
+      console.log('🔧 Corrigindo pedidos órfãos...');
+
+      const { supabase } = await import('@/integrations/supabase/client');
+
+      // Marcar todos os pedidos órfãos como não importados
+      const { error } = await supabase
+        .from('orders')
+        .update({ imported: false, updated_at: new Date().toISOString() })
+        .eq('source_project', 'mobile')
+        .eq('imported', true);
+
+      if (error) throw error;
+
+      toast.success('Pedidos órfãos corrigidos', {
+        description: `${orphanOrders.length} pedidos foram marcados como não importados`
+      });
+
+      // Recarregar dados
+      await Promise.all([loadOrphanOrders(), loadSalesRepStats()]);
+
+    } catch (error) {
+      console.error('Erro ao corrigir pedidos órfãos:', error);
+      toast.error('Erro ao corrigir pedidos órfãos');
+    } finally {
+      setIsFixingOrphans(false);
     }
   };
 
@@ -175,7 +245,7 @@ export default function MobileOrderImportPanel() {
   };
 
   const refreshData = async () => {
-    await Promise.all([loadStats(), loadLogs(), loadSalesRepStats()]);
+    await Promise.all([loadStats(), loadLogs(), loadSalesRepStats(), loadOrphanOrders()]);
   };
 
   useEffect(() => {
@@ -229,6 +299,32 @@ export default function MobileOrderImportPanel() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Alerta sobre pedidos órfãos */}
+          {orphanOrders.length > 0 && (
+            <Alert className="border-orange-200 bg-orange-50">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <strong>Problema detectado:</strong> {orphanOrders.length} pedidos mobile apareceram no sistema sem passar pelo processo de importação.
+                    <div className="text-sm mt-1">
+                      Estes pedidos devem ser marcados como "não importados" para seguir o fluxo correto.
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={fixOrphanOrders}
+                    disabled={isFixingOrphans}
+                    className="ml-4"
+                  >
+                    {isFixingOrphans ? 'Corrigindo...' : 'Corrigir'}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Estatísticas gerais */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -363,6 +459,17 @@ export default function MobileOrderImportPanel() {
                 ))
               )}
             </div>
+          </div>
+
+          {/* Documentação */}
+          <div className="text-sm text-gray-600 bg-blue-50 rounded-lg p-4">
+            <h4 className="font-semibold mb-2 text-blue-800">⚠️ Importante - Configuração Mobile:</h4>
+            <ul className="list-disc list-inside space-y-1 text-blue-700">
+              <li><strong>Endpoint correto:</strong> O mobile deve usar <code>/mobile-orders-import</code> para enviar pedidos</li>
+              <li><strong>Não usar:</strong> O endpoint <code>/orders-api</code> foi bloqueado para criar pedidos mobile</li>
+              <li><strong>Fluxo correto:</strong> Mobile envia → Fica pendente → Importação manual no Desktop</li>
+              <li><strong>Validação:</strong> Sistema agora detecta e corrige pedidos que aparecem sem importação</li>
+            </ul>
           </div>
         </CardContent>
       </Card>

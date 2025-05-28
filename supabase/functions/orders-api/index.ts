@@ -73,97 +73,18 @@ serve(async (req) => {
 
     // Route handling
     if (method === 'POST' && path === '/') {
-      // Create order
-      const orderData: Order = await req.json()
+      // Create order - IMPORTANTE: Agora redireciona para mobile-orders-import
+      console.log('⚠️ orders-api POST detected - redirecting to mobile-orders-import');
       
-      // Validate required fields
-      if (!orderData.cliente || !orderData.itens || !Array.isArray(orderData.itens) || orderData.itens.length === 0) {
-        return new Response(
-          JSON.stringify({ error: 'Campos obrigatórios: cliente, itens' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
-      // Calculate total if not provided
-      if (!orderData.valor_total) {
-        orderData.valor_total = orderData.itens.reduce((total, item) => 
-          total + (item.quantidade * item.preco_unitario), 0
-        )
-      }
-
-      // Generate next order code
-      const { data: nextCode } = await supabase.rpc('get_next_order_code')
-      
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          code: nextCode || 1,
-          customer_name: orderData.cliente,
-          date: orderData.data || new Date().toISOString(),
-          status: orderData.status || 'pending',
-          total: orderData.valor_total,
-          sales_rep_id: orderData.vendedor_id || currentUserId,
-          source_project: 'mobile'
-        })
-        .select()
-        .single()
-
-      if (orderError) {
-        return new Response(
-          JSON.stringify({ error: 'Erro ao criar pedido', details: orderError.message }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
-      // Create order items
-      const orderItems = orderData.itens.map(item => ({
-        order_id: order.id,
-        product_name: item.produto,
-        quantity: item.quantidade,
-        unit_price: item.preco_unitario,
-        price: item.preco_unitario,
-        total: item.quantidade * item.preco_unitario
-      }))
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems)
-
-      if (itemsError) {
-        // Rollback order if items creation fails
-        await supabase.from('orders').delete().eq('id', order.id)
-        return new Response(
-          JSON.stringify({ error: 'Erro ao criar itens do pedido', details: itemsError.message }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          order: {
-            id: order.id,
-            code: order.code,
-            cliente: order.customer_name,
-            data: order.date,
-            status: order.status,
-            valor_total: order.total,
-            vendedor_id: order.sales_rep_id,
-            itens: orderData.itens
-          }
+          error: 'Este endpoint não deve ser usado para criar pedidos mobile',
+          message: 'Use o endpoint /mobile-orders-import para enviar pedidos do mobile',
+          redirect_to: '/mobile-orders-import',
+          documentation: 'Pedidos mobile devem passar pelo processo de importação manual'
         }),
         { 
-          status: 201, 
+          status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
@@ -182,6 +103,7 @@ serve(async (req) => {
       let query = supabase
         .from('orders')
         .select('*, order_items(*)')
+        .eq('imported', true) // IMPORTANTE: Só mostra pedidos já importados
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
@@ -223,6 +145,8 @@ serve(async (req) => {
         status: order.status,
         valor_total: order.total,
         vendedor_id: order.sales_rep_id,
+        imported: order.imported,
+        source_project: order.source_project,
         itens: order.order_items?.map((item: any) => ({
           produto: item.product_name,
           quantidade: item.quantity,
@@ -235,7 +159,8 @@ serve(async (req) => {
           orders: formattedOrders,
           total: formattedOrders.length,
           limit,
-          offset 
+          offset,
+          note: 'Apenas pedidos importados são exibidos nesta API'
         }),
         { 
           status: 200, 
@@ -252,11 +177,12 @@ serve(async (req) => {
         .from('orders')
         .select('*, order_items(*)')
         .eq('id', orderId)
+        .eq('imported', true) // IMPORTANTE: Só mostra se já foi importado
         .single()
 
       if (error) {
         return new Response(
-          JSON.stringify({ error: 'Pedido não encontrado' }),
+          JSON.stringify({ error: 'Pedido não encontrado ou não importado' }),
           { 
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -272,6 +198,8 @@ serve(async (req) => {
         status: order.status,
         valor_total: order.total,
         vendedor_id: order.sales_rep_id,
+        imported: order.imported,
+        source_project: order.source_project,
         itens: order.order_items?.map((item: any) => ({
           produto: item.product_name,
           quantidade: item.quantity,
@@ -303,12 +231,13 @@ serve(async (req) => {
         .from('orders')
         .update(updates)
         .eq('id', orderId)
+        .eq('imported', true) // IMPORTANTE: Só permite editar se já foi importado
         .select()
         .single()
 
       if (error) {
         return new Response(
-          JSON.stringify({ error: 'Erro ao atualizar pedido', details: error.message }),
+          JSON.stringify({ error: 'Erro ao atualizar pedido ou pedido não importado', details: error.message }),
           { 
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -327,7 +256,8 @@ serve(async (req) => {
             data: order.date,
             status: order.status,
             valor_total: order.total,
-            vendedor_id: order.sales_rep_id
+            vendedor_id: order.sales_rep_id,
+            imported: order.imported
           }
         }),
         { 
@@ -340,6 +270,23 @@ serve(async (req) => {
     if (method === 'DELETE' && path.startsWith('/')) {
       // Delete order
       const orderId = path.substring(1)
+      
+      // Check if order is imported before allowing deletion
+      const { data: orderCheck } = await supabase
+        .from('orders')
+        .select('imported')
+        .eq('id', orderId)
+        .single()
+
+      if (!orderCheck?.imported) {
+        return new Response(
+          JSON.stringify({ error: 'Não é possível excluir pedido não importado via API' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
       
       // Delete order items first
       await supabase.from('order_items').delete().eq('order_id', orderId)
