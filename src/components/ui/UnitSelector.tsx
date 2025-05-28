@@ -35,23 +35,26 @@ export default function UnitSelector({
       
       // Always add main unit
       if (product.unit) {
-        const mainUnitData = allUnits.find(u => u.value === product.unit);
         productUnits.push({
           value: product.unit,
           label: product.unit,
-          conversionRate: mainUnitData?.conversionRate || 1
+          conversionRate: 1 // Main unit is always 1
         });
       }
       
       // Add subunit if exists
       if (product.hasSubunit && product.subunit) {
-        const subunitData = allUnits.find(u => u.value === product.subunit);
-        const conversionRate = subunitData?.conversionRate || 1;
+        // Get the main unit's conversion rate to calculate subunit info
+        const mainUnitData = allUnits.find(u => u.value === product.unit);
+        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
+        
+        // Calculate price per subunit for display
+        const pricePerSubunit = product.price / mainUnitConversionRate;
         
         productUnits.push({
           value: product.subunit,
-          label: `${product.subunit} (${conversionRate}x)`,
-          conversionRate
+          label: `${product.subunit} (R$ ${pricePerSubunit.toFixed(2).replace('.', ',')})`,
+          conversionRate: mainUnitConversionRate
         });
       }
       
@@ -71,11 +74,6 @@ export default function UnitSelector({
         {availableUnits.map(unit => (
           <SelectItem key={unit.value} value={unit.value}>
             {unit.label || unit.value}
-            {unit.conversionRate && unit.conversionRate !== 1 && !unit.label?.includes('x') && (
-              <span className="text-xs text-gray-500 ml-1">
-                ({unit.conversionRate}x)
-              </span>
-            )}
           </SelectItem>
         ))}
       </SelectContent>

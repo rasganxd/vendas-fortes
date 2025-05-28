@@ -84,10 +84,12 @@ export default function ProductSearchInput({
       
       // If product has subunit and selected unit is the subunit
       if (selectedProduct.hasSubunit && selectedProduct.subunit === unit) {
-        // Use conversion rate from units configuration
-        const subunitData = units.find(u => u.value === unit);
-        const conversionRate = subunitData?.conversionRate || 1;
-        convertedPrice = selectedProduct.price / conversionRate;
+        // Get the main unit's conversion rate
+        const mainUnitData = units.find(u => u.value === selectedProduct.unit);
+        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
+        
+        // Price per subunit = main unit price / main unit conversion rate
+        convertedPrice = selectedProduct.price / mainUnitConversionRate;
       }
       
       originalHandlePriceChange({ target: { value: convertedPrice.toFixed(2).replace('.', ',') } } as any);
@@ -98,11 +100,14 @@ export default function ProductSearchInput({
     if (selectedProduct && quantity && quantity > 0) {
       let finalQuantity = quantity;
       
-      // If using subunit, convert to main unit for storage using conversion rate
+      // If using subunit, convert quantity to main unit equivalent
       if (selectedUnit === selectedProduct.subunit && selectedProduct.hasSubunit) {
-        const subunitData = units.find(u => u.value === selectedUnit);
-        const conversionRate = subunitData?.conversionRate || 1;
-        finalQuantity = quantity / conversionRate;
+        // Get the main unit's conversion rate
+        const mainUnitData = units.find(u => u.value === selectedProduct.unit);
+        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
+        
+        // Final quantity = subunit quantity * main unit conversion rate
+        finalQuantity = quantity * mainUnitConversionRate;
       }
       
       addItemToOrder(selectedProduct, finalQuantity, price, selectedUnit);
@@ -121,9 +126,11 @@ export default function ProductSearchInput({
     }
     
     if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit) {
-      const subunitData = units.find(u => u.value === selectedUnit);
-      const conversionRate = subunitData?.conversionRate || 1;
-      const mainUnitQty = (quantity || 0) / conversionRate;
+      // Get the main unit's conversion rate  
+      const mainUnitData = units.find(u => u.value === selectedProduct.unit);
+      const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
+      
+      const mainUnitQty = (quantity || 0) * mainUnitConversionRate;
       return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }
     
