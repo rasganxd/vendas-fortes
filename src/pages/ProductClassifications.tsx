@@ -28,6 +28,8 @@ import { DeleteConfirmationDialog } from '@/components/products/DeleteConfirmati
 import { useProductClassification } from '@/hooks/useProductClassification';
 
 export default function ProductClassifications() {
+  console.log("=== ProductClassifications component rendering ===");
+  
   const navigate = useNavigate();
   const {
     productCategories,
@@ -49,6 +51,13 @@ export default function ProductClassifications() {
     handleDeleteBrand
   } = useProductClassification();
 
+  console.log("ProductClassifications - dados recebidos do hook:", {
+    productCategories: productCategories?.length || 0,
+    productGroups: productGroups?.length || 0,
+    productBrands: productBrands?.length || 0,
+    loadingStates: { isLoadingCategories, isLoadingGroups, isLoadingBrands }
+  });
+
   // Category state
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
@@ -69,21 +78,25 @@ export default function ProductClassifications() {
 
   // Category handlers
   const openAddCategoryDialog = () => {
+    console.log("Abrindo dialog para adicionar categoria");
     setSelectedCategory(null);
     setCategoryDialogOpen(true);
   };
 
   const openEditCategoryDialog = (category: ProductCategory) => {
+    console.log("Abrindo dialog para editar categoria:", category);
     setSelectedCategory(category);
     setCategoryDialogOpen(true);
   };
 
   const openDeleteCategoryDialog = (category: ProductCategory) => {
+    console.log("Abrindo dialog para deletar categoria:", category);
     setCategoryToDelete(category);
     setDeleteCategoryDialogOpen(true);
   };
 
   const handleSaveCategory = async (category: Omit<ProductCategory, 'id'>) => {
+    console.log("Salvando categoria:", category);
     if (selectedCategory) {
       await handleUpdateCategory(selectedCategory.id, category);
     } else {
@@ -93,21 +106,25 @@ export default function ProductClassifications() {
 
   // Group handlers
   const openAddGroupDialog = () => {
+    console.log("Abrindo dialog para adicionar grupo");
     setSelectedGroup(null);
     setGroupDialogOpen(true);
   };
 
   const openEditGroupDialog = (group: ProductGroup) => {
+    console.log("Abrindo dialog para editar grupo:", group);
     setSelectedGroup(group);
     setGroupDialogOpen(true);
   };
 
   const openDeleteGroupDialog = (group: ProductGroup) => {
+    console.log("Abrindo dialog para deletar grupo:", group);
     setGroupToDelete(group);
     setDeleteGroupDialogOpen(true);
   };
 
   const handleSaveGroup = async (group: Omit<ProductGroup, 'id'>) => {
+    console.log("Salvando grupo:", group);
     if (selectedGroup) {
       await handleUpdateGroup(selectedGroup.id, group);
     } else {
@@ -117,27 +134,33 @@ export default function ProductClassifications() {
 
   // Brand handlers
   const openAddBrandDialog = () => {
+    console.log("Abrindo dialog para adicionar marca");
     setSelectedBrand(null);
     setBrandDialogOpen(true);
   };
 
   const openEditBrandDialog = (brand: ProductBrand) => {
+    console.log("Abrindo dialog para editar marca:", brand);
     setSelectedBrand(brand);
     setBrandDialogOpen(true);
   };
 
   const openDeleteBrandDialog = (brand: ProductBrand) => {
+    console.log("Abrindo dialog para deletar marca:", brand);
     setBrandToDelete(brand);
     setDeleteBrandDialogOpen(true);
   };
 
   const handleSaveBrand = async (brand: Omit<ProductBrand, 'id'>) => {
+    console.log("Salvando marca:", brand);
     if (selectedBrand) {
       await handleUpdateBrand(selectedBrand.id, brand);
     } else {
       await handleAddBrand(brand);
     }
   };
+
+  console.log("ProductClassifications - renderizando interface...");
 
   return (
     <PageLayout title="Classificações de Produtos">
@@ -178,11 +201,16 @@ export default function ProductClassifications() {
               {isLoadingCategories ? (
                 <p>Carregando categorias...</p>
               ) : (
-                <CategoryTable 
-                  categories={productCategories}
-                  onEdit={openEditCategoryDialog}
-                  onDelete={openDeleteCategoryDialog}
-                />
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    DEBUG: {productCategories?.length || 0} categorias carregadas
+                  </p>
+                  <CategoryTable 
+                    categories={productCategories || []}
+                    onEdit={openEditCategoryDialog}
+                    onDelete={openDeleteCategoryDialog}
+                  />
+                </div>
               )}
             </TabsContent>
 
@@ -198,11 +226,16 @@ export default function ProductClassifications() {
               {isLoadingGroups ? (
                 <p>Carregando grupos...</p>
               ) : (
-                <GroupTable 
-                  groups={productGroups}
-                  onEdit={openEditGroupDialog}
-                  onDelete={openDeleteGroupDialog}
-                />
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    DEBUG: {productGroups?.length || 0} grupos carregados
+                  </p>
+                  <GroupTable 
+                    groups={productGroups || []}
+                    onEdit={openEditGroupDialog}
+                    onDelete={openDeleteGroupDialog}
+                  />
+                </div>
               )}
             </TabsContent>
 
@@ -218,11 +251,16 @@ export default function ProductClassifications() {
               {isLoadingBrands ? (
                 <p>Carregando marcas...</p>
               ) : (
-                <BrandTable 
-                  brands={productBrands}
-                  onEdit={openEditBrandDialog}
-                  onDelete={openDeleteBrandDialog}
-                />
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    DEBUG: {productBrands?.length || 0} marcas carregadas
+                  </p>
+                  <BrandTable 
+                    brands={productBrands || []}
+                    onEdit={openEditBrandDialog}
+                    onDelete={openDeleteBrandDialog}
+                  />
+                </div>
               )}
             </TabsContent>
           </Tabs>
