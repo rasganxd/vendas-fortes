@@ -75,7 +75,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     return pairs;
   };
   
-  // Function to print in a new window with 2 orders per page layout
+  // Function to print in a new window with enhanced 2 orders per page layout
   const handlePrintInNewWindow = () => {
     // Don't print if settings are still loading
     if (!settings || settings.id === 'loading') {
@@ -90,186 +90,299 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     // Group orders in pairs
     const orderPairs = groupOrdersInPairs(ordersToPrint);
 
-    // CSS styles for 2 orders per page printing
+    // Enhanced CSS styles for professional 2 orders per page printing
     const printStyles = `
       @media print {
         @page {
-          margin: 0.5cm;
-          size: portrait;
+          margin: 0.8cm;
+          size: A4 portrait;
         }
         
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           margin: 0;
           padding: 0;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
           font-size: 9pt;
+          line-height: 1.3;
+          color: #333;
         }
         
         /* Page container for 2 orders */
         .print-page {
-          height: 49vh;
-          padding: 0.3cm;
-          margin-bottom: 0.2cm;
-          border-bottom: 1px dashed #ccc;
+          height: 48vh;
+          padding: 0.4cm;
+          margin-bottom: 0.3cm;
+          border-bottom: 2px dashed #e0e0e0;
           overflow: hidden;
+          background: #fafafa;
+          border-radius: 6px;
+          position: relative;
         }
         
         .print-page:last-child {
           border-bottom: none;
+          margin-bottom: 0;
         }
         
         /* Page break after every 2 orders */
         .page-pair {
           page-break-after: always;
           height: 100vh;
+          display: flex;
+          flex-direction: column;
+          gap: 0.3cm;
         }
         
         .page-pair:last-child {
           page-break-after: auto;
         }
         
+        /* Enhanced company header */
         .company-header {
           text-align: center;
-          margin-bottom: 0.4cm;
+          margin-bottom: 0.5cm;
+          padding: 0.3cm;
+          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+          color: white;
+          border-radius: 6px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .company-header h2 {
-          font-weight: bold;
-          font-size: 12pt;
-          margin: 0;
+          font-weight: 700;
+          font-size: 14pt;
+          margin: 0 0 0.2cm 0;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
         }
         
         .company-header p {
           font-size: 8pt;
-          color: #666;
-          margin: 2px 0;
+          margin: 1px 0;
+          opacity: 0.95;
+          font-weight: 300;
         }
         
+        /* Order date and info */
         .order-date {
           text-align: center;
           margin-bottom: 0.4cm;
+          padding: 0.2cm;
+          background: #f8f9fa;
+          border-radius: 4px;
+          border: 1px solid #e9ecef;
         }
         
         .order-date p {
-          font-size: 8pt;
+          font-size: 9pt;
           margin: 0;
+          font-weight: 600;
+          color: #495057;
         }
         
+        /* Information containers */
         .info-container {
           display: flex;
           margin-bottom: 0.4cm;
-          gap: 0.2cm;
+          gap: 0.3cm;
         }
         
         .info-box {
-          border: 1px solid #ddd;
-          border-radius: 3px;
-          padding: 0.2cm;
+          border: 1px solid #dee2e6;
+          border-radius: 6px;
+          padding: 0.3cm;
           flex: 1;
+          background: white;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
         .info-box h3 {
-          font-weight: 600;
+          font-weight: 700;
           margin-top: 0;
           margin-bottom: 0.2cm;
-          font-size: 9pt;
+          font-size: 10pt;
+          color: #495057;
+          border-bottom: 1px solid #e9ecef;
+          padding-bottom: 0.1cm;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
         }
         
         .info-box p {
-          font-size: 7pt;
-          margin: 1px 0;
-          line-height: 1.2;
+          font-size: 8pt;
+          margin: 2px 0;
+          line-height: 1.4;
+          color: #6c757d;
         }
         
+        .info-box p span {
+          color: #495057;
+          font-weight: 600;
+        }
+        
+        /* Order items section */
         .order-items {
           margin-bottom: 0.4cm;
         }
         
         .order-items h3 {
-          font-size: 9pt;
-          margin-bottom: 0.2cm;
+          font-size: 10pt;
+          margin-bottom: 0.3cm;
+          color: #495057;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          border-bottom: 2px solid #4a90e2;
+          padding-bottom: 0.1cm;
         }
         
+        /* Enhanced table styles */
         .order-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 7pt;
+          font-size: 7.5pt;
+          background: white;
+          border-radius: 6px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
         .order-table th {
-          background-color: #f3f4f6;
-          padding: 3px;
+          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+          color: white;
+          padding: 0.2cm;
           text-align: left;
-          border: 1px solid #ddd;
-          font-size: 7pt;
+          font-size: 8pt;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
         }
         
         .order-table td {
-          padding: 3px;
-          border: 1px solid #ddd;
-          font-size: 7pt;
-          line-height: 1.1;
+          padding: 0.15cm;
+          border-bottom: 1px solid #f1f3f4;
+          font-size: 7.5pt;
+          line-height: 1.3;
+        }
+        
+        .order-table tbody tr:nth-child(even) {
+          background-color: #f8f9fa;
+        }
+        
+        .order-table tbody tr:hover {
+          background-color: #e3f2fd;
         }
         
         .order-table .text-right {
           text-align: right;
+          font-weight: 600;
+          color: #495057;
         }
         
         .order-table .text-center {
           text-align: center;
+          font-weight: 600;
         }
         
+        /* Enhanced totals section */
         .order-totals {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 0.2cm;
+          margin-bottom: 0.3cm;
+          padding: 0.3cm;
+          background: #f8f9fa;
+          border-radius: 6px;
+          border: 1px solid #e9ecef;
           font-size: 8pt;
         }
         
         .payment-info {
           text-align: left;
+          flex: 1;
+        }
+        
+        .payment-info p {
+          margin: 2px 0;
+          color: #6c757d;
+          font-weight: 500;
         }
         
         .total-info {
           text-align: right;
+          flex: 1;
+        }
+        
+        .total-info p {
+          margin: 2px 0;
+          color: #495057;
         }
         
         .total-value {
-          font-weight: bold;
-          font-size: 9pt;
+          font-weight: 700;
+          font-size: 11pt;
+          color: #28a745;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
+        /* Enhanced notes section */
         .order-notes {
-          margin-top: 0.2cm;
+          margin-top: 0.3cm;
+          padding: 0.3cm;
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          border-radius: 6px;
+          border-left: 4px solid #f39c12;
         }
         
         .order-notes h3 {
-          font-weight: 600;
-          margin-bottom: 3px;
-          font-size: 8pt;
+          font-weight: 700;
+          margin-bottom: 0.2cm;
+          font-size: 9pt;
+          color: #856404;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
         }
         
         .order-notes p {
-          font-size: 7pt;
-          line-height: 1.2;
+          font-size: 8pt;
+          line-height: 1.4;
+          color: #856404;
+          font-style: italic;
         }
         
+        /* Enhanced footer */
         .footer {
-          margin-top: 0.2cm;
+          margin-top: 0.3cm;
           text-align: center;
-          font-size: 6pt;
-          color: #666;
+          font-size: 7pt;
+          color: #6c757d;
+          padding: 0.2cm;
+          background: #f8f9fa;
+          border-radius: 4px;
+          border-top: 2px solid #4a90e2;
+        }
+        
+        .footer p {
+          margin: 1px 0;
+          font-weight: 500;
         }
         
         /* Hide non-printable elements */
         .no-print {
           display: none !important;
         }
+        
+        /* Responsive adjustments for single orders */
+        .single-order .print-page {
+          height: auto;
+          min-height: 70vh;
+          border-bottom: none;
+        }
       }`;
 
-    // Generate order HTML function - with real company data
+    // Generate enhanced order HTML function
     const generateOrderHTML = (order: Order) => {
       const orderCustomer = validCustomers.find(c => c.id === order.customerId);
       return `
@@ -284,20 +397,25 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           ` : ''}
           
           <div class="order-date">
-            <p>Pedido #${order.code || 'N/A'} - Data: ${new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
+            <p>Pedido #${order.code || 'N/A'} - ${new Date(order.createdAt).toLocaleDateString('pt-BR', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</p>
           </div>
           
           <div class="info-container">
             <div class="info-box">
-              <h3>Cliente</h3>
-              <p><span style="font-weight: 600;">Nome:</span> ${orderCustomer?.name || ''}</p>
-              <p><span style="font-weight: 600;">Tel:</span> ${orderCustomer?.phone || ''}</p>
-              ${orderCustomer?.document ? `<p><span style="font-weight: 600;">CPF/CNPJ:</span> ${orderCustomer.document}</p>` : ''}
+              <h3>Dados do Cliente</h3>
+              <p><span>Nome:</span> ${orderCustomer?.name || 'N/A'}</p>
+              <p><span>Telefone:</span> ${orderCustomer?.phone || 'N/A'}</p>
+              ${orderCustomer?.document ? `<p><span>CPF/CNPJ:</span> ${orderCustomer.document}</p>` : ''}
             </div>
             
             ${(orderCustomer?.address || order.deliveryAddress) ? `
             <div class="info-box">
-              <h3>Endereço</h3>
+              <h3>Endereço de Entrega</h3>
               <p>${order.deliveryAddress || orderCustomer?.address || ''}
               ${(order.deliveryCity || orderCustomer?.city) ? `, ${order.deliveryCity || orderCustomer?.city}` : ''}
               ${(order.deliveryState || orderCustomer?.state) ? ` - ${order.deliveryState || orderCustomer?.state}` : ''}
@@ -311,23 +429,23 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             <table class="order-table">
               <thead>
                 <tr>
-                  <th>Produto</th>
-                  <th class="text-center">Qtd</th>
-                  <th class="text-right">Preço Unit.</th>
-                  <th class="text-right">Total</th>
+                  <th style="width: 50%;">Produto</th>
+                  <th class="text-center" style="width: 15%;">Qtd</th>
+                  <th class="text-right" style="width: 17.5%;">Preço Unit.</th>
+                  <th class="text-right" style="width: 17.5%;">Total</th>
                 </tr>
               </thead>
               <tbody>
-                ${order.items && Array.isArray(order.items) && order.items.length > 0 ? order.items.map(item => `
+                ${order.items && Array.isArray(order.items) && order.items.length > 0 ? order.items.map((item, index) => `
                   <tr>
-                    <td>${item.productName}</td>
+                    <td style="font-weight: 500; color: #495057;">${item.productName}</td>
                     <td class="text-center">${item.quantity}</td>
                     <td class="text-right">${formatCurrency(item.unitPrice)}</td>
-                    <td class="text-right">${formatCurrency(item.total)}</td>
+                    <td class="text-right" style="font-weight: 700; color: #28a745;">${formatCurrency(item.total)}</td>
                   </tr>
                 `).join('') : `
                   <tr>
-                    <td colspan="4" style="text-align: center; color: #666;">
+                    <td colspan="4" style="text-align: center; color: #6c757d; font-style: italic; padding: 0.4cm;">
                       Nenhum item encontrado
                     </td>
                   </tr>
@@ -338,8 +456,8 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           
           <div class="order-totals">
             <div class="payment-info">
-              ${order.paymentStatus !== 'pending' ? `<p class="font-semibold">${order.paymentStatus}</p>` : ''}
-              ${order.paymentMethod ? `<p>${order.paymentMethod}</p>` : ''}
+              ${order.paymentStatus !== 'pending' ? `<p><strong>Status:</strong> ${order.paymentStatus}</p>` : ''}
+              ${order.paymentMethod ? `<p><strong>Forma de Pagamento:</strong> ${order.paymentMethod}</p>` : ''}
             </div>
             <div class="total-info">
               <p class="total-value">Total: ${formatCurrency(order.total)}</p>
@@ -348,7 +466,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           
           ${order.notes ? `
           <div class="order-notes">
-            <h3>Observações:</h3>
+            <h3>Observações Importantes</h3>
             <p>${order.notes}</p>
           </div>
           ` : ''}
@@ -358,21 +476,23 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
               <p>${companyData.footer}</p>
             ` : `
               <p>${companyData?.name && companyData.name !== 'Carregando...' ? companyData.name : 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
+              <p>Suporte: ${companyData?.phone || '(11) 9999-8888'}</p>
             `}
           </div>
         </div>
       `;
     };
 
-    // Write HTML content to the new window
+    // Write enhanced HTML content to the new window
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Impressão de Pedidos</title>
+          <title>Impressão de Pedidos - ${companyData?.name || 'ForcaVendas'}</title>
+          <meta charset="UTF-8">
           <style>${printStyles}</style>
         </head>
-        <body>
+        <body class="${orderPairs.length === 1 && orderPairs[0].length === 1 ? 'single-order' : ''}">
           <div id="print-content">
             ${orderPairs.map((pair, pairIndex) => `
               <div class="page-pair">
