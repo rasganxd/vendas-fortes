@@ -33,12 +33,12 @@ export default function ProductSearchResults({
   return (
     <div 
       ref={resultsRef}
-      className="fixed z-[100] overflow-auto bg-white border rounded-md shadow-lg"
+      className="fixed z-[9999] overflow-auto bg-white border rounded-md shadow-lg"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
         width: `${position.width}px`,
-        maxHeight: '40vh', // Limit to 40% of viewport height
+        maxHeight: '40vh',
         maxWidth: '100%'
       }}
     >
