@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -413,15 +412,11 @@ const ProductPricing = () => {
                             <TableCell>{formatCurrency(product.cost)}</TableCell>
                             <TableCell>
                               <Input
-                                type="number"
-                                value={minPrice || ''}
+                                value={formatCurrency(minPrice)}
                                 onChange={(e) => {
-                                  const newMinPrice = parseFloat(e.target.value) || 0;
+                                  const newMinPrice = formatPriceInput(e.target.value);
                                   handleMinPriceChange(product.id, newMinPrice);
                                 }}
-                                placeholder="0.00"
-                                step="0.01"
-                                min="0"
                                 className="w-24"
                               />
                             </TableCell>
