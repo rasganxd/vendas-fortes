@@ -82,7 +82,7 @@ export default function OrderFormTwoColumnLayout({
   }, [selectedCustomer, selectedSalesRep, orderItems, handleCreateOrder, productInputRef, customerInputRef, salesRepInputRef]);
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {/* Header */}
       <Card className="shadow-sm border-gray-200">
         <CardContent className="pt-3 pb-3">
@@ -90,10 +90,10 @@ export default function OrderFormTwoColumnLayout({
         </CardContent>
       </Card>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left Column - Form Fields (2/3 width) */}
-        <div className="lg:col-span-2 space-y-4">
+      {/* Expanded Two Column Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Left Column - Form Fields (3/4 width on XL screens) */}
+        <div className="xl:col-span-3 space-y-4">
           {/* Order Form Fields */}
           <Card className="shadow-sm border-gray-200">
             <CardContent className="pt-4 pb-4">
@@ -157,8 +157,8 @@ export default function OrderFormTwoColumnLayout({
           </Card>
         </div>
 
-        {/* Right Column - Summary Panel (1/3 width) */}
-        <div className="space-y-4">
+        {/* Right Column - Summary Panel (1/4 width on XL screens) */}
+        <div className="xl:col-span-1 space-y-4">
           <OrderSummaryPanel
             orderItems={orderItems}
             selectedCustomer={selectedCustomer}

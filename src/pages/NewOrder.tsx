@@ -66,8 +66,8 @@ export default function NewOrder() {
   
   if (orderId && isValidating) {
     return (
-      <PageLayout title={pageTitle}>
-        <div className="max-w-7xl mx-auto">
+      <PageLayout title={pageTitle} fullWidth={true}>
+        <div className="w-full">
           <OrderLoadingSkeleton />
         </div>
       </PageLayout>
@@ -76,8 +76,8 @@ export default function NewOrder() {
   
   if (orderId && !isValid && !isValidating) {
     return (
-      <PageLayout title="Pedido não encontrado">
-        <div className="max-w-7xl mx-auto">
+      <PageLayout title="Pedido não encontrado" fullWidth={true}>
+        <div className="w-full">
           <div className="flex justify-center items-center h-64 animate-fade-in">
             <div className="text-center">
               <div className="rounded-full h-12 w-12 border-2 border-red-500 mx-auto mb-4 flex items-center justify-center">
@@ -99,8 +99,8 @@ export default function NewOrder() {
   }
   
   return (
-    <PageLayout title={pageTitle} showConnectionStatus={true}>
-      <div className={`max-w-7xl mx-auto transition-opacity duration-300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+    <PageLayout title={pageTitle} showConnectionStatus={true} fullWidth={true}>
+      <div className={`w-full transition-opacity duration-300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
         <OrderFormContainer preloadedOrder={orderData} orderId={orderId} />
       </div>
     </PageLayout>

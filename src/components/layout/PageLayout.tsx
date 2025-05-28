@@ -11,6 +11,7 @@ interface PageLayoutProps {
   subtitle?: string;
   description?: string;
   showConnectionStatus?: boolean;
+  fullWidth?: boolean;
 }
 
 export default function PageLayout({ 
@@ -18,13 +19,16 @@ export default function PageLayout({
   title, 
   subtitle, 
   description,
-  showConnectionStatus = true
+  showConnectionStatus = true,
+  fullWidth = false
 }: PageLayoutProps) {
   const { settings } = useAppContext();
   
   return (
     <div className="flex-1 bg-background w-full min-h-screen">
-      <div className="container mx-auto px-4 py-5">
+      <div className={cn(
+        fullWidth ? "w-full px-6 py-5" : "container mx-auto px-4 py-5"
+      )}>
         {title && (
           <div className="mb-8">
             <div className="flex justify-between items-center">

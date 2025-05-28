@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Package, Plus, Barcode } from 'lucide-react';
-import { useProducts } from '@/hooks/useProducts';
 import QuantityInput from './QuantityInput';
 
 interface EnhancedProductSearchProps {
@@ -31,18 +30,15 @@ export default function EnhancedProductSearch({
   const [showResults, setShowResults] = useState(false);
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
-  
-  const { getProductsByCustomer } = useProducts();
 
   // Filter products based on search term
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
+    product.code.toString().toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 8); // Limit to 8 results
 
-  // Get customer's recent products
-  const customerProducts = selectedCustomer ? getProductsByCustomer(selectedCustomer.id).slice(0, 5) : [];
+  // Get customer's recent products (simplified - just show first 5 products for now)
+  const customerProducts = selectedCustomer ? products.slice(0, 5) : [];
 
   useEffect(() => {
     if (selectedProduct) {
@@ -115,7 +111,7 @@ export default function EnhancedProductSearch({
           <Input
             ref={productInputRef}
             type="text"
-            placeholder="Buscar por nome, código ou código de barras..."
+            placeholder="Buscar por nome ou código..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -142,9 +138,6 @@ export default function EnhancedProductSearch({
                   <div className="flex-1">
                     <div className="font-medium text-gray-900">{product.name}</div>
                     <div className="text-sm text-gray-500">Cód: {product.code}</div>
-                    {product.barcode && (
-                      <div className="text-xs text-gray-400">Barras: {product.barcode}</div>
-                    )}
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-green-600">
