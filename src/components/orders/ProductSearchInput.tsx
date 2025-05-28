@@ -9,6 +9,7 @@ import ProductSearchResults from './ProductSearchResults';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import { useAppData } from '@/context/providers/AppDataProvider';
+import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -24,6 +25,7 @@ export default function ProductSearchInput({
   inputRef
 }: ProductSearchInputProps) {
   const { products: centralizedProducts, refreshProducts } = useAppData();
+  const { units } = useProductUnits();
   const [selectedUnit, setSelectedUnit] = useState<string>('');
   
   const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
@@ -81,8 +83,11 @@ export default function ProductSearchInput({
       let convertedPrice = selectedProduct.price;
       
       // If product has subunit and selected unit is the subunit
-      if (selectedProduct.hasSubunit && selectedProduct.subunit === unit && selectedProduct.subunitRatio) {
-        convertedPrice = selectedProduct.price / selectedProduct.subunitRatio;
+      if (selectedProduct.hasSubunit && selectedProduct.subunit === unit) {
+        // Use conversion rate from units configuration
+        const subunitData = units.find(u => u.value === unit);
+        const conversionRate = subunitData?.conversionRate || 1;
+        convertedPrice = selectedProduct.price / conversionRate;
       }
       
       originalHandlePriceChange({ target: { value: convertedPrice.toFixed(2).replace('.', ',') } } as any);
@@ -93,9 +98,11 @@ export default function ProductSearchInput({
     if (selectedProduct && quantity && quantity > 0) {
       let finalQuantity = quantity;
       
-      // If using subunit, convert to main unit for storage
-      if (selectedUnit === selectedProduct.subunit && selectedProduct.subunitRatio) {
-        finalQuantity = quantity / selectedProduct.subunitRatio;
+      // If using subunit, convert to main unit for storage using conversion rate
+      if (selectedUnit === selectedProduct.subunit && selectedProduct.hasSubunit) {
+        const subunitData = units.find(u => u.value === selectedUnit);
+        const conversionRate = subunitData?.conversionRate || 1;
+        finalQuantity = quantity / conversionRate;
       }
       
       addItemToOrder(selectedProduct, finalQuantity, price, selectedUnit);
@@ -113,8 +120,10 @@ export default function ProductSearchInput({
       return null;
     }
     
-    if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
-      const mainUnitQty = (quantity || 0) / selectedProduct.subunitRatio;
+    if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit) {
+      const subunitData = units.find(u => u.value === selectedUnit);
+      const conversionRate = subunitData?.conversionRate || 1;
+      const mainUnitQty = (quantity || 0) / conversionRate;
       return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }
     

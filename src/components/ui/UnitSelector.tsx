@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Unit } from '@/types/unit';
 import { Product } from '@/types/product';
+import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 
 interface UnitSelectorProps {
   units?: Unit[];
@@ -25,6 +26,8 @@ export default function UnitSelector({
   product,
   className
 }: UnitSelectorProps) {
+  const { units: allUnits } = useProductUnits();
+  
   // If product is provided, show only product-specific units
   const availableUnits = React.useMemo(() => {
     if (product) {
@@ -32,19 +35,23 @@ export default function UnitSelector({
       
       // Always add main unit
       if (product.unit) {
+        const mainUnitData = allUnits.find(u => u.value === product.unit);
         productUnits.push({
           value: product.unit,
           label: product.unit,
-          conversionRate: 1
+          conversionRate: mainUnitData?.conversionRate || 1
         });
       }
       
       // Add subunit if exists
-      if (product.hasSubunit && product.subunit && product.subunitRatio) {
+      if (product.hasSubunit && product.subunit) {
+        const subunitData = allUnits.find(u => u.value === product.subunit);
+        const conversionRate = subunitData?.conversionRate || 1;
+        
         productUnits.push({
           value: product.subunit,
-          label: `${product.subunit} (${product.subunitRatio}x)`,
-          conversionRate: product.subunitRatio
+          label: `${product.subunit} (${conversionRate}x)`,
+          conversionRate
         });
       }
       
@@ -53,7 +60,7 @@ export default function UnitSelector({
     
     // Fallback to generic units if no product specified
     return units;
-  }, [product, units]);
+  }, [product, units, allUnits]);
 
   return (
     <Select value={selectedUnit} onValueChange={onUnitChange}>

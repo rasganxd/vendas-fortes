@@ -47,7 +47,6 @@ const productFormSchema = z.object({
   unit: z.string(),
   hasSubunit: z.boolean().optional(),
   subunit: z.string().optional(),
-  subunitRatio: z.number().optional(),
   stock: z.number().optional(),
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
@@ -113,7 +112,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
       unit: isEditing && selectedProduct ? selectedProduct.unit || "UN" : "UN",
       hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
       subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
-      subunitRatio: isEditing && selectedProduct ? selectedProduct.subunitRatio || 1 : 1,
       stock: isEditing && selectedProduct ? selectedProduct.stock : 0,
       categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
       groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
@@ -123,6 +121,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
   
   // Watch hasSubunit to show/hide subunit fields
   const hasSubunit = form.watch("hasSubunit");
+  const selectedUnit = form.watch("unit");
+  const selectedSubunit = form.watch("subunit");
+  
+  // Get conversion rate for subunit
+  const getSubunitConversionRate = () => {
+    if (!selectedSubunit) return 1;
+    const subunitData = units.find(u => u.value === selectedSubunit);
+    return subunitData?.conversionRate || 1;
+  };
   
   // Update form values when selected product changes
   useEffect(() => {
@@ -134,7 +141,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
         unit: selectedProduct.unit || "UN",
         hasSubunit: selectedProduct.hasSubunit || false,
         subunit: selectedProduct.subunit || "",
-        subunitRatio: selectedProduct.subunitRatio || 1,
         stock: selectedProduct.stock,
         categoryId: selectedProduct.categoryId || "",
         groupId: selectedProduct.groupId || "",
@@ -147,7 +153,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
     setIsSubmitting(true);
     try {
       console.log("Submitting form data:", data);
-      await onSubmit(data);
+      
+      // Adicionar a taxa de conversão automaticamente baseada na sub-unidade selecionada
+      const formDataWithConversion = {
+        ...data,
+        subunitRatio: hasSubunit && data.subunit ? getSubunitConversionRate() : undefined
+      };
+      
+      await onSubmit(formDataWithConversion);
       toast("Produto salvo com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
@@ -279,7 +292,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               />
 
               {hasSubunit && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <FormField
                     control={form.control}
                     name="subunit"
@@ -302,27 +315,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="subunitRatio"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Proporção</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Ex: 24" 
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
-                          />
-                        </FormControl>
-                        <p className="text-xs text-gray-600">
-                          Quantas sub-unidades em 1 unidade principal
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  
+                  {selectedSubunit && (
+                    <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded-md">
+                      <p className="font-medium">Taxa de Conversão:</p>
+                      <p>1 {selectedUnit} = {getSubunitConversionRate()} {selectedSubunit}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
