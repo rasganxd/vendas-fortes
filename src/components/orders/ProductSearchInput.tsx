@@ -10,6 +10,7 @@ import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
+import { calculateUnitPrice, formatBrazilianPrice } from '@/utils/priceConverter';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -70,29 +71,55 @@ export default function ProductSearchInput({
 
   // Update selected unit when product changes
   const handleProductSelect = (product: Product) => {
+    console.log("📦 Produto selecionado:", product.name, {
+      price: product.price,
+      unit: product.unit,
+      subunit: product.subunit,
+      hasSubunit: product.hasSubunit,
+      subunitRatio: product.subunitRatio
+    });
+    
     originalHandleProductSelect(product);
+    
     // Set default unit to product's main unit
-    setSelectedUnit(product.unit || 'UN');
+    const defaultUnit = product.unit || 'UN';
+    setSelectedUnit(defaultUnit);
+    
+    // Calculate correct price for default unit
+    const correctPrice = calculateUnitPrice(product, defaultUnit);
+    console.log(`💰 Preço calculado para ${defaultUnit}: R$ ${correctPrice.toFixed(2)}`);
+    
+    // Update the price in the form
+    originalHandlePriceChange({ 
+      target: { value: formatBrazilianPrice(correctPrice) } 
+    } as any);
   };
 
   // Calculate price when unit changes
   const handleUnitChange = (unit: string) => {
+    console.log("🔄 Mudança de unidade:", unit);
     setSelectedUnit(unit);
+    
     if (selectedProduct) {
-      let convertedPrice = selectedProduct.price;
+      // Use the new calculateUnitPrice function
+      const correctPrice = calculateUnitPrice(selectedProduct, unit);
+      console.log(`💰 Novo preço para ${unit}: R$ ${correctPrice.toFixed(2)}`);
       
-      // If product has subunit and selected unit is the subunit
-      if (selectedProduct.hasSubunit && selectedProduct.subunit === unit && selectedProduct.subunitRatio) {
-        // Price per subunit = main unit price / subunit ratio
-        convertedPrice = selectedProduct.price / selectedProduct.subunitRatio;
-      }
-      
-      originalHandlePriceChange({ target: { value: convertedPrice.toFixed(2).replace('.', ',') } } as any);
+      // Update the price field
+      originalHandlePriceChange({ 
+        target: { value: formatBrazilianPrice(correctPrice) } 
+      } as any);
     }
   };
 
   const handleAddToOrder = () => {
     if (selectedProduct && quantity && quantity > 0) {
+      console.log("🛒 Adicionando ao pedido:", {
+        product: selectedProduct.name,
+        quantity,
+        price,
+        unit: selectedUnit
+      });
       addItemToOrder(selectedProduct, quantity, price, selectedUnit);
     }
   };
@@ -196,6 +223,16 @@ export default function ProductSearchInput({
       {getConversionDisplay() && (
         <div className="mt-2 text-xs text-gray-500">
           {getConversionDisplay()}
+        </div>
+      )}
+      
+      {/* Mostrar informação da conversão de preço */}
+      {selectedProduct && selectedProduct.hasSubunit && selectedUnit && (
+        <div className="mt-1 text-xs text-blue-600">
+          {selectedUnit === selectedProduct.subunit ? 
+            `Preço individual: R$ ${formatPriceDisplay(price)} (de uma ${selectedProduct.unit} com ${selectedProduct.subunitRatio} ${selectedProduct.subunit})` :
+            `Preço da ${selectedProduct.unit}: R$ ${formatPriceDisplay(price)}`
+          }
         </div>
       )}
     </div>
