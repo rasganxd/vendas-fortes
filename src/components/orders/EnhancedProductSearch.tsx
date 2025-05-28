@@ -22,8 +22,7 @@ export default function EnhancedProductSearch({
   products,
   handleAddItem,
   productInputRef,
-  isEditMode,
-  selectedCustomer
+  isEditMode
 }: EnhancedProductSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -48,9 +47,6 @@ export default function EnhancedProductSearch({
       return product.name.toLowerCase().includes(searchTerm.toLowerCase());
     }
   }).slice(0, 8); // Limit to 8 results
-
-  // Get customer's recent products (simplified - just show first 5 products for now)
-  const customerProducts = selectedCustomer ? products.slice(0, 5) : [];
 
   useEffect(() => {
     if (selectedProduct) {
@@ -325,31 +321,6 @@ export default function EnhancedProductSearch({
                   {(quantity * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Customer's Recent Products */}
-      {selectedCustomer && customerProducts.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Produtos Recentes - {selectedCustomer.name}</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-1">
-              {customerProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex justify-between items-center p-2 hover:bg-white rounded cursor-pointer"
-                  onClick={() => handleProductSelect(product)}
-                >
-                  <span className="text-sm font-medium">{product.name}</span>
-                  <span className="text-sm text-blue-600">
-                    {product.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </span>
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>
