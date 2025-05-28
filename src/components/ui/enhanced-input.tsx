@@ -98,11 +98,33 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
       onChange && onChange(e);
     };
 
+    // Calculate padding based on icons and password visibility
+    const getPaddingClasses = () => {
+      let paddingClasses = "px-3";
+      
+      if (icon && iconPosition === 'left') {
+        paddingClasses = "pl-10 pr-3";
+      }
+      
+      if (isPasswordType) {
+        if (icon && iconPosition === 'right') {
+          paddingClasses = paddingClasses.replace('pr-3', 'pr-16');
+        } else {
+          paddingClasses = paddingClasses.replace('pr-3', 'pr-10');
+        }
+      } else if (icon && iconPosition === 'right') {
+        paddingClasses = paddingClasses.replace('pr-3', 'pr-10');
+      }
+      
+      return paddingClasses;
+    };
+
     const inputClasses = cn(
-      "flex h-11 w-full rounded-lg border bg-background px-3 py-2 text-sm transition-all duration-200",
+      "flex h-11 w-full rounded-lg border bg-background py-2 text-sm transition-all duration-200",
       "ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium",
       "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2",
       "focus-visible:ring-blue-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
+      getPaddingClasses(),
       {
         // Default variant
         "border-gray-200 hover:border-gray-300": variant === 'default' && !error && !isFocused,
@@ -119,11 +141,6 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
         
         // Error states
         "border-red-500 bg-red-50/30 focus-visible:ring-red-500": error,
-        
-        // Icon padding
-        "pl-10": icon && iconPosition === 'left',
-        "pr-10": (icon && iconPosition === 'right') || isPasswordType,
-        "pr-16": icon && iconPosition === 'right' && isPasswordType,
       },
       className
     );
