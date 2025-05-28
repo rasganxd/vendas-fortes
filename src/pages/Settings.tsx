@@ -1,39 +1,121 @@
-
-import React from 'react';
-import PageLayout from '@/components/layout/PageLayout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import CompanySettings from '@/components/settings/CompanySettings';
-import SalesForceDataGenerator from '@/components/settings/SalesForceDataGenerator';
 import ApiTokensPanel from '@/components/settings/ApiTokensPanel';
+import MobileSyncPanel from '@/components/settings/MobileSyncPanel';
 import MobileOrderImportPanel from '@/components/settings/MobileOrderImportPanel';
 import UnitsPanel from '@/components/settings/UnitsPanel';
+import SyncUpdateMonitor from '@/components/settings/SyncUpdateMonitor';
+import PageLayout from '@/components/layout/PageLayout';
+import { Settings as SettingsIcon, Building, Smartphone, Download, Package, Activity } from 'lucide-react';
 
 export default function Settings() {
+  const [activeTab, setActiveTab] = useState('company');
+
   return (
-    <PageLayout title="Configurações">
-      <div className="space-y-4">
-        <Tabs defaultValue="company" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 md:w-auto md:inline-flex">
-            <TabsTrigger value="company">Dados da Empresa</TabsTrigger>
-            <TabsTrigger value="units">Unidades</TabsTrigger>
-            <TabsTrigger value="salesforce">Gerar Dados Força de Vendas</TabsTrigger>
-            <TabsTrigger value="api">API REST & Mobile</TabsTrigger>
-            <TabsTrigger value="import">Importação Mobile</TabsTrigger>
+    <PageLayout title="Configurações do Sistema">
+      <div className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="company" className="flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              Empresa
+            </TabsTrigger>
+            <TabsTrigger value="units" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Unidades
+            </TabsTrigger>
+            <TabsTrigger value="mobile-sync" className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4" />
+              Sync Mobile
+            </TabsTrigger>
+            <TabsTrigger value="mobile-orders" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Pedidos Mobile
+            </TabsTrigger>
+            <TabsTrigger value="sync-monitor" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Monitor Sync
+            </TabsTrigger>
+            <TabsTrigger value="api-tokens" className="flex items-center gap-2">
+              <SettingsIcon className="h-4 w-4" />
+              API
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="company" className="mt-4">
-            <CompanySettings />
+
+          <TabsContent value="company" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configurações da Empresa</CardTitle>
+                <CardDescription>
+                  Configure as informações básicas da sua empresa
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CompanySettings />
+              </CardContent>
+            </Card>
           </TabsContent>
-          <TabsContent value="units" className="mt-4">
-            <UnitsPanel />
+
+          <TabsContent value="units" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Unidades de Medida</CardTitle>
+                <CardDescription>
+                  Gerencie as unidades de medida disponíveis no sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UnitsPanel />
+              </CardContent>
+            </Card>
           </TabsContent>
-          <TabsContent value="salesforce" className="mt-4">
-            <SalesForceDataGenerator />
+
+          <TabsContent value="mobile-sync" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sincronização Mobile</CardTitle>
+                <CardDescription>
+                  Monitore e configure a sincronização com dispositivos móveis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MobileSyncPanel salesRepId="" />
+              </CardContent>
+            </Card>
           </TabsContent>
-          <TabsContent value="api" className="mt-4">
-            <ApiTokensPanel />
+
+          <TabsContent value="mobile-orders" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Importação de Pedidos Mobile</CardTitle>
+                <CardDescription>
+                  Configure e monitore a importação de pedidos do aplicativo móvel
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MobileOrderImportPanel />
+              </CardContent>
+            </Card>
           </TabsContent>
-          <TabsContent value="import" className="mt-4">
-            <MobileOrderImportPanel />
+
+          <TabsContent value="sync-monitor" className="space-y-4">
+            <SyncUpdateMonitor />
+          </TabsContent>
+
+          <TabsContent value="api-tokens" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tokens de API</CardTitle>
+                <CardDescription>
+                  Gerencie os tokens de acesso para integração com APIs externas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ApiTokensPanel />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
