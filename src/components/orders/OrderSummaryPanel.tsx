@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, User, UserCheck, CreditCard, Package, Calculator } from 'lucide-react';
+
 interface OrderSummaryPanelProps {
   orderItems: OrderItem[];
   selectedCustomer: Customer | null;
@@ -11,19 +12,97 @@ interface OrderSummaryPanelProps {
   selectedPaymentTable: string;
   calculateTotal: () => number;
   isEditMode: boolean;
+  compact?: boolean;
 }
+
 export default function OrderSummaryPanel({
   orderItems,
   selectedCustomer,
   selectedSalesRep,
   selectedPaymentTable,
   calculateTotal,
-  isEditMode
+  isEditMode,
+  compact = false
 }: OrderSummaryPanelProps) {
   const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = calculateTotal();
   const averageItemValue = orderItems.length > 0 ? totalValue / orderItems.length : 0;
-  return <div className="space-y-4">
+
+  if (compact) {
+    return (
+      <div className="space-y-4">
+        {/* Compact Financial Summary */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Calculator size={18} />
+            <h4 className="font-semibold text-gray-800">Resumo Financeiro</h4>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Itens:</span>
+              <Badge variant="secondary" className="font-bold">
+                {totalItems}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Produtos:</span>
+              <Badge variant="outline">
+                {orderItems.length}
+              </Badge>
+            </div>
+            
+            <Separator className="my-2" />
+            
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-800">Total:</span>
+              <span className="text-lg font-bold text-green-600">
+                {totalValue.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Compact Info */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <User size={18} />
+            <h4 className="font-semibold text-gray-800">Dados do Pedido</h4>
+          </div>
+          
+          <div className="space-y-2 text-sm">
+            <div>
+              <span className="text-gray-600">Cliente: </span>
+              <span className="font-medium">
+                {selectedCustomer ? selectedCustomer.name : 'Não selecionado'}
+              </span>
+            </div>
+            
+            <div>
+              <span className="text-gray-600">Vendedor: </span>
+              <span className="font-medium">
+                {selectedSalesRep ? selectedSalesRep.name : 'Não selecionado'}
+              </span>
+            </div>
+            
+            <div>
+              <span className="text-gray-600">Pagamento: </span>
+              <span className="font-medium">
+                {selectedPaymentTable === 'default-table' ? 'Padrão' : selectedPaymentTable}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
       {/* Order Status */}
       <Card className="shadow-sm border-gray-200">
         <CardHeader className="pb-3">
@@ -130,5 +209,6 @@ export default function OrderSummaryPanel({
 
       {/* Keyboard shortcuts help */}
       
-    </div>;
+    </div>
+  );
 }

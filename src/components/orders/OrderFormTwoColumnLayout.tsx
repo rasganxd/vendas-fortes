@@ -27,18 +27,15 @@ export default function OrderFormTwoColumnLayout({
   isEditMode,
   isSubmitting,
   connectionStatus,
-  // Handlers
   handleCreateOrder,
   handleViewRecentPurchases,
   handleAddItem,
   handleRemoveItem,
   calculateTotal,
-  // Refs
   salesRepInputRef,
   customerInputRef,
   paymentTableRef,
   productInputRef,
-  // Navigation handlers
   onSalesRepNext,
   onCustomerNext,
   onPaymentNext
@@ -46,25 +43,21 @@ export default function OrderFormTwoColumnLayout({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // F2 - Focus on product search
       if (e.key === 'F2') {
         e.preventDefault();
         productInputRef.current?.focus();
       }
 
-      // F3 - Focus on customer search
       if (e.key === 'F3') {
         e.preventDefault();
         customerInputRef.current?.focus();
       }
 
-      // F4 - Focus on sales rep search
       if (e.key === 'F4') {
         e.preventDefault();
         salesRepInputRef.current?.focus();
       }
 
-      // Ctrl+Enter - Submit order
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         if (selectedCustomer && selectedSalesRep && orderItems.length > 0) {
@@ -162,31 +155,39 @@ export default function OrderFormTwoColumnLayout({
             </Card>
           </div>
 
-          {/* Right Column - Summary Panel with sticky positioning */}
+          {/* Right Column - Reorganized with Actions on top */}
           <div className="xl:col-span-1 hidden lg:block">
             <div className="sticky top-4 space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
-              <OrderSummaryPanel 
-                orderItems={orderItems}
-                selectedCustomer={selectedCustomer}
-                selectedSalesRep={selectedSalesRep}
-                selectedPaymentTable={selectedPaymentTable}
-                calculateTotal={calculateTotal}
-                isEditMode={isEditMode}
-              />
+              {/* Summary Panel - Financial info only */}
+              <Card className="shadow-sm border-gray-200">
+                <CardContent className="pt-4 pb-4">
+                  <OrderSummaryPanel 
+                    orderItems={orderItems}
+                    selectedCustomer={selectedCustomer}
+                    selectedSalesRep={selectedSalesRep}
+                    selectedPaymentTable={selectedPaymentTable}
+                    calculateTotal={calculateTotal}
+                    isEditMode={isEditMode}
+                    compact={true}
+                  />
+                </CardContent>
+              </Card>
 
-              {/* Actions always visible on desktop */}
-              <div className="bg-white rounded-lg border shadow-sm p-4 sticky bottom-0">
-                <OrderFormActions 
-                  selectedCustomer={selectedCustomer}
-                  selectedSalesRep={selectedSalesRep}
-                  orderItems={orderItems}
-                  isSubmitting={isSubmitting}
-                  isEditMode={isEditMode}
-                  connectionStatus={connectionStatus}
-                  handleViewRecentPurchases={handleViewRecentPurchases}
-                  handleCreateOrder={handleCreateOrder}
-                />
-              </div>
+              {/* Actions moved up - right after summary */}
+              <Card className="shadow-sm border-gray-200">
+                <CardContent className="pt-4 pb-4">
+                  <OrderFormActions 
+                    selectedCustomer={selectedCustomer}
+                    selectedSalesRep={selectedSalesRep}
+                    orderItems={orderItems}
+                    isSubmitting={isSubmitting}
+                    isEditMode={isEditMode}
+                    connectionStatus={connectionStatus}
+                    handleViewRecentPurchases={handleViewRecentPurchases}
+                    handleCreateOrder={handleCreateOrder}
+                  />
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
