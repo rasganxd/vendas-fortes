@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Package, Plus, Barcode } from 'lucide-react';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
+import ProductSearchResultsPortal from './ProductSearchResultsPortal';
 import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
 
 interface EnhancedProductSearchProps {
@@ -55,8 +57,6 @@ export default function EnhancedProductSearch({
       setPriceDisplayValue(formatBrazilianPrice(selectedProduct.price || 0));
     }
   }, [selectedProduct]);
-
-  // REMOVED: Auto-select product when searching by code - now requires Enter
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
@@ -118,6 +118,8 @@ export default function EnhancedProductSearch({
       if (!isCodeSearch) {
         setShowResults(true);
       }
+    } else if (e.key === 'Escape') {
+      setShowResults(false);
     }
   };
 
@@ -153,6 +155,18 @@ export default function EnhancedProductSearch({
     return calculateQuantityConversion(selectedProduct, quantity, selectedUnit, selectedProduct.unit || 'UN');
   };
 
+  // Handle clicks outside to close results
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (productInputRef.current && !productInputRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [productInputRef]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -183,43 +197,13 @@ export default function EnhancedProductSearch({
           />
         </div>
 
-        {/* Search Results - POSICIONAMENTO CORRIGIDO */}
-        {showResults && !isCodeSearch && filteredProducts.length > 0 && (
-          <div 
-            className="absolute w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
-            style={{ 
-              zIndex: 999999,
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0
-            }}
-          >
-            {filteredProducts.map(product => (
-              <div
-                key={product.id}
-                className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                onClick={() => handleProductSelect(product)}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{product.name}</div>
-                    <div className="text-sm text-gray-500">Cód: {product.code}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-green-600">
-                      {product.price?.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      })}
-                    </div>
-                    <div className="text-xs text-gray-500">{product.unit}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Search Results using Portal */}
+        <ProductSearchResultsPortal
+          products={filteredProducts}
+          inputRef={productInputRef}
+          onSelectProduct={handleProductSelect}
+          isVisible={showResults && !isCodeSearch}
+        />
       </div>
 
       {/* Product Addition Form */}
