@@ -53,7 +53,7 @@ export const SyncTestPanel = () => {
       toast({
         title: result.hasUpdates ? "Atualização encontrada!" : "Nenhuma atualização",
         description: result.message,
-        variant: result.hasUpdates ? "default" : "secondary"
+        variant: result.hasUpdates ? "default" : "default"
       });
       
       console.log('📋 Resultado da verificação:', result);

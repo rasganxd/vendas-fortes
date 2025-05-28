@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Users, User, CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { Download, Users, User, CheckCircle, AlertCircle, Zap, Clock } from 'lucide-react';
 import { toast } from "sonner";
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { Badge } from '@/components/ui/badge';
 import { syncUpdatesService } from '@/services/supabase/syncUpdatesService';
+import { useSyncUpdatesHistory } from '@/hooks/useSyncUpdatesHistory';
 import {
   Table,
   TableBody,
@@ -25,6 +26,7 @@ interface SalesRepDataStatus {
 
 export default function SalesForceDataGenerator() {
   const { salesReps, isLoading } = useSalesReps();
+  const { syncHistory, refreshHistory, getLastSyncActivation } = useSyncUpdatesHistory();
   const [generationStatus, setGenerationStatus] = useState<Record<string, SalesRepDataStatus>>({});
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [isActivatingSync, setIsActivatingSync] = useState(false);
@@ -122,6 +124,9 @@ export default function SalesForceDataGenerator() {
         'Desktop User'
       );
       
+      // Atualizar histórico após criar a sincronização
+      refreshHistory();
+      
       toast("Sincronização ativada!", {
         description: "Dispositivos móveis podem agora sincronizar os dados atualizados",
         style: {
@@ -170,6 +175,8 @@ export default function SalesForceDataGenerator() {
     }
   };
 
+  const lastSyncActivation = getLastSyncActivation();
+
   if (isLoading) {
     return (
       <Card>
@@ -191,10 +198,18 @@ export default function SalesForceDataGenerator() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
+          <div className="space-y-2">
             <p className="text-sm text-gray-600">
               {salesReps.length} vendedores cadastrados
             </p>
+            {lastSyncActivation && (
+              <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-1 rounded-md">
+                <Clock size={14} />
+                <span>
+                  Última sincronização ativada: {new Date(lastSyncActivation.created_at).toLocaleString('pt-BR')}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button 
@@ -229,8 +244,8 @@ export default function SalesForceDataGenerator() {
               <TableRow>
                 <TableHead>Vendedor</TableHead>
                 <TableHead>Código</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Última Geração</TableHead>
+                <TableHead>Status Geração</TableHead>
+                <TableHead>Última Geração Local</TableHead>
                 <TableHead className="w-[150px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -282,7 +297,7 @@ export default function SalesForceDataGenerator() {
             <li>• <strong>Gerar Individual/Todos:</strong> Atualiza os dados para vendedores específicos ou todos</li>
             <li>• <strong>Ativar Sincronização Mobile:</strong> Libera os dados atualizados para dispositivos móveis</li>
             <li>• <strong>Controle de Acesso:</strong> Mobile só recebe dados quando Desktop ativa uma sincronização</li>
-            <li>• <strong>Status em Tempo Real:</strong> Acompanhe o progresso da geração e ativação</li>
+            <li>• <strong>Status em Tempo Real:</strong> Acompanhe o progresso da geração e ativação de sincronização</li>
           </ul>
         </div>
       </CardContent>
