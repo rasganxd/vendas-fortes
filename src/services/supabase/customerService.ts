@@ -7,7 +7,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     super('customers');
   }
 
-  // Override getAll to include sales rep name
+  // Override getAll to include sales rep name and ensure proper filtering
   async getAll(): Promise<Customer[]> {
     try {
       console.log(`📋 Getting all records from ${this.tableName} with sales rep info`);
@@ -17,6 +17,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
         .select(`
           *,
           sales_reps!sales_rep_id (
+            id,
             name
           )
         `)
@@ -32,8 +33,13 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
         return [];
       }
       
-      // Transform data to include sales rep name
-      const transformedData = data.map(item => this.transformFromDB(item));
+      // Transform data to include sales rep name and log associations
+      const transformedData = data.map(item => {
+        const transformed = this.transformFromDB(item);
+        console.log(`🔗 Customer ${transformed.name} -> Sales Rep ID: ${transformed.salesRepId}, Name: ${transformed.salesRepName}`);
+        return transformed;
+      });
+      
       console.log(`✅ Retrieved ${transformedData.length} records from ${this.tableName}`);
       return transformedData;
     } catch (error) {
@@ -48,8 +54,12 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     
     const baseTransformed = super.transformFromDB(dbRecord);
     
-    // Extract sales rep name from the joined data
-    const salesRepName = dbRecord.sales_reps?.name || undefined;
+    // Extract sales rep info from the joined data
+    const salesRepData = dbRecord.sales_reps;
+    const salesRepId = dbRecord.sales_rep_id;
+    const salesRepName = salesRepData?.name || undefined;
+    
+    console.log(`🔍 Transforming customer ${dbRecord.name}: sales_rep_id=${salesRepId}, sales_rep_name=${salesRepName}`);
     
     // Map database snake_case fields to TypeScript camelCase
     return {
@@ -58,7 +68,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       visitDays: dbRecord.visit_days || [],
       visitFrequency: dbRecord.visit_frequency || '',
       visitSequence: dbRecord.visit_sequence || 0,
-      salesRepId: dbRecord.sales_rep_id || undefined,
+      salesRepId: salesRepId || undefined,
       salesRepName: salesRepName,
       deliveryRouteId: dbRecord.delivery_route_id || undefined,
       zipCode: dbRecord.zip_code || '',
@@ -84,6 +94,8 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       delivery_route_id: record.deliveryRouteId || null,
       zip_code: record.zip || record.zipCode || ''
     };
+
+    console.log(`📝 Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}`);
 
     // Remove the camelCase fields that don't exist in the database
     delete dbRecord.companyName;

@@ -23,13 +23,21 @@ const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) =
   const loadCustomers = async () => {
     try {
       setIsLoading(true);
+      console.log(`🔍 Loading customers for sales rep ID: ${salesRep.id}`);
+      
       const allCustomers = await customerService.getAll();
-      const salesRepCustomers = allCustomers.filter(
-        customer => customer.salesRepId === salesRep.id
-      );
+      console.log(`📋 Total customers loaded: ${allCustomers.length}`);
+      
+      // Filter customers that belong to this specific sales rep
+      const salesRepCustomers = allCustomers.filter(customer => {
+        console.log(`Customer ${customer.name} - salesRepId: ${customer.salesRepId}, looking for: ${salesRep.id}`);
+        return customer.salesRepId === salesRep.id;
+      });
+      
+      console.log(`✅ Found ${salesRepCustomers.length} customers for sales rep ${salesRep.name} (ID: ${salesRep.id})`);
       setCustomers(salesRepCustomers);
     } catch (error) {
-      console.error('Error loading customers:', error);
+      console.error('❌ Error loading customers:', error);
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +58,7 @@ const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) =
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
-          Clientes de {salesRep.name}
+          Clientes de {salesRep.name} (ID: {salesRep.id})
           <Badge variant="secondary">{customers.length}</Badge>
         </CardTitle>
       </CardHeader>
@@ -73,9 +81,17 @@ const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) =
                   {customer.phone && (
                     <div className="text-sm text-gray-500">{customer.phone}</div>
                   )}
+                  <div className="text-xs text-blue-600 mt-1">
+                    Sales Rep ID: {customer.salesRepId || 'Não definido'}
+                  </div>
                 </div>
                 <div className="text-right">
                   <Badge variant="outline">#{customer.code}</Badge>
+                  {customer.salesRepName && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {customer.salesRepName}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
