@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Form,
@@ -125,11 +124,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const selectedUnit = form.watch("unit");
   const selectedSubunit = form.watch("subunit");
   
-  // Get conversion rate for the main unit (not subunit)
-  const getMainUnitConversionRate = () => {
+  // Get package quantity for the main unit (not subunit)
+  const getMainUnitPackageQuantity = () => {
     if (!selectedUnit) return 1;
     const unitData = units.find(u => u.value === selectedUnit);
-    return unitData?.conversionRate || 1;
+    return unitData?.packageQuantity || 1;
   };
   
   // Update form values when selected product changes
@@ -155,10 +154,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
     try {
       console.log("Submitting form data:", data);
       
-      // Configure subunit_ratio correctly based on main unit's conversion rate
+      // Configure subunit_ratio correctly based on main unit's package quantity
       const formDataWithConversion = {
         ...data,
-        subunitRatio: hasSubunit && data.unit ? getMainUnitConversionRate() : undefined
+        subunitRatio: hasSubunit && data.unit ? getMainUnitPackageQuantity() : undefined
       };
       
       console.log("📊 Configuração do produto:", {
@@ -166,7 +165,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         subunit: data.subunit,
         hasSubunit,
         subunitRatio: formDataWithConversion.subunitRatio,
-        mainUnitConversionRate: getMainUnitConversionRate()
+        mainUnitPackageQuantity: getMainUnitPackageQuantity()
       });
       
       await onSubmit(formDataWithConversion);
@@ -328,7 +327,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   {selectedUnit && (
                     <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded-md">
                       <p className="font-medium">Taxa de Conversão (baseada na unidade principal):</p>
-                      <p>1 {selectedUnit} = {getMainUnitConversionRate()} {selectedSubunit || 'sub-unidades'}</p>
+                      <p>1 {selectedUnit} = {getMainUnitPackageQuantity()} {selectedSubunit || 'sub-unidades'}</p>
                       <p className="text-xs mt-1 text-gray-500">
                         Esta taxa será usada para calcular os preços automaticamente
                       </p>

@@ -150,8 +150,8 @@ export default function ProductUnits() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={() => handleOpenDialog()}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Unidade
@@ -168,57 +168,67 @@ export default function ProductUnits() {
           {isLoading ? (
             <p>Carregando unidades...</p>
           ) : (
-            <div>
+            <div className="w-full">
               <p className="text-sm text-gray-600 mb-2">
                 DEBUG: {units?.length || 0} unidades carregadas
               </p>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Nome/Descrição</TableHead>
-                    <TableHead>Quantidade na Embalagem</TableHead>
-                    <TableHead className="w-24">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {units && units.length > 0 ? (
-                    units.map((unit) => (
-                      <TableRow key={unit.value}>
-                        <TableCell className="font-medium">{unit.value}</TableCell>
-                        <TableCell>{unit.label || unit.value}</TableCell>
-                        <TableCell>
-                          {unit.packageQuantity === 1 ? '1 unidade' : `${unit.packageQuantity} unidades`}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenDialog(unit)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(unit)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+              <div className="w-full overflow-auto">
+                <Table className="w-full">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[15%] min-w-[80px]">Valor</TableHead>
+                      <TableHead className="w-[45%] min-w-[120px]">Nome/Descrição</TableHead>
+                      <TableHead className="w-[25%] min-w-[120px]">Quantidade na Embalagem</TableHead>
+                      <TableHead className="w-[15%] min-w-[80px] text-center">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {units && units.length > 0 ? (
+                      units.map((unit) => (
+                        <TableRow key={unit.value}>
+                          <TableCell className="font-medium break-words">
+                            <span className="block truncate">{unit.value}</span>
+                          </TableCell>
+                          <TableCell className="break-words">
+                            <span className="block">{unit.label || unit.value}</span>
+                          </TableCell>
+                          <TableCell className="break-words">
+                            <span className="block text-sm">
+                              {unit.packageQuantity === 1 ? '1 unidade' : `${unit.packageQuantity} unidades`}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenDialog(unit)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(unit)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center">
+                          Nenhuma unidade encontrada
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center">
-                        Nenhuma unidade encontrada
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>
@@ -226,7 +236,7 @@ export default function ProductUnits() {
 
       {/* Dialog para adicionar/editar unidade */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
               {editingUnit ? 'Editar Unidade' : 'Nova Unidade'}
