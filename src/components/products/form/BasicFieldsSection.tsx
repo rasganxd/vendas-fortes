@@ -61,7 +61,7 @@ export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({
         />
       </div>
       
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="cost"
@@ -71,26 +71,6 @@ export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({
               <FormControl>
                 <Input 
                   placeholder="Preço de custo" 
-                  value={formatCurrency(field.value)} 
-                  onChange={(e) => {
-                    const numericValue = e.target.value.replace(/\D/g, '');
-                    field.onChange(parseFloat(numericValue) / 100 || 0);
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="price"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Preço de Venda</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Preço de venda" 
                   value={formatCurrency(field.value)} 
                   onChange={(e) => {
                     const numericValue = e.target.value.replace(/\D/g, '');
@@ -141,6 +121,19 @@ export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({
             </FormItem>
           )}
         />
+      </div>
+
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div className="flex items-start gap-2">
+          <div className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">i</div>
+          <div>
+            <p className="text-sm font-medium text-blue-800">Sobre Precificação</p>
+            <p className="text-xs text-blue-700 mt-1">
+              Os preços de venda dos produtos são definidos na seção <strong>Precificação de Produtos</strong>. 
+              Após cadastrar o produto, acesse o menu Precificação para definir os preços de venda.
+            </p>
+          </div>
+        </div>
       </div>
     </>
   );

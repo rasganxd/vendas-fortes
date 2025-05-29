@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { EnhancedCard, EnhancedCardContent, EnhancedCardDescription, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Filter, Download, Upload } from 'lucide-react';
+import { Plus, Search, Filter, Download, Upload, DollarSign } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useProducts } from '@/hooks/useProducts';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -91,22 +91,26 @@ export default function Products() {
     try {
       console.log("💾 Salvando produto:", data);
       
+      // Prepare product data with required fields
+      const productData = {
+        ...data,
+        description: data.description || "",
+        minStock: data.minStock || 0,
+        price: 0, // Default price - será definido na precificação
+        syncStatus: 'synced'
+      };
+      
       if (editingProduct) {
         // Updating existing product
-        await updateProduct(editingProduct.id, data);
+        await updateProduct(editingProduct.id, productData);
         toast("Produto atualizado", {
           description: "O produto foi atualizado com sucesso"
         });
       } else {
         // Creating new product
-        await addProduct({
-          ...data,
-          description: data.description || "",
-          minStock: data.minStock || 0,
-          syncStatus: 'synced'
-        });
+        await addProduct(productData);
         toast("Produto criado", {
-          description: "O produto foi criado com sucesso"
+          description: "O produto foi criado com sucesso. Defina o preço de venda na seção Precificação."
         });
       }
       
@@ -157,6 +161,14 @@ export default function Products() {
                 </EnhancedCardDescription>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = '/precificacao'}
+                  className="flex items-center gap-2"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  Precificação
+                </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => setIsBulkUploadOpen(true)}

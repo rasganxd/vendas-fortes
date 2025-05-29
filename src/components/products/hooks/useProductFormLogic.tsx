@@ -14,9 +14,8 @@ const productFormSchema = z.object({
   name: z.string().min(2, {
     message: "Nome deve ter pelo menos 2 caracteres.",
   }),
-  cost: z.number(),
-  price: z.number().min(0, {
-    message: "Preço deve ser maior ou igual a zero.",
+  cost: z.number().min(0, {
+    message: "Custo deve ser maior ou igual a zero.",
   }),
   unit: z.string(),
   hasSubunit: z.boolean().optional(),
@@ -52,7 +51,6 @@ export const useProductFormLogic = ({
         Math.max(...products.map(p => p.code || 0), 0) + 1,
       name: isEditing && selectedProduct ? selectedProduct.name : "",
       cost: isEditing && selectedProduct ? selectedProduct.cost : 0,
-      price: isEditing && selectedProduct ? selectedProduct.price : 0,
       unit: isEditing && selectedProduct ? selectedProduct.unit || "UN" : "UN",
       hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
       subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
@@ -94,7 +92,6 @@ export const useProductFormLogic = ({
         code: selectedProduct.code,
         name: selectedProduct.name,
         cost: selectedProduct.cost,
-        price: selectedProduct.price,
         unit: selectedProduct.unit || "UN",
         hasSubunit: selectedProduct.hasSubunit || false,
         subunit: selectedProduct.subunit || "",
@@ -119,9 +116,10 @@ export const useProductFormLogic = ({
         return;
       }
       
-      // Convert classification IDs from "none" to null
+      // Convert classification IDs from "none" to null and add required fields
       const processedData = {
         ...data,
+        price: 0, // Default price - será definido na precificação
         categoryId: data.categoryId === "none" || data.categoryId === "" ? null : data.categoryId,
         groupId: data.groupId === "none" || data.groupId === "" ? null : data.groupId,
         brandId: data.brandId === "none" || data.brandId === "" ? null : data.brandId,
