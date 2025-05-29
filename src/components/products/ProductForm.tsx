@@ -326,10 +326,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   
                   {selectedUnit && (
                     <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded-md">
-                      <p className="font-medium">Taxa de Conversão (baseada na unidade principal):</p>
-                      <p>1 {selectedUnit} = {getMainUnitPackageQuantity()} {selectedSubunit || 'sub-unidades'}</p>
+                      <p className="font-medium">Quantidade na Embalagem:</p>
+                      <p>1 {selectedUnit} contém {getMainUnitPackageQuantity()} {selectedSubunit || 'sub-unidades'}</p>
                       <p className="text-xs mt-1 text-gray-500">
-                        Esta taxa será usada para calcular os preços automaticamente
+                        Esta quantidade será usada para calcular os preços automaticamente
                       </p>
                     </div>
                   )}
