@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { OrderItem } from '@/types';
 import { Button } from "@/components/ui/button";
@@ -99,8 +100,8 @@ export default function EnhancedOrderItemsTable({
         )}
       </div>
 
-      {/* Scrollable content area - MELHORADO overflow */}
-      <div className="flex-1" style={{ overflowY: 'auto', overflowX: 'visible' }}>
+      {/* Scrollable content area - FIXED overflow issues */}
+      <div className="flex-1 overflow-y-auto">
         {filteredItems.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             {searchFilter ? (
@@ -116,17 +117,17 @@ export default function EnhancedOrderItemsTable({
             )}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
-            <table className="w-full border-collapse">
+          <div className="w-full">
+            <table className="w-full border-collapse table-fixed">
               <thead className="sticky top-0 bg-gray-50 z-10">
                 <tr className="text-left">
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-sm">Código</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-sm">Descrição</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-sm text-center">Qtde</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-sm text-center">Un</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-sm text-right">Valor Unit.</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-sm text-right">Valor Total</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-sm text-center">Ações</th>
+                  <th className="w-20 px-4 py-3 font-semibold text-gray-700 text-sm">Código</th>
+                  <th className="w-auto px-4 py-3 font-semibold text-gray-700 text-sm">Descrição</th>
+                  <th className="w-16 px-4 py-3 font-semibold text-gray-700 text-sm text-center">Qtde</th>
+                  <th className="w-16 px-4 py-3 font-semibold text-gray-700 text-sm text-center">Un</th>
+                  <th className="w-24 px-4 py-3 font-semibold text-gray-700 text-sm text-right">Valor Unit.</th>
+                  <th className="w-28 px-4 py-3 font-semibold text-gray-700 text-sm text-right">Valor Total</th>
+                  <th className="w-20 px-4 py-3 font-semibold text-gray-700 text-sm text-center">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -136,11 +137,11 @@ export default function EnhancedOrderItemsTable({
                   
                   return (
                     <tr key={itemKey} className="border-t hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-4 text-gray-800 font-mono">
+                      <td className="px-4 py-4 text-gray-800 font-mono text-sm">
                         {item.productCode || '—'}
                       </td>
                       <td className="px-4 py-4 text-gray-800 font-medium">
-                        <div className="max-w-xs truncate" title={item.productName}>
+                        <div className="truncate pr-2" title={item.productName}>
                           {item.productName}
                         </div>
                       </td>
@@ -150,7 +151,7 @@ export default function EnhancedOrderItemsTable({
                             type="number"
                             value={editValues.quantity}
                             onChange={(e) => setEditValues(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
-                            className="w-20 h-8 text-center"
+                            className="w-full h-8 text-center"
                             min="0"
                             step="1"
                           />
@@ -172,16 +173,16 @@ export default function EnhancedOrderItemsTable({
                               const value = e.target.value.replace(',', '.');
                               setEditValues(prev => ({ ...prev, price: parseFloat(value) || 0 }));
                             }}
-                            className="w-24 h-8 text-right"
+                            className="w-full h-8 text-right"
                           />
                         ) : (
-                          <span className="text-gray-800 font-medium">
+                          <span className="text-gray-800 font-medium text-sm">
                             {(item.unitPrice || item.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </span>
                         )}
                       </td>
                       <td className="px-4 py-4 text-right">
-                        <span className="font-bold text-gray-900 text-lg">
+                        <span className="font-bold text-gray-900 text-sm">
                           {((item.unitPrice || item.price || 0) * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
                       </td>
