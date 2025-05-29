@@ -151,12 +151,19 @@ export function calculateUnitPrice(
     subunit,
     mainUnit,
     isSubunit: selectedUnit === subunit,
-    isMainUnit: selectedUnit === mainUnit
+    isMainUnit: selectedUnit === mainUnit,
+    subunitRatio
   });
   
   // Se a unidade selecionada é a subunidade, calcular o preço da subunidade
   if (selectedUnit === subunit) {
-    // Preço da unidade = preço da caixa ÷ quantidade de unidades na caixa
+    // Validação para evitar divisão por zero
+    if (subunitRatio === 0) {
+      console.warn('⚠️ SubunitRatio é zero, usando preço original');
+      return product.price;
+    }
+    
+    // Preço da subunidade = preço da unidade principal ÷ quantidade de subunidades
     const unitPrice = product.price / subunitRatio;
     console.log(`💰 Calculando preço da ${subunit}: R$ ${product.price} ÷ ${subunitRatio} = R$ ${unitPrice.toFixed(2)}`);
     return unitPrice;

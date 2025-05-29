@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Form,
@@ -124,11 +125,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const selectedUnit = form.watch("unit");
   const selectedSubunit = form.watch("subunit");
   
-  // Get conversion rate for subunit
-  const getSubunitConversionRate = () => {
-    if (!selectedSubunit) return 1;
-    const subunitData = units.find(u => u.value === selectedSubunit);
-    return subunitData?.conversionRate || 1;
+  // Get conversion rate for the main unit (not subunit)
+  const getMainUnitConversionRate = () => {
+    if (!selectedUnit) return 1;
+    const unitData = units.find(u => u.value === selectedUnit);
+    return unitData?.conversionRate || 1;
   };
   
   // Update form values when selected product changes
@@ -154,11 +155,19 @@ const ProductForm: React.FC<ProductFormProps> = ({
     try {
       console.log("Submitting form data:", data);
       
-      // Adicionar a taxa de conversão automaticamente baseada na sub-unidade selecionada
+      // Configure subunit_ratio correctly based on main unit's conversion rate
       const formDataWithConversion = {
         ...data,
-        subunitRatio: hasSubunit && data.subunit ? getSubunitConversionRate() : undefined
+        subunitRatio: hasSubunit && data.unit ? getMainUnitConversionRate() : undefined
       };
+      
+      console.log("📊 Configuração do produto:", {
+        unit: data.unit,
+        subunit: data.subunit,
+        hasSubunit,
+        subunitRatio: formDataWithConversion.subunitRatio,
+        mainUnitConversionRate: getMainUnitConversionRate()
+      });
       
       await onSubmit(formDataWithConversion);
       toast("Produto salvo com sucesso!");
@@ -316,10 +325,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
                     )}
                   />
                   
-                  {selectedSubunit && (
+                  {selectedUnit && (
                     <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded-md">
-                      <p className="font-medium">Taxa de Conversão:</p>
-                      <p>1 {selectedUnit} = {getSubunitConversionRate()} {selectedSubunit}</p>
+                      <p className="font-medium">Taxa de Conversão (baseada na unidade principal):</p>
+                      <p>1 {selectedUnit} = {getMainUnitConversionRate()} {selectedSubunit || 'sub-unidades'}</p>
+                      <p className="text-xs mt-1 text-gray-500">
+                        Esta taxa será usada para calcular os preços automaticamente
+                      </p>
                     </div>
                   )}
                 </div>

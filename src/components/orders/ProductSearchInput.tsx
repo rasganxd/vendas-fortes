@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,8 @@ export default function ProductSearchInput({
   const [showProductDialog, setShowProductDialog] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [priceValidationError, setPriceValidationError] = useState<string>('');
+  
+  const quantityInputRef = useRef<HTMLInputElement>(null);
   
   const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
   
@@ -235,6 +237,7 @@ export default function ProductSearchInput({
               onQuantityChange={handleQuantityChange}
               onIncrement={() => setQuantity(prev => prev + 1)}
               onDecrement={() => setQuantity(prev => Math.max(1, prev - 1))}
+              inputRef={quantityInputRef}
             />
           </div>
           
