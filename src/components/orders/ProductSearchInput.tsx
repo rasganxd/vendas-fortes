@@ -4,14 +4,14 @@ import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, ShoppingCart, AlertTriangle } from 'lucide-react';
-import { useProductSearch } from '@/hooks/useProductSearch';
-import ProductSearchResults from './ProductSearchResults';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import PriceValidation from '@/components/products/pricing/PriceValidation';
+import ProductSearchDialog from './ProductSearchDialog';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
-import { calculateUnitPrice, formatBrazilianPrice } from '@/utils/priceConverter';
+import { calculateUnitPrice, formatBrazilianPrice, parseBrazilianPrice } from '@/utils/priceConverter';
+import { validateProductDiscount } from '@/context/operations/productOperations';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -28,7 +28,15 @@ export default function ProductSearchInput({
 }: ProductSearchInputProps) {
   const { products: centralizedProducts, refreshProducts } = useAppData();
   const { units } = useProductUnits();
+  
+  const [productCode, setProductCode] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [price, setPrice] = useState<number>(0);
   const [selectedUnit, setSelectedUnit] = useState<string>('');
+  const [showProductDialog, setShowProductDialog] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [priceValidationError, setPriceValidationError] = useState<string>('');
   
   const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
   
@@ -45,35 +53,39 @@ export default function ProductSearchInput({
     };
   }, []);
 
-  const {
-    searchTerm,
-    selectedProduct,
-    quantity,
-    price,
-    showResults,
-    sortedProducts,
-    resultsRef,
-    quantityInputRef,
-    priceInputRef,
-    isAddingItem,
-    currentPriceError,
-    isCurrentPriceValid,
-    handleSearch,
-    handleSearchKeyDown,
-    handleProductSelect: originalHandleProductSelect,
-    handleQuantityChange,
-    handlePriceChange: originalHandlePriceChange,
-    handleAddToOrder: originalHandleAddToOrder,
-    incrementQuantity,
-    decrementQuantity,
-    resetForm
-  } = useProductSearch({
-    products,
-    addItemToOrder: (product, qty, prc) => addItemToOrder(product, qty, prc, selectedUnit),
-    inputRef
-  });
+  // Validate price whenever it changes
+  useEffect(() => {
+    if (selectedProduct && price > 0) {
+      const validation = validateProductDiscount(selectedProduct.id, price, products);
+      if (validation === true) {
+        setPriceValidationError('');
+      } else {
+        setPriceValidationError(validation as string);
+      }
+    } else {
+      setPriceValidationError('');
+    }
+  }, [selectedProduct, price, products]);
 
-  // Update selected unit when product changes
+  // Handle product code input change
+  const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
+    setProductCode(value);
+
+    // Reset selected product if code changes
+    if (selectedProduct && selectedProduct.code.toString() !== value) {
+      resetForm();
+    }
+
+    // Try to find product by code
+    if (value) {
+      const product = products.find(p => p.code.toString() === value);
+      if (product) {
+        handleProductSelect(product);
+      }
+    }
+  };
+
   const handleProductSelect = (product: Product) => {
     console.log("📦 Produto selecionado:", product.name, {
       price: product.price,
@@ -83,7 +95,8 @@ export default function ProductSearchInput({
       subunitRatio: product.subunitRatio
     });
     
-    originalHandleProductSelect(product);
+    setSelectedProduct(product);
+    setProductCode(product.code.toString());
     
     // Set default unit to product's main unit
     const defaultUnit = product.unit || 'UN';
@@ -93,10 +106,7 @@ export default function ProductSearchInput({
     const correctPrice = calculateUnitPrice(product, defaultUnit);
     console.log(`💰 Preço calculado para ${defaultUnit}: R$ ${correctPrice.toFixed(2)}`);
     
-    // Update the price in the form
-    originalHandlePriceChange({ 
-      target: { value: formatBrazilianPrice(correctPrice) } 
-    } as any);
+    setPrice(correctPrice);
   };
 
   // Calculate price when unit changes
@@ -109,34 +119,66 @@ export default function ProductSearchInput({
       const correctPrice = calculateUnitPrice(selectedProduct, unit);
       console.log(`💰 Novo preço para ${unit}: R$ ${correctPrice.toFixed(2)}`);
       
-      // Update the price field
-      originalHandlePriceChange({ 
-        target: { value: formatBrazilianPrice(correctPrice) } 
-      } as any);
+      setPrice(correctPrice);
     }
   };
 
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^\d]/g, '');
+    const numericValue = value ? parseInt(value, 10) : 1;
+    setQuantity(numericValue);
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const displayValue = e.target.value;
+    const numericPrice = parseBrazilianPrice(displayValue);
+    setPrice(numericPrice);
+  };
+
   const handleAddToOrder = () => {
-    if (selectedProduct && quantity && quantity > 0 && isCurrentPriceValid) {
+    if (selectedProduct && quantity && quantity > 0 && !priceValidationError && price > 0) {
       console.log("🛒 Adicionando ao pedido:", {
         product: selectedProduct.name,
         quantity,
         price,
         unit: selectedUnit
       });
-      addItemToOrder(selectedProduct, quantity, price, selectedUnit);
       
-      // Reset unit selection after adding
-      setSelectedUnit('');
+      setIsAddingItem(true);
       
-      // Reset the form completely
-      resetForm();
+      try {
+        addItemToOrder(selectedProduct, quantity, price, selectedUnit);
+        resetForm();
+      } catch (error) {
+        console.error("Erro ao adicionar item:", error);
+      } finally {
+        setTimeout(() => setIsAddingItem(false), 1000);
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setProductCode('');
+    setSelectedProduct(null);
+    setQuantity(1);
+    setPrice(0);
+    setSelectedUnit('');
+    setPriceValidationError('');
+  };
+
+  const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!selectedProduct) {
+        // Open search dialog if no product found by code
+        setShowProductDialog(true);
+      }
     }
   };
   
   const formatPriceDisplay = (value: number): string => {
     if (value === 0) return '';
-    return value.toFixed(2).replace('.', ',');
+    return formatBrazilianPrice(value);
   };
   
   // Calculate unit conversion display
@@ -153,35 +195,36 @@ export default function ProductSearchInput({
     
     return null;
   };
+
+  const isPriceValid = !priceValidationError && price > 0;
   
   return (
     <div className="relative w-full z-10">
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
         <div className="relative flex-1 w-full">
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
               <Input
                 ref={inputRef}
                 type="text"
-                className="pl-10 h-11 border-gray-300 focus:border-blue-400 focus:ring-blue-400"
-                placeholder="Buscar produto pelo nome ou código"
-                value={searchTerm}
-                onChange={handleSearch}
-                onKeyDown={handleSearchKeyDown}
+                className="h-11 border-gray-300 focus:border-blue-400 focus:ring-blue-400"
+                placeholder="Digite o código do produto"
+                value={productCode}
+                onChange={handleProductCodeChange}
+                onKeyDown={handleProductCodeKeyDown}
                 autoComplete="off"
                 disabled={isAddingItem}
               />
-              
-              {/* Only show results when we have a search term and no selected product */}
-              {showResults && !selectedProduct && (
-                <ProductSearchResults
-                  products={sortedProducts}
-                  resultsRef={resultsRef}
-                  onSelectProduct={handleProductSelect}
-                />
-              )}
             </div>
+            <Button
+              onClick={() => setShowProductDialog(true)}
+              variant="outline"
+              size="default"
+              className="h-11 px-3"
+              disabled={isAddingItem}
+            >
+              <Search size={18} />
+            </Button>
           </div>
         </div>
         
@@ -190,10 +233,8 @@ export default function ProductSearchInput({
             <QuantityInput
               quantity={quantity}
               onQuantityChange={handleQuantityChange}
-              onIncrement={incrementQuantity}
-              onDecrement={decrementQuantity}
-              inputRef={quantityInputRef}
-              onKeyDown={(e) => e.key === 'Enter' && priceInputRef.current?.focus()}
+              onIncrement={() => setQuantity(prev => prev + 1)}
+              onDecrement={() => setQuantity(prev => Math.max(1, prev - 1))}
             />
           </div>
           
@@ -208,15 +249,14 @@ export default function ProductSearchInput({
           
           <div className="flex-none">
             <Input
-              ref={priceInputRef}
               type="text"
               className={`h-11 text-center w-28 border-gray-300 ${
-                !isCurrentPriceValid ? 'border-red-500 bg-red-50' : ''
+                !isPriceValid ? 'border-red-500 bg-red-50' : ''
               }`}
               placeholder="Preço"
               value={formatPriceDisplay(price)}
-              onChange={originalHandlePriceChange}
-              onKeyDown={(e) => e.key === 'Enter' && isCurrentPriceValid && handleAddToOrder()}
+              onChange={handlePriceChange}
+              onKeyDown={(e) => e.key === 'Enter' && isPriceValid && handleAddToOrder()}
               disabled={isAddingItem}
             />
           </div>
@@ -224,7 +264,7 @@ export default function ProductSearchInput({
           <Button 
             type="button"
             className="h-11 flex-none w-32 bg-sales-800 hover:bg-sales-700 text-white"
-            disabled={!selectedProduct || quantity === null || quantity <= 0 || isAddingItem || !isCurrentPriceValid}
+            disabled={!selectedProduct || quantity <= 0 || isAddingItem || !isPriceValid}
             onClick={handleAddToOrder}
           >
             <ShoppingCart size={18} className="mr-2" />
@@ -232,6 +272,14 @@ export default function ProductSearchInput({
           </Button>
         </div>
       </div>
+
+      {/* Product Search Dialog */}
+      <ProductSearchDialog
+        open={showProductDialog}
+        onClose={() => setShowProductDialog(false)}
+        products={products}
+        onSelectProduct={handleProductSelect}
+      />
       
       {/* Validação de preço */}
       {selectedProduct && (
@@ -244,10 +292,10 @@ export default function ProductSearchInput({
         </div>
       )}
 
-      {currentPriceError && (
+      {priceValidationError && (
         <div className="mt-2 flex items-center text-sm text-red-600 bg-red-50 p-2 rounded">
           <AlertTriangle className="h-4 w-4 mr-2" />
-          <span>{currentPriceError}</span>
+          <span>{priceValidationError}</span>
         </div>
       )}
       

@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Barcode, AlertTriangle } from 'lucide-react';
+import { Search, Package, Plus, AlertTriangle } from 'lucide-react';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
-import ProductSearchResultsPortal from './ProductSearchResultsPortal';
+import ProductSearchDialog from './ProductSearchDialog';
 import PriceValidation from '@/components/products/pricing/PriceValidation';
 import { calculateUnitPrice, formatBrazilianPrice, parseBrazilianPrice } from '@/utils/priceConverter';
 import { validateProductDiscount } from '@/context/operations/productOperations';
@@ -27,30 +27,16 @@ export default function EnhancedProductSearch({
   productInputRef,
   isEditMode
 }: EnhancedProductSearchProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [productCode, setProductCode] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState('');
-  const [showResults, setShowResults] = useState(false);
   const [priceDisplayValue, setPriceDisplayValue] = useState('');
   const [priceValidationError, setPriceValidationError] = useState<string>('');
+  const [showProductDialog, setShowProductDialog] = useState(false);
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Check if search term is a product code (numeric)
-  const isCodeSearch = /^\d+$/.test(searchTerm.trim());
-
-  // Filter products based on search term
-  const filteredProducts = products.filter(product => {
-    if (isCodeSearch) {
-      // For code search, match exact code
-      return product.code.toString() === searchTerm.trim();
-    } else {
-      // For name search, match name containing the search term
-      return product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    }
-  }).slice(0, 8); // Limit to 8 results
 
   // Validate price whenever it changes
   useEffect(() => {
@@ -81,6 +67,29 @@ export default function EnhancedProductSearch({
     }
   }, [selectedProduct]);
 
+  // Handle product code input change
+  const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
+    setProductCode(value);
+
+    // Reset selected product if code changes
+    if (selectedProduct && selectedProduct.code.toString() !== value) {
+      setSelectedProduct(null);
+      setPrice(0);
+      setPriceDisplayValue('');
+      setSelectedUnit('');
+      setPriceValidationError('');
+    }
+
+    // Try to find product by code
+    if (value) {
+      const product = products.find(p => p.code.toString() === value);
+      if (product) {
+        handleProductSelect(product);
+      }
+    }
+  };
+
   const handleProductSelect = (product: Product) => {
     console.log("📦 Produto selecionado:", product.name, {
       price: product.price,
@@ -91,8 +100,7 @@ export default function EnhancedProductSearch({
     });
     
     setSelectedProduct(product);
-    setSearchTerm(product.name);
-    setShowResults(false); // Always hide results when selecting a product
+    setProductCode(product.code.toString());
 
     // Focus on quantity input
     setTimeout(() => {
@@ -138,33 +146,27 @@ export default function EnhancedProductSearch({
 
       // Reset form completely
       setSelectedProduct(null);
-      setSearchTerm('');
+      setProductCode('');
       setQuantity(1);
       setPrice(0);
       setPriceDisplayValue('');
       setSelectedUnit('');
       setPriceValidationError('');
-      setShowResults(false); // Explicitly hide results after adding
 
       // Focus back on search
       productInputRef.current?.focus();
     }
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+  const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (filteredProducts.length > 0) {
-        // Select first result for both code and name search
-        handleProductSelect(filteredProducts[0]);
+      if (selectedProduct) {
+        quantityInputRef.current?.focus();
+      } else {
+        // Open search dialog if no product found by code
+        setShowProductDialog(true);
       }
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (!isCodeSearch && searchTerm.length > 0) {
-        setShowResults(true);
-      }
-    } else if (e.key === 'Escape') {
-      setShowResults(false);
     }
   };
 
@@ -175,26 +177,6 @@ export default function EnhancedProductSearch({
         handleAdd();
       }
     }
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-
-    // Reset selected product when search changes
-    if (selectedProduct && selectedProduct.name !== value) {
-      setSelectedProduct(null);
-      setPrice(0);
-      setPriceDisplayValue('');
-      setSelectedUnit('');
-      setPriceValidationError('');
-    }
-
-    // Show results only for name search (not code search) and when there's input
-    // AND when we don't have a selected product
-    const isCode = /^\d+$/.test(value.trim());
-    const shouldShowResults = !isCode && value.length > 0 && !selectedProduct;
-    setShowResults(shouldShowResults);
   };
 
   // Get quantity conversion display
@@ -212,18 +194,6 @@ export default function EnhancedProductSearch({
     return '';
   };
 
-  // Handle clicks outside to close results
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (productInputRef.current && !productInputRef.current.contains(event.target as Node)) {
-        setShowResults(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [productInputRef]);
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -233,36 +203,38 @@ export default function EnhancedProductSearch({
         </h3>
       </div>
 
-      {/* Search Input */}
-      <div className="relative">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      {/* Product Code Input */}
+      <div className="flex gap-2">
+        <div className="flex-1">
           <Input
             ref={productInputRef}
             type="text"
-            placeholder="Buscar por nome ou código..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            onKeyDown={handleSearchKeyDown}
-            onFocus={() => {
-              // Only show results if we have search term, it's not a code search, and no product is selected
-              if (!isCodeSearch && searchTerm.length > 0 && !selectedProduct) {
-                setShowResults(true);
-              }
-            }}
-            className="pl-10 pr-4 h-11 text-base"
+            placeholder="Digite o código do produto..."
+            value={productCode}
+            onChange={handleProductCodeChange}
+            onKeyDown={handleProductCodeKeyDown}
+            className="h-11 text-base"
             disabled={isEditMode}
           />
         </div>
-
-        {/* Search Results using Portal */}
-        <ProductSearchResultsPortal
-          products={filteredProducts}
-          inputRef={productInputRef}
-          onSelectProduct={handleProductSelect}
-          isVisible={showResults && !isCodeSearch && !selectedProduct}
-        />
+        <Button
+          onClick={() => setShowProductDialog(true)}
+          variant="outline"
+          size="default"
+          className="h-11 px-3"
+          disabled={isEditMode}
+        >
+          <Search size={18} />
+        </Button>
       </div>
+
+      {/* Product Search Dialog */}
+      <ProductSearchDialog
+        open={showProductDialog}
+        onClose={() => setShowProductDialog(false)}
+        products={products}
+        onSelectProduct={handleProductSelect}
+      />
 
       {/* Product Addition Form */}
       {selectedProduct && (
