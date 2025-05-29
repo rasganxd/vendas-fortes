@@ -146,6 +146,14 @@ export function calculateUnitPrice(
   const subunit = product.subunit;
   const subunitRatio = product.subunitRatio;
   
+  console.log('🔍 Verificando unidade selecionada:', {
+    selectedUnit,
+    subunit,
+    mainUnit,
+    isSubunit: selectedUnit === subunit,
+    isMainUnit: selectedUnit === mainUnit
+  });
+  
   // Se a unidade selecionada é a subunidade, calcular o preço da subunidade
   if (selectedUnit === subunit) {
     // Preço da unidade = preço da caixa ÷ quantidade de unidades na caixa

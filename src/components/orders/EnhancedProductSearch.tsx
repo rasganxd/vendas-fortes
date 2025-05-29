@@ -66,6 +66,7 @@ export default function EnhancedProductSearch({
     }
   }, [selectedProduct, price, products]);
 
+  // Initialize price when product is selected
   useEffect(() => {
     if (selectedProduct) {
       const mainUnit = selectedProduct.unit || 'UN';
@@ -100,13 +101,13 @@ export default function EnhancedProductSearch({
   };
 
   const handleUnitChange = (unit: string) => {
-    console.log("🔄 Mudança de unidade:", unit);
+    console.log("🔄 Mudança de unidade para:", unit);
     setSelectedUnit(unit);
 
     if (selectedProduct) {
       // Use calculateUnitPrice to get the correct price for the selected unit
       const correctPrice = calculateUnitPrice(selectedProduct, unit);
-      console.log(`💰 Novo preço para ${unit}: R$ ${correctPrice.toFixed(2)}`);
+      console.log(`💰 Novo preço calculado para ${unit}: R$ ${correctPrice.toFixed(2)}`);
       
       setPrice(correctPrice);
       setPriceDisplayValue(formatBrazilianPrice(correctPrice));
