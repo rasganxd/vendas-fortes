@@ -91,7 +91,7 @@ export default function EnhancedProductSearch({
     
     setSelectedProduct(product);
     setSearchTerm(product.name);
-    setShowResults(false);
+    setShowResults(false); // Always hide results when selecting a product
 
     // Focus on quantity input
     setTimeout(() => {
@@ -135,7 +135,7 @@ export default function EnhancedProductSearch({
       
       handleAddItem(selectedProduct, quantity, price, selectedUnit);
 
-      // Reset form
+      // Reset form completely
       setSelectedProduct(null);
       setSearchTerm('');
       setQuantity(1);
@@ -143,6 +143,7 @@ export default function EnhancedProductSearch({
       setPriceDisplayValue('');
       setSelectedUnit('');
       setPriceValidationError('');
+      setShowResults(false); // Explicitly hide results after adding
 
       // Focus back on search
       productInputRef.current?.focus();
@@ -158,7 +159,7 @@ export default function EnhancedProductSearch({
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (!isCodeSearch) {
+      if (!isCodeSearch && searchTerm.length > 0) {
         setShowResults(true);
       }
     } else if (e.key === 'Escape') {
@@ -189,8 +190,10 @@ export default function EnhancedProductSearch({
     }
 
     // Show results only for name search (not code search) and when there's input
+    // AND when we don't have a selected product
     const isCode = /^\d+$/.test(value.trim());
-    setShowResults(!isCode && value.length > 0);
+    const shouldShowResults = !isCode && value.length > 0 && !selectedProduct;
+    setShowResults(shouldShowResults);
   };
 
   // Get quantity conversion display
@@ -241,7 +244,8 @@ export default function EnhancedProductSearch({
             onChange={handleSearchChange}
             onKeyDown={handleSearchKeyDown}
             onFocus={() => {
-              if (!isCodeSearch && searchTerm.length > 0) {
+              // Only show results if we have search term, it's not a code search, and no product is selected
+              if (!isCodeSearch && searchTerm.length > 0 && !selectedProduct) {
                 setShowResults(true);
               }
             }}
@@ -255,7 +259,7 @@ export default function EnhancedProductSearch({
           products={filteredProducts}
           inputRef={productInputRef}
           onSelectProduct={handleProductSelect}
-          isVisible={showResults && !isCodeSearch}
+          isVisible={showResults && !isCodeSearch && !selectedProduct}
         />
       </div>
 

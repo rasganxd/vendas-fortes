@@ -65,7 +65,8 @@ export default function ProductSearchInput({
     handlePriceChange: originalHandlePriceChange,
     handleAddToOrder: originalHandleAddToOrder,
     incrementQuantity,
-    decrementQuantity
+    decrementQuantity,
+    resetForm
   } = useProductSearch({
     products,
     addItemToOrder: (product, qty, prc) => addItemToOrder(product, qty, prc, selectedUnit),
@@ -124,6 +125,12 @@ export default function ProductSearchInput({
         unit: selectedUnit
       });
       addItemToOrder(selectedProduct, quantity, price, selectedUnit);
+      
+      // Reset unit selection after adding
+      setSelectedUnit('');
+      
+      // Reset the form completely
+      resetForm();
     }
   };
   
@@ -166,7 +173,8 @@ export default function ProductSearchInput({
                 disabled={isAddingItem}
               />
               
-              {showResults && (
+              {/* Only show results when we have a search term and no selected product */}
+              {showResults && !selectedProduct && (
                 <ProductSearchResults
                   products={sortedProducts}
                   resultsRef={resultsRef}
@@ -236,7 +244,6 @@ export default function ProductSearchInput({
         </div>
       )}
 
-      {/* Erro de validação */}
       {currentPriceError && (
         <div className="mt-2 flex items-center text-sm text-red-600 bg-red-50 p-2 rounded">
           <AlertTriangle className="h-4 w-4 mr-2" />
@@ -250,7 +257,6 @@ export default function ProductSearchInput({
         </div>
       )}
       
-      {/* Mostrar informação da conversão de preço */}
       {selectedProduct && selectedProduct.hasSubunit && selectedUnit && (
         <div className="mt-1 text-xs text-blue-600">
           {selectedUnit === selectedProduct.subunit ? 
