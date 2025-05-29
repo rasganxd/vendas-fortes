@@ -17,7 +17,7 @@ import { Product } from '@/types';
 import { toast } from "sonner";
 
 export default function Products() {
-  const { products, isLoading, deleteProduct } = useProducts();
+  const { products, isLoading, deleteProduct, addProduct, updateProduct } = useProducts();
   const { refreshData } = useAppContext();
   
   // Use the product classification hook to get categories, groups, and brands
@@ -89,12 +89,39 @@ export default function Products() {
 
   const handleProductSaved = async (data: any) => {
     try {
-      // Lógica para salvar o produto aqui
+      console.log("💾 Salvando produto:", data);
+      
+      if (editingProduct) {
+        // Updating existing product
+        await updateProduct(editingProduct.id, data);
+        toast("Produto atualizado", {
+          description: "O produto foi atualizado com sucesso"
+        });
+      } else {
+        // Creating new product
+        await addProduct({
+          ...data,
+          description: data.description || "",
+          minStock: data.minStock || 0,
+          syncStatus: 'synced'
+        });
+        toast("Produto criado", {
+          description: "O produto foi criado com sucesso"
+        });
+      }
+      
       setIsProductFormOpen(false);
       setEditingProduct(null);
       refreshData();
     } catch (error) {
       console.error('Erro ao salvar produto:', error);
+      toast("Erro", {
+        description: "Erro ao salvar produto",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
     }
   };
 

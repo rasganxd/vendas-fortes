@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
+import { Product } from '@/types';
 import { useProductUnits } from './useProductUnits';
 import { toast } from "sonner";
 
@@ -15,6 +15,9 @@ const productFormSchema = z.object({
     message: "Nome deve ter pelo menos 2 caracteres.",
   }),
   cost: z.number(),
+  price: z.number().min(0, {
+    message: "Preço deve ser maior ou igual a zero.",
+  }),
   unit: z.string(),
   hasSubunit: z.boolean().optional(),
   subunit: z.string().optional(),
@@ -49,6 +52,7 @@ export const useProductFormLogic = ({
         Math.max(...products.map(p => p.code || 0), 0) + 1,
       name: isEditing && selectedProduct ? selectedProduct.name : "",
       cost: isEditing && selectedProduct ? selectedProduct.cost : 0,
+      price: isEditing && selectedProduct ? selectedProduct.price : 0,
       unit: isEditing && selectedProduct ? selectedProduct.unit || "UN" : "UN",
       hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
       subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
@@ -90,6 +94,7 @@ export const useProductFormLogic = ({
         code: selectedProduct.code,
         name: selectedProduct.name,
         cost: selectedProduct.cost,
+        price: selectedProduct.price,
         unit: selectedProduct.unit || "UN",
         hasSubunit: selectedProduct.hasSubunit || false,
         subunit: selectedProduct.subunit || "",
@@ -114,22 +119,18 @@ export const useProductFormLogic = ({
         return;
       }
       
-      const formDataWithConversion = {
+      // Convert classification IDs from "none" to null
+      const processedData = {
         ...data,
+        categoryId: data.categoryId === "none" || data.categoryId === "" ? null : data.categoryId,
+        groupId: data.groupId === "none" || data.groupId === "" ? null : data.groupId,
+        brandId: data.brandId === "none" || data.brandId === "" ? null : data.brandId,
         subunitRatio: hasSubunit && isConversionValid ? subunitRatio : undefined
       };
       
-      console.log("📊 Configuração do produto:", {
-        unit: data.unit,
-        subunit: data.subunit,
-        hasSubunit,
-        subunitRatio: formDataWithConversion.subunitRatio,
-        mainUnitPackageQuantity: units.find(u => u.value === selectedUnit)?.packageQuantity,
-        subUnitPackageQuantity: units.find(u => u.value === selectedSubunit)?.packageQuantity,
-        calculatedRatio: subunitRatio
-      });
+      console.log("📊 Produto processado para salvar:", processedData);
       
-      await onSubmit(formDataWithConversion);
+      await onSubmit(processedData);
       toast("Produto salvo com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar produto:", error);

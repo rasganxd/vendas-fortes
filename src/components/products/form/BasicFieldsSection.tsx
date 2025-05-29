@@ -61,7 +61,7 @@ export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({
         />
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <FormField
           control={form.control}
           name="cost"
@@ -71,6 +71,26 @@ export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({
               <FormControl>
                 <Input 
                   placeholder="Preço de custo" 
+                  value={formatCurrency(field.value)} 
+                  onChange={(e) => {
+                    const numericValue = e.target.value.replace(/\D/g, '');
+                    field.onChange(parseFloat(numericValue) / 100 || 0);
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Preço de Venda</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Preço de venda" 
                   value={formatCurrency(field.value)} 
                   onChange={(e) => {
                     const numericValue = e.target.value.replace(/\D/g, '');
