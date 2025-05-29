@@ -70,7 +70,7 @@ export default function OrderFormTwoColumnLayout({
   }, [selectedCustomer, selectedSalesRep, orderItems, handleCreateOrder, productInputRef, customerInputRef, salesRepInputRef]);
 
   return (
-    <div className="w-full h-screen flex flex-col">
+    <div className="w-full h-screen flex flex-col overflow-hidden">
       {/* Fixed Action Bar for Mobile */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg p-4">
         <OrderFormActions 
@@ -85,18 +85,18 @@ export default function OrderFormTwoColumnLayout({
         />
       </div>
 
-      {/* Main Content with controlled height */}
+      {/* Main Content with proper grid alignment */}
       <div className="flex-1 overflow-hidden">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-full">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-full p-6">
           {/* Left Column - Form Fields (3/4 width on XL screens) */}
-          <div className="xl:col-span-3 flex flex-col space-y-4 pb-20 lg:pb-4" style={{ overflow: 'visible' }}>
+          <div className="xl:col-span-3 flex flex-col space-y-6 pb-20 lg:pb-0 min-w-0">
             {/* Order Form Fields */}
             <Card className="shadow-sm border-gray-200 flex-shrink-0">
-              <CardContent className="pt-4 pb-4">
+              <CardContent className="pt-6 pb-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-800">Dados do Pedido</h3>
-                    <div className="text-xs text-gray-500 space-x-4">
+                    <div className="text-xs text-gray-500 space-x-4 hidden lg:block">
                       <span>F3: Cliente</span>
                       <span>F4: Vendedor</span>
                       <span>F2: Produto</span>
@@ -127,9 +127,9 @@ export default function OrderFormTwoColumnLayout({
               </CardContent>
             </Card>
 
-            {/* Enhanced Product Search - REMOVIDO relative z-10 */}
+            {/* Enhanced Product Search */}
             <Card className="shadow-sm border-gray-200 flex-shrink-0">
-              <CardContent className="pt-4 pb-4">
+              <CardContent className="pt-6 pb-6">
                 <EnhancedProductSearch 
                   products={products}
                   handleAddItem={handleAddItem}
@@ -143,7 +143,7 @@ export default function OrderFormTwoColumnLayout({
             {/* Order Items Table with better overflow handling */}
             <Card className="shadow-sm border-gray-200 flex-1 flex flex-col min-h-0">
               <CardContent className="p-0 flex-1 flex flex-col min-h-0">
-                <div className="flex-1" style={{ overflow: 'visible' }}>
+                <div className="flex-1 overflow-auto">
                   <EnhancedOrderItemsTable 
                     orderItems={orderItems}
                     handleRemoveItem={handleRemoveItem}
@@ -155,12 +155,12 @@ export default function OrderFormTwoColumnLayout({
             </Card>
           </div>
 
-          {/* Right Column - Reorganized with Actions on top */}
-          <div className="xl:col-span-1 hidden lg:block">
-            <div className="sticky top-4 space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+          {/* Right Column - Properly aligned with left column */}
+          <div className="xl:col-span-1 hidden lg:block min-w-0">
+            <div className="sticky top-6 space-y-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
               {/* Compact Summary - Financial info only */}
               <Card className="shadow-sm border-gray-200">
-                <CardContent className="pt-4 pb-4">
+                <CardContent className="pt-6 pb-6">
                   <OrderSummaryPanel 
                     orderItems={orderItems}
                     selectedCustomer={selectedCustomer}
@@ -173,9 +173,9 @@ export default function OrderFormTwoColumnLayout({
                 </CardContent>
               </Card>
 
-              {/* Actions - Now positioned higher */}
+              {/* Actions - Positioned consistently */}
               <Card className="shadow-sm border-gray-200">
-                <CardContent className="pt-4 pb-4">
+                <CardContent className="pt-6 pb-6">
                   <OrderFormActions 
                     selectedCustomer={selectedCustomer}
                     selectedSalesRep={selectedSalesRep}

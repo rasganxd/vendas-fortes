@@ -30,15 +30,15 @@ export default function OrderSummaryPanel({
 
   if (compact) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Compact Financial Summary */}
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Calculator size={18} />
+          <div className="flex items-center gap-2 mb-4">
+            <Calculator size={18} className="text-blue-600" />
             <h4 className="font-semibold text-gray-800">Resumo Financeiro</h4>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Itens:</span>
               <Badge variant="secondary" className="font-bold">
@@ -53,7 +53,7 @@ export default function OrderSummaryPanel({
               </Badge>
             </div>
             
-            <Separator className="my-2" />
+            <Separator className="my-3" />
             
             <div className="flex items-center justify-between">
               <span className="font-medium text-gray-800">Total:</span>
@@ -69,29 +69,29 @@ export default function OrderSummaryPanel({
 
         {/* Compact Info */}
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <User size={18} />
+          <div className="flex items-center gap-2 mb-4">
+            <User size={18} className="text-blue-600" />
             <h4 className="font-semibold text-gray-800">Dados do Pedido</h4>
           </div>
           
-          <div className="space-y-2 text-sm">
-            <div>
+          <div className="space-y-3 text-sm">
+            <div className="min-w-0">
               <span className="text-gray-600">Cliente: </span>
-              <span className="font-medium">
+              <span className="font-medium truncate block" title={selectedCustomer ? selectedCustomer.name : 'Não selecionado'}>
                 {selectedCustomer ? selectedCustomer.name : 'Não selecionado'}
               </span>
             </div>
             
-            <div>
+            <div className="min-w-0">
               <span className="text-gray-600">Vendedor: </span>
-              <span className="font-medium">
+              <span className="font-medium truncate block" title={selectedSalesRep ? selectedSalesRep.name : 'Não selecionado'}>
                 {selectedSalesRep ? selectedSalesRep.name : 'Não selecionado'}
               </span>
             </div>
             
-            <div>
+            <div className="min-w-0">
               <span className="text-gray-600">Pagamento: </span>
-              <span className="font-medium">
+              <span className="font-medium truncate block" title={selectedPaymentTable === 'default-table' ? 'Padrão' : selectedPaymentTable}>
                 {selectedPaymentTable === 'default-table' ? 'Padrão' : selectedPaymentTable}
               </span>
             </div>
