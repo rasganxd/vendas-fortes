@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Barcode } from 'lucide-react';
+import { Search, Package, Plus, Barcode, AlertTriangle } from 'lucide-react';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import ProductSearchResultsPortal from './ProductSearchResultsPortal';
+import PriceValidation from '@/components/products/pricing/PriceValidation';
 import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
+import { validateProductDiscount } from '@/context/operations/productOperations';
 
 interface EnhancedProductSearchProps {
   products: Product[];
@@ -32,6 +34,7 @@ export default function EnhancedProductSearch({
   const [selectedUnit, setSelectedUnit] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [priceDisplayValue, setPriceDisplayValue] = useState('');
+  const [priceValidationError, setPriceValidationError] = useState<string>('');
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -48,6 +51,20 @@ export default function EnhancedProductSearch({
       return product.name.toLowerCase().includes(searchTerm.toLowerCase());
     }
   }).slice(0, 8); // Limit to 8 results
+
+  // Validate price whenever it changes
+  useEffect(() => {
+    if (selectedProduct && price > 0) {
+      const validation = validateProductDiscount(selectedProduct.id, price, products);
+      if (validation === true) {
+        setPriceValidationError('');
+      } else {
+        setPriceValidationError(validation as string);
+      }
+    } else {
+      setPriceValidationError('');
+    }
+  }, [selectedProduct, price, products]);
 
   useEffect(() => {
     if (selectedProduct) {
@@ -89,8 +106,10 @@ export default function EnhancedProductSearch({
     setPrice(numericPrice);
   };
 
+  const isPriceValid = !priceValidationError && price > 0;
+
   const handleAdd = () => {
-    if (selectedProduct && quantity > 0) {
+    if (selectedProduct && quantity > 0 && isPriceValid) {
       handleAddItem(selectedProduct, quantity, price, selectedUnit);
 
       // Reset form
@@ -100,6 +119,7 @@ export default function EnhancedProductSearch({
       setPrice(0);
       setPriceDisplayValue('');
       setSelectedUnit('');
+      setPriceValidationError('');
 
       // Focus back on search
       productInputRef.current?.focus();
@@ -126,7 +146,9 @@ export default function EnhancedProductSearch({
   const handleQuantityKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleAdd();
+      if (isPriceValid) {
+        handleAdd();
+      }
     }
   };
 
@@ -140,6 +162,7 @@ export default function EnhancedProductSearch({
       setPrice(0);
       setPriceDisplayValue('');
       setSelectedUnit('');
+      setPriceValidationError('');
     }
 
     // Show results only for name search (not code search) and when there's input
@@ -208,7 +231,7 @@ export default function EnhancedProductSearch({
 
       {/* Product Addition Form */}
       {selectedProduct && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className={`border-2 ${isPriceValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
           <CardContent className="pt-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -252,7 +275,7 @@ export default function EnhancedProductSearch({
                     value={priceDisplayValue}
                     onChange={handlePriceChange}
                     placeholder="0,00"
-                    className="h-10"
+                    className={`h-10 ${!isPriceValid ? 'border-red-500 bg-red-50' : ''}`}
                   />
                 </div>
 
@@ -260,8 +283,8 @@ export default function EnhancedProductSearch({
                   <Button
                     ref={addButtonRef}
                     onClick={handleAdd}
-                    className="w-full h-10 bg-green-600 hover:bg-green-700"
-                    disabled={!selectedProduct || quantity <= 0}
+                    className={`w-full h-10 ${isPriceValid ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400'}`}
+                    disabled={!selectedProduct || quantity <= 0 || !isPriceValid}
                   >
                     <Plus size={16} className="mr-2" />
                     Adicionar
@@ -269,12 +292,32 @@ export default function EnhancedProductSearch({
                 </div>
               </div>
 
+              {/* Price Validation */}
+              <div className="space-y-2">
+                <PriceValidation
+                  product={selectedProduct}
+                  currentPrice={price}
+                  className="text-sm"
+                />
+                
+                {priceValidationError && (
+                  <div className="flex items-center text-sm text-red-600 bg-red-100 p-2 rounded">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    <span>{priceValidationError}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Quantity conversion display */}
-              {getQuantityConversion()}
+              {getQuantityConversion() && (
+                <div className="text-sm text-gray-600">
+                  {getQuantityConversion()}
+                </div>
+              )}
 
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Total:</span>
-                <span className="font-bold text-green-600 text-lg">
+                <span className={`font-bold text-lg ${isPriceValid ? 'text-green-600' : 'text-red-600'}`}>
                   {(quantity * price).toLocaleString('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'

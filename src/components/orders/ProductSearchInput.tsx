@@ -3,11 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, ShoppingCart } from 'lucide-react';
+import { Search, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { useProductSearch } from '@/hooks/useProductSearch';
 import ProductSearchResults from './ProductSearchResults';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
+import PriceValidation from '@/components/products/pricing/PriceValidation';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 import { calculateUnitPrice, formatBrazilianPrice } from '@/utils/priceConverter';
@@ -55,6 +56,8 @@ export default function ProductSearchInput({
     quantityInputRef,
     priceInputRef,
     isAddingItem,
+    currentPriceError,
+    isCurrentPriceValid,
     handleSearch,
     handleSearchKeyDown,
     handleProductSelect: originalHandleProductSelect,
@@ -113,7 +116,7 @@ export default function ProductSearchInput({
   };
 
   const handleAddToOrder = () => {
-    if (selectedProduct && quantity && quantity > 0) {
+    if (selectedProduct && quantity && quantity > 0 && isCurrentPriceValid) {
       console.log("🛒 Adicionando ao pedido:", {
         product: selectedProduct.name,
         quantity,
@@ -199,11 +202,13 @@ export default function ProductSearchInput({
             <Input
               ref={priceInputRef}
               type="text"
-              className="h-11 text-center w-28 border-gray-300"
+              className={`h-11 text-center w-28 border-gray-300 ${
+                !isCurrentPriceValid ? 'border-red-500 bg-red-50' : ''
+              }`}
               placeholder="Preço"
               value={formatPriceDisplay(price)}
               onChange={originalHandlePriceChange}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddToOrder()}
+              onKeyDown={(e) => e.key === 'Enter' && isCurrentPriceValid && handleAddToOrder()}
               disabled={isAddingItem}
             />
           </div>
@@ -211,7 +216,7 @@ export default function ProductSearchInput({
           <Button 
             type="button"
             className="h-11 flex-none w-32 bg-sales-800 hover:bg-sales-700 text-white"
-            disabled={!selectedProduct || quantity === null || quantity <= 0 || isAddingItem}
+            disabled={!selectedProduct || quantity === null || quantity <= 0 || isAddingItem || !isCurrentPriceValid}
             onClick={handleAddToOrder}
           >
             <ShoppingCart size={18} className="mr-2" />
@@ -219,6 +224,25 @@ export default function ProductSearchInput({
           </Button>
         </div>
       </div>
+      
+      {/* Validação de preço */}
+      {selectedProduct && (
+        <div className="mt-2">
+          <PriceValidation
+            product={selectedProduct}
+            currentPrice={price}
+            className="text-sm"
+          />
+        </div>
+      )}
+
+      {/* Erro de validação */}
+      {currentPriceError && (
+        <div className="mt-2 flex items-center text-sm text-red-600 bg-red-50 p-2 rounded">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <span>{currentPriceError}</span>
+        </div>
+      )}
       
       {getConversionDisplay() && (
         <div className="mt-2 text-xs text-gray-500">

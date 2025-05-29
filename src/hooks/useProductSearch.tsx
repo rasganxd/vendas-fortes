@@ -1,6 +1,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Product } from '@/types';
+import { useProductSearchValidation } from './useProductSearchValidation';
 
 // Cache for product search results
 const productSearchCache = new Map<string, Product[]>();
@@ -27,6 +28,9 @@ export function useProductSearch({
   const priceInputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const addTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Usar hook de validação
+  const { validatePrice, getPriceValidationError, isPriceValid, clearValidationErrors } = useProductSearchValidation({ products });
   
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -62,7 +66,11 @@ export function useProductSearch({
     setSearchTerm(product.name);
     setPrice(product.price);
     setShowResults(false);
-    setQuantity(1); // Set default quantity to 1 when selecting a product
+    setQuantity(1);
+    
+    // Validar preço inicial
+    validatePrice(product.id, product.price);
+    
     setTimeout(() => quantityInputRef.current?.focus(), 10);
   };
   
@@ -82,10 +90,16 @@ export function useProductSearch({
   
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
-    setPrice(parseFloat(value) || 0);
+    const newPrice = parseFloat(value) || 0;
+    setPrice(newPrice);
+    
+    // Validar novo preço
+    if (selectedProduct) {
+      validatePrice(selectedProduct.id, newPrice);
+    }
   };
 
-  // Enhanced handleAddToOrder with debounce and validation
+  // Enhanced handleAddToOrder with price validation
   const handleAddToOrder = useCallback(() => {
     console.log("🛒 === ADDING ITEM TO ORDER (PRODUCT SEARCH) ===");
     console.log("📦 Selected product:", selectedProduct?.name, selectedProduct?.id);
@@ -108,6 +122,12 @@ export function useProductSearch({
       console.warn("⚠️ Invalid quantity:", quantity);
       return;
     }
+
+    // Validar preço antes de adicionar
+    if (!isPriceValid(selectedProduct.id)) {
+      console.warn("⚠️ Invalid price - below minimum");
+      return;
+    }
     
     // Clear any existing timeout
     if (addTimeoutRef.current) {
@@ -116,7 +136,7 @@ export function useProductSearch({
     
     // Set timeout to prevent rapid additions
     addTimeoutRef.current = setTimeout(() => {
-      if (selectedProduct && (quantity !== null && quantity > 0)) {
+      if (selectedProduct && (quantity !== null && quantity > 0) && isPriceValid(selectedProduct.id)) {
         try {
           setIsAddingItem(true);
           console.log("✅ Calling addItemToOrder with:", {
@@ -149,12 +169,13 @@ export function useProductSearch({
           }, 1000);
         }
       } else {
-        console.warn("⚠️ Cannot add item - missing product or invalid quantity");
+        console.warn("⚠️ Cannot add item - missing product, invalid quantity, or invalid price");
         console.warn("📦 Selected product:", selectedProduct);
         console.warn("🔢 Quantity:", quantity);
+        console.warn("💰 Price valid:", selectedProduct ? isPriceValid(selectedProduct.id) : 'no product');
       }
     }, 300); // 300ms debounce
-  }, [selectedProduct, quantity, price, addItemToOrder, inputRef, isAddingItem]);
+  }, [selectedProduct, quantity, price, addItemToOrder, inputRef, isAddingItem, isPriceValid]);
 
   // Enhanced form reset function
   const resetForm = () => {
@@ -164,6 +185,7 @@ export function useProductSearch({
     setQuantity(null);
     setPrice(0);
     setShowResults(false);
+    clearValidationErrors();
   };
   
   const incrementQuantity = () => {
@@ -238,6 +260,10 @@ export function useProductSearch({
     return 0;
   });
 
+  // Get current price validation error
+  const currentPriceError = selectedProduct ? getPriceValidationError(selectedProduct.id) : undefined;
+  const isCurrentPriceValid = selectedProduct ? isPriceValid(selectedProduct.id) : true;
+
   return {
     searchTerm,
     selectedProduct,
@@ -249,6 +275,8 @@ export function useProductSearch({
     quantityInputRef,
     priceInputRef,
     isAddingItem,
+    currentPriceError,
+    isCurrentPriceValid,
     handleSearch,
     handleSearchKeyDown,
     handleProductSelect,
