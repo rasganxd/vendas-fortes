@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -51,19 +52,6 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     }
   }, [statusMessage]);
 
-  // Filter function to remove temporary documents from results
-  const filterTemporaryDocs = (logs: SyncLogEntry[]): SyncLogEntry[] => {
-    if (!logs || !Array.isArray(logs)) return [];
-    
-    return logs.filter(log => {
-      // Skip documents that are marked as temporary
-      if (!log || typeof log !== 'object') return false;
-      
-      // Keep only documents with valid properties
-      return log.id && log.event_type && log.created_at;
-    });
-  };
-
   const loadSyncLogs = async () => {
     if (!salesRepId) {
       console.error("MobileSyncStatus: No salesRepId provided");
@@ -79,8 +67,11 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       console.log(`MobileSyncStatus: Loading sync logs for sales rep ID ${salesRepId}`);
       const data = await mobileSyncService.getSyncLogs();
       
-      // Filter out temporary documents
-      const filteredData = filterTemporaryDocs(data || []);
+      // Filtrar logs por vendedor se necessário
+      const filteredData = salesRepId ? 
+        data.filter(log => log.sales_rep_id === salesRepId) : 
+        data;
+      
       setSyncLogs(filteredData);
       
       if (filteredData && filteredData.length > 0) {
@@ -92,7 +83,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
         setStatusType('success');
       } else {
         console.log("MobileSyncStatus: No sync logs found for this sales rep");
-        setStatusMessage("Nenhum histórico de sincronização encontrado.");
+        setStatusMessage("Nenhum histórico de sincronização encontrado para este vendedor.");
         setStatusType('info');
         setLastSynced(null);
       }
@@ -264,8 +255,9 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                 <TableRow>
                   <TableHead className="text-blue-800">Status</TableHead>
                   <TableHead className="text-blue-800">Tipo</TableHead>
+                  <TableHead className="text-blue-800">Dados</TableHead>
+                  <TableHead className="text-blue-800">Qtd</TableHead>
                   <TableHead className="text-blue-800">Dispositivo</TableHead>
-                  <TableHead className="text-blue-800">IP</TableHead>
                   <TableHead className="text-blue-800">Data</TableHead>
                 </TableRow>
               </TableHeader>
@@ -277,8 +269,9 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                       {log.event_type === 'upload' ? 'Envio' : 
                        log.event_type === 'download' ? 'Recebimento' : 'Erro'}
                     </TableCell>
+                    <TableCell>{log.data_type || '—'}</TableCell>
+                    <TableCell>{log.records_count || 0}</TableCell>
                     <TableCell>{log.device_id || '—'}</TableCell>
-                    <TableCell>{log.device_ip || '—'}</TableCell>
                     <TableCell>
                       {formatDate(log.created_at)}
                     </TableCell>
