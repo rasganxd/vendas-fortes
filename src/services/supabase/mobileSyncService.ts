@@ -117,20 +117,19 @@ class MobileSyncService {
     } catch (error) {
       console.error('❌ Failed to import orders from mobile:', error);
       
-      // Log the error
-      await this.logSyncEvent('error', 'orders', 0, undefined, deviceId, deviceIp, 
+      // Log the error - com retry logic
+      await this.logSyncEventWithRetry('error', 'orders', 0, undefined, deviceId, deviceIp, 
         error instanceof Error ? error.message : 'Unknown error');
       
       throw error;
     }
   }
 
-  // Get sync logs - Updated to handle RLS correctly
+  // Get sync logs - Melhorado com tratamento de erros mais robusto
   async getSyncLogs(): Promise<SyncLogEntry[]> {
     try {
       console.log('📋 Fetching sync logs...');
       
-      // Tentar com uma consulta mais específica
       const { data, error } = await supabase
         .from('sync_logs')
         .select('*')
@@ -139,7 +138,7 @@ class MobileSyncService {
 
       if (error) {
         console.error('❌ Error fetching sync logs:', error);
-        // Se houver erro, retornar array vazio em vez de falhar
+        console.error('❌ Error details:', error.details, error.hint, error.code);
         return [];
       }
 
@@ -163,7 +162,6 @@ class MobileSyncService {
       return transformedLogs;
     } catch (error) {
       console.error('❌ Failed to fetch sync logs:', error);
-      // Retornar array vazio em caso de falha
       return [];
     }
   }
@@ -176,7 +174,7 @@ class MobileSyncService {
       const { error } = await supabase
         .from('sync_logs')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
       if (error) {
         console.error('❌ Error clearing sync logs:', error);
@@ -190,7 +188,7 @@ class MobileSyncService {
     }
   }
 
-  // Log sync event - CORRIGIDO para inserir logs sem falhas de RLS
+  // Log sync event - MELHORADO com retry logic e debugging adicional
   async logSyncEvent(
     eventType: 'upload' | 'download' | 'error',
     dataType: string,
@@ -200,7 +198,7 @@ class MobileSyncService {
     deviceIp?: string,
     errorMessage?: string,
     metadata?: any
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       console.log(`📝 Logging sync event: ${eventType} - ${dataType} for sales rep: ${salesRepId}`);
       
@@ -218,7 +216,6 @@ class MobileSyncService {
 
       console.log('📝 Creating log entry:', logEntry);
 
-      // Usar insert sem check de políticas RLS por enquanto
       const { data, error } = await supabase
         .from('sync_logs')
         .insert(logEntry)
@@ -227,18 +224,52 @@ class MobileSyncService {
       if (error) {
         console.error('❌ Error logging sync event:', error);
         console.error('❌ Error details:', error.details, error.hint, error.code);
-        // Não fazer throw para não quebrar o fluxo principal
-        return;
+        return false;
       }
 
       console.log('✅ Sync event logged successfully:', data);
+      return true;
     } catch (error) {
       console.error('❌ Failed to log sync event:', error);
-      // Não fazer throw aqui para não quebrar outras operações
+      return false;
     }
   }
 
-  // Get customers for mobile sync
+  // Novo método com retry logic para logging
+  async logSyncEventWithRetry(
+    eventType: 'upload' | 'download' | 'error',
+    dataType: string,
+    recordsCount: number = 0,
+    salesRepId?: string,
+    deviceId?: string,
+    deviceIp?: string,
+    errorMessage?: string,
+    metadata?: any,
+    maxRetries: number = 3
+  ): Promise<boolean> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`📝 Attempt ${attempt}/${maxRetries} to log sync event`);
+      
+      const success = await this.logSyncEvent(
+        eventType, dataType, recordsCount, salesRepId, 
+        deviceId, deviceIp, errorMessage, metadata
+      );
+      
+      if (success) {
+        return true;
+      }
+      
+      if (attempt < maxRetries) {
+        console.log(`⏳ Retrying log sync event in ${attempt * 1000}ms...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+      }
+    }
+    
+    console.error('❌ Failed to log sync event after all retries');
+    return false;
+  }
+
+  // Get customers for mobile sync - MELHORADO com logging garantido
   async getCustomersForSync(salesRepId?: string): Promise<Customer[]> {
     try {
       console.log(`📱 Getting customers for sync, sales rep: ${salesRepId}`);
@@ -256,13 +287,18 @@ class MobileSyncService {
 
       if (error) {
         console.error('❌ Error fetching customers for sync:', error);
+        await this.logSyncEventWithRetry('error', 'customers', 0, salesRepId, 
+          undefined, undefined, error.message);
         throw error;
       }
 
       console.log(`✅ Found ${data?.length || 0} customers for sync`);
 
-      // Log the sync event
-      await this.logSyncEvent('download', 'customers', data?.length || 0, salesRepId);
+      // Garantir que o log seja criado
+      const logSuccess = await this.logSyncEventWithRetry('download', 'customers', data?.length || 0, salesRepId);
+      if (!logSuccess) {
+        console.warn('⚠️ Failed to log customer sync event, but continuing...');
+      }
       
       // Transform data to match Customer interface
       const transformedCustomers = (data || []).map(transformCustomerData).filter(Boolean) as Customer[];
@@ -273,7 +309,7 @@ class MobileSyncService {
     }
   }
 
-  // Get products for mobile sync
+  // Get products for mobile sync - MELHORADO com logging garantido
   async getProductsForSync(salesRepId?: string): Promise<Product[]> {
     try {
       console.log(`📱 Getting products for sync, sales rep: ${salesRepId}`);
@@ -285,13 +321,18 @@ class MobileSyncService {
 
       if (error) {
         console.error('❌ Error fetching products for sync:', error);
+        await this.logSyncEventWithRetry('error', 'products', 0, salesRepId, 
+          undefined, undefined, error.message);
         throw error;
       }
 
       console.log(`✅ Found ${data?.length || 0} products for sync`);
 
-      // Log the sync event
-      await this.logSyncEvent('download', 'products', data?.length || 0, salesRepId);
+      // Garantir que o log seja criado
+      const logSuccess = await this.logSyncEventWithRetry('download', 'products', data?.length || 0, salesRepId);
+      if (!logSuccess) {
+        console.warn('⚠️ Failed to log product sync event, but continuing...');
+      }
       
       // Transform data to match Product interface
       const transformedProducts = (data || []).map(transformProductData).filter(Boolean) as Product[];
@@ -302,7 +343,7 @@ class MobileSyncService {
     }
   }
 
-  // Upload orders from mobile
+  // Upload orders from mobile - MELHORADO
   async uploadOrders(orders: Partial<Order>[], salesRepId?: string): Promise<void> {
     try {
       console.log('📤 Uploading orders from mobile:', orders.length);
@@ -338,13 +379,13 @@ class MobileSyncService {
 
       if (error) {
         console.error('❌ Error uploading orders:', error);
-        await this.logSyncEvent('error', 'orders', orders.length, salesRepId, 
+        await this.logSyncEventWithRetry('error', 'orders', orders.length, salesRepId, 
           undefined, undefined, error.message);
         throw error;
       }
 
       // Log successful upload
-      await this.logSyncEvent('upload', 'orders', orders.length, salesRepId);
+      await this.logSyncEventWithRetry('upload', 'orders', orders.length, salesRepId);
       console.log('✅ Orders uploaded successfully');
     } catch (error) {
       console.error('❌ Failed to upload orders:', error);
@@ -352,7 +393,7 @@ class MobileSyncService {
     }
   }
 
-  // Upload customers from mobile
+  // Upload customers from mobile - MELHORADO
   async uploadCustomers(customers: Partial<Customer>[], salesRepId?: string): Promise<void> {
     try {
       console.log('📤 Uploading customers from mobile:', customers.length);
@@ -387,17 +428,60 @@ class MobileSyncService {
 
       if (error) {
         console.error('❌ Error uploading customers:', error);
-        await this.logSyncEvent('error', 'customers', customers.length, salesRepId,
+        await this.logSyncEventWithRetry('error', 'customers', customers.length, salesRepId,
           undefined, undefined, error.message);
         throw error;
       }
 
       // Log successful upload
-      await this.logSyncEvent('upload', 'customers', customers.length, salesRepId);
+      await this.logSyncEventWithRetry('upload', 'customers', customers.length, salesRepId);
       console.log('✅ Customers uploaded successfully');
     } catch (error) {
       console.error('❌ Failed to upload customers:', error);
       throw error;
+    }
+  }
+
+  // Novo método para conectar sync_updates com sync_logs
+  async processSyncUpdate(updateId: string, salesRepId: string, dataTypes: string[]): Promise<boolean> {
+    try {
+      console.log(`🔄 Processing sync update ${updateId} for sales rep ${salesRepId}`);
+      
+      // Log do início do processamento
+      await this.logSyncEventWithRetry(
+        'download', 
+        'sync_update', 
+        1, 
+        salesRepId, 
+        undefined, 
+        undefined, 
+        undefined,
+        { sync_update_id: updateId, data_types: dataTypes }
+      );
+      
+      // Marcar sync update como processado (seria chamado pela edge function)
+      const { error } = await supabase
+        .from('sync_updates')
+        .update({
+          is_active: false,
+          completed_at: new Date().toISOString(),
+          metadata: {
+            ...{ processed_by: salesRepId },
+            processed_at: new Date().toISOString()
+          }
+        })
+        .eq('id', updateId);
+
+      if (error) {
+        console.error('❌ Error updating sync_update:', error);
+        return false;
+      }
+
+      console.log(`✅ Sync update ${updateId} processed successfully`);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to process sync update:', error);
+      return false;
     }
   }
 

@@ -21,29 +21,45 @@ export const useSalesRepSyncStatus = (salesReps: SalesRep[]) => {
       setIsLoading(true);
       console.log('🔍 Loading sync statuses for sales reps:', salesReps.length);
       
-      // Buscar últimos logs de sincronização
-      const syncLogs = await mobileSyncService.getSyncLogs();
-      console.log('📋 Found sync logs:', syncLogs?.length || 0);
+      // Buscar logs de sincronização com melhor tratamento de erro
+      let syncLogs = [];
+      try {
+        syncLogs = await mobileSyncService.getSyncLogs();
+        console.log('📋 Found sync logs:', syncLogs?.length || 0);
+      } catch (error) {
+        console.error('❌ Error loading sync logs, continuing without logs:', error);
+      }
 
       // Buscar atualizações pendentes
-      const { data: pendingUpdates, error: updatesError } = await supabase
-        .from('sync_updates')
-        .select('*')
-        .eq('is_active', true);
+      let pendingUpdates = [];
+      try {
+        const { data, error: updatesError } = await supabase
+          .from('sync_updates')
+          .select('*')
+          .eq('is_active', true);
 
-      if (updatesError) {
-        console.error('❌ Error loading pending updates:', updatesError);
-      } else {
-        console.log('⏳ Found pending updates:', pendingUpdates?.length || 0);
+        if (updatesError) {
+          console.error('❌ Error loading pending updates:', updatesError);
+        } else {
+          pendingUpdates = data || [];
+          console.log('⏳ Found pending updates:', pendingUpdates.length);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching pending updates:', error);
       }
 
       // Mapear status para cada vendedor
       const statuses: SalesRepSyncStatus[] = salesReps.map(salesRep => {
-        // Encontrar último log de sync do vendedor
-        const lastLog = syncLogs?.find(log => log.sales_rep_id === salesRep.id);
+        // Encontrar logs do vendedor (filtrando por sales_rep_id)
+        const salesRepLogs = syncLogs.filter(log => 
+          log.sales_rep_id === salesRep.id && log.status === 'completed'
+        );
         
-        // Contar atualizações pendentes
-        const pendingCount = pendingUpdates?.length || 0;
+        // Encontrar último log bem-sucedido
+        const lastLog = salesRepLogs.length > 0 ? salesRepLogs[0] : null;
+        
+        // Contar atualizações pendentes (global para todos os vendedores)
+        const pendingCount = pendingUpdates.length;
         
         // Determinar status baseado no último log
         let status: 'online' | 'offline' | 'pending' | 'error' = 'offline';
@@ -53,19 +69,20 @@ export const useSalesRepSyncStatus = (salesReps: SalesRep[]) => {
           const now = Date.now();
           const hoursSinceLastSync = (now - lastSyncTime) / (1000 * 60 * 60);
           
-          console.log(`📊 Sales rep ${salesRep.name}: last sync ${hoursSinceLastSync.toFixed(1)}h ago, status: ${lastLog.status}`);
+          console.log(`📊 Sales rep ${salesRep.name}: last sync ${hoursSinceLastSync.toFixed(1)}h ago, log status: ${lastLog.status}`);
           
-          if (lastLog.status === 'failed') {
-            status = 'error';
-          } else if (pendingCount > 0) {
+          if (pendingCount > 0) {
             status = 'pending';
           } else if (hoursSinceLastSync < 24) {
             status = 'online';
           } else {
             status = 'offline';
           }
-        } else if (pendingCount > 0) {
-          status = 'pending';
+        } else {
+          console.log(`📊 Sales rep ${salesRep.name}: no sync logs found`);
+          if (pendingCount > 0) {
+            status = 'pending';
+          }
         }
 
         return {
@@ -77,10 +94,19 @@ export const useSalesRepSyncStatus = (salesReps: SalesRep[]) => {
         };
       });
 
-      console.log('✅ Final sync statuses:', statuses.map(s => `${s.salesRep.name}: ${s.status}`));
+      console.log('✅ Final sync statuses:', statuses.map(s => `${s.salesRep.name}: ${s.status} (last: ${s.lastSyncAt ? new Date(s.lastSyncAt).toLocaleString() : 'never'})`));
       setSyncStatuses(statuses);
     } catch (error) {
       console.error('❌ Error loading sync statuses:', error);
+      // Em caso de erro, criar status padrão para todos os vendedores
+      const fallbackStatuses: SalesRepSyncStatus[] = salesReps.map(salesRep => ({
+        salesRep,
+        lastSyncAt: undefined,
+        deviceInfo: undefined,
+        status: 'offline' as const,
+        pendingUpdatesCount: 0
+      }));
+      setSyncStatuses(fallbackStatuses);
     } finally {
       setIsLoading(false);
     }
