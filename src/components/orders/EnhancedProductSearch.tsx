@@ -10,7 +10,7 @@ import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import ProductSearchResultsPortal from './ProductSearchResultsPortal';
 import PriceValidation from '@/components/products/pricing/PriceValidation';
-import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
+import { calculateUnitPrice, formatBrazilianPrice, parseBrazilianPrice } from '@/utils/priceConverter';
 import { validateProductDiscount } from '@/context/operations/productOperations';
 
 interface EnhancedProductSearchProps {
@@ -70,12 +70,25 @@ export default function EnhancedProductSearch({
     if (selectedProduct) {
       const mainUnit = selectedProduct.unit || 'UN';
       setSelectedUnit(mainUnit);
-      setPrice(selectedProduct.price || 0);
-      setPriceDisplayValue(formatBrazilianPrice(selectedProduct.price || 0));
+      
+      // Use calculateUnitPrice to get the correct price for the main unit
+      const correctPrice = calculateUnitPrice(selectedProduct, mainUnit);
+      console.log(`💰 Preço inicial para ${mainUnit}: R$ ${correctPrice.toFixed(2)}`);
+      
+      setPrice(correctPrice);
+      setPriceDisplayValue(formatBrazilianPrice(correctPrice));
     }
   }, [selectedProduct]);
 
   const handleProductSelect = (product: Product) => {
+    console.log("📦 Produto selecionado:", product.name, {
+      price: product.price,
+      unit: product.unit,
+      subunit: product.subunit,
+      hasSubunit: product.hasSubunit,
+      subunitRatio: product.subunitRatio
+    });
+    
     setSelectedProduct(product);
     setSearchTerm(product.name);
     setShowResults(false);
@@ -87,14 +100,17 @@ export default function EnhancedProductSearch({
   };
 
   const handleUnitChange = (unit: string) => {
-    if (!selectedProduct) return;
-    const currentUnit = selectedUnit;
+    console.log("🔄 Mudança de unidade:", unit);
     setSelectedUnit(unit);
 
-    // Convert price between units
-    const conversion = convertPriceBetweenUnits(selectedProduct, currentUnit, unit, price);
-    setPrice(conversion.price);
-    setPriceDisplayValue(formatBrazilianPrice(conversion.price));
+    if (selectedProduct) {
+      // Use calculateUnitPrice to get the correct price for the selected unit
+      const correctPrice = calculateUnitPrice(selectedProduct, unit);
+      console.log(`💰 Novo preço para ${unit}: R$ ${correctPrice.toFixed(2)}`);
+      
+      setPrice(correctPrice);
+      setPriceDisplayValue(formatBrazilianPrice(correctPrice));
+    }
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +126,13 @@ export default function EnhancedProductSearch({
 
   const handleAdd = () => {
     if (selectedProduct && quantity > 0 && isPriceValid) {
+      console.log("🛒 Adicionando ao pedido:", {
+        product: selectedProduct.name,
+        quantity,
+        price,
+        unit: selectedUnit
+      });
+      
       handleAddItem(selectedProduct, quantity, price, selectedUnit);
 
       // Reset form
@@ -175,7 +198,14 @@ export default function EnhancedProductSearch({
     if (!selectedProduct || !selectedProduct.hasSubunit || !selectedUnit) {
       return '';
     }
-    return calculateQuantityConversion(selectedProduct, quantity, selectedUnit, selectedProduct.unit || 'UN');
+    
+    if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
+      // Show how many main units this subunit quantity represents
+      const mainUnitQty = quantity / selectedProduct.subunitRatio;
+      return `${quantity} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
+    }
+    
+    return '';
   };
 
   // Handle clicks outside to close results
@@ -312,6 +342,16 @@ export default function EnhancedProductSearch({
               {getQuantityConversion() && (
                 <div className="text-sm text-gray-600">
                   {getQuantityConversion()}
+                </div>
+              )}
+
+              {/* Mostrar informação da conversão de preço */}
+              {selectedProduct && selectedProduct.hasSubunit && selectedUnit && (
+                <div className="text-xs text-blue-600">
+                  {selectedUnit === selectedProduct.subunit ? 
+                    `Preço individual: R$ ${formatBrazilianPrice(price)} (de uma ${selectedProduct.unit} com ${selectedProduct.subunitRatio} ${selectedProduct.subunit})` :
+                    `Preço da ${selectedProduct.unit}: R$ ${formatBrazilianPrice(price)}`
+                  }
                 </div>
               )}
 

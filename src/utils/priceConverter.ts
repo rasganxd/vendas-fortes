@@ -126,7 +126,19 @@ export function calculateUnitPrice(
   product: Product,
   selectedUnit: string
 ): number {
+  console.log('🧮 Calculando preço da unidade:', {
+    product: product.name,
+    selectedUnit,
+    originalPrice: product.price,
+    hasSubunit: product.hasSubunit,
+    mainUnit: product.unit,
+    subunit: product.subunit,
+    subunitRatio: product.subunitRatio
+  });
+
+  // Validações básicas
   if (!product.hasSubunit || !product.subunit || !product.subunitRatio) {
+    console.log('📝 Produto sem subunidade, retornando preço original:', product.price);
     return product.price;
   }
 
@@ -138,16 +150,23 @@ export function calculateUnitPrice(
   if (selectedUnit === subunit) {
     // Preço da unidade = preço da caixa ÷ quantidade de unidades na caixa
     const unitPrice = product.price / subunitRatio;
-    console.log(`💰 Preço da ${subunit}: R$ ${product.price} ÷ ${subunitRatio} = R$ ${unitPrice.toFixed(2)}`);
+    console.log(`💰 Calculando preço da ${subunit}: R$ ${product.price} ÷ ${subunitRatio} = R$ ${unitPrice.toFixed(2)}`);
     return unitPrice;
   }
   
   // Se a unidade selecionada é a unidade principal, usar o preço do produto
   if (selectedUnit === mainUnit) {
+    console.log(`💰 Usando preço da ${mainUnit}: R$ ${product.price}`);
     return product.price;
   }
   
-  // Fallback
+  // Fallback - unidade não reconhecida
+  console.warn('⚠️ Unidade não reconhecida, usando preço original:', {
+    selectedUnit,
+    mainUnit,
+    subunit,
+    price: product.price
+  });
   return product.price;
 }
 
