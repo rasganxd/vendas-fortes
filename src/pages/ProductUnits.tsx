@@ -1,54 +1,39 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus, Trash2, Edit } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PageLayout from '@/components/layout/PageLayout';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 import { Unit } from '@/types/unit';
 import { toast } from 'sonner';
-
 export default function ProductUnits() {
   console.log("=== ProductUnits component rendering ===");
-  
   const navigate = useNavigate();
-  const { units, isLoading, addUnit, updateUnit, deleteUnit, resetToDefault } = useProductUnits();
-  
+  const {
+    units,
+    isLoading,
+    addUnit,
+    updateUnit,
+    deleteUnit,
+    resetToDefault
+  } = useProductUnits();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-  const [formData, setFormData] = useState({ value: '', label: '', packageQuantity: 1 });
-
+  const [formData, setFormData] = useState({
+    value: '',
+    label: '',
+    packageQuantity: 1
+  });
   console.log("ProductUnits - dados das unidades:", {
     unitsCount: units?.length || 0,
     isLoading,
     units
   });
-
   const handleOpenDialog = (unit?: Unit) => {
     console.log("Abrindo dialog para unidade:", unit);
     if (unit) {
@@ -60,28 +45,28 @@ export default function ProductUnits() {
       });
     } else {
       setEditingUnit(null);
-      setFormData({ value: '', label: '', packageQuantity: 1 });
+      setFormData({
+        value: '',
+        label: '',
+        packageQuantity: 1
+      });
     }
     setDialogOpen(true);
   };
-
   const handleSave = async () => {
     try {
       console.log("Salvando unidade:", formData);
-      
       if (!formData.value.trim()) {
         toast("Erro", {
           description: "O valor da unidade é obrigatório"
         });
         return;
       }
-
       const unitData = {
         value: formData.value.toUpperCase().trim(),
         label: formData.label.trim() || formData.value.toUpperCase().trim(),
         packageQuantity: Number(formData.packageQuantity) || 1
       };
-
       if (editingUnit) {
         await updateUnit(editingUnit.value, unitData);
         toast("Unidade atualizada com sucesso");
@@ -89,10 +74,13 @@ export default function ProductUnits() {
         await addUnit(unitData);
         toast("Unidade adicionada com sucesso");
       }
-      
       setDialogOpen(false);
       setEditingUnit(null);
-      setFormData({ value: '', label: '', packageQuantity: 1 });
+      setFormData({
+        value: '',
+        label: '',
+        packageQuantity: 1
+      });
     } catch (error) {
       console.error("Erro ao salvar unidade:", error);
       toast("Erro ao salvar unidade", {
@@ -100,7 +88,6 @@ export default function ProductUnits() {
       });
     }
   };
-
   const handleDelete = async (unit: Unit) => {
     try {
       console.log("Deletando unidade:", unit);
@@ -113,7 +100,6 @@ export default function ProductUnits() {
       });
     }
   };
-
   const handleResetToDefault = async () => {
     try {
       console.log("Resetando unidades para padrão");
@@ -126,17 +112,10 @@ export default function ProductUnits() {
       });
     }
   };
-
   console.log("ProductUnits - renderizando interface...");
-
-  return (
-    <PageLayout title="Unidades de Produtos">
+  return <PageLayout title="Unidades de Produtos">
       <div className="mb-4 flex justify-between">
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => navigate('/produtos')}
-        >
+        <Button variant="outline" size="sm" onClick={() => navigate('/produtos')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar para Produtos
         </Button>
@@ -145,9 +124,7 @@ export default function ProductUnits() {
       <Card>
         <CardHeader>
           <CardTitle>Unidades de Medida</CardTitle>
-          <CardDescription>
-            Gerencie as unidades de medida e defina quantas unidades básicas cada embalagem contém. Exemplo: CX23 = caixa com 23 unidades.
-          </CardDescription>
+          
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
@@ -165,13 +142,8 @@ export default function ProductUnits() {
             </p>
           </div>
 
-          {isLoading ? (
-            <p>Carregando unidades...</p>
-          ) : (
-            <div className="w-full">
-              <p className="text-sm text-gray-600 mb-2">
-                DEBUG: {units?.length || 0} unidades carregadas
-              </p>
+          {isLoading ? <p>Carregando unidades...</p> : <div className="w-full">
+              
               <div className="w-full overflow-auto">
                 <Table className="w-full">
                   <TableHeader>
@@ -183,9 +155,7 @@ export default function ProductUnits() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {units && units.length > 0 ? (
-                      units.map((unit) => (
-                        <TableRow key={unit.value}>
+                    {units && units.length > 0 ? units.map(unit => <TableRow key={unit.value}>
                           <TableCell className="font-medium break-words">
                             <span className="block truncate">{unit.value}</span>
                           </TableCell>
@@ -199,38 +169,23 @@ export default function ProductUnits() {
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-center gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenDialog(unit)}
-                                className="h-8 w-8 p-0"
-                              >
+                              <Button variant="outline" size="sm" onClick={() => handleOpenDialog(unit)} className="h-8 w-8 p-0">
                                 <Edit className="h-3 w-3" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDelete(unit)}
-                                className="h-8 w-8 p-0"
-                              >
+                              <Button variant="outline" size="sm" onClick={() => handleDelete(unit)} className="h-8 w-8 p-0">
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
                           </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
+                        </TableRow>) : <TableRow>
                         <TableCell colSpan={4} className="text-center">
                           Nenhuma unidade encontrada
                         </TableCell>
-                      </TableRow>
-                    )}
+                      </TableRow>}
                   </TableBody>
                 </Table>
               </div>
-            </div>
-          )}
+            </div>}
         </CardContent>
       </Card>
 
@@ -242,45 +197,33 @@ export default function ProductUnits() {
               {editingUnit ? 'Editar Unidade' : 'Nova Unidade'}
             </DialogTitle>
             <DialogDescription>
-              {editingUnit 
-                ? 'Edite as informações da unidade de medida' 
-                : 'Adicione uma nova unidade de medida para os produtos'
-              }
+              {editingUnit ? 'Edite as informações da unidade de medida' : 'Adicione uma nova unidade de medida para os produtos'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div>
               <Label htmlFor="value">Valor da Unidade</Label>
-              <Input
-                id="value"
-                value={formData.value}
-                onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
-                placeholder="Ex: CX23, FARDO, UN, KG"
-                disabled={!!editingUnit}
-              />
+              <Input id="value" value={formData.value} onChange={e => setFormData(prev => ({
+              ...prev,
+              value: e.target.value
+            }))} placeholder="Ex: CX23, FARDO, UN, KG" disabled={!!editingUnit} />
             </div>
             
             <div>
               <Label htmlFor="label">Nome/Descrição</Label>
-              <Input
-                id="label"
-                value={formData.label}
-                onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                placeholder="Ex: Caixa com 23 unidades, Fardo, Unidade"
-              />
+              <Input id="label" value={formData.label} onChange={e => setFormData(prev => ({
+              ...prev,
+              label: e.target.value
+            }))} placeholder="Ex: Caixa com 23 unidades, Fardo, Unidade" />
             </div>
             
             <div>
               <Label htmlFor="packageQuantity">Quantidade na Embalagem</Label>
-              <Input
-                id="packageQuantity"
-                type="number"
-                step="0.001"
-                value={formData.packageQuantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, packageQuantity: Number(e.target.value) }))}
-                placeholder="Quantas unidades contém nesta embalagem"
-              />
+              <Input id="packageQuantity" type="number" step="0.001" value={formData.packageQuantity} onChange={e => setFormData(prev => ({
+              ...prev,
+              packageQuantity: Number(e.target.value)
+            }))} placeholder="Quantas unidades contém nesta embalagem" />
               <p className="text-xs text-gray-500 mt-1">
                 Exemplo: Para CX23, coloque 23 (cada caixa contém 23 unidades)
               </p>
@@ -297,6 +240,5 @@ export default function ProductUnits() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageLayout>
-  );
+    </PageLayout>;
 }
