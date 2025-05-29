@@ -67,7 +67,7 @@ export default function EnhancedProductSearch({
     }
   }, [selectedProduct]);
 
-  // Handle product code input change
+  // Handle product code input change - REMOVIDA A BUSCA AUTOMÁTICA
   const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
     setProductCode(value);
@@ -81,13 +81,8 @@ export default function EnhancedProductSearch({
       setPriceValidationError('');
     }
 
-    // Try to find product by code
-    if (value) {
-      const product = products.find(p => p.code.toString() === value);
-      if (product) {
-        handleProductSelect(product);
-      }
-    }
+    // REMOVIDO: Não buscar produto automaticamente durante a digitação
+    // A busca só acontece quando o usuário pressionar Enter
   };
 
   const handleProductSelect = (product: Product) => {
@@ -158,13 +153,24 @@ export default function EnhancedProductSearch({
     }
   };
 
+  // NOVA LÓGICA: Buscar produto apenas quando pressionar Enter
   const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (selectedProduct) {
-        quantityInputRef.current?.focus();
+      
+      if (productCode) {
+        // Buscar produto pelo código exato
+        const product = products.find(p => p.code.toString() === productCode);
+        if (product) {
+          console.log("🔍 Produto encontrado pelo código:", productCode);
+          handleProductSelect(product);
+        } else {
+          console.log("❌ Produto não encontrado pelo código:", productCode);
+          // Abrir diálogo de busca se não encontrar produto
+          setShowProductDialog(true);
+        }
       } else {
-        // Open search dialog if no product found by code
+        // Se não há código, abrir diálogo de busca
         setShowProductDialog(true);
       }
     }
@@ -209,7 +215,7 @@ export default function EnhancedProductSearch({
           <Input
             ref={productInputRef}
             type="text"
-            placeholder="Digite o código do produto..."
+            placeholder="Digite o código do produto e pressione Enter..."
             value={productCode}
             onChange={handleProductCodeChange}
             onKeyDown={handleProductCodeKeyDown}

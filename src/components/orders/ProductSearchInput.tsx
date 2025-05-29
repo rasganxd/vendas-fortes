@@ -69,7 +69,7 @@ export default function ProductSearchInput({
     }
   }, [selectedProduct, price, products]);
 
-  // Handle product code input change
+  // Handle product code input change - REMOVIDA A BUSCA AUTOMÁTICA
   const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
     setProductCode(value);
@@ -79,13 +79,8 @@ export default function ProductSearchInput({
       resetForm();
     }
 
-    // Try to find product by code
-    if (value) {
-      const product = products.find(p => p.code.toString() === value);
-      if (product) {
-        handleProductSelect(product);
-      }
-    }
+    // REMOVIDO: Não buscar produto automaticamente durante a digitação
+    // A busca só acontece quando o usuário pressionar Enter
   };
 
   const handleProductSelect = (product: Product) => {
@@ -109,6 +104,11 @@ export default function ProductSearchInput({
     console.log(`💰 Preço calculado para ${defaultUnit}: R$ ${correctPrice.toFixed(2)}`);
     
     setPrice(correctPrice);
+
+    // Focus on quantity input after product selection
+    setTimeout(() => {
+      quantityInputRef.current?.focus();
+    }, 100);
   };
 
   // Calculate price when unit changes
@@ -168,11 +168,24 @@ export default function ProductSearchInput({
     setPriceValidationError('');
   };
 
+  // NOVA LÓGICA: Buscar produto apenas quando pressionar Enter
   const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (!selectedProduct) {
-        // Open search dialog if no product found by code
+      
+      if (productCode) {
+        // Buscar produto pelo código exato
+        const product = products.find(p => p.code.toString() === productCode);
+        if (product) {
+          console.log("🔍 Produto encontrado pelo código:", productCode);
+          handleProductSelect(product);
+        } else {
+          console.log("❌ Produto não encontrado pelo código:", productCode);
+          // Abrir diálogo de busca se não encontrar produto
+          setShowProductDialog(true);
+        }
+      } else {
+        // Se não há código, abrir diálogo de busca
         setShowProductDialog(true);
       }
     }
@@ -210,7 +223,7 @@ export default function ProductSearchInput({
                 ref={inputRef}
                 type="text"
                 className="h-11 border-gray-300 focus:border-blue-400 focus:ring-blue-400"
-                placeholder="Digite o código do produto"
+                placeholder="Digite o código do produto e pressione Enter"
                 value={productCode}
                 onChange={handleProductCodeChange}
                 onKeyDown={handleProductCodeKeyDown}
