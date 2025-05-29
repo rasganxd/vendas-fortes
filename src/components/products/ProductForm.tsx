@@ -28,7 +28,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -124,6 +124,30 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const selectedUnit = form.watch("unit");
   const selectedSubunit = form.watch("subunit");
   
+  // Calculate correct subunit ratio
+  const calculateSubunitRatio = () => {
+    if (!selectedUnit || !selectedSubunit || !hasSubunit) return null;
+    
+    const mainUnitData = units.find(u => u.value === selectedUnit);
+    const subUnitData = units.find(u => u.value === selectedSubunit);
+    
+    if (!mainUnitData || !subUnitData) return null;
+    
+    const mainPackageQty = mainUnitData.packageQuantity || 1;
+    const subPackageQty = subUnitData.packageQuantity || 1;
+    
+    // Validation: subunit cannot have more items than main unit
+    if (subPackageQty > mainPackageQty) {
+      return null;
+    }
+    
+    // Calculate how many subunits fit in one main unit
+    return Math.floor(mainPackageQty / subPackageQty);
+  };
+  
+  const subunitRatio = calculateSubunitRatio();
+  const isConversionValid = subunitRatio !== null && subunitRatio > 0;
+  
   // Get package quantity for the main unit (not subunit)
   const getMainUnitPackageQuantity = () => {
     if (!selectedUnit) return 1;
@@ -154,10 +178,19 @@ const ProductForm: React.FC<ProductFormProps> = ({
     try {
       console.log("Submitting form data:", data);
       
-      // Configure subunit_ratio correctly based on main unit's package quantity
+      // Validate subunit configuration
+      if (hasSubunit && !isConversionValid) {
+        toast("Configuração inválida", {
+          description: "A sub-unidade não pode ter mais itens que a unidade principal"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Configure subunit_ratio correctly with proper calculation
       const formDataWithConversion = {
         ...data,
-        subunitRatio: hasSubunit && data.unit ? getMainUnitPackageQuantity() : undefined
+        subunitRatio: hasSubunit && isConversionValid ? subunitRatio : undefined
       };
       
       console.log("📊 Configuração do produto:", {
@@ -165,7 +198,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
         subunit: data.subunit,
         hasSubunit,
         subunitRatio: formDataWithConversion.subunitRatio,
-        mainUnitPackageQuantity: getMainUnitPackageQuantity()
+        mainUnitPackageQuantity: units.find(u => u.value === selectedUnit)?.packageQuantity,
+        subUnitPackageQuantity: units.find(u => u.value === selectedSubunit)?.packageQuantity,
+        calculatedRatio: subunitRatio
       });
       
       await onSubmit(formDataWithConversion);
@@ -292,7 +327,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                         Este produto tem sub-unidade?
                       </FormLabel>
                       <p className="text-sm text-gray-600">
-                        Ex: Produto vendido em caixas que contêm unidades
+                        Ex: Produto vendido em caixas que contêm unidades menores
                       </p>
                     </div>
                   </FormItem>
@@ -324,13 +359,34 @@ const ProductForm: React.FC<ProductFormProps> = ({
                     )}
                   />
                   
-                  {selectedUnit && (
-                    <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded-md">
-                      <p className="font-medium">Quantidade na Embalagem:</p>
-                      <p>1 {selectedUnit} contém {getMainUnitPackageQuantity()} {selectedSubunit || 'sub-unidades'}</p>
-                      <p className="text-xs mt-1 text-gray-500">
-                        Esta quantidade será usada para calcular os preços automaticamente
-                      </p>
+                  {selectedUnit && selectedSubunit && (
+                    <div className="space-y-3">
+                      {isConversionValid ? (
+                        <div className="text-sm text-gray-700 p-3 bg-blue-50 rounded-md border border-blue-200">
+                          <p className="font-medium text-blue-800">Conversão Calculada:</p>
+                          <p className="text-blue-700">
+                            1 {selectedUnit} contém {subunitRatio} {selectedSubunit}
+                          </p>
+                          <p className="text-xs mt-1 text-blue-600">
+                            Baseado nas quantidades: {selectedUnit} ({units.find(u => u.value === selectedUnit)?.packageQuantity}) ÷ {selectedSubunit} ({units.find(u => u.value === selectedSubunit)?.packageQuantity})
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-red-700 p-3 bg-red-50 rounded-md border border-red-200">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-medium text-red-800">Configuração Inválida</p>
+                              <p className="text-red-700">
+                                A sub-unidade ({selectedSubunit}: {units.find(u => u.value === selectedSubunit)?.packageQuantity}) não pode ter mais itens que a unidade principal ({selectedUnit}: {units.find(u => u.value === selectedUnit)?.packageQuantity})
+                              </p>
+                              <p className="text-xs mt-1 text-red-600">
+                                Ajuste as quantidades das unidades em Configurações → Unidades
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -450,7 +506,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               />
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || (hasSubunit && !isConversionValid)}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
