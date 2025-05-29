@@ -41,7 +41,7 @@ export default function ProductUnits() {
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-  const [formData, setFormData] = useState({ value: '', label: '', conversionRate: 1 });
+  const [formData, setFormData] = useState({ value: '', label: '', packageQuantity: 1 });
 
   console.log("ProductUnits - dados das unidades:", {
     unitsCount: units?.length || 0,
@@ -56,11 +56,11 @@ export default function ProductUnits() {
       setFormData({
         value: unit.value,
         label: unit.label || unit.value,
-        conversionRate: unit.conversionRate || 1
+        packageQuantity: unit.packageQuantity || 1
       });
     } else {
       setEditingUnit(null);
-      setFormData({ value: '', label: '', conversionRate: 1 });
+      setFormData({ value: '', label: '', packageQuantity: 1 });
     }
     setDialogOpen(true);
   };
@@ -79,7 +79,7 @@ export default function ProductUnits() {
       const unitData = {
         value: formData.value.toUpperCase().trim(),
         label: formData.label.trim() || formData.value.toUpperCase().trim(),
-        conversionRate: Number(formData.conversionRate) || 1
+        packageQuantity: Number(formData.packageQuantity) || 1
       };
 
       if (editingUnit) {
@@ -92,7 +92,7 @@ export default function ProductUnits() {
       
       setDialogOpen(false);
       setEditingUnit(null);
-      setFormData({ value: '', label: '', conversionRate: 1 });
+      setFormData({ value: '', label: '', packageQuantity: 1 });
     } catch (error) {
       console.error("Erro ao salvar unidade:", error);
       toast("Erro ao salvar unidade", {
@@ -146,7 +146,7 @@ export default function ProductUnits() {
         <CardHeader>
           <CardTitle>Unidades de Medida</CardTitle>
           <CardDescription>
-            Gerencie as unidades de medida disponíveis para os produtos
+            Gerencie as unidades de medida e defina quantas unidades básicas cada embalagem contém. Exemplo: CX23 = caixa com 23 unidades.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -177,7 +177,7 @@ export default function ProductUnits() {
                   <TableRow>
                     <TableHead>Valor</TableHead>
                     <TableHead>Nome/Descrição</TableHead>
-                    <TableHead>Taxa de Conversão</TableHead>
+                    <TableHead>Quantidade na Embalagem</TableHead>
                     <TableHead className="w-24">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -187,7 +187,9 @@ export default function ProductUnits() {
                       <TableRow key={unit.value}>
                         <TableCell className="font-medium">{unit.value}</TableCell>
                         <TableCell>{unit.label || unit.value}</TableCell>
-                        <TableCell>{unit.conversionRate || 1}</TableCell>
+                        <TableCell>
+                          {unit.packageQuantity === 1 ? '1 unidade' : `${unit.packageQuantity} unidades`}
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <Button
@@ -244,7 +246,7 @@ export default function ProductUnits() {
                 id="value"
                 value={formData.value}
                 onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
-                placeholder="Ex: KG, LT, UN, CX"
+                placeholder="Ex: CX23, FARDO, UN, KG"
                 disabled={!!editingUnit}
               />
             </div>
@@ -255,20 +257,23 @@ export default function ProductUnits() {
                 id="label"
                 value={formData.label}
                 onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                placeholder="Ex: Quilograma, Litro, Unidade, Caixa"
+                placeholder="Ex: Caixa com 23 unidades, Fardo, Unidade"
               />
             </div>
             
             <div>
-              <Label htmlFor="conversionRate">Taxa de Conversão</Label>
+              <Label htmlFor="packageQuantity">Quantidade na Embalagem</Label>
               <Input
-                id="conversionRate"
+                id="packageQuantity"
                 type="number"
                 step="0.001"
-                value={formData.conversionRate}
-                onChange={(e) => setFormData(prev => ({ ...prev, conversionRate: Number(e.target.value) }))}
-                placeholder="1"
+                value={formData.packageQuantity}
+                onChange={(e) => setFormData(prev => ({ ...prev, packageQuantity: Number(e.target.value) }))}
+                placeholder="Quantas unidades contém nesta embalagem"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Exemplo: Para CX23, coloque 23 (cada caixa contém 23 unidades)
+              </p>
             </div>
           </div>
           

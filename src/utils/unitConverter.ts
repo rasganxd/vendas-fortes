@@ -19,12 +19,12 @@ export class UnitConverter {
     
     if (!from || !to) return quantity;
     
-    // Conversão simples usando taxas de conversão
-    const fromRate = from.conversionRate || 1;
-    const toRate = to.conversionRate || 1;
+    // Conversão simples usando quantidade na embalagem
+    const fromQuantity = from.packageQuantity || 1;
+    const toQuantity = to.packageQuantity || 1;
     
     // Converter para unidade base e depois para unidade desejada
-    return (quantity * fromRate) / toRate;
+    return (quantity * fromQuantity) / toQuantity;
   }
   
   /**
@@ -34,8 +34,8 @@ export class UnitConverter {
     const unitData = this.units.find(u => u.value === unit);
     if (!unitData || unit === baseUnit) return totalPrice / quantity;
     
-    const conversionRate = unitData.conversionRate || 1;
-    return (totalPrice / conversionRate) / quantity;
+    const packageQuantity = unitData.packageQuantity || 1;
+    return (totalPrice / packageQuantity) / quantity;
   }
   
   /**

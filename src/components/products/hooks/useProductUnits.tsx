@@ -6,16 +6,16 @@ import { toast } from 'sonner';
 import { productUnitsService } from '@/services/supabase/productUnitsService';
 
 const DEFAULT_UNITS: Unit[] = [
-  { value: 'UN', label: 'Unidade', conversionRate: 1 },
-  { value: 'KG', label: 'Quilograma', conversionRate: 1 },
-  { value: 'LT', label: 'Litro', conversionRate: 1 },
-  { value: 'MT', label: 'Metro', conversionRate: 1 },
-  { value: 'CX', label: 'Caixa', conversionRate: 1 },
-  { value: 'PC', label: 'Peça', conversionRate: 1 },
-  { value: 'M2', label: 'Metro Quadrado', conversionRate: 1 },
-  { value: 'M3', label: 'Metro Cúbico', conversionRate: 1 },
-  { value: 'DZ', label: 'Dúzia', conversionRate: 12 },
-  { value: 'GR', label: 'Grama', conversionRate: 0.001 },
+  { value: 'UN', label: 'Unidade', packageQuantity: 1 },
+  { value: 'KG', label: 'Quilograma', packageQuantity: 1 },
+  { value: 'LT', label: 'Litro', packageQuantity: 1 },
+  { value: 'MT', label: 'Metro', packageQuantity: 1 },
+  { value: 'CX', label: 'Caixa', packageQuantity: 1 },
+  { value: 'PC', label: 'Peça', packageQuantity: 1 },
+  { value: 'M2', label: 'Metro Quadrado', packageQuantity: 1 },
+  { value: 'M3', label: 'Metro Cúbico', packageQuantity: 1 },
+  { value: 'DZ', label: 'Dúzia', packageQuantity: 12 },
+  { value: 'GR', label: 'Grama', packageQuantity: 0.001 },
 ];
 
 export const useProductUnits = () => {

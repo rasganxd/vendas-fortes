@@ -6,7 +6,7 @@ export interface DatabaseUnit {
   id: string;
   value: string;
   label: string;
-  conversion_rate: number;
+  package_quantity: number;
   is_default: boolean;
   created_at: string;
   updated_at: string;
@@ -28,7 +28,7 @@ export const productUnitsService = {
     return data.map(unit => ({
       value: unit.value,
       label: unit.label,
-      conversionRate: Number(unit.conversion_rate)
+      packageQuantity: Number(unit.package_quantity)
     }));
   },
 
@@ -39,7 +39,7 @@ export const productUnitsService = {
       .insert({
         value: unit.value.toUpperCase(),
         label: unit.label,
-        conversion_rate: unit.conversionRate,
+        package_quantity: unit.packageQuantity,
         is_default: false
       })
       .select('id')
@@ -59,7 +59,7 @@ export const productUnitsService = {
     
     if (unit.value) updateData.value = unit.value.toUpperCase();
     if (unit.label) updateData.label = unit.label;
-    if (unit.conversionRate !== undefined) updateData.conversion_rate = unit.conversionRate;
+    if (unit.packageQuantity !== undefined) updateData.package_quantity = unit.packageQuantity;
     
     updateData.updated_at = new Date().toISOString();
 

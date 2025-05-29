@@ -38,7 +38,7 @@ export default function UnitSelector({
         productUnits.push({
           value: product.unit,
           label: product.unit,
-          conversionRate: 1
+          packageQuantity: 1
         });
       }
       
@@ -50,7 +50,7 @@ export default function UnitSelector({
         productUnits.push({
           value: product.subunit,
           label: `${product.subunit} (R$ ${pricePerSubunit.toFixed(2).replace('.', ',')})`,
-          conversionRate: product.subunitRatio
+          packageQuantity: product.subunitRatio
         });
       }
       

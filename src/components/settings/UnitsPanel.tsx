@@ -40,7 +40,7 @@ export default function UnitsPanel() {
   const [newUnit, setNewUnit] = useState({ 
     value: '', 
     label: '', 
-    conversionRate: 1
+    packageQuantity: 1
   });
 
   // Carregar unidades do banco de dados
@@ -104,7 +104,7 @@ export default function UnitsPanel() {
       await loadUnits();
       notifyUnitsUpdated(units);
       
-      setNewUnit({ value: '', label: '', conversionRate: 1 });
+      setNewUnit({ value: '', label: '', packageQuantity: 1 });
       setIsOpen(false);
       
       toast("Unidade adicionada", {
@@ -249,7 +249,7 @@ export default function UnitsPanel() {
       <CardHeader>
         <CardTitle>Gerenciar Unidades de Medida</CardTitle>
         <CardDescription>
-          Configure as unidades de medida e suas taxas de conversão. A taxa de conversão indica quantas unidades básicas correspondem a 1 desta unidade. As configurações são salvas no banco de dados.
+          Configure as unidades de medida e quantas unidades básicas cada embalagem contém. Exemplo: CX23 = caixa que contém 23 unidades. As configurações são salvas no banco de dados.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -279,7 +279,7 @@ export default function UnitsPanel() {
                 <DialogHeader>
                   <DialogTitle>Adicionar Nova Unidade</DialogTitle>
                   <DialogDescription>
-                    Cadastre uma nova unidade de medida com sua taxa de conversão
+                    Cadastre uma nova unidade de medida com a quantidade de unidades que cada embalagem contém
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -287,7 +287,7 @@ export default function UnitsPanel() {
                     <Label htmlFor="unitValue">Código da Unidade</Label>
                     <Input
                       id="unitValue"
-                      placeholder="Ex: FARDO, DECA, etc."
+                      placeholder="Ex: CX23, FARDO, DECA, etc."
                       value={newUnit.value}
                       onChange={(e) => setNewUnit(prev => ({ ...prev, value: e.target.value }))}
                     />
@@ -296,21 +296,21 @@ export default function UnitsPanel() {
                     <Label htmlFor="unitLabel">Nome Completo</Label>
                     <Input
                       id="unitLabel"
-                      placeholder="Ex: Fardo (FARDO), Dezena (DECA)"
+                      placeholder="Ex: Caixa com 23 unidades"
                       value={newUnit.label}
                       onChange={(e) => setNewUnit(prev => ({ ...prev, label: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="conversionRate">Taxa de Conversão</Label>
+                    <Label htmlFor="packageQuantity">Quantidade na Embalagem</Label>
                     <Input
-                      id="conversionRate"
+                      id="packageQuantity"
                       type="number"
-                      placeholder="Ex: 24 (1 desta unidade = 24 unidades básicas)"
-                      value={newUnit.conversionRate}
+                      placeholder="Ex: 23 (quantas unidades contém nesta embalagem)"
+                      value={newUnit.packageQuantity}
                       onChange={(e) => setNewUnit(prev => ({ 
                         ...prev, 
-                        conversionRate: parseFloat(e.target.value) || 1 
+                        packageQuantity: parseFloat(e.target.value) || 1 
                       }))}
                       min="0.001"
                       step="0.001"
@@ -336,7 +336,7 @@ export default function UnitsPanel() {
             <TableRow>
               <TableHead>Código</TableHead>
               <TableHead>Nome Completo</TableHead>
-              <TableHead>Taxa de Conversão</TableHead>
+              <TableHead>Quantidade na Embalagem</TableHead>
               <TableHead className="w-[140px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -347,7 +347,7 @@ export default function UnitsPanel() {
                 <TableCell>{unit.label}</TableCell>
                 <TableCell>
                   <span className="text-sm">
-                    1 = {unit.conversionRate} {unit.conversionRate === 1 ? 'unidade básica' : 'unidades básicas'}
+                    {unit.packageQuantity === 1 ? '1 unidade' : `${unit.packageQuantity} unidades`}
                   </span>
                 </TableCell>
                 <TableCell>

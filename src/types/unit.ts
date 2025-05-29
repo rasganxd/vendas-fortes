@@ -3,7 +3,7 @@ export interface Unit {
   id?: string;
   value: string;
   label: string;
-  conversionRate: number;
+  packageQuantity: number;
 }
 
 export interface UnitConversion {
