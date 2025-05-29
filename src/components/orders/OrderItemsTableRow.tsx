@@ -50,7 +50,7 @@ export default function OrderItemsTableRow({
           <Input
             type="number"
             value={editValues.quantity}
-            onChange={(e) => setEditValues(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
+            onChange={(e) => setEditValues({ ...editValues, quantity: parseFloat(e.target.value) || 0 })}
             className="w-full h-8 text-center"
             min="0"
             step="1"
@@ -71,7 +71,7 @@ export default function OrderItemsTableRow({
             value={editValues.price.toFixed(2).replace('.', ',')}
             onChange={(e) => {
               const value = e.target.value.replace(',', '.');
-              setEditValues(prev => ({ ...prev, price: parseFloat(value) || 0 }));
+              setEditValues({ ...editValues, price: parseFloat(value) || 0 });
             }}
             className="w-full h-8 text-right"
           />
