@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +24,6 @@ const productFormSchema = z.object({
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
   brandId: z.string().optional(),
-  maxDiscountPercentage: z.number().min(0).max(100).optional(),
 });
 
 export type ProductFormData = z.infer<typeof productFormSchema>;
@@ -58,7 +58,6 @@ export const useProductFormLogic = ({
       categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
       groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
       brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
-      maxDiscountPercentage: isEditing && selectedProduct ? selectedProduct.maxDiscountPercentage : undefined,
     },
   });
   
@@ -100,7 +99,6 @@ export const useProductFormLogic = ({
         categoryId: selectedProduct.categoryId || "",
         groupId: selectedProduct.groupId || "",
         brandId: selectedProduct.brandId || "",
-        maxDiscountPercentage: selectedProduct.maxDiscountPercentage,
       });
     }
   }, [selectedProduct, isEditing, form]);
@@ -126,7 +124,6 @@ export const useProductFormLogic = ({
         groupId: data.groupId === "none" || data.groupId === "" ? null : data.groupId,
         brandId: data.brandId === "none" || data.brandId === "" ? null : data.brandId,
         subunitRatio: hasSubunit && isConversionValid ? subunitRatio : undefined,
-        maxDiscountPercentage: data.maxDiscountPercentage || undefined
       };
       
       console.log("📊 Produto processado para salvar:", processedData);

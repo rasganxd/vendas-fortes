@@ -849,6 +849,38 @@ export type Database = {
         }
         Relationships: []
       }
+      product_discount_settings: {
+        Row: {
+          created_at: string
+          id: string
+          max_discount_percentage: number | null
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_discount_percentage?: number | null
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_discount_percentage?: number | null
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_discount_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_groups: {
         Row: {
           created_at: string
@@ -957,7 +989,6 @@ export type Database = {
           has_subunit: boolean | null
           id: string
           main_unit_id: string | null
-          max_discount_percentage: number | null
           max_price: number | null
           min_price: number | null
           min_stock: number | null
@@ -981,7 +1012,6 @@ export type Database = {
           has_subunit?: boolean | null
           id?: string
           main_unit_id?: string | null
-          max_discount_percentage?: number | null
           max_price?: number | null
           min_price?: number | null
           min_stock?: number | null
@@ -1005,7 +1035,6 @@ export type Database = {
           has_subunit?: boolean | null
           id?: string
           main_unit_id?: string | null
-          max_discount_percentage?: number | null
           max_price?: number | null
           min_price?: number | null
           min_stock?: number | null

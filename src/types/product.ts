@@ -10,7 +10,6 @@ export interface Product {
   minStock: number;
   minPrice?: number; // DEPRECATED: Use maxDiscountPercentage instead
   maxPrice?: number; // DEPRECATED: Use maxDiscountPercentage instead
-  maxDiscountPercentage?: number; // New field for percentage-based discount validation
   groupId?: string;
   categoryId?: string;
   brandId?: string;
@@ -47,6 +46,14 @@ export interface ProductBrand {
   name: string;
   description: string;
   notes: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProductDiscountSetting {
+  id: string;
+  productId: string;
+  maxDiscountPercentage: number;
   createdAt: Date;
   updatedAt: Date;
 }

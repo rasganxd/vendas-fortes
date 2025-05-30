@@ -9,7 +9,6 @@ import { useProductFormLogic, ProductFormData } from './hooks/useProductFormLogi
 import { BasicFieldsSection } from './form/BasicFieldsSection';
 import { ClassificationSection } from './form/ClassificationSection';
 import { ProductUnitsSection } from './form/ProductUnitsSection';
-import { DiscountSection } from './form/DiscountSection';
 
 interface ProductFormProps {
   open: boolean;
@@ -77,8 +76,6 @@ export default function ProductForm({
               productPrice={selectedProduct?.price}
               isEditing={isEditing}
             />
-
-            <DiscountSection form={form} />
 
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button 
