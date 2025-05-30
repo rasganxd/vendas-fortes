@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { EnhancedCard, EnhancedCardContent, EnhancedCardDescription, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
@@ -94,7 +93,7 @@ export default function Products() {
   
   const handleProductSaved = async (data: any) => {
     try {
-      console.log("💾 Salvando produto:", data);
+      console.log("💾 Salvando produto e unidades:", data);
 
       // Prepare product data with required fields
       const productData = {
@@ -108,44 +107,85 @@ export default function Products() {
       let productId: string;
       
       if (editingProduct) {
+        console.log("✏️ Editando produto existente:", editingProduct.id);
+        
         // Updating existing product
         await updateProduct(editingProduct.id, productData);
         productId = editingProduct.id;
+        
+        // For editing: first remove all existing units, then add new ones
+        if (data.selectedUnits && data.selectedUnits.length > 0) {
+          try {
+            console.log("🔄 Atualizando unidades do produto...");
+            
+            // Remove all existing unit mappings
+            const existingUnits = await productUnitsMappingService.getProductUnits(productId);
+            for (const unit of existingUnits) {
+              await productUnitsMappingService.removeUnitFromProduct(productId, unit.id);
+            }
+            console.log("🗑️ Unidades existentes removidas");
+            
+            // Add new unit mappings
+            for (const unit of data.selectedUnits) {
+              await productUnitsMappingService.addUnitToProduct(
+                productId,
+                unit.unitId,
+                unit.isMainUnit
+              );
+            }
+            console.log("✅ Novas unidades adicionadas");
+            
+          } catch (error) {
+            console.error("❌ Erro ao atualizar unidades:", error);
+            toast("Produto atualizado, mas houve erro ao configurar unidades", {
+              description: "As unidades podem não ter sido salvas corretamente"
+            });
+          }
+        }
+        
         toast("Produto atualizado", {
-          description: "O produto foi atualizado com sucesso"
+          description: "O produto e suas unidades foram atualizados com sucesso"
         });
+        
       } else {
+        console.log("🆕 Criando novo produto");
+        
         // Creating new product
         productId = await addProduct(productData);
+        
+        // Save unit mappings if units were selected
+        if (data.selectedUnits && data.selectedUnits.length > 0) {
+          try {
+            console.log("🔄 Adicionando unidades ao novo produto...");
+            
+            for (const unit of data.selectedUnits) {
+              await productUnitsMappingService.addUnitToProduct(
+                productId,
+                unit.unitId,
+                unit.isMainUnit
+              );
+            }
+            console.log("✅ Unidades associadas ao produto com sucesso");
+            
+          } catch (error) {
+            console.error("❌ Erro ao associar unidades:", error);
+            toast("Produto criado, mas houve erro ao configurar unidades", {
+              description: "Configure as unidades manualmente na edição do produto"
+            });
+          }
+        }
+        
         toast("Produto criado", {
           description: "O produto foi criado com sucesso. Defina o preço de venda na seção Precificação."
         });
       }
       
-      // Save unit mappings if units were selected
-      if (data.selectedUnits && data.selectedUnits.length > 0) {
-        try {
-          for (const unit of data.selectedUnits) {
-            await productUnitsMappingService.addUnitToProduct(
-              productId,
-              unit.unitId,
-              unit.isMainUnit
-            );
-          }
-          console.log("✅ Unidades associadas ao produto com sucesso");
-        } catch (error) {
-          console.error("Erro ao associar unidades:", error);
-          toast("Produto salvo, mas houve erro ao configurar unidades", {
-            description: "Configure as unidades manualmente na edição do produto"
-          });
-        }
-      }
-      
       setIsProductFormOpen(false);
       setEditingProduct(null);
       refreshData();
+      
     } catch (error) {
-      console.error('Erro ao salvar produto:', error);
+      console.error('❌ Erro ao salvar produto:', error);
       toast("Erro", {
         description: "Erro ao salvar produto",
         style: {
