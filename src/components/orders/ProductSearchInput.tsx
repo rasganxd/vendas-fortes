@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -13,6 +12,7 @@ import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 import { calculateUnitPrice } from '@/utils/priceConverter';
 import { validateProductDiscount } from '@/context/operations/productOperations';
 import { PriceInput } from '@/components/ui/price-input';
+import { productService } from '@/services/supabase/productService';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -38,18 +38,44 @@ export default function ProductSearchInput({
   const [showProductDialog, setShowProductDialog] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [priceValidationError, setPriceValidationError] = useState<string>('');
+  const [localProducts, setLocalProducts] = useState<Product[]>([]);
   
   const quantityInputRef = useRef<HTMLInputElement>(null);
   
+  // Use centralized products as primary source
   const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
   
-  // Listen for product updates and price changes
+  // Update local products when centralized products change
   useEffect(() => {
-    const handleProductsUpdated = () => {
-      console.log("Products updated event received in ProductSearchInput");
+    console.log("🔄 Updating local products cache in ProductSearchInput");
+    setLocalProducts(products);
+  }, [products]);
+  
+  // Listen for product updates and refresh immediately
+  useEffect(() => {
+    const handleProductsUpdated = async (event: CustomEvent) => {
+      console.log("📦 Products updated event received in ProductSearchInput:", event.detail);
+      
+      // Force refresh products to get latest data
+      await refreshProducts();
+      
+      // If a product was added, try to find it in the updated list
+      if (event.detail?.action === 'add' && event.detail?.product) {
+        const newProduct = event.detail.product;
+        setLocalProducts(prev => {
+          const exists = prev.find(p => p.id === newProduct.id);
+          if (!exists) {
+            console.log("➕ Adding new product to local cache:", newProduct.name);
+            return [...prev, newProduct];
+          }
+          return prev;
+        });
+      }
+      
       // Force refresh of selected product if it exists
       if (selectedProduct) {
-        const updatedProduct = products.find(p => p.id === selectedProduct.id);
+        const updatedProducts = centralizedProducts.length > 0 ? centralizedProducts : products;
+        const updatedProduct = updatedProducts.find(p => p.id === selectedProduct.id);
         if (updatedProduct && updatedProduct.price !== selectedProduct.price) {
           console.log("Product price updated, refreshing");
           setSelectedProduct(updatedProduct);
@@ -69,19 +95,19 @@ export default function ProductSearchInput({
       }
     };
 
-    window.addEventListener('productsUpdated', handleProductsUpdated);
+    window.addEventListener('productsUpdated', handleProductsUpdated as EventListener);
     window.addEventListener('productPriceUpdated', handlePriceUpdated as EventListener);
     
     return () => {
-      window.removeEventListener('productsUpdated', handleProductsUpdated);
+      window.removeEventListener('productsUpdated', handleProductsUpdated as EventListener);
       window.removeEventListener('productPriceUpdated', handlePriceUpdated as EventListener);
     };
-  }, [selectedProduct, selectedUnit, products]);
+  }, [selectedProduct, selectedUnit, refreshProducts, centralizedProducts, products]);
 
   // Validate price whenever it changes
   useEffect(() => {
     if (selectedProduct && price > 0) {
-      const validation = validateProductDiscount(selectedProduct.id, price, products);
+      const validation = validateProductDiscount(selectedProduct.id, price, localProducts);
       if (validation === true) {
         setPriceValidationError('');
       } else {
@@ -90,7 +116,47 @@ export default function ProductSearchInput({
     } else {
       setPriceValidationError('');
     }
-  }, [selectedProduct, price, products]);
+  }, [selectedProduct, price, localProducts]);
+
+  // Enhanced product search with fallback to database
+  const findProductByCode = async (code: string): Promise<Product | null> => {
+    console.log("🔍 Searching for product with code:", code);
+    
+    // First try local/cached products
+    let product = localProducts.find(p => p.code.toString() === code);
+    
+    if (product) {
+      console.log("✅ Product found in local cache:", product.name);
+      return product;
+    }
+    
+    // If not found locally, try centralized products
+    product = products.find(p => p.code.toString() === code);
+    
+    if (product) {
+      console.log("✅ Product found in centralized products:", product.name);
+      return product;
+    }
+    
+    // If still not found, search directly in database as fallback
+    console.log("🔄 Product not found locally, searching in database...");
+    try {
+      const allProducts = await productService.getAll();
+      product = allProducts.find(p => p.code.toString() === code);
+      
+      if (product) {
+        console.log("✅ Product found in database:", product.name);
+        // Update local cache with fresh data
+        setLocalProducts(allProducts);
+        return product;
+      }
+    } catch (error) {
+      console.error("❌ Error searching in database:", error);
+    }
+    
+    console.log("❌ Product not found anywhere with code:", code);
+    return null;
+  };
 
   // Handle product code input change
   const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,17 +241,18 @@ export default function ProductSearchInput({
     setPriceValidationError('');
   };
 
-  const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
+  const handleProductCodeKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       
       if (productCode) {
-        const product = products.find(p => p.code.toString() === productCode);
+        console.log("🔍 Searching for product with code:", productCode);
+        const product = await findProductByCode(productCode);
         if (product) {
-          console.log("🔍 Produto encontrado pelo código:", productCode);
+          console.log("✅ Product found and selected:", product.name);
           handleProductSelect(product);
         } else {
-          console.log("❌ Produto não encontrado pelo código:", productCode);
+          console.log("❌ Product not found, opening search dialog");
           setShowProductDialog(true);
         }
       } else {
@@ -286,7 +353,7 @@ export default function ProductSearchInput({
       <ProductSearchDialog
         open={showProductDialog}
         onClose={() => setShowProductDialog(false)}
-        products={products}
+        products={localProducts.length > 0 ? localProducts : products}
         onSelectProduct={handleProductSelect}
       />
       

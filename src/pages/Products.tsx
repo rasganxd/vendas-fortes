@@ -187,7 +187,18 @@ export default function Products() {
       
       setIsProductFormOpen(false);
       setEditingProduct(null);
-      refreshData();
+      
+      // Force immediate refresh of data
+      console.log("🔄 Refreshing product data after save...");
+      await refreshData();
+      
+      // Dispatch event to notify all components of product update
+      window.dispatchEvent(new CustomEvent('productsUpdated', { 
+        detail: { 
+          action: isEditingProduct ? 'update' : 'add',
+          productId: productId
+        } 
+      }));
       
     } catch (error: any) {
       console.error('❌ Erro ao salvar produto:', error);
