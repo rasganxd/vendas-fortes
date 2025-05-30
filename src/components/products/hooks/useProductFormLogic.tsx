@@ -111,13 +111,16 @@ export const useProductFormLogic = ({
     if (isEditing && existingUnits && existingUnits.length > 0) {
       console.log("🔄 Carregando unidades existentes para edição:", existingUnits);
       
-      const mappedUnits: SelectedUnit[] = existingUnits.map(unit => ({
-        unitId: unit.id,
-        unitValue: unit.value,
-        unitLabel: unit.label,
-        packageQuantity: unit.packageQuantity,
-        isMainUnit: unit.isMainUnit
-      }));
+      // Ensure all required properties are present and properly typed
+      const mappedUnits: SelectedUnit[] = existingUnits
+        .filter(unit => unit.id && unit.value && unit.label) // Filter out invalid units
+        .map(unit => ({
+          unitId: unit.id,
+          unitValue: unit.value,
+          unitLabel: unit.label,
+          packageQuantity: unit.packageQuantity || 1,
+          isMainUnit: unit.isMainUnit || false
+        }));
       
       const mainUnitIdToSet = existingMainUnit?.id || "";
       
