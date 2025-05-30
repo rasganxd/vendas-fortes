@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { EnhancedTable, EnhancedTableHeader, EnhancedTableBody, EnhancedTableRow, EnhancedTableHead, EnhancedTableCell } from '@/components/ui/enhanced-table';
 import { PriceInput } from '@/components/ui/price-input';
+import { SavingIndicator } from '@/components/ui/saving-indicator';
 import { formatCurrency } from '@/lib/utils';
 import { Product } from '@/types';
 import { useProducts } from '@/hooks/useProducts';
 import { productDiscountService } from '@/services/supabase/productDiscountService';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { Edit, Save, X, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -19,19 +20,23 @@ interface ProductPricingRow extends Product {
 
 export default function ProductPricing() {
   const { products, updateProduct } = useProducts();
+  const { toast } = useToast();
   const [pricingData, setPricingData] = useState<ProductPricingRow[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState<number>(0);
   const [editDiscount, setEditDiscount] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load pricing data with discount settings
   useEffect(() => {
     const loadPricingData = async () => {
       setIsLoading(true);
       try {
+        console.log('🔄 Loading pricing data for products:', products.length);
         const discounts = await productDiscountService.getAllDiscounts();
+        console.log('📊 Loaded discounts:', discounts);
         
         const combined = products.map(product => ({
           ...product,
@@ -39,8 +44,13 @@ export default function ProductPricing() {
         }));
         
         setPricingData(combined);
+        console.log('✅ Pricing data loaded:', combined.length, 'products');
       } catch (error) {
-        console.error('Erro ao carregar dados de precificação:', error);
+        console.error('❌ Error loading pricing data:', error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar as configurações de desconto"
+        });
         setPricingData(products.map(product => ({
           ...product,
           maxDiscountPercentage: 0
@@ -50,8 +60,10 @@ export default function ProductPricing() {
       }
     };
 
-    loadPricingData();
-  }, [products]);
+    if (products.length > 0) {
+      loadPricingData();
+    }
+  }, [products, toast]);
 
   const filteredData = pricingData.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -59,34 +71,54 @@ export default function ProductPricing() {
   );
 
   const handleEditStart = (product: ProductPricingRow) => {
+    console.log('✏️ Starting edit for product:', product.name, 'Price:', product.price);
     setEditingId(product.id);
     setEditPrice(product.price || 0);
     setEditDiscount(product.maxDiscountPercentage.toString());
   };
 
   const handleEditCancel = () => {
+    console.log('❌ Canceling edit');
     setEditingId(null);
     setEditPrice(0);
     setEditDiscount('');
   };
 
   const handleSave = async (productId: string) => {
+    console.log('💾 Starting save for product:', productId, 'Price:', editPrice, 'Discount:', editDiscount);
+    
     try {
-      const discountPercentage = parseFloat(editDiscount);
+      setIsSaving(true);
       
-      if (isNaN(editPrice) || editPrice < 0) {
-        toast("Preço inválido", {
-          description: "O preço deve ser um número válido maior ou igual a zero"
+      // Validação corrigida - editPrice já é number
+      if (editPrice < 0) {
+        toast({
+          title: "Preço inválido",
+          description: "O preço deve ser maior ou igual a zero"
         });
         return;
       }
 
+      const discountPercentage = parseFloat(editDiscount) || 0;
+      
+      if (discountPercentage < 0 || discountPercentage > 100) {
+        toast({
+          title: "Desconto inválido",
+          description: "O desconto deve estar entre 0% e 100%"
+        });
+        return;
+      }
+
+      console.log('🔄 Updating product price...');
       // Update product price
       await updateProduct(productId, { price: editPrice });
+      console.log('✅ Product price updated successfully');
       
       // Update discount settings if provided
       if (discountPercentage > 0) {
+        console.log('🔄 Updating discount settings...');
         await productDiscountService.upsert(productId, discountPercentage);
+        console.log('✅ Discount settings updated successfully');
       }
       
       // Update local state
@@ -101,14 +133,23 @@ export default function ProductPricing() {
         detail: { productId, newPrice: editPrice } 
       }));
       
-      toast("Preço atualizado com sucesso!");
+      toast({
+        title: "Preço atualizado com sucesso!",
+        description: `Novo preço: ${formatCurrency(editPrice)}`
+      });
+      
       setEditingId(null);
       setEditPrice(0);
       setEditDiscount('');
       
     } catch (error) {
-      console.error('Erro ao atualizar preço:', error);
-      toast("Erro ao atualizar preço");
+      console.error('❌ Error saving price:', error);
+      toast({
+        title: "Erro ao atualizar preço",
+        description: error instanceof Error ? error.message : "Erro desconhecido"
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -131,6 +172,9 @@ export default function ProductPricing() {
 
   return (
     <div className="space-y-6">
+      {/* Saving Indicator */}
+      <SavingIndicator isVisible={isSaving} message="Salvando preço..." />
+
       {/* Header */}
       <Card>
         <CardHeader>
@@ -217,6 +261,7 @@ export default function ProductPricing() {
                           <Button
                             size="sm"
                             onClick={() => handleSave(product.id)}
+                            disabled={isSaving}
                             className="h-7 w-7 p-0"
                           >
                             <Save className="h-3 w-3" />
@@ -225,6 +270,7 @@ export default function ProductPricing() {
                             size="sm"
                             variant="outline"
                             onClick={handleEditCancel}
+                            disabled={isSaving}
                             className="h-7 w-7 p-0"
                           >
                             <X className="h-3 w-3" />
