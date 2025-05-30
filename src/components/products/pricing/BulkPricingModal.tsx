@@ -40,7 +40,6 @@ interface BulkPricingChanges {
     mode: 'percentage' | 'fixed' | 'absolute';
     value: number;
   };
-  minPriceChange?: number;
 }
 
 interface ProductPreview {
@@ -48,8 +47,6 @@ interface ProductPreview {
   name: string;
   currentPrice: number;
   newPrice: number;
-  currentMinPrice?: number;
-  newMinPrice?: number;
   markup?: number;
 }
 
@@ -66,7 +63,6 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [markupMode, setMarkupMode] = useState<string>('percentage');
   const [bulkValue, setBulkValue] = useState<number>(0);
-  const [bulkMinPrice, setBulkMinPrice] = useState<number>(0);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [productPreviews, setProductPreviews] = useState<ProductPreview[]>([]);
@@ -146,8 +142,6 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
         name: product.name,
         currentPrice: product.price,
         newPrice: newPrice,
-        currentMinPrice: product.minPrice,
-        newMinPrice: bulkMinPrice > 0 ? bulkMinPrice : product.minPrice,
         markup: calculateMarkup(product.cost, newPrice)
       });
     });
@@ -168,17 +162,12 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
       };
     }
 
-    if (bulkMinPrice > 0) {
-      changes.minPriceChange = bulkMinPrice;
-    }
-
     onApplyChanges(changes);
     onOpenChange(false);
     
     // Reset form
     setSelectedProducts(new Set());
     setBulkValue(0);
-    setBulkMinPrice(0);
     setShowPreview(false);
   };
 
@@ -188,7 +177,7 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
         <DialogHeader>
           <DialogTitle>Precificação em Massa</DialogTitle>
           <DialogDescription>
-            Configure preços para múltiplos produtos simultaneamente
+            Configure preços de venda para múltiplos produtos simultaneamente
           </DialogDescription>
         </DialogHeader>
 
@@ -263,7 +252,7 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
           {/* Configurações de preço */}
           <div className="space-y-4">
             <Separator />
-            <h3 className="text-lg font-medium">Preços de Venda</h3>
+            <h3 className="text-lg font-medium">Configuração de Preços de Venda</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -292,22 +281,6 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
                 />
               </div>
             </div>
-
-            <Separator />
-            <h3 className="text-lg font-medium">Preço Mínimo</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Preço Mínimo (R$)</Label>
-                <Input
-                  type="number"
-                  value={bulkMinPrice || ''}
-                  onChange={(e) => setBulkMinPrice(parseFloat(e.target.value) || 0)}
-                  placeholder="Ex: 5.00"
-                  step="0.01"
-                />
-              </div>
-            </div>
           </div>
 
           {/* Preview */}
@@ -321,18 +294,13 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
                   {productPreviews.slice(0, 10).map(preview => (
                     <div key={preview.id} className="text-sm border-b pb-2">
                       <div className="font-medium">{preview.name}</div>
-                      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                         <div>
                           Preço: {formatCurrency(preview.currentPrice)} → {formatCurrency(preview.newPrice)}
                         </div>
                         <div>
                           Markup: {preview.markup?.toFixed(1)}%
                         </div>
-                        {preview.newMinPrice !== preview.currentMinPrice && (
-                          <div>
-                            Min: {formatCurrency(preview.currentMinPrice || 0)} → {formatCurrency(preview.newMinPrice || 0)}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -360,7 +328,7 @@ export const BulkPricingModal: React.FC<BulkPricingModalProps> = ({
           </Button>
           <Button 
             onClick={applyChanges}
-            disabled={selectedProducts.size === 0 || (bulkValue <= 0 && bulkMinPrice <= 0)}
+            disabled={selectedProducts.size === 0 || bulkValue <= 0}
           >
             Aplicar Alterações
           </Button>

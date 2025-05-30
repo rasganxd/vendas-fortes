@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -29,16 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import BulkPricingModal from './pricing/BulkPricingModal';
 
 interface BulkPricingChanges {
@@ -47,7 +38,6 @@ interface BulkPricingChanges {
     mode: 'percentage' | 'fixed' | 'absolute';
     value: number;
   };
-  minPriceChange?: number;
 }
 
 const ProductPricing = () => {
@@ -67,24 +57,18 @@ const ProductPricing = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [productPrices, setProductPrices] = useState<Record<string, number>>({});
-  const [productMinPrices, setProductMinPrices] = useState<Record<string, number>>({});
   const [hasChanges, setHasChanges] = useState(false);
-  const [showOverrideDialog, setShowOverrideDialog] = useState(false);
-  const [pendingSave, setPendingSave] = useState<any>(null);
   const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
 
   // Initialize product prices from products
   useEffect(() => {
     const initialPrices: Record<string, number> = {};
-    const initialMinPrices: Record<string, number> = {};
     
     products.forEach(product => {
       initialPrices[product.id] = product.price || 0;
-      initialMinPrices[product.id] = product.minPrice || 0;
     });
     
     setProductPrices(initialPrices);
-    setProductMinPrices(initialMinPrices);
   }, [products]);
 
   // Filter products based on search and filters
@@ -142,17 +126,8 @@ const ProductPricing = () => {
     setHasChanges(true);
   };
 
-  const handleMinPriceChange = (productId: string, newMinPrice: number) => {
-    setProductMinPrices(prev => ({
-      ...prev,
-      [productId]: newMinPrice
-    }));
-    setHasChanges(true);
-  };
-
   const handleBulkPricingChanges = (changes: BulkPricingChanges) => {
     const newPrices = { ...productPrices };
-    const newMinPrices = { ...productMinPrices };
     
     changes.selectedProducts.forEach(productId => {
       const product = products.find(p => p.id === productId);
@@ -170,15 +145,9 @@ const ProductPricing = () => {
           newPrices[productId] = value;
         }
       }
-      
-      // Apply min price changes
-      if (changes.minPriceChange && changes.minPriceChange > 0) {
-        newMinPrices[productId] = changes.minPriceChange;
-      }
     });
 
     setProductPrices(newPrices);
-    setProductMinPrices(newMinPrices);
     setHasChanges(true);
     
     toast("Preços atualizados", {
@@ -186,40 +155,8 @@ const ProductPricing = () => {
     });
   };
 
-  const validatePriceChanges = () => {
-    const outOfRangeProducts = [];
-    
-    for (const productId of Object.keys(productPrices)) {
-      const product = products.find(p => p.id === productId);
-      if (!product) continue;
-      
-      const currentPrice = productPrices[productId];
-      const minPrice = productMinPrices[productId] || product.minPrice;
-      
-      if (minPrice && currentPrice < minPrice) {
-        outOfRangeProducts.push({
-          product,
-          currentPrice,
-          minPrice
-        });
-      }
-    }
-    
-    return outOfRangeProducts;
-  };
-
-  const saveAllPrices = async (forceOverride = false) => {
+  const saveAllPrices = async () => {
     if (!hasChanges) return;
-    
-    // Validar preços se não forçar override
-    if (!forceOverride) {
-      const outOfRangeProducts = validatePriceChanges();
-      if (outOfRangeProducts.length > 0) {
-        setPendingSave({ outOfRangeProducts });
-        setShowOverrideDialog(true);
-        return;
-      }
-    }
     
     setIsLoading(true);
     
@@ -230,23 +167,10 @@ const ProductPricing = () => {
         const product = products.find(p => p.id === productId);
         if (!product) continue;
         
-        const updateData: any = {};
-        let hasUpdates = false;
-        
         if (product.price !== productPrices[productId]) {
-          updateData.price = productPrices[productId];
-          hasUpdates = true;
-        }
-        
-        if ((product.minPrice || 0) !== (productMinPrices[productId] || 0)) {
-          updateData.minPrice = productMinPrices[productId] || null;
-          hasUpdates = true;
-        }
-        
-        if (hasUpdates) {
           updates.push({
             id: productId,
-            updates: updateData
+            updates: { price: productPrices[productId] }
           });
         }
       }
@@ -277,8 +201,6 @@ const ProductPricing = () => {
       });
     } finally {
       setIsLoading(false);
-      setShowOverrideDialog(false);
-      setPendingSave(null);
     }
   };
 
@@ -311,7 +233,7 @@ const ProductPricing = () => {
           </div>
           <CardTitle>Precificação de Produtos</CardTitle>
           <CardDescription>
-            Configure os preços de venda e limites dos seus produtos ({products.length} produtos carregados)
+            Configure os preços de venda dos seus produtos ({products.length} produtos carregados)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -380,9 +302,9 @@ const ProductPricing = () => {
                       <TableHead className="w-20">Código</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead className="w-32">Custo</TableHead>
-                      <TableHead className="w-32">Preço Mín</TableHead>
-                      <TableHead className="w-32">Preço Venda</TableHead>
+                      <TableHead className="w-32">Preço de Venda</TableHead>
                       <TableHead className="w-32">Markup %</TableHead>
+                      <TableHead className="w-24">Desc. Máx</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -395,7 +317,6 @@ const ProductPricing = () => {
                     ) : (
                       filteredProducts.map((product) => {
                         const currentPrice = productPrices[product.id] || 0;
-                        const minPrice = productMinPrices[product.id] || 0;
                         const markup = calculateMarkup(product.cost, currentPrice);
                         
                         return (
@@ -412,16 +333,6 @@ const ProductPricing = () => {
                             <TableCell>{formatCurrency(product.cost)}</TableCell>
                             <TableCell>
                               <Input
-                                value={formatCurrency(minPrice)}
-                                onChange={(e) => {
-                                  const newMinPrice = formatPriceInput(e.target.value);
-                                  handleMinPriceChange(product.id, newMinPrice);
-                                }}
-                                className="w-24"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
                                 value={formatCurrency(currentPrice)}
                                 onChange={(e) => {
                                   const newPrice = formatPriceInput(e.target.value);
@@ -433,6 +344,11 @@ const ProductPricing = () => {
                             <TableCell>
                               <span className={`font-medium ${markup >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {markup.toFixed(1)}%
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-gray-600">
+                                {product.maxDiscountPercentage ? `${product.maxDiscountPercentage}%` : '-'}
                               </span>
                             </TableCell>
                           </TableRow>
@@ -447,7 +363,7 @@ const ProductPricing = () => {
             {/* Save button */}
             <div className="flex justify-end mt-4">
               <Button
-                onClick={() => saveAllPrices(false)}
+                onClick={saveAllPrices}
                 disabled={isLoading || !hasChanges}
               >
                 {isLoading ? (
@@ -476,41 +392,6 @@ const ProductPricing = () => {
         productGroups={productGroups}
         onApplyChanges={handleBulkPricingChanges}
       />
-
-      {/* Override Dialog */}
-      <AlertDialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center">
-              Preços Abaixo do Mínimo
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingSave?.outOfRangeProducts?.length} produto(s) têm preços abaixo do mínimo permitido:
-              <div className="mt-2 space-y-1">
-                {pendingSave?.outOfRangeProducts?.slice(0, 5).map((item: any) => (
-                  <div key={item.product.id} className="text-sm">
-                    <strong>{item.product.name}</strong>: {formatCurrency(item.currentPrice)}
-                    {item.minPrice && ` (min: ${formatCurrency(item.minPrice)})`}
-                  </div>
-                ))}
-                {pendingSave?.outOfRangeProducts?.length > 5 && (
-                  <div className="text-sm text-muted-foreground">
-                    ...e mais {pendingSave.outOfRangeProducts.length - 5} produto(s)
-                  </div>
-                )}
-              </div>
-              <br />
-              Deseja salvar mesmo assim?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => saveAllPrices(true)}>
-              Salvar Mesmo Assim
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };
