@@ -57,18 +57,22 @@ const ProductPricing = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [productPrices, setProductPrices] = useState<Record<string, number>>({});
+  const [productMaxDiscounts, setProductMaxDiscounts] = useState<Record<string, number>>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
 
-  // Initialize product prices from products
+  // Initialize product prices and max discounts from products
   useEffect(() => {
     const initialPrices: Record<string, number> = {};
+    const initialMaxDiscounts: Record<string, number> = {};
     
     products.forEach(product => {
       initialPrices[product.id] = product.price || 0;
+      initialMaxDiscounts[product.id] = product.maxDiscountPercentage || 0;
     });
     
     setProductPrices(initialPrices);
+    setProductMaxDiscounts(initialMaxDiscounts);
   }, [products]);
 
   // Filter products based on search and filters
@@ -126,6 +130,16 @@ const ProductPricing = () => {
     setHasChanges(true);
   };
 
+  const handleMaxDiscountChange = (productId: string, newMaxDiscount: number) => {
+    // Validate percentage range
+    const validatedDiscount = Math.max(0, Math.min(100, newMaxDiscount));
+    setProductMaxDiscounts(prev => ({
+      ...prev,
+      [productId]: validatedDiscount
+    }));
+    setHasChanges(true);
+  };
+
   const handleBulkPricingChanges = (changes: BulkPricingChanges) => {
     const newPrices = { ...productPrices };
     
@@ -167,10 +181,23 @@ const ProductPricing = () => {
         const product = products.find(p => p.id === productId);
         if (!product) continue;
         
-        if (product.price !== productPrices[productId]) {
+        const priceChanged = product.price !== productPrices[productId];
+        const discountChanged = (product.maxDiscountPercentage || 0) !== productMaxDiscounts[productId];
+        
+        if (priceChanged || discountChanged) {
+          const updateData: any = {};
+          
+          if (priceChanged) {
+            updateData.price = productPrices[productId];
+          }
+          
+          if (discountChanged) {
+            updateData.maxDiscountPercentage = productMaxDiscounts[productId] || null;
+          }
+          
           updates.push({
             id: productId,
-            updates: { price: productPrices[productId] }
+            updates: updateData
           });
         }
       }
@@ -180,8 +207,8 @@ const ProductPricing = () => {
           await updateProduct(update.id, update.updates);
         }
         
-        toast("Preços salvos", {
-          description: `Preços de ${updates.length} produtos foram salvos com sucesso.`
+        toast("Preços e descontos salvos", {
+          description: `Configurações de ${updates.length} produtos foram salvas com sucesso.`
         });
         
         setHasChanges(false);
@@ -191,9 +218,9 @@ const ProductPricing = () => {
         });
       }
     } catch (error) {
-      console.error("Erro ao salvar preços:", error);
+      console.error("Erro ao salvar:", error);
       toast("Erro ao salvar", {
-        description: "Ocorreu um erro ao salvar os preços dos produtos.",
+        description: "Ocorreu um erro ao salvar as configurações dos produtos.",
         style: {
           backgroundColor: 'rgb(239, 68, 68)',
           color: 'white'
@@ -207,6 +234,11 @@ const ProductPricing = () => {
   const formatPriceInput = (value: string): number => {
     const numericValue = value.replace(/\D/g, '');
     return parseFloat(numericValue) / 100 || 0;
+  };
+
+  const formatDiscountInput = (value: string): number => {
+    const numericValue = value.replace(/[^\d.]/g, '');
+    return parseFloat(numericValue) || 0;
   };
 
   return (
@@ -233,7 +265,7 @@ const ProductPricing = () => {
           </div>
           <CardTitle>Precificação de Produtos</CardTitle>
           <CardDescription>
-            Configure os preços de venda dos seus produtos ({products.length} produtos carregados)
+            Configure os preços de venda e descontos máximos dos seus produtos ({products.length} produtos carregados)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -304,7 +336,7 @@ const ProductPricing = () => {
                       <TableHead className="w-32">Custo</TableHead>
                       <TableHead className="w-32">Preço de Venda</TableHead>
                       <TableHead className="w-32">Markup %</TableHead>
-                      <TableHead className="w-24">Desc. Máx</TableHead>
+                      <TableHead className="w-32">Desc. Máx %</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -317,6 +349,7 @@ const ProductPricing = () => {
                     ) : (
                       filteredProducts.map((product) => {
                         const currentPrice = productPrices[product.id] || 0;
+                        const currentMaxDiscount = productMaxDiscounts[product.id] || 0;
                         const markup = calculateMarkup(product.cost, currentPrice);
                         
                         return (
@@ -338,7 +371,7 @@ const ProductPricing = () => {
                                   const newPrice = formatPriceInput(e.target.value);
                                   handlePriceChange(product.id, newPrice);
                                 }}
-                                className="w-24"
+                                className="w-28"
                               />
                             </TableCell>
                             <TableCell>
@@ -347,9 +380,19 @@ const ProductPricing = () => {
                               </span>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm text-gray-600">
-                                {product.maxDiscountPercentage ? `${product.maxDiscountPercentage}%` : '-'}
-                              </span>
+                              <Input
+                                type="number"
+                                value={currentMaxDiscount || ''}
+                                onChange={(e) => {
+                                  const newMaxDiscount = formatDiscountInput(e.target.value);
+                                  handleMaxDiscountChange(product.id, newMaxDiscount);
+                                }}
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                className="w-20"
+                              />
                             </TableCell>
                           </TableRow>
                         );
@@ -374,7 +417,7 @@ const ProductPricing = () => {
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Salvar Preços
+                    Salvar Alterações
                   </>
                 )}
               </Button>
