@@ -7,6 +7,7 @@ import { Product } from '@/types';
 import { useProductUnits } from './useProductUnits';
 import { toast } from "sonner";
 import { ProductFormUnitsData, SelectedUnit } from '@/types/productFormUnits';
+import { ProductUnitWithMapping } from '@/types/productUnits';
 
 const productFormSchema = z.object({
   code: z.number().min(1, {
@@ -43,13 +44,17 @@ interface UseProductFormLogicProps {
   selectedProduct: Product | null;
   products: Product[];
   onSubmit: (data: ProductFormData) => Promise<void>;
+  existingUnits?: ProductUnitWithMapping[];
+  existingMainUnit?: ProductUnitWithMapping | null;
 }
 
 export const useProductFormLogic = ({
   isEditing,
   selectedProduct,
   products,
-  onSubmit
+  onSubmit,
+  existingUnits = [],
+  existingMainUnit = null
 }: UseProductFormLogicProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUnits, setSelectedUnits] = useState<SelectedUnit[]>([]);
@@ -100,6 +105,37 @@ export const useProductFormLogic = ({
   const subunitRatio = calculateSubunitRatio();
   const isConversionValid = subunitRatio !== null && subunitRatio > 0;
   
+  // Load existing units when editing
+  useEffect(() => {
+    if (isEditing && existingUnits && existingUnits.length > 0) {
+      console.log("🔄 Loading existing units for editing:", existingUnits);
+      
+      const mappedUnits: SelectedUnit[] = existingUnits.map(unit => ({
+        unitId: unit.id,
+        unitValue: unit.value,
+        unitLabel: unit.label,
+        packageQuantity: unit.packageQuantity,
+        isMainUnit: unit.isMainUnit
+      }));
+      
+      setSelectedUnits(mappedUnits);
+      
+      if (existingMainUnit) {
+        setMainUnitId(existingMainUnit.id);
+        console.log("👑 Set existing main unit:", existingMainUnit.id);
+      }
+      
+      // Update form values
+      form.setValue('selectedUnits', mappedUnits);
+      form.setValue('mainUnitId', existingMainUnit?.id || null);
+      
+      console.log("✅ Existing units loaded successfully:", {
+        unitsCount: mappedUnits.length,
+        mainUnitId: existingMainUnit?.id
+      });
+    }
+  }, [isEditing, existingUnits, existingMainUnit, form]);
+
   useEffect(() => {
     if (isEditing && selectedProduct) {
       form.reset({
@@ -113,11 +149,11 @@ export const useProductFormLogic = ({
         categoryId: selectedProduct.categoryId || "",
         groupId: selectedProduct.groupId || "",
         brandId: selectedProduct.brandId || "",
-        selectedUnits: [],
-        mainUnitId: null,
+        selectedUnits: selectedUnits, // Keep existing units
+        mainUnitId: mainUnitId, // Keep existing main unit
       });
     }
-  }, [selectedProduct, isEditing, form]);
+  }, [selectedProduct, isEditing, form, selectedUnits, mainUnitId]);
 
   const addUnit = (unit: { id: string; value: string; label: string; packageQuantity: number }) => {
     console.log("🔄 Adding unit to form state:", unit);

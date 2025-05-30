@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { useProductFormLogic, ProductFormData } from './hooks/useProductFormLogic';
+import { useProductUnitsMapping } from '@/hooks/useProductUnitsMapping';
 import { BasicFieldsSection } from './form/BasicFieldsSection';
 import { ClassificationSection } from './form/ClassificationSection';
 import { ProductUnitsSection } from './form/ProductUnitsSection';
@@ -33,6 +34,13 @@ export default function ProductForm({
   productGroups,
   productBrands
 }: ProductFormProps) {
+  // Load existing units when editing
+  const {
+    productUnits: existingUnits,
+    mainUnit: existingMainUnit,
+    isLoading: loadingUnits
+  } = useProductUnitsMapping(isEditing ? selectedProduct?.id : undefined);
+
   const {
     form,
     units,
@@ -52,7 +60,9 @@ export default function ProductForm({
     isEditing,
     selectedProduct,
     products,
-    onSubmit
+    onSubmit,
+    existingUnits,
+    existingMainUnit
   });
 
   return (
@@ -86,15 +96,22 @@ export default function ProductForm({
             {/* Seção de Unidades */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Unidades de Medida</h3>
-              <ProductUnitsSection 
-                form={form}
-                selectedUnits={selectedUnits}
-                mainUnitId={mainUnitId}
-                onAddUnit={addUnit}
-                onRemoveUnit={removeUnit}
-                onSetMainUnit={setAsMainUnit}
-                productPrice={selectedProduct?.price || 0}
-              />
+              {loadingUnits && isEditing ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span className="text-sm text-gray-500">Carregando unidades...</span>
+                </div>
+              ) : (
+                <ProductUnitsSection 
+                  form={form}
+                  selectedUnits={selectedUnits}
+                  mainUnitId={mainUnitId}
+                  onAddUnit={addUnit}
+                  onRemoveUnit={removeUnit}
+                  onSetMainUnit={setAsMainUnit}
+                  productPrice={selectedProduct?.price || 0}
+                />
+              )}
             </div>
 
             {/* Botões de Ação */}
@@ -110,7 +127,7 @@ export default function ProductForm({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isSubmitting}
+                disabled={isSubmitting || (loadingUnits && isEditing)}
                 className="bg-blue-600 hover:bg-blue-700 px-6"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
