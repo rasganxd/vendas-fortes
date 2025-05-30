@@ -75,6 +75,19 @@ export const useProductFormLogic = ({
   const selectedUnits = form.watch("selectedUnits") || [];
   const mainUnitId = form.watch("mainUnitId");
   
+  // Helper function to validate and convert to SelectedUnit
+  const validateAndConvertToSelectedUnit = useCallback((units: any[]): SelectedUnit[] => {
+    return units
+      .filter((unit): unit is SelectedUnit => 
+        Boolean(unit.unitId) && 
+        Boolean(unit.unitValue) && 
+        Boolean(unit.unitLabel) && 
+        typeof unit.packageQuantity === 'number' && 
+        unit.packageQuantity > 0 &&
+        typeof unit.isMainUnit === 'boolean'
+      );
+  }, []);
+  
   // Validar e mapear unidades existentes
   const mappedExistingUnits = useMemo(() => {
     if (!isEditing || !existingUnits?.length) return [];
@@ -143,19 +156,20 @@ export const useProductFormLogic = ({
     console.log("🔄 Adicionando unidade:", unit);
     
     const currentUnits = form.getValues('selectedUnits') || [];
+    const validCurrentUnits = validateAndConvertToSelectedUnit(currentUnits);
     
     const newUnit: SelectedUnit = {
       unitId: unit.id,
       unitValue: unit.value,
       unitLabel: unit.label,
       packageQuantity: unit.packageQuantity,
-      isMainUnit: currentUnits.length === 0
+      isMainUnit: validCurrentUnits.length === 0
     };
     
-    const updatedUnits = [...currentUnits, newUnit];
+    const updatedUnits = [...validCurrentUnits, newUnit];
     form.setValue('selectedUnits', updatedUnits, { shouldValidate: true });
     
-    if (currentUnits.length === 0) {
+    if (validCurrentUnits.length === 0) {
       form.setValue('mainUnitId', unit.id, { shouldValidate: true });
       console.log("👑 Definida como unidade principal:", unit.id);
     }
@@ -166,15 +180,16 @@ export const useProductFormLogic = ({
     });
     
     toast("Unidade adicionada com sucesso!");
-  }, [form]);
+  }, [form, validateAndConvertToSelectedUnit]);
 
   const removeUnit = useCallback((unitId: string) => {
     console.log("🗑️ Removendo unidade:", unitId);
     
     const currentUnits = form.getValues('selectedUnits') || [];
+    const validCurrentUnits = validateAndConvertToSelectedUnit(currentUnits);
     const currentMainUnitId = form.getValues('mainUnitId');
     
-    const updatedUnits = currentUnits.filter(u => u.unitId !== unitId);
+    const updatedUnits = validCurrentUnits.filter(u => u.unitId !== unitId);
     form.setValue('selectedUnits', updatedUnits, { shouldValidate: true });
     
     if (currentMainUnitId === unitId && updatedUnits.length > 0) {
@@ -194,14 +209,15 @@ export const useProductFormLogic = ({
     }
     
     console.log("✅ Unidade removida");
-  }, [form]);
+  }, [form, validateAndConvertToSelectedUnit]);
 
   const setAsMainUnit = useCallback((unitId: string) => {
     console.log("👑 Definindo nova unidade principal:", unitId);
     
     const currentUnits = form.getValues('selectedUnits') || [];
+    const validCurrentUnits = validateAndConvertToSelectedUnit(currentUnits);
     
-    const updatedUnits = currentUnits.map(u => ({
+    const updatedUnits = validCurrentUnits.map(u => ({
       ...u,
       isMainUnit: u.unitId === unitId
     }));
@@ -210,7 +226,7 @@ export const useProductFormLogic = ({
     form.setValue('mainUnitId', unitId, { shouldValidate: true });
     
     console.log("✅ Unidade principal definida");
-  }, [form]);
+  }, [form, validateAndConvertToSelectedUnit]);
 
   // Validação centralizada
   const validateFormData = useCallback((data: ProductFormData) => {
