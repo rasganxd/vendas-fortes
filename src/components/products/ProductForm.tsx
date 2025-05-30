@@ -42,6 +42,11 @@ export default function ProductForm({
     selectedSubunit,
     subunitRatio,
     isConversionValid,
+    selectedUnits,
+    mainUnitId,
+    addUnit,
+    removeUnit,
+    setAsMainUnit,
     handleSubmit
   } = useProductFormLogic({
     isEditing,
@@ -72,9 +77,12 @@ export default function ProductForm({
             
             <ProductUnitsSection 
               form={form}
-              productId={selectedProduct?.id}
-              productPrice={selectedProduct?.price}
-              isEditing={isEditing}
+              selectedUnits={selectedUnits}
+              mainUnitId={mainUnitId}
+              onAddUnit={addUnit}
+              onRemoveUnit={removeUnit}
+              onSetMainUnit={setAsMainUnit}
+              productPrice={selectedProduct?.price || 0}
             />
 
             <div className="flex justify-end gap-2 pt-4 border-t">

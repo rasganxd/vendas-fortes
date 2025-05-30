@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +5,7 @@ import * as z from "zod";
 import { Product } from '@/types';
 import { useProductUnits } from './useProductUnits';
 import { toast } from "sonner";
+import { ProductFormUnitsData, SelectedUnit } from '@/types/productFormUnits';
 
 const productFormSchema = z.object({
   code: z.number().min(1, {
@@ -24,9 +24,18 @@ const productFormSchema = z.object({
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
   brandId: z.string().optional(),
+  // New fields for units configuration
+  selectedUnits: z.array(z.object({
+    unitId: z.string(),
+    unitValue: z.string(),
+    unitLabel: z.string(),
+    packageQuantity: z.number(),
+    isMainUnit: z.boolean()
+  })).optional(),
+  mainUnitId: z.string().optional(),
 });
 
-export type ProductFormData = z.infer<typeof productFormSchema>;
+export type ProductFormData = z.infer<typeof productFormSchema> & ProductFormUnitsData;
 
 interface UseProductFormLogicProps {
   isEditing: boolean;
@@ -42,6 +51,8 @@ export const useProductFormLogic = ({
   onSubmit
 }: UseProductFormLogicProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedUnits, setSelectedUnits] = useState<SelectedUnit[]>([]);
+  const [mainUnitId, setMainUnitId] = useState<string | null>(null);
   const { units } = useProductUnits();
   
   const form = useForm<ProductFormData>({
@@ -58,6 +69,8 @@ export const useProductFormLogic = ({
       categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
       groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
       brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
+      selectedUnits: [],
+      mainUnitId: null,
     },
   });
   
@@ -99,9 +112,65 @@ export const useProductFormLogic = ({
         categoryId: selectedProduct.categoryId || "",
         groupId: selectedProduct.groupId || "",
         brandId: selectedProduct.brandId || "",
+        selectedUnits: [],
+        mainUnitId: null,
       });
     }
   }, [selectedProduct, isEditing, form]);
+
+  const addUnit = (unit: { id: string; value: string; label: string; packageQuantity: number }) => {
+    const newUnit: SelectedUnit = {
+      unitId: unit.id,
+      unitValue: unit.value,
+      unitLabel: unit.label,
+      packageQuantity: unit.packageQuantity,
+      isMainUnit: selectedUnits.length === 0 // First unit becomes main unit
+    };
+    
+    const updatedUnits = [...selectedUnits, newUnit];
+    setSelectedUnits(updatedUnits);
+    
+    if (selectedUnits.length === 0) {
+      setMainUnitId(unit.id);
+    }
+    
+    form.setValue('selectedUnits', updatedUnits);
+    form.setValue('mainUnitId', mainUnitId);
+  };
+
+  const removeUnit = (unitId: string) => {
+    const updatedUnits = selectedUnits.filter(u => u.unitId !== unitId);
+    setSelectedUnits(updatedUnits);
+    
+    // If removing main unit, set first remaining unit as main
+    if (mainUnitId === unitId && updatedUnits.length > 0) {
+      const newMainUnitId = updatedUnits[0].unitId;
+      setMainUnitId(newMainUnitId);
+      const updatedUnitsWithNewMain = updatedUnits.map(u => ({
+        ...u,
+        isMainUnit: u.unitId === newMainUnitId
+      }));
+      setSelectedUnits(updatedUnitsWithNewMain);
+      form.setValue('selectedUnits', updatedUnitsWithNewMain);
+      form.setValue('mainUnitId', newMainUnitId);
+    } else if (updatedUnits.length === 0) {
+      setMainUnitId(null);
+      form.setValue('mainUnitId', null);
+    }
+    
+    form.setValue('selectedUnits', updatedUnits);
+  };
+
+  const setAsMainUnit = (unitId: string) => {
+    const updatedUnits = selectedUnits.map(u => ({
+      ...u,
+      isMainUnit: u.unitId === unitId
+    }));
+    setSelectedUnits(updatedUnits);
+    setMainUnitId(unitId);
+    form.setValue('selectedUnits', updatedUnits);
+    form.setValue('mainUnitId', unitId);
+  };
 
   const handleSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
@@ -116,14 +185,16 @@ export const useProductFormLogic = ({
         return;
       }
       
-      // Convert classification IDs from "none" to null and add required fields
+      // Include units data in the submission
       const processedData = {
         ...data,
-        price: 0, // Default price - será definido na precificação
+        price: 0,
         categoryId: data.categoryId === "none" || data.categoryId === "" ? null : data.categoryId,
         groupId: data.groupId === "none" || data.groupId === "" ? null : data.groupId,
         brandId: data.brandId === "none" || data.brandId === "" ? null : data.brandId,
         subunitRatio: hasSubunit && isConversionValid ? subunitRatio : undefined,
+        selectedUnits,
+        mainUnitId,
       };
       
       console.log("📊 Produto processado para salvar:", processedData);
@@ -147,6 +218,11 @@ export const useProductFormLogic = ({
     selectedSubunit,
     subunitRatio,
     isConversionValid,
+    selectedUnits,
+    mainUnitId,
+    addUnit,
+    removeUnit,
+    setAsMainUnit,
     handleSubmit
   };
 };

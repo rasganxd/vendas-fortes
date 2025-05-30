@@ -1,4 +1,4 @@
-import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
+import { Product } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
 import { productBrandService } from '@/services/supabase/productBrandService';
@@ -143,35 +143,18 @@ export const deleteProduct = async (
  * Validates if a discounted price is acceptable for a product using percentage-based discount
  */
 export const validateProductDiscount = (
-  productId: string,
-  discountedPrice: number,
+  productId: string, 
+  discountedPrice: number, 
   products: Product[]
 ): string | boolean => {
   const product = products.find(p => p.id === productId);
-  if (!product) return true;
+  if (!product) return "Produto não encontrado";
   
-  // Check if price is positive
+  // Since maxDiscountPercentage is now in a separate table,
+  // this validation will be handled by the pricing system
+  // For now, just check if price is positive
   if (discountedPrice <= 0) {
-    return "O preço deve ser maior que zero";
-  }
-  
-  // Check maximum discount percentage if defined
-  if (product.maxDiscountPercentage !== undefined && product.maxDiscountPercentage !== null) {
-    const currentDiscountPercentage = ((product.price - discountedPrice) / product.price) * 100;
-    
-    if (currentDiscountPercentage > product.maxDiscountPercentage) {
-      return `O desconto não pode ser maior que ${product.maxDiscountPercentage.toFixed(1)}% (atual: ${currentDiscountPercentage.toFixed(1)}%)`;
-    }
-  }
-  
-  // Legacy support: Check minimum price if defined (deprecated)
-  if (product.minPrice && discountedPrice < product.minPrice) {
-    return `O preço não pode ser menor que R$ ${product.minPrice.toFixed(2)}`;
-  }
-  
-  // Legacy support: Check maximum price if defined (deprecated)
-  if (product.maxPrice && discountedPrice > product.maxPrice) {
-    return `O preço não pode ser maior que R$ ${product.maxPrice.toFixed(2)}`;
+    return "O preço com desconto deve ser maior que zero";
   }
   
   return true;
@@ -184,14 +167,10 @@ export const getMinimumPrice = (productId: string, products: Product[]): number 
   const product = products.find(p => p.id === productId);
   if (!product) return 0;
   
-  // Use percentage-based calculation if available
-  if (product.maxDiscountPercentage !== undefined && product.maxDiscountPercentage !== null) {
-    const maxDiscount = (product.maxDiscountPercentage / 100) * product.price;
-    return product.price - maxDiscount;
-  }
-  
-  // Fall back to legacy minimum price
-  return product.minPrice || 0;
+  // Since maxDiscountPercentage is moved to separate table,
+  // return the cost as minimum price for now
+  // This will be enhanced by the pricing system
+  return product.cost || 0;
 };
 
 /**

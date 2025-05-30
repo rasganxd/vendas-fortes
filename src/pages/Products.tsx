@@ -14,6 +14,7 @@ import { DeleteConfirmationDialog } from '@/components/products/DeleteConfirmati
 import BulkProductUpload from '@/components/products/BulkProductUpload';
 import { Product } from '@/types';
 import { toast } from "sonner";
+import { productUnitsMappingService } from '@/services/supabase/productUnitsMapping';
 export default function Products() {
   const {
     products,
@@ -94,22 +95,46 @@ export default function Products() {
         description: data.description || "",
         minStock: data.minStock || 0,
         price: 0,
-        // Default price - será definido na precificação
         syncStatus: 'synced'
       };
+      
+      let productId: string;
+      
       if (editingProduct) {
         // Updating existing product
         await updateProduct(editingProduct.id, productData);
+        productId = editingProduct.id;
         toast("Produto atualizado", {
           description: "O produto foi atualizado com sucesso"
         });
       } else {
         // Creating new product
-        await addProduct(productData);
+        const newProduct = await addProduct(productData);
+        productId = typeof newProduct === 'string' ? newProduct : newProduct.id;
         toast("Produto criado", {
           description: "O produto foi criado com sucesso. Defina o preço de venda na seção Precificação."
         });
       }
+      
+      // Save unit mappings if units were selected
+      if (data.selectedUnits && data.selectedUnits.length > 0) {
+        try {
+          for (const unit of data.selectedUnits) {
+            await productUnitsMappingService.addUnitToProduct(
+              productId,
+              unit.unitId,
+              unit.isMainUnit
+            );
+          }
+          console.log("✅ Unidades associadas ao produto com sucesso");
+        } catch (error) {
+          console.error("Erro ao associar unidades:", error);
+          toast("Produto salvo, mas houve erro ao configurar unidades", {
+            description: "Configure as unidades manualmente na edição do produto"
+          });
+        }
+      }
+      
       setIsProductFormOpen(false);
       setEditingProduct(null);
       refreshData();
