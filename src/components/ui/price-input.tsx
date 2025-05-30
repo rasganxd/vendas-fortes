@@ -16,7 +16,10 @@ const PriceInput = React.forwardRef<HTMLInputElement, PriceInputProps>(
     // Sincronizar valor numérico com display
     React.useEffect(() => {
       if (value !== undefined && value !== null) {
-        const formatted = applyPriceMask((value * 100).toString());
+        const formatted = new Intl.NumberFormat('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value);
         setDisplayValue(formatted);
       } else {
         setDisplayValue('');

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +10,10 @@ import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import ProductSearchDialog from './ProductSearchDialog';
 import PriceValidation from '@/components/products/pricing/PriceValidation';
-import { calculateUnitPrice, formatBrazilianPrice, parseBrazilianPrice } from '@/utils/priceConverter';
+import { PriceInput } from '@/components/ui/price-input';
+import { calculateUnitPrice } from '@/utils/priceConverter';
 import { validateProductDiscount } from '@/context/operations/productOperations';
+
 interface EnhancedProductSearchProps {
   products: Product[];
   handleAddItem: (product: Product, quantity: number, price: number, unit?: string) => void;
@@ -18,6 +21,7 @@ interface EnhancedProductSearchProps {
   isEditMode: boolean;
   selectedCustomer: any;
 }
+
 export default function EnhancedProductSearch({
   products,
   handleAddItem,
@@ -29,7 +33,6 @@ export default function EnhancedProductSearch({
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState('');
-  const [priceDisplayValue, setPriceDisplayValue] = useState('');
   const [priceValidationError, setPriceValidationError] = useState<string>('');
   const [showProductDialog, setShowProductDialog] = useState(false);
   const quantityInputRef = useRef<HTMLInputElement>(null);
@@ -59,7 +62,6 @@ export default function EnhancedProductSearch({
       const correctPrice = calculateUnitPrice(selectedProduct, mainUnit);
       console.log(`💰 Preço inicial para ${selectedProduct.name} - ${mainUnit}: R$ ${correctPrice.toFixed(2)}`);
       setPrice(correctPrice);
-      setPriceDisplayValue(formatBrazilianPrice(correctPrice));
     }
   }, [selectedProduct]);
 
@@ -72,7 +74,6 @@ export default function EnhancedProductSearch({
     if (selectedProduct && selectedProduct.code.toString() !== value) {
       setSelectedProduct(null);
       setPrice(0);
-      setPriceDisplayValue('');
       setSelectedUnit('');
       setPriceValidationError('');
     }
@@ -80,6 +81,7 @@ export default function EnhancedProductSearch({
     // REMOVIDO: Não buscar produto automaticamente durante a digitação
     // A busca só acontece quando o usuário pressionar Enter
   };
+
   const handleProductSelect = (product: Product) => {
     console.log("📦 Produto selecionado:", product.name, {
       price: product.price,
@@ -96,6 +98,7 @@ export default function EnhancedProductSearch({
       quantityInputRef.current?.focus();
     }, 100);
   };
+
   const handleUnitChange = (unit: string) => {
     console.log("🔄 Mudança de unidade para:", unit, "no produto:", selectedProduct?.name);
     setSelectedUnit(unit);
@@ -112,18 +115,11 @@ export default function EnhancedProductSearch({
         selectedUnit: unit
       });
       setPrice(correctPrice);
-      setPriceDisplayValue(formatBrazilianPrice(correctPrice));
     }
   };
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const displayValue = e.target.value;
-    setPriceDisplayValue(displayValue);
 
-    // Convert to number for calculations
-    const numericPrice = parseBrazilianPrice(displayValue);
-    setPrice(numericPrice);
-  };
   const isPriceValid = !priceValidationError && price > 0;
+  
   const handleAdd = () => {
     if (selectedProduct && quantity > 0 && isPriceValid) {
       console.log("🛒 Adicionando ao pedido:", {
@@ -139,7 +135,6 @@ export default function EnhancedProductSearch({
       setProductCode('');
       setQuantity(1);
       setPrice(0);
-      setPriceDisplayValue('');
       setSelectedUnit('');
       setPriceValidationError('');
 
@@ -169,6 +164,7 @@ export default function EnhancedProductSearch({
       }
     }
   };
+
   const handleQuantityKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -203,13 +199,17 @@ export default function EnhancedProductSearch({
       return;
     } else if (selectedUnit === selectedProduct.unit && selectedProduct.hasSubunit) {
       // Show that this is the main unit price
-      return <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+      return (
+        <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
           ✓ Preço da unidade principal ({selectedProduct.unit})
-        </div>;
+        </div>
+      );
     }
     return null;
   };
-  return <div className="space-y-4">
+
+  return (
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
           <Package size={20} />
@@ -220,18 +220,39 @@ export default function EnhancedProductSearch({
       {/* Product Code Input */}
       <div className="flex gap-2">
         <div className="flex-1">
-          <Input ref={productInputRef} type="text" placeholder="Digite o código do produto e pressione Enter..." value={productCode} onChange={handleProductCodeChange} onKeyDown={handleProductCodeKeyDown} className="h-11 text-base" disabled={isEditMode} />
+          <Input
+            ref={productInputRef}
+            type="text"
+            placeholder="Digite o código do produto e pressione Enter..."
+            value={productCode}
+            onChange={handleProductCodeChange}
+            onKeyDown={handleProductCodeKeyDown}
+            className="h-11 text-base"
+            disabled={isEditMode}
+          />
         </div>
-        <Button onClick={() => setShowProductDialog(true)} variant="outline" size="default" className="h-11 px-3" disabled={isEditMode}>
+        <Button
+          onClick={() => setShowProductDialog(true)}
+          variant="outline"
+          size="default"
+          className="h-11 px-3"
+          disabled={isEditMode}
+        >
           <Search size={18} />
         </Button>
       </div>
 
       {/* Product Search Dialog */}
-      <ProductSearchDialog open={showProductDialog} onClose={() => setShowProductDialog(false)} products={products} onSelectProduct={handleProductSelect} />
+      <ProductSearchDialog
+        open={showProductDialog}
+        onClose={() => setShowProductDialog(false)}
+        products={products}
+        onSelectProduct={handleProductSelect}
+      />
 
       {/* Product Addition Form */}
-      {selectedProduct && <Card className={`border-2 ${isPriceValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+      {selectedProduct && (
+        <Card className={`border-2 ${isPriceValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
           <CardContent className="pt-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -247,21 +268,43 @@ export default function EnhancedProductSearch({
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Quantidade</label>
-                  <QuantityInput quantity={quantity} onQuantityChange={e => setQuantity(parseInt(e.target.value) || 1)} onIncrement={() => setQuantity(prev => prev + 1)} onDecrement={() => setQuantity(prev => Math.max(1, prev - 1))} inputRef={quantityInputRef} onKeyDown={handleQuantityKeyDown} />
+                  <QuantityInput
+                    quantity={quantity}
+                    onQuantityChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    onIncrement={() => setQuantity(prev => prev + 1)}
+                    onDecrement={() => setQuantity(prev => Math.max(1, prev - 1))}
+                    inputRef={quantityInputRef}
+                    onKeyDown={handleQuantityKeyDown}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Unidade</label>
-                  <UnitSelector selectedUnit={selectedUnit} onUnitChange={handleUnitChange} product={selectedProduct} className="h-10" />
+                  <UnitSelector
+                    selectedUnit={selectedUnit}
+                    onUnitChange={handleUnitChange}
+                    product={selectedProduct}
+                    className="h-10"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Preço Unitário</label>
-                  <Input type="text" mask="price" value={priceDisplayValue} onChange={handlePriceChange} placeholder="0,00" className={`h-10 ${!isPriceValid ? 'border-red-500 bg-red-50' : ''}`} />
+                  <PriceInput
+                    value={price}
+                    onChange={setPrice}
+                    placeholder="0,00"
+                    className={`h-10 ${!isPriceValid ? 'border-red-500 bg-red-50' : ''}`}
+                  />
                 </div>
 
                 <div className="flex items-end">
-                  <Button ref={addButtonRef} onClick={handleAdd} className={`w-full h-10 ${isPriceValid ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400'}`} disabled={!selectedProduct || quantity <= 0 || !isPriceValid}>
+                  <Button
+                    ref={addButtonRef}
+                    onClick={handleAdd}
+                    className={`w-full h-10 ${isPriceValid ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400'}`}
+                    disabled={!selectedProduct || quantity <= 0 || !isPriceValid}
+                  >
                     <Plus size={16} className="mr-2" />
                     Adicionar
                   </Button>
@@ -270,12 +313,18 @@ export default function EnhancedProductSearch({
 
               {/* Price Validation */}
               <div className="space-y-2">
-                <PriceValidation product={selectedProduct} currentPrice={price} className="text-sm" />
+                <PriceValidation
+                  product={selectedProduct}
+                  currentPrice={price}
+                  className="text-sm"
+                />
                 
-                {priceValidationError && <div className="flex items-center text-sm text-red-600 bg-red-100 p-2 rounded">
+                {priceValidationError && (
+                  <div className="flex items-center text-sm text-red-600 bg-red-100 p-2 rounded">
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     <span>{priceValidationError}</span>
-                  </div>}
+                  </div>
+                )}
               </div>
 
               {/* Price conversion display */}
@@ -288,13 +337,15 @@ export default function EnhancedProductSearch({
                 <span className="text-gray-600">Total:</span>
                 <span className={`font-bold text-lg ${isPriceValid ? 'text-green-600' : 'text-red-600'}`}>
                   {(quantity * price).toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
                 </span>
               </div>
             </div>
           </CardContent>
-        </Card>}
-    </div>;
+        </Card>
+      )}
+    </div>
+  );
 }

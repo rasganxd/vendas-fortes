@@ -8,13 +8,9 @@ export const parseBrazilianPrice = (value: string): number => {
   // Remove símbolos de moeda, espaços e caracteres especiais, mantendo apenas dígitos, pontos e vírgulas
   let cleanValue = value.replace(/[R$\s]/g, '');
   
-  // Se não há vírgula, trata como valor inteiro ou centavos
+  // Se não há vírgula, trata como valor inteiro em reais
   if (!cleanValue.includes(',')) {
     const num = parseInt(cleanValue) || 0;
-    // Se é um número pequeno (até 3 dígitos), pode ser centavos
-    if (num < 1000 && cleanValue.length <= 3) {
-      return num / 100;
-    }
     return num;
   }
   
@@ -38,38 +34,31 @@ export const formatBrazilianPrice = (value: number): string => {
   }).format(value);
 };
 
-// Formata um número para entrada de texto com máscara em tempo real
-export const formatPriceForInput = (value: string): string => {
-  if (!value) return '';
-  
-  // Remove tudo exceto dígitos
-  let numbers = value.replace(/\D/g, '');
-  
-  // Se vazio, retorna vazio
-  if (!numbers) return '';
-  
-  // Converte para centavos e depois para reais
-  const cents = parseInt(numbers);
-  const reais = cents / 100;
-  
-  return formatBrazilianPrice(reais);
-};
-
 // Aplica máscara de preço em tempo real durante digitação
 export const applyPriceMask = (value: string): string => {
-  // Remove tudo exceto números
-  const numbers = value.replace(/\D/g, '');
+  // Remove tudo exceto números e vírgula
+  let cleanValue = value.replace(/[^\d,]/g, '');
   
-  if (!numbers) return '';
+  if (!cleanValue) return '';
   
-  // Converte para número (centavos)
-  const num = parseInt(numbers);
+  // Se já contém vírgula, formatar mantendo a vírgula
+  if (cleanValue.includes(',')) {
+    const parts = cleanValue.split(',');
+    const integerPart = parts[0];
+    const decimalPart = parts[1] ? parts[1].substring(0, 2) : '';
+    
+    // Formatar parte inteira com pontos de milhares
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    
+    return decimalPart ? `${formattedInteger},${decimalPart}` : `${formattedInteger},`;
+  }
   
-  // Converte centavos para reais
-  const reais = num / 100;
+  // Se não contém vírgula, tratar como número inteiro em reais
+  const num = parseInt(cleanValue);
+  if (isNaN(num)) return '';
   
-  // Formata com vírgulas e pontos
-  return formatBrazilianPrice(reais);
+  // Formatar como valor em reais
+  return formatBrazilianPrice(num);
 };
 
 // Valida se uma string representa um preço válido
