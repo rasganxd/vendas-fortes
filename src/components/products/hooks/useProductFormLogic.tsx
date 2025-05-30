@@ -220,8 +220,11 @@ export const useProductFormLogic = ({
       const newMainUnitId = updatedUnits[0].unitId;
       
       // Atualizar isMainUnit no array
-      const updatedUnitsWithNewMain = updatedUnits.map(u => ({
-        ...u,
+      const updatedUnitsWithNewMain: SelectedUnit[] = updatedUnits.map(u => ({
+        unitId: u.unitId,
+        unitValue: u.unitValue,
+        unitLabel: u.unitLabel,
+        packageQuantity: u.packageQuantity,
         isMainUnit: u.unitId === newMainUnitId
       }));
       
@@ -241,8 +244,11 @@ export const useProductFormLogic = ({
     
     const currentUnits = form.getValues('selectedUnits') || [];
     
-    const updatedUnits = currentUnits.map(u => ({
-      ...u,
+    const updatedUnits: SelectedUnit[] = currentUnits.map(u => ({
+      unitId: u.unitId,
+      unitValue: u.unitValue,
+      unitLabel: u.unitLabel,
+      packageQuantity: u.packageQuantity,
       isMainUnit: u.unitId === unitId
     }));
     

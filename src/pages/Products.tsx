@@ -93,6 +93,8 @@ export default function Products() {
   };
   
   const handleProductSaved = async (data: any) => {
+    const isEditingProduct = !!editingProduct;
+    
     try {
       console.log("💾 Iniciando salvamento do produto:", data);
 
@@ -121,7 +123,7 @@ export default function Products() {
       
       let productId: string;
       
-      if (editingProduct) {
+      if (isEditingProduct) {
         console.log("✏️ Atualizando produto existente:", editingProduct.id);
         
         // Updating existing product
@@ -142,20 +144,43 @@ export default function Products() {
         });
       }
 
-      // Sincronizar unidades usando o novo método transacional
+      // Sincronizar unidades usando operações individuais
       console.log("🔄 Sincronizando unidades do produto...");
       
-      const unitsToSync = data.selectedUnits.map((unit: any) => ({
-        unitId: unit.unitId,
-        isMainUnit: unit.isMainUnit
-      }));
-
-      await productUnitsMappingService.syncProductUnits(productId, unitsToSync);
+      // Primeiro, buscar unidades existentes
+      const existingUnits = isEditingProduct 
+        ? await productUnitsMappingService.getProductUnits(productId)
+        : [];
+      
+      // Remover unidades que não estão mais selecionadas
+      for (const existingUnit of existingUnits) {
+        const stillSelected = data.selectedUnits.find((u: any) => u.unitId === existingUnit.id);
+        if (!stillSelected) {
+          await productUnitsMappingService.removeUnitFromProduct(productId, existingUnit.id);
+        }
+      }
+      
+      // Adicionar novas unidades
+      for (const selectedUnit of data.selectedUnits) {
+        const alreadyExists = existingUnits.find(u => u.id === selectedUnit.unitId);
+        if (!alreadyExists) {
+          await productUnitsMappingService.addUnitToProduct(
+            productId, 
+            selectedUnit.unitId, 
+            selectedUnit.isMainUnit
+          );
+        } else if (selectedUnit.isMainUnit !== alreadyExists.isMainUnit) {
+          // Atualizar se mudou o status de unidade principal
+          if (selectedUnit.isMainUnit) {
+            await productUnitsMappingService.setMainUnit(productId, selectedUnit.unitId);
+          }
+        }
+      }
       
       console.log("✅ Produto e unidades salvos com sucesso");
       
       toast("Sucesso!", {
-        description: isEditing 
+        description: isEditingProduct 
           ? "Produto e unidades atualizados com sucesso" 
           : "Produto criado e unidades configuradas com sucesso. Defina o preço de venda na seção Precificação."
       });

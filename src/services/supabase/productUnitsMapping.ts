@@ -43,41 +43,6 @@ export const productUnitsMappingService = {
     }
   },
 
-  // Sincronizar unidades de um produto com transação
-  async syncProductUnits(productId: string, selectedUnits: Array<{
-    unitId: string;
-    isMainUnit: boolean;
-  }>): Promise<void> {
-    try {
-      console.log('🔄 Sincronizando unidades do produto:', { productId, selectedUnits });
-
-      if (selectedUnits.length === 0) {
-        throw new Error('Produto deve ter pelo menos uma unidade');
-      }
-
-      const mainUnits = selectedUnits.filter(u => u.isMainUnit);
-      if (mainUnits.length !== 1) {
-        throw new Error('Produto deve ter exatamente uma unidade principal');
-      }
-
-      // Realizar operação em transação
-      const { error } = await supabase.rpc('sync_product_units', {
-        p_product_id: productId,
-        p_units: selectedUnits
-      });
-
-      if (error) {
-        console.error('❌ Erro ao sincronizar unidades:', error);
-        throw error;
-      }
-
-      console.log('✅ Unidades sincronizadas com sucesso');
-    } catch (error) {
-      console.error('❌ Erro ao sincronizar unidades:', error);
-      throw error;
-    }
-  },
-
   // Adicionar unidade a um produto
   async addUnitToProduct(productId: string, unitId: string, isMainUnit: boolean = false): Promise<void> {
     try {
