@@ -120,20 +120,31 @@ export const useProductUnits = () => {
     }
   };
 
-  // Delete a unit
+  // Delete a unit with improved error handling
   const deleteUnit = async (value: string) => {
     try {
-      console.log("🗑️ Deleting unit:", value);
+      console.log("🗑️ Attempting to delete unit:", value);
+      
+      // First check if unit can be deleted
+      const canDeleteResult = await productUnitsService.canDelete(value);
+      
+      if (!canDeleteResult.canDelete) {
+        console.log("❌ Unit cannot be deleted:", canDeleteResult.reason);
+        toast("Não é possível excluir a unidade", {
+          description: canDeleteResult.reason || "Unidade está sendo usada."
+        });
+        return;
+      }
       
       await productUnitsService.remove(value);
       
       setUnits(prev => prev.filter(u => u.value !== value));
       
       toast("Unidade excluída com sucesso");
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error deleting unit:', error);
       toast("Erro ao excluir unidade", {
-        description: "Houve um problema ao excluir a unidade."
+        description: error.message || "Houve um problema ao excluir a unidade."
       });
       throw error;
     }
@@ -146,7 +157,11 @@ export const useProductUnits = () => {
       
       // Clear existing units
       for (const unit of units) {
-        await productUnitsService.remove(unit.value);
+        try {
+          await productUnitsService.remove(unit.value);
+        } catch (error) {
+          console.warn(`Warning: Could not remove unit ${unit.value}:`, error);
+        }
       }
       
       // Add default units

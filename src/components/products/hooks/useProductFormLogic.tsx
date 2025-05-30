@@ -23,7 +23,6 @@ const productFormSchema = z.object({
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
   brandId: z.string().optional(),
-  // New fields for units configuration
   selectedUnits: z.array(z.object({
     unitId: z.string(),
     unitValue: z.string(),
@@ -76,27 +75,32 @@ export const useProductFormLogic = ({
   const selectedUnits = form.watch("selectedUnits") || [];
   const mainUnitId = form.watch("mainUnitId");
   
-  // Memoize the mapped units to avoid recalculation
+  // Memoize and validate the mapped units
   const mappedExistingUnits = useMemo(() => {
     if (!isEditing || !existingUnits?.length) return [];
     
     return existingUnits
-      .filter(unit => unit.id && unit.value && unit.label)
+      .filter(unit => unit.id && unit.value && unit.label && unit.packageQuantity != null)
       .map(unit => ({
         unitId: unit.id,
         unitValue: unit.value,
         unitLabel: unit.label,
-        packageQuantity: unit.packageQuantity || 1,
+        packageQuantity: unit.packageQuantity,
         isMainUnit: unit.isMainUnit || false
-      }));
+      })) as SelectedUnit[];
   }, [isEditing, existingUnits]);
 
-  // Load existing units when editing (consolidated useEffect)
+  // Consolidated useEffect for form initialization
   useEffect(() => {
     if (isEditing && selectedProduct) {
       console.log("🔄 Resetando formulário para produto:", selectedProduct.name);
       
       const mainUnitIdToSet = existingMainUnit?.id || "";
+      
+      // Ensure we have valid units before setting
+      const validUnits = mappedExistingUnits.filter(unit => 
+        unit.unitId && unit.unitValue && unit.unitLabel && unit.packageQuantity > 0
+      );
       
       form.reset({
         code: selectedProduct.code,
@@ -106,16 +110,15 @@ export const useProductFormLogic = ({
         categoryId: selectedProduct.categoryId || "",
         groupId: selectedProduct.groupId || "",
         brandId: selectedProduct.brandId || "",
-        selectedUnits: mappedExistingUnits,
+        selectedUnits: validUnits,
         mainUnitId: mainUnitIdToSet,
       });
       
       console.log("✅ Unidades carregadas no formulário:", {
-        unitsCount: mappedExistingUnits.length,
+        unitsCount: validUnits.length,
         mainUnitId: mainUnitIdToSet
       });
     } else if (!isEditing) {
-      // Reset para novo produto
       form.reset({
         code: Math.max(...products.map(p => p.code || 0), 0) + 1,
         name: "",
@@ -134,7 +137,6 @@ export const useProductFormLogic = ({
     console.log("🔄 Adicionando unidade:", unit);
     
     const currentUnits = form.getValues('selectedUnits') || [];
-    const currentMainUnitId = form.getValues('mainUnitId');
     
     const newUnit: SelectedUnit = {
       unitId: unit.id,
@@ -154,8 +156,7 @@ export const useProductFormLogic = ({
     
     console.log("✅ Unidade adicionada:", {
       newUnit,
-      totalUnits: updatedUnits.length,
-      mainUnitId: currentUnits.length === 0 ? unit.id : currentMainUnitId
+      totalUnits: updatedUnits.length
     });
     
     toast("Unidade adicionada com sucesso!");
@@ -173,7 +174,7 @@ export const useProductFormLogic = ({
     if (currentMainUnitId === unitId && updatedUnits.length > 0) {
       const newMainUnitId = updatedUnits[0].unitId;
       
-      const updatedUnitsWithNewMain: SelectedUnit[] = updatedUnits.map(u => ({
+      const updatedUnitsWithNewMain = updatedUnits.map(u => ({
         ...u,
         isMainUnit: u.unitId === newMainUnitId
       }));
@@ -194,7 +195,7 @@ export const useProductFormLogic = ({
     
     const currentUnits = form.getValues('selectedUnits') || [];
     
-    const updatedUnits: SelectedUnit[] = currentUnits.map(u => ({
+    const updatedUnits = currentUnits.map(u => ({
       ...u,
       isMainUnit: u.unitId === unitId
     }));
@@ -205,33 +206,38 @@ export const useProductFormLogic = ({
     console.log("✅ Unidade principal definida");
   }, [form]);
 
+  // Centralized validation function
+  const validateFormData = useCallback((data: ProductFormData) => {
+    if (!data.selectedUnits || data.selectedUnits.length === 0) {
+      throw new Error("Produto deve ter pelo menos uma unidade");
+    }
+
+    if (!data.mainUnitId) {
+      throw new Error("Produto deve ter uma unidade principal definida");
+    }
+
+    const mainUnits = data.selectedUnits.filter(u => u.isMainUnit);
+    if (mainUnits.length !== 1) {
+      throw new Error("Produto deve ter exatamente uma unidade principal");
+    }
+
+    // Validate all units have required fields
+    const invalidUnits = data.selectedUnits.filter(u => 
+      !u.unitId || !u.unitValue || !u.unitLabel || u.packageQuantity <= 0
+    );
+    
+    if (invalidUnits.length > 0) {
+      throw new Error("Todas as unidades devem ter informações válidas");
+    }
+  }, []);
+
   const handleSubmit = useCallback(async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
       console.log("📤 Submetendo dados do formulário:", data);
       
-      // Validações centralizadas
-      if (!data.selectedUnits || data.selectedUnits.length === 0) {
-        toast("Erro de validação", {
-          description: "Produto deve ter pelo menos uma unidade"
-        });
-        return;
-      }
-
-      if (!data.mainUnitId) {
-        toast("Erro de validação", {
-          description: "Produto deve ter uma unidade principal definida"
-        });
-        return;
-      }
-
-      const mainUnits = data.selectedUnits.filter(u => u.isMainUnit);
-      if (mainUnits.length !== 1) {
-        toast("Erro de validação", {
-          description: "Produto deve ter exatamente uma unidade principal"
-        });
-        return;
-      }
+      // Use centralized validation
+      validateFormData(data);
       
       const processedData = {
         ...data,
@@ -245,13 +251,15 @@ export const useProductFormLogic = ({
       
       await onSubmit(processedData);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Erro ao salvar produto:", error);
-      toast("Erro ao salvar produto. Tente novamente.");
+      toast("Erro ao salvar produto", {
+        description: error.message || "Tente novamente."
+      });
     } finally {
       setIsSubmitting(false);
     }
-  }, [onSubmit]);
+  }, [onSubmit, validateFormData]);
 
   return {
     form,
