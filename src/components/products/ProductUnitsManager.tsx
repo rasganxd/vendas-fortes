@@ -49,7 +49,7 @@ export const ProductUnitsManager: React.FC<ProductUnitsManagerProps> = ({
   const [selectedUnitId, setSelectedUnitId] = useState<string>('');
   const [unitPrices, setUnitPrices] = useState<Record<string, number>>({});
 
-  // Calcular preços para cada unidade
+  // Calcular preços para cada unidade com lógica corrigida
   React.useEffect(() => {
     const calculatePrices = async () => {
       if (!mainUnit || productUnits.length === 0) return;
@@ -60,8 +60,10 @@ export const ProductUnitsManager: React.FC<ProductUnitsManagerProps> = ({
         if (unit.isMainUnit) {
           prices[unit.id] = productPrice;
         } else {
-          const price = await calculateUnitPrice(productPrice, mainUnit.id, unit.id);
-          prices[unit.id] = price;
+          // Lógica corrigida: usar divisão ao invés de multiplicação
+          // Se unidade principal tem packageQuantity maior, a unidade menor deve ter preço maior por unidade
+          const conversionRatio = mainUnit.packageQuantity / unit.packageQuantity;
+          prices[unit.id] = productPrice / conversionRatio;
         }
       }
       
@@ -69,7 +71,7 @@ export const ProductUnitsManager: React.FC<ProductUnitsManagerProps> = ({
     };
     
     calculatePrices();
-  }, [productUnits, mainUnit, productPrice, calculateUnitPrice]);
+  }, [productUnits, mainUnit, productPrice]);
 
   const availableUnits = allUnits.filter(
     unit => !productUnits.some(pu => pu.id === unit.id)

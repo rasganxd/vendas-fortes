@@ -95,9 +95,13 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
       return productPrice;
     }
     
-    // Simple conversion: main unit price / (unit package quantity / main unit package quantity)
-    const conversionFactor = unit.packageQuantity / mainUnit.packageQuantity;
-    return productPrice / conversionFactor;
+    // Lógica corrigida: 
+    // Se a unidade principal tem 18 unidades e custa R$ 69,00
+    // E queremos o preço de uma unidade com 1 unidade
+    // Preço da unidade = preço principal / (packageQuantity principal / packageQuantity da unidade)
+    // Exemplo: R$ 69,00 / (18 / 1) = R$ 69,00 / 18 = R$ 3,83
+    const conversionRatio = mainUnit.packageQuantity / unit.packageQuantity;
+    return productPrice / conversionRatio;
   };
 
   if (isLoading) {
