@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Crown } from 'lucide-react';
+import { Plus, Trash2, Crown, Loader2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -42,18 +42,33 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
   productPrice,
   className
 }) => {
-  const { units: allUnits } = useProductUnits();
+  const { units: allUnits, isLoading } = useProductUnits();
   const [addUnitDialogOpen, setAddUnitDialogOpen] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string>('');
 
+  console.log("🔍 ProductUnitsSelector state:", {
+    allUnits: allUnits.length,
+    selectedUnits: selectedUnits.length,
+    isLoading,
+    selectedUnitId
+  });
+
+  // Filter available units that haven't been selected yet
   const availableUnits = allUnits.filter(
     unit => !selectedUnits.some(su => su.unitId === unit.id)
   );
 
+  console.log("📋 Available units:", availableUnits);
+
   const handleAddUnit = () => {
-    if (!selectedUnitId) return;
+    if (!selectedUnitId) {
+      console.log("⚠️ No unit selected");
+      return;
+    }
     
     const unit = allUnits.find(u => u.id === selectedUnitId);
+    console.log("➕ Adding unit:", { selectedUnitId, unit });
+    
     if (unit) {
       onAddUnit({
         id: unit.id,
@@ -61,6 +76,9 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
         label: unit.label,
         packageQuantity: unit.packageQuantity
       });
+      console.log("✅ Unit added successfully");
+    } else {
+      console.log("❌ Unit not found:", selectedUnitId);
     }
     
     setAddUnitDialogOpen(false);
@@ -81,6 +99,17 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
     const conversionFactor = unit.packageQuantity / mainUnit.packageQuantity;
     return productPrice / conversionFactor;
   };
+
+  if (isLoading) {
+    return (
+      <Card className={className}>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <span className="text-sm text-muted-foreground">Carregando unidades...</span>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={className}>
@@ -178,13 +207,23 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            
+            {availableUnits.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Todas as unidades disponíveis já foram adicionadas.
+              </p>
+            )}
           </div>
           
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAddUnitDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleAddUnit} disabled={!selectedUnitId}>
+            <Button 
+              type="button" 
+              onClick={handleAddUnit} 
+              disabled={!selectedUnitId || availableUnits.length === 0}
+            >
               Adicionar
             </Button>
           </DialogFooter>

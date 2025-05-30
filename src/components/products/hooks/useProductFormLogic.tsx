@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -119,6 +120,8 @@ export const useProductFormLogic = ({
   }, [selectedProduct, isEditing, form]);
 
   const addUnit = (unit: { id: string; value: string; label: string; packageQuantity: number }) => {
+    console.log("🔄 Adding unit to form state:", unit);
+    
     const newUnit: SelectedUnit = {
       unitId: unit.id,
       unitValue: unit.value,
@@ -132,13 +135,25 @@ export const useProductFormLogic = ({
     
     if (selectedUnits.length === 0) {
       setMainUnitId(unit.id);
+      console.log("👑 Set as main unit:", unit.id);
     }
     
+    // Update form values
     form.setValue('selectedUnits', updatedUnits);
-    form.setValue('mainUnitId', mainUnitId);
+    form.setValue('mainUnitId', selectedUnits.length === 0 ? unit.id : mainUnitId);
+    
+    console.log("✅ Unit added successfully:", {
+      newUnit,
+      totalUnits: updatedUnits.length,
+      mainUnitId: selectedUnits.length === 0 ? unit.id : mainUnitId
+    });
+    
+    toast("Unidade adicionada com sucesso!");
   };
 
   const removeUnit = (unitId: string) => {
+    console.log("🗑️ Removing unit:", unitId);
+    
     const updatedUnits = selectedUnits.filter(u => u.unitId !== unitId);
     setSelectedUnits(updatedUnits);
     
@@ -159,9 +174,12 @@ export const useProductFormLogic = ({
     }
     
     form.setValue('selectedUnits', updatedUnits);
+    console.log("✅ Unit removed successfully");
   };
 
   const setAsMainUnit = (unitId: string) => {
+    console.log("👑 Setting main unit:", unitId);
+    
     const updatedUnits = selectedUnits.map(u => ({
       ...u,
       isMainUnit: u.unitId === unitId
@@ -170,12 +188,14 @@ export const useProductFormLogic = ({
     setMainUnitId(unitId);
     form.setValue('selectedUnits', updatedUnits);
     form.setValue('mainUnitId', unitId);
+    
+    console.log("✅ Main unit set successfully");
   };
 
   const handleSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
-      console.log("Submitting form data:", data);
+      console.log("📤 Submitting form data:", data);
       
       if (hasSubunit && !isConversionValid) {
         toast("Configuração inválida", {
@@ -202,7 +222,7 @@ export const useProductFormLogic = ({
       await onSubmit(processedData);
       toast("Produto salvo com sucesso!");
     } catch (error) {
-      console.error("Erro ao salvar produto:", error);
+      console.error("❌ Erro ao salvar produto:", error);
       toast("Erro ao salvar produto. Tente novamente.");
     } finally {
       setIsSubmitting(false);

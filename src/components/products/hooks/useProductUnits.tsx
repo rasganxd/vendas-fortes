@@ -6,16 +6,16 @@ import { toast } from 'sonner';
 import { productUnitsService } from '@/services/supabase/productUnitsService';
 
 const DEFAULT_UNITS: Unit[] = [
-  { value: 'UN', label: 'Unidade', packageQuantity: 1 },
-  { value: 'KG', label: 'Quilograma', packageQuantity: 1 },
-  { value: 'LT', label: 'Litro', packageQuantity: 1 },
-  { value: 'MT', label: 'Metro', packageQuantity: 1 },
-  { value: 'CX', label: 'Caixa', packageQuantity: 1 },
-  { value: 'PC', label: 'Peça', packageQuantity: 1 },
-  { value: 'M2', label: 'Metro Quadrado', packageQuantity: 1 },
-  { value: 'M3', label: 'Metro Cúbico', packageQuantity: 1 },
-  { value: 'DZ', label: 'Dúzia', packageQuantity: 12 },
-  { value: 'GR', label: 'Grama', packageQuantity: 0.001 },
+  { id: 'un', value: 'UN', label: 'Unidade', packageQuantity: 1 },
+  { id: 'kg', value: 'KG', label: 'Quilograma', packageQuantity: 1 },
+  { id: 'lt', value: 'LT', label: 'Litro', packageQuantity: 1 },
+  { id: 'mt', value: 'MT', label: 'Metro', packageQuantity: 1 },
+  { id: 'cx', value: 'CX', label: 'Caixa', packageQuantity: 1 },
+  { id: 'pc', value: 'PC', label: 'Peça', packageQuantity: 1 },
+  { id: 'm2', value: 'M2', label: 'Metro Quadrado', packageQuantity: 1 },
+  { id: 'm3', value: 'M3', label: 'Metro Cúbico', packageQuantity: 1 },
+  { id: 'dz', value: 'DZ', label: 'Dúzia', packageQuantity: 12 },
+  { id: 'gr', value: 'GR', label: 'Grama', packageQuantity: 0.001 },
 ];
 
 export const useProductUnits = () => {
@@ -27,19 +27,28 @@ export const useProductUnits = () => {
   const loadUnits = async () => {
     try {
       setIsLoading(true);
-      console.log("Loading units from database...");
+      console.log("🔄 Loading units from database...");
       
       const dbUnits = await productUnitsService.getAll();
+      console.log("📦 Database units loaded:", dbUnits);
       
       if (dbUnits.length === 0) {
-        console.log("No units found in DB, initializing with defaults");
-        await initializeDefaultUnits();
+        console.log("⚠️ No units found in DB, using defaults");
+        setUnits(DEFAULT_UNITS);
       } else {
-        console.log(`Loaded ${dbUnits.length} units from database:`, dbUnits);
-        setUnits(dbUnits);
+        // Map database units to include id
+        const mappedUnits = dbUnits.map(unit => ({
+          id: unit.value.toLowerCase(),
+          value: unit.value,
+          label: unit.label,
+          packageQuantity: unit.packageQuantity
+        }));
+        console.log("✅ Units mapped with IDs:", mappedUnits);
+        setUnits(mappedUnits);
       }
     } catch (error) {
-      console.error('Error loading units:', error);
+      console.error('❌ Error loading units:', error);
+      console.log("🔄 Falling back to default units");
       setUnits(DEFAULT_UNITS);
       toast("Erro ao carregar unidades", {
         description: "Usando unidades padrão."
@@ -52,18 +61,20 @@ export const useProductUnits = () => {
   // Initialize default units in the database
   const initializeDefaultUnits = async () => {
     try {
-      console.log("Initializing default units in database");
+      console.log("🔧 Initializing default units in database");
       
       for (const unit of DEFAULT_UNITS) {
-        await productUnitsService.add(unit);
+        await productUnitsService.add({
+          value: unit.value,
+          label: unit.label,
+          packageQuantity: unit.packageQuantity
+        });
       }
       
-      const dbUnits = await productUnitsService.getAll();
-      setUnits(dbUnits);
-      
+      await loadUnits();
       toast("Unidades padrão inicializadas");
     } catch (error) {
-      console.error('Error initializing default units:', error);
+      console.error('❌ Error initializing default units:', error);
       setUnits(DEFAULT_UNITS);
     }
   };
@@ -71,7 +82,7 @@ export const useProductUnits = () => {
   // Add a new unit
   const addUnit = async (unit: Omit<Unit, 'id'>) => {
     try {
-      console.log("Adding new unit:", unit);
+      console.log("➕ Adding new unit:", unit);
       const id = await productUnitsService.add(unit);
       const newUnit = { ...unit, id } as Unit;
       
@@ -80,7 +91,7 @@ export const useProductUnits = () => {
       toast("Unidade adicionada com sucesso");
       return id;
     } catch (error) {
-      console.error('Error adding unit:', error);
+      console.error('❌ Error adding unit:', error);
       toast("Erro ao adicionar unidade", {
         description: "Houve um problema ao adicionar a unidade."
       });
@@ -91,7 +102,7 @@ export const useProductUnits = () => {
   // Update an existing unit
   const updateUnit = async (value: string, updates: Partial<Unit>) => {
     try {
-      console.log("Updating unit:", value, updates);
+      console.log("✏️ Updating unit:", value, updates);
       
       await productUnitsService.update(value, updates);
       
@@ -101,7 +112,7 @@ export const useProductUnits = () => {
       
       toast("Unidade atualizada com sucesso");
     } catch (error) {
-      console.error('Error updating unit:', error);
+      console.error('❌ Error updating unit:', error);
       toast("Erro ao atualizar unidade", {
         description: "Houve um problema ao atualizar a unidade."
       });
@@ -112,7 +123,7 @@ export const useProductUnits = () => {
   // Delete a unit
   const deleteUnit = async (value: string) => {
     try {
-      console.log("Deleting unit:", value);
+      console.log("🗑️ Deleting unit:", value);
       
       await productUnitsService.remove(value);
       
@@ -120,7 +131,7 @@ export const useProductUnits = () => {
       
       toast("Unidade excluída com sucesso");
     } catch (error) {
-      console.error('Error deleting unit:', error);
+      console.error('❌ Error deleting unit:', error);
       toast("Erro ao excluir unidade", {
         description: "Houve um problema ao excluir a unidade."
       });
@@ -131,7 +142,7 @@ export const useProductUnits = () => {
   // Reset to default units
   const resetToDefault = async () => {
     try {
-      console.log("Resetting to default units");
+      console.log("🔄 Resetting to default units");
       
       // Clear existing units
       for (const unit of units) {
@@ -143,7 +154,7 @@ export const useProductUnits = () => {
       
       toast("Unidades resetadas para o padrão");
     } catch (error) {
-      console.error('Error resetting units:', error);
+      console.error('❌ Error resetting units:', error);
       toast("Erro ao resetar unidades", {
         description: "Houve um problema ao resetar as unidades."
       });

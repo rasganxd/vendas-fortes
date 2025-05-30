@@ -1,6 +1,6 @@
 
 export interface Unit {
-  id?: string;
+  id: string;
   value: string;
   label: string;
   packageQuantity: number;
@@ -9,5 +9,11 @@ export interface Unit {
 export interface UnitConversion {
   fromUnit: string;
   toUnit: string;
-  rate: number;
+  factor: number;
+}
+
+export interface UnitGroup {
+  name: string;
+  units: Unit[];
+  baseUnit: string;
 }
