@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Package, Plus, AlertTriangle } from 'lucide-react';
 import QuantityInput from './QuantityInput';
-import UnitSelector from '@/components/ui/UnitSelector';
+import UnifiedUnitSelector from '@/components/ui/UnifiedUnitSelector';
 import ProductSearchDialog from './ProductSearchDialog';
 import PriceValidation from '@/components/products/pricing/PriceValidation';
 import { PriceInput } from '@/components/ui/price-input';
-import { calculateUnitPrice } from '@/utils/priceConverter';
+import { useUnifiedProductUnits } from '@/hooks/useUnifiedProductUnits';
 import { validateProductDiscount } from '@/context/operations/productOperations';
 
 interface EnhancedProductSearchProps {
@@ -38,6 +38,9 @@ export default function EnhancedProductSearch({
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Hook unificado para unidades
+  const { units, calculateUnitPrice, hasNewUnits } = useUnifiedProductUnits(selectedProduct);
+
   // Validate price whenever it changes
   useEffect(() => {
     if (selectedProduct && price > 0) {
@@ -54,32 +57,28 @@ export default function EnhancedProductSearch({
 
   // Initialize price when product is selected
   useEffect(() => {
-    if (selectedProduct) {
-      const mainUnit = selectedProduct.unit || 'UN';
-      setSelectedUnit(mainUnit);
+    if (selectedProduct && units.length > 0) {
+      const mainUnit = units.find(u => u.isMainUnit) || units[0];
+      setSelectedUnit(mainUnit.value);
 
-      // Use calculateUnitPrice to get the correct price for the main unit
-      const correctPrice = calculateUnitPrice(selectedProduct, mainUnit);
-      console.log(`💰 Preço inicial para ${selectedProduct.name} - ${mainUnit}: R$ ${correctPrice.toFixed(2)}`);
+      // Usar o hook unificado para calcular preço
+      const correctPrice = calculateUnitPrice(selectedProduct.price, mainUnit.value);
+      console.log(`💰 Preço inicial calculado pelo sistema unificado para ${selectedProduct.name} - ${mainUnit.value}: R$ ${correctPrice.toFixed(2)}`);
       setPrice(correctPrice);
     }
-  }, [selectedProduct]);
+  }, [selectedProduct, units, calculateUnitPrice]);
 
-  // Handle product code input change - REMOVIDA A BUSCA AUTOMÁTICA
+  // Handle product code input change
   const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
+    const value = e.target.value.replace(/[^\d]/g, '');
     setProductCode(value);
 
-    // Reset selected product if code changes
     if (selectedProduct && selectedProduct.code.toString() !== value) {
       setSelectedProduct(null);
       setPrice(0);
       setSelectedUnit('');
       setPriceValidationError('');
     }
-
-    // REMOVIDO: Não buscar produto automaticamente durante a digitação
-    // A busca só acontece quando o usuário pressionar Enter
   };
 
   const handleProductSelect = (product: Product) => {
@@ -93,7 +92,6 @@ export default function EnhancedProductSearch({
     setSelectedProduct(product);
     setProductCode(product.code.toString());
 
-    // Focus on quantity input
     setTimeout(() => {
       quantityInputRef.current?.focus();
     }, 100);
@@ -103,17 +101,9 @@ export default function EnhancedProductSearch({
     console.log("🔄 Mudança de unidade para:", unit, "no produto:", selectedProduct?.name);
     setSelectedUnit(unit);
     if (selectedProduct) {
-      // Use calculateUnitPrice to get the correct price for the selected unit
-      const correctPrice = calculateUnitPrice(selectedProduct, unit);
-      console.log(`💰 Novo preço calculado para ${unit}: R$ ${correctPrice.toFixed(2)}`);
-      console.log(`🔍 Detalhes do produto:`, {
-        basePrice: selectedProduct.price,
-        mainUnit: selectedProduct.unit,
-        subunit: selectedProduct.subunit,
-        hasSubunit: selectedProduct.hasSubunit,
-        subunitRatio: selectedProduct.subunitRatio,
-        selectedUnit: unit
-      });
+      // Usar o hook unificado para calcular preço
+      const correctPrice = calculateUnitPrice(selectedProduct.price, unit);
+      console.log(`💰 Novo preço calculado pelo sistema unificado para ${unit}: R$ ${correctPrice.toFixed(2)}`);
       setPrice(correctPrice);
     }
   };
@@ -126,7 +116,8 @@ export default function EnhancedProductSearch({
         product: selectedProduct.name,
         quantity,
         price,
-        unit: selectedUnit
+        unit: selectedUnit,
+        systemType: hasNewUnits ? 'novo' : 'antigo'
       });
       handleAddItem(selectedProduct, quantity, price, selectedUnit);
 
@@ -138,28 +129,24 @@ export default function EnhancedProductSearch({
       setSelectedUnit('');
       setPriceValidationError('');
 
-      // Focus back on search
       productInputRef.current?.focus();
     }
   };
 
-  // NOVA LÓGICA: Buscar produto apenas quando pressionar Enter
+  // Handle product code search
   const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (productCode) {
-        // Buscar produto pelo código exato
         const product = products.find(p => p.code.toString() === productCode);
         if (product) {
           console.log("🔍 Produto encontrado pelo código:", productCode);
           handleProductSelect(product);
         } else {
           console.log("❌ Produto não encontrado pelo código:", productCode);
-          // Abrir diálogo de busca se não encontrar produto
           setShowProductDialog(true);
         }
       } else {
-        // Se não há código, abrir diálogo de busca
         setShowProductDialog(true);
       }
     }
@@ -174,38 +161,16 @@ export default function EnhancedProductSearch({
     }
   };
 
-  // Get quantity conversion display
+  // Get quantity conversion display for legacy system
   const getQuantityConversion = () => {
     if (!selectedProduct || !selectedProduct.hasSubunit || !selectedUnit) {
       return '';
     }
     if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
-      // Show how many main units this subunit quantity represents
       const mainUnitQty = quantity / selectedProduct.subunitRatio;
       return `${quantity} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }
     return '';
-  };
-
-  // Get price conversion display
-  const getPriceConversionDisplay = () => {
-    if (!selectedProduct || !selectedProduct.hasSubunit || !selectedUnit) {
-      return null;
-    }
-    if (selectedUnit === selectedProduct.subunit && selectedProduct.subunitRatio) {
-      // Show conversion from main unit to subunit
-      const mainUnitPrice = selectedProduct.price;
-      const subunitPrice = mainUnitPrice / selectedProduct.subunitRatio;
-      return;
-    } else if (selectedUnit === selectedProduct.unit && selectedProduct.hasSubunit) {
-      // Show that this is the main unit price
-      return (
-        <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
-          ✓ Preço da unidade principal ({selectedProduct.unit})
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
@@ -258,7 +223,10 @@ export default function EnhancedProductSearch({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium text-gray-900">{selectedProduct.name}</div>
-                  <div className="text-sm text-gray-500">Cód: {selectedProduct.code}</div>
+                  <div className="text-sm text-gray-500">
+                    Cód: {selectedProduct.code} 
+                    {hasNewUnits && <span className="ml-2 text-blue-600">(Sistema Novo)</span>}
+                  </div>
                 </div>
                 <Badge variant="outline" className="bg-white">
                   {selectedUnit || selectedProduct.unit}
@@ -280,7 +248,7 @@ export default function EnhancedProductSearch({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Unidade</label>
-                  <UnitSelector
+                  <UnifiedUnitSelector
                     selectedUnit={selectedUnit}
                     onUnitChange={handleUnitChange}
                     product={selectedProduct}
@@ -327,11 +295,12 @@ export default function EnhancedProductSearch({
                 )}
               </div>
 
-              {/* Price conversion display */}
-              {getPriceConversionDisplay()}
-
-              {/* Quantity conversion display */}
-              {getQuantityConversion()}
+              {/* Quantity conversion display (legacy system) */}
+              {getQuantityConversion() && (
+                <div className="text-xs text-gray-500">
+                  {getQuantityConversion()}
+                </div>
+              )}
 
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Total:</span>
