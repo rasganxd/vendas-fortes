@@ -34,7 +34,7 @@ export const formatBrazilianPrice = (value: number): string => {
   }).format(value);
 };
 
-// Aplica máscara de preço em tempo real durante digitação
+// Aplica máscara de preço em tempo real durante digitação - VERSÃO CORRIGIDA
 export const applyPriceMask = (value: string): string => {
   // Remove tudo exceto números e vírgula
   let cleanValue = value.replace(/[^\d,]/g, '');
@@ -47,18 +47,25 @@ export const applyPriceMask = (value: string): string => {
     const integerPart = parts[0];
     const decimalPart = parts[1] ? parts[1].substring(0, 2) : '';
     
-    // Formatar parte inteira com pontos de milhares
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Formatar parte inteira com pontos de milhares apenas se tiver 4+ dígitos
+    const formattedInteger = integerPart.length >= 4 
+      ? integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+      : integerPart;
     
     return decimalPart ? `${formattedInteger},${decimalPart}` : `${formattedInteger},`;
   }
   
-  // Se não contém vírgula, tratar como número inteiro em reais
+  // Para números sem vírgula, não aplicar formatação de centavos automaticamente
+  // Permitir digitação livre até que o usuário adicione vírgula manualmente
   const num = parseInt(cleanValue);
   if (isNaN(num)) return '';
   
-  // Formatar como valor em reais
-  return formatBrazilianPrice(num);
+  // Aplicar pontos de milhares apenas se tiver 4+ dígitos
+  if (cleanValue.length >= 4) {
+    return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+  
+  return cleanValue;
 };
 
 // Valida se uma string representa um preço válido

@@ -12,19 +12,20 @@ interface PriceInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElemen
 const PriceInput = React.forwardRef<HTMLInputElement, PriceInputProps>(
   ({ className, value, onChange, onDisplayChange, ...props }, ref) => {
     const [displayValue, setDisplayValue] = React.useState('');
+    const [isFocused, setIsFocused] = React.useState(false);
 
-    // Sincronizar valor numérico com display
+    // Sincronizar valor numérico com display apenas quando não está focado
     React.useEffect(() => {
-      if (value !== undefined && value !== null) {
+      if (!isFocused && value !== undefined && value !== null) {
         const formatted = new Intl.NumberFormat('pt-BR', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         }).format(value);
         setDisplayValue(formatted);
-      } else {
+      } else if (!isFocused && (value === undefined || value === null)) {
         setDisplayValue('');
       }
-    }, [value]);
+    }, [value, isFocused]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
@@ -42,6 +43,30 @@ const PriceInput = React.forwardRef<HTMLInputElement, PriceInputProps>(
       }
     };
 
+    const handleFocus = () => {
+      setIsFocused(true);
+    };
+
+    const handleBlur = () => {
+      setIsFocused(false);
+      
+      // Aplicar formatação completa ao sair do campo
+      if (displayValue && !displayValue.includes(',')) {
+        const numericValue = parseBrazilianPrice(displayValue);
+        if (numericValue > 0) {
+          const formatted = new Intl.NumberFormat('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(numericValue);
+          setDisplayValue(formatted);
+          
+          if (onDisplayChange) {
+            onDisplayChange(formatted);
+          }
+        }
+      }
+    };
+
     return (
       <input
         type="text"
@@ -52,6 +77,8 @@ const PriceInput = React.forwardRef<HTMLInputElement, PriceInputProps>(
         ref={ref}
         value={displayValue}
         onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         placeholder="0,00"
         {...props}
       />
