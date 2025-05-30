@@ -38,16 +38,15 @@ export default function SalesRepImportSelector({
 
       const { supabase } = await import('@/integrations/supabase/client');
       
-      // Buscar pedidos pendentes agrupados por vendedor
+      // Buscar pedidos pendentes na tabela orders_mobile
       const { data: pendingOrders, error } = await supabase
-        .from('orders')
+        .from('orders_mobile')
         .select(`
           sales_rep_id,
           sales_rep_name,
           total,
           created_at
         `)
-        .eq('source_project', 'mobile')
         .eq('imported', false)
         .not('sales_rep_id', 'is', null);
 
