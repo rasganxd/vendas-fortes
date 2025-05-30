@@ -903,6 +903,48 @@ export type Database = {
         }
         Relationships: []
       }
+      product_units_mapping: {
+        Row: {
+          created_at: string
+          id: string
+          is_main_unit: boolean
+          product_id: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_main_unit?: boolean
+          product_id: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_main_unit?: boolean
+          product_id?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_units_mapping_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_units_mapping_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "product_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand_id: string | null
@@ -914,6 +956,7 @@ export type Database = {
           group_id: string | null
           has_subunit: boolean | null
           id: string
+          main_unit_id: string | null
           max_discount_percentage: number | null
           max_price: number | null
           min_price: number | null
@@ -937,6 +980,7 @@ export type Database = {
           group_id?: string | null
           has_subunit?: boolean | null
           id?: string
+          main_unit_id?: string | null
           max_discount_percentage?: number | null
           max_price?: number | null
           min_price?: number | null
@@ -960,6 +1004,7 @@ export type Database = {
           group_id?: string | null
           has_subunit?: boolean | null
           id?: string
+          main_unit_id?: string | null
           max_discount_percentage?: number | null
           max_price?: number | null
           min_price?: number | null
@@ -993,6 +1038,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "product_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_main_unit_id_fkey"
+            columns: ["main_unit_id"]
+            isOneToOne: false
+            referencedRelation: "product_units"
             referencedColumns: ["id"]
           },
         ]
@@ -1345,6 +1397,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_unit_conversion_factor: {
+        Args: { p_from_unit_id: string; p_to_unit_id: string }
+        Returns: number
+      }
       cleanup_expired_tokens: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -1389,6 +1445,16 @@ export type Database = {
       get_next_sales_rep_code: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_product_units: {
+        Args: { p_product_id: string }
+        Returns: {
+          unit_id: string
+          unit_value: string
+          unit_label: string
+          package_quantity: number
+          is_main_unit: boolean
+        }[]
       }
       get_route_with_customers: {
         Args: { p_route_id: string }

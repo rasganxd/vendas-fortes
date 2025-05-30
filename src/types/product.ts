@@ -14,10 +14,11 @@ export interface Product {
   groupId?: string;
   categoryId?: string;
   brandId?: string;
-  unit?: string;
-  subunit?: string;
-  hasSubunit?: boolean;
-  subunitRatio?: number;
+  unit?: string; // DEPRECATED: Use product_units_mapping table
+  subunit?: string; // DEPRECATED: Use product_units_mapping table
+  hasSubunit?: boolean; // DEPRECATED: Use product_units_mapping table
+  subunitRatio?: number; // DEPRECATED: Use product_units_mapping table
+  mainUnitId?: string; // New field for main unit reference
   createdAt: Date;
   updatedAt: Date;
   syncStatus?: 'synced' | 'pending' | 'error';

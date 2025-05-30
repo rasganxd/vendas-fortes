@@ -8,7 +8,7 @@ import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { useProductFormLogic, ProductFormData } from './hooks/useProductFormLogic';
 import { BasicFieldsSection } from './form/BasicFieldsSection';
 import { ClassificationSection } from './form/ClassificationSection';
-import { SubunitSection } from './form/SubunitSection';
+import { ProductUnitsSection } from './form/ProductUnitsSection';
 import { DiscountSection } from './form/DiscountSection';
 
 interface ProductFormProps {
@@ -71,14 +71,11 @@ export default function ProductForm({
               productBrands={productBrands}
             />
             
-            <SubunitSection 
+            <ProductUnitsSection 
               form={form}
-              units={units}
-              hasSubunit={hasSubunit}
-              selectedUnit={selectedUnit}
-              selectedSubunit={selectedSubunit}
-              subunitRatio={subunitRatio}
-              isConversionValid={isConversionValid}
+              productId={selectedProduct?.id}
+              productPrice={selectedProduct?.price}
+              isEditing={isEditing}
             />
 
             <DiscountSection form={form} />
