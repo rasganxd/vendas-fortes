@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -19,9 +19,6 @@ const productFormSchema = z.object({
   cost: z.number().min(0, {
     message: "Custo deve ser maior ou igual a zero.",
   }),
-  unit: z.string(),
-  hasSubunit: z.boolean().optional(),
-  subunit: z.string().optional(),
   stock: z.number().optional(),
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
@@ -61,15 +58,12 @@ export const useProductFormLogic = ({
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
-    mode: "onChange", // Validar em tempo real
+    mode: "onChange",
     defaultValues: {
       code: isEditing && selectedProduct ? selectedProduct.code : 
         Math.max(...products.map(p => p.code || 0), 0) + 1,
       name: isEditing && selectedProduct ? selectedProduct.name : "",
       cost: isEditing && selectedProduct ? selectedProduct.cost : 0,
-      unit: isEditing && selectedProduct ? selectedProduct.unit || "UN" : "UN",
-      hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
-      subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
       stock: isEditing && selectedProduct ? selectedProduct.stock : 0,
       categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
       groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
@@ -79,84 +73,46 @@ export const useProductFormLogic = ({
     },
   });
   
-  const hasSubunit = form.watch("hasSubunit");
-  const selectedUnit = form.watch("unit");
-  const selectedSubunit = form.watch("subunit");
   const selectedUnits = form.watch("selectedUnits") || [];
   const mainUnitId = form.watch("mainUnitId");
   
-  const calculateSubunitRatio = () => {
-    if (!selectedUnit || !selectedSubunit || !hasSubunit) return null;
+  // Memoize the mapped units to avoid recalculation
+  const mappedExistingUnits = useMemo(() => {
+    if (!isEditing || !existingUnits?.length) return [];
     
-    const mainUnitData = units.find(u => u.value === selectedUnit);
-    const subUnitData = units.find(u => u.value === selectedSubunit);
-    
-    if (!mainUnitData || !subUnitData) return null;
-    
-    const mainPackageQty = mainUnitData.packageQuantity || 1;
-    const subPackageQty = subUnitData.packageQuantity || 1;
-    
-    if (subPackageQty > mainPackageQty) {
-      return null;
-    }
-    
-    return Math.floor(mainPackageQty / subPackageQty);
-  };
-  
-  const subunitRatio = calculateSubunitRatio();
-  const isConversionValid = subunitRatio !== null && subunitRatio > 0;
-  
-  // Load existing units when editing
+    return existingUnits
+      .filter(unit => unit.id && unit.value && unit.label)
+      .map(unit => ({
+        unitId: unit.id,
+        unitValue: unit.value,
+        unitLabel: unit.label,
+        packageQuantity: unit.packageQuantity || 1,
+        isMainUnit: unit.isMainUnit || false
+      }));
+  }, [isEditing, existingUnits]);
+
+  // Load existing units when editing (consolidated useEffect)
   useEffect(() => {
-    if (isEditing && existingUnits && existingUnits.length > 0) {
-      console.log("🔄 Carregando unidades existentes para edição:", existingUnits);
-      
-      // Ensure all required properties are present and properly typed
-      const mappedUnits: SelectedUnit[] = existingUnits
-        .filter(unit => unit.id && unit.value && unit.label) // Filter out invalid units
-        .map(unit => ({
-          unitId: unit.id,
-          unitValue: unit.value,
-          unitLabel: unit.label,
-          packageQuantity: unit.packageQuantity || 1,
-          isMainUnit: unit.isMainUnit || false
-        }));
+    if (isEditing && selectedProduct) {
+      console.log("🔄 Resetando formulário para produto:", selectedProduct.name);
       
       const mainUnitIdToSet = existingMainUnit?.id || "";
-      
-      form.setValue('selectedUnits', mappedUnits);
-      form.setValue('mainUnitId', mainUnitIdToSet);
-      
-      console.log("✅ Unidades carregadas no formulário:", {
-        unitsCount: mappedUnits.length,
-        mainUnitId: mainUnitIdToSet
-      });
-    } else if (!isEditing) {
-      // Limpar unidades ao criar novo produto
-      console.log("🆕 Criando novo produto - limpando unidades");
-      form.setValue('selectedUnits', []);
-      form.setValue('mainUnitId', "");
-    }
-  }, [isEditing, existingUnits, existingMainUnit, form]);
-
-  // Reset form when product changes
-  useEffect(() => {
-    if (selectedProduct) {
-      console.log("🔄 Resetando formulário para produto:", selectedProduct.name);
       
       form.reset({
         code: selectedProduct.code,
         name: selectedProduct.name,
         cost: selectedProduct.cost,
-        unit: selectedProduct.unit || "UN",
-        hasSubunit: selectedProduct.hasSubunit || false,
-        subunit: selectedProduct.subunit || "",
         stock: selectedProduct.stock,
         categoryId: selectedProduct.categoryId || "",
         groupId: selectedProduct.groupId || "",
         brandId: selectedProduct.brandId || "",
-        selectedUnits: [], // Será carregado pelo useEffect das unidades
-        mainUnitId: "", // Será carregado pelo useEffect das unidades
+        selectedUnits: mappedExistingUnits,
+        mainUnitId: mainUnitIdToSet,
+      });
+      
+      console.log("✅ Unidades carregadas no formulário:", {
+        unitsCount: mappedExistingUnits.length,
+        mainUnitId: mainUnitIdToSet
       });
     } else if (!isEditing) {
       // Reset para novo produto
@@ -164,9 +120,6 @@ export const useProductFormLogic = ({
         code: Math.max(...products.map(p => p.code || 0), 0) + 1,
         name: "",
         cost: 0,
-        unit: "UN",
-        hasSubunit: false,
-        subunit: "",
         stock: 0,
         categoryId: "",
         groupId: "",
@@ -175,9 +128,9 @@ export const useProductFormLogic = ({
         mainUnitId: "",
       });
     }
-  }, [selectedProduct, isEditing, form, products]);
+  }, [selectedProduct, isEditing, form, products, mappedExistingUnits, existingMainUnit]);
 
-  const addUnit = (unit: { id: string; value: string; label: string; packageQuantity: number }) => {
+  const addUnit = useCallback((unit: { id: string; value: string; label: string; packageQuantity: number }) => {
     console.log("🔄 Adicionando unidade:", unit);
     
     const currentUnits = form.getValues('selectedUnits') || [];
@@ -188,13 +141,12 @@ export const useProductFormLogic = ({
       unitValue: unit.value,
       unitLabel: unit.label,
       packageQuantity: unit.packageQuantity,
-      isMainUnit: currentUnits.length === 0 // Primeira unidade vira principal
+      isMainUnit: currentUnits.length === 0
     };
     
     const updatedUnits = [...currentUnits, newUnit];
     form.setValue('selectedUnits', updatedUnits, { shouldValidate: true });
     
-    // Se é a primeira unidade, definir como principal
     if (currentUnits.length === 0) {
       form.setValue('mainUnitId', unit.id, { shouldValidate: true });
       console.log("👑 Definida como unidade principal:", unit.id);
@@ -207,9 +159,9 @@ export const useProductFormLogic = ({
     });
     
     toast("Unidade adicionada com sucesso!");
-  };
+  }, [form]);
 
-  const removeUnit = (unitId: string) => {
+  const removeUnit = useCallback((unitId: string) => {
     console.log("🗑️ Removendo unidade:", unitId);
     
     const currentUnits = form.getValues('selectedUnits') || [];
@@ -218,16 +170,11 @@ export const useProductFormLogic = ({
     const updatedUnits = currentUnits.filter(u => u.unitId !== unitId);
     form.setValue('selectedUnits', updatedUnits, { shouldValidate: true });
     
-    // Se removendo a unidade principal e ainda há unidades
     if (currentMainUnitId === unitId && updatedUnits.length > 0) {
       const newMainUnitId = updatedUnits[0].unitId;
       
-      // Atualizar isMainUnit no array
       const updatedUnitsWithNewMain: SelectedUnit[] = updatedUnits.map(u => ({
-        unitId: u.unitId,
-        unitValue: u.unitValue,
-        unitLabel: u.unitLabel,
-        packageQuantity: u.packageQuantity,
+        ...u,
         isMainUnit: u.unitId === newMainUnitId
       }));
       
@@ -240,18 +187,15 @@ export const useProductFormLogic = ({
     }
     
     console.log("✅ Unidade removida");
-  };
+  }, [form]);
 
-  const setAsMainUnit = (unitId: string) => {
+  const setAsMainUnit = useCallback((unitId: string) => {
     console.log("👑 Definindo nova unidade principal:", unitId);
     
     const currentUnits = form.getValues('selectedUnits') || [];
     
     const updatedUnits: SelectedUnit[] = currentUnits.map(u => ({
-      unitId: u.unitId,
-      unitValue: u.unitValue,
-      unitLabel: u.unitLabel,
-      packageQuantity: u.packageQuantity,
+      ...u,
       isMainUnit: u.unitId === unitId
     }));
     
@@ -259,14 +203,14 @@ export const useProductFormLogic = ({
     form.setValue('mainUnitId', unitId, { shouldValidate: true });
     
     console.log("✅ Unidade principal definida");
-  };
+  }, [form]);
 
-  const handleSubmit = async (data: ProductFormData) => {
+  const handleSubmit = useCallback(async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
       console.log("📤 Submetendo dados do formulário:", data);
       
-      // Validações adicionais
+      // Validações centralizadas
       if (!data.selectedUnits || data.selectedUnits.length === 0) {
         toast("Erro de validação", {
           description: "Produto deve ter pelo menos uma unidade"
@@ -289,20 +233,12 @@ export const useProductFormLogic = ({
         return;
       }
       
-      if (hasSubunit && !isConversionValid) {
-        toast("Configuração inválida", {
-          description: "A sub-unidade não pode ter mais itens que a unidade principal"
-        });
-        return;
-      }
-      
       const processedData = {
         ...data,
         price: 0,
         categoryId: data.categoryId === "none" || data.categoryId === "" ? null : data.categoryId,
         groupId: data.groupId === "none" || data.groupId === "" ? null : data.groupId,
         brandId: data.brandId === "none" || data.brandId === "" ? null : data.brandId,
-        subunitRatio: hasSubunit && isConversionValid ? subunitRatio : undefined,
       };
       
       console.log("📊 Dados processados para salvamento:", processedData);
@@ -315,17 +251,12 @@ export const useProductFormLogic = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [onSubmit]);
 
   return {
     form,
     units,
     isSubmitting,
-    hasSubunit,
-    selectedUnit,
-    selectedSubunit,
-    subunitRatio,
-    isConversionValid,
     selectedUnits,
     mainUnitId,
     addUnit,
