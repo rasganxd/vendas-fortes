@@ -2,7 +2,7 @@
 import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
-import { formatCurrency } from "@/lib/utils";
+import { PriceInput } from '@/components/ui/price-input';
 import { UseFormReturn } from 'react-hook-form';
 import { ProductFormData } from '../hooks/useProductFormLogic';
 
@@ -65,14 +65,9 @@ export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({
             <FormItem>
               <FormLabel className="text-sm font-medium text-gray-700">Preço de Custo</FormLabel>
               <FormControl>
-                <Input 
-                  mask="price"
-                  placeholder="0,00" 
-                  value={formatCurrency(field.value)} 
-                  onChange={e => {
-                    const numericValue = e.target.value.replace(/\D/g, '');
-                    field.onChange(parseFloat(numericValue) / 100 || 0);
-                  }}
+                <PriceInput 
+                  value={field.value}
+                  onChange={field.onChange}
                   className="h-11"
                 />
               </FormControl>

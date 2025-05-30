@@ -2,16 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EnhancedTable, EnhancedTableHeader, EnhancedTableBody, EnhancedTableRow, EnhancedTableHead, EnhancedTableCell } from '@/components/ui/enhanced-table';
+import { PriceInput } from '@/components/ui/price-input';
 import { formatCurrency } from '@/lib/utils';
 import { Product } from '@/types';
 import { useProducts } from '@/hooks/useProducts';
 import { productDiscountService } from '@/services/supabase/productDiscountService';
 import { toast } from 'sonner';
 import { Edit, Save, X, Search } from 'lucide-react';
-import { parseBrazilianPrice, formatPriceForInput, isValidPrice } from '@/utils/priceUtils';
+import { Input } from '@/components/ui/input';
 
 interface ProductPricingRow extends Product {
   maxDiscountPercentage: number;
@@ -21,7 +21,7 @@ export default function ProductPricing() {
   const { products, updateProduct } = useProducts();
   const [pricingData, setPricingData] = useState<ProductPricingRow[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editPrice, setEditPrice] = useState<string>('');
+  const [editPrice, setEditPrice] = useState<number>(0);
   const [editDiscount, setEditDiscount] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,10 +31,8 @@ export default function ProductPricing() {
     const loadPricingData = async () => {
       setIsLoading(true);
       try {
-        // Get all discount settings
         const discounts = await productDiscountService.getAllDiscounts();
         
-        // Combine products with their discount settings
         const combined = products.map(product => ({
           ...product,
           maxDiscountPercentage: discounts[product.id] || 0
@@ -43,7 +41,6 @@ export default function ProductPricing() {
         setPricingData(combined);
       } catch (error) {
         console.error('Erro ao carregar dados de precificação:', error);
-        // If there's an error, just use products without discount data
         setPricingData(products.map(product => ({
           ...product,
           maxDiscountPercentage: 0
@@ -63,33 +60,21 @@ export default function ProductPricing() {
 
   const handleEditStart = (product: ProductPricingRow) => {
     setEditingId(product.id);
-    setEditPrice(formatPriceForInput(product.price || 0));
+    setEditPrice(product.price || 0);
     setEditDiscount(product.maxDiscountPercentage.toString());
   };
 
   const handleEditCancel = () => {
     setEditingId(null);
-    setEditPrice('');
+    setEditPrice(0);
     setEditDiscount('');
-  };
-
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditPrice(e.target.value);
   };
 
   const handleSave = async (productId: string) => {
     try {
-      if (!isValidPrice(editPrice)) {
-        toast("Preço inválido", {
-          description: "Digite um preço válido no formato brasileiro (ex: 1.234,56)"
-        });
-        return;
-      }
-
-      const price = parseBrazilianPrice(editPrice);
       const discountPercentage = parseFloat(editDiscount);
       
-      if (isNaN(price) || price < 0) {
+      if (isNaN(editPrice) || editPrice < 0) {
         toast("Preço inválido", {
           description: "O preço deve ser um número válido maior ou igual a zero"
         });
@@ -97,7 +82,7 @@ export default function ProductPricing() {
       }
 
       // Update product price
-      await updateProduct(productId, { price });
+      await updateProduct(productId, { price: editPrice });
       
       // Update discount settings if provided
       if (discountPercentage > 0) {
@@ -107,13 +92,18 @@ export default function ProductPricing() {
       // Update local state
       setPricingData(prev => prev.map(item => 
         item.id === productId 
-          ? { ...item, price, maxDiscountPercentage: discountPercentage }
+          ? { ...item, price: editPrice, maxDiscountPercentage: discountPercentage }
           : item
       ));
       
+      // Disparar evento para sincronização com outros componentes
+      window.dispatchEvent(new CustomEvent('productPriceUpdated', { 
+        detail: { productId, newPrice: editPrice } 
+      }));
+      
       toast("Preço atualizado com sucesso!");
       setEditingId(null);
-      setEditPrice('');
+      setEditPrice(0);
       setEditDiscount('');
       
     } catch (error) {
@@ -187,12 +177,10 @@ export default function ProductPricing() {
                   </EnhancedTableCell>
                   <EnhancedTableCell>
                     {editingId === product.id ? (
-                      <Input
-                        mask="price"
+                      <PriceInput
                         value={editPrice}
-                        onChange={handlePriceChange}
+                        onChange={setEditPrice}
                         className="w-32"
-                        placeholder="0,00"
                         autoFocus
                       />
                     ) : (

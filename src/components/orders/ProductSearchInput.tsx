@@ -10,8 +10,9 @@ import PriceValidation from '@/components/products/pricing/PriceValidation';
 import ProductSearchDialog from './ProductSearchDialog';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
-import { calculateUnitPrice, formatBrazilianPrice, parseBrazilianPrice } from '@/utils/priceConverter';
+import { calculateUnitPrice } from '@/utils/priceConverter';
 import { validateProductDiscount } from '@/context/operations/productOperations';
+import { PriceInput } from '@/components/ui/price-input';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -42,18 +43,40 @@ export default function ProductSearchInput({
   
   const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
   
-  // Listen for product updates
+  // Listen for product updates and price changes
   useEffect(() => {
     const handleProductsUpdated = () => {
       console.log("Products updated event received in ProductSearchInput");
+      // Force refresh of selected product if it exists
+      if (selectedProduct) {
+        const updatedProduct = products.find(p => p.id === selectedProduct.id);
+        if (updatedProduct && updatedProduct.price !== selectedProduct.price) {
+          console.log("Product price updated, refreshing");
+          setSelectedProduct(updatedProduct);
+          const correctPrice = calculateUnitPrice(updatedProduct, selectedUnit || updatedProduct.unit || 'UN');
+          setPrice(correctPrice);
+        }
+      }
+    };
+
+    const handlePriceUpdated = (event: CustomEvent) => {
+      const { productId, newPrice } = event.detail;
+      if (selectedProduct && selectedProduct.id === productId) {
+        console.log("Price updated for selected product:", newPrice);
+        const correctPrice = calculateUnitPrice({ ...selectedProduct, price: newPrice }, selectedUnit || selectedProduct.unit || 'UN');
+        setPrice(correctPrice);
+        setSelectedProduct(prev => prev ? { ...prev, price: newPrice } : null);
+      }
     };
 
     window.addEventListener('productsUpdated', handleProductsUpdated);
+    window.addEventListener('productPriceUpdated', handlePriceUpdated as EventListener);
     
     return () => {
       window.removeEventListener('productsUpdated', handleProductsUpdated);
+      window.removeEventListener('productPriceUpdated', handlePriceUpdated as EventListener);
     };
-  }, []);
+  }, [selectedProduct, selectedUnit, products]);
 
   // Validate price whenever it changes
   useEffect(() => {
@@ -69,18 +92,14 @@ export default function ProductSearchInput({
     }
   }, [selectedProduct, price, products]);
 
-  // Handle product code input change - REMOVIDA A BUSCA AUTOMÁTICA
+  // Handle product code input change
   const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
+    const value = e.target.value.replace(/[^\d]/g, '');
     setProductCode(value);
 
-    // Reset selected product if code changes
     if (selectedProduct && selectedProduct.code.toString() !== value) {
       resetForm();
     }
-
-    // REMOVIDO: Não buscar produto automaticamente durante a digitação
-    // A busca só acontece quando o usuário pressionar Enter
   };
 
   const handleProductSelect = (product: Product) => {
@@ -95,32 +114,26 @@ export default function ProductSearchInput({
     setSelectedProduct(product);
     setProductCode(product.code.toString());
     
-    // Set default unit to product's main unit
     const defaultUnit = product.unit || 'UN';
     setSelectedUnit(defaultUnit);
     
-    // Calculate correct price for default unit
     const correctPrice = calculateUnitPrice(product, defaultUnit);
     console.log(`💰 Preço calculado para ${defaultUnit}: R$ ${correctPrice.toFixed(2)}`);
     
     setPrice(correctPrice);
 
-    // Focus on quantity input after product selection
     setTimeout(() => {
       quantityInputRef.current?.focus();
     }, 100);
   };
 
-  // Calculate price when unit changes
   const handleUnitChange = (unit: string) => {
     console.log("🔄 Mudança de unidade:", unit);
     setSelectedUnit(unit);
     
     if (selectedProduct) {
-      // Use the new calculateUnitPrice function
       const correctPrice = calculateUnitPrice(selectedProduct, unit);
       console.log(`💰 Novo preço para ${unit}: R$ ${correctPrice.toFixed(2)}`);
-      
       setPrice(correctPrice);
     }
   };
@@ -129,12 +142,6 @@ export default function ProductSearchInput({
     const value = e.target.value.replace(/[^\d]/g, '');
     const numericValue = value ? parseInt(value, 10) : 1;
     setQuantity(numericValue);
-  };
-
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const displayValue = e.target.value;
-    const numericPrice = parseBrazilianPrice(displayValue);
-    setPrice(numericPrice);
   };
 
   const handleAddToOrder = () => {
@@ -168,42 +175,31 @@ export default function ProductSearchInput({
     setPriceValidationError('');
   };
 
-  // NOVA LÓGICA: Buscar produto apenas quando pressionar Enter
   const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       
       if (productCode) {
-        // Buscar produto pelo código exato
         const product = products.find(p => p.code.toString() === productCode);
         if (product) {
           console.log("🔍 Produto encontrado pelo código:", productCode);
           handleProductSelect(product);
         } else {
           console.log("❌ Produto não encontrado pelo código:", productCode);
-          // Abrir diálogo de busca se não encontrar produto
           setShowProductDialog(true);
         }
       } else {
-        // Se não há código, abrir diálogo de busca
         setShowProductDialog(true);
       }
     }
   };
   
-  const formatPriceDisplay = (value: number): string => {
-    if (value === 0) return '';
-    return formatBrazilianPrice(value);
-  };
-  
-  // Calculate unit conversion display
   const getConversionDisplay = () => {
     if (!selectedProduct || !selectedUnit || selectedUnit === selectedProduct.unit) {
       return null;
     }
     
     if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
-      // Show how many main units this subunit quantity represents
       const mainUnitQty = (quantity || 0) / selectedProduct.subunitRatio;
       return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }
@@ -264,14 +260,12 @@ export default function ProductSearchInput({
           </div>
           
           <div className="flex-none">
-            <Input
-              type="text"
+            <PriceInput
+              value={price}
+              onChange={setPrice}
               className={`h-11 text-center w-28 border-gray-300 ${
                 !isPriceValid ? 'border-red-500 bg-red-50' : ''
               }`}
-              placeholder="Preço"
-              value={formatPriceDisplay(price)}
-              onChange={handlePriceChange}
               onKeyDown={(e) => e.key === 'Enter' && isPriceValid && handleAddToOrder()}
               disabled={isAddingItem}
             />
@@ -289,7 +283,6 @@ export default function ProductSearchInput({
         </div>
       </div>
 
-      {/* Product Search Dialog */}
       <ProductSearchDialog
         open={showProductDialog}
         onClose={() => setShowProductDialog(false)}
@@ -297,7 +290,6 @@ export default function ProductSearchInput({
         onSelectProduct={handleProductSelect}
       />
       
-      {/* Validação de preço */}
       {selectedProduct && (
         <div className="mt-2">
           <PriceValidation
@@ -324,8 +316,8 @@ export default function ProductSearchInput({
       {selectedProduct && selectedProduct.hasSubunit && selectedUnit && (
         <div className="mt-1 text-xs text-blue-600">
           {selectedUnit === selectedProduct.subunit ? 
-            `Preço individual: R$ ${formatPriceDisplay(price)} (de uma ${selectedProduct.unit} com ${selectedProduct.subunitRatio} ${selectedProduct.subunit})` :
-            `Preço da ${selectedProduct.unit}: R$ ${formatPriceDisplay(price)}`
+            `Preço individual: R$ ${price.toFixed(2)} (de uma ${selectedProduct.unit} com ${selectedProduct.subunitRatio} ${selectedProduct.subunit})` :
+            `Preço da ${selectedProduct.unit}: R$ ${price.toFixed(2)}`
           }
         </div>
       )}
