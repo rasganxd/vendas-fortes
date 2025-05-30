@@ -8,8 +8,9 @@ export interface Product {
   cost: number;
   stock: number;
   minStock: number;
-  minPrice?: number;
-  maxPrice?: number;
+  minPrice?: number; // DEPRECATED: Use maxDiscountPercentage instead
+  maxPrice?: number; // DEPRECATED: Use maxDiscountPercentage instead
+  maxDiscountPercentage?: number; // New field for percentage-based discount validation
   groupId?: string;
   categoryId?: string;
   brandId?: string;

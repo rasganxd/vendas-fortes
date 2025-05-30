@@ -1,47 +1,39 @@
 
-import React, { useEffect } from 'react';
-import {
-  Form,
-} from "@/components/ui/form";
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Loader2 } from 'lucide-react';
-import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { useProductFormLogic, ProductFormData } from './hooks/useProductFormLogic';
 import { BasicFieldsSection } from './form/BasicFieldsSection';
-import { SubunitSection } from './form/SubunitSection';
 import { ClassificationSection } from './form/ClassificationSection';
+import { SubunitSection } from './form/SubunitSection';
+import { DiscountSection } from './form/DiscountSection';
 
 interface ProductFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSubmit: (data: ProductFormData) => Promise<void>;
   isEditing: boolean;
   selectedProduct: Product | null;
   products: Product[];
   productCategories: ProductCategory[];
   productGroups: ProductGroup[];
   productBrands: ProductBrand[];
-  onSubmit: (data: ProductFormData) => Promise<void>;
 }
 
-const ProductForm: React.FC<ProductFormProps> = ({
+export default function ProductForm({
   open,
   onOpenChange,
+  onSubmit,
   isEditing,
   selectedProduct,
   products,
   productCategories,
   productGroups,
-  productBrands,
-  onSubmit
-}) => {
+  productBrands
+}: ProductFormProps) {
   const {
     form,
     units,
@@ -58,38 +50,26 @@ const ProductForm: React.FC<ProductFormProps> = ({
     products,
     onSubmit
   });
-  
-  // Add debug logging for classification data
-  useEffect(() => {
-    console.log("ProductForm received productCategories:", productCategories?.length || 0, "items");
-    console.log("ProductForm received productGroups:", productGroups?.length || 0, "items");
-    console.log("ProductForm received productBrands:", productBrands?.length || 0, "items");
-    
-    if (productGroups?.length === 0) {
-      console.log("No product groups received");
-    } else {
-      console.log("First few product groups:", productGroups?.slice(0, 3));
-    }
-    
-    if (productBrands?.length === 0) {
-      console.log("No product brands received");
-    } else {
-      console.log("First few product brands:", productBrands?.slice(0, 3));
-    }
-  }, [productCategories, productGroups, productBrands]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar" : "Adicionar"} Produto</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Edite os dados do produto abaixo" : "Preencha os dados do novo produto abaixo"}
-          </DialogDescription>
+          <DialogTitle>
+            {isEditing ? 'Editar Produto' : 'Novo Produto'}
+          </DialogTitle>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <BasicFieldsSection form={form} units={units} />
+            
+            <ClassificationSection 
+              form={form}
+              productCategories={productCategories}
+              productGroups={productGroups}
+              productBrands={productBrands}
+            />
             
             <SubunitSection 
               form={form}
@@ -100,31 +80,30 @@ const ProductForm: React.FC<ProductFormProps> = ({
               subunitRatio={subunitRatio}
               isConversionValid={isConversionValid}
             />
-            
-            <ClassificationSection 
-              form={form}
-              productCategories={productCategories}
-              productGroups={productGroups}
-              productBrands={productBrands}
-            />
-            
-            <DialogFooter>
-              <Button type="submit" disabled={isSubmitting || (hasSubunit && !isConversionValid)}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  "Salvar"
-                )}
+
+            <DiscountSection form={form} />
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Cancelar
               </Button>
-            </DialogFooter>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditing ? 'Atualizar' : 'Criar'} Produto
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default ProductForm;
+}

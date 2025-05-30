@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
@@ -26,6 +25,7 @@ export const productService = {
       minStock: item.min_stock || 0,
       minPrice: item.min_price || undefined,
       maxPrice: item.max_price || undefined,
+      maxDiscountPercentage: item.max_discount_percentage || undefined,
       unit: item.unit || 'UN',
       subunit: item.subunit || undefined,
       hasSubunit: item.has_subunit || false,
@@ -63,6 +63,7 @@ export const productService = {
       minStock: data.min_stock || 0,
       minPrice: data.min_price || undefined,
       maxPrice: data.max_price || undefined,
+      maxDiscountPercentage: data.max_discount_percentage || undefined,
       unit: data.unit || 'UN',
       subunit: data.subunit || undefined,
       hasSubunit: data.has_subunit || false,
@@ -90,6 +91,7 @@ export const productService = {
       min_stock: product.minStock || 0,
       min_price: product.minPrice || null,
       max_price: product.maxPrice || null,
+      max_discount_percentage: product.maxDiscountPercentage || null,
       unit: product.unit || 'UN',
       subunit: product.subunit || null,
       has_subunit: product.hasSubunit || false,
@@ -125,6 +127,7 @@ export const productService = {
       minStock: data.min_stock,
       minPrice: data.min_price || undefined,
       maxPrice: data.max_price || undefined,
+      maxDiscountPercentage: data.max_discount_percentage || undefined,
       unit: data.unit,
       subunit: data.subunit || undefined,
       hasSubunit: data.has_subunit || false,
@@ -154,6 +157,7 @@ export const productService = {
     if (product.minStock !== undefined) updateData.min_stock = product.minStock;
     if (product.minPrice !== undefined) updateData.min_price = product.minPrice;
     if (product.maxPrice !== undefined) updateData.max_price = product.maxPrice;
+    if (product.maxDiscountPercentage !== undefined) updateData.max_discount_percentage = product.maxDiscountPercentage;
     if (product.unit !== undefined) updateData.unit = product.unit;
     if (product.subunit !== undefined) updateData.subunit = product.subunit;
     if (product.hasSubunit !== undefined) updateData.has_subunit = product.hasSubunit;
@@ -187,6 +191,7 @@ export const productService = {
       minStock: data.min_stock,
       minPrice: data.min_price || undefined,
       maxPrice: data.max_price || undefined,
+      maxDiscountPercentage: data.max_discount_percentage || undefined,
       unit: data.unit,
       subunit: data.subunit || undefined,
       hasSubunit: data.has_subunit || false,

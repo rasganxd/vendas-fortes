@@ -1,4 +1,3 @@
-
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -141,7 +140,7 @@ export const deleteProduct = async (
 };
 
 /**
- * Validates if a discounted price is acceptable for a product
+ * Validates if a discounted price is acceptable for a product using percentage-based discount
  */
 export const validateProductDiscount = (
   productId: string,
@@ -156,12 +155,21 @@ export const validateProductDiscount = (
     return "O preço deve ser maior que zero";
   }
   
-  // Check minimum price if defined
+  // Check maximum discount percentage if defined
+  if (product.maxDiscountPercentage !== undefined && product.maxDiscountPercentage !== null) {
+    const currentDiscountPercentage = ((product.price - discountedPrice) / product.price) * 100;
+    
+    if (currentDiscountPercentage > product.maxDiscountPercentage) {
+      return `O desconto não pode ser maior que ${product.maxDiscountPercentage.toFixed(1)}% (atual: ${currentDiscountPercentage.toFixed(1)}%)`;
+    }
+  }
+  
+  // Legacy support: Check minimum price if defined (deprecated)
   if (product.minPrice && discountedPrice < product.minPrice) {
     return `O preço não pode ser menor que R$ ${product.minPrice.toFixed(2)}`;
   }
   
-  // Check maximum price if defined
+  // Legacy support: Check maximum price if defined (deprecated)
   if (product.maxPrice && discountedPrice > product.maxPrice) {
     return `O preço não pode ser maior que R$ ${product.maxPrice.toFixed(2)}`;
   }
@@ -170,14 +178,57 @@ export const validateProductDiscount = (
 };
 
 /**
- * Gets the minimum price for a product
+ * Gets the minimum price for a product based on maximum discount percentage
  */
 export const getMinimumPrice = (productId: string, products: Product[]): number => {
   const product = products.find(p => p.id === productId);
   if (!product) return 0;
   
-  // Return the defined minimum price or 0
+  // Use percentage-based calculation if available
+  if (product.maxDiscountPercentage !== undefined && product.maxDiscountPercentage !== null) {
+    const maxDiscount = (product.maxDiscountPercentage / 100) * product.price;
+    return product.price - maxDiscount;
+  }
+  
+  // Fall back to legacy minimum price
   return product.minPrice || 0;
+};
+
+/**
+ * Gets the maximum discount percentage for a product
+ */
+export const getMaximumDiscountPercentage = (productId: string, products: Product[]): number => {
+  const product = products.find(p => p.id === productId);
+  if (!product) return 0;
+  
+  return product.maxDiscountPercentage || 0;
+};
+
+/**
+ * Gets the current discount percentage for a given price
+ */
+export const getCurrentDiscountPercentage = (
+  productId: string,
+  currentPrice: number,
+  products: Product[]
+): number => {
+  const product = products.find(p => p.id === productId);
+  if (!product || product.price <= 0) return 0;
+  
+  const discountPercentage = ((product.price - currentPrice) / product.price) * 100;
+  return Math.max(0, discountPercentage);
+};
+
+/**
+ * Validates if a price is within the defined discount range for a product
+ */
+export const isPriceWithinRange = (
+  productId: string,
+  price: number,
+  products: Product[]
+): boolean => {
+  const validation = validateProductDiscount(productId, price, products);
+  return validation === true;
 };
 
 /**
@@ -189,18 +240,6 @@ export const getMaximumPrice = (productId: string, products: Product[]): number 
   
   // Return the defined maximum price or 0 (no limit)
   return product.maxPrice || 0;
-};
-
-/**
- * Validates if a price is within the defined range for a product
- */
-export const isPriceWithinRange = (
-  productId: string,
-  price: number,
-  products: Product[]
-): boolean => {
-  const validation = validateProductDiscount(productId, price, products);
-  return validation === true;
 };
 
 /**
