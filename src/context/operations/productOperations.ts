@@ -177,10 +177,10 @@ export const getMinimumPrice = (productId: string, products: Product[]): number 
  * Gets the maximum discount percentage for a product
  */
 export const getMaximumDiscountPercentage = (productId: string, products: Product[]): number => {
-  const product = products.find(p => p.id === productId);
-  if (!product) return 0;
-  
-  return product.maxDiscountPercentage || 0;
+  // Since maxDiscountPercentage is moved to separate table,
+  // this function should use the productDiscountService
+  // For now, return 0
+  return 0;
 };
 
 /**

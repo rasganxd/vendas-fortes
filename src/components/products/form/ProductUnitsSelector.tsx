@@ -114,7 +114,7 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{unit.unitValue}</span>
                   <span className="text-sm text-muted-foreground">
-                    {unit.label}
+                    {unit.unitLabel}
                   </span>
                   {unit.isMainUnit && (
                     <Badge variant="default" className="text-xs">

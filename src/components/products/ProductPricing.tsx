@@ -4,160 +4,265 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { EnhancedTable, EnhancedTableHeader, EnhancedTableBody, EnhancedTableRow, EnhancedTableHead, EnhancedTableCell } from '@/components/ui/enhanced-table';
 import { formatCurrency } from '@/lib/utils';
 import { Product } from '@/types';
 import { useProducts } from '@/hooks/useProducts';
 import { productDiscountService } from '@/services/supabase/productDiscountService';
 import { toast } from 'sonner';
+import { Edit, Save, X, Search } from 'lucide-react';
+
+interface ProductPricingRow extends Product {
+  maxDiscountPercentage: number;
+}
 
 export default function ProductPricing() {
   const { products, updateProduct } = useProducts();
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [newPrice, setNewPrice] = useState<string>('');
-  const [maxDiscount, setMaxDiscount] = useState<string>('');
+  const [pricingData, setPricingData] = useState<ProductPricingRow[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState<string>('');
+  const [editDiscount, setEditDiscount] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleProductSelect = async (product: Product) => {
-    setSelectedProduct(product);
-    setNewPrice(product.price?.toString() || '');
-    
-    // Load discount settings for the product
-    try {
-      const discountSettings = await productDiscountService.getByProductId(product.id);
-      setMaxDiscount(discountSettings?.maxDiscountPercentage?.toString() || '');
-    } catch (error) {
-      console.error('Erro ao carregar configurações de desconto:', error);
-      setMaxDiscount('');
-    }
+  // Load pricing data with discount settings
+  useEffect(() => {
+    const loadPricingData = async () => {
+      setIsLoading(true);
+      try {
+        // Get all discount settings
+        const discounts = await productDiscountService.getAllDiscounts();
+        
+        // Combine products with their discount settings
+        const combined = products.map(product => ({
+          ...product,
+          maxDiscountPercentage: discounts[product.id] || 0
+        }));
+        
+        setPricingData(combined);
+      } catch (error) {
+        console.error('Erro ao carregar dados de precificação:', error);
+        // If there's an error, just use products without discount data
+        setPricingData(products.map(product => ({
+          ...product,
+          maxDiscountPercentage: 0
+        })));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPricingData();
+  }, [products]);
+
+  const filteredData = pricingData.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    product.code.toString().includes(searchTerm)
+  );
+
+  const handleEditStart = (product: ProductPricingRow) => {
+    setEditingId(product.id);
+    setEditPrice(product.price?.toString() || '');
+    setEditDiscount(product.maxDiscountPercentage.toString());
   };
 
-  const handlePriceUpdate = async () => {
-    if (!selectedProduct) return;
-    
-    setIsLoading(true);
+  const handleEditCancel = () => {
+    setEditingId(null);
+    setEditPrice('');
+    setEditDiscount('');
+  };
+
+  const handleSave = async (productId: string) => {
     try {
-      const price = parseFloat(newPrice);
-      const discountPercentage = parseFloat(maxDiscount);
+      const price = parseFloat(editPrice);
+      const discountPercentage = parseFloat(editDiscount);
       
+      if (isNaN(price) || price < 0) {
+        toast("Preço inválido", {
+          description: "O preço deve ser um número válido maior ou igual a zero"
+        });
+        return;
+      }
+
       // Update product price
-      await updateProduct(selectedProduct.id, { price });
+      await updateProduct(productId, { price });
       
       // Update discount settings if provided
       if (discountPercentage > 0) {
-        await productDiscountService.upsert(selectedProduct.id, discountPercentage);
+        await productDiscountService.upsert(productId, discountPercentage);
       }
       
-      toast("Preço atualizado com sucesso!");
+      // Update local state
+      setPricingData(prev => prev.map(item => 
+        item.id === productId 
+          ? { ...item, price, maxDiscountPercentage: discountPercentage }
+          : item
+      ));
       
-      // Refresh the selected product data
-      const updatedProduct = { ...selectedProduct, price };
-      setSelectedProduct(updatedProduct);
+      toast("Preço atualizado com sucesso!");
+      setEditingId(null);
+      setEditPrice('');
+      setEditDiscount('');
       
     } catch (error) {
       console.error('Erro ao atualizar preço:', error);
       toast("Erro ao atualizar preço");
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const calculateMinPrice = () => {
-    if (!selectedProduct) return 0;
-    const discount = parseFloat(maxDiscount) || 0;
-    const price = parseFloat(newPrice) || 0;
-    return price * (1 - discount / 100);
+  const calculateMargin = (product: ProductPricingRow): number => {
+    if (!product.cost || product.cost === 0) return 0;
+    const price = product.price || 0;
+    return ((price - product.cost) / product.cost) * 100;
+  };
+
+  const calculateMinPrice = (product: ProductPricingRow): number => {
+    if (!product.price || product.maxDiscountPercentage === 0) return product.price || 0;
+    return product.price * (1 - product.maxDiscountPercentage / 100);
+  };
+
+  const getMarginColor = (margin: number): string => {
+    if (margin >= 30) return 'text-green-600';
+    if (margin >= 15) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Product Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Selecionar Produto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {products.map(product => (
-                <div
-                  key={product.id}
-                  className={`p-3 border rounded cursor-pointer hover:bg-gray-50 ${
-                    selectedProduct?.id === product.id ? 'border-blue-500 bg-blue-50' : ''
-                  }`}
-                  onClick={() => handleProductSelect(product)}
-                >
-                  <div className="font-medium">{product.name}</div>
-                  <div className="text-sm text-gray-500">
-                    Código: {product.code} | Preço atual: {formatCurrency(product.price || 0)}
-                  </div>
-                </div>
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle>Precificação de Produtos</CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Buscar produto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Pricing Table */}
+      <Card>
+        <CardContent className="p-0">
+          <EnhancedTable isLoading={isLoading}>
+            <EnhancedTableHeader>
+              <EnhancedTableRow>
+                <EnhancedTableHead>Código</EnhancedTableHead>
+                <EnhancedTableHead>Produto</EnhancedTableHead>
+                <EnhancedTableHead>Custo</EnhancedTableHead>
+                <EnhancedTableHead>Preço de Venda</EnhancedTableHead>
+                <EnhancedTableHead>Margem</EnhancedTableHead>
+                <EnhancedTableHead>Desc. Máx (%)</EnhancedTableHead>
+                <EnhancedTableHead>Preço Mín.</EnhancedTableHead>
+                <EnhancedTableHead>Ações</EnhancedTableHead>
+              </EnhancedTableRow>
+            </EnhancedTableHeader>
+            <EnhancedTableBody>
+              {filteredData.map((product) => (
+                <EnhancedTableRow key={product.id}>
+                  <EnhancedTableCell className="font-medium">
+                    {product.code}
+                  </EnhancedTableCell>
+                  <EnhancedTableCell>{product.name}</EnhancedTableCell>
+                  <EnhancedTableCell>
+                    {formatCurrency(product.cost || 0)}
+                  </EnhancedTableCell>
+                  <EnhancedTableCell>
+                    {editingId === product.id ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={editPrice}
+                        onChange={(e) => setEditPrice(e.target.value)}
+                        className="w-24"
+                        autoFocus
+                      />
+                    ) : (
+                      formatCurrency(product.price || 0)
+                    )}
+                  </EnhancedTableCell>
+                  <EnhancedTableCell>
+                    <span className={getMarginColor(calculateMargin(product))}>
+                      {calculateMargin(product).toFixed(1)}%
+                    </span>
+                  </EnhancedTableCell>
+                  <EnhancedTableCell>
+                    {editingId === product.id ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={editDiscount}
+                        onChange={(e) => setEditDiscount(e.target.value)}
+                        className="w-20"
+                      />
+                    ) : (
+                      product.maxDiscountPercentage.toFixed(1) + '%'
+                    )}
+                  </EnhancedTableCell>
+                  <EnhancedTableCell>
+                    {formatCurrency(calculateMinPrice(product))}
+                  </EnhancedTableCell>
+                  <EnhancedTableCell>
+                    <div className="flex items-center gap-2">
+                      {editingId === product.id ? (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSave(product.id)}
+                            className="h-7 w-7 p-0"
+                          >
+                            <Save className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleEditCancel}
+                            className="h-7 w-7 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditStart(product)}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </EnhancedTableCell>
+                </EnhancedTableRow>
               ))}
+            </EnhancedTableBody>
+          </EnhancedTable>
+        </CardContent>
+      </Card>
+
+      {filteredData.length === 0 && !isLoading && (
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center text-gray-500">
+              <p>Nenhum produto encontrado.</p>
+              {searchTerm && (
+                <p className="text-sm mt-2">
+                  Tente ajustar os termos de busca.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
-
-        {/* Pricing Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Configurar Preço</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {selectedProduct ? (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="newPrice">Preço de Venda</Label>
-                  <Input
-                    id="newPrice"
-                    type="number"
-                    step="0.01"
-                    value={newPrice}
-                    onChange={(e) => setNewPrice(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="maxDiscount">Desconto Máximo (%)</Label>
-                  <Input
-                    id="maxDiscount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={maxDiscount}
-                    onChange={(e) => setMaxDiscount(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className="space-y-2 p-3 bg-gray-50 rounded">
-                  <div className="text-sm">
-                    <strong>Custo:</strong> {formatCurrency(selectedProduct.cost || 0)}
-                  </div>
-                  <div className="text-sm">
-                    <strong>Margem:</strong> {
-                      ((parseFloat(newPrice) - (selectedProduct.cost || 0)) / (selectedProduct.cost || 1) * 100).toFixed(2)
-                    }%
-                  </div>
-                  <div className="text-sm">
-                    <strong>Preço mínimo:</strong> {formatCurrency(calculateMinPrice())}
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={handlePriceUpdate}
-                  disabled={isLoading || !newPrice}
-                  className="w-full"
-                >
-                  {isLoading ? 'Atualizando...' : 'Atualizar Preço'}
-                </Button>
-              </div>
-            ) : (
-              <p className="text-gray-500">Selecione um produto para configurar o preço</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { EnhancedCard, EnhancedCardContent, EnhancedCardDescription, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
@@ -15,6 +16,7 @@ import BulkProductUpload from '@/components/products/BulkProductUpload';
 import { Product } from '@/types';
 import { toast } from "sonner";
 import { productUnitsMappingService } from '@/services/supabase/productUnitsMapping';
+
 export default function Products() {
   const {
     products,
@@ -54,15 +56,19 @@ export default function Products() {
       loadingBrands: isLoadingBrands
     });
   }, [productCategories, productGroups, productBrands, isLoadingCategories, isLoadingGroups, isLoadingBrands]);
+  
   const filteredProducts = products.filter(product => product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.code.toString().toLowerCase().includes(searchTerm.toLowerCase()));
+  
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setIsProductFormOpen(true);
   };
+  
   const handleDeleteProduct = (product: Product) => {
     setProductToDelete(product);
     setDeleteDialogOpen(true);
   };
+  
   const handleConfirmDelete = async () => {
     if (productToDelete) {
       try {
@@ -85,6 +91,7 @@ export default function Products() {
     setDeleteDialogOpen(false);
     setProductToDelete(null);
   };
+  
   const handleProductSaved = async (data: any) => {
     try {
       console.log("💾 Salvando produto:", data);
@@ -109,8 +116,7 @@ export default function Products() {
         });
       } else {
         // Creating new product
-        const newProduct = await addProduct(productData);
-        productId = typeof newProduct === 'string' ? newProduct : newProduct.id;
+        productId = await addProduct(productData);
         toast("Produto criado", {
           description: "O produto foi criado com sucesso. Defina o preço de venda na seção Precificação."
         });
@@ -149,6 +155,7 @@ export default function Products() {
       });
     }
   };
+  
   const handleNewProduct = () => {
     setEditingProduct(null);
     setIsProductFormOpen(true);
@@ -156,7 +163,9 @@ export default function Products() {
 
   // Check if any classification data is still loading
   const isClassificationLoading = isLoadingCategories || isLoadingGroups || isLoadingBrands;
-  return <PageLayout title="Gerenciar Produtos" subtitle="Cadastre e gerencie seus produtos" description="Controle seu estoque, preços e informações dos produtos">
+  
+  return (
+    <PageLayout title="Gerenciar Produtos" subtitle="Cadastre e gerencie seus produtos" description="Controle seu estoque, preços e informações dos produtos">
       <div className="space-y-6">
         {/* Action Buttons */}
         <ProductsActionButtons onAddProduct={handleNewProduct} />
@@ -221,5 +230,6 @@ export default function Products() {
 
         <BulkProductUpload open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} onSuccess={refreshData} />
       </div>
-    </PageLayout>;
+    </PageLayout>
+  );
 }
