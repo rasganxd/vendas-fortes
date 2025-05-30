@@ -59,45 +59,59 @@ export default function ProductForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-gray-900">
             {isEditing ? 'Editar Produto' : 'Novo Produto'}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <BasicFieldsSection form={form} units={units} />
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+            {/* Seção de Campos Básicos */}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Informações Básicas</h3>
+              <BasicFieldsSection form={form} />
+            </div>
             
-            <ClassificationSection 
-              form={form}
-              productCategories={productCategories}
-              productGroups={productGroups}
-              productBrands={productBrands}
-            />
+            {/* Seção de Classificação */}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Classificação</h3>
+              <ClassificationSection 
+                form={form}
+                productCategories={productCategories}
+                productGroups={productGroups}
+                productBrands={productBrands}
+              />
+            </div>
             
-            <ProductUnitsSection 
-              form={form}
-              selectedUnits={selectedUnits}
-              mainUnitId={mainUnitId}
-              onAddUnit={addUnit}
-              onRemoveUnit={removeUnit}
-              onSetMainUnit={setAsMainUnit}
-              productPrice={selectedProduct?.price || 0}
-            />
+            {/* Seção de Unidades */}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Unidades de Medida</h3>
+              <ProductUnitsSection 
+                form={form}
+                selectedUnits={selectedUnits}
+                mainUnitId={mainUnitId}
+                onAddUnit={addUnit}
+                onRemoveUnit={removeUnit}
+                onSetMainUnit={setAsMainUnit}
+                productPrice={selectedProduct?.price || 0}
+              />
+            </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            {/* Botões de Ação */}
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
+                className="px-6"
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 px-6"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? 'Atualizar' : 'Criar'} Produto
