@@ -11,6 +11,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { productDiscountService } from '@/services/supabase/productDiscountService';
 import { toast } from 'sonner';
 import { Edit, Save, X, Search } from 'lucide-react';
+import { parseBrazilianPrice, formatPriceForInput, isValidPrice } from '@/utils/priceUtils';
 
 interface ProductPricingRow extends Product {
   maxDiscountPercentage: number;
@@ -62,7 +63,7 @@ export default function ProductPricing() {
 
   const handleEditStart = (product: ProductPricingRow) => {
     setEditingId(product.id);
-    setEditPrice(product.price?.toString() || '');
+    setEditPrice(formatPriceForInput(product.price || 0));
     setEditDiscount(product.maxDiscountPercentage.toString());
   };
 
@@ -72,9 +73,20 @@ export default function ProductPricing() {
     setEditDiscount('');
   };
 
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditPrice(e.target.value);
+  };
+
   const handleSave = async (productId: string) => {
     try {
-      const price = parseFloat(editPrice);
+      if (!isValidPrice(editPrice)) {
+        toast("Preço inválido", {
+          description: "Digite um preço válido no formato brasileiro (ex: 1.234,56)"
+        });
+        return;
+      }
+
+      const price = parseBrazilianPrice(editPrice);
       const discountPercentage = parseFloat(editDiscount);
       
       if (isNaN(price) || price < 0) {
@@ -176,11 +188,11 @@ export default function ProductPricing() {
                   <EnhancedTableCell>
                     {editingId === product.id ? (
                       <Input
-                        type="number"
-                        step="0.01"
+                        mask="price"
                         value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
-                        className="w-24"
+                        onChange={handlePriceChange}
+                        className="w-32"
+                        placeholder="0,00"
                         autoFocus
                       />
                     ) : (

@@ -26,6 +26,7 @@ export const productUnitsService = {
     }
 
     return data.map(unit => ({
+      id: unit.id,
       value: unit.value,
       label: unit.label,
       packageQuantity: Number(unit.package_quantity)

@@ -29,6 +29,7 @@ export default function EditUnitDialog({
   onSave,
 }: EditUnitDialogProps) {
   const [editData, setEditData] = useState({
+    id: '',
     value: '',
     label: '',
     packageQuantity: 1
@@ -37,6 +38,7 @@ export default function EditUnitDialog({
   useEffect(() => {
     if (unit) {
       setEditData({
+        id: unit.id,
         value: unit.value,
         label: unit.label,
         packageQuantity: unit.packageQuantity || 1
@@ -57,6 +59,7 @@ export default function EditUnitDialog({
     }
 
     const updatedUnit: Unit = {
+      id: editData.id,
       value: editData.value.toUpperCase(),
       label: editData.label,
       packageQuantity: editData.packageQuantity
