@@ -37,7 +37,7 @@ export const PriceValidation: React.FC<PriceValidationProps> = ({
       <div className={cn("flex items-center text-sm", className)}>
         <XCircle className="h-4 w-4 text-red-500 mr-1" />
         <span className="text-red-600">
-          Desconto acima do limite ({currentDiscountPercentage.toFixed(1)}% > {maxDiscountPercentage.toFixed(1)}%)
+          Desconto acima do limite ({currentDiscountPercentage.toFixed(1)}% {'>'}  {maxDiscountPercentage.toFixed(1)}%)
         </span>
       </div>
     );
