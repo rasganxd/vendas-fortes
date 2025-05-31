@@ -71,15 +71,21 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
     console.log("➕ Adding unit:", { selectedUnitId, unit });
     
     if (unit) {
-      // Garantir que estamos passando dados válidos
+      // CORRIGIDO: Garantir que estamos passando apenas dados válidos e verificados
       const unitData = {
-        id: unit.id,
+        id: unit.id, // Este deve ser um UUID válido
         value: unit.value,
         label: unit.label,
         packageQuantity: unit.packageQuantity
       };
       
-      console.log("📤 Sending unit data:", unitData);
+      console.log("📤 Sending validated unit data:", unitData);
+      
+      // Validação adicional antes de enviar
+      if (!unitData.id || !unitData.value || !unitData.label || unitData.packageQuantity <= 0) {
+        console.error("❌ Invalid unit data:", unitData);
+        return;
+      }
       
       onAddUnit(unitData);
       console.log("✅ Unit add function called successfully");
@@ -93,6 +99,13 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
 
   const handleRemoveUnit = (unitId: string) => {
     console.log("🗑️ Removing unit:", unitId);
+    
+    // Validar se há pelo menos 2 unidades antes de remover
+    if (selectedUnits.length <= 1) {
+      console.warn("⚠️ Cannot remove last unit");
+      return;
+    }
+    
     onRemoveUnit(unitId);
   };
 
@@ -111,11 +124,7 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
       return productPrice;
     }
     
-    // Lógica corrigida: 
-    // Se a unidade principal tem 18 unidades e custa R$ 69,00
-    // E queremos o preço de uma unidade com 1 unidade
-    // Preço da unidade = preço principal / (packageQuantity principal / packageQuantity da unidade)
-    // Exemplo: R$ 69,00 / (18 / 1) = R$ 69,00 / 18 = R$ 3,83
+    // Calcular preço baseado na proporção das quantidades
     const conversionRatio = mainUnit.packageQuantity / unit.packageQuantity;
     return productPrice / conversionRatio;
   };

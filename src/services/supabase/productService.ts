@@ -142,6 +142,8 @@ export const productService = {
   },
 
   async update(id: string, product: Partial<Product>): Promise<Product> {
+    console.log('📝 Updating product:', id, 'with data:', product);
+    
     // Prepare data for Supabase
     const updateData: any = {};
     
@@ -149,7 +151,11 @@ export const productService = {
     if (product.name !== undefined) updateData.name = product.name;
     if (product.description !== undefined) updateData.description = product.description;
     if (product.cost !== undefined) updateData.cost = product.cost;
-    if (product.price !== undefined) updateData.price = product.price;
+    // IMPORTANTE: Só atualizar preço se explicitamente fornecido
+    if (product.price !== undefined) {
+      updateData.price = product.price;
+      console.log('💰 Atualizando preço para:', product.price);
+    }
     if (product.stock !== undefined) updateData.stock = product.stock;
     if (product.minStock !== undefined) updateData.min_stock = product.minStock;
     if (product.minPrice !== undefined) updateData.min_price = product.minPrice;
@@ -163,6 +169,8 @@ export const productService = {
     if (product.brandId !== undefined) updateData.brand_id = product.brandId;
     if (product.syncStatus !== undefined) updateData.sync_status = product.syncStatus;
 
+    console.log('📊 Final update data (price preserved if not changed):', updateData);
+
     const { data, error } = await supabase
       .from('products')
       .update(updateData)
@@ -174,6 +182,8 @@ export const productService = {
       console.error('Erro ao atualizar produto:', error);
       throw error;
     }
+
+    console.log('✅ Product updated successfully with preserved price:', data.price);
 
     // Transform the response to match our Product interface
     return {

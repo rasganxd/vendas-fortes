@@ -61,6 +61,7 @@ export const useProductFormLogic = ({
     selectedProduct: selectedProduct?.name,
     existingUnitsCount: existingUnits.length,
     existingMainUnit: existingMainUnit?.value,
+    selectedProductPrice: selectedProduct?.price,
     isInitialized
   });
   
@@ -86,6 +87,7 @@ export const useProductFormLogic = ({
   
   // Helper function para validar UUID
   const isValidUUID = useCallback((uuid: string): boolean => {
+    if (!uuid || typeof uuid !== 'string') return false;
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }, []);
@@ -97,9 +99,13 @@ export const useProductFormLogic = ({
 
   // Helper function to validate and convert to SelectedUnit
   const validateAndConvertToSelectedUnit = useCallback((units: any[]): SelectedUnit[] => {
+    console.log("🔄 Validando e convertendo unidades:", units);
+    
     const validUnits = units
       .map((unit): SelectedUnit | null => {
         let unitId = unit.unitId;
+        
+        console.log("🔍 Processando unidade:", { original: unit, unitId });
         
         // Se o unitId não é um UUID válido, tentar encontrar por valor
         if (!isValidUUID(unitId)) {
@@ -122,26 +128,30 @@ export const useProductFormLogic = ({
           return null;
         }
 
-        return {
+        const validUnit = {
           unitId,
           unitValue: unit.unitValue,
           unitLabel: unit.unitLabel,
           packageQuantity: unit.packageQuantity,
           isMainUnit: unit.isMainUnit
         };
+        
+        console.log("✅ Unidade validada:", validUnit);
+        return validUnit;
       })
       .filter((unit): unit is SelectedUnit => unit !== null);
     
-    console.log("🔍 Validação de unidades:", {
+    console.log("📊 Resultado da validação:", {
       input: units.length,
       valid: validUnits.length,
-      invalid: units.length - validUnits.length
+      invalid: units.length - validUnits.length,
+      validUnits
     });
     
     return validUnits;
   }, [isValidUUID, findUnitByValue]);
   
-  // Validar e mapear unidades existentes com melhor validação
+  // Validar e mapear unidades existentes
   const mappedExistingUnits = useMemo(() => {
     if (!isEditing || !existingUnits?.length) {
       console.log("📋 Sem unidades para mapear:", { isEditing, existingUnitsLength: existingUnits?.length });
@@ -192,7 +202,7 @@ export const useProductFormLogic = ({
     return mapped;
   }, [isEditing, existingUnits, isValidUUID]);
 
-  // Inicialização melhorada com melhor controle de timing
+  // Inicialização melhorada
   useEffect(() => {
     console.log("🚀 Efeito de inicialização disparado:", {
       isEditing,
@@ -203,13 +213,13 @@ export const useProductFormLogic = ({
     });
 
     if (isEditing && selectedProduct) {
-      // Para edição, aguardar dados completos antes de resetar
       const mainUnitIdToSet = existingMainUnit?.id || "";
       
       console.log("📝 Resetando formulário para edição:", {
         productName: selectedProduct.name,
         unitsToSet: mappedExistingUnits.length,
-        mainUnitId: mainUnitIdToSet
+        mainUnitId: mainUnitIdToSet,
+        preservingPrice: selectedProduct.price
       });
       
       form.reset({
@@ -226,12 +236,8 @@ export const useProductFormLogic = ({
       
       setIsInitialized(true);
       
-      console.log("✅ Formulário resetado com unidades:", {
-        selectedUnits: mappedExistingUnits,
-        mainUnitId: mainUnitIdToSet
-      });
+      console.log("✅ Formulário resetado com unidades e preço preservado");
     } else if (!isEditing) {
-      // Para novo produto, reset simples
       console.log("🆕 Resetando formulário para novo produto");
       
       form.reset({
@@ -354,7 +360,7 @@ export const useProductFormLogic = ({
     toast("Unidade principal definida com sucesso!");
   }, [form, validateAndConvertToSelectedUnit, isValidUUID]);
 
-  // Validação centralizada melhorada
+  // Validação centralizada
   const validateFormData = useCallback((data: ProductFormData) => {
     console.log("🔍 Validando dados do formulário:", data);
     
@@ -416,15 +422,17 @@ export const useProductFormLogic = ({
       
       validateFormData(processedData);
       
+      // IMPORTANTE: Não forçar preço para 0 - preserve o preço existente ou deixe como está
       const finalData = {
         ...processedData,
-        price: 0,
+        // Preserve o preço existente do produto ou mantenha o valor do formulário
+        price: isEditing && selectedProduct ? selectedProduct.price : 0,
         categoryId: processedData.categoryId === "none" || processedData.categoryId === "" ? null : processedData.categoryId,
         groupId: processedData.groupId === "none" || processedData.groupId === "" ? null : processedData.groupId,
         brandId: processedData.brandId === "none" || processedData.brandId === "" ? null : processedData.brandId,
       };
       
-      console.log("📊 Dados finais para salvamento:", finalData);
+      console.log("📊 Dados finais para salvamento (preço preservado):", finalData);
       
       await onSubmit(finalData);
       
@@ -436,7 +444,7 @@ export const useProductFormLogic = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [onSubmit, validateFormData, validateAndConvertToSelectedUnit]);
+  }, [onSubmit, validateFormData, validateAndConvertToSelectedUnit, isEditing, selectedProduct]);
 
   return {
     form,

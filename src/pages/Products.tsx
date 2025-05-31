@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { EnhancedCard, EnhancedCardContent, EnhancedCardDescription, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
@@ -112,22 +111,45 @@ export default function Products() {
         throw new Error("Produto deve ter exatamente uma unidade principal");
       }
 
-      // Prepare product data with required fields
+      // CORRIGIDO: Preserve o preço existente ao atualizar produto
       const productData = {
         ...data,
         description: data.description || "",
         minStock: data.minStock || 0,
-        price: 0,
+        // IMPORTANTE: Não resetar o preço ao editar - preservar o preço existente
+        price: isEditingProduct && editingProduct ? editingProduct.price : 0,
         syncStatus: 'synced'
       };
+      
+      console.log("💰 Preço sendo preservado:", {
+        isEditingProduct,
+        originalPrice: editingProduct?.price,
+        preservedPrice: productData.price
+      });
       
       let productId: string;
       
       if (isEditingProduct) {
         console.log("✏️ Atualizando produto existente:", editingProduct.id);
         
-        // Updating existing product
-        await updateProduct(editingProduct.id, productData);
+        // Updating existing product - preserve all existing data not being changed
+        const updateData = {
+          code: productData.code,
+          name: productData.name,
+          description: productData.description,
+          cost: productData.cost,
+          stock: productData.stock,
+          minStock: productData.minStock,
+          categoryId: productData.categoryId,
+          groupId: productData.groupId,
+          brandId: productData.brandId,
+          syncStatus: productData.syncStatus
+          // IMPORTANTE: Não incluir 'price' aqui para não sobrescrever
+        };
+        
+        console.log("📝 Dados de atualização (sem alterar preço):", updateData);
+        
+        await updateProduct(editingProduct.id, updateData);
         productId = editingProduct.id;
         
         toast("Produto atualizado", {
@@ -152,18 +174,23 @@ export default function Products() {
         ? await productUnitsMappingService.getProductUnits(productId)
         : [];
       
+      console.log("📋 Unidades existentes:", existingUnits);
+      console.log("📋 Unidades selecionadas:", data.selectedUnits);
+      
       // Remover unidades que não estão mais selecionadas
       for (const existingUnit of existingUnits) {
         const stillSelected = data.selectedUnits.find((u: any) => u.unitId === existingUnit.id);
         if (!stillSelected) {
+          console.log("🗑️ Removendo unidade não selecionada:", existingUnit.value);
           await productUnitsMappingService.removeUnitFromProduct(productId, existingUnit.id);
         }
       }
       
-      // Adicionar novas unidades
+      // Adicionar novas unidades e atualizar status de principal
       for (const selectedUnit of data.selectedUnits) {
         const alreadyExists = existingUnits.find(u => u.id === selectedUnit.unitId);
         if (!alreadyExists) {
+          console.log("➕ Adicionando nova unidade:", selectedUnit.unitValue);
           await productUnitsMappingService.addUnitToProduct(
             productId, 
             selectedUnit.unitId, 
@@ -172,6 +199,7 @@ export default function Products() {
         } else if (selectedUnit.isMainUnit !== alreadyExists.isMainUnit) {
           // Atualizar se mudou o status de unidade principal
           if (selectedUnit.isMainUnit) {
+            console.log("👑 Atualizando unidade principal:", selectedUnit.unitValue);
             await productUnitsMappingService.setMainUnit(productId, selectedUnit.unitId);
           }
         }
@@ -181,7 +209,7 @@ export default function Products() {
       
       toast("Sucesso!", {
         description: isEditingProduct 
-          ? "Produto e unidades atualizados com sucesso" 
+          ? "Produto e unidades atualizados com sucesso. Preço preservado." 
           : "Produto criado e unidades configuradas com sucesso. Defina o preço de venda na seção Precificação."
       });
       
