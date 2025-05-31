@@ -24,13 +24,13 @@ const productFormSchema = z.object({
   groupId: z.string().optional(),
   brandId: z.string().optional(),
   selectedUnits: z.array(z.object({
-    unitId: z.string(),
+    unitId: z.string().uuid("ID da unidade deve ser um UUID válido"),
     unitValue: z.string(),
     unitLabel: z.string(),
     packageQuantity: z.number(),
     isMainUnit: z.boolean()
   })).min(1, "Produto deve ter pelo menos uma unidade"),
-  mainUnitId: z.string().min(1, "Produto deve ter uma unidade principal"),
+  mainUnitId: z.string().uuid("ID da unidade principal deve ser um UUID válido"),
 });
 
 export type ProductFormData = z.infer<typeof productFormSchema> & ProductFormUnitsData;
@@ -84,26 +84,62 @@ export const useProductFormLogic = ({
   const selectedUnits = form.watch("selectedUnits") || [];
   const mainUnitId = form.watch("mainUnitId");
   
+  // Helper function para validar UUID
+  const isValidUUID = useCallback((uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  }, []);
+
+  // Helper function para encontrar unidade por valor
+  const findUnitByValue = useCallback((value: string) => {
+    return units.find(unit => unit.value.toLowerCase() === value.toLowerCase());
+  }, [units]);
+
   // Helper function to validate and convert to SelectedUnit
   const validateAndConvertToSelectedUnit = useCallback((units: any[]): SelectedUnit[] => {
     const validUnits = units
-      .filter((unit): unit is SelectedUnit => 
-        Boolean(unit.unitId) && 
-        Boolean(unit.unitValue) && 
-        Boolean(unit.unitLabel) && 
-        typeof unit.packageQuantity === 'number' && 
-        unit.packageQuantity > 0 &&
-        typeof unit.isMainUnit === 'boolean'
-      );
+      .map((unit): SelectedUnit | null => {
+        let unitId = unit.unitId;
+        
+        // Se o unitId não é um UUID válido, tentar encontrar por valor
+        if (!isValidUUID(unitId)) {
+          console.warn("⚠️ unitId inválido detectado:", unitId, "tentando encontrar por valor");
+          const foundUnit = findUnitByValue(unitId);
+          if (foundUnit) {
+            unitId = foundUnit.id;
+            console.log("✅ Unidade encontrada por valor:", { originalValue: unit.unitId, foundId: unitId });
+          } else {
+            console.error("❌ Não foi possível encontrar unidade para valor:", unitId);
+            return null;
+          }
+        }
+
+        // Validar se todos os campos necessários estão presentes
+        if (!unitId || !unit.unitValue || !unit.unitLabel || 
+            typeof unit.packageQuantity !== 'number' || unit.packageQuantity <= 0 ||
+            typeof unit.isMainUnit !== 'boolean') {
+          console.warn("⚠️ Unidade com dados inválidos:", unit);
+          return null;
+        }
+
+        return {
+          unitId,
+          unitValue: unit.unitValue,
+          unitLabel: unit.unitLabel,
+          packageQuantity: unit.packageQuantity,
+          isMainUnit: unit.isMainUnit
+        };
+      })
+      .filter((unit): unit is SelectedUnit => unit !== null);
     
-    console.log("🔍 Validando unidades:", {
+    console.log("🔍 Validação de unidades:", {
       input: units.length,
       valid: validUnits.length,
       invalid: units.length - validUnits.length
     });
     
     return validUnits;
-  }, []);
+  }, [isValidUUID, findUnitByValue]);
   
   // Validar e mapear unidades existentes com melhor validação
   const mappedExistingUnits = useMemo(() => {
@@ -122,6 +158,7 @@ export const useProductFormLogic = ({
         packageQuantity: number;
       } => {
         const isValid = Boolean(unit.id) && 
+          isValidUUID(unit.id) &&
           Boolean(unit.value) && 
           Boolean(unit.label) && 
           typeof unit.packageQuantity === 'number' && 
@@ -153,7 +190,7 @@ export const useProductFormLogic = ({
     });
     
     return mapped;
-  }, [isEditing, existingUnits]);
+  }, [isEditing, existingUnits, isValidUUID]);
 
   // Inicialização melhorada com melhor controle de timing
   useEffect(() => {
@@ -216,8 +253,27 @@ export const useProductFormLogic = ({
   const addUnit = useCallback((unit: { id: string; value: string; label: string; packageQuantity: number }) => {
     console.log("➕ Adicionando unidade:", unit);
     
+    // Validar se o ID da unidade é um UUID válido
+    if (!isValidUUID(unit.id)) {
+      console.error("❌ ID da unidade inválido:", unit.id);
+      toast("Erro: ID da unidade inválido", {
+        description: "O ID da unidade deve ser um UUID válido."
+      });
+      return;
+    }
+    
     const currentUnits = form.getValues('selectedUnits') || [];
     const validCurrentUnits = validateAndConvertToSelectedUnit(currentUnits);
+    
+    // Verificar se a unidade já existe
+    const unitExists = validCurrentUnits.some(u => u.unitId === unit.id);
+    if (unitExists) {
+      console.warn("⚠️ Unidade já existe:", unit.id);
+      toast("Unidade já adicionada", {
+        description: "Esta unidade já foi adicionada ao produto."
+      });
+      return;
+    }
     
     const newUnit: SelectedUnit = {
       unitId: unit.id,
@@ -241,7 +297,7 @@ export const useProductFormLogic = ({
     });
     
     toast("Unidade adicionada com sucesso!");
-  }, [form, validateAndConvertToSelectedUnit]);
+  }, [form, validateAndConvertToSelectedUnit, isValidUUID]);
 
   const removeUnit = useCallback((unitId: string) => {
     console.log("🗑️ Removendo unidade:", unitId);
@@ -276,6 +332,13 @@ export const useProductFormLogic = ({
   const setAsMainUnit = useCallback((unitId: string) => {
     console.log("👑 Definindo nova unidade principal:", unitId);
     
+    // Validar se o ID é um UUID válido
+    if (!isValidUUID(unitId)) {
+      console.error("❌ ID da unidade principal inválido:", unitId);
+      toast("Erro: ID da unidade principal inválido");
+      return;
+    }
+    
     const currentUnits = form.getValues('selectedUnits') || [];
     const validCurrentUnits = validateAndConvertToSelectedUnit(currentUnits);
     
@@ -289,9 +352,9 @@ export const useProductFormLogic = ({
     
     console.log("✅ Unidade principal definida");
     toast("Unidade principal definida com sucesso!");
-  }, [form, validateAndConvertToSelectedUnit]);
+  }, [form, validateAndConvertToSelectedUnit, isValidUUID]);
 
-  // Validação centralizada
+  // Validação centralizada melhorada
   const validateFormData = useCallback((data: ProductFormData) => {
     console.log("🔍 Validando dados do formulário:", data);
     
@@ -299,13 +362,30 @@ export const useProductFormLogic = ({
       throw new Error("Produto deve ter pelo menos uma unidade");
     }
 
-    if (!data.mainUnitId) {
-      throw new Error("Produto deve ter uma unidade principal definida");
+    if (!data.mainUnitId || !isValidUUID(data.mainUnitId)) {
+      throw new Error("Produto deve ter uma unidade principal válida definida");
+    }
+
+    // Validar UUIDs de todas as unidades
+    const invalidUnitIds = data.selectedUnits.filter(u => !isValidUUID(u.unitId));
+    if (invalidUnitIds.length > 0) {
+      console.error("❌ Unidades com IDs inválidos:", invalidUnitIds);
+      throw new Error("Todas as unidades devem ter IDs válidos");
     }
 
     const mainUnits = data.selectedUnits.filter(u => u.isMainUnit);
     if (mainUnits.length !== 1) {
       throw new Error("Produto deve ter exatamente uma unidade principal");
+    }
+
+    // Verificar se a unidade principal marcada corresponde ao mainUnitId
+    const mainUnitFromList = mainUnits[0];
+    if (mainUnitFromList.unitId !== data.mainUnitId) {
+      console.error("❌ Inconsistência entre unidade principal marcada e mainUnitId:", {
+        mainUnitFromList: mainUnitFromList.unitId,
+        mainUnitId: data.mainUnitId
+      });
+      throw new Error("Inconsistência na unidade principal");
     }
 
     const invalidUnits = data.selectedUnits.filter(u => 
@@ -318,26 +398,35 @@ export const useProductFormLogic = ({
     }
     
     console.log("✅ Dados do formulário válidos");
-  }, []);
+  }, [isValidUUID]);
 
   const handleSubmit = useCallback(async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
       console.log("📤 Submetendo dados do formulário:", data);
       
-      validateFormData(data);
-      
+      // Validar e processar unidades antes da validação final
+      const processedUnits = validateAndConvertToSelectedUnit(data.selectedUnits);
       const processedData = {
         ...data,
-        price: 0,
-        categoryId: data.categoryId === "none" || data.categoryId === "" ? null : data.categoryId,
-        groupId: data.groupId === "none" || data.groupId === "" ? null : data.groupId,
-        brandId: data.brandId === "none" || data.brandId === "" ? null : data.brandId,
+        selectedUnits: processedUnits
       };
       
-      console.log("📊 Dados processados para salvamento:", processedData);
+      console.log("🔄 Dados processados com unidades validadas:", processedData);
       
-      await onSubmit(processedData);
+      validateFormData(processedData);
+      
+      const finalData = {
+        ...processedData,
+        price: 0,
+        categoryId: processedData.categoryId === "none" || processedData.categoryId === "" ? null : processedData.categoryId,
+        groupId: processedData.groupId === "none" || processedData.groupId === "" ? null : processedData.groupId,
+        brandId: processedData.brandId === "none" || processedData.brandId === "" ? null : processedData.brandId,
+      };
+      
+      console.log("📊 Dados finais para salvamento:", finalData);
+      
+      await onSubmit(finalData);
       
     } catch (error: any) {
       console.error("❌ Erro ao salvar produto:", error);
@@ -347,7 +436,7 @@ export const useProductFormLogic = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [onSubmit, validateFormData]);
+  }, [onSubmit, validateFormData, validateAndConvertToSelectedUnit]);
 
   return {
     form,

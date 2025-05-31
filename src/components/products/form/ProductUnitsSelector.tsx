@@ -49,6 +49,7 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
   console.log("🔍 ProductUnitsSelector state:", {
     allUnits: allUnits.length,
     selectedUnits: selectedUnits.length,
+    selectedUnitIds: selectedUnits.map(u => u.unitId),
     isLoading,
     selectedUnitId
   });
@@ -58,7 +59,7 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
     unit => !selectedUnits.some(su => su.unitId === unit.id)
   );
 
-  console.log("📋 Available units:", availableUnits);
+  console.log("📋 Available units:", availableUnits.map(u => ({ id: u.id, value: u.value })));
 
   const handleAddUnit = () => {
     if (!selectedUnitId) {
@@ -70,19 +71,34 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
     console.log("➕ Adding unit:", { selectedUnitId, unit });
     
     if (unit) {
-      onAddUnit({
+      // Garantir que estamos passando dados válidos
+      const unitData = {
         id: unit.id,
         value: unit.value,
         label: unit.label,
         packageQuantity: unit.packageQuantity
-      });
-      console.log("✅ Unit added successfully");
+      };
+      
+      console.log("📤 Sending unit data:", unitData);
+      
+      onAddUnit(unitData);
+      console.log("✅ Unit add function called successfully");
     } else {
       console.log("❌ Unit not found:", selectedUnitId);
     }
     
     setAddUnitDialogOpen(false);
     setSelectedUnitId('');
+  };
+
+  const handleRemoveUnit = (unitId: string) => {
+    console.log("🗑️ Removing unit:", unitId);
+    onRemoveUnit(unitId);
+  };
+
+  const handleSetMainUnit = (unitId: string) => {
+    console.log("👑 Setting main unit:", unitId);
+    onSetMainUnit(unitId);
   };
 
   const calculateUnitPrice = (unit: SelectedUnit): number => {
@@ -165,7 +181,7 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
                       size="sm"
                       variant="outline"
                       type="button"
-                      onClick={() => onSetMainUnit(unit.unitId)}
+                      onClick={() => handleSetMainUnit(unit.unitId)}
                       className="h-6 px-2 text-xs"
                     >
                       Definir como principal
@@ -175,13 +191,25 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
                     size="sm"
                     variant="outline"
                     type="button"
-                    onClick={() => onRemoveUnit(unit.unitId)}
+                    onClick={() => handleRemoveUnit(unit.unitId)}
                     className="h-6 w-6 p-0"
                     disabled={selectedUnits.length === 1}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Debug info in development */}
+        {process.env.NODE_ENV === 'development' && selectedUnits.length > 0 && (
+          <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+            <strong>Debug Units:</strong>
+            {selectedUnits.map(unit => (
+              <div key={unit.unitId} className="text-xs">
+                {unit.unitValue} (ID: {unit.unitId.substring(0, 8)}...) - Main: {unit.isMainUnit ? 'Sim' : 'Não'}
               </div>
             ))}
           </div>
@@ -216,6 +244,13 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
               <p className="text-sm text-muted-foreground">
                 Todas as unidades disponíveis já foram adicionadas.
               </p>
+            )}
+
+            {/* Debug info in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="p-2 bg-gray-100 rounded text-xs">
+                <strong>Debug:</strong> Selected: {selectedUnitId || 'Nenhuma'} | Available: {availableUnits.length}
+              </div>
             )}
           </div>
           
