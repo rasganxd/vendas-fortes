@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Smartphone, Download, RefreshCw } from 'lucide-react';
+import { Smartphone, Download, RefreshCw, Bug } from 'lucide-react';
 import { useMobileOrderImport } from '@/hooks/useMobileOrderImport';
 import SalesRepImportSelector from './SalesRepImportSelector';
+import { toast } from 'sonner';
 
 interface MobileOrderImportButtonProps {
   onImportComplete?: () => void;
@@ -20,23 +21,39 @@ export default function MobileOrderImportButton({
     importOrphanedOrders,
     isImporting,
     pendingOrdersCount,
-    checkPendingOrders
+    checkPendingOrders,
+    debugInfo
   } = useMobileOrderImport();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Check for pending orders on mount
-    checkPendingOrders();
+    console.log('🚀 [DEBUG] MobileOrderImportButton mounted, checking orders...');
+    // Check for pending orders on mount with force refresh
+    checkPendingOrders(true);
 
     // Set up interval to check periodically
-    const interval = setInterval(checkPendingOrders, 30000); // Check every 30 seconds
+    const interval = setInterval(() => {
+      console.log('⏰ [DEBUG] Periodic check triggered');
+      checkPendingOrders();
+    }, 30000); // Check every 30 seconds
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log('🛑 [DEBUG] MobileOrderImportButton unmounted, clearing interval');
+      clearInterval(interval);
+    };
   }, [checkPendingOrders]);
 
+  // Force refresh when dialog opens
+  useEffect(() => {
+    if (isDialogOpen) {
+      console.log('🔄 [DEBUG] Dialog opened, forcing data refresh...');
+      checkPendingOrders(true);
+    }
+  }, [isDialogOpen, checkPendingOrders]);
+
   const handleImportAll = async () => {
-    console.log('🚀 Starting import of ALL pending orders...');
+    console.log('🚀 [DEBUG] Starting import of ALL pending orders...');
     const result = await importMobileOrders();
     if (result.success && onImportComplete) {
       onImportComplete();
@@ -49,7 +66,7 @@ export default function MobileOrderImportButton({
   };
 
   const handleImportSalesRep = async (salesRepId: string, salesRepName: string) => {
-    console.log(`🎯 Starting import for specific sales rep: ${salesRepName}`);
+    console.log(`🎯 [DEBUG] Starting import for specific sales rep: ${salesRepName}`);
     const result = await importSalesRepOrders(salesRepId, salesRepName);
     if (result.success && onImportComplete) {
       onImportComplete();
@@ -62,7 +79,7 @@ export default function MobileOrderImportButton({
   };
 
   const handleImportOrphaned = async () => {
-    console.log('🔄 Starting import of orphaned orders...');
+    console.log('🔄 [DEBUG] Starting import of orphaned orders...');
     const result = await importOrphanedOrders();
     if (result.success && onImportComplete) {
       onImportComplete();
@@ -72,6 +89,12 @@ export default function MobileOrderImportButton({
     if (result.success) {
       setIsDialogOpen(false);
     }
+  };
+
+  const showDebugInfo = () => {
+    toast.info('Debug Info', {
+      description: `Última verificação: ${debugInfo.lastCheck}\nPedidos encontrados: ${debugInfo.ordersFound}\nCom vendedor: ${debugInfo.withSalesRep}\nÓrfãos: ${debugInfo.orphaned}${debugInfo.error ? `\nErro: ${debugInfo.error}` : ''}`
+    });
   };
 
   // Show button even if count is 0 for debugging purposes, but indicate no orders
@@ -98,6 +121,19 @@ export default function MobileOrderImportButton({
             </Badge>
           )}
           {isImporting && <RefreshCw size={16} className="ml-2 animate-spin" />}
+          
+          {/* Debug button */}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="ml-2 p-1 h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              showDebugInfo();
+            }}
+          >
+            <Bug size={12} />
+          </Button>
         </Button>
       </DialogTrigger>
       
@@ -109,6 +145,12 @@ export default function MobileOrderImportButton({
             {pendingOrdersCount > 0 && (
               <Badge variant="secondary">{pendingOrdersCount} pendentes</Badge>
             )}
+            
+            {/* Debug info */}
+            <div className="text-xs text-gray-500 ml-auto">
+              Debug: {debugInfo.ordersFound} encontrados ({debugInfo.withSalesRep}+{debugInfo.orphaned})
+              {debugInfo.error && <span className="text-red-500 ml-2">⚠️ {debugInfo.error}</span>}
+            </div>
           </DialogTitle>
         </DialogHeader>
         

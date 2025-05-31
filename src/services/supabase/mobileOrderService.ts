@@ -45,10 +45,10 @@ export interface SalesRepSyncStatus {
 }
 
 class MobileOrderService {
-  // Buscar pedidos mobile não importados (incluindo órfãos)
+  // Buscar pedidos mobile não importados (incluindo órfãos) com debug
   async getPendingOrders(salesRepId?: string): Promise<MobileOrder[]> {
     try {
-      console.log('🔍 Fetching pending mobile orders...', salesRepId ? `for sales rep: ${salesRepId}` : 'for all');
+      console.log('🔍 [DEBUG - Service] Fetching pending mobile orders...', salesRepId ? `for sales rep: ${salesRepId}` : 'for all');
       
       let query = supabase
         .from('orders_mobile')
@@ -66,24 +66,29 @@ class MobileOrderService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('❌ Error fetching pending orders:', error);
+        console.error('❌ [DEBUG - Service] Error fetching pending orders:', error);
         throw error;
       }
 
-      console.log(`📋 Found ${data?.length || 0} pending orders`);
+      console.log(`📋 [DEBUG - Service] Found ${data?.length || 0} pending orders:`, data?.map(o => ({
+        id: o.id,
+        customer: o.customer_name,
+        salesRep: o.sales_rep_name || 'Órfão',
+        total: o.total
+      })));
       
       return (data || []).map(order => ({
         ...order,
         items: order.order_items_mobile || []
       }));
     } catch (error) {
-      console.error('❌ Error in getPendingOrders:', error);
+      console.error('❌ [DEBUG - Service] Error in getPendingOrders:', error);
       throw error;
     }
   }
 
   // Buscar pedidos mobile importados
-  async getImportedOrders(salesRepId?: string): Promise<MobileOrder[]> {
+  async getImportedOrders(salesRepId?: string): Promise<MobileOrder[]> => {
     try {
       let query = supabase
         .from('orders_mobile')
@@ -115,9 +120,11 @@ class MobileOrderService {
     }
   }
 
-  // Status de sincronização por vendedor
-  async getSalesRepSyncStatus(): Promise<SalesRepSyncStatus[]> {
+  // Status de sincronização por vendedor com melhor debug
+  async getSalesRepSyncStatus(): Promise<SalesRepSyncStatus[]> => {
     try {
+      console.log('🔍 [DEBUG - Service] Getting sales rep sync status...');
+      
       // Buscar última sincronização por vendedor
       const { data: syncData, error: syncError } = await supabase
         .from('sync_logs')
@@ -141,6 +148,8 @@ class MobileOrderService {
         console.error('❌ Error fetching pending data:', pendingError);
         throw pendingError;
       }
+
+      console.log(`📊 [DEBUG - Service] Sync data: ${syncData?.length || 0} records, Pending data: ${pendingData?.length || 0} records`);
 
       // Agrupar dados por vendedor
       const salesRepMap = new Map<string, SalesRepSyncStatus>();
@@ -177,17 +186,20 @@ class MobileOrderService {
         }
       });
 
-      return Array.from(salesRepMap.values());
+      const result = Array.from(salesRepMap.values());
+      console.log(`✅ [DEBUG - Service] Returning ${result.length} sales rep statuses:`, result);
+
+      return result;
     } catch (error) {
       console.error('❌ Error in getSalesRepSyncStatus:', error);
       throw error;
     }
   }
 
-  // Importar pedidos usando a função do banco (melhorada para tratar órfãos)
+  // Importar pedidos usando a função do banco (melhorada para tratar órfãos) com debug
   async importOrders(salesRepId?: string, importedBy: string = 'desktop'): Promise<ImportResult> {
     try {
-      console.log('🚀 Starting manual import of mobile orders', { salesRepId, importedBy });
+      console.log('🚀 [DEBUG - Service] Starting manual import of mobile orders', { salesRepId, importedBy });
 
       // Se salesRepId é null, incluir pedidos órfãos
       const { data, error } = await supabase.rpc('import_mobile_orders', {
@@ -196,13 +208,13 @@ class MobileOrderService {
       });
 
       if (error) {
-        console.error('❌ Error importing orders:', error);
+        console.error('❌ [DEBUG - Service] Error importing orders:', error);
         throw error;
       }
 
       const result = data[0] || { imported_count: 0, failed_count: 0, error_messages: [] };
       
-      console.log('✅ Import completed:', result);
+      console.log('✅ [DEBUG - Service] Import completed:', result);
       
       // Disparar evento para atualizar listas
       window.dispatchEvent(new CustomEvent('ordersUpdated'));
@@ -210,13 +222,13 @@ class MobileOrderService {
 
       return result;
     } catch (error) {
-      console.error('❌ Error in importOrders:', error);
+      console.error('❌ [DEBUG - Service] Error in importOrders:', error);
       throw error;
     }
   }
 
   // Reimportar um pedido específico
-  async reimportOrder(mobileOrderId: string): Promise<void> {
+  async reimportOrder(mobileOrderId: string): Promise<void> => {
     try {
       console.log('🔄 Reimporting order:', mobileOrderId);
 
@@ -244,22 +256,25 @@ class MobileOrderService {
     }
   }
 
-  // Obter contagem total de pedidos pendentes (incluindo órfãos)
+  // Obter contagem total de pedidos pendentes (incluindo órfãos) com debug
   async getPendingOrdersCount(): Promise<number> {
     try {
+      console.log('🔍 [DEBUG - Service] Getting pending orders count...');
+      
       const { count, error } = await supabase
         .from('orders_mobile')
         .select('*', { count: 'exact', head: true })
         .eq('imported', false);
 
       if (error) {
-        console.error('❌ Error getting pending orders count:', error);
+        console.error('❌ [DEBUG - Service] Error getting pending orders count:', error);
         throw error;
       }
 
+      console.log(`📊 [DEBUG - Service] Found ${count || 0} pending orders`);
       return count || 0;
     } catch (error) {
-      console.error('❌ Error in getPendingOrdersCount:', error);
+      console.error('❌ [DEBUG - Service] Error in getPendingOrdersCount:', error);
       return 0;
     }
   }

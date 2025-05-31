@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, User, Download, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Calendar, User, Download, RefreshCw, AlertTriangle, Bug } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -40,11 +40,18 @@ export default function SalesRepImportSelector({
   const [salesRepsWithOrders, setSalesRepsWithOrders] = useState<SalesRepWithOrders[]>([]);
   const [orphanedOrders, setOrphanedOrders] = useState<OrphanedOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({
+    lastLoad: '',
+    totalFound: 0,
+    withSalesRep: 0,
+    orphaned: 0,
+    error: ''
+  });
 
-  const loadSalesRepsWithPendingOrders = async () => {
+  const loadSalesRepsWithPendingOrders = async (forceRefresh = false) => {
     try {
       setIsLoading(true);
-      console.log('🔍 Loading sales reps with pending orders and orphaned orders...');
+      console.log('🔍 [DEBUG] Loading sales reps with pending orders and orphaned orders...', { forceRefresh });
 
       const { supabase } = await import('@/integrations/supabase/client');
       
@@ -62,24 +69,36 @@ export default function SalesRepImportSelector({
         .eq('imported', false);
 
       if (error) {
-        console.error('❌ Error loading pending orders:', error);
+        console.error('❌ [DEBUG] Error loading pending orders:', error);
+        setDebugInfo(prev => ({
+          ...prev,
+          lastLoad: new Date().toISOString(),
+          error: error.message
+        }));
         throw error;
       }
 
       if (!pendingOrders || pendingOrders.length === 0) {
+        console.log('ℹ️ [DEBUG] No pending orders found');
         setSalesRepsWithOrders([]);
         setOrphanedOrders([]);
-        console.log('ℹ️ No pending orders found');
+        setDebugInfo({
+          lastLoad: new Date().toISOString(),
+          totalFound: 0,
+          withSalesRep: 0,
+          orphaned: 0,
+          error: ''
+        });
         return;
       }
 
-      console.log(`📋 Found ${pendingOrders.length} total pending orders`);
+      console.log(`📋 [DEBUG] Found ${pendingOrders.length} total pending orders:`, pendingOrders);
 
       // Separar pedidos com vendedor vs órfãos
       const ordersWithSalesRep = pendingOrders.filter(order => order.sales_rep_id && order.sales_rep_name);
       const orphanedOrdersList = pendingOrders.filter(order => !order.sales_rep_id);
 
-      console.log(`📊 Breakdown: ${ordersWithSalesRep.length} with sales rep, ${orphanedOrdersList.length} orphaned`);
+      console.log(`📊 [DEBUG] Breakdown: ${ordersWithSalesRep.length} with sales rep, ${orphanedOrdersList.length} orphaned`);
 
       // Processar pedidos órfãos
       const orphans: OrphanedOrder[] = orphanedOrdersList.map(order => ({
@@ -90,6 +109,7 @@ export default function SalesRepImportSelector({
       }));
 
       setOrphanedOrders(orphans);
+      console.log(`⚠️ [DEBUG] Set ${orphans.length} orphaned orders:`, orphans);
 
       // Agrupar por vendedor (apenas pedidos com vendedor)
       const salesRepMap = new Map<string, SalesRepWithOrders>();
@@ -123,14 +143,29 @@ export default function SalesRepImportSelector({
         .sort((a, b) => (b.lastSync?.getTime() || 0) - (a.lastSync?.getTime() || 0));
 
       setSalesRepsWithOrders(salesRepsArray);
+      console.log(`✅ [DEBUG] Set ${salesRepsArray.length} sales reps with pending orders:`, salesRepsArray);
       
-      console.log(`✅ Found ${salesRepsArray.length} sales reps with pending orders`);
-      if (orphans.length > 0) {
-        console.log(`⚠️ Found ${orphans.length} orphaned orders`);
-      }
+      // Update debug info
+      setDebugInfo({
+        lastLoad: new Date().toISOString(),
+        totalFound: pendingOrders.length,
+        withSalesRep: ordersWithSalesRep.length,
+        orphaned: orphanedOrdersList.length,
+        error: ''
+      });
+
+      // Toast de debug
+      toast.success(`Debug: Dados carregados`, {
+        description: `${salesRepsArray.length} vendedores, ${orphans.length} órfãos, ${pendingOrders.length} total`
+      });
 
     } catch (error) {
-      console.error('❌ Error loading sales reps with pending orders:', error);
+      console.error('❌ [DEBUG] Error loading sales reps with pending orders:', error);
+      setDebugInfo(prev => ({
+        ...prev,
+        lastLoad: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      }));
       toast.error('Erro ao carregar vendedores', {
         description: 'Não foi possível carregar a lista de vendedores com pedidos pendentes'
       });
@@ -140,7 +175,8 @@ export default function SalesRepImportSelector({
   };
 
   useEffect(() => {
-    loadSalesRepsWithPendingOrders();
+    console.log('🚀 [DEBUG] SalesRepImportSelector mounted, loading data...');
+    loadSalesRepsWithPendingOrders(true);
   }, []);
 
   const formatCurrency = (value: number) => {
@@ -159,6 +195,12 @@ export default function SalesRepImportSelector({
       .slice(0, 2);
   };
 
+  const showDebugInfo = () => {
+    toast.info('Debug Info - Selector', {
+      description: `Última carga: ${debugInfo.lastLoad}\nTotal: ${debugInfo.totalFound}\nCom vendedor: ${debugInfo.withSalesRep}\nÓrfãos: ${debugInfo.orphaned}${debugInfo.error ? `\nErro: ${debugInfo.error}` : ''}`
+    });
+  };
+
   const totalPendingOrders = salesRepsWithOrders.reduce((sum, rep) => sum + rep.pendingOrdersCount, 0) + orphanedOrders.length;
   const totalPendingValue = salesRepsWithOrders.reduce((sum, rep) => sum + rep.totalValue, 0) + orphanedOrders.reduce((sum, order) => sum + order.total, 0);
 
@@ -169,6 +211,14 @@ export default function SalesRepImportSelector({
           <div className="flex items-center justify-center">
             <RefreshCw className="animate-spin mr-2" size={20} />
             Carregando vendedores...
+            <Button
+              size="sm"
+              variant="ghost"
+              className="ml-2 p-1 h-6 w-6"
+              onClick={showDebugInfo}
+            >
+              <Bug size={12} />
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -183,6 +233,24 @@ export default function SalesRepImportSelector({
             <User size={48} className="mx-auto mb-4 opacity-50" />
             <p>Nenhum pedido pendente encontrado</p>
             <p className="text-sm">Todos os pedidos mobile foram importados</p>
+            
+            {/* Debug info para caso vazio */}
+            <div className="mt-4 p-3 bg-gray-50 rounded text-xs">
+              <div className="flex items-center justify-between">
+                <span>Debug: {debugInfo.totalFound} pedidos no banco</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="p-1 h-6 w-6"
+                  onClick={showDebugInfo}
+                >
+                  <Bug size={12} />
+                </Button>
+              </div>
+              {debugInfo.error && (
+                <div className="text-red-500 mt-1">Erro: {debugInfo.error}</div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -197,15 +265,25 @@ export default function SalesRepImportSelector({
             <User size={20} />
             Pedidos Mobile Pendentes
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadSalesRepsWithPendingOrders}
-            disabled={isLoading}
-          >
-            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-            Atualizar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadSalesRepsWithPendingOrders(true)}
+              disabled={isLoading}
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Atualizar
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="p-1 h-6 w-6"
+              onClick={showDebugInfo}
+            >
+              <Bug size={12} />
+            </Button>
+          </div>
         </CardTitle>
         
         {/* Resumo geral */}
@@ -216,6 +294,11 @@ export default function SalesRepImportSelector({
           {orphanedOrders.length > 0 && (
             <span className="text-amber-600 font-medium">{orphanedOrders.length} órfãos</span>
           )}
+        </div>
+        
+        {/* Debug info resumido */}
+        <div className="text-xs text-gray-400">
+          Debug: {debugInfo.totalFound} no banco | Última carga: {debugInfo.lastLoad ? new Date(debugInfo.lastLoad).toLocaleTimeString() : 'nunca'}
         </div>
       </CardHeader>
 
