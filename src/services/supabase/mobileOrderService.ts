@@ -88,8 +88,10 @@ class MobileOrderService {
   }
 
   // Buscar pedidos mobile importados
-  async getImportedOrders(salesRepId?: string): Promise<MobileOrder[]> => {
+  async getImportedOrders(salesRepId?: string): Promise<MobileOrder[]> {
     try {
+      console.log('🔍 [DEBUG - Service] Fetching imported mobile orders...', salesRepId ? `for sales rep: ${salesRepId}` : 'for all');
+      
       let query = supabase
         .from('orders_mobile')
         .select(`
@@ -106,22 +108,24 @@ class MobileOrderService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('❌ Error fetching imported orders:', error);
+        console.error('❌ [DEBUG - Service] Error fetching imported orders:', error);
         throw error;
       }
+
+      console.log(`📋 [DEBUG - Service] Found ${data?.length || 0} imported orders`);
 
       return (data || []).map(order => ({
         ...order,
         items: order.order_items_mobile || []
       }));
     } catch (error) {
-      console.error('❌ Error in getImportedOrders:', error);
+      console.error('❌ [DEBUG - Service] Error in getImportedOrders:', error);
       throw error;
     }
   }
 
   // Status de sincronização por vendedor com melhor debug
-  async getSalesRepSyncStatus(): Promise<SalesRepSyncStatus[]> => {
+  async getSalesRepSyncStatus(): Promise<SalesRepSyncStatus[]> {
     try {
       console.log('🔍 [DEBUG - Service] Getting sales rep sync status...');
       
@@ -134,7 +138,7 @@ class MobileOrderService {
         .order('created_at', { ascending: false });
 
       if (syncError) {
-        console.error('❌ Error fetching sync data:', syncError);
+        console.error('❌ [DEBUG - Service] Error fetching sync data:', syncError);
         throw syncError;
       }
 
@@ -145,7 +149,7 @@ class MobileOrderService {
         .eq('imported', false);
 
       if (pendingError) {
-        console.error('❌ Error fetching pending data:', pendingError);
+        console.error('❌ [DEBUG - Service] Error fetching pending data:', pendingError);
         throw pendingError;
       }
 
@@ -191,7 +195,7 @@ class MobileOrderService {
 
       return result;
     } catch (error) {
-      console.error('❌ Error in getSalesRepSyncStatus:', error);
+      console.error('❌ [DEBUG - Service] Error in getSalesRepSyncStatus:', error);
       throw error;
     }
   }
@@ -228,9 +232,9 @@ class MobileOrderService {
   }
 
   // Reimportar um pedido específico
-  async reimportOrder(mobileOrderId: string): Promise<void> => {
+  async reimportOrder(mobileOrderId: string): Promise<void> {
     try {
-      console.log('🔄 Reimporting order:', mobileOrderId);
+      console.log('🔄 [DEBUG - Service] Reimporting order:', mobileOrderId);
 
       // Marcar como não importado temporariamente
       const { error: updateError } = await supabase
@@ -242,16 +246,16 @@ class MobileOrderService {
         .eq('id', mobileOrderId);
 
       if (updateError) {
-        console.error('❌ Error marking order for reimport:', updateError);
+        console.error('❌ [DEBUG - Service] Error marking order for reimport:', updateError);
         throw updateError;
       }
 
       // Importar novamente
       await this.importOrders();
 
-      console.log('✅ Order reimported successfully');
+      console.log('✅ [DEBUG - Service] Order reimported successfully');
     } catch (error) {
-      console.error('❌ Error in reimportOrder:', error);
+      console.error('❌ [DEBUG - Service] Error in reimportOrder:', error);
       throw error;
     }
   }
