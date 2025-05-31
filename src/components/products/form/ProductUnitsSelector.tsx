@@ -159,12 +159,7 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
           </div>}
 
         {/* Debug info in development */}
-        {process.env.NODE_ENV === 'development' && selectedUnits.length > 0 && <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
-            <strong>Debug Units:</strong>
-            {selectedUnits.map(unit => <div key={unit.unitId} className="text-xs">
-                {unit.unitValue} (ID: {unit.unitId.substring(0, 8)}...) - Main: {unit.isMainUnit ? 'Sim' : 'Não'}
-              </div>)}
-          </div>}
+        {process.env.NODE_ENV === 'development' && selectedUnits.length > 0}
       </CardContent>
 
       {/* Dialog para adicionar unidade */}
