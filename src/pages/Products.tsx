@@ -95,28 +95,25 @@ export default function Products() {
     const isEditingProduct = !!editingProduct;
     
     try {
-      console.log("💾 Iniciando salvamento do produto:", data);
+      console.log("💾 Iniciando salvamento do produto (simplificado):", data);
 
       // Validar dados de unidades
-      if (!data.selectedUnits || data.selectedUnits.length === 0) {
-        throw new Error("Produto deve ter pelo menos uma unidade");
-      }
-
-      if (!data.mainUnitId) {
+      if (!data.primaryUnit) {
         throw new Error("Produto deve ter uma unidade principal");
-      }
-
-      const mainUnits = data.selectedUnits.filter((u: any) => u.isMainUnit);
-      if (mainUnits.length !== 1) {
-        throw new Error("Produto deve ter exatamente uma unidade principal");
       }
 
       // CORRIGIDO: Preserve o preço existente ao atualizar produto
       const productData = {
-        ...data,
+        code: data.code,
+        name: data.name,
         description: data.description || "",
+        cost: data.cost,
+        stock: data.stock,
         minStock: data.minStock || 0,
-        // IMPORTANTE: Não resetar o preço ao editar - preservar o preço existente
+        categoryId: data.categoryId,
+        groupId: data.groupId,
+        brandId: data.brandId,
+        // IMPORTANTE: Preservar o preço existente ao editar
         price: isEditingProduct && editingProduct ? editingProduct.price : 0,
         syncStatus: 'synced'
       };
@@ -132,8 +129,8 @@ export default function Products() {
       if (isEditingProduct) {
         console.log("✏️ Atualizando produto existente:", editingProduct.id);
         
-        // Updating existing product - preserve all existing data not being changed
-        const updateData = {
+        // Atualizar produto sem alterar preço
+        await updateProduct(editingProduct.id, {
           code: productData.code,
           name: productData.name,
           description: productData.description,
@@ -144,12 +141,7 @@ export default function Products() {
           groupId: productData.groupId,
           brandId: productData.brandId,
           syncStatus: productData.syncStatus
-          // IMPORTANTE: Não incluir 'price' aqui para não sobrescrever
-        };
-        
-        console.log("📝 Dados de atualização (sem alterar preço):", updateData);
-        
-        await updateProduct(editingProduct.id, updateData);
+        });
         productId = editingProduct.id;
         
         toast("Produto atualizado", {
@@ -157,8 +149,6 @@ export default function Products() {
         });
       } else {
         console.log("🆕 Criando novo produto");
-        
-        // Creating new product
         productId = await addProduct(productData);
         
         toast("Produto criado", {
@@ -166,43 +156,38 @@ export default function Products() {
         });
       }
 
-      // Sincronizar unidades usando operações individuais
-      console.log("🔄 Sincronizando unidades do produto...");
+      // Sincronizar unidades usando o novo sistema
+      console.log("🔄 Sincronizando unidades do produto (sistema simplificado)...");
       
-      // Primeiro, buscar unidades existentes
+      // Buscar unidades existentes
       const existingUnits = isEditingProduct 
         ? await productUnitsMappingService.getProductUnits(productId)
         : [];
       
       console.log("📋 Unidades existentes:", existingUnits);
-      console.log("📋 Unidades selecionadas:", data.selectedUnits);
       
-      // Remover unidades que não estão mais selecionadas
+      // Remover todas as unidades existentes para limpar
       for (const existingUnit of existingUnits) {
-        const stillSelected = data.selectedUnits.find((u: any) => u.unitId === existingUnit.id);
-        if (!stillSelected) {
-          console.log("🗑️ Removendo unidade não selecionada:", existingUnit.value);
-          await productUnitsMappingService.removeUnitFromProduct(productId, existingUnit.id);
-        }
+        console.log("🗑️ Removendo unidade existente:", existingUnit.value);
+        await productUnitsMappingService.removeUnitFromProduct(productId, existingUnit.id);
       }
       
-      // Adicionar novas unidades e atualizar status de principal
-      for (const selectedUnit of data.selectedUnits) {
-        const alreadyExists = existingUnits.find(u => u.id === selectedUnit.unitId);
-        if (!alreadyExists) {
-          console.log("➕ Adicionando nova unidade:", selectedUnit.unitValue);
-          await productUnitsMappingService.addUnitToProduct(
-            productId, 
-            selectedUnit.unitId, 
-            selectedUnit.isMainUnit
-          );
-        } else if (selectedUnit.isMainUnit !== alreadyExists.isMainUnit) {
-          // Atualizar se mudou o status de unidade principal
-          if (selectedUnit.isMainUnit) {
-            console.log("👑 Atualizando unidade principal:", selectedUnit.unitValue);
-            await productUnitsMappingService.setMainUnit(productId, selectedUnit.unitId);
-          }
-        }
+      // Adicionar unidade principal
+      console.log("👑 Adicionando unidade principal:", data.primaryUnit.value);
+      await productUnitsMappingService.addUnitToProduct(
+        productId, 
+        data.primaryUnit.id, 
+        true // é unidade principal
+      );
+      
+      // Adicionar unidades secundárias
+      for (const secondaryUnit of data.secondaryUnits || []) {
+        console.log("➕ Adicionando unidade secundária:", secondaryUnit.value);
+        await productUnitsMappingService.addUnitToProduct(
+          productId, 
+          secondaryUnit.id, 
+          false // não é unidade principal
+        );
       }
       
       console.log("✅ Produto e unidades salvos com sucesso");

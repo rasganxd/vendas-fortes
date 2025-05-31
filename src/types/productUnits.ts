@@ -24,3 +24,9 @@ export interface UnitConversionFactor {
   toUnitId: string;
   factor: number;
 }
+
+// Nova estrutura simplificada para o formulário
+export interface ProductUnitsFormData {
+  primaryUnit: ProductUnit | null;
+  secondaryUnits: ProductUnit[];
+}
