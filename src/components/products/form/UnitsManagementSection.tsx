@@ -4,9 +4,10 @@ import { UseFormReturn } from 'react-hook-form';
 import { ProductUnit } from '@/types/productUnits';
 import { PrimaryUnitSelector } from './PrimaryUnitSelector';
 import { SecondaryUnitsManager } from './SecondaryUnitsManager';
+import { SimplifiedProductFormData } from '../hooks/useSimplifiedProductFormLogic';
 
 interface UnitsManagementSectionProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<SimplifiedProductFormData>;
   availableUnits: ProductUnit[];
   primaryUnit: ProductUnit | null;
   secondaryUnits: ProductUnit[];

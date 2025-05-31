@@ -3,10 +3,10 @@ import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from 'react-hook-form';
-import { ProductFormData } from '../hooks/useProductFormLogic';
+import { SimplifiedProductFormData } from '../hooks/useSimplifiedProductFormLogic';
 
 interface BasicFieldsSectionProps {
-  form: UseFormReturn<ProductFormData>;
+  form: UseFormReturn<SimplifiedProductFormData>;
 }
 
 export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({ form }) => {
@@ -22,29 +22,28 @@ export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({ form }) 
               <Input 
                 type="number" 
                 {...field} 
-                onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                className="w-full" 
+                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
+      
       <FormField
         control={form.control}
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Nome do Produto</FormLabel>
+            <FormLabel>Nome</FormLabel>
             <FormControl>
-              <Input {...field} className="w-full" />
+              <Input {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
+      
       <FormField
         control={form.control}
         name="cost"
@@ -54,29 +53,27 @@ export const BasicFieldsSection: React.FC<BasicFieldsSectionProps> = ({ form }) 
             <FormControl>
               <Input 
                 type="number" 
-                step="0.01" 
+                step="0.01"
                 {...field} 
-                onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                className="w-full" 
+                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
+      
       <FormField
         control={form.control}
         name="stock"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Estoque Inicial</FormLabel>
+            <FormLabel>Estoque</FormLabel>
             <FormControl>
               <Input 
                 type="number" 
                 {...field} 
-                onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                className="w-full" 
+                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
               />
             </FormControl>
             <FormMessage />

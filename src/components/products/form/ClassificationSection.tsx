@@ -1,26 +1,13 @@
 
 import React from 'react';
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from 'react-hook-form';
-import { ProductFormData } from '../hooks/useProductFormLogic';
+import { ProductBrand, ProductCategory, ProductGroup } from '@/types';
+import { SimplifiedProductFormData } from '../hooks/useSimplifiedProductFormLogic';
 
 interface ClassificationSectionProps {
-  form: UseFormReturn<ProductFormData>;
+  form: UseFormReturn<SimplifiedProductFormData>;
   productCategories: ProductCategory[];
   productGroups: ProductGroup[];
   productBrands: ProductBrand[];
@@ -32,13 +19,8 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
   productGroups,
   productBrands
 }) => {
-  const hasCategories = Array.isArray(productCategories) && productCategories.length > 0;
-  const hasGroups = Array.isArray(productGroups) && productGroups.length > 0;
-  const hasBrands = Array.isArray(productBrands) && productBrands.length > 0;
-  const isLoadingClassifications = productCategories === undefined || productGroups === undefined || productBrands === undefined;
-
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <FormField
         control={form.control}
         name="categoryId"
@@ -46,30 +28,25 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
           <FormItem>
             <FormLabel>Categoria</FormLabel>
             <FormControl>
-              {isLoadingClassifications ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <Select onValueChange={field.onChange} value={field.value || "none"}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhuma</SelectItem>
-                    {hasCategories ? (
-                      productCategories.map(category => (
-                        <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-categories" disabled>Nenhuma categoria cadastrada</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
+              <Select value={field.value || ""} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma categoria</SelectItem>
+                  {productCategories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
+      
       <FormField
         control={form.control}
         name="groupId"
@@ -77,30 +54,25 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
           <FormItem>
             <FormLabel>Grupo</FormLabel>
             <FormControl>
-              {isLoadingClassifications ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <Select onValueChange={field.onChange} value={field.value || "none"}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Grupo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhum</SelectItem>
-                    {hasGroups ? (
-                      productGroups.map(group => (
-                        <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-groups" disabled>Nenhum grupo cadastrado</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
+              <Select value={field.value || ""} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um grupo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum grupo</SelectItem>
+                  {productGroups.map(group => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
+      
       <FormField
         control={form.control}
         name="brandId"
@@ -108,25 +80,19 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
           <FormItem>
             <FormLabel>Marca</FormLabel>
             <FormControl>
-              {isLoadingClassifications ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <Select onValueChange={field.onChange} value={field.value || "none"}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Marca" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhuma</SelectItem>
-                    {hasBrands ? (
-                      productBrands.map(brand => (
-                        <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-brands" disabled>Nenhuma marca cadastrada</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
+              <Select value={field.value || ""} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma marca</SelectItem>
+                  {productBrands.map(brand => (
+                    <SelectItem key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormControl>
             <FormMessage />
           </FormItem>

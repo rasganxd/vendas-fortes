@@ -5,9 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UseFormReturn } from 'react-hook-form';
 import { ProductUnit } from '@/types/productUnits';
 import { Crown } from 'lucide-react';
+import { SimplifiedProductFormData } from '../hooks/useSimplifiedProductFormLogic';
 
 interface PrimaryUnitSelectorProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<SimplifiedProductFormData>;
   availableUnits: ProductUnit[];
   selectedPrimaryUnit: ProductUnit | null;
   onPrimaryUnitChange: (unit: ProductUnit | null) => void;
