@@ -30,3 +30,17 @@ export interface ProductUnitsFormData {
   primaryUnit: ProductUnit | null;
   secondaryUnits: ProductUnit[];
 }
+
+// Compatibilidade com o sistema antigo
+export interface SelectedUnit {
+  unitId: string;
+  unitValue: string;
+  unitLabel: string;
+  packageQuantity: number;
+  isMainUnit: boolean;
+}
+
+export interface ProductFormUnitsData {
+  selectedUnits: SelectedUnit[];
+  mainUnitId: string;
+}

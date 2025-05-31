@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Product } from '@/types';
-import { ProductUnit, ProductUnitsFormData } from '@/types/productUnits';
+import { ProductUnit, ProductUnitsFormData, SelectedUnit, ProductFormUnitsData } from '@/types/productUnits';
 import { useProductUnits } from './useProductUnits';
 import { toast } from "sonner";
 
@@ -17,9 +17,18 @@ const productFormSchema = z.object({
   groupId: z.string().optional(),
   brandId: z.string().optional(),
   primaryUnitId: z.string().min(1, "Unidade principal é obrigatória"),
+  // Compatibilidade com sistema antigo
+  selectedUnits: z.array(z.object({
+    unitId: z.string(),
+    unitValue: z.string(),
+    unitLabel: z.string(),
+    packageQuantity: z.number(),
+    isMainUnit: z.boolean()
+  })).optional().default([]),
+  mainUnitId: z.string().optional().default(""),
 });
 
-export type SimplifiedProductFormData = z.infer<typeof productFormSchema> & ProductUnitsFormData;
+export type SimplifiedProductFormData = z.infer<typeof productFormSchema> & ProductUnitsFormData & ProductFormUnitsData;
 
 interface UseSimplifiedProductFormLogicProps {
   isEditing: boolean;
@@ -67,6 +76,8 @@ export const useSimplifiedProductFormLogic = ({
       groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
       brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
       primaryUnitId: "",
+      selectedUnits: [],
+      mainUnitId: "",
     },
   });
 
@@ -81,10 +92,21 @@ export const useSimplifiedProductFormLogic = ({
 
     let mappedPrimary: ProductUnit | null = null;
     const mappedSecondary: ProductUnit[] = [];
+    const selectedUnitsForCompatibility: SelectedUnit[] = [];
 
     for (const existingUnit of existingUnits) {
       const fullUnit = allUnits.find(u => u.id === existingUnit.id);
       if (fullUnit) {
+        const selectedUnit: SelectedUnit = {
+          unitId: fullUnit.id,
+          unitValue: fullUnit.value,
+          unitLabel: fullUnit.label,
+          packageQuantity: fullUnit.packageQuantity,
+          isMainUnit: existingUnit.isMainUnit
+        };
+        
+        selectedUnitsForCompatibility.push(selectedUnit);
+        
         if (existingUnit.isMainUnit) {
           mappedPrimary = fullUnit;
         } else {
@@ -95,7 +117,8 @@ export const useSimplifiedProductFormLogic = ({
 
     console.log("✅ Unidades mapeadas:", {
       primary: mappedPrimary?.value,
-      secondary: mappedSecondary.map(u => u.value)
+      secondary: mappedSecondary.map(u => u.value),
+      selectedUnits: selectedUnitsForCompatibility.length
     });
 
     setPrimaryUnit(mappedPrimary);
@@ -103,7 +126,10 @@ export const useSimplifiedProductFormLogic = ({
     
     if (mappedPrimary) {
       form.setValue('primaryUnitId', mappedPrimary.id);
+      form.setValue('mainUnitId', mappedPrimary.id);
     }
+    
+    form.setValue('selectedUnits', selectedUnitsForCompatibility);
   }, [isEditing, existingUnits, allUnits, form]);
 
   // Inicialização
@@ -123,6 +149,8 @@ export const useSimplifiedProductFormLogic = ({
         setPrimaryUnit(null);
         setSecondaryUnits([]);
         form.setValue('primaryUnitId', '');
+        form.setValue('mainUnitId', '');
+        form.setValue('selectedUnits', []);
       }
       setIsInitialized(true);
     }
@@ -133,14 +161,41 @@ export const useSimplifiedProductFormLogic = ({
     
     setPrimaryUnit(unit);
     form.setValue('primaryUnitId', unit?.id || '');
+    form.setValue('mainUnitId', unit?.id || '');
     
     // Se a nova unidade principal estava nas secundárias, remover
     if (unit) {
       setSecondaryUnits(prev => prev.filter(u => u.id !== unit.id));
     }
     
+    // Atualizar selectedUnits para compatibilidade
+    const currentSecondary = unit ? secondaryUnits.filter(u => u.id !== unit.id) : secondaryUnits;
+    const updatedSelectedUnits: SelectedUnit[] = [];
+    
+    if (unit) {
+      updatedSelectedUnits.push({
+        unitId: unit.id,
+        unitValue: unit.value,
+        unitLabel: unit.label,
+        packageQuantity: unit.packageQuantity,
+        isMainUnit: true
+      });
+    }
+    
+    currentSecondary.forEach(u => {
+      updatedSelectedUnits.push({
+        unitId: u.id,
+        unitValue: u.value,
+        unitLabel: u.label,
+        packageQuantity: u.packageQuantity,
+        isMainUnit: false
+      });
+    });
+    
+    form.setValue('selectedUnits', updatedSelectedUnits);
+    
     toast.success("Unidade principal definida!");
-  }, [form]);
+  }, [form, secondaryUnits]);
 
   const handleAddSecondaryUnit = useCallback((unit: ProductUnit) => {
     console.log("➕ Adicionando unidade secundária:", unit.value);
@@ -157,16 +212,70 @@ export const useSimplifiedProductFormLogic = ({
       return;
     }
     
-    setSecondaryUnits(prev => [...prev, unit]);
+    const newSecondaryUnits = [...secondaryUnits, unit];
+    setSecondaryUnits(newSecondaryUnits);
+    
+    // Atualizar selectedUnits para compatibilidade
+    const updatedSelectedUnits: SelectedUnit[] = [];
+    
+    if (primaryUnit) {
+      updatedSelectedUnits.push({
+        unitId: primaryUnit.id,
+        unitValue: primaryUnit.value,
+        unitLabel: primaryUnit.label,
+        packageQuantity: primaryUnit.packageQuantity,
+        isMainUnit: true
+      });
+    }
+    
+    newSecondaryUnits.forEach(u => {
+      updatedSelectedUnits.push({
+        unitId: u.id,
+        unitValue: u.value,
+        unitLabel: u.label,
+        packageQuantity: u.packageQuantity,
+        isMainUnit: false
+      });
+    });
+    
+    form.setValue('selectedUnits', updatedSelectedUnits);
+    
     toast.success(`Unidade ${unit.value} adicionada!`);
-  }, [secondaryUnits, primaryUnit]);
+  }, [secondaryUnits, primaryUnit, form]);
 
   const handleRemoveSecondaryUnit = useCallback((unitId: string) => {
     console.log("🗑️ Removendo unidade secundária:", unitId);
     
-    setSecondaryUnits(prev => prev.filter(u => u.id !== unitId));
+    const newSecondaryUnits = secondaryUnits.filter(u => u.id !== unitId);
+    setSecondaryUnits(newSecondaryUnits);
+    
+    // Atualizar selectedUnits para compatibilidade
+    const updatedSelectedUnits: SelectedUnit[] = [];
+    
+    if (primaryUnit) {
+      updatedSelectedUnits.push({
+        unitId: primaryUnit.id,
+        unitValue: primaryUnit.value,
+        unitLabel: primaryUnit.label,
+        packageQuantity: primaryUnit.packageQuantity,
+        isMainUnit: true
+      });
+    }
+    
+    newSecondaryUnits.forEach(u => {
+      updatedSelectedUnits.push({
+        unitId: u.id,
+        unitValue: u.value,
+        unitLabel: u.label,
+        packageQuantity: u.packageQuantity,
+        isMainUnit: false
+      });
+    });
+    
+    form.setValue('selectedUnits', updatedSelectedUnits);
+    
     toast.success("Unidade removida!");
-  }, []);
+  }, [secondaryUnits, primaryUnit, form]);
 
   const handleSubmit = useCallback(async (data: SimplifiedProductFormData) => {
     setIsSubmitting(true);

@@ -115,7 +115,9 @@ export default function Products() {
         brandId: data.brandId,
         // IMPORTANTE: Preservar o preço existente ao editar
         price: isEditingProduct && editingProduct ? editingProduct.price : 0,
-        syncStatus: 'synced'
+        syncStatus: 'synced' as const,
+        createdAt: isEditingProduct && editingProduct ? editingProduct.createdAt : new Date(),
+        updatedAt: new Date()
       };
       
       console.log("💰 Preço sendo preservado:", {
