@@ -45,9 +45,11 @@ export interface SalesRepSyncStatus {
 }
 
 class MobileOrderService {
-  // Buscar pedidos mobile não importados
+  // Buscar pedidos mobile não importados (incluindo órfãos)
   async getPendingOrders(salesRepId?: string): Promise<MobileOrder[]> {
     try {
+      console.log('🔍 Fetching pending mobile orders...', salesRepId ? `for sales rep: ${salesRepId}` : 'for all');
+      
       let query = supabase
         .from('orders_mobile')
         .select(`
@@ -68,6 +70,8 @@ class MobileOrderService {
         throw error;
       }
 
+      console.log(`📋 Found ${data?.length || 0} pending orders`);
+      
       return (data || []).map(order => ({
         ...order,
         items: order.order_items_mobile || []
@@ -127,7 +131,7 @@ class MobileOrderService {
         throw syncError;
       }
 
-      // Buscar contagem de pedidos pendentes por vendedor
+      // Buscar contagem de pedidos pendentes por vendedor (incluindo órfãos)
       const { data: pendingData, error: pendingError } = await supabase
         .from('orders_mobile')
         .select('sales_rep_id, sales_rep_name')
@@ -141,17 +145,20 @@ class MobileOrderService {
       // Agrupar dados por vendedor
       const salesRepMap = new Map<string, SalesRepSyncStatus>();
 
-      // Adicionar dados de pedidos pendentes
+      // Adicionar dados de pedidos pendentes (incluindo órfãos)
       pendingData?.forEach(order => {
-        if (!salesRepMap.has(order.sales_rep_id)) {
-          salesRepMap.set(order.sales_rep_id, {
-            sales_rep_id: order.sales_rep_id,
-            sales_rep_name: order.sales_rep_name,
+        const salesRepId = order.sales_rep_id || 'orphaned';
+        const salesRepName = order.sales_rep_name || 'Pedidos Órfãos';
+
+        if (!salesRepMap.has(salesRepId)) {
+          salesRepMap.set(salesRepId, {
+            sales_rep_id: salesRepId,
+            sales_rep_name: salesRepName,
             last_sync: null,
             pending_orders: 0
           });
         }
-        const status = salesRepMap.get(order.sales_rep_id)!;
+        const status = salesRepMap.get(salesRepId)!;
         status.pending_orders++;
       });
 
@@ -165,7 +172,9 @@ class MobileOrderService {
 
       // Atualizar com dados de sincronização
       salesRepMap.forEach((status, salesRepId) => {
-        status.last_sync = lastSyncMap.get(salesRepId) || null;
+        if (salesRepId !== 'orphaned') {
+          status.last_sync = lastSyncMap.get(salesRepId) || null;
+        }
       });
 
       return Array.from(salesRepMap.values());
@@ -175,11 +184,12 @@ class MobileOrderService {
     }
   }
 
-  // Importar pedidos usando a função do banco
+  // Importar pedidos usando a função do banco (melhorada para tratar órfãos)
   async importOrders(salesRepId?: string, importedBy: string = 'desktop'): Promise<ImportResult> {
     try {
       console.log('🚀 Starting manual import of mobile orders', { salesRepId, importedBy });
 
+      // Se salesRepId é null, incluir pedidos órfãos
       const { data, error } = await supabase.rpc('import_mobile_orders', {
         p_sales_rep_id: salesRepId || null,
         p_imported_by: importedBy
@@ -231,6 +241,26 @@ class MobileOrderService {
     } catch (error) {
       console.error('❌ Error in reimportOrder:', error);
       throw error;
+    }
+  }
+
+  // Obter contagem total de pedidos pendentes (incluindo órfãos)
+  async getPendingOrdersCount(): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('orders_mobile')
+        .select('*', { count: 'exact', head: true })
+        .eq('imported', false);
+
+      if (error) {
+        console.error('❌ Error getting pending orders count:', error);
+        throw error;
+      }
+
+      return count || 0;
+    } catch (error) {
+      console.error('❌ Error in getPendingOrdersCount:', error);
+      return 0;
     }
   }
 }

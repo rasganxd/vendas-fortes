@@ -17,6 +17,7 @@ export default function MobileOrderImportButton({
   const {
     importMobileOrders,
     importSalesRepOrders,
+    importOrphanedOrders,
     isImporting,
     pendingOrdersCount,
     checkPendingOrders
@@ -35,6 +36,7 @@ export default function MobileOrderImportButton({
   }, [checkPendingOrders]);
 
   const handleImportAll = async () => {
+    console.log('🚀 Starting import of ALL pending orders...');
     const result = await importMobileOrders();
     if (result.success && onImportComplete) {
       onImportComplete();
@@ -47,6 +49,7 @@ export default function MobileOrderImportButton({
   };
 
   const handleImportSalesRep = async (salesRepId: string, salesRepName: string) => {
+    console.log(`🎯 Starting import for specific sales rep: ${salesRepName}`);
     const result = await importSalesRepOrders(salesRepId, salesRepName);
     if (result.success && onImportComplete) {
       onImportComplete();
@@ -58,8 +61,24 @@ export default function MobileOrderImportButton({
     }
   };
 
-  if (pendingOrdersCount === 0) {
-    return null; // Don't show button if no pending orders
+  const handleImportOrphaned = async () => {
+    console.log('🔄 Starting import of orphaned orders...');
+    const result = await importOrphanedOrders();
+    if (result.success && onImportComplete) {
+      onImportComplete();
+    }
+
+    // Fechar dialog após importação bem-sucedida
+    if (result.success) {
+      setIsDialogOpen(false);
+    }
+  };
+
+  // Show button even if count is 0 for debugging purposes, but indicate no orders
+  const showButton = true; // Always show for debugging
+
+  if (!showButton) {
+    return null;
   }
 
   return (
@@ -73,6 +92,11 @@ export default function MobileOrderImportButton({
               {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
             </Badge>
           )}
+          {pendingOrdersCount === 0 && !isImporting && (
+            <Badge variant="outline" className="ml-2 text-gray-500">
+              0
+            </Badge>
+          )}
           {isImporting && <RefreshCw size={16} className="ml-2 animate-spin" />}
         </Button>
       </DialogTrigger>
@@ -82,12 +106,16 @@ export default function MobileOrderImportButton({
           <DialogTitle className="flex items-center gap-2">
             <Smartphone size={20} />
             Importar Pedidos Mobile
+            {pendingOrdersCount > 0 && (
+              <Badge variant="secondary">{pendingOrdersCount} pendentes</Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
         
         <SalesRepImportSelector 
           onImportSalesRep={handleImportSalesRep} 
-          onImportAll={handleImportAll} 
+          onImportAll={handleImportAll}
+          onImportOrphaned={handleImportOrphaned}
           isImporting={isImporting} 
         />
       </DialogContent>

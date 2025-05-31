@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, User, Download, RefreshCw } from 'lucide-react';
+import { Calendar, User, Download, RefreshCw, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -17,38 +17,49 @@ interface SalesRepWithOrders {
   totalValue: number;
 }
 
+interface OrphanedOrder {
+  id: string;
+  customer_name: string;
+  total: number;
+  created_at: string;
+}
+
 interface SalesRepImportSelectorProps {
   onImportSalesRep: (salesRepId: string, salesRepName: string) => Promise<void>;
   onImportAll: () => Promise<void>;
+  onImportOrphaned?: () => Promise<void>;
   isImporting: boolean;
 }
 
 export default function SalesRepImportSelector({ 
   onImportSalesRep, 
   onImportAll, 
+  onImportOrphaned,
   isImporting 
 }: SalesRepImportSelectorProps) {
   const [salesRepsWithOrders, setSalesRepsWithOrders] = useState<SalesRepWithOrders[]>([]);
+  const [orphanedOrders, setOrphanedOrders] = useState<OrphanedOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadSalesRepsWithPendingOrders = async () => {
     try {
       setIsLoading(true);
-      console.log('🔍 Loading sales reps with pending orders...');
+      console.log('🔍 Loading sales reps with pending orders and orphaned orders...');
 
       const { supabase } = await import('@/integrations/supabase/client');
       
-      // Buscar pedidos pendentes na tabela orders_mobile
+      // Buscar TODOS os pedidos pendentes na tabela orders_mobile
       const { data: pendingOrders, error } = await supabase
         .from('orders_mobile')
         .select(`
           sales_rep_id,
           sales_rep_name,
           total,
-          created_at
+          created_at,
+          customer_name,
+          id
         `)
-        .eq('imported', false)
-        .not('sales_rep_id', 'is', null);
+        .eq('imported', false);
 
       if (error) {
         console.error('❌ Error loading pending orders:', error);
@@ -57,14 +68,34 @@ export default function SalesRepImportSelector({
 
       if (!pendingOrders || pendingOrders.length === 0) {
         setSalesRepsWithOrders([]);
+        setOrphanedOrders([]);
+        console.log('ℹ️ No pending orders found');
         return;
       }
 
-      // Agrupar por vendedor
+      console.log(`📋 Found ${pendingOrders.length} total pending orders`);
+
+      // Separar pedidos com vendedor vs órfãos
+      const ordersWithSalesRep = pendingOrders.filter(order => order.sales_rep_id && order.sales_rep_name);
+      const orphanedOrdersList = pendingOrders.filter(order => !order.sales_rep_id);
+
+      console.log(`📊 Breakdown: ${ordersWithSalesRep.length} with sales rep, ${orphanedOrdersList.length} orphaned`);
+
+      // Processar pedidos órfãos
+      const orphans: OrphanedOrder[] = orphanedOrdersList.map(order => ({
+        id: order.id,
+        customer_name: order.customer_name || 'Cliente sem nome',
+        total: Number(order.total || 0),
+        created_at: order.created_at
+      }));
+
+      setOrphanedOrders(orphans);
+
+      // Agrupar por vendedor (apenas pedidos com vendedor)
       const salesRepMap = new Map<string, SalesRepWithOrders>();
 
-      pendingOrders.forEach(order => {
-        const salesRepId = order.sales_rep_id;
+      ordersWithSalesRep.forEach(order => {
+        const salesRepId = order.sales_rep_id!;
         const salesRepName = order.sales_rep_name || 'Vendedor sem nome';
 
         if (!salesRepMap.has(salesRepId)) {
@@ -92,7 +123,11 @@ export default function SalesRepImportSelector({
         .sort((a, b) => (b.lastSync?.getTime() || 0) - (a.lastSync?.getTime() || 0));
 
       setSalesRepsWithOrders(salesRepsArray);
+      
       console.log(`✅ Found ${salesRepsArray.length} sales reps with pending orders`);
+      if (orphans.length > 0) {
+        console.log(`⚠️ Found ${orphans.length} orphaned orders`);
+      }
 
     } catch (error) {
       console.error('❌ Error loading sales reps with pending orders:', error);
@@ -124,8 +159,8 @@ export default function SalesRepImportSelector({
       .slice(0, 2);
   };
 
-  const totalPendingOrders = salesRepsWithOrders.reduce((sum, rep) => sum + rep.pendingOrdersCount, 0);
-  const totalPendingValue = salesRepsWithOrders.reduce((sum, rep) => sum + rep.totalValue, 0);
+  const totalPendingOrders = salesRepsWithOrders.reduce((sum, rep) => sum + rep.pendingOrdersCount, 0) + orphanedOrders.length;
+  const totalPendingValue = salesRepsWithOrders.reduce((sum, rep) => sum + rep.totalValue, 0) + orphanedOrders.reduce((sum, order) => sum + order.total, 0);
 
   if (isLoading) {
     return (
@@ -140,13 +175,13 @@ export default function SalesRepImportSelector({
     );
   }
 
-  if (salesRepsWithOrders.length === 0) {
+  if (salesRepsWithOrders.length === 0 && orphanedOrders.length === 0) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="text-center text-gray-500">
             <User size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Nenhum vendedor com pedidos pendentes</p>
+            <p>Nenhum pedido pendente encontrado</p>
             <p className="text-sm">Todos os pedidos mobile foram importados</p>
           </div>
         </CardContent>
@@ -160,7 +195,7 @@ export default function SalesRepImportSelector({
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <User size={20} />
-            Vendedores com Pedidos Pendentes
+            Pedidos Mobile Pendentes
           </div>
           <Button
             variant="outline"
@@ -178,6 +213,9 @@ export default function SalesRepImportSelector({
           <span>{salesRepsWithOrders.length} vendedores</span>
           <span>{totalPendingOrders} pedidos pendentes</span>
           <span>{formatCurrency(totalPendingValue)} em valor total</span>
+          {orphanedOrders.length > 0 && (
+            <span className="text-amber-600 font-medium">{orphanedOrders.length} órfãos</span>
+          )}
         </div>
       </CardHeader>
 
@@ -198,57 +236,111 @@ export default function SalesRepImportSelector({
           </Button>
         </div>
 
+        {/* Seção de pedidos órfãos */}
+        {orphanedOrders.length > 0 && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-amber-800 flex items-center gap-2 text-base">
+                <AlertTriangle size={16} />
+                Pedidos Órfãos (Sem Vendedor)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-amber-700">
+                  <span>{orphanedOrders.length} pedidos sem vendedor associado</span>
+                  <span className="ml-4">{formatCurrency(orphanedOrders.reduce((sum, order) => sum + order.total, 0))}</span>
+                </div>
+                {onImportOrphaned && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onImportOrphaned}
+                    disabled={isImporting}
+                    className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                  >
+                    {isImporting ? (
+                      <RefreshCw size={14} className="animate-spin mr-1" />
+                    ) : (
+                      <Download size={14} className="mr-1" />
+                    )}
+                    Importar Órfãos
+                  </Button>
+                )}
+              </div>
+              
+              {/* Lista de pedidos órfãos */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {orphanedOrders.slice(0, 6).map((order) => (
+                  <div key={order.id} className="bg-white p-2 rounded border border-amber-200">
+                    <div className="font-medium text-amber-800">{order.customer_name}</div>
+                    <div className="text-amber-600">{formatCurrency(order.total)}</div>
+                  </div>
+                ))}
+                {orphanedOrders.length > 6 && (
+                  <div className="text-amber-600 text-center">
+                    +{orphanedOrders.length - 6} mais...
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Lista de vendedores */}
-        <div className="space-y-3">
-          {salesRepsWithOrders.map((salesRep) => (
-            <div
-              key={salesRep.id}
-              className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-gray-50"
-            >
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback className="bg-blue-100 text-blue-600">
-                    {getInitials(salesRep.name)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div>
-                  <div className="font-medium">{salesRep.name}</div>
-                  <div className="text-sm text-gray-500 flex items-center gap-4">
-                    <span className="flex items-center gap-1">
-                      <Calendar size={14} />
-                      {salesRep.lastSync 
-                        ? formatDistanceToNow(salesRep.lastSync, { addSuffix: true, locale: ptBR })
-                        : 'Nunca sincronizado'
-                      }
-                    </span>
-                    <span>{formatCurrency(salesRep.totalValue)}</span>
+        {salesRepsWithOrders.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-gray-700">Vendedores com Pedidos</h4>
+            {salesRepsWithOrders.map((salesRep) => (
+              <div
+                key={salesRep.id}
+                className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarFallback className="bg-blue-100 text-blue-600">
+                      {getInitials(salesRep.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div>
+                    <div className="font-medium">{salesRep.name}</div>
+                    <div className="text-sm text-gray-500 flex items-center gap-4">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={14} />
+                        {salesRep.lastSync 
+                          ? formatDistanceToNow(salesRep.lastSync, { addSuffix: true, locale: ptBR })
+                          : 'Nunca sincronizado'
+                        }
+                      </span>
+                      <span>{formatCurrency(salesRep.totalValue)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">
-                  {salesRep.pendingOrdersCount} pedidos
-                </Badge>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onImportSalesRep(salesRep.id, salesRep.name)}
-                  disabled={isImporting}
-                >
-                  {isImporting ? (
-                    <RefreshCw size={14} className="animate-spin" />
-                  ) : (
-                    <Download size={14} />
-                  )}
-                  Importar
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">
+                    {salesRep.pendingOrdersCount} pedidos
+                  </Badge>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onImportSalesRep(salesRep.id, salesRep.name)}
+                    disabled={isImporting}
+                  >
+                    {isImporting ? (
+                      <RefreshCw size={14} className="animate-spin" />
+                    ) : (
+                      <Download size={14} />
+                    )}
+                    Importar
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
