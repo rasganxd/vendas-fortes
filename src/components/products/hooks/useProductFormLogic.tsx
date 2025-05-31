@@ -53,7 +53,16 @@ export const useProductFormLogic = ({
   existingMainUnit = null
 }: UseProductFormLogicProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { units } = useProductUnits();
+  
+  console.log("🔧 useProductFormLogic - Estado inicial:", {
+    isEditing,
+    selectedProduct: selectedProduct?.name,
+    existingUnitsCount: existingUnits.length,
+    existingMainUnit: existingMainUnit?.value,
+    isInitialized
+  });
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
@@ -77,7 +86,7 @@ export const useProductFormLogic = ({
   
   // Helper function to validate and convert to SelectedUnit
   const validateAndConvertToSelectedUnit = useCallback((units: any[]): SelectedUnit[] => {
-    return units
+    const validUnits = units
       .filter((unit): unit is SelectedUnit => 
         Boolean(unit.unitId) && 
         Boolean(unit.unitValue) && 
@@ -86,40 +95,85 @@ export const useProductFormLogic = ({
         unit.packageQuantity > 0 &&
         typeof unit.isMainUnit === 'boolean'
       );
+    
+    console.log("🔍 Validando unidades:", {
+      input: units.length,
+      valid: validUnits.length,
+      invalid: units.length - validUnits.length
+    });
+    
+    return validUnits;
   }, []);
   
-  // Validar e mapear unidades existentes
+  // Validar e mapear unidades existentes com melhor validação
   const mappedExistingUnits = useMemo(() => {
-    if (!isEditing || !existingUnits?.length) return [];
+    if (!isEditing || !existingUnits?.length) {
+      console.log("📋 Sem unidades para mapear:", { isEditing, existingUnitsLength: existingUnits?.length });
+      return [];
+    }
     
-    return existingUnits
+    console.log("🔄 Mapeando unidades existentes:", existingUnits);
+    
+    const mapped = existingUnits
       .filter((unit): unit is ProductUnitWithMapping & {
         id: string;
         value: string;
         label: string;
         packageQuantity: number;
-      } => 
-        Boolean(unit.id) && 
-        Boolean(unit.value) && 
-        Boolean(unit.label) && 
-        typeof unit.packageQuantity === 'number' && 
-        unit.packageQuantity > 0
-      )
-      .map(unit => ({
-        unitId: unit.id,
-        unitValue: unit.value,
-        unitLabel: unit.label,
-        packageQuantity: unit.packageQuantity,
-        isMainUnit: unit.isMainUnit || false
-      })) as SelectedUnit[];
+      } => {
+        const isValid = Boolean(unit.id) && 
+          Boolean(unit.value) && 
+          Boolean(unit.label) && 
+          typeof unit.packageQuantity === 'number' && 
+          unit.packageQuantity > 0;
+        
+        if (!isValid) {
+          console.warn("⚠️ Unidade inválida encontrada:", unit);
+        }
+        
+        return isValid;
+      })
+      .map(unit => {
+        const mappedUnit = {
+          unitId: unit.id,
+          unitValue: unit.value,
+          unitLabel: unit.label,
+          packageQuantity: unit.packageQuantity,
+          isMainUnit: unit.isMainUnit || false
+        };
+        
+        console.log("✅ Unidade mapeada:", mappedUnit);
+        return mappedUnit;
+      }) as SelectedUnit[];
+
+    console.log("📊 Resultado do mapeamento:", {
+      original: existingUnits.length,
+      mapped: mapped.length,
+      mainUnits: mapped.filter(u => u.isMainUnit).length
+    });
+    
+    return mapped;
   }, [isEditing, existingUnits]);
 
-  // Inicialização consolidada do formulário
+  // Inicialização melhorada com melhor controle de timing
   useEffect(() => {
+    console.log("🚀 Efeito de inicialização disparado:", {
+      isEditing,
+      selectedProduct: selectedProduct?.name,
+      mappedUnitsCount: mappedExistingUnits.length,
+      existingMainUnit: existingMainUnit?.value,
+      isInitialized
+    });
+
     if (isEditing && selectedProduct) {
-      console.log("🔄 Resetando formulário para produto:", selectedProduct.name);
-      
+      // Para edição, aguardar dados completos antes de resetar
       const mainUnitIdToSet = existingMainUnit?.id || "";
+      
+      console.log("📝 Resetando formulário para edição:", {
+        productName: selectedProduct.name,
+        unitsToSet: mappedExistingUnits.length,
+        mainUnitId: mainUnitIdToSet
+      });
       
       form.reset({
         code: selectedProduct.code,
@@ -133,11 +187,16 @@ export const useProductFormLogic = ({
         mainUnitId: mainUnitIdToSet,
       });
       
-      console.log("✅ Unidades carregadas no formulário:", {
-        unitsCount: mappedExistingUnits.length,
+      setIsInitialized(true);
+      
+      console.log("✅ Formulário resetado com unidades:", {
+        selectedUnits: mappedExistingUnits,
         mainUnitId: mainUnitIdToSet
       });
     } else if (!isEditing) {
+      // Para novo produto, reset simples
+      console.log("🆕 Resetando formulário para novo produto");
+      
       form.reset({
         code: Math.max(...products.map(p => p.code || 0), 0) + 1,
         name: "",
@@ -149,11 +208,13 @@ export const useProductFormLogic = ({
         selectedUnits: [],
         mainUnitId: "",
       });
+      
+      setIsInitialized(true);
     }
   }, [selectedProduct, isEditing, form, products, mappedExistingUnits, existingMainUnit]);
 
   const addUnit = useCallback((unit: { id: string; value: string; label: string; packageQuantity: number }) => {
-    console.log("🔄 Adicionando unidade:", unit);
+    console.log("➕ Adicionando unidade:", unit);
     
     const currentUnits = form.getValues('selectedUnits') || [];
     const validCurrentUnits = validateAndConvertToSelectedUnit(currentUnits);
@@ -171,7 +232,7 @@ export const useProductFormLogic = ({
     
     if (validCurrentUnits.length === 0) {
       form.setValue('mainUnitId', unit.id, { shouldValidate: true });
-      console.log("👑 Definida como unidade principal:", unit.id);
+      console.log("👑 Primeira unidade definida como principal:", unit.id);
     }
     
     console.log("✅ Unidade adicionada:", {
@@ -209,6 +270,7 @@ export const useProductFormLogic = ({
     }
     
     console.log("✅ Unidade removida");
+    toast("Unidade removida com sucesso!");
   }, [form, validateAndConvertToSelectedUnit]);
 
   const setAsMainUnit = useCallback((unitId: string) => {
@@ -226,10 +288,13 @@ export const useProductFormLogic = ({
     form.setValue('mainUnitId', unitId, { shouldValidate: true });
     
     console.log("✅ Unidade principal definida");
+    toast("Unidade principal definida com sucesso!");
   }, [form, validateAndConvertToSelectedUnit]);
 
   // Validação centralizada
   const validateFormData = useCallback((data: ProductFormData) => {
+    console.log("🔍 Validando dados do formulário:", data);
+    
     if (!data.selectedUnits || data.selectedUnits.length === 0) {
       throw new Error("Produto deve ter pelo menos uma unidade");
     }
@@ -248,8 +313,11 @@ export const useProductFormLogic = ({
     );
     
     if (invalidUnits.length > 0) {
+      console.error("❌ Unidades inválidas encontradas:", invalidUnits);
       throw new Error("Todas as unidades devem ter informações válidas");
     }
+    
+    console.log("✅ Dados do formulário válidos");
   }, []);
 
   const handleSubmit = useCallback(async (data: ProductFormData) => {
@@ -287,6 +355,7 @@ export const useProductFormLogic = ({
     isSubmitting,
     selectedUnits,
     mainUnitId,
+    isInitialized,
     addUnit,
     removeUnit,
     setAsMainUnit,

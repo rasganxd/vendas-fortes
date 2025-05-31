@@ -34,12 +34,21 @@ export default function ProductForm({
   productGroups,
   productBrands
 }: ProductFormProps) {
-  // Load existing units when editing
+  // Load existing units when editing with better debugging
   const {
     productUnits: existingUnits,
     mainUnit: existingMainUnit,
     isLoading: loadingUnits
   } = useProductUnitsMapping(isEditing ? selectedProduct?.id : undefined);
+
+  console.log("🎭 ProductForm - Estado:", {
+    open,
+    isEditing,
+    selectedProduct: selectedProduct?.name,
+    existingUnitsCount: existingUnits.length,
+    existingMainUnit: existingMainUnit?.value,
+    loadingUnits
+  });
 
   const {
     form,
@@ -47,6 +56,7 @@ export default function ProductForm({
     isSubmitting,
     selectedUnits,
     mainUnitId,
+    isInitialized,
     addUnit,
     removeUnit,
     setAsMainUnit,
@@ -58,6 +68,16 @@ export default function ProductForm({
     onSubmit,
     existingUnits,
     existingMainUnit
+  });
+
+  // Only show form when properly initialized
+  const showUnitsSection = !isEditing || (isEditing && isInitialized && !loadingUnits);
+
+  console.log("👁️ ProductForm - Renderização:", {
+    showUnitsSection,
+    isInitialized,
+    loadingUnits,
+    selectedUnitsCount: selectedUnits.length
   });
 
   return (
@@ -92,11 +112,16 @@ export default function ProductForm({
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Unidades de Medida</h3>
               {loadingUnits && isEditing ? (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  <span className="text-sm text-gray-500">Carregando unidades...</span>
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  <span className="text-sm text-gray-500">Carregando unidades do produto...</span>
                 </div>
-              ) : (
+              ) : !isInitialized && isEditing ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  <span className="text-sm text-gray-500">Inicializando formulário...</span>
+                </div>
+              ) : showUnitsSection ? (
                 <ProductUnitsSection 
                   form={form}
                   selectedUnits={selectedUnits}
@@ -106,6 +131,22 @@ export default function ProductForm({
                   onSetMainUnit={setAsMainUnit}
                   productPrice={selectedProduct?.price || 0}
                 />
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <span className="text-sm text-gray-500">Preparando seção de unidades...</span>
+                </div>
+              )}
+              
+              {/* Debug info in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+                  <strong>Debug:</strong> 
+                  Editing: {isEditing ? 'Sim' : 'Não'} | 
+                  Loading: {loadingUnits ? 'Sim' : 'Não'} | 
+                  Initialized: {isInitialized ? 'Sim' : 'Não'} | 
+                  Units: {selectedUnits.length} | 
+                  Main: {mainUnitId || 'Nenhuma'}
+                </div>
               )}
             </div>
 
@@ -122,7 +163,7 @@ export default function ProductForm({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isSubmitting || (loadingUnits && isEditing)}
+                disabled={isSubmitting || (loadingUnits && isEditing) || (!isInitialized && isEditing)}
                 className="bg-blue-600 hover:bg-blue-700 px-6"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
