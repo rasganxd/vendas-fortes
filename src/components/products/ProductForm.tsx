@@ -44,6 +44,7 @@ export default function ProductForm({
     isConversionValid,
     selectedUnits,
     mainUnitId,
+    isLoadingUnits,
     addUnit,
     removeUnit,
     setAsMainUnit,
@@ -94,6 +95,7 @@ export default function ProductForm({
                 onRemoveUnit={removeUnit}
                 onSetMainUnit={setAsMainUnit}
                 productPrice={selectedProduct?.price || 0}
+                isLoadingUnits={isLoadingUnits}
               />
             </div>
 
@@ -110,7 +112,7 @@ export default function ProductForm({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLoadingUnits}
                 className="bg-blue-600 hover:bg-blue-700 px-6"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

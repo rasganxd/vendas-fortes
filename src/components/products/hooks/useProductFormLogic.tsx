@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Product } from '@/types';
 import { useProductUnits } from './useProductUnits';
+import { useProductUnitsMapping } from '@/hooks/useProductUnitsMapping';
 import { toast } from "sonner";
 import { ProductFormUnitsData, SelectedUnit } from '@/types/productFormUnits';
 
@@ -54,7 +55,16 @@ export const useProductFormLogic = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUnits, setSelectedUnits] = useState<SelectedUnit[]>([]);
   const [mainUnitId, setMainUnitId] = useState<string | null>(null);
+  const [isLoadingUnits, setIsLoadingUnits] = useState(false);
   const { units } = useProductUnits();
+  
+  // Hook para carregar unidades do produto em edição
+  const { 
+    productUnits, 
+    mainUnit, 
+    isLoading: isLoadingProductUnits,
+    refreshProductUnits 
+  } = useProductUnitsMapping(selectedProduct?.id);
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
@@ -99,9 +109,51 @@ export const useProductFormLogic = ({
   
   const subunitRatio = calculateSubunitRatio();
   const isConversionValid = subunitRatio !== null && subunitRatio > 0;
+
+  // Carregar unidades do produto quando em modo de edição
+  useEffect(() => {
+    if (isEditing && selectedProduct && productUnits.length > 0) {
+      console.log('🔄 Carregando unidades do produto para edição:', selectedProduct.name);
+      console.log('📦 Unidades encontradas:', productUnits);
+      
+      setIsLoadingUnits(true);
+      
+      // Mapear unidades do produto para o formato do formulário
+      const mappedUnits: SelectedUnit[] = productUnits.map(unit => ({
+        unitId: unit.id,
+        unitValue: unit.value,
+        unitLabel: unit.label,
+        packageQuantity: unit.packageQuantity,
+        isMainUnit: unit.isMainUnit
+      }));
+      
+      console.log('🔄 Unidades mapeadas para o formulário:', mappedUnits);
+      
+      setSelectedUnits(mappedUnits);
+      
+      // Definir unidade principal
+      if (mainUnit) {
+        console.log('👑 Definindo unidade principal:', mainUnit.value);
+        setMainUnitId(mainUnit.id);
+        
+        // Atualizar campo legacy do formulário
+        form.setValue('unit', mainUnit.value);
+      }
+      
+      // Atualizar valores do formulário
+      form.setValue('selectedUnits', mappedUnits);
+      form.setValue('mainUnitId', mainUnit?.id || null);
+      
+      setIsLoadingUnits(false);
+      console.log('✅ Unidades carregadas com sucesso no formulário');
+    }
+  }, [selectedProduct, productUnits, mainUnit, isEditing, form]);
   
+  // Reset do formulário quando produto muda
   useEffect(() => {
     if (isEditing && selectedProduct) {
+      console.log('🔄 Resetando formulário para produto:', selectedProduct.name);
+      
       form.reset({
         code: selectedProduct.code,
         name: selectedProduct.name,
@@ -116,6 +168,10 @@ export const useProductFormLogic = ({
         selectedUnits: [],
         mainUnitId: null,
       });
+      
+      // Resetar estado das unidades
+      setSelectedUnits([]);
+      setMainUnitId(null);
     }
   }, [selectedProduct, isEditing, form]);
 
@@ -240,6 +296,7 @@ export const useProductFormLogic = ({
     isConversionValid,
     selectedUnits,
     mainUnitId,
+    isLoadingUnits: isLoadingUnits || isLoadingProductUnits,
     addUnit,
     removeUnit,
     setAsMainUnit,
