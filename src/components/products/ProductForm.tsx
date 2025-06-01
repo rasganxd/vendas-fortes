@@ -36,8 +36,8 @@ export default function ProductForm({
 }: ProductFormProps) {
   // Load existing units when editing
   const {
-    productUnits: existingUnits,
-    mainUnit: existingMainUnit,
+    productUnits: loadedProductUnits,
+    mainUnit: loadedMainUnit,
     isLoading: loadingUnits
   } = useProductUnitsMapping(isEditing ? selectedProduct?.id : undefined);
 
@@ -45,7 +45,8 @@ export default function ProductForm({
     isEditing,
     selectedProduct: selectedProduct?.name,
     open,
-    existingUnitsCount: existingUnits?.length || 0,
+    loadedUnitsCount: loadedProductUnits?.length || 0,
+    loadedMainUnit: loadedMainUnit?.value,
     loadingUnits
   });
 
@@ -66,8 +67,8 @@ export default function ProductForm({
     selectedProduct,
     products,
     onSubmit,
-    existingUnits,
-    existingMainUnit
+    existingUnits: loadedProductUnits || [],
+    existingMainUnit: loadedMainUnit
   });
 
   // Show units section when ready
@@ -80,7 +81,8 @@ export default function ProductForm({
     isInitialized,
     unitsLoading,
     loadingUnits,
-    primaryUnit: primaryUnit?.value
+    primaryUnit: primaryUnit?.value,
+    loadedUnitsCount: loadedProductUnits?.length || 0
   });
 
   // Helper function to convert "none" values to empty strings or null

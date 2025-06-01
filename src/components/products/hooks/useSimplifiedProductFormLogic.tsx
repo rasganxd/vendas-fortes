@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Product } from '@/types';
-import { ProductUnit, ProductUnitsFormData, SelectedUnit, ProductFormUnitsData } from '@/types/productUnits';
+import { ProductUnit, ProductUnitsFormData, SelectedUnit, ProductFormUnitsData, ProductUnitWithMapping } from '@/types/productUnits';
 import { useProductUnits } from './useProductUnits';
 import { toast } from "sonner";
 
@@ -35,8 +34,8 @@ interface UseSimplifiedProductFormLogicProps {
   selectedProduct: Product | null;
   products: Product[];
   onSubmit: (data: SimplifiedProductFormData) => Promise<void>;
-  existingUnits?: any[];
-  existingMainUnit?: any;
+  existingUnits?: ProductUnitWithMapping[];
+  existingMainUnit?: ProductUnitWithMapping | null;
 }
 
 export const useSimplifiedProductFormLogic = ({
@@ -57,10 +56,12 @@ export const useSimplifiedProductFormLogic = ({
   console.log("🚀 useSimplifiedProductFormLogic:", {
     isEditing,
     selectedProduct: selectedProduct?.name,
-    existingUnitsCount: existingUnits.length,
+    existingUnitsCount: existingUnits?.length || 0,
+    existingMainUnit: existingMainUnit?.value,
     primaryUnit: primaryUnit?.value,
     secondaryUnitsCount: secondaryUnits.length,
-    isInitialized
+    isInitialized,
+    allUnitsLoaded: allUnits.length > 0
   });
 
   // Função para obter valores padrão do formulário
@@ -102,48 +103,30 @@ export const useSimplifiedProductFormLogic = ({
     defaultValues: getDefaultValues(),
   });
 
-  // Reset do formulário quando o produto selecionado muda
-  useEffect(() => {
-    console.log("🔄 Resetando formulário devido a mudança no produto:", {
-      isEditing,
-      selectedProduct: selectedProduct?.name,
-      allUnitsLoaded: allUnits.length > 0
-    });
-
-    if (!unitsLoading && allUnits.length > 0) {
-      const defaultValues = getDefaultValues();
-      console.log("📝 Valores padrão para reset:", defaultValues);
-      
-      form.reset(defaultValues);
-      
-      if (isEditing && selectedProduct) {
-        // Para edição, aguardar o carregamento das unidades
-        console.log("⏳ Aguardando carregamento das unidades para produto em edição...");
-      } else {
-        // Para novo produto, limpar tudo
-        console.log("🆕 Configurando para novo produto");
-        setPrimaryUnit(null);
-        setSecondaryUnits([]);
-        setIsInitialized(true);
-      }
-    }
-  }, [isEditing, selectedProduct, form, getDefaultValues, unitsLoading, allUnits.length]);
-
-  // Mapear unidades existentes para o novo formato
+  // Função para mapear unidades existentes (ProductUnitWithMapping) para ProductUnit
   const mapExistingUnits = useCallback(() => {
-    if (!isEditing || !existingUnits.length || !allUnits.length) {
-      console.log("📋 Sem unidades para mapear ou não está em modo de edição");
+    if (!isEditing || !existingUnits || existingUnits.length === 0 || !allUnits || allUnits.length === 0) {
+      console.log("📋 Sem unidades para mapear:", {
+        isEditing,
+        existingUnitsLength: existingUnits?.length || 0,
+        allUnitsLength: allUnits?.length || 0
+      });
       return;
     }
 
-    console.log("🔄 Mapeando unidades existentes:", { existingUnits, allUnits });
+    console.log("🔄 Mapeando unidades existentes:", {
+      existingUnits: existingUnits.map(u => ({ id: u.id, value: u.value, isMainUnit: u.isMainUnit })),
+      allUnitsCount: allUnits.length
+    });
 
     let mappedPrimary: ProductUnit | null = null;
     const mappedSecondary: ProductUnit[] = [];
     const selectedUnitsForCompatibility: SelectedUnit[] = [];
 
     for (const existingUnit of existingUnits) {
+      // Encontrar a unidade completa na lista de todas as unidades
       const fullUnit = allUnits.find(u => u.id === existingUnit.id);
+      
       if (fullUnit) {
         const selectedUnit: SelectedUnit = {
           unitId: fullUnit.id,
@@ -157,9 +140,13 @@ export const useSimplifiedProductFormLogic = ({
         
         if (existingUnit.isMainUnit) {
           mappedPrimary = fullUnit;
+          console.log("👑 Unidade principal encontrada:", fullUnit.value);
         } else {
           mappedSecondary.push(fullUnit);
+          console.log("📦 Unidade secundária encontrada:", fullUnit.value);
         }
+      } else {
+        console.warn("⚠️ Unidade não encontrada na lista completa:", existingUnit.id);
       }
     }
 
@@ -181,21 +168,54 @@ export const useSimplifiedProductFormLogic = ({
     setIsInitialized(true);
   }, [isEditing, existingUnits, allUnits, form]);
 
+  // Reset do formulário quando o produto selecionado muda
+  useEffect(() => {
+    console.log("🔄 Resetando formulário devido a mudança no produto:", {
+      isEditing,
+      selectedProduct: selectedProduct?.name,
+      allUnitsLoaded: allUnits.length > 0,
+      existingUnitsCount: existingUnits?.length || 0
+    });
+
+    if (!unitsLoading && allUnits.length > 0) {
+      const defaultValues = getDefaultValues();
+      console.log("📝 Valores padrão para reset:", defaultValues);
+      
+      form.reset(defaultValues);
+      
+      if (isEditing && selectedProduct) {
+        // Para edição, resetar estado e aguardar mapeamento
+        console.log("⏳ Preparando para mapear unidades existentes...");
+        setIsInitialized(false);
+        setPrimaryUnit(null);
+        setSecondaryUnits([]);
+      } else {
+        // Para novo produto, limpar tudo e marcar como inicializado
+        console.log("🆕 Configurando para novo produto");
+        setPrimaryUnit(null);
+        setSecondaryUnits([]);
+        setIsInitialized(true);
+      }
+    }
+  }, [isEditing, selectedProduct, form, getDefaultValues, unitsLoading, allUnits.length]);
+
   // Inicialização das unidades para edição
   useEffect(() => {
     console.log("🔄 Efeito de inicialização das unidades:", {
       isEditing,
       unitsLoading,
       allUnitsCount: allUnits.length,
-      existingUnitsCount: existingUnits.length,
-      isInitialized
+      existingUnitsCount: existingUnits?.length || 0,
+      isInitialized,
+      hasExistingUnits: existingUnits && existingUnits.length > 0
     });
 
     if (!unitsLoading && allUnits.length > 0 && isEditing && !isInitialized) {
-      if (existingUnits.length > 0) {
+      if (existingUnits && existingUnits.length > 0) {
+        console.log("🎯 Iniciando mapeamento das unidades existentes");
         mapExistingUnits();
       } else {
-        console.log("⚠️ Produto em edição mas sem unidades existentes carregadas");
+        console.log("⚠️ Produto em edição mas sem unidades existentes");
         setIsInitialized(true);
       }
     }
