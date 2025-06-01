@@ -55,6 +55,6 @@ export const productDependenciesService = {
     }
 
     console.log('✅ Product deletion result:', data);
-    return data as ProductDeletionResult;
+    return data as unknown as ProductDeletionResult;
   }
 };
