@@ -10,7 +10,7 @@ import { Product } from '@/types';
 import { useProducts } from '@/hooks/useProducts';
 import { productDiscountService } from '@/services/supabase/productDiscountService';
 import { toast } from 'sonner';
-import { Edit, Save, X, Search } from 'lucide-react';
+import { Edit, Save, X, Search, AlertTriangle } from 'lucide-react';
 import { parseBrazilianPrice, formatPriceForInput, isValidPrice } from '@/utils/priceUtils';
 
 interface ProductPricingRow extends Product {
@@ -25,6 +25,8 @@ export default function ProductPricing() {
   const [editDiscount, setEditDiscount] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string>('');
 
   // Load pricing data with discount settings
   useEffect(() => {
@@ -61,64 +63,114 @@ export default function ProductPricing() {
     product.code.toString().includes(searchTerm)
   );
 
+  const validateDiscount = (discountPercentage: number): string => {
+    if (discountPercentage < 0) {
+      return 'O desconto não pode ser negativo';
+    }
+    if (discountPercentage > 100) {
+      return 'O desconto não pode ser maior que 100%';
+    }
+    return '';
+  };
+
   const handleEditStart = (product: ProductPricingRow) => {
     setEditingId(product.id);
     setEditPrice(formatPriceForInput(product.price || 0));
     setEditDiscount(product.maxDiscountPercentage.toString());
+    setValidationError('');
   };
 
   const handleEditCancel = () => {
     setEditingId(null);
     setEditPrice('');
     setEditDiscount('');
+    setValidationError('');
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditPrice(e.target.value);
+    setValidationError('');
+  };
+
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEditDiscount(value);
+    
+    // Real-time validation
+    const discountValue = parseFloat(value);
+    if (!isNaN(discountValue)) {
+      const error = validateDiscount(discountValue);
+      setValidationError(error);
+    }
   };
 
   const handleSave = async (productId: string) => {
     try {
+      setIsSaving(productId);
+      setValidationError('');
+
       if (!isValidPrice(editPrice)) {
-        toast("Preço inválido", {
-          description: "Digite um preço válido no formato brasileiro (ex: 1.234,56)"
-        });
+        setValidationError("Digite um preço válido no formato brasileiro (ex: 1.234,56)");
         return;
       }
 
       const price = parseBrazilianPrice(editPrice);
-      const discountPercentage = parseFloat(editDiscount);
+      const discountPercentage = parseFloat(editDiscount) || 0;
       
       if (isNaN(price) || price < 0) {
-        toast("Preço inválido", {
-          description: "O preço deve ser um número válido maior ou igual a zero"
-        });
+        setValidationError("O preço deve ser um número válido maior ou igual a zero");
         return;
       }
 
+      // Validate discount percentage
+      const discountError = validateDiscount(discountPercentage);
+      if (discountError) {
+        setValidationError(discountError);
+        return;
+      }
+
+      console.log('💾 Salvando alterações:', { productId, price, discountPercentage });
+
       // Update product price
       await updateProduct(productId, { price });
+      console.log('✅ Preço do produto atualizado');
       
-      // Update discount settings if provided
+      // Update discount settings
       if (discountPercentage > 0) {
         await productDiscountService.upsert(productId, discountPercentage);
+        console.log('✅ Configuração de desconto salva:', discountPercentage + '%');
+      } else {
+        // If discount is 0, remove the setting
+        try {
+          await productDiscountService.delete(productId);
+          console.log('✅ Configuração de desconto removida');
+        } catch (error) {
+          // Ignore error if no discount setting exists
+          console.log('ℹ️ Nenhuma configuração de desconto para remover');
+        }
       }
       
-      // Update local state
+      // Update local state immediately
       setPricingData(prev => prev.map(item => 
         item.id === productId 
           ? { ...item, price, maxDiscountPercentage: discountPercentage }
           : item
       ));
       
-      toast("Preço atualizado com sucesso!");
+      toast.success("Configurações salvas com sucesso!", {
+        description: `Preço: R$ ${formatPriceForInput(price)} | Desconto máximo: ${discountPercentage}%`
+      });
+      
       setEditingId(null);
       setEditPrice('');
       setEditDiscount('');
       
     } catch (error) {
-      console.error('Erro ao atualizar preço:', error);
-      toast("Erro ao atualizar preço");
+      console.error('❌ Erro ao salvar configurações:', error);
+      setValidationError("Erro ao salvar as configurações. Tente novamente.");
+      toast.error("Erro ao salvar configurações");
+    } finally {
+      setIsSaving(null);
     }
   };
 
@@ -187,14 +239,16 @@ export default function ProductPricing() {
                   </EnhancedTableCell>
                   <EnhancedTableCell>
                     {editingId === product.id ? (
-                      <Input
-                        mask="price"
-                        value={editPrice}
-                        onChange={handlePriceChange}
-                        className="w-32"
-                        placeholder="0,00"
-                        autoFocus
-                      />
+                      <div className="space-y-1">
+                        <Input
+                          mask="price"
+                          value={editPrice}
+                          onChange={handlePriceChange}
+                          className={`w-32 ${validationError && validationError.includes('preço') ? 'border-red-500' : ''}`}
+                          placeholder="0,00"
+                          autoFocus
+                        />
+                      </div>
                     ) : (
                       formatCurrency(product.price || 0)
                     )}
@@ -206,15 +260,18 @@ export default function ProductPricing() {
                   </EnhancedTableCell>
                   <EnhancedTableCell>
                     {editingId === product.id ? (
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={editDiscount}
-                        onChange={(e) => setEditDiscount(e.target.value)}
-                        className="w-20"
-                      />
+                      <div className="space-y-1">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={editDiscount}
+                          onChange={handleDiscountChange}
+                          className={`w-20 ${validationError && validationError.includes('desconto') ? 'border-red-500' : ''}`}
+                          placeholder="0"
+                        />
+                      </div>
                     ) : (
                       product.maxDiscountPercentage.toFixed(1) + '%'
                     )}
@@ -230,14 +287,20 @@ export default function ProductPricing() {
                             size="sm"
                             onClick={() => handleSave(product.id)}
                             className="h-7 w-7 p-0"
+                            disabled={!!validationError || isSaving === product.id}
                           >
-                            <Save className="h-3 w-3" />
+                            {isSaving === product.id ? (
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            ) : (
+                              <Save className="h-3 w-3" />
+                            )}
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={handleEditCancel}
                             className="h-7 w-7 p-0"
+                            disabled={isSaving === product.id}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -248,6 +311,7 @@ export default function ProductPricing() {
                           variant="outline"
                           onClick={() => handleEditStart(product)}
                           className="h-7 w-7 p-0"
+                          disabled={!!isSaving}
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
@@ -258,6 +322,16 @@ export default function ProductPricing() {
               ))}
             </EnhancedTableBody>
           </EnhancedTable>
+          
+          {/* Error message for editing row */}
+          {editingId && validationError && (
+            <div className="p-4 border-t bg-red-50">
+              <div className="flex items-center text-sm text-red-600">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                <span>{validationError}</span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

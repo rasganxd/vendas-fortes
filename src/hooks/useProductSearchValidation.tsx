@@ -1,7 +1,7 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Product } from '@/types';
-import { validateProductDiscount } from '@/context/operations/productOperations';
+import { useProductValidation } from './useProductValidation';
 
 interface UseProductSearchValidationProps {
   products: Product[];
@@ -9,12 +9,37 @@ interface UseProductSearchValidationProps {
 
 export function useProductSearchValidation({ products }: UseProductSearchValidationProps) {
   const [priceValidationErrors, setPriceValidationErrors] = useState<Map<string, string>>(new Map());
+  
+  const {
+    validateProductPrice,
+    validateProductDiscount,
+    loadDiscountSettings,
+    discountSettings
+  } = useProductValidation({ products });
 
-  const validatePrice = useCallback((productId: string, price: number): boolean => {
-    const validation = validateProductDiscount(productId, price, products);
+  // Load discount settings when component mounts
+  useEffect(() => {
+    loadDiscountSettings();
+  }, [loadDiscountSettings]);
+
+  const validatePrice = useCallback(async (productId: string, price: number): Promise<boolean> => {
+    // First validate basic price rules
+    const basicValidation = validateProductPrice(productId, price);
     
-    if (validation === true) {
-      // Remove erro se existir
+    if (basicValidation !== true) {
+      setPriceValidationErrors(prev => {
+        const newMap = new Map(prev);
+        newMap.set(productId, basicValidation as string);
+        return newMap;
+      });
+      return false;
+    }
+
+    // Then validate discount rules
+    const discountValidation = await validateProductDiscount(productId, price);
+    
+    if (discountValidation === true) {
+      // Remove error if valid
       setPriceValidationErrors(prev => {
         const newMap = new Map(prev);
         newMap.delete(productId);
@@ -22,15 +47,15 @@ export function useProductSearchValidation({ products }: UseProductSearchValidat
       });
       return true;
     } else {
-      // Adiciona erro
+      // Add error
       setPriceValidationErrors(prev => {
         const newMap = new Map(prev);
-        newMap.set(productId, validation as string);
+        newMap.set(productId, discountValidation as string);
         return newMap;
       });
       return false;
     }
-  }, [products]);
+  }, [validateProductPrice, validateProductDiscount]);
 
   const getPriceValidationError = useCallback((productId: string): string | undefined => {
     return priceValidationErrors.get(productId);
@@ -44,10 +69,18 @@ export function useProductSearchValidation({ products }: UseProductSearchValidat
     setPriceValidationErrors(new Map());
   }, []);
 
+  const refreshDiscountSettings = useCallback(async () => {
+    await loadDiscountSettings();
+    // Clear errors to re-validate with new settings
+    clearValidationErrors();
+  }, [loadDiscountSettings, clearValidationErrors]);
+
   return {
     validatePrice,
     getPriceValidationError,
     isPriceValid,
-    clearValidationErrors
+    clearValidationErrors,
+    refreshDiscountSettings,
+    discountSettings
   };
 }

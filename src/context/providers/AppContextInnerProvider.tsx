@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
@@ -8,6 +9,7 @@ import { useAppDataState } from './appData/useAppDataState';
 import { useAppDataOperations } from './appData/useAppDataOperations';
 import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { validateProductDiscount } from '@/context/operations/productOperations';
 
 /**
  * Inner provider for the AppContext
@@ -96,6 +98,11 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     companyName: settings?.company?.name,
     isLoadingSettings
   });
+
+  // Create validateProductDiscount wrapper that uses current products
+  const contextValidateProductDiscount = (productId: string, discountedPrice: number): string | boolean => {
+    return validateProductDiscount(productId, discountedPrice, products);
+  };
 
   // Build the full context value combining all data sources
   const contextValue = {
@@ -255,8 +262,8 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     restoreBackup: async () => false,
     deleteBackup: async () => false,
     
-    // Product operations that might be missing
-    validateProductDiscount: () => true,
+    // Product operations that might be missing - corrected validateProductDiscount
+    validateProductDiscount: contextValidateProductDiscount,
     getMinimumPrice: () => 0,
     addBulkProducts: async () => [],
     
