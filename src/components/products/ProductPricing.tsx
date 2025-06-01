@@ -1,17 +1,17 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { EnhancedTable, EnhancedTableHeader, EnhancedTableBody, EnhancedTableRow, EnhancedTableHead, EnhancedTableCell } from '@/components/ui/enhanced-table';
-import { PriceInput } from '@/components/ui/price-input';
-import { SavingIndicator } from '@/components/ui/saving-indicator';
 import { formatCurrency } from '@/lib/utils';
 import { Product } from '@/types';
 import { useProducts } from '@/hooks/useProducts';
 import { productDiscountService } from '@/services/supabase/productDiscountService';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Edit, Save, X, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { parseBrazilianPrice, formatPriceForInput, isValidPrice } from '@/utils/priceUtils';
 
 interface ProductPricingRow extends Product {
   maxDiscountPercentage: number;
@@ -19,190 +19,129 @@ interface ProductPricingRow extends Product {
 
 export default function ProductPricing() {
   const { products, updateProduct } = useProducts();
-  const { toast } = useToast();
-  
   const [pricingData, setPricingData] = useState<ProductPricingRow[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editPrice, setEditPrice] = useState<number>(0);
+  const [editPrice, setEditPrice] = useState<string>('');
   const [editDiscount, setEditDiscount] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [discountsLoaded, setDiscountsLoaded] = useState(false);
 
-  // Memoized filtered data
-  const filteredData = useMemo(() => 
-    pricingData.filter(product => 
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      product.code.toString().includes(searchTerm)
-    ), [pricingData, searchTerm]
+  // Load pricing data with discount settings
+  useEffect(() => {
+    const loadPricingData = async () => {
+      setIsLoading(true);
+      try {
+        // Get all discount settings
+        const discounts = await productDiscountService.getAllDiscounts();
+        
+        // Combine products with their discount settings
+        const combined = products.map(product => ({
+          ...product,
+          maxDiscountPercentage: discounts[product.id] || 0
+        }));
+        
+        setPricingData(combined);
+      } catch (error) {
+        console.error('Erro ao carregar dados de precificação:', error);
+        // If there's an error, just use products without discount data
+        setPricingData(products.map(product => ({
+          ...product,
+          maxDiscountPercentage: 0
+        })));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPricingData();
+  }, [products]);
+
+  const filteredData = pricingData.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    product.code.toString().includes(searchTerm)
   );
 
-  // Memoized load pricing data function
-  const loadPricingData = useCallback(async () => {
-    if (products.length === 0 || discountsLoaded) return;
-    
-    setIsLoading(true);
-    try {
-      const discounts = await productDiscountService.getAllDiscounts();
-      
-      const combined = products.map(product => ({
-        ...product,
-        maxDiscountPercentage: discounts[product.id] || 0
-      }));
-      
-      setPricingData(combined);
-      setDiscountsLoaded(true);
-    } catch (error) {
-      console.error('Error loading discount settings:', error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar as configurações de desconto"
-      });
-      // Fallback to products without discounts
-      setPricingData(products.map(product => ({
-        ...product,
-        maxDiscountPercentage: 0
-      })));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [products, toast, discountsLoaded]);
-
-  // Load pricing data only when products change and discounts not loaded
-  useEffect(() => {
-    if (products.length > 0 && !discountsLoaded) {
-      loadPricingData();
-    }
-  }, [products, loadPricingData, discountsLoaded]);
-
-  // Update pricing data when products change (after initial load)
-  useEffect(() => {
-    if (discountsLoaded && products.length > 0) {
-      setPricingData(prev => 
-        products.map(product => {
-          const existing = prev.find(p => p.id === product.id);
-          return {
-            ...product,
-            maxDiscountPercentage: existing?.maxDiscountPercentage || 0
-          };
-        })
-      );
-    }
-  }, [products, discountsLoaded]);
-
-  const handleEditStart = useCallback((product: ProductPricingRow) => {
+  const handleEditStart = (product: ProductPricingRow) => {
     setEditingId(product.id);
-    setEditPrice(product.price || 0);
+    setEditPrice(formatPriceForInput(product.price || 0));
     setEditDiscount(product.maxDiscountPercentage.toString());
-  }, []);
+  };
 
-  const handleEditCancel = useCallback(() => {
+  const handleEditCancel = () => {
     setEditingId(null);
-    setEditPrice(0);
+    setEditPrice('');
     setEditDiscount('');
-  }, []);
+  };
 
-  const handleSave = useCallback(async (productId: string) => {
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditPrice(e.target.value);
+  };
+
+  const handleSave = async (productId: string) => {
     try {
-      setIsSaving(true);
+      if (!isValidPrice(editPrice)) {
+        toast("Preço inválido", {
+          description: "Digite um preço válido no formato brasileiro (ex: 1.234,56)"
+        });
+        return;
+      }
+
+      const price = parseBrazilianPrice(editPrice);
+      const discountPercentage = parseFloat(editDiscount);
       
-      // Validate price
-      if (isNaN(editPrice) || editPrice < 0) {
-        toast({
-          title: "Preço inválido",
+      if (isNaN(price) || price < 0) {
+        toast("Preço inválido", {
           description: "O preço deve ser um número válido maior ou igual a zero"
         });
         return;
       }
 
-      // Validate discount
-      const discountValue = editDiscount.trim();
-      let discountPercentage = 0;
-      
-      if (discountValue !== '') {
-        discountPercentage = parseFloat(discountValue.replace(',', '.'));
-        
-        if (isNaN(discountPercentage) || discountPercentage < 0 || discountPercentage > 100) {
-          toast({
-            title: "Desconto inválido",
-            description: "O desconto deve estar entre 0% e 100%"
-          });
-          return;
-        }
-      }
-
       // Update product price
-      await updateProduct(productId, { price: editPrice });
+      await updateProduct(productId, { price });
       
-      // Update discount settings
+      // Update discount settings if provided
       if (discountPercentage > 0) {
         await productDiscountService.upsert(productId, discountPercentage);
-      } else {
-        try {
-          await productDiscountService.delete(productId);
-        } catch (error) {
-          // Not critical if delete fails (might not exist)
-          console.debug('No discount settings to remove');
-        }
       }
       
       // Update local state
       setPricingData(prev => prev.map(item => 
         item.id === productId 
-          ? { ...item, price: editPrice, maxDiscountPercentage: discountPercentage }
+          ? { ...item, price, maxDiscountPercentage: discountPercentage }
           : item
       ));
       
-      // Dispatch event for synchronization
-      window.dispatchEvent(new CustomEvent('productPriceUpdated', { 
-        detail: { productId, newPrice: editPrice } 
-      }));
-      
-      toast({
-        title: "Produto atualizado com sucesso!",
-        description: `Preço: ${formatCurrency(editPrice)} | Desconto máx: ${discountPercentage.toFixed(1)}%`
-      });
-      
+      toast("Preço atualizado com sucesso!");
       setEditingId(null);
-      setEditPrice(0);
+      setEditPrice('');
       setEditDiscount('');
       
     } catch (error) {
-      console.error('Error saving price and discount:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-      toast({
-        title: "Erro ao atualizar produto",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
+      console.error('Erro ao atualizar preço:', error);
+      toast("Erro ao atualizar preço");
     }
-  }, [editPrice, editDiscount, updateProduct, toast]);
+  };
 
-  const calculateMargin = useCallback((product: ProductPricingRow): number => {
+  const calculateMargin = (product: ProductPricingRow): number => {
     if (!product.cost || product.cost === 0) return 0;
     const price = product.price || 0;
     return ((price - product.cost) / product.cost) * 100;
-  }, []);
+  };
 
-  const calculateMinPrice = useCallback((product: ProductPricingRow): number => {
+  const calculateMinPrice = (product: ProductPricingRow): number => {
     if (!product.price || product.maxDiscountPercentage === 0) return product.price || 0;
     return product.price * (1 - product.maxDiscountPercentage / 100);
-  }, []);
+  };
 
-  const getMarginColor = useCallback((margin: number): string => {
+  const getMarginColor = (margin: number): string => {
     if (margin >= 30) return 'text-green-600';
     if (margin >= 15) return 'text-yellow-600';
     return 'text-red-600';
-  }, []);
+  };
 
   return (
     <div className="space-y-6">
-      <SavingIndicator isVisible={isSaving} message="Salvando preço e desconto..." />
-
+      {/* Header */}
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -220,6 +159,7 @@ export default function ProductPricing() {
         </CardHeader>
       </Card>
 
+      {/* Pricing Table */}
       <Card>
         <CardContent className="p-0">
           <EnhancedTable isLoading={isLoading}>
@@ -247,10 +187,12 @@ export default function ProductPricing() {
                   </EnhancedTableCell>
                   <EnhancedTableCell>
                     {editingId === product.id ? (
-                      <PriceInput
+                      <Input
+                        mask="price"
                         value={editPrice}
-                        onChange={setEditPrice}
+                        onChange={handlePriceChange}
                         className="w-32"
+                        placeholder="0,00"
                         autoFocus
                       />
                     ) : (
@@ -265,10 +207,12 @@ export default function ProductPricing() {
                   <EnhancedTableCell>
                     {editingId === product.id ? (
                       <Input
-                        type="text"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
                         value={editDiscount}
                         onChange={(e) => setEditDiscount(e.target.value)}
-                        placeholder="0.0"
                         className="w-20"
                       />
                     ) : (
@@ -285,7 +229,6 @@ export default function ProductPricing() {
                           <Button
                             size="sm"
                             onClick={() => handleSave(product.id)}
-                            disabled={isSaving}
                             className="h-7 w-7 p-0"
                           >
                             <Save className="h-3 w-3" />
@@ -294,7 +237,6 @@ export default function ProductPricing() {
                             size="sm"
                             variant="outline"
                             onClick={handleEditCancel}
-                            disabled={isSaving}
                             className="h-7 w-7 p-0"
                           >
                             <X className="h-3 w-3" />

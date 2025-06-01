@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Unit } from '@/types/unit';
-import { unitUsageService } from './unitUsageService';
 
 export interface DatabaseUnit {
   id: string;
@@ -76,49 +75,15 @@ export const productUnitsService = {
     }
   },
 
-  // Remover unidade com verificações de uso
+  // Remover unidade
   async remove(value: string): Promise<void> {
-    try {
-      console.log('🔍 Verificando uso da unidade antes da exclusão:', value);
-      
-      // Verificar se a unidade está sendo usada
-      const usageInfo = await unitUsageService.checkUnitUsage(value);
-      
-      if (usageInfo.isUsed) {
-        const productsList = usageInfo.usedInProducts.slice(0, 5).join(', ');
-        const moreProducts = usageInfo.usedInProducts.length > 5 ? 
-          ` e mais ${usageInfo.usedInProducts.length - 5} produto(s)` : '';
-        
-        throw new Error(
-          `Esta unidade não pode ser excluída porque está sendo usada em: ${productsList}${moreProducts}. ` +
-          `Remova ou altere a unidade destes produtos antes de excluí-la.`
-        );
-      }
+    const { error } = await supabase
+      .from('product_units')
+      .delete()
+      .eq('value', value);
 
-      console.log('✅ Unidade não está em uso, prosseguindo com exclusão');
-
-      const { error } = await supabase
-        .from('product_units')
-        .delete()
-        .eq('value', value);
-
-      if (error) {
-        console.error('Erro ao remover unidade:', error);
-        
-        // Verificar se é erro de foreign key constraint
-        if (error.code === '23503') {
-          throw new Error(
-            'Esta unidade não pode ser excluída porque está sendo referenciada por outros dados. ' +
-            'Verifique se não há produtos ou mapeamentos usando esta unidade.'
-          );
-        }
-        
-        throw error;
-      }
-
-      console.log('✅ Unidade removida com sucesso');
-    } catch (error: any) {
-      console.error('❌ Erro durante remoção da unidade:', error);
+    if (error) {
+      console.error('Erro ao remover unidade:', error);
       throw error;
     }
   },
@@ -137,28 +102,5 @@ export const productUnitsService = {
     }
 
     // As unidades padrão já estão no banco, não precisa reinseri-las
-  },
-
-  // Verificar se unidade pode ser excluída
-  async canDelete(value: string): Promise<{ canDelete: boolean; reason?: string; usedInProducts?: string[] }> {
-    try {
-      const usageInfo = await unitUsageService.checkUnitUsage(value);
-      
-      if (usageInfo.isUsed) {
-        return {
-          canDelete: false,
-          reason: `Unidade está sendo usada em ${usageInfo.usageCount} produto(s)`,
-          usedInProducts: usageInfo.usedInProducts
-        };
-      }
-      
-      return { canDelete: true };
-    } catch (error) {
-      console.error('Erro ao verificar se unidade pode ser excluída:', error);
-      return {
-        canDelete: false,
-        reason: 'Erro ao verificar uso da unidade'
-      };
-    }
   }
 };

@@ -7,17 +7,22 @@ export const useAppDataEventHandlers = (
   unmarkOrderAsBeingEdited: (orderId: string) => void
 ) => {
   useEffect(() => {
+    console.log('🔧 Setting up global data synchronization listeners');
+    
     const handleDataSync = () => {
+      console.log('🔄 Global data sync triggered');
       refreshData();
     };
 
     const handleOrderEditStarted = (event: CustomEvent) => {
       const { orderId } = event.detail;
+      console.log('🔒 Order edit started:', orderId);
       markOrderAsBeingEdited(orderId);
     };
 
     const handleOrderEditFinished = (event: CustomEvent) => {
       const { orderId } = event.detail;
+      console.log('🔓 Order edit finished:', orderId);
       unmarkOrderAsBeingEdited(orderId);
     };
 

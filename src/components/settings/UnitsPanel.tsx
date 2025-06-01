@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Unit } from '@/types/unit';
 import EditUnitDialog from './EditUnitDialog';
-import { DeleteUnitConfirmDialog } from './DeleteUnitConfirmDialog';
+import { DeleteDialog } from '@/components/ui/DeleteDialog';
 import { productUnitsService } from '@/services/supabase/productUnitsService';
 
 export default function UnitsPanel() {
@@ -200,7 +200,6 @@ export default function UnitsPanel() {
           color: 'white'
         }
       });
-      throw error; // Re-throw para o diálogo tratar
     } finally {
       setIsSubmitting(false);
       setDeleteDialogOpen(false);
@@ -391,14 +390,14 @@ export default function UnitsPanel() {
           baseUnits={[]}
         />
 
-        <DeleteUnitConfirmDialog
-          unit={unitToDelete}
-          isOpen={deleteDialogOpen}
-          onClose={() => {
-            setDeleteDialogOpen(false);
-            setUnitToDelete(null);
-          }}
+        <DeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
+          title="Excluir Unidade"
+          description={`Tem certeza que deseja excluir a unidade "${unitToDelete?.label}"? Esta ação não pode ser desfeita.`}
+          actionLabel="Excluir"
+          cancelLabel="Cancelar"
         />
       </CardContent>
     </Card>

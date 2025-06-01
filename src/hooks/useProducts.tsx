@@ -23,15 +23,19 @@ export const useProducts = () => {
         setIsLoading(true);
         setHasAttemptedLoad(true);
         
+        console.log("Fetching products from Supabase");
         const fetchedProducts = await productService.getAll();
+        console.log(`Loaded ${fetchedProducts.length} products from Supabase`);
         
         if (fetchedProducts && fetchedProducts.length > 0) {
           setProducts(fetchedProducts);
+          console.log("Updated products state with Supabase data");
           
           // Update cache
           localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
           localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
         } else {
+          console.log("No products found in Supabase");
           setProducts([]);
         }
       } catch (error) {
@@ -45,8 +49,10 @@ export const useProducts = () => {
           if (cachedData && cachedTimestamp) {
             const age = Date.now() - parseInt(cachedTimestamp);
             if (age < CACHE_MAX_AGE) {
+              console.log("Using cached products data");
               setProducts(JSON.parse(cachedData));
             } else {
+              console.log("Cached products data is too old");
               setProducts([]);
             }
           } else {
@@ -64,35 +70,17 @@ export const useProducts = () => {
     fetchProducts();
   }, [hasAttemptedLoad]);
 
-  const clearCache = () => {
-    localStorage.removeItem(PRODUCTS_CACHE_KEY);
-    localStorage.removeItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
-  };
-
-  const updateCache = (updatedProducts: Product[]) => {
-    localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
-    localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-  };
-
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
+      // CORRIGIDO: usar create() ao invés de add()
       const newProduct = await productService.create(product);
       
+      setProducts((prev) => [...prev, newProduct]);
+      
+      // Update cache
       const updatedProducts = [...products, newProduct];
-      setProducts(updatedProducts);
-      
-      // Clear and update cache immediately
-      clearCache();
-      updateCache(updatedProducts);
-      
-      // Dispatch event for immediate synchronization
-      window.dispatchEvent(new CustomEvent('productsUpdated', { 
-        detail: { 
-          action: 'add', 
-          productId: newProduct.id,
-          product: newProduct 
-        } 
-      }));
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       toast({
         title: 'Produto adicionado',
@@ -115,23 +103,16 @@ export const useProducts = () => {
     try {
       await productService.update(id, product);
       
+      setProducts((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...product } : item))
+      );
+      
+      // Update cache
       const updatedProducts = products.map((item) => 
         item.id === id ? { ...item, ...product } : item
       );
-      setProducts(updatedProducts);
-      
-      // Clear and update cache immediately
-      clearCache();
-      updateCache(updatedProducts);
-      
-      // Dispatch event for immediate synchronization
-      window.dispatchEvent(new CustomEvent('productsUpdated', { 
-        detail: { 
-          action: 'update', 
-          productId: id,
-          updatedData: product 
-        } 
-      }));
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
       toast({
         title: 'Produto atualizado',
@@ -147,29 +128,61 @@ export const useProducts = () => {
     }
   };
 
+  const deleteProduct = async (id: string) => {
+    try {
+      console.log(`Deleting product ${id}`);
+      
+      // Delete from Supabase first
+      await productService.delete(id);
+      
+      // Update local state
+      setProducts((prev) => prev.filter((item) => item.id !== id));
+      
+      // Update cache
+      const updatedProducts = products.filter((item) => item.id !== id);
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      toast({
+        title: 'Produto excluído',
+        description: 'Produto excluído com sucesso!',
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir o produto.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const forceRefreshProducts = async () => {
+    console.log("Force refreshing products from Supabase");
     setIsLoading(true);
     
     try {
-      clearCache();
+      // Clear cache
+      localStorage.removeItem(PRODUCTS_CACHE_KEY);
+      localStorage.removeItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
+      
+      // Clear local state
       setHasAttemptedLoad(false);
       
+      // Fetch from Supabase
       const fetchedProducts = await productService.getAll();
+      console.log(`Forcefully loaded ${fetchedProducts.length} products from Supabase`);
       
       if (fetchedProducts && fetchedProducts.length > 0) {
         setProducts(fetchedProducts);
-        updateCache(fetchedProducts);
+        
+        // Update cache
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
+        localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       } else {
+        console.log("No products found in Supabase during force refresh");
         setProducts([]);
       }
-      
-      // Dispatch event for immediate synchronization
-      window.dispatchEvent(new CustomEvent('productsUpdated', { 
-        detail: { 
-          action: 'refresh',
-          products: fetchedProducts 
-        } 
-      }));
       
       toast({
         title: 'Produtos atualizados',
@@ -195,6 +208,7 @@ export const useProducts = () => {
   const syncPendingProducts = async () => {
     setIsSyncing(true);
     try {
+      // For now, just refresh products since we're using Supabase directly
       const result = await forceRefreshProducts();
       setIsSyncing(false);
       return result;
@@ -211,6 +225,7 @@ export const useProducts = () => {
     isSyncing,
     addProduct,
     updateProduct,
+    deleteProduct,
     syncPendingProducts,
     forceRefreshProducts
   };
@@ -219,6 +234,7 @@ export const useProducts = () => {
 // Export fetchProducts function for compatibility
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
+    console.log("Fetching products from Supabase (fetchProducts function)");
     return await productService.getAll();
   } catch (error) {
     console.error('Error in fetchProducts:', error);

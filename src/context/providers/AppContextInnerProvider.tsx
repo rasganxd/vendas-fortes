@@ -1,115 +1,215 @@
-
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
 import { useThemeInitializer } from '@/hooks/useThemeInitializer';
 import { useConnection } from './ConnectionProvider';
+import { useAppOperations } from '@/context/operations/appOperations';
+import { useAppDataState } from './appData/useAppDataState';
+import { useAppDataOperations } from './appData/useAppDataOperations';
+import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
 import { useAppSettings } from '@/hooks/useAppSettings';
-import { useProductGroups } from '@/hooks/useProductGroups';
-import { useProductCategories } from '@/hooks/useProductCategories';
-import { useProductBrands } from '@/hooks/useProductBrands';
-import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
-import { useBackups } from '@/hooks/useBackups';
 
 /**
- * Simplified inner provider for the AppContext
- * Uses centralized data from existing hooks
+ * Inner provider for the AppContext
+ * Combines data and operations from various sources into a unified context
  */
 export const AppContextInnerProvider = ({ children }: { children: React.ReactNode }) => {
   // Get connection status
   const connection = useConnection();
   
-  // Get main operations from centralized hooks
+  // Get app operations (customer, product brands, etc.)
+  const appOperations = useAppOperations();
+  
+  // Get hooks for various data operations
   const hookOperations = useAppContextHooks();
 
-  // Get settings
-  const { settings, updateSettings: updateSettingsHook } = useAppSettings();
+  // Get real settings from the database
+  const { settings, updateSettings: updateSettingsHook, isLoading: isLoadingSettings } = useAppSettings();
 
-  // Get additional data
-  const productGroupsHook = useProductGroups();
-  const productCategoriesHook = useProductCategories();
-  const productBrandsHook = useProductBrands();
-  const deliveryRoutesHook = useDeliveryRoutes();
-  const backupsHook = useBackups();
-
-  // Wrap updateSettings to match expected return type
+  // Wrap updateSettings to match the expected return type (Promise<void>)
   const updateSettings = async (newSettings: Partial<typeof settings>) => {
     await updateSettingsHook(newSettings);
   };
 
-  // Initialize theme
-  useThemeInitializer(settings?.theme?.primaryColor || '#3b82f6');
+  // Get app data state directly (products, orders)
+  const {
+    products,
+    isLoadingProducts,
+    addProductHook,
+    updateProductHook,
+    deleteProductHook,
+    forceRefreshProducts,
+    orders,
+    isLoadingOrders,
+    addOrderHook,
+    updateOrderHook,
+    deleteOrderHook,
+    refreshOrdersHook,
+    markOrderAsBeingEdited,
+    unmarkOrderAsBeingEdited
+  } = useAppDataState();
 
-  // Build the context value with all required properties
+  // Get app data operations
+  const {
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    refreshProducts,
+    addOrder,
+    updateOrder,
+    deleteOrder,
+    refreshOrders
+  } = useAppDataOperations(
+    addProductHook,
+    updateProductHook,
+    deleteProductHook,
+    forceRefreshProducts,
+    addOrderHook,
+    updateOrderHook,
+    deleteOrderHook,
+    refreshOrdersHook
+  );
+
+  const refreshData = async (): Promise<boolean> => {
+    try {
+      console.log('🔄 Refreshing all app data...');
+      await Promise.all([
+        refreshProducts(),
+        refreshOrders()
+      ]);
+      console.log('✅ All app data refreshed successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error);
+      return false;
+    }
+  };
+
+  useAppDataEventHandlers(refreshData, markOrderAsBeingEdited, unmarkOrderAsBeingEdited);
+  
+  // Initialize theme with the real primary color or fallback
+  useThemeInitializer(settings?.theme?.primaryColor || '#3b82f6');
+  
+  // Log current settings state for debugging
+  console.log('🏢 Current settings in context:', {
+    settingsLoaded: !!settings,
+    companyName: settings?.company?.name,
+    isLoadingSettings
+  });
+
+  // Build the full context value combining all data sources
   const contextValue = {
-    // Core data from centralized hooks
-    ...hookOperations,
+    // Core data from app operations
+    customers: appOperations.customers,
+    isLoadingCustomers: appOperations.isLoading,
+    addCustomer: appOperations.addCustomer,
+    updateCustomer: appOperations.updateCustomer,
+    deleteCustomer: appOperations.deleteCustomer,
+    generateNextCustomerCode: appOperations.generateNextCustomerCode,
     
-    // Additional data that was missing
-    productGroups: productGroupsHook.productGroups,
-    productCategories: productCategoriesHook.productCategories,
-    productBrands: productBrandsHook.productBrands,
-    deliveryRoutes: deliveryRoutesHook.deliveryRoutes,
-    backups: backupsHook.backups,
+    // Products data (override with direct state)
+    products,
+    isLoadingProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    refreshProducts,
     
-    // Loading states for additional data
-    isLoadingProductGroups: productGroupsHook.isLoading,
-    isLoadingProductCategories: productCategoriesHook.isLoading,
-    isLoadingProductBrands: productBrandsHook.isLoading,
-    isLoadingDeliveryRoutes: deliveryRoutesHook.isLoading,
-    isLoadingBackups: backupsHook.isLoading,
+    // Orders data (override with direct state)
+    orders,
+    isLoadingOrders,
+    addOrder,
+    updateOrder,
+    deleteOrder,
+    refreshOrders,
     
-    // Additional operations that were missing
-    addProductGroup: productGroupsHook.addProductGroup,
-    updateProductGroup: productGroupsHook.updateProductGroup,
-    deleteProductGroup: productGroupsHook.deleteProductGroup,
+    // Product operations from appOperations
+    productBrands: appOperations.productBrands,
+    isLoadingProductBrands: appOperations.isLoadingProductBrands,
+    addProductBrand: appOperations.addProductBrand,
+    updateProductBrand: appOperations.updateProductBrand,
+    deleteProductBrand: appOperations.deleteProductBrand,
     
-    addProductCategory: productCategoriesHook.addProductCategory,
-    updateProductCategory: productCategoriesHook.updateProductCategory,
-    deleteProductCategory: productCategoriesHook.deleteProductCategory,
+    productCategories: appOperations.productCategories,
+    isLoadingProductCategories: appOperations.isLoadingProductCategories,
+    addProductCategory: appOperations.addProductCategory,
+    updateProductCategory: appOperations.updateProductCategory,
+    deleteProductCategory: appOperations.deleteProductCategory,
     
-    addProductBrand: productBrandsHook.addProductBrand,
-    updateProductBrand: productBrandsHook.updateProductBrand,
-    deleteProductBrand: productBrandsHook.deleteProductBrand,
+    productGroups: appOperations.productGroups,
+    isLoadingProductGroups: appOperations.isLoadingProductGroups,
+    addProductGroup: appOperations.addProductGroup,
+    updateProductGroup: appOperations.updateProductGroup,
+    deleteProductGroup: appOperations.deleteProductGroup,
     
-    addDeliveryRoute: deliveryRoutesHook.addDeliveryRoute,
-    updateDeliveryRoute: deliveryRoutesHook.updateDeliveryRoute,
-    deleteDeliveryRoute: deliveryRoutesHook.deleteDeliveryRoute,
-    generateRouteUpdate: deliveryRoutesHook.generateRouteUpdate,
-    getRouteWithCustomers: deliveryRoutesHook.getRouteWithCustomers,
+    // Sales reps operations
+    salesReps: appOperations.salesReps,
+    isLoadingSalesReps: appOperations.isLoadingSalesReps,
+    addSalesRep: appOperations.addSalesRep,
+    updateSalesRep: appOperations.updateSalesRep,
+    deleteSalesRep: appOperations.deleteSalesRep,
     
-    createBackup: async (name?: string, description?: string): Promise<string> => {
-      return await backupsHook.createBackup(name, description);
-    },
-    restoreBackup: async (backupId: string): Promise<boolean> => {
-      try {
-        await backupsHook.restoreBackup(backupId);
-        return true;
-      } catch (error) {
-        console.error('Error restoring backup:', error);
-        return false;
-      }
-    },
-    deleteBackup: backupsHook.deleteBackup,
+    // Vehicle operations
+    vehicles: appOperations.vehicles,
+    isLoadingVehicles: appOperations.isLoadingVehicles,
+    addVehicle: appOperations.addVehicle,
+    updateVehicle: appOperations.updateVehicle,
+    deleteVehicle: appOperations.deleteVehicle,
     
-    // System operations
-    startNewMonth: async () => {
-      console.log('Starting new month...');
-      return true;
-    },
+    // Delivery routes operations
+    deliveryRoutes: appOperations.deliveryRoutes,
+    isLoadingDeliveryRoutes: appOperations.isLoadingDeliveryRoutes,
+    addDeliveryRoute: appOperations.addDeliveryRoute,
+    updateDeliveryRoute: appOperations.updateDeliveryRoute,
+    deleteDeliveryRoute: appOperations.deleteDeliveryRoute,
     
-    startNewDay: async () => {
-      console.log('Starting new day...');
-      return true;
-    },
+    // Load operations
+    loads: appOperations.loads,
+    isLoadingLoads: appOperations.isLoadingLoads,
+    addLoad: appOperations.addLoad,
+    updateLoad: appOperations.updateLoad,
+    deleteLoad: appOperations.deleteLoad,
     
-    // Connection and settings
+    // Payment operations
+    payments: appOperations.payments,
+    isLoadingPayments: appOperations.isLoadingPayments,
+    addPayment: appOperations.addPayment,
+    updatePayment: appOperations.updatePayment,
+    deletePayment: appOperations.deletePayment,
+    createAutomaticPaymentRecord: hookOperations.createAutomaticPaymentRecord,
+    
+    // Payment method operations
+    paymentMethods: appOperations.paymentMethods,
+    isLoadingPaymentMethods: appOperations.isLoadingPaymentMethods,
+    addPaymentMethod: appOperations.addPaymentMethod,
+    updatePaymentMethod: appOperations.updatePaymentMethod,
+    deletePaymentMethod: appOperations.deletePaymentMethod,
+    
+    // Payment table operations
+    paymentTables: appOperations.paymentTables,
+    isLoadingPaymentTables: appOperations.isLoadingPaymentTables,
+    addPaymentTable: appOperations.addPaymentTable,
+    updatePaymentTable: appOperations.updatePaymentTable,
+    deletePaymentTable: appOperations.deletePaymentTable,
+    
+    // Routes operations from hook operations
+    routes: hookOperations.routes,
+    isLoadingRoutes: hookOperations.isLoadingRoutes,
+    addRoute: hookOperations.addRoute,
+    updateRoute: hookOperations.updateRoute,
+    deleteRoute: hookOperations.deleteRoute,
+    
+    // Hook operations that might not be in appOperations
+    getOrderById: hookOperations.getOrderById,
+    generateNextOrderCode: hookOperations.generateNextOrderCode,
+    
+    // Connection and settings - use real settings
     connectionStatus: connection.connectionStatus as 'online' | 'offline' | 'connecting' | 'error',
     lastConnectAttempt: connection.lastConnectAttempt,
     reconnectToSupabase: connection.reconnectToSupabase,
     testConnection: connection.testConnection,
     
-    // Settings
+    // Use real settings from database, with fallback only if completely unavailable
     settings: settings || {
       id: 'loading',
       company: {
@@ -124,22 +224,14 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
         primaryColor: '#6B7280'
       }
     },
+    
+    // Settings operations
     updateSettings,
     
-    // Refresh function - use centralized refresh
-    refreshData: async (): Promise<boolean> => {
-      try {
-        console.log('🔄 Refreshing all data...');
-        await hookOperations.forceRefreshProducts();
-        console.log('✅ Data refreshed successfully');
-        return true;
-      } catch (error) {
-        console.error('❌ Error refreshing data:', error);
-        return false;
-      }
-    },
+    // System operations
+    refreshData,
     
-    // Required setters (no-op for compatibility)
+    // Required setters (placeholders for compatibility)
     setCustomers: () => {},
     setProducts: () => {},
     setOrders: () => {},
@@ -156,13 +248,28 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     setDeliveryRoutes: () => {},
     setBackups: () => {},
     
-    // System operations
-    clearCache: async () => {
-      console.log('🧹 Clearing cache...');
-      await hookOperations.forceRefreshProducts();
-    },
+    // Backup operations (placeholders)
+    backups: [],
+    isLoadingBackups: false,
+    createBackup: async () => '',
+    restoreBackup: async () => false,
+    deleteBackup: async () => false,
     
-    // Required properties
+    // Product operations that might be missing
+    validateProductDiscount: () => true,
+    getMinimumPrice: () => 0,
+    addBulkProducts: async () => [],
+    
+    // Route operations
+    generateRouteUpdate: async () => 0,
+    getRouteWithCustomers: async () => null,
+    
+    // System operations that might be missing
+    startNewMonth: async () => false,
+    startNewDay: async () => false,
+    clearCache: async () => {},
+    
+    // Required but not used properties
     isUsingMockData: false
   };
   

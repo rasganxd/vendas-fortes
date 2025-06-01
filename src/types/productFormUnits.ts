@@ -9,5 +9,5 @@ export interface SelectedUnit {
 
 export interface ProductFormUnitsData {
   selectedUnits: SelectedUnit[];
-  mainUnitId: string;
+  mainUnitId: string | null;
 }

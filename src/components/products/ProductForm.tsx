@@ -5,16 +5,15 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
-import { useProductUnitsMapping } from '@/hooks/useProductUnitsMapping';
+import { useProductFormLogic, ProductFormData } from './hooks/useProductFormLogic';
 import { BasicFieldsSection } from './form/BasicFieldsSection';
 import { ClassificationSection } from './form/ClassificationSection';
 import { ProductUnitsSection } from './form/ProductUnitsSection';
-import { useSimplifiedProductFormLogic, SimplifiedProductFormData } from './hooks/useSimplifiedProductFormLogic';
 
 interface ProductFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: SimplifiedProductFormData) => Promise<void>;
+  onSubmit: (data: ProductFormData) => Promise<void>;
   isEditing: boolean;
   selectedProduct: Product | null;
   products: Product[];
@@ -34,95 +33,39 @@ export default function ProductForm({
   productGroups,
   productBrands
 }: ProductFormProps) {
-  // Load existing units when editing
-  const {
-    productUnits: loadedProductUnits,
-    mainUnit: loadedMainUnit,
-    isLoading: loadingUnits
-  } = useProductUnitsMapping(isEditing ? selectedProduct?.id : undefined);
-
-  console.log("🏗️ ProductForm render:", {
-    isEditing,
-    selectedProduct: selectedProduct?.name,
-    open,
-    loadedUnitsCount: loadedProductUnits?.length || 0,
-    loadedMainUnit: loadedMainUnit?.value,
-    loadingUnits
-  });
-
   const {
     form,
-    allUnits,
+    units,
     isSubmitting,
-    isInitialized,
-    unitsLoading,
-    primaryUnit,
-    secondaryUnits,
-    handlePrimaryUnitChange,
-    handleAddSecondaryUnit,
-    handleRemoveSecondaryUnit,
+    hasSubunit,
+    selectedUnit,
+    selectedSubunit,
+    subunitRatio,
+    isConversionValid,
+    selectedUnits,
+    mainUnitId,
+    addUnit,
+    removeUnit,
+    setAsMainUnit,
     handleSubmit
-  } = useSimplifiedProductFormLogic({
+  } = useProductFormLogic({
     isEditing,
     selectedProduct,
     products,
-    onSubmit,
-    existingUnits: loadedProductUnits || [],
-    existingMainUnit: loadedMainUnit
+    onSubmit
   });
-
-  // Show units section when ready
-  const showUnitsSection = !isEditing || (isEditing && isInitialized && !loadingUnits);
-  const isFormReady = isInitialized && !unitsLoading && !loadingUnits;
-
-  console.log("📊 Estados do formulário:", {
-    showUnitsSection,
-    isFormReady,
-    isInitialized,
-    unitsLoading,
-    loadingUnits,
-    primaryUnit: primaryUnit?.value,
-    loadedUnitsCount: loadedProductUnits?.length || 0
-  });
-
-  // Helper function to convert "none" values to empty strings or null
-  const sanitizeFormValue = (value: string | undefined | null) => {
-    if (!value || value === "none") return null;
-    return value;
-  };
-
-  // Custom submit handler to sanitize values
-  const handleFormSubmit = (data: any) => {
-    console.log("📤 Enviando dados do formulário:", data);
-    
-    // Prevent submission if form is not ready
-    if (!isFormReady || isSubmitting || !primaryUnit) {
-      console.log("⚠️ Formulário não está pronto para envio");
-      return;
-    }
-
-    const sanitizedData = {
-      ...data,
-      categoryId: sanitizeFormValue(data.categoryId),
-      groupId: sanitizeFormValue(data.groupId),
-      brandId: sanitizeFormValue(data.brandId)
-    };
-    
-    console.log("🧹 Dados sanitizados:", sanitizedData);
-    handleSubmit(sanitizedData);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-gray-900">
-            {isEditing ? `Editar Produto: ${selectedProduct?.name}` : 'Novo Produto'}
+            {isEditing ? 'Editar Produto' : 'Novo Produto'}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
             {/* Seção de Campos Básicos */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Informações Básicas</h3>
@@ -133,35 +76,25 @@ export default function ProductForm({
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Classificação</h3>
               <ClassificationSection 
-                form={form} 
-                productCategories={productCategories.filter(cat => cat.name && cat.name.trim() !== '')} 
-                productGroups={productGroups.filter(group => group.name && group.name.trim() !== '')} 
-                productBrands={productBrands.filter(brand => brand.name && brand.name.trim() !== '')} 
+                form={form}
+                productCategories={productCategories}
+                productGroups={productGroups}
+                productBrands={productBrands}
               />
             </div>
             
             {/* Seção de Unidades */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Unidades de Medida</h3>
-              {showUnitsSection ? (
-                <ProductUnitsSection
-                  form={form}
-                  availableUnits={allUnits}
-                  primaryUnit={primaryUnit}
-                  secondaryUnits={secondaryUnits}
-                  onPrimaryUnitChange={handlePrimaryUnitChange}
-                  onAddSecondaryUnit={handleAddSecondaryUnit}
-                  onRemoveSecondaryUnit={handleRemoveSecondaryUnit}
-                  isLoading={unitsLoading}
-                />
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                  <span className="text-sm text-gray-500">
-                    {loadingUnits ? "Carregando unidades do produto..." : "Inicializando formulário..."}
-                  </span>
-                </div>
-              )}
+              <ProductUnitsSection 
+                form={form}
+                selectedUnits={selectedUnits}
+                mainUnitId={mainUnitId}
+                onAddUnit={addUnit}
+                onRemoveUnit={removeUnit}
+                onSetMainUnit={setAsMainUnit}
+                productPrice={selectedProduct?.price || 0}
+              />
             </div>
 
             {/* Botões de Ação */}
@@ -169,7 +102,7 @@ export default function ProductForm({
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => onOpenChange(false)} 
+                onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
                 className="px-6"
               >
@@ -177,7 +110,7 @@ export default function ProductForm({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isSubmitting || !isFormReady || !primaryUnit}
+                disabled={isSubmitting}
                 className="bg-blue-600 hover:bg-blue-700 px-6"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import { Customer, SalesRep, OrderItem, Order } from '@/types';
 
 export const useOrderFormState = () => {
@@ -15,7 +15,8 @@ export const useOrderFormState = () => {
   const [isProcessingItem, setIsProcessingItem] = useState(false);
   const [lastOperation, setLastOperation] = useState<string>('');
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
+    console.log("🔄 Resetting form completely");
     setSelectedCustomer(null);
     setSelectedSalesRep(null);
     setOrderItems([]);
@@ -27,11 +28,11 @@ export const useOrderFormState = () => {
     setOriginalOrder(null);
     setIsProcessingItem(false);
     setLastOperation('');
-  }, []);
+  };
 
-  const calculateTotal = useMemo(() => {
+  const calculateTotal = () => {
     return orderItems.reduce((total, item) => total + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
-  }, [orderItems]);
+  };
 
   return {
     selectedCustomer,

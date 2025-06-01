@@ -1,16 +1,51 @@
-
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  mask?: 'cpf' | 'cnpj' | 'cpfCnpj';
+  mask?: 'cpf' | 'cnpj' | 'cpfCnpj' | 'price';
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, mask, onChange, value, ...props }, ref) => {
-    // Handle input masking for CPF/CNPJ only
+    // Handle input masking for CPF/CNPJ and price
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (mask) {
+        if (mask === 'price') {
+          // Price mask formatting - improved for Brazilian currency
+          let inputValue = e.target.value;
+          
+          // Remove all non-digit characters except comma
+          inputValue = inputValue.replace(/[^\d,]/g, '');
+          
+          // Ensure only one comma
+          const parts = inputValue.split(',');
+          if (parts.length > 2) {
+            inputValue = parts[0] + ',' + parts.slice(1).join('');
+          }
+          
+          // Limit decimal places to 2
+          if (parts.length === 2 && parts[1].length > 2) {
+            inputValue = parts[0] + ',' + parts[1].substring(0, 2);
+          }
+          
+          // Add thousands separators to integer part
+          if (parts[0].length > 3) {
+            const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            inputValue = integerPart + (parts[1] !== undefined ? ',' + parts[1] : '');
+          }
+          
+          const newEvent = {
+            ...e,
+            target: {
+              ...e.target,
+              value: inputValue
+            }
+          };
+          
+          onChange && onChange(newEvent as React.ChangeEvent<HTMLInputElement>);
+          return;
+        }
+        
         let inputValue = e.target.value.replace(/\D/g, '');
         
         if (mask === 'cpf' || (mask === 'cpfCnpj' && inputValue.length <= 11)) {

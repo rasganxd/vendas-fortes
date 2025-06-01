@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -9,10 +10,8 @@ import PriceValidation from '@/components/products/pricing/PriceValidation';
 import ProductSearchDialog from './ProductSearchDialog';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
-import { calculateUnitPrice } from '@/utils/priceConverter';
+import { calculateUnitPrice, formatBrazilianPrice, parseBrazilianPrice } from '@/utils/priceConverter';
 import { validateProductDiscount } from '@/context/operations/productOperations';
-import { PriceInput } from '@/components/ui/price-input';
-import { productService } from '@/services/supabase/productService';
 
 interface ProductSearchInputProps {
   products: Product[];
@@ -38,161 +37,50 @@ export default function ProductSearchInput({
   const [showProductDialog, setShowProductDialog] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [priceValidationError, setPriceValidationError] = useState<string>('');
-  const [localProducts, setLocalProducts] = useState<Product[]>([]);
-  const [lastProductsRefresh, setLastProductsRefresh] = useState<number>(0);
   
   const quantityInputRef = useRef<HTMLInputElement>(null);
   
-  // Use centralized products as primary source
   const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
   
-  // Update local products when centralized products change
+  // Listen for product updates
   useEffect(() => {
-    console.log("🔄 Updating local products cache in ProductSearchInput");
-    setLocalProducts(products);
-    setLastProductsRefresh(Date.now());
-  }, [products]);
-  
-  // Listen for product updates and refresh immediately
-  useEffect(() => {
-    const handleProductsUpdated = async (event: CustomEvent) => {
-      console.log("📦 Products updated event received in ProductSearchInput:", event.detail);
-      
-      // Force refresh products to get latest data
-      try {
-        await refreshProducts();
-        
-        // Force a fresh fetch if the update was significant
-        if (event.detail?.action === 'update' && event.detail?.productId === selectedProduct?.id) {
-          console.log("🔄 Refreshing specific product data due to update");
-          const freshProducts = await productService.getAll();
-          setLocalProducts(freshProducts);
-          
-          // Update selected product with fresh data
-          const updatedProduct = freshProducts.find(p => p.id === selectedProduct.id);
-          if (updatedProduct) {
-            console.log("📦 Updating selected product with fresh data:", {
-              oldPrice: selectedProduct.price,
-              newPrice: updatedProduct.price
-            });
-            setSelectedProduct(updatedProduct);
-            
-            // Recalculate price with new product data
-            const newPrice = calculateUnitPrice(updatedProduct, selectedUnit || updatedProduct.unit || 'UN');
-            console.log("💰 Recalculated price:", newPrice);
-            setPrice(newPrice);
-          }
-        }
-      } catch (error) {
-        console.error("❌ Error refreshing products:", error);
-      }
+    const handleProductsUpdated = () => {
+      console.log("Products updated event received in ProductSearchInput");
     };
 
-    const handlePriceUpdated = async (event: CustomEvent) => {
-      const { productId, newPrice } = event.detail;
-      console.log("💰 Price updated event received:", { productId, newPrice });
-      
-      if (selectedProduct && selectedProduct.id === productId) {
-        console.log("💰 Updating price for selected product");
-        
-        // Update the selected product with new price
-        const updatedProduct = { ...selectedProduct, price: newPrice };
-        setSelectedProduct(updatedProduct);
-        
-        // Recalculate unit price
-        const correctPrice = calculateUnitPrice(updatedProduct, selectedUnit || updatedProduct.unit || 'UN');
-        console.log("💰 New calculated price:", correctPrice);
-        setPrice(correctPrice);
-        
-        // Update local products cache
-        setLocalProducts(prev => prev.map(p => 
-          p.id === productId ? { ...p, price: newPrice } : p
-        ));
-      }
-    };
-
-    window.addEventListener('productsUpdated', handleProductsUpdated as EventListener);
-    window.addEventListener('productPriceUpdated', handlePriceUpdated as EventListener);
+    window.addEventListener('productsUpdated', handleProductsUpdated);
     
     return () => {
-      window.removeEventListener('productsUpdated', handleProductsUpdated as EventListener);
-      window.removeEventListener('productPriceUpdated', handlePriceUpdated as EventListener);
+      window.removeEventListener('productsUpdated', handleProductsUpdated);
     };
-  }, [selectedProduct, selectedUnit, refreshProducts]);
+  }, []);
 
-  // Validate price whenever it changes - make it async to handle discount validation
+  // Validate price whenever it changes
   useEffect(() => {
-    const validatePrice = async () => {
-      if (selectedProduct && price > 0) {
-        try {
-          const validation = await validateProductDiscount(selectedProduct.id, price, localProducts);
-          if (validation === true) {
-            setPriceValidationError('');
-          } else {
-            setPriceValidationError(validation as string);
-          }
-        } catch (error) {
-          console.error("Error validating price:", error);
-          setPriceValidationError('');
-        }
-      } else {
+    if (selectedProduct && price > 0) {
+      const validation = validateProductDiscount(selectedProduct.id, price, products);
+      if (validation === true) {
         setPriceValidationError('');
+      } else {
+        setPriceValidationError(validation as string);
       }
-    };
-
-    validatePrice();
-  }, [selectedProduct, price, localProducts]);
-
-  // Enhanced product search with aggressive cache refresh
-  const findProductByCode = async (code: string): Promise<Product | null> => {
-    console.log("🔍 Searching for product with code:", code);
-    
-    // First try local/cached products
-    let product = localProducts.find(p => p.code.toString() === code);
-    
-    if (product) {
-      console.log("✅ Product found in local cache:", product.name);
-      return product;
+    } else {
+      setPriceValidationError('');
     }
-    
-    // If not found locally, try centralized products
-    product = products.find(p => p.code.toString() === code);
-    
-    if (product) {
-      console.log("✅ Product found in centralized products:", product.name);
-      return product;
-    }
-    
-    // If still not found, force refresh and search again
-    console.log("🔄 Product not found locally, forcing database refresh...");
-    try {
-      await refreshProducts();
-      const allProducts = await productService.getAll();
-      product = allProducts.find(p => p.code.toString() === code);
-      
-      if (product) {
-        console.log("✅ Product found in database after refresh:", product.name);
-        // Update local cache with fresh data
-        setLocalProducts(allProducts);
-        setLastProductsRefresh(Date.now());
-        return product;
-      }
-    } catch (error) {
-      console.error("❌ Error searching in database:", error);
-    }
-    
-    console.log("❌ Product not found anywhere with code:", code);
-    return null;
-  };
+  }, [selectedProduct, price, products]);
 
-  // Handle product code input change
+  // Handle product code input change - REMOVIDA A BUSCA AUTOMÁTICA
   const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d]/g, '');
+    const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
     setProductCode(value);
 
+    // Reset selected product if code changes
     if (selectedProduct && selectedProduct.code.toString() !== value) {
       resetForm();
     }
+
+    // REMOVIDO: Não buscar produto automaticamente durante a digitação
+    // A busca só acontece quando o usuário pressionar Enter
   };
 
   const handleProductSelect = (product: Product) => {
@@ -207,26 +95,32 @@ export default function ProductSearchInput({
     setSelectedProduct(product);
     setProductCode(product.code.toString());
     
+    // Set default unit to product's main unit
     const defaultUnit = product.unit || 'UN';
     setSelectedUnit(defaultUnit);
     
+    // Calculate correct price for default unit
     const correctPrice = calculateUnitPrice(product, defaultUnit);
     console.log(`💰 Preço calculado para ${defaultUnit}: R$ ${correctPrice.toFixed(2)}`);
     
     setPrice(correctPrice);
 
+    // Focus on quantity input after product selection
     setTimeout(() => {
       quantityInputRef.current?.focus();
     }, 100);
   };
 
+  // Calculate price when unit changes
   const handleUnitChange = (unit: string) => {
     console.log("🔄 Mudança de unidade:", unit);
     setSelectedUnit(unit);
     
     if (selectedProduct) {
+      // Use the new calculateUnitPrice function
       const correctPrice = calculateUnitPrice(selectedProduct, unit);
       console.log(`💰 Novo preço para ${unit}: R$ ${correctPrice.toFixed(2)}`);
+      
       setPrice(correctPrice);
     }
   };
@@ -235,6 +129,12 @@ export default function ProductSearchInput({
     const value = e.target.value.replace(/[^\d]/g, '');
     const numericValue = value ? parseInt(value, 10) : 1;
     setQuantity(numericValue);
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const displayValue = e.target.value;
+    const numericPrice = parseBrazilianPrice(displayValue);
+    setPrice(numericPrice);
   };
 
   const handleAddToOrder = () => {
@@ -268,34 +168,42 @@ export default function ProductSearchInput({
     setPriceValidationError('');
   };
 
-  const handleProductCodeKeyDown = async (e: React.KeyboardEvent) => {
+  // NOVA LÓGICA: Buscar produto apenas quando pressionar Enter
+  const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       
       if (productCode) {
-        console.log("🔍 Searching for product with code:", productCode);
-        const product = await findProductByCode(productCode);
+        // Buscar produto pelo código exato
+        const product = products.find(p => p.code.toString() === productCode);
         if (product) {
-          console.log("✅ Product found and selected:", product.name);
+          console.log("🔍 Produto encontrado pelo código:", productCode);
           handleProductSelect(product);
         } else {
-          console.log("❌ Product not found, opening search dialog");
+          console.log("❌ Produto não encontrado pelo código:", productCode);
+          // Abrir diálogo de busca se não encontrar produto
           setShowProductDialog(true);
         }
       } else {
+        // Se não há código, abrir diálogo de busca
         setShowProductDialog(true);
       }
     }
   };
   
-  // ... keep existing code (getConversionDisplay function and component render)
-
+  const formatPriceDisplay = (value: number): string => {
+    if (value === 0) return '';
+    return formatBrazilianPrice(value);
+  };
+  
+  // Calculate unit conversion display
   const getConversionDisplay = () => {
     if (!selectedProduct || !selectedUnit || selectedUnit === selectedProduct.unit) {
       return null;
     }
     
     if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
+      // Show how many main units this subunit quantity represents
       const mainUnitQty = (quantity || 0) / selectedProduct.subunitRatio;
       return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }
@@ -356,12 +264,14 @@ export default function ProductSearchInput({
           </div>
           
           <div className="flex-none">
-            <PriceInput
-              value={price}
-              onChange={setPrice}
+            <Input
+              type="text"
               className={`h-11 text-center w-28 border-gray-300 ${
                 !isPriceValid ? 'border-red-500 bg-red-50' : ''
               }`}
+              placeholder="Preço"
+              value={formatPriceDisplay(price)}
+              onChange={handlePriceChange}
               onKeyDown={(e) => e.key === 'Enter' && isPriceValid && handleAddToOrder()}
               disabled={isAddingItem}
             />
@@ -379,13 +289,15 @@ export default function ProductSearchInput({
         </div>
       </div>
 
+      {/* Product Search Dialog */}
       <ProductSearchDialog
         open={showProductDialog}
         onClose={() => setShowProductDialog(false)}
-        products={localProducts.length > 0 ? localProducts : products}
+        products={products}
         onSelectProduct={handleProductSelect}
       />
       
+      {/* Validação de preço */}
       {selectedProduct && (
         <div className="mt-2">
           <PriceValidation
@@ -412,8 +324,8 @@ export default function ProductSearchInput({
       {selectedProduct && selectedProduct.hasSubunit && selectedUnit && (
         <div className="mt-1 text-xs text-blue-600">
           {selectedUnit === selectedProduct.subunit ? 
-            `Preço individual: R$ ${price.toFixed(2)} (de uma ${selectedProduct.unit} com ${selectedProduct.subunitRatio} ${selectedProduct.subunit})` :
-            `Preço da ${selectedProduct.unit}: R$ ${price.toFixed(2)}`
+            `Preço individual: R$ ${formatPriceDisplay(price)} (de uma ${selectedProduct.unit} com ${selectedProduct.subunitRatio} ${selectedProduct.subunit})` :
+            `Preço da ${selectedProduct.unit}: R$ ${formatPriceDisplay(price)}`
           }
         </div>
       )}

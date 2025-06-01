@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
@@ -9,7 +10,7 @@ export const productService = {
       .order('code');
     
     if (error) {
-      console.error('Error fetching products:', error);
+      console.error('Erro ao buscar produtos:', error);
       throw error;
     }
     
@@ -46,7 +47,7 @@ export const productService = {
       .single();
     
     if (error) {
-      console.error('Error fetching product:', error);
+      console.error('Erro ao buscar produto:', error);
       return null;
     }
     
@@ -76,6 +77,8 @@ export const productService = {
   },
 
   async create(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
+    console.log('Creating product with data:', product);
+    
     // Prepare data for Supabase (remove any undefined values)
     const productData = {
       code: product.code,
@@ -97,6 +100,8 @@ export const productService = {
       sync_status: product.syncStatus || 'synced'
     };
 
+    console.log('Supabase product data:', productData);
+
     const { data, error } = await supabase
       .from('products')
       .insert([productData])
@@ -104,7 +109,7 @@ export const productService = {
       .single();
     
     if (error) {
-      console.error('Error creating product:', error);
+      console.error('Erro ao criar produto:', error);
       throw error;
     }
 
@@ -132,6 +137,7 @@ export const productService = {
       syncStatus: (data.sync_status || 'synced') as 'synced' | 'pending' | 'error'
     };
 
+    console.log('Created product:', createdProduct);
     return createdProduct;
   },
 
@@ -143,10 +149,7 @@ export const productService = {
     if (product.name !== undefined) updateData.name = product.name;
     if (product.description !== undefined) updateData.description = product.description;
     if (product.cost !== undefined) updateData.cost = product.cost;
-    // IMPORTANT: Only update price if explicitly provided
-    if (product.price !== undefined) {
-      updateData.price = product.price;
-    }
+    if (product.price !== undefined) updateData.price = product.price;
     if (product.stock !== undefined) updateData.stock = product.stock;
     if (product.minStock !== undefined) updateData.min_stock = product.minStock;
     if (product.minPrice !== undefined) updateData.min_price = product.minPrice;
@@ -168,7 +171,7 @@ export const productService = {
       .single();
     
     if (error) {
-      console.error('Error updating product:', error);
+      console.error('Erro ao atualizar produto:', error);
       throw error;
     }
 
@@ -197,40 +200,15 @@ export const productService = {
     };
   },
 
-  // Método simplificado de exclusão que remove automaticamente unidades e configurações
   async delete(id: string): Promise<void> {
-    const { data, error } = await supabase.rpc('delete_product_simple', {
-      p_product_id: id
-    });
-
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+    
     if (error) {
-      console.error('Error calling delete_product_simple:', error);
+      console.error('Erro ao excluir produto:', error);
       throw error;
-    }
-
-    const result = data as any;
-
-    if (!result.success) {
-      throw new Error(result.error || 'Falha ao excluir produto');
-    }
-  },
-
-  // Método avançado de exclusão com opções de força
-  async deleteWithDependencies(id: string, forceDelete: boolean = false): Promise<void> {
-    const { data, error } = await supabase.rpc('delete_product_with_dependencies', {
-      p_product_id: id,
-      p_force_delete: forceDelete
-    });
-
-    if (error) {
-      console.error('Error calling delete_product_with_dependencies:', error);
-      throw error;
-    }
-
-    const result = data as any;
-
-    if (!result.success) {
-      throw new Error(result.error || 'Falha ao excluir produto');
     }
   }
 };

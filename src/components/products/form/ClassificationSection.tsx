@@ -1,24 +1,26 @@
 
 import React from 'react';
-import { UseFormReturn } from 'react-hook-form';
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ProductBrand, ProductCategory, ProductGroup } from '@/types';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
+import { UseFormReturn } from 'react-hook-form';
+import { ProductFormData } from '../hooks/useProductFormLogic';
 
 interface ClassificationSectionProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<ProductFormData>;
   productCategories: ProductCategory[];
   productGroups: ProductGroup[];
   productBrands: ProductBrand[];
@@ -30,109 +32,102 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
   productGroups,
   productBrands
 }) => {
-  // Filter out invalid items to prevent Select errors - must have valid ID and name
-  const validCategories = productCategories.filter(cat => 
-    cat && 
-    cat.id && 
-    cat.id.trim() !== '' && 
-    cat.name && 
-    cat.name.trim() !== ''
-  );
-  
-  const validGroups = productGroups.filter(group => 
-    group && 
-    group.id && 
-    group.id.trim() !== '' && 
-    group.name && 
-    group.name.trim() !== ''
-  );
-  
-  const validBrands = productBrands.filter(brand => 
-    brand && 
-    brand.id && 
-    brand.id.trim() !== '' && 
-    brand.name && 
-    brand.name.trim() !== ''
-  );
+  const hasCategories = Array.isArray(productCategories) && productCategories.length > 0;
+  const hasGroups = Array.isArray(productGroups) && productGroups.length > 0;
+  const hasBrands = Array.isArray(productBrands) && productBrands.length > 0;
+  const isLoadingClassifications = productCategories === undefined || productGroups === undefined || productBrands === undefined;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Categoria */}
+    <div className="grid grid-cols-3 gap-4">
       <FormField
         control={form.control}
         name="categoryId"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Categoria</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value || ""}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="none">Nenhuma categoria</SelectItem>
-                {validCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              {isLoadingClassifications ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Select onValueChange={field.onChange} value={field.value || "none"}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma</SelectItem>
+                    {hasCategories ? (
+                      productCategories.map(category => (
+                        <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-categories" disabled>Nenhuma categoria cadastrada</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
-      {/* Grupo */}
       <FormField
         control={form.control}
         name="groupId"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Grupo</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value || ""}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um grupo" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="none">Nenhum grupo</SelectItem>
-                {validGroups.map((group) => (
-                  <SelectItem key={group.id} value={group.id}>
-                    {group.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              {isLoadingClassifications ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Select onValueChange={field.onChange} value={field.value || "none"}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Grupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {hasGroups ? (
+                      productGroups.map(group => (
+                        <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-groups" disabled>Nenhum grupo cadastrado</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
-      {/* Marca */}
       <FormField
         control={form.control}
         name="brandId"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Marca</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value || ""}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma marca" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="none">Nenhuma marca</SelectItem>
-                {validBrands.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              {isLoadingClassifications ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Select onValueChange={field.onChange} value={field.value || "none"}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma</SelectItem>
+                    {hasBrands ? (
+                      productBrands.map(brand => (
+                        <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-brands" disabled>Nenhuma marca cadastrada</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}

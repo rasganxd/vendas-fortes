@@ -15,6 +15,7 @@ export const useProducts = () => {
 
   // Force refresh function
   const forceRefreshProducts = async () => {
+    console.log("Force refreshing products from Supabase");
     setIsLoading(true);
     
     try {
@@ -24,6 +25,7 @@ export const useProducts = () => {
       
       // Fetch from Supabase
       const fetchedProducts = await productService.getAll();
+      console.log(`Forcefully loaded ${fetchedProducts.length} products from Supabase`);
       
       setProducts(fetchedProducts);
       
@@ -64,13 +66,16 @@ export const useProducts = () => {
       if (cachedData && cachedTimestamp) {
         const age = Date.now() - parseInt(cachedTimestamp);
         if (age < CACHE_MAX_AGE) {
+          console.log("Using cached products data");
           setProducts(JSON.parse(cachedData));
           setIsLoading(false);
           return;
         }
       }
       
+      console.log("Fetching products from Supabase");
       const fetchedProducts = await productService.getAll();
+      console.log(`Loaded ${fetchedProducts.length} products from Supabase`);
       
       setProducts(fetchedProducts);
       
@@ -84,6 +89,7 @@ export const useProducts = () => {
       // Try to use cached data as fallback
       const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
       if (cachedData) {
+        console.log("Using cached products data as fallback");
         setProducts(JSON.parse(cachedData));
       } else {
         setProducts([]);
@@ -96,6 +102,7 @@ export const useProducts = () => {
   // Listen for product updates from other components
   useEffect(() => {
     const handleProductsUpdated = () => {
+      console.log("Products updated event received, refreshing...");
       forceRefreshProducts();
     };
 
@@ -172,7 +179,9 @@ export const useProducts = () => {
 
   const deleteProduct = async (id: string) => {
     try {
-      // Use the simple delete method that automatically removes units and pricing
+      console.log(`Deleting product ${id}`);
+      
+      // Delete from Supabase first
       await productService.delete(id);
       
       // Update local state immediately
@@ -185,26 +194,15 @@ export const useProducts = () => {
       
       toast({
         title: 'Produto excluído',
-        description: 'Produto excluído com sucesso! Unidades e configurações removidas automaticamente.',
+        description: 'Produto excluído com sucesso!',
       });
-    } catch (error: any) {
-      console.error('❌ Error deleting product:', error);
-      
-      // Enhanced error handling
-      let errorMessage = 'Não foi possível excluir o produto.';
-      
-      if (error.message?.includes('histórico')) {
-        errorMessage = 'Produto não pode ser excluído pois possui histórico de vendas.';
-      }
-      
+    } catch (error) {
+      console.error('Error deleting product:', error);
       toast({
         title: 'Erro',
-        description: errorMessage,
+        description: 'Não foi possível excluir o produto.',
         variant: 'destructive',
       });
-      
-      // Re-throw to let the caller handle it
-      throw error;
     }
   };
 

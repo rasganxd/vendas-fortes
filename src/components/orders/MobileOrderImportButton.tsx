@@ -1,111 +1,69 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Smartphone, RefreshCw } from 'lucide-react';
+import { Smartphone, Download, RefreshCw } from 'lucide-react';
 import { useMobileOrderImport } from '@/hooks/useMobileOrderImport';
 import SalesRepImportSelector from './SalesRepImportSelector';
-
 interface MobileOrderImportButtonProps {
   onImportComplete?: () => void;
 }
-
 export default function MobileOrderImportButton({
   onImportComplete
 }: MobileOrderImportButtonProps) {
   const {
     importMobileOrders,
     importSalesRepOrders,
-    importOrphanedOrders,
     isImporting,
     pendingOrdersCount,
     checkPendingOrders
   } = useMobileOrderImport();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   useEffect(() => {
-    // Check for pending orders on mount with force refresh
-    checkPendingOrders(true);
+    // Check for pending orders on mount
+    checkPendingOrders();
 
     // Set up interval to check periodically
-    const interval = setInterval(() => {
-      checkPendingOrders();
-    }, 30000); // Check every 30 seconds
+    const interval = setInterval(checkPendingOrders, 30000); // Check every 30 seconds
 
-    return () => {
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [checkPendingOrders]);
-
-  // Force refresh when dialog opens
-  useEffect(() => {
-    if (isDialogOpen) {
-      checkPendingOrders(true);
-    }
-  }, [isDialogOpen, checkPendingOrders]);
-
   const handleImportAll = async () => {
     const result = await importMobileOrders();
     if (result.success && onImportComplete) {
       onImportComplete();
     }
 
-    // Close dialog after successful import
+    // Fechar dialog após importação bem-sucedida
     if (result.success) {
       setIsDialogOpen(false);
     }
   };
-
   const handleImportSalesRep = async (salesRepId: string, salesRepName: string) => {
     const result = await importSalesRepOrders(salesRepId, salesRepName);
     if (result.success && onImportComplete) {
       onImportComplete();
     }
 
-    // Close dialog after successful import
+    // Fechar dialog após importação bem-sucedida
     if (result.success) {
       setIsDialogOpen(false);
     }
   };
-
-  const handleImportOrphaned = async () => {
-    const result = await importOrphanedOrders();
-    if (result.success && onImportComplete) {
-      onImportComplete();
-    }
-
-    // Close dialog after successful import
-    if (result.success) {
-      setIsDialogOpen(false);
-    }
-  };
-
-  // Show button even if count is 0 for debugging purposes, but indicate no orders
-  const showButton = true; // Always show for debugging
-
-  if (!showButton) {
-    return null;
+  if (pendingOrdersCount === 0) {
+    return null; // Don't show button if no pending orders
   }
-
-  return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  return <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="relative">
-          <Smartphone size={16} className="mr-2" />
-          Importar Pedidos Mobile
-          {pendingOrdersCount > 0 && !isImporting && (
-            <Badge variant="secondary" className="ml-2">
-              {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
-            </Badge>
-          )}
-          {pendingOrdersCount === 0 && !isImporting && (
-            <Badge variant="outline" className="ml-2 text-gray-500">
-              0
-            </Badge>
-          )}
-          {isImporting && <RefreshCw size={16} className="ml-2 animate-spin" />}
-        </Button>
+        <div className="relative">
+          
+          
+          {pendingOrdersCount > 0 && !isImporting && <div className="absolute -top-2 -right-2">
+              <div className="bg-blue-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+                {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+              </div>
+            </div>}
+        </div>
       </DialogTrigger>
       
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -113,17 +71,10 @@ export default function MobileOrderImportButton({
           <DialogTitle className="flex items-center gap-2">
             <Smartphone size={20} />
             Importar Pedidos Mobile
-            {pendingOrdersCount > 0 && <Badge variant="secondary">{pendingOrdersCount} pendentes</Badge>}
           </DialogTitle>
         </DialogHeader>
         
-        <SalesRepImportSelector 
-          onImportSalesRep={handleImportSalesRep} 
-          onImportAll={handleImportAll} 
-          onImportOrphaned={handleImportOrphaned} 
-          isImporting={isImporting} 
-        />
+        <SalesRepImportSelector onImportSalesRep={handleImportSalesRep} onImportAll={handleImportAll} isImporting={isImporting} />
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
