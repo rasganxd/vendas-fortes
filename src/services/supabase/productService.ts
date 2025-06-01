@@ -220,5 +220,26 @@ export const productService = {
       console.error('Erro ao excluir produto:', error);
       throw error;
     }
+  },
+
+  async deleteWithDependencies(id: string, forceDelete: boolean = false): Promise<void> {
+    console.log('🗑️ Deleting product with dependencies check:', { id, forceDelete });
+    
+    const { data, error } = await supabase.rpc('delete_product_with_dependencies', {
+      p_product_id: id,
+      p_force_delete: forceDelete
+    });
+
+    if (error) {
+      console.error('❌ Error calling delete_product_with_dependencies:', error);
+      throw error;
+    }
+
+    if (!data.success) {
+      console.error('❌ Product deletion failed:', data);
+      throw new Error(data.error || 'Falha ao excluir produto');
+    }
+
+    console.log('✅ Product deleted successfully with dependencies:', data);
   }
 };

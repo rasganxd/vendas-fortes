@@ -179,9 +179,10 @@ export const useProducts = () => {
 
   const deleteProduct = async (id: string) => {
     try {
-      console.log(`Deleting product ${id}`);
+      console.log(`🗑️ Deleting product ${id}`);
       
-      // Delete from Supabase first
+      // Delete from Supabase first - Note: this now uses the simple delete
+      // Enhanced deletion with dependencies is handled at the page level
       await productService.delete(id);
       
       // Update local state immediately
@@ -192,17 +193,32 @@ export const useProducts = () => {
       localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
       localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
       
+      console.log("✅ Product deleted successfully from local state and cache");
+      
       toast({
         title: 'Produto excluído',
         description: 'Produto excluído com sucesso!',
       });
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch (error: any) {
+      console.error('❌ Error deleting product:', error);
+      
+      // Enhanced error handling
+      let errorMessage = 'Não foi possível excluir o produto.';
+      
+      if (error.message?.includes('foreign key')) {
+        errorMessage = 'Produto não pode ser excluído pois está sendo usado em outros registros.';
+      } else if (error.message?.includes('dependências')) {
+        errorMessage = 'Produto possui dependências que impedem a exclusão.';
+      }
+      
       toast({
         title: 'Erro',
-        description: 'Não foi possível excluir o produto.',
+        description: errorMessage,
         variant: 'destructive',
       });
+      
+      // Re-throw to let the caller handle it
+      throw error;
     }
   };
 

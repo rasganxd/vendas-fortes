@@ -15,6 +15,8 @@ import BulkProductUpload from '@/components/products/BulkProductUpload';
 import { Product } from '@/types';
 import { toast } from "sonner";
 import { productUnitsMappingService } from '@/services/supabase/productUnitsMapping';
+import { EnhancedDeleteConfirmationDialog } from '@/components/products/EnhancedDeleteConfirmationDialog';
+import { productService } from '@/services/supabase/productService';
 
 export default function Products() {
   const {
@@ -68,18 +70,33 @@ export default function Products() {
     setDeleteDialogOpen(true);
   };
   
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = async (forceDelete: boolean = false) => {
     if (productToDelete) {
       try {
-        await deleteProduct(productToDelete.id);
-        toast("Produto excluído", {
-          description: "O produto foi excluído com sucesso"
+        console.log('🗑️ Confirming product deletion:', { 
+          productId: productToDelete.id, 
+          forceDelete 
         });
+        
+        // Use the enhanced deletion method
+        await productService.deleteWithDependencies(productToDelete.id, forceDelete);
+        
+        // Update local state
+        await deleteProduct(productToDelete.id);
+        
+        toast("Produto excluído", {
+          description: forceDelete 
+            ? "O produto e suas dependências foram removidos com sucesso" 
+            : "O produto foi excluído com sucesso"
+        });
+        
         refreshData();
-      } catch (error) {
-        console.error('Erro ao excluir produto:', error);
+      } catch (error: any) {
+        console.error('❌ Erro ao excluir produto:', error);
+        
+        const errorMessage = error.message || "Erro ao excluir produto";
         toast("Erro", {
-          description: "Erro ao excluir produto",
+          description: errorMessage,
           style: {
             backgroundColor: 'rgb(239, 68, 68)',
             color: 'white'
@@ -295,12 +312,27 @@ export default function Products() {
         </EnhancedCard>
 
         {/* Dialogs */}
-        <ProductForm open={isProductFormOpen} onOpenChange={open => {
-        setIsProductFormOpen(open);
-        if (!open) setEditingProduct(null);
-      }} onSubmit={handleProductSaved} isEditing={!!editingProduct} selectedProduct={editingProduct} products={products} productCategories={productCategories || []} productGroups={productGroups || []} productBrands={productBrands || []} />
+        <ProductForm 
+          open={isProductFormOpen} 
+          onOpenChange={open => {
+            setIsProductFormOpen(open);
+            if (!open) setEditingProduct(null);
+          }} 
+          onSubmit={handleProductSaved} 
+          isEditing={!!editingProduct} 
+          selectedProduct={editingProduct} 
+          products={products} 
+          productCategories={productCategories || []} 
+          productGroups={productGroups || []} 
+          productBrands={productBrands || []} 
+        />
 
-        <DeleteConfirmationDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleConfirmDelete} title="Excluir Produto" description={`Tem certeza que deseja excluir o produto "${productToDelete?.name || ''}"? Esta ação não pode ser desfeita.`} />
+        <EnhancedDeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleConfirmDelete}
+          product={productToDelete}
+        />
 
         <BulkProductUpload open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} onSuccess={refreshData} />
       </div>

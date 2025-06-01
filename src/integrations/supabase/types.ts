@@ -1430,9 +1430,22 @@ export type Database = {
         Args: { p_from_unit_id: string; p_to_unit_id: string }
         Returns: number
       }
+      check_product_dependencies: {
+        Args: { p_product_id: string }
+        Returns: {
+          dependency_type: string
+          dependency_count: number
+          can_delete: boolean
+          details: Json
+        }[]
+      }
       cleanup_expired_tokens: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      delete_product_with_dependencies: {
+        Args: { p_product_id: string; p_force_delete?: boolean }
+        Returns: Json
       }
       generate_api_token: {
         Args: {
