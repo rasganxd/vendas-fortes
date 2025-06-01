@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +37,15 @@ export default function ProductUnits() {
     isLoading,
     units
   });
+
+  // Calculate dynamic height based on number of units
+  const getTableContainerHeight = () => {
+    const unitCount = units?.length || 0;
+    if (unitCount === 0) return 'min-h-[200px] max-h-[300px]';
+    if (unitCount <= 3) return 'min-h-[250px] max-h-[350px]';
+    if (unitCount <= 8) return 'min-h-[400px] max-h-[500px]';
+    return 'min-h-[500px] max-h-[60vh]';
+  };
 
   const handleOpenDialog = (unit?: Unit) => {
     console.log("Abrindo dialog para unidade:", unit);
@@ -160,7 +168,7 @@ export default function ProductUnits() {
               <p>Carregando unidades...</p>
             </div>
           ) : (
-            <div className="border rounded-lg h-[60vh]">
+            <div className={`border rounded-lg ${getTableContainerHeight()}`}>
               <ScrollArea className="h-full">
                 <div className="min-w-[600px]">
                   <Table>
