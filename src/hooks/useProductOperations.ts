@@ -45,12 +45,12 @@ export const useProductOperations = (
     }
   };
 
-  const validateProductDiscount = (productId: string, discountedPrice: number): string | boolean => {
-    return validateProductDiscountOp(productId, discountedPrice, products);
+  const validateProductDiscount = async (productId: string, discountedPrice: number): Promise<string | boolean> => {
+    return await validateProductDiscountOp(productId, discountedPrice, products);
   };
 
-  const getMinimumPrice = (productId: string): number => {
-    return getMinimumPriceOp(productId, products);
+  const getMinimumPrice = async (productId: string): Promise<number> => {
+    return await getMinimumPriceOp(productId, products);
   };
 
   const addBulkProducts = async (productsArray: Omit<Product, 'id'>[]): Promise<string[]> => {

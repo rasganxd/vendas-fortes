@@ -41,18 +41,27 @@ export default function EnhancedProductSearch({
   // Hook unificado para unidades
   const { units, calculateUnitPrice, hasNewUnits } = useUnifiedProductUnits(selectedProduct);
 
-  // Validate price whenever it changes
+  // Validate price whenever it changes - now properly async
   useEffect(() => {
-    if (selectedProduct && price > 0) {
-      const validation = validateProductDiscount(selectedProduct.id, price, products);
-      if (validation === true) {
-        setPriceValidationError('');
+    const validatePrice = async () => {
+      if (selectedProduct && price > 0) {
+        try {
+          const validation = await validateProductDiscount(selectedProduct.id, price, products);
+          if (validation === true) {
+            setPriceValidationError('');
+          } else {
+            setPriceValidationError(validation as string);
+          }
+        } catch (error) {
+          console.error("Error validating price:", error);
+          setPriceValidationError('');
+        }
       } else {
-        setPriceValidationError(validation as string);
+        setPriceValidationError('');
       }
-    } else {
-      setPriceValidationError('');
-    }
+    };
+
+    validatePrice();
   }, [selectedProduct, price, products]);
 
   // Initialize price when product is selected

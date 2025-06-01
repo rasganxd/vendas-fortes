@@ -1,5 +1,5 @@
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { OrderItem, Product } from '@/types';
 import { validateProductDiscount } from '@/context/operations/productOperations';
 
@@ -9,29 +9,46 @@ interface UseOrderValidationProps {
 }
 
 export function useOrderValidation({ orderItems, products }: UseOrderValidationProps) {
-  const validationResults = useMemo(() => {
-    const invalidItems: Array<{
+  const [validationResults, setValidationResults] = useState({
+    isValid: true,
+    invalidItems: [] as Array<{
       item: OrderItem;
       error: string;
-    }> = [];
+    }>,
+    totalInvalidItems: 0
+  });
 
-    orderItems.forEach(item => {
-      if (item.productId) {
-        const validation = validateProductDiscount(item.productId, item.unitPrice || 0, products);
-        if (validation !== true) {
-          invalidItems.push({
-            item,
-            error: validation as string
-          });
+  useEffect(() => {
+    const validateItems = async () => {
+      const invalidItems: Array<{
+        item: OrderItem;
+        error: string;
+      }> = [];
+
+      for (const item of orderItems) {
+        if (item.productId) {
+          try {
+            const validation = await validateProductDiscount(item.productId, item.unitPrice || 0, products);
+            if (validation !== true) {
+              invalidItems.push({
+                item,
+                error: validation as string
+              });
+            }
+          } catch (error) {
+            console.error("Error validating order item:", error);
+          }
         }
       }
-    });
 
-    return {
-      isValid: invalidItems.length === 0,
-      invalidItems,
-      totalInvalidItems: invalidItems.length
+      setValidationResults({
+        isValid: invalidItems.length === 0,
+        invalidItems,
+        totalInvalidItems: invalidItems.length
+      });
     };
+
+    validateItems();
   }, [orderItems, products]);
 
   return validationResults;
