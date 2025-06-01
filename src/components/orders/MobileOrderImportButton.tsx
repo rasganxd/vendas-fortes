@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,11 +6,9 @@ import { Smartphone, Download, RefreshCw, Bug } from 'lucide-react';
 import { useMobileOrderImport } from '@/hooks/useMobileOrderImport';
 import SalesRepImportSelector from './SalesRepImportSelector';
 import { toast } from 'sonner';
-
 interface MobileOrderImportButtonProps {
   onImportComplete?: () => void;
 }
-
 export default function MobileOrderImportButton({
   onImportComplete
 }: MobileOrderImportButtonProps) {
@@ -24,9 +21,7 @@ export default function MobileOrderImportButton({
     checkPendingOrders,
     debugInfo
   } = useMobileOrderImport();
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   useEffect(() => {
     console.log('🚀 [DEBUG] MobileOrderImportButton mounted, checking orders...');
     // Check for pending orders on mount with force refresh
@@ -51,7 +46,6 @@ export default function MobileOrderImportButton({
       checkPendingOrders(true);
     }
   }, [isDialogOpen, checkPendingOrders]);
-
   const handleImportAll = async () => {
     console.log('🚀 [DEBUG] Starting import of ALL pending orders...');
     const result = await importMobileOrders();
@@ -64,7 +58,6 @@ export default function MobileOrderImportButton({
       setIsDialogOpen(false);
     }
   };
-
   const handleImportSalesRep = async (salesRepId: string, salesRepName: string) => {
     console.log(`🎯 [DEBUG] Starting import for specific sales rep: ${salesRepName}`);
     const result = await importSalesRepOrders(salesRepId, salesRepName);
@@ -77,7 +70,6 @@ export default function MobileOrderImportButton({
       setIsDialogOpen(false);
     }
   };
-
   const handleImportOrphaned = async () => {
     console.log('🔄 [DEBUG] Starting import of orphaned orders...');
     const result = await importOrphanedOrders();
@@ -90,7 +82,6 @@ export default function MobileOrderImportButton({
       setIsDialogOpen(false);
     }
   };
-
   const showDebugInfo = () => {
     toast.info('Debug Info', {
       description: `Última verificação: ${debugInfo.lastCheck}\nPedidos encontrados: ${debugInfo.ordersFound}\nCom vendedor: ${debugInfo.withSalesRep}\nÓrfãos: ${debugInfo.orphaned}${debugInfo.error ? `\nErro: ${debugInfo.error}` : ''}`
@@ -103,35 +94,24 @@ export default function MobileOrderImportButton({
   if (!showButton) {
     return null;
   }
-
-  return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  return <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="relative">
           <Smartphone size={16} className="mr-2" />
           Importar Pedidos Mobile
-          {pendingOrdersCount > 0 && !isImporting && (
-            <Badge variant="secondary" className="ml-2">
+          {pendingOrdersCount > 0 && !isImporting && <Badge variant="secondary" className="ml-2">
               {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
-            </Badge>
-          )}
-          {pendingOrdersCount === 0 && !isImporting && (
-            <Badge variant="outline" className="ml-2 text-gray-500">
+            </Badge>}
+          {pendingOrdersCount === 0 && !isImporting && <Badge variant="outline" className="ml-2 text-gray-500">
               0
-            </Badge>
-          )}
+            </Badge>}
           {isImporting && <RefreshCw size={16} className="ml-2 animate-spin" />}
           
           {/* Debug button */}
-          <Button
-            size="sm"
-            variant="ghost"
-            className="ml-2 p-1 h-6 w-6"
-            onClick={(e) => {
-              e.stopPropagation();
-              showDebugInfo();
-            }}
-          >
+          <Button size="sm" variant="ghost" className="ml-2 p-1 h-6 w-6" onClick={e => {
+          e.stopPropagation();
+          showDebugInfo();
+        }}>
             <Bug size={12} />
           </Button>
         </Button>
@@ -142,25 +122,14 @@ export default function MobileOrderImportButton({
           <DialogTitle className="flex items-center gap-2">
             <Smartphone size={20} />
             Importar Pedidos Mobile
-            {pendingOrdersCount > 0 && (
-              <Badge variant="secondary">{pendingOrdersCount} pendentes</Badge>
-            )}
+            {pendingOrdersCount > 0 && <Badge variant="secondary">{pendingOrdersCount} pendentes</Badge>}
             
             {/* Debug info */}
-            <div className="text-xs text-gray-500 ml-auto">
-              Debug: {debugInfo.ordersFound} encontrados ({debugInfo.withSalesRep}+{debugInfo.orphaned})
-              {debugInfo.error && <span className="text-red-500 ml-2">⚠️ {debugInfo.error}</span>}
-            </div>
+            
           </DialogTitle>
         </DialogHeader>
         
-        <SalesRepImportSelector 
-          onImportSalesRep={handleImportSalesRep} 
-          onImportAll={handleImportAll}
-          onImportOrphaned={handleImportOrphaned}
-          isImporting={isImporting} 
-        />
+        <SalesRepImportSelector onImportSalesRep={handleImportSalesRep} onImportAll={handleImportAll} onImportOrphaned={handleImportOrphaned} isImporting={isImporting} />
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
