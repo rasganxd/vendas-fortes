@@ -1,7 +1,7 @@
 
 // Utilitários unificados para manipulação de preços brasileiros
 
-// Converte uma string de preço brasileiro (formato R$ 1.234,56 ou 1234,56) para número
+// Converte uma string de preço brasileiro (formato R$ 1.234,56) para número
 export const parseBrazilianPrice = (value: string): number => {
   if (!value || typeof value !== 'string') return 0;
   
@@ -10,7 +10,8 @@ export const parseBrazilianPrice = (value: string): number => {
   
   // Se não há vírgula, trata como valor inteiro em reais
   if (!cleanValue.includes(',')) {
-    const num = parseInt(cleanValue) || 0;
+    // Remove pontos de milhares e converte
+    const num = parseInt(cleanValue.replace(/\./g, '')) || 0;
     return num;
   }
   
@@ -22,50 +23,30 @@ export const parseBrazilianPrice = (value: string): number => {
   return parseFloat(`${integerPart}.${decimalPart}`);
 };
 
-// Formata um número para o formato de preço brasileiro (sem R$)
+// Formata um número para o formato de preço brasileiro (com R$)
 export const formatBrazilianPrice = (value: number): string => {
   if (value === undefined || value === null || isNaN(value)) {
-    return '0,00';
+    return 'R$ 0,00';
   }
   
-  return new Intl.NumberFormat('pt-BR', {
+  return 'R$ ' + new Intl.NumberFormat('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(value);
 };
 
-// Aplica máscara de preço em tempo real durante digitação - VERSÃO CORRIGIDA
+// Aplica máscara de preço em tempo real - SIMPLIFICADA para uso com jQuery MaskMoney
 export const applyPriceMask = (value: string): string => {
-  // Remove tudo exceto números e vírgula
-  let cleanValue = value.replace(/[^\d,]/g, '');
+  // Esta função agora é principalmente para compatibilidade
+  // O jQuery MaskMoney fará o trabalho pesado
+  if (!value) return 'R$ ';
   
-  if (!cleanValue) return '';
+  // Se já tem R$, retorna como está
+  if (value.includes('R$')) return value;
   
-  // Se já contém vírgula, formatar mantendo a vírgula
-  if (cleanValue.includes(',')) {
-    const parts = cleanValue.split(',');
-    const integerPart = parts[0];
-    const decimalPart = parts[1] ? parts[1].substring(0, 2) : '';
-    
-    // Formatar parte inteira com pontos de milhares apenas se tiver 4+ dígitos
-    const formattedInteger = integerPart.length >= 4 
-      ? integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-      : integerPart;
-    
-    return decimalPart ? `${formattedInteger},${decimalPart}` : `${formattedInteger},`;
-  }
-  
-  // Para números sem vírgula, não aplicar formatação de centavos automaticamente
-  // Permitir digitação livre até que o usuário adicione vírgula manualmente
-  const num = parseInt(cleanValue);
-  if (isNaN(num)) return '';
-  
-  // Aplicar pontos de milhares apenas se tiver 4+ dígitos
-  if (cleanValue.length >= 4) {
-    return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  }
-  
-  return cleanValue;
+  // Caso contrário, aplica formatação básica
+  const numValue = parseBrazilianPrice(value);
+  return formatBrazilianPrice(numValue);
 };
 
 // Valida se uma string representa um preço válido
@@ -84,4 +65,9 @@ export const priceStringToNumber = (priceString: string): number => {
 // Converte número para string formatada (para exibição)
 export const numberToPriceString = (num: number): string => {
   return formatBrazilianPrice(num);
+};
+
+// Função específica para extrair valor numérico do jQuery MaskMoney
+export const extractNumericValue = (maskedValue: string): number => {
+  return parseBrazilianPrice(maskedValue);
 };
