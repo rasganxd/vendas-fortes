@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
@@ -198,6 +197,25 @@ export const productService = {
     };
   },
 
+  // Método simplificado de exclusão que remove automaticamente unidades e configurações
+  async delete(id: string): Promise<void> {
+    const { data, error } = await supabase.rpc('delete_product_simple', {
+      p_product_id: id
+    });
+
+    if (error) {
+      console.error('Error calling delete_product_simple:', error);
+      throw error;
+    }
+
+    const result = data as any;
+
+    if (!result.success) {
+      throw new Error(result.error || 'Falha ao excluir produto');
+    }
+  },
+
+  // Método avançado de exclusão com opções de força
   async deleteWithDependencies(id: string, forceDelete: boolean = false): Promise<void> {
     const { data, error } = await supabase.rpc('delete_product_with_dependencies', {
       p_product_id: id,
@@ -209,7 +227,6 @@ export const productService = {
       throw error;
     }
 
-    // Type assertion since we know the structure of the returned data
     const result = data as any;
 
     if (!result.success) {

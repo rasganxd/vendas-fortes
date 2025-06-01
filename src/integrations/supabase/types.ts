@@ -1443,6 +1443,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      delete_product_simple: {
+        Args: { p_product_id: string }
+        Returns: Json
+      }
       delete_product_with_dependencies: {
         Args: { p_product_id: string; p_force_delete?: boolean }
         Returns: Json

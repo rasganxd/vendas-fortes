@@ -97,7 +97,7 @@ export const updateProduct = async (
 };
 
 /**
- * Deletes a product with improved sync
+ * Deletes a product with automatic cleanup of units and pricing
  */
 export const deleteProduct = async (
   id: string,
@@ -105,8 +105,8 @@ export const deleteProduct = async (
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ): Promise<void> => {
   try {
-    // Delete from Supabase using the correct method
-    await productService.deleteWithDependencies(id, false);
+    // Use the simple delete method that automatically removes units and pricing
+    await productService.delete(id);
     
     // Update local state
     const updatedProducts = products.filter(product => product.id !== id);
@@ -118,7 +118,7 @@ export const deleteProduct = async (
     
     toast({
       title: "Produto excluído",
-      description: "Produto excluído com sucesso!"
+      description: "Produto excluído com sucesso! Unidades e configurações removidas automaticamente."
     });
     
     return;

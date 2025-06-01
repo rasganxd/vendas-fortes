@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabase/productService';
@@ -173,8 +172,8 @@ export const useProducts = () => {
 
   const deleteProduct = async (id: string) => {
     try {
-      // Delete from Supabase using the correct method
-      await productService.deleteWithDependencies(id, false);
+      // Use the simple delete method that automatically removes units and pricing
+      await productService.delete(id);
       
       // Update local state immediately
       setProducts((prev) => prev.filter((item) => item.id !== id));
@@ -186,7 +185,7 @@ export const useProducts = () => {
       
       toast({
         title: 'Produto excluído',
-        description: 'Produto excluído com sucesso!',
+        description: 'Produto excluído com sucesso! Unidades e configurações removidas automaticamente.',
       });
     } catch (error: any) {
       console.error('❌ Error deleting product:', error);
@@ -194,10 +193,8 @@ export const useProducts = () => {
       // Enhanced error handling
       let errorMessage = 'Não foi possível excluir o produto.';
       
-      if (error.message?.includes('foreign key')) {
-        errorMessage = 'Produto não pode ser excluído pois está sendo usado em outros registros.';
-      } else if (error.message?.includes('dependências')) {
-        errorMessage = 'Produto possui dependências que impedem a exclusão.';
+      if (error.message?.includes('histórico')) {
+        errorMessage = 'Produto não pode ser excluído pois possui histórico de vendas.';
       }
       
       toast({

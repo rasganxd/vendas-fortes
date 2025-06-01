@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { EnhancedCard, EnhancedCardContent, EnhancedCardDescription, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
@@ -15,15 +14,15 @@ import BulkProductUpload from '@/components/products/BulkProductUpload';
 import { Product } from '@/types';
 import { toast } from "sonner";
 import { productUnitsMappingService } from '@/services/supabase/productUnitsMapping';
-import { EnhancedDeleteConfirmationDialog } from '@/components/products/EnhancedDeleteConfirmationDialog';
-import { productService } from '@/services/supabase/productService';
+import { SimpleDeleteConfirmationDialog } from '@/components/products/SimpleDeleteConfirmationDialog';
 
 export default function Products() {
   const {
     products,
     isLoading,
     addProduct,
-    updateProduct
+    updateProduct,
+    deleteProduct
   } = useProducts();
   const {
     refreshData
@@ -38,6 +37,7 @@ export default function Products() {
     isLoadingGroups,
     isLoadingBrands
   } = useProductClassification();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -61,7 +61,7 @@ export default function Products() {
     setDeleteDialogOpen(true);
   };
   
-  const handleConfirmDelete = async (forceDelete: boolean = false) => {
+  const handleConfirmDelete = async () => {
     if (!productToDelete || isDeleting) {
       return;
     }
@@ -69,13 +69,10 @@ export default function Products() {
     setIsDeleting(true);
     
     try {
-      // Use only the enhanced deletion method from productService
-      await productService.deleteWithDependencies(productToDelete.id, forceDelete);
+      await deleteProduct(productToDelete.id);
       
       toast.success("Produto excluído", {
-        description: forceDelete 
-          ? "O produto e suas dependências foram removidos com sucesso" 
-          : "O produto foi excluído com sucesso"
+        description: "Produto excluído com sucesso! Unidades e configurações removidas automaticamente."
       });
       
       // Refresh all data to ensure consistency
@@ -88,15 +85,7 @@ export default function Products() {
       let errorMessage = "Erro ao excluir produto";
       
       if (error.message) {
-        if (error.message.includes('pelo menos uma unidade principal')) {
-          errorMessage = "Erro: Produto deve ter pelo menos uma unidade principal configurada";
-        } else if (error.message.includes('foreign key')) {
-          errorMessage = "Produto não pode ser excluído pois está sendo usado em outros registros";
-        } else if (error.message.includes('dependências')) {
-          errorMessage = "Produto possui dependências que impedem a exclusão";
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
       
       toast.error("Erro", {
@@ -312,11 +301,12 @@ export default function Products() {
           productBrands={productBrands || []} 
         />
 
-        <EnhancedDeleteConfirmationDialog
+        <SimpleDeleteConfirmationDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
           product={productToDelete}
+          isDeleting={isDeleting}
         />
 
         <BulkProductUpload 
