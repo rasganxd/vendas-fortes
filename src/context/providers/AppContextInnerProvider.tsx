@@ -127,38 +127,16 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     generateRouteUpdate: deliveryRoutesHook.generateRouteUpdate,
     getRouteWithCustomers: deliveryRoutesHook.getRouteWithCustomers,
     
-    createBackup: backupsHook.createBackup,
+    createBackup: async (name?: string, description?: string) => {
+      return await backupsHook.createBackup(name, description);
+    },
     restoreBackup: backupsHook.restoreBackup,
     deleteBackup: backupsHook.deleteBackup,
     
-    // Product operations that might be missing
-    validateProductDiscount: (productId: string, discountedPrice: number) => {
-      const product = products.find(p => p.id === productId);
-      if (!product) return "Produto não encontrado";
-      
-      const maxDiscount = product.maxDiscountPercentage || 0;
-      const minPrice = product.price * (1 - maxDiscount / 100);
-      
-      if (discountedPrice < minPrice) {
-        return `Preço mínimo permitido: R$ ${minPrice.toFixed(2)}`;
-      }
-      
-      return true;
-    },
-    
-    getMinimumPrice: (productId: string) => {
-      const product = products.find(p => p.id === productId);
-      if (!product) return 0;
-      
-      const maxDiscount = product.maxDiscountPercentage || 0;
-      return product.price * (1 - maxDiscount / 100);
-    },
-    
-    addBulkProducts: async (products: any[]) => {
-      // Placeholder implementation
-      console.log('addBulkProducts called with:', products.length, 'products');
-      return [];
-    },
+    // Product operations - use existing operations
+    validateProductDiscount: hookOperations.validateProductDiscount,
+    getMinimumPrice: hookOperations.getMinimumPrice,
+    addBulkProducts: hookOperations.addBulkProducts,
     
     // System operations that might be missing
     startNewMonth: async () => {
