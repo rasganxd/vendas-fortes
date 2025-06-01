@@ -198,18 +198,6 @@ export const productService = {
     };
   },
 
-  async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error deleting product:', error);
-      throw error;
-    }
-  },
-
   async deleteWithDependencies(id: string, forceDelete: boolean = false): Promise<void> {
     const { data, error } = await supabase.rpc('delete_product_with_dependencies', {
       p_product_id: id,
@@ -225,7 +213,6 @@ export const productService = {
     const result = data as any;
 
     if (!result.success) {
-      console.error('Product deletion failed:', result);
       throw new Error(result.error || 'Falha ao excluir produto');
     }
   }

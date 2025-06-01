@@ -74,6 +74,11 @@ export default function ProductForm({
 
   // Custom submit handler to sanitize values
   const handleFormSubmit = (data: any) => {
+    // Prevent submission if form is not ready
+    if (!isFormReady || isSubmitting || !primaryUnit) {
+      return;
+    }
+
     const sanitizedData = {
       ...data,
       categoryId: sanitizeFormValue(data.categoryId),

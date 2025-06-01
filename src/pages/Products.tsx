@@ -22,7 +22,6 @@ export default function Products() {
   const {
     products,
     isLoading,
-    deleteProduct,
     addProduct,
     updateProduct
   } = useProducts();
@@ -45,6 +44,7 @@ export default function Products() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -62,19 +62,17 @@ export default function Products() {
   };
   
   const handleConfirmDelete = async (forceDelete: boolean = false) => {
-    if (!productToDelete) {
-      console.error('No product selected for deletion');
+    if (!productToDelete || isDeleting) {
       return;
     }
     
+    setIsDeleting(true);
+    
     try {
-      // Use the enhanced deletion method from productService
+      // Use only the enhanced deletion method from productService
       await productService.deleteWithDependencies(productToDelete.id, forceDelete);
       
-      // Update local state using the hook
-      await deleteProduct(productToDelete.id);
-      
-      toast("Produto excluído", {
+      toast.success("Produto excluído", {
         description: forceDelete 
           ? "O produto e suas dependências foram removidos com sucesso" 
           : "O produto foi excluído com sucesso"
@@ -83,9 +81,10 @@ export default function Products() {
       // Refresh all data to ensure consistency
       await refreshData();
       
-    } catch (error: any) {
-      console.error('Error deleting product:', error);
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
       
+    } catch (error: any) {
       let errorMessage = "Erro ao excluir produto";
       
       if (error.message) {
@@ -100,18 +99,11 @@ export default function Products() {
         }
       }
       
-      toast("Erro", {
-        description: errorMessage,
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
+      toast.error("Erro", {
+        description: errorMessage
       });
-      
-      // Don't throw the error - let the dialog handle it
     } finally {
-      setDeleteDialogOpen(false);
-      setProductToDelete(null);
+      setIsDeleting(false);
     }
   };
   
@@ -124,7 +116,6 @@ export default function Products() {
         throw new Error("Produto deve ter uma unidade principal");
       }
 
-      // FIXED: Preserve existing price when updating product
       const productData = {
         code: data.code,
         name: data.name,
@@ -135,7 +126,7 @@ export default function Products() {
         categoryId: data.categoryId,
         groupId: data.groupId,
         brandId: data.brandId,
-        // IMPORTANT: Preserve existing price when editing
+        // Preserve existing price when editing
         price: isEditingProduct && editingProduct ? editingProduct.price : 0,
         syncStatus: 'synced' as const,
         createdAt: isEditingProduct && editingProduct ? editingProduct.createdAt : new Date(),
@@ -160,7 +151,7 @@ export default function Products() {
         });
         productId = editingProduct.id;
         
-        toast("Produto atualizado", {
+        toast.success("Produto atualizado", {
           description: "Produto atualizado com sucesso. Sincronizando unidades..."
         });
       } else {
@@ -170,13 +161,12 @@ export default function Products() {
           throw new Error("Falha ao criar produto - ID não retornado");
         }
         
-        toast("Produto criado", {
+        toast.success("Produto criado", {
           description: "Produto criado com sucesso. Configurando unidades..."
         });
       }
 
       // Synchronize units using the new system
-      // Fetch existing units
       const existingUnits = isEditingProduct 
         ? await productUnitsMappingService.getProductUnits(productId)
         : [];
@@ -202,7 +192,7 @@ export default function Products() {
         );
       }
       
-      toast("Sucesso!", {
+      toast.success("Sucesso!", {
         description: isEditingProduct 
           ? "Produto e unidades atualizados com sucesso. Preço preservado." 
           : "Produto criado e unidades configuradas com sucesso. Defina o preço de venda na seção Precificação."
@@ -223,16 +213,10 @@ export default function Products() {
       }));
       
     } catch (error: any) {
-      console.error('Error saving product:', error);
-      
       const errorMessage = error.message || "Erro desconhecido ao salvar produto";
       
-      toast("Erro ao salvar", {
-        description: errorMessage,
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
+      toast.error("Erro ao salvar", {
+        description: errorMessage
       });
     }
   };
@@ -265,7 +249,6 @@ export default function Products() {
                 </EnhancedCardDescription>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
-                
                 <Button variant="outline" onClick={() => setIsBulkUploadOpen(true)} className="flex items-center gap-2">
                   <Upload className="h-4 w-4" />
                   Importar
