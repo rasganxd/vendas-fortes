@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { EnhancedTable, EnhancedTableHeader, EnhancedTableBody, EnhancedTableRow, EnhancedTableHead, EnhancedTableCell } from '@/components/ui/enhanced-table';
 import { PriceInput } from '@/components/ui/price-input';
 import { SavingIndicator } from '@/components/ui/saving-indicator';
@@ -10,6 +10,7 @@ import { Product } from '@/types';
 import { useProducts } from '@/hooks/useProducts';
 import { productDiscountService } from '@/services/supabase/productDiscountService';
 import { useToast } from '@/hooks/use-toast';
+import { useOptimizedLogging } from '@/hooks/useOptimizedLogging';
 import { Edit, Save, X, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -20,6 +21,8 @@ interface ProductPricingRow extends Product {
 export default function ProductPricing() {
   const { products, updateProduct } = useProducts();
   const { toast } = useToast();
+  const { logDebug, logError, logSuccess } = useOptimizedLogging({ component: 'ProductPricing' });
+  
   const [pricingData, setPricingData] = useState<ProductPricingRow[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState<number>(0);
@@ -28,14 +31,23 @@ export default function ProductPricing() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Memoized filtered data
+  const filteredData = useMemo(() => 
+    pricingData.filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      product.code.toString().includes(searchTerm)
+    ), [pricingData, searchTerm]
+  );
+
   // Load pricing data with discount settings
   useEffect(() => {
     const loadPricingData = async () => {
+      if (products.length === 0) return;
+      
       setIsLoading(true);
       try {
-        console.log('🔄 Loading pricing data for products:', products.length);
+        logDebug('Loading pricing data', products.length);
         const discounts = await productDiscountService.getAllDiscounts();
-        console.log('📊 Loaded discounts:', discounts);
         
         const combined = products.map(product => ({
           ...product,
@@ -43,13 +55,14 @@ export default function ProductPricing() {
         }));
         
         setPricingData(combined);
-        console.log('✅ Pricing data loaded:', combined.length, 'products');
+        logSuccess('Pricing data loaded', combined.length);
       } catch (error) {
-        console.error('❌ Error loading pricing data:', error);
+        logError('Error loading pricing data', error);
         toast({
           title: "Erro ao carregar dados",
           description: "Não foi possível carregar as configurações de desconto"
         });
+        // Fallback to products without discounts
         setPricingData(products.map(product => ({
           ...product,
           maxDiscountPercentage: 0
@@ -59,37 +72,26 @@ export default function ProductPricing() {
       }
     };
 
-    if (products.length > 0) {
-      loadPricingData();
-    }
-  }, [products, toast]);
-
-  const filteredData = pricingData.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    product.code.toString().includes(searchTerm)
-  );
+    loadPricingData();
+  }, [products, toast, logDebug, logError, logSuccess]);
 
   const handleEditStart = (product: ProductPricingRow) => {
-    console.log('✏️ Starting edit for product:', product.name, 'Price:', product.price);
     setEditingId(product.id);
     setEditPrice(product.price || 0);
     setEditDiscount(product.maxDiscountPercentage.toString());
   };
 
   const handleEditCancel = () => {
-    console.log('❌ Canceling edit');
     setEditingId(null);
     setEditPrice(0);
     setEditDiscount('');
   };
 
   const handleSave = async (productId: string) => {
-    console.log('💾 Starting save for product:', productId, 'Price:', editPrice, 'Discount:', editDiscount);
-    
     try {
       setIsSaving(true);
       
-      // Validação do preço - editPrice já é number
+      // Validate price
       if (isNaN(editPrice) || editPrice < 0) {
         toast({
           title: "Preço inválido",
@@ -98,22 +100,14 @@ export default function ProductPricing() {
         return;
       }
 
-      // Conversão e validação do desconto
+      // Validate discount
       const discountValue = editDiscount.trim();
       let discountPercentage = 0;
       
       if (discountValue !== '') {
         discountPercentage = parseFloat(discountValue.replace(',', '.'));
         
-        if (isNaN(discountPercentage)) {
-          toast({
-            title: "Desconto inválido",
-            description: "O desconto deve ser um número válido"
-          });
-          return;
-        }
-        
-        if (discountPercentage < 0 || discountPercentage > 100) {
+        if (isNaN(discountPercentage) || discountPercentage < 0 || discountPercentage > 100) {
           toast({
             title: "Desconto inválido",
             description: "O desconto deve estar entre 0% e 100%"
@@ -122,40 +116,18 @@ export default function ProductPricing() {
         }
       }
 
-      console.log('🔄 Updating product price...');
       // Update product price
       await updateProduct(productId, { price: editPrice });
-      console.log('✅ Product price updated successfully');
       
-      // Update or delete discount settings with improved error handling
+      // Update discount settings
       if (discountPercentage > 0) {
-        console.log('🔄 Updating discount settings to:', discountPercentage, '%');
-        try {
-          await productDiscountService.upsert(productId, discountPercentage);
-          console.log('✅ Discount settings updated successfully');
-        } catch (discountError) {
-          console.error('❌ Error updating discount settings:', discountError);
-          
-          // Se falhar no upsert, tentar uma segunda vez após um pequeno delay
-          console.log('🔄 Retrying discount update...');
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          try {
-            await productDiscountService.upsert(productId, discountPercentage);
-            console.log('✅ Discount settings updated successfully on retry');
-          } catch (retryError) {
-            console.error('❌ Failed to update discount even on retry:', retryError);
-            throw new Error(`Erro ao salvar desconto: ${retryError instanceof Error ? retryError.message : 'Erro desconhecido'}`);
-          }
-        }
+        await productDiscountService.upsert(productId, discountPercentage);
       } else {
-        console.log('🔄 Removing discount settings (0% or empty)');
         try {
           await productDiscountService.delete(productId);
-          console.log('✅ Discount settings removed successfully');
         } catch (error) {
-          // Não é um erro crítico se não conseguir deletar (pode não existir)
-          console.log('ℹ️ No discount settings to remove or error removing:', error);
+          // Not critical if delete fails (might not exist)
+          logDebug('No discount settings to remove', error);
         }
       }
       
@@ -166,7 +138,7 @@ export default function ProductPricing() {
           : item
       ));
       
-      // Disparar evento para sincronização com outros componentes
+      // Dispatch event for synchronization
       window.dispatchEvent(new CustomEvent('productPriceUpdated', { 
         detail: { productId, newPrice: editPrice } 
       }));
@@ -181,14 +153,9 @@ export default function ProductPricing() {
       setEditDiscount('');
       
     } catch (error) {
-      console.error('❌ Error saving price and discount:', error);
+      logError('Error saving price and discount', error);
       
-      // Mostrar erro mais específico baseado no tipo
-      let errorMessage = "Erro desconhecido";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast({
         title: "Erro ao atualizar produto",
         description: errorMessage,
@@ -218,10 +185,8 @@ export default function ProductPricing() {
 
   return (
     <div className="space-y-6">
-      {/* Saving Indicator */}
       <SavingIndicator isVisible={isSaving} message="Salvando preço e desconto..." />
 
-      {/* Header */}
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -239,7 +204,6 @@ export default function ProductPricing() {
         </CardHeader>
       </Card>
 
-      {/* Pricing Table */}
       <Card>
         <CardContent className="p-0">
           <EnhancedTable isLoading={isLoading}>

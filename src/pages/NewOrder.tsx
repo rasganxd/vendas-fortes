@@ -13,58 +13,40 @@ export default function NewOrder() {
   const { getOrderById } = useOrders();
   const navigate = useNavigate();
   
-  const [isValidating, setIsValidating] = useState(false);
-  const [isValid, setIsValid] = useState(true);
+  const [isValidating, setIsValidating] = useState(!!orderId);
   const [orderData, setOrderData] = useState<Order | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [showContent, setShowContent] = useState(!orderId); // Show immediately if no orderId
   
-  // Validate order ID to prevent navigation to invalid orders
+  // Optimized order validation
   useEffect(() => {
-    const validateOrderId = async () => {
-      if (orderId) {
-        try {
-          setIsValidating(true);
-          setValidationError(null);
-          console.log("Validating order ID:", orderId);
-          
-          // Get order data - will be passed to OrderFormContainer to prevent duplicate requests
-          const order = await getOrderById(orderId);
-          
-          if (!order) {
-            console.error("Order not found with ID:", orderId);
-            setIsValid(false);
-            setValidationError(`Pedido com ID ${orderId} não encontrado`);
-            
-            // Navigate back to orders after delay
-            setTimeout(() => {
-              navigate('/pedidos', { 
-                state: { error: `Pedido com ID ${orderId} não encontrado` }
-              });
-            }, 3000);
-          } else {
-            console.log("Order validated successfully:", order.id);
-            setOrderData(order);
-            setIsValid(true);
-            // Show content with smooth transition
-            setTimeout(() => setShowContent(true), 100);
-          }
-        } catch (error) {
-          console.error("Error validating order ID:", error);
-          setIsValid(false);
-          setValidationError(error instanceof Error ? error.message : "Erro ao validar pedido");
-        } finally {
-          setIsValidating(false);
+    if (!orderId) return;
+
+    const validateOrder = async () => {
+      try {
+        setIsValidating(true);
+        const order = await getOrderById(orderId);
+        
+        if (!order) {
+          setValidationError(`Pedido com ID ${orderId} não encontrado`);
+          setTimeout(() => navigate('/pedidos', { 
+            state: { error: `Pedido não encontrado` }
+          }), 2000);
+        } else {
+          setOrderData(order);
         }
+      } catch (error) {
+        setValidationError(error instanceof Error ? error.message : "Erro ao validar pedido");
+      } finally {
+        setIsValidating(false);
       }
     };
     
-    validateOrderId();
+    validateOrder();
   }, [orderId, getOrderById, navigate]);
   
   const pageTitle = orderId ? "Edição de Pedido" : "Digitação de Pedidos";
   
-  if (orderId && isValidating) {
+  if (isValidating) {
     return (
       <PageLayout title={pageTitle} fullWidth={true}>
         <div className="w-full">
@@ -74,17 +56,17 @@ export default function NewOrder() {
     );
   }
   
-  if (orderId && !isValid && !isValidating) {
+  if (validationError) {
     return (
-      <PageLayout title="Pedido não encontrado" fullWidth={true}>
+      <PageLayout title="Erro" fullWidth={true}>
         <div className="w-full">
-          <div className="flex justify-center items-center h-64 animate-fade-in">
+          <div className="flex justify-center items-center h-64">
             <div className="text-center">
               <div className="rounded-full h-12 w-12 border-2 border-red-500 mx-auto mb-4 flex items-center justify-center">
                 <span className="text-red-500 text-xl">!</span>
               </div>
-              <p className="text-lg text-gray-700 mb-2">Pedido não encontrado</p>
-              <p className="text-sm text-gray-500">{validationError || "O pedido solicitado não está disponível ou foi excluído."}</p>
+              <p className="text-lg text-gray-700 mb-2">Erro ao carregar pedido</p>
+              <p className="text-sm text-gray-500">{validationError}</p>
               <button 
                 onClick={() => navigate('/pedidos')} 
                 className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded transition-colors"
@@ -100,7 +82,7 @@ export default function NewOrder() {
   
   return (
     <PageLayout title={pageTitle} showConnectionStatus={true} fullWidth={true}>
-      <div className={`w-full transition-opacity duration-300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+      <div className="w-full">
         <OrderFormContainer preloadedOrder={orderData} orderId={orderId} />
       </div>
     </PageLayout>
