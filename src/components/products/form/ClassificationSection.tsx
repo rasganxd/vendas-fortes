@@ -30,10 +30,30 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
   productGroups,
   productBrands
 }) => {
-  // Filter out invalid items to prevent Select errors
-  const validCategories = productCategories.filter(cat => cat && cat.id && cat.name && cat.name.trim() !== '');
-  const validGroups = productGroups.filter(group => group && group.id && group.name && group.name.trim() !== '');
-  const validBrands = productBrands.filter(brand => brand && brand.id && brand.name && brand.name.trim() !== '');
+  // Filter out invalid items to prevent Select errors - must have valid ID and name
+  const validCategories = productCategories.filter(cat => 
+    cat && 
+    cat.id && 
+    cat.id.trim() !== '' && 
+    cat.name && 
+    cat.name.trim() !== ''
+  );
+  
+  const validGroups = productGroups.filter(group => 
+    group && 
+    group.id && 
+    group.id.trim() !== '' && 
+    group.name && 
+    group.name.trim() !== ''
+  );
+  
+  const validBrands = productBrands.filter(brand => 
+    brand && 
+    brand.id && 
+    brand.id.trim() !== '' && 
+    brand.name && 
+    brand.name.trim() !== ''
+  );
 
   console.log('🏷️ ClassificationSection - Valid data:', {
     categoriesCount: validCategories.length,
@@ -57,7 +77,7 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">Nenhuma categoria</SelectItem>
+                <SelectItem value="none">Nenhuma categoria</SelectItem>
                 {validCategories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -84,7 +104,7 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">Nenhum grupo</SelectItem>
+                <SelectItem value="none">Nenhum grupo</SelectItem>
                 {validGroups.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
                     {group.name}
@@ -111,7 +131,7 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">Nenhuma marca</SelectItem>
+                <SelectItem value="none">Nenhuma marca</SelectItem>
                 {validBrands.map((brand) => (
                   <SelectItem key={brand.id} value={brand.id}>
                     {brand.name}

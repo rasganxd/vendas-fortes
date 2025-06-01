@@ -86,6 +86,23 @@ export default function ProductForm({
     secondaryUnitsCount: secondaryUnits.length
   });
 
+  // Helper function to convert "none" values to empty strings or null
+  const sanitizeFormValue = (value: string | undefined | null) => {
+    if (!value || value === "none") return null;
+    return value;
+  };
+
+  // Custom submit handler to sanitize values
+  const handleFormSubmit = (data: any) => {
+    const sanitizedData = {
+      ...data,
+      categoryId: sanitizeFormValue(data.categoryId),
+      groupId: sanitizeFormValue(data.groupId),
+      brandId: sanitizeFormValue(data.brandId)
+    };
+    handleSubmit(sanitizedData);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -96,7 +113,7 @@ export default function ProductForm({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
             {/* Seção de Campos Básicos */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Informações Básicas</h3>
