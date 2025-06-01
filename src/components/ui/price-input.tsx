@@ -3,12 +3,31 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useEffect, useRef } from "react"
 
-// Declaração global para jQuery
+// Declaração global para jQuery e MaskMoney
 declare global {
   interface Window {
     $: any;
     jQuery: any;
   }
+}
+
+// Definição de tipos para o plugin MaskMoney
+interface JQueryMaskMoneyOptions {
+  prefix?: string;
+  suffix?: string;
+  affixesStay?: boolean;
+  thousands?: string;
+  decimal?: string;
+  precision?: number;
+  allowZero?: boolean;
+  allowNegative?: boolean;
+}
+
+interface JQuery {
+  maskMoney(options?: JQueryMaskMoneyOptions): JQuery;
+  maskMoney(method: 'mask', value?: number): JQuery;
+  maskMoney(method: 'unmasked'): number[];
+  maskMoney(method: 'destroy'): JQuery;
 }
 
 interface PriceInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
@@ -22,54 +41,65 @@ const PriceInput = React.forwardRef<HTMLInputElement, PriceInputProps>(
     const inputRef = useRef<HTMLInputElement>(null);
     const maskMoneyInstanceRef = useRef<any>(null);
 
-    // Importar jQuery dinamicamente e inicializar MaskMoney
+    // Inicializar MaskMoney
     useEffect(() => {
       const initializeMaskMoney = async () => {
         try {
-          // Importar jQuery dinamicamente
-          const $ = (await import('jquery')).default;
+          // Carregar jQuery via CDN para evitar problemas de resolução
+          if (!window.$) {
+            const script = document.createElement('script');
+            script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+            script.onload = () => {
+              const maskScript = document.createElement('script');
+              maskScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jquery-maskmoney/3.0.2/jquery.maskMoney.min.js';
+              maskScript.onload = () => {
+                setupMaskMoney();
+              };
+              document.head.appendChild(maskScript);
+            };
+            document.head.appendChild(script);
+          } else {
+            setupMaskMoney();
+          }
           
-          // Importar jQuery Mask Plugin
-          await import('jquery-mask-plugin');
-          
-          // Garantir que o jQuery está disponível globalmente
-          window.$ = window.jQuery = $;
-          
-          if (inputRef.current) {
-            const $input = $(inputRef.current);
-            
-            // Inicializar MaskMoney com configurações brasileiras
-            $input.maskMoney({
-              prefix: 'R$ ',
-              thousands: '.',
-              decimal: ',',
-              precision: 2,
-              allowZero: true,
-              allowNegative: false,
-              affixesStay: true
-            });
-            
-            // Armazenar a instância para limpeza posterior
-            maskMoneyInstanceRef.current = $input;
-            
-            // Configurar valor inicial se fornecido
-            if (value !== undefined && value !== null) {
-              $input.maskMoney('mask', value);
+          function setupMaskMoney() {
+            if (inputRef.current && window.$) {
+              const $ = window.$;
+              const $input = $(inputRef.current);
+              
+              // Inicializar MaskMoney com configurações brasileiras
+              $input.maskMoney({
+                prefix: 'R$ ',
+                thousands: '.',
+                decimal: ',',
+                precision: 2,
+                allowZero: true,
+                allowNegative: false,
+                affixesStay: true
+              });
+              
+              // Armazenar a instância para limpeza posterior
+              maskMoneyInstanceRef.current = $input;
+              
+              // Configurar valor inicial se fornecido
+              if (value !== undefined && value !== null) {
+                $input.maskMoney('mask', value);
+              }
+              
+              // Configurar evento de mudança
+              $input.on('keyup blur', () => {
+                const maskedValue = $input.val();
+                const numericValue = $input.maskMoney('unmasked')[0] || 0;
+                
+                if (onChange) {
+                  onChange(numericValue);
+                }
+                
+                if (onDisplayChange) {
+                  onDisplayChange(maskedValue);
+                }
+              });
             }
-            
-            // Configurar evento de mudança
-            $input.on('keyup blur', () => {
-              const maskedValue = $input.val();
-              const numericValue = $input.maskMoney('unmasked')[0] || 0;
-              
-              if (onChange) {
-                onChange(numericValue);
-              }
-              
-              if (onDisplayChange) {
-                onDisplayChange(maskedValue);
-              }
-            });
           }
         } catch (error) {
           console.error('Erro ao inicializar MaskMoney:', error);
@@ -80,7 +110,7 @@ const PriceInput = React.forwardRef<HTMLInputElement, PriceInputProps>(
 
       // Cleanup
       return () => {
-        if (maskMoneyInstanceRef.current) {
+        if (maskMoneyInstanceRef.current && window.$) {
           try {
             maskMoneyInstanceRef.current.off('keyup blur');
             maskMoneyInstanceRef.current.maskMoney('destroy');
