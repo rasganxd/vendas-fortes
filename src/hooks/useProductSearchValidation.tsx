@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Product } from '@/types';
-import { useProductValidation } from './useProductValidation';
+import { useProductValidationFixed } from './useProductValidationFixed';
 
 interface UseProductSearchValidationProps {
   products: Product[];
@@ -15,7 +15,7 @@ export function useProductSearchValidation({ products }: UseProductSearchValidat
     validateProductDiscount,
     loadDiscountSettings,
     discountSettings
-  } = useProductValidation({ products });
+  } = useProductValidationFixed({ products });
 
   // Load discount settings when component mounts
   useEffect(() => {
@@ -36,7 +36,7 @@ export function useProductSearchValidation({ products }: UseProductSearchValidat
     }
 
     // Then validate discount rules
-    const discountValidation = await validateProductDiscount(productId, price);
+    const discountValidation = validateProductDiscount(productId, price);
     
     if (discountValidation === true) {
       // Remove error if valid

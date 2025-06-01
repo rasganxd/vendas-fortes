@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
@@ -9,7 +8,7 @@ import { useAppDataState } from './appData/useAppDataState';
 import { useAppDataOperations } from './appData/useAppDataOperations';
 import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
 import { useAppSettings } from '@/hooks/useAppSettings';
-import { validateProductDiscount } from '@/context/operations/productOperations';
+import { validateProductDiscount } from '@/context/operations/productValidationOperations';
 
 /**
  * Inner provider for the AppContext
