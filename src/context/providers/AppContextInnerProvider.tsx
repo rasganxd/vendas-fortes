@@ -4,8 +4,6 @@ import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
 import { useThemeInitializer } from '@/hooks/useThemeInitializer';
 import { useConnection } from './ConnectionProvider';
-import { useOptimizedAppData } from '@/hooks/useOptimizedAppData';
-import { useOptimizedEventListeners } from '@/hooks/useOptimizedEventListeners';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useProductGroups } from '@/hooks/useProductGroups';
 import { useProductCategories } from '@/hooks/useProductCategories';
@@ -14,31 +12,20 @@ import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
 import { useBackups } from '@/hooks/useBackups';
 
 /**
- * Optimized inner provider for the AppContext
- * Eliminates duplications and improves performance
+ * Simplified inner provider for the AppContext
+ * Uses centralized data from existing hooks
  */
 export const AppContextInnerProvider = ({ children }: { children: React.ReactNode }) => {
   // Get connection status
   const connection = useConnection();
   
-  // Get optimized app data (products, orders, customers, salesReps)
-  const {
-    products,
-    orders,
-    customers,
-    salesReps,
-    isLoading: isLoadingOptimized,
-    refreshData: optimizedRefreshData,
-    isCacheValid
-  } = useOptimizedAppData();
-  
-  // Get hooks for other operations
+  // Get main operations from centralized hooks
   const hookOperations = useAppContextHooks();
 
   // Get settings
   const { settings, updateSettings: updateSettingsHook } = useAppSettings();
 
-  // Get additional data that was missing
+  // Get additional data
   const productGroupsHook = useProductGroups();
   const productCategoriesHook = useProductCategories();
   const productBrandsHook = useProductBrands();
@@ -50,46 +37,13 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     await updateSettingsHook(newSettings);
   };
 
-  // Setup optimized event listeners
-  useOptimizedEventListeners([
-    {
-      event: 'productsUpdated',
-      handler: () => {
-        if (!isCacheValid) {
-          optimizedRefreshData();
-        }
-      }
-    },
-    {
-      event: 'ordersUpdated', 
-      handler: () => {
-        if (!isCacheValid) {
-          optimizedRefreshData();
-        }
-      }
-    },
-    {
-      event: 'mobileOrdersUpdated',
-      handler: () => {
-        optimizedRefreshData();
-      }
-    }
-  ]);
-
   // Initialize theme
   useThemeInitializer(settings?.theme?.primaryColor || '#3b82f6');
 
   // Build the context value with all required properties
   const contextValue = {
-    // Optimized core data
-    products,
-    orders,
-    customers,
-    salesReps,
-    isLoadingProducts: isLoadingOptimized,
-    isLoadingOrders: isLoadingOptimized,
-    isLoadingCustomers: isLoadingOptimized,
-    isLoadingSalesReps: isLoadingOptimized,
+    // Core data from centralized hooks
+    ...hookOperations,
     
     // Additional data that was missing
     productGroups: productGroupsHook.productGroups,
@@ -104,9 +58,6 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     isLoadingProductBrands: productBrandsHook.isLoading,
     isLoadingDeliveryRoutes: deliveryRoutesHook.isLoading,
     isLoadingBackups: backupsHook.isLoading,
-    
-    // Hook operations
-    ...hookOperations,
     
     // Additional operations that were missing
     addProductGroup: productGroupsHook.addProductGroup,
@@ -127,18 +78,21 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     generateRouteUpdate: deliveryRoutesHook.generateRouteUpdate,
     getRouteWithCustomers: deliveryRoutesHook.getRouteWithCustomers,
     
-    createBackup: async (name?: string, description?: string) => {
+    createBackup: async (name?: string, description?: string): Promise<string> => {
       return await backupsHook.createBackup(name, description);
     },
-    restoreBackup: backupsHook.restoreBackup,
+    restoreBackup: async (backupId: string): Promise<boolean> => {
+      try {
+        await backupsHook.restoreBackup(backupId);
+        return true;
+      } catch (error) {
+        console.error('Error restoring backup:', error);
+        return false;
+      }
+    },
     deleteBackup: backupsHook.deleteBackup,
     
-    // Product operations - use existing operations
-    validateProductDiscount: hookOperations.validateProductDiscount,
-    getMinimumPrice: hookOperations.getMinimumPrice,
-    addBulkProducts: hookOperations.addBulkProducts,
-    
-    // System operations that might be missing
+    // System operations
     startNewMonth: async () => {
       console.log('Starting new month...');
       return true;
@@ -172,8 +126,18 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     },
     updateSettings,
     
-    // Optimized refresh
-    refreshData: optimizedRefreshData,
+    // Refresh function - use centralized refresh
+    refreshData: async (): Promise<boolean> => {
+      try {
+        console.log('🔄 Refreshing all data...');
+        await hookOperations.forceRefreshProducts();
+        console.log('✅ Data refreshed successfully');
+        return true;
+      } catch (error) {
+        console.error('❌ Error refreshing data:', error);
+        return false;
+      }
+    },
     
     // Required setters (no-op for compatibility)
     setCustomers: () => {},
@@ -194,7 +158,8 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     
     // System operations
     clearCache: async () => {
-      await optimizedRefreshData();
+      console.log('🧹 Clearing cache...');
+      await hookOperations.forceRefreshProducts();
     },
     
     // Required properties

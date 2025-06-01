@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EnhancedTable, EnhancedTableHeader, EnhancedTableBody, EnhancedTableRow, EnhancedTableHead, EnhancedTableCell } from '@/components/ui/enhanced-table';
@@ -10,7 +10,6 @@ import { Product } from '@/types';
 import { useProducts } from '@/hooks/useProducts';
 import { productDiscountService } from '@/services/supabase/productDiscountService';
 import { useToast } from '@/hooks/use-toast';
-import { useOptimizedLogging } from '@/hooks/useOptimizedLogging';
 import { Edit, Save, X, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -21,7 +20,6 @@ interface ProductPricingRow extends Product {
 export default function ProductPricing() {
   const { products, updateProduct } = useProducts();
   const { toast } = useToast();
-  const { logDebug, logError, logSuccess } = useOptimizedLogging({ component: 'ProductPricing' });
   
   const [pricingData, setPricingData] = useState<ProductPricingRow[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -30,6 +28,7 @@ export default function ProductPricing() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [discountsLoaded, setDiscountsLoaded] = useState(false);
 
   // Memoized filtered data
   const filteredData = useMemo(() => 
@@ -39,55 +38,72 @@ export default function ProductPricing() {
     ), [pricingData, searchTerm]
   );
 
-  // Load pricing data with discount settings
-  useEffect(() => {
-    const loadPricingData = async () => {
-      if (products.length === 0) return;
+  // Memoized load pricing data function
+  const loadPricingData = useCallback(async () => {
+    if (products.length === 0 || discountsLoaded) return;
+    
+    setIsLoading(true);
+    try {
+      const discounts = await productDiscountService.getAllDiscounts();
       
-      setIsLoading(true);
-      try {
-        logDebug('Loading pricing data', products.length);
-        const discounts = await productDiscountService.getAllDiscounts();
-        
-        const combined = products.map(product => ({
-          ...product,
-          maxDiscountPercentage: discounts[product.id] || 0
-        }));
-        
-        setPricingData(combined);
-        logSuccess('Pricing data loaded', combined.length);
-      } catch (error) {
-        logError('Error loading pricing data', error);
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Não foi possível carregar as configurações de desconto"
-        });
-        // Fallback to products without discounts
-        setPricingData(products.map(product => ({
-          ...product,
-          maxDiscountPercentage: 0
-        })));
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const combined = products.map(product => ({
+        ...product,
+        maxDiscountPercentage: discounts[product.id] || 0
+      }));
+      
+      setPricingData(combined);
+      setDiscountsLoaded(true);
+    } catch (error) {
+      console.error('Error loading discount settings:', error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar as configurações de desconto"
+      });
+      // Fallback to products without discounts
+      setPricingData(products.map(product => ({
+        ...product,
+        maxDiscountPercentage: 0
+      })));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [products, toast, discountsLoaded]);
 
-    loadPricingData();
-  }, [products, toast, logDebug, logError, logSuccess]);
+  // Load pricing data only when products change and discounts not loaded
+  useEffect(() => {
+    if (products.length > 0 && !discountsLoaded) {
+      loadPricingData();
+    }
+  }, [products, loadPricingData, discountsLoaded]);
 
-  const handleEditStart = (product: ProductPricingRow) => {
+  // Update pricing data when products change (after initial load)
+  useEffect(() => {
+    if (discountsLoaded && products.length > 0) {
+      setPricingData(prev => 
+        products.map(product => {
+          const existing = prev.find(p => p.id === product.id);
+          return {
+            ...product,
+            maxDiscountPercentage: existing?.maxDiscountPercentage || 0
+          };
+        })
+      );
+    }
+  }, [products, discountsLoaded]);
+
+  const handleEditStart = useCallback((product: ProductPricingRow) => {
     setEditingId(product.id);
     setEditPrice(product.price || 0);
     setEditDiscount(product.maxDiscountPercentage.toString());
-  };
+  }, []);
 
-  const handleEditCancel = () => {
+  const handleEditCancel = useCallback(() => {
     setEditingId(null);
     setEditPrice(0);
     setEditDiscount('');
-  };
+  }, []);
 
-  const handleSave = async (productId: string) => {
+  const handleSave = useCallback(async (productId: string) => {
     try {
       setIsSaving(true);
       
@@ -127,7 +143,7 @@ export default function ProductPricing() {
           await productDiscountService.delete(productId);
         } catch (error) {
           // Not critical if delete fails (might not exist)
-          logDebug('No discount settings to remove', error);
+          console.debug('No discount settings to remove');
         }
       }
       
@@ -153,7 +169,7 @@ export default function ProductPricing() {
       setEditDiscount('');
       
     } catch (error) {
-      logError('Error saving price and discount', error);
+      console.error('Error saving price and discount:', error);
       
       const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast({
@@ -164,24 +180,24 @@ export default function ProductPricing() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [editPrice, editDiscount, updateProduct, toast]);
 
-  const calculateMargin = (product: ProductPricingRow): number => {
+  const calculateMargin = useCallback((product: ProductPricingRow): number => {
     if (!product.cost || product.cost === 0) return 0;
     const price = product.price || 0;
     return ((price - product.cost) / product.cost) * 100;
-  };
+  }, []);
 
-  const calculateMinPrice = (product: ProductPricingRow): number => {
+  const calculateMinPrice = useCallback((product: ProductPricingRow): number => {
     if (!product.price || product.maxDiscountPercentage === 0) return product.price || 0;
     return product.price * (1 - product.maxDiscountPercentage / 100);
-  };
+  }, []);
 
-  const getMarginColor = (margin: number): string => {
+  const getMarginColor = useCallback((margin: number): string => {
     if (margin >= 30) return 'text-green-600';
     if (margin >= 15) return 'text-yellow-600';
     return 'text-red-600';
-  };
+  }, []);
 
   return (
     <div className="space-y-6">

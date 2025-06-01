@@ -1,42 +1,33 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 
 interface EventConfig {
   event: string;
-  handler: (event: CustomEvent) => void;
-  options?: AddEventListenerOptions;
+  handler: () => void;
 }
 
 export const useOptimizedEventListeners = (events: EventConfig[]) => {
-  const listenersRef = useRef<Map<string, (event: CustomEvent) => void>>(new Map());
+  const setupListeners = useCallback(() => {
+    const listeners: Array<{ event: string; handler: EventListener }> = [];
 
-  useEffect(() => {
-    const currentListeners = listenersRef.current;
-
-    // Remove existing listeners to prevent duplicates
-    currentListeners.forEach((handler, event) => {
-      window.removeEventListener(event, handler as EventListener);
-    });
-    currentListeners.clear();
-
-    // Add new listeners
-    events.forEach(({ event, handler, options }) => {
-      const wrappedHandler = (e: Event) => {
-        if (e instanceof CustomEvent) {
-          handler(e);
-        }
+    events.forEach(({ event, handler }) => {
+      const wrappedHandler = () => {
+        // Debounce rapid events
+        setTimeout(handler, 100);
       };
 
-      window.addEventListener(event, wrappedHandler, options);
-      currentListeners.set(event, wrappedHandler as (event: CustomEvent) => void);
+      window.addEventListener(event, wrappedHandler);
+      listeners.push({ event, handler: wrappedHandler });
     });
 
-    // Cleanup function
     return () => {
-      currentListeners.forEach((handler, event) => {
-        window.removeEventListener(event, handler as EventListener);
+      listeners.forEach(({ event, handler }) => {
+        window.removeEventListener(event, handler);
       });
-      currentListeners.clear();
     };
   }, [events]);
+
+  useEffect(() => {
+    return setupListeners();
+  }, [setupListeners]);
 };

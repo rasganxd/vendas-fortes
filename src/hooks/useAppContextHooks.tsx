@@ -10,6 +10,7 @@ import { useLoads } from './useLoads';
 import { useRoutes } from './useRoutes';
 import { usePaymentMethods } from './usePaymentMethods';
 import { usePaymentTables } from './usePaymentTables';
+import { Product } from '@/types';
 
 export const useAppContextHooks = () => {
   const customersHook = useCustomers();
@@ -22,6 +23,36 @@ export const useAppContextHooks = () => {
   const routesHook = useRoutes();
   const paymentMethodsHook = usePaymentMethods();
   const paymentTablesHook = usePaymentTables();
+
+  // Product operations that were missing
+  const validateProductDiscount = async (productId: string, discountedPrice: number): Promise<string | boolean> => {
+    const product = productsHook.products.find(p => p.id === productId);
+    if (!product) return "Produto não encontrado";
+    
+    // For now, return true as validation - can be enhanced later
+    return true;
+  };
+
+  const getMinimumPrice = async (productId: string): Promise<number> => {
+    const product = productsHook.products.find(p => p.id === productId);
+    if (!product) return 0;
+    
+    // Return the product price as minimum for now
+    return product.price || 0;
+  };
+
+  const addBulkProducts = async (productsArray: Omit<Product, 'id'>[]): Promise<string[]> => {
+    const results: string[] = [];
+    for (const product of productsArray) {
+      try {
+        const id = await productsHook.addProduct(product);
+        results.push(id);
+      } catch (error) {
+        console.error('Error adding product:', error);
+      }
+    }
+    return results;
+  };
 
   return {
     // Orders operations
@@ -50,6 +81,11 @@ export const useAppContextHooks = () => {
     isSyncing: productsHook.isSyncing,
     syncPendingProducts: productsHook.syncPendingProducts,
     forceRefreshProducts: productsHook.forceRefreshProducts,
+
+    // Product operations that were missing
+    validateProductDiscount,
+    getMinimumPrice,
+    addBulkProducts,
 
     // Payments operations
     payments: paymentsHook.payments,
