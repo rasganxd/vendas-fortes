@@ -235,11 +235,14 @@ export const productService = {
       throw error;
     }
 
-    if (!data.success) {
-      console.error('❌ Product deletion failed:', data);
-      throw new Error(data.error || 'Falha ao excluir produto');
+    // Type assertion since we know the structure of the returned data
+    const result = data as any;
+
+    if (!result.success) {
+      console.error('❌ Product deletion failed:', result);
+      throw new Error(result.error || 'Falha ao excluir produto');
     }
 
-    console.log('✅ Product deleted successfully with dependencies:', data);
+    console.log('✅ Product deleted successfully with dependencies:', result);
   }
 };

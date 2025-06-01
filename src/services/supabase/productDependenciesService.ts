@@ -35,7 +35,7 @@ export const productDependenciesService = {
     }
 
     console.log('📋 Product dependencies found:', data);
-    return data || [];
+    return (data || []) as ProductDependency[];
   },
 
   async deleteWithDependencies(
@@ -55,6 +55,6 @@ export const productDependenciesService = {
     }
 
     console.log('✅ Product deletion result:', data);
-    return data;
+    return data as ProductDeletionResult;
   }
 };

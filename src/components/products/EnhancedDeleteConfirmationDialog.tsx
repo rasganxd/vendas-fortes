@@ -78,6 +78,11 @@ export const EnhancedDeleteConfirmationDialog: React.FC<EnhancedDeleteConfirmati
     }
   };
 
+  const handleForceDeleteChange = (checked: boolean | "indeterminate") => {
+    // Convert indeterminate to false, only accept true/false
+    setForceDelete(checked === true);
+  };
+
   if (!product) return null;
 
   return (
@@ -153,7 +158,7 @@ export const EnhancedDeleteConfirmationDialog: React.FC<EnhancedDeleteConfirmati
                     <Checkbox
                       id="force-delete"
                       checked={forceDelete}
-                      onCheckedChange={setForceDelete}
+                      onCheckedChange={handleForceDeleteChange}
                     />
                     <label 
                       htmlFor="force-delete" 
