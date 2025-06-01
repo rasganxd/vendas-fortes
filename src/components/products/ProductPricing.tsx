@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,23 +89,37 @@ export default function ProductPricing() {
     try {
       setIsSaving(true);
       
-      // Validação corrigida - editPrice já é number
-      if (editPrice < 0) {
+      // Validação do preço - editPrice já é number
+      if (isNaN(editPrice) || editPrice < 0) {
         toast({
           title: "Preço inválido",
-          description: "O preço deve ser maior ou igual a zero"
+          description: "O preço deve ser um número válido maior ou igual a zero"
         });
         return;
       }
 
-      const discountPercentage = parseFloat(editDiscount) || 0;
+      // Conversão e validação do desconto
+      const discountValue = editDiscount.trim();
+      let discountPercentage = 0;
       
-      if (discountPercentage < 0 || discountPercentage > 100) {
-        toast({
-          title: "Desconto inválido",
-          description: "O desconto deve estar entre 0% e 100%"
-        });
-        return;
+      if (discountValue !== '') {
+        discountPercentage = parseFloat(discountValue.replace(',', '.'));
+        
+        if (isNaN(discountPercentage)) {
+          toast({
+            title: "Desconto inválido",
+            description: "O desconto deve ser um número válido"
+          });
+          return;
+        }
+        
+        if (discountPercentage < 0 || discountPercentage > 100) {
+          toast({
+            title: "Desconto inválido",
+            description: "O desconto deve estar entre 0% e 100%"
+          });
+          return;
+        }
       }
 
       console.log('🔄 Updating product price...');
@@ -114,11 +127,20 @@ export default function ProductPricing() {
       await updateProduct(productId, { price: editPrice });
       console.log('✅ Product price updated successfully');
       
-      // Update discount settings if provided
+      // Update or delete discount settings
       if (discountPercentage > 0) {
-        console.log('🔄 Updating discount settings...');
+        console.log('🔄 Updating discount settings to:', discountPercentage, '%');
         await productDiscountService.upsert(productId, discountPercentage);
         console.log('✅ Discount settings updated successfully');
+      } else {
+        console.log('🔄 Removing discount settings (0% or empty)');
+        try {
+          await productDiscountService.delete(productId);
+          console.log('✅ Discount settings removed successfully');
+        } catch (error) {
+          // Não é um erro crítico se não conseguir deletar (pode não existir)
+          console.log('ℹ️ No discount settings to remove or error removing:', error);
+        }
       }
       
       // Update local state
@@ -134,8 +156,8 @@ export default function ProductPricing() {
       }));
       
       toast({
-        title: "Preço atualizado com sucesso!",
-        description: `Novo preço: ${formatCurrency(editPrice)}`
+        title: "Produto atualizado com sucesso!",
+        description: `Preço: ${formatCurrency(editPrice)} | Desconto máx: ${discountPercentage.toFixed(1)}%`
       });
       
       setEditingId(null);
@@ -143,9 +165,9 @@ export default function ProductPricing() {
       setEditDiscount('');
       
     } catch (error) {
-      console.error('❌ Error saving price:', error);
+      console.error('❌ Error saving price and discount:', error);
       toast({
-        title: "Erro ao atualizar preço",
+        title: "Erro ao atualizar produto",
         description: error instanceof Error ? error.message : "Erro desconhecido"
       });
     } finally {
@@ -239,12 +261,10 @@ export default function ProductPricing() {
                   <EnhancedTableCell>
                     {editingId === product.id ? (
                       <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
+                        type="text"
                         value={editDiscount}
                         onChange={(e) => setEditDiscount(e.target.value)}
+                        placeholder="0.0"
                         className="w-20"
                       />
                     ) : (
