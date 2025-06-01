@@ -127,11 +127,27 @@ export default function ProductPricing() {
       await updateProduct(productId, { price: editPrice });
       console.log('✅ Product price updated successfully');
       
-      // Update or delete discount settings
+      // Update or delete discount settings with improved error handling
       if (discountPercentage > 0) {
         console.log('🔄 Updating discount settings to:', discountPercentage, '%');
-        await productDiscountService.upsert(productId, discountPercentage);
-        console.log('✅ Discount settings updated successfully');
+        try {
+          await productDiscountService.upsert(productId, discountPercentage);
+          console.log('✅ Discount settings updated successfully');
+        } catch (discountError) {
+          console.error('❌ Error updating discount settings:', discountError);
+          
+          // Se falhar no upsert, tentar uma segunda vez após um pequeno delay
+          console.log('🔄 Retrying discount update...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          try {
+            await productDiscountService.upsert(productId, discountPercentage);
+            console.log('✅ Discount settings updated successfully on retry');
+          } catch (retryError) {
+            console.error('❌ Failed to update discount even on retry:', retryError);
+            throw new Error(`Erro ao salvar desconto: ${retryError instanceof Error ? retryError.message : 'Erro desconhecido'}`);
+          }
+        }
       } else {
         console.log('🔄 Removing discount settings (0% or empty)');
         try {
@@ -166,9 +182,17 @@ export default function ProductPricing() {
       
     } catch (error) {
       console.error('❌ Error saving price and discount:', error);
+      
+      // Mostrar erro mais específico baseado no tipo
+      let errorMessage = "Erro desconhecido";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro ao atualizar produto",
-        description: error instanceof Error ? error.message : "Erro desconhecido"
+        description: errorMessage,
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
@@ -195,7 +219,7 @@ export default function ProductPricing() {
   return (
     <div className="space-y-6">
       {/* Saving Indicator */}
-      <SavingIndicator isVisible={isSaving} message="Salvando preço..." />
+      <SavingIndicator isVisible={isSaving} message="Salvando preço e desconto..." />
 
       {/* Header */}
       <Card>
