@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { EnhancedCard, EnhancedCardContent, EnhancedCardDescription, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
@@ -10,7 +11,6 @@ import { useProductClassification } from '@/hooks/useProductClassification';
 import ProductForm from '@/components/products/ProductForm';
 import EnhancedProductsTable from '@/components/products/EnhancedProductsTable';
 import ProductsActionButtons from '@/components/products/ProductsActionButtons';
-import { DeleteConfirmationDialog } from '@/components/products/DeleteConfirmationDialog';
 import BulkProductUpload from '@/components/products/BulkProductUpload';
 import { Product } from '@/types';
 import { toast } from "sonner";
@@ -61,58 +61,90 @@ export default function Products() {
   const filteredProducts = products.filter(product => product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.code.toString().toLowerCase().includes(searchTerm.toLowerCase()));
   
   const handleEditProduct = (product: Product) => {
+    console.log('✏️ Opening product for editing:', product.name);
     setEditingProduct(product);
     setIsProductFormOpen(true);
   };
   
   const handleDeleteProduct = (product: Product) => {
+    console.log('🗑️ Opening delete dialog for product:', product.name);
     setProductToDelete(product);
     setDeleteDialogOpen(true);
   };
   
   const handleConfirmDelete = async (forceDelete: boolean = false) => {
-    if (productToDelete) {
-      try {
-        console.log('🗑️ Confirming product deletion:', { 
-          productId: productToDelete.id, 
-          forceDelete 
-        });
-        
-        // Use the enhanced deletion method
-        await productService.deleteWithDependencies(productToDelete.id, forceDelete);
-        
-        // Update local state
-        await deleteProduct(productToDelete.id);
-        
-        toast("Produto excluído", {
-          description: forceDelete 
-            ? "O produto e suas dependências foram removidos com sucesso" 
-            : "O produto foi excluído com sucesso"
-        });
-        
-        refreshData();
-      } catch (error: any) {
-        console.error('❌ Erro ao excluir produto:', error);
-        
-        const errorMessage = error.message || "Erro ao excluir produto";
-        toast("Erro", {
-          description: errorMessage,
-          style: {
-            backgroundColor: 'rgb(239, 68, 68)',
-            color: 'white'
-          }
-        });
-      }
+    if (!productToDelete) {
+      console.error('❌ No product selected for deletion');
+      return;
     }
-    setDeleteDialogOpen(false);
-    setProductToDelete(null);
+    
+    try {
+      console.log('🗑️ Confirming product deletion:', { 
+        productId: productToDelete.id, 
+        productName: productToDelete.name,
+        forceDelete 
+      });
+      
+      // Use the enhanced deletion method from productService
+      await productService.deleteWithDependencies(productToDelete.id, forceDelete);
+      
+      console.log('✅ Product deleted from database, updating local state...');
+      
+      // Update local state using the hook
+      await deleteProduct(productToDelete.id);
+      
+      console.log('✅ Local state updated successfully');
+      
+      toast("Produto excluído", {
+        description: forceDelete 
+          ? "O produto e suas dependências foram removidos com sucesso" 
+          : "O produto foi excluído com sucesso"
+      });
+      
+      // Refresh all data to ensure consistency
+      await refreshData();
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao excluir produto:', error);
+      
+      let errorMessage = "Erro ao excluir produto";
+      
+      if (error.message) {
+        if (error.message.includes('pelo menos uma unidade principal')) {
+          errorMessage = "Erro: Produto deve ter pelo menos uma unidade principal configurada";
+        } else if (error.message.includes('foreign key')) {
+          errorMessage = "Produto não pode ser excluído pois está sendo usado em outros registros";
+        } else if (error.message.includes('dependências')) {
+          errorMessage = "Produto possui dependências que impedem a exclusão";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast("Erro", {
+        description: errorMessage,
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+      
+      // Don't throw the error - let the dialog handle it
+    } finally {
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
+    }
   };
   
   const handleProductSaved = async (data: any) => {
     const isEditingProduct = !!editingProduct;
     
     try {
-      console.log("💾 Iniciando salvamento do produto (simplificado):", data);
+      console.log("💾 Iniciando salvamento do produto:", {
+        isEditing: isEditingProduct,
+        productName: data.name,
+        productCode: data.code
+      });
 
       // Validar dados de unidades
       if (!data.primaryUnit) {
@@ -145,7 +177,7 @@ export default function Products() {
       
       let productId: string;
       
-      if (isEditingProduct) {
+      if (isEditingProduct && editingProduct) {
         console.log("✏️ Atualizando produto existente:", editingProduct.id);
         
         // Atualizar produto sem alterar preço
@@ -170,13 +202,17 @@ export default function Products() {
         console.log("🆕 Criando novo produto");
         productId = await addProduct(productData);
         
+        if (!productId) {
+          throw new Error("Falha ao criar produto - ID não retornado");
+        }
+        
         toast("Produto criado", {
           description: "Produto criado com sucesso. Configurando unidades..."
         });
       }
 
       // Sincronizar unidades usando o novo sistema
-      console.log("🔄 Sincronizando unidades do produto (sistema simplificado)...");
+      console.log("🔄 Sincronizando unidades do produto...");
       
       // Buscar unidades existentes
       const existingUnits = isEditingProduct 
@@ -248,6 +284,7 @@ export default function Products() {
   };
   
   const handleNewProduct = () => {
+    console.log('🆕 Opening form for new product');
     setEditingProduct(null);
     setIsProductFormOpen(true);
   };
@@ -315,8 +352,12 @@ export default function Products() {
         <ProductForm 
           open={isProductFormOpen} 
           onOpenChange={open => {
+            console.log('📝 Product form visibility changed:', open);
             setIsProductFormOpen(open);
-            if (!open) setEditingProduct(null);
+            if (!open) {
+              console.log('🧹 Clearing editing product state');
+              setEditingProduct(null);
+            }
           }} 
           onSubmit={handleProductSaved} 
           isEditing={!!editingProduct} 

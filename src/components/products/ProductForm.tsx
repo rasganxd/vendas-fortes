@@ -45,6 +45,7 @@ export default function ProductForm({
     open,
     isEditing,
     selectedProduct: selectedProduct?.name,
+    selectedProductId: selectedProduct?.id,
     existingUnitsCount: existingUnits.length,
     existingMainUnit: existingMainUnit?.value,
     loadingUnits
@@ -71,6 +72,7 @@ export default function ProductForm({
     existingMainUnit
   });
 
+  // Show units section when ready
   const showUnitsSection = !isEditing || (isEditing && isInitialized && !loadingUnits);
   const isFormReady = isInitialized && !unitsLoading && !loadingUnits;
 
@@ -89,7 +91,7 @@ export default function ProductForm({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-gray-900">
-            {isEditing ? 'Editar Produto' : 'Novo Produto'}
+            {isEditing ? `Editar Produto: ${selectedProduct?.name}` : 'Novo Produto'}
           </DialogTitle>
         </DialogHeader>
 
@@ -106,9 +108,9 @@ export default function ProductForm({
               <h3 className="text-lg font-medium text-gray-900 mb-4">Classificação</h3>
               <ClassificationSection 
                 form={form} 
-                productCategories={productCategories} 
-                productGroups={productGroups} 
-                productBrands={productBrands} 
+                productCategories={productCategories.filter(cat => cat.name && cat.name.trim() !== '')} 
+                productGroups={productGroups.filter(group => group.name && group.name.trim() !== '')} 
+                productBrands={productBrands.filter(brand => brand.name && brand.name.trim() !== '')} 
               />
             </div>
             
@@ -141,7 +143,10 @@ export default function ProductForm({
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => onOpenChange(false)} 
+                onClick={() => {
+                  console.log('❌ Form cancelled by user');
+                  onOpenChange(false);
+                }} 
                 disabled={isSubmitting}
                 className="px-6"
               >

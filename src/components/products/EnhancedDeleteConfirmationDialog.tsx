@@ -56,10 +56,12 @@ export const EnhancedDeleteConfirmationDialog: React.FC<EnhancedDeleteConfirmati
     try {
       setIsLoading(true);
       setError(null);
+      console.log('🔍 Loading dependencies for product:', product.id);
       const deps = await productDependenciesService.checkDependencies(product.id);
+      console.log('📋 Dependencies loaded:', deps);
       setDependencies(deps);
     } catch (error) {
-      console.error('Error loading dependencies:', error);
+      console.error('❌ Error loading dependencies:', error);
       setError('Erro ao verificar dependências do produto');
     } finally {
       setIsLoading(false);
@@ -67,19 +69,26 @@ export const EnhancedDeleteConfirmationDialog: React.FC<EnhancedDeleteConfirmati
   };
 
   const handleConfirm = async () => {
+    if (!product) return;
+    
     try {
       setIsDeleting(true);
+      setError(null);
+      console.log('🗑️ Starting product deletion:', { productId: product.id, forceDelete });
       await onConfirm(forceDelete);
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      setError('Erro ao excluir produto');
+      console.log('✅ Product deletion completed successfully');
+    } catch (error: any) {
+      console.error('❌ Error deleting product:', error);
+      const errorMessage = error.message || 'Erro ao excluir produto';
+      setError(errorMessage);
     } finally {
       setIsDeleting(false);
     }
   };
 
+  // Corrigir o tratamento do CheckedState para boolean
   const handleForceDeleteChange = (checked: boolean | "indeterminate") => {
-    // Convert indeterminate to false, only accept true/false
+    console.log('🔄 Force delete checkbox changed:', checked);
     setForceDelete(checked === true);
   };
 
