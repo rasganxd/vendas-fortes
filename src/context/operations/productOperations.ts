@@ -33,11 +33,8 @@ export const addProduct = async (
       updatedAt: new Date()
     };
     
-    console.log("Adding product:", productWithCode);
-    
     // Add to Supabase
     const newProduct = await productService.create(productWithCode);
-    console.log("Product created:", newProduct);
     
     // Atualizar o estado local - ensure we're using the correct setter pattern for state updates
     setProducts(currentProducts => [...currentProducts, newProduct]);
@@ -79,7 +76,6 @@ export const updateProduct = async (
     
     // Update in Supabase
     await productService.update(id, updateData);
-    console.log("Product updated, ID:", id, "Data:", updateData);
     
     // Atualizar o estado local usando a função de atualização correta
     setProducts(currentProducts => 
@@ -109,10 +105,8 @@ export const deleteProduct = async (
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ): Promise<void> => {
   try {
-    console.log(`Deleting product ${id}`);
-    
-    // Delete from Supabase first
-    await productService.delete(id);
+    // Delete from Supabase using the correct method
+    await productService.deleteWithDependencies(id, false);
     
     // Update local state
     const updatedProducts = products.filter(product => product.id !== id);

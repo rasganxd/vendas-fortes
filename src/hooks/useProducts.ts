@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabase/productService';
@@ -15,7 +16,6 @@ export const useProducts = () => {
 
   // Force refresh function
   const forceRefreshProducts = async () => {
-    console.log("Force refreshing products from Supabase");
     setIsLoading(true);
     
     try {
@@ -25,7 +25,6 @@ export const useProducts = () => {
       
       // Fetch from Supabase
       const fetchedProducts = await productService.getAll();
-      console.log(`Forcefully loaded ${fetchedProducts.length} products from Supabase`);
       
       setProducts(fetchedProducts);
       
@@ -66,16 +65,13 @@ export const useProducts = () => {
       if (cachedData && cachedTimestamp) {
         const age = Date.now() - parseInt(cachedTimestamp);
         if (age < CACHE_MAX_AGE) {
-          console.log("Using cached products data");
           setProducts(JSON.parse(cachedData));
           setIsLoading(false);
           return;
         }
       }
       
-      console.log("Fetching products from Supabase");
       const fetchedProducts = await productService.getAll();
-      console.log(`Loaded ${fetchedProducts.length} products from Supabase`);
       
       setProducts(fetchedProducts);
       
@@ -89,7 +85,6 @@ export const useProducts = () => {
       // Try to use cached data as fallback
       const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
       if (cachedData) {
-        console.log("Using cached products data as fallback");
         setProducts(JSON.parse(cachedData));
       } else {
         setProducts([]);
@@ -102,7 +97,6 @@ export const useProducts = () => {
   // Listen for product updates from other components
   useEffect(() => {
     const handleProductsUpdated = () => {
-      console.log("Products updated event received, refreshing...");
       forceRefreshProducts();
     };
 
@@ -179,11 +173,8 @@ export const useProducts = () => {
 
   const deleteProduct = async (id: string) => {
     try {
-      console.log(`🗑️ Deleting product ${id}`);
-      
-      // Delete from Supabase first - Note: this now uses the simple delete
-      // Enhanced deletion with dependencies is handled at the page level
-      await productService.delete(id);
+      // Delete from Supabase using the correct method
+      await productService.deleteWithDependencies(id, false);
       
       // Update local state immediately
       setProducts((prev) => prev.filter((item) => item.id !== id));
@@ -192,8 +183,6 @@ export const useProducts = () => {
       const updatedProducts = products.filter((item) => item.id !== id);
       localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
       localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-      
-      console.log("✅ Product deleted successfully from local state and cache");
       
       toast({
         title: 'Produto excluído',
