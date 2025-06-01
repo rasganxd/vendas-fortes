@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,17 @@ export default function ProductPricing() {
     return '';
   };
 
+  const validateProductId = (productId: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(productId);
+  };
+
   const handleEditStart = (product: ProductPricingRow) => {
+    if (!validateProductId(product.id)) {
+      setValidationError('ID do produto inválido');
+      return;
+    }
+    
     setEditingId(product.id);
     setEditPrice(formatPriceForInput(product.price || 0));
     setEditDiscount(product.maxDiscountPercentage.toString());
@@ -109,6 +118,12 @@ export default function ProductPricing() {
       setIsSaving(productId);
       setValidationError('');
 
+      // Validate product ID
+      if (!validateProductId(productId)) {
+        setValidationError('ID do produto inválido');
+        return;
+      }
+
       if (!isValidPrice(editPrice)) {
         setValidationError("Digite um preço válido no formato brasileiro (ex: 1.234,56)");
         return;
@@ -135,19 +150,34 @@ export default function ProductPricing() {
       await updateProduct(productId, { price });
       console.log('✅ Preço do produto atualizado');
       
-      // Update discount settings
-      if (discountPercentage > 0) {
-        await productDiscountService.upsert(productId, discountPercentage);
-        console.log('✅ Configuração de desconto salva:', discountPercentage + '%');
-      } else {
-        // If discount is 0, remove the setting
-        try {
-          await productDiscountService.delete(productId);
-          console.log('✅ Configuração de desconto removida');
-        } catch (error) {
-          // Ignore error if no discount setting exists
-          console.log('ℹ️ Nenhuma configuração de desconto para remover');
+      // Handle discount settings with better error handling
+      try {
+        if (discountPercentage > 0) {
+          // First, try to delete existing setting to avoid duplicates
+          try {
+            await productDiscountService.delete(productId);
+          } catch (deleteError) {
+            // Ignore delete errors - setting might not exist
+            console.log('ℹ️ Nenhuma configuração anterior para remover');
+          }
+          
+          // Then create new setting
+          await productDiscountService.upsert(productId, discountPercentage);
+          console.log('✅ Configuração de desconto salva:', discountPercentage + '%');
+        } else {
+          // If discount is 0, remove the setting
+          try {
+            await productDiscountService.delete(productId);
+            console.log('✅ Configuração de desconto removida');
+          } catch (error) {
+            // Ignore error if no discount setting exists
+            console.log('ℹ️ Nenhuma configuração de desconto para remover');
+          }
         }
+      } catch (discountError) {
+        console.error('❌ Erro ao salvar configuração de desconto:', discountError);
+        // Don't fail the entire operation for discount errors
+        toast.error("Preço salvo, mas houve erro ao configurar desconto");
       }
       
       // Update local state immediately
@@ -167,7 +197,7 @@ export default function ProductPricing() {
       
     } catch (error) {
       console.error('❌ Erro ao salvar configurações:', error);
-      setValidationError("Erro ao salvar as configurações. Tente novamente.");
+      setValidationError("Erro ao salvar as configurações. Verifique os dados e tente novamente.");
       toast.error("Erro ao salvar configurações");
     } finally {
       setIsSaving(null);

@@ -14,7 +14,12 @@ export const validateProductDiscount = (productId: string, discountedPrice: numb
     return `Preço não pode ser menor que o custo (R$ ${product.cost.toFixed(2)})`;
   }
 
-  // If no specific discount settings, allow any price above cost
+  // Validate product ID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(productId)) {
+    return "ID do produto inválido";
+  }
+
   return true;
 };
 
@@ -31,6 +36,12 @@ export const validateProductPrice = (productId: string, price: number, products:
   
   if (price <= 0) {
     return "O preço deve ser maior que zero";
+  }
+
+  // Validate product ID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(productId)) {
+    return "ID do produto inválido";
   }
 
   // Check against cost
