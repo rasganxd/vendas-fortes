@@ -23,18 +23,15 @@ export interface ProductDeletionResult {
 
 export const productDependenciesService = {
   async checkDependencies(productId: string): Promise<ProductDependency[]> {
-    console.log('🔍 Checking dependencies for product:', productId);
-    
     const { data, error } = await supabase.rpc('check_product_dependencies', {
       p_product_id: productId
     });
 
     if (error) {
-      console.error('❌ Error checking product dependencies:', error);
+      console.error('Error checking product dependencies:', error);
       throw error;
     }
 
-    console.log('📋 Product dependencies found:', data);
     return (data || []) as ProductDependency[];
   },
 
@@ -42,19 +39,16 @@ export const productDependenciesService = {
     productId: string, 
     forceDelete: boolean = false
   ): Promise<ProductDeletionResult> {
-    console.log('🗑️ Deleting product with dependencies:', { productId, forceDelete });
-    
     const { data, error } = await supabase.rpc('delete_product_with_dependencies', {
       p_product_id: productId,
       p_force_delete: forceDelete
     });
 
     if (error) {
-      console.error('❌ Error deleting product with dependencies:', error);
+      console.error('Error deleting product with dependencies:', error);
       throw error;
     }
 
-    console.log('✅ Product deletion result:', data);
     return data as unknown as ProductDeletionResult;
   }
 };

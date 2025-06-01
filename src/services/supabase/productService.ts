@@ -10,7 +10,7 @@ export const productService = {
       .order('code');
     
     if (error) {
-      console.error('Erro ao buscar produtos:', error);
+      console.error('Error fetching products:', error);
       throw error;
     }
     
@@ -47,7 +47,7 @@ export const productService = {
       .single();
     
     if (error) {
-      console.error('Erro ao buscar produto:', error);
+      console.error('Error fetching product:', error);
       return null;
     }
     
@@ -77,8 +77,6 @@ export const productService = {
   },
 
   async create(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
-    console.log('Creating product with data:', product);
-    
     // Prepare data for Supabase (remove any undefined values)
     const productData = {
       code: product.code,
@@ -100,8 +98,6 @@ export const productService = {
       sync_status: product.syncStatus || 'synced'
     };
 
-    console.log('Supabase product data:', productData);
-
     const { data, error } = await supabase
       .from('products')
       .insert([productData])
@@ -109,7 +105,7 @@ export const productService = {
       .single();
     
     if (error) {
-      console.error('Erro ao criar produto:', error);
+      console.error('Error creating product:', error);
       throw error;
     }
 
@@ -137,13 +133,10 @@ export const productService = {
       syncStatus: (data.sync_status || 'synced') as 'synced' | 'pending' | 'error'
     };
 
-    console.log('Created product:', createdProduct);
     return createdProduct;
   },
 
   async update(id: string, product: Partial<Product>): Promise<Product> {
-    console.log('📝 Updating product:', id, 'with data:', product);
-    
     // Prepare data for Supabase
     const updateData: any = {};
     
@@ -151,10 +144,9 @@ export const productService = {
     if (product.name !== undefined) updateData.name = product.name;
     if (product.description !== undefined) updateData.description = product.description;
     if (product.cost !== undefined) updateData.cost = product.cost;
-    // IMPORTANTE: Só atualizar preço se explicitamente fornecido
+    // IMPORTANT: Only update price if explicitly provided
     if (product.price !== undefined) {
       updateData.price = product.price;
-      console.log('💰 Atualizando preço para:', product.price);
     }
     if (product.stock !== undefined) updateData.stock = product.stock;
     if (product.minStock !== undefined) updateData.min_stock = product.minStock;
@@ -169,8 +161,6 @@ export const productService = {
     if (product.brandId !== undefined) updateData.brand_id = product.brandId;
     if (product.syncStatus !== undefined) updateData.sync_status = product.syncStatus;
 
-    console.log('📊 Final update data (price preserved if not changed):', updateData);
-
     const { data, error } = await supabase
       .from('products')
       .update(updateData)
@@ -179,11 +169,9 @@ export const productService = {
       .single();
     
     if (error) {
-      console.error('Erro ao atualizar produto:', error);
+      console.error('Error updating product:', error);
       throw error;
     }
-
-    console.log('✅ Product updated successfully with preserved price:', data.price);
 
     // Transform the response to match our Product interface
     return {
@@ -217,21 +205,19 @@ export const productService = {
       .eq('id', id);
     
     if (error) {
-      console.error('Erro ao excluir produto:', error);
+      console.error('Error deleting product:', error);
       throw error;
     }
   },
 
   async deleteWithDependencies(id: string, forceDelete: boolean = false): Promise<void> {
-    console.log('🗑️ Deleting product with dependencies check:', { id, forceDelete });
-    
     const { data, error } = await supabase.rpc('delete_product_with_dependencies', {
       p_product_id: id,
       p_force_delete: forceDelete
     });
 
     if (error) {
-      console.error('❌ Error calling delete_product_with_dependencies:', error);
+      console.error('Error calling delete_product_with_dependencies:', error);
       throw error;
     }
 
@@ -239,10 +225,8 @@ export const productService = {
     const result = data as any;
 
     if (!result.success) {
-      console.error('❌ Product deletion failed:', result);
+      console.error('Product deletion failed:', result);
       throw new Error(result.error || 'Falha ao excluir produto');
     }
-
-    console.log('✅ Product deleted successfully with dependencies:', result);
   }
 };

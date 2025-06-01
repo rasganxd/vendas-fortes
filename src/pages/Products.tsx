@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { EnhancedCard, EnhancedCardContent, EnhancedCardDescription, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Filter, Download, Upload, DollarSign } from 'lucide-react';
+import { Plus, Search, Filter, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useProducts } from '@/hooks/useProducts';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -45,55 +45,34 @@ export default function Products() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
-
-  // Debug log to verify data loading
-  useEffect(() => {
-    console.log("Products page - Classification data loaded:", {
-      categories: productCategories?.length || 0,
-      groups: productGroups?.length || 0,
-      brands: productBrands?.length || 0,
-      loadingCategories: isLoadingCategories,
-      loadingGroups: isLoadingGroups,
-      loadingBrands: isLoadingBrands
-    });
-  }, [productCategories, productGroups, productBrands, isLoadingCategories, isLoadingGroups, isLoadingBrands]);
   
-  const filteredProducts = products.filter(product => product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.code.toString().toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    product.code.toString().toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   const handleEditProduct = (product: Product) => {
-    console.log('✏️ Opening product for editing:', product.name);
     setEditingProduct(product);
     setIsProductFormOpen(true);
   };
   
   const handleDeleteProduct = (product: Product) => {
-    console.log('🗑️ Opening delete dialog for product:', product.name);
     setProductToDelete(product);
     setDeleteDialogOpen(true);
   };
   
   const handleConfirmDelete = async (forceDelete: boolean = false) => {
     if (!productToDelete) {
-      console.error('❌ No product selected for deletion');
+      console.error('No product selected for deletion');
       return;
     }
     
     try {
-      console.log('🗑️ Confirming product deletion:', { 
-        productId: productToDelete.id, 
-        productName: productToDelete.name,
-        forceDelete 
-      });
-      
       // Use the enhanced deletion method from productService
       await productService.deleteWithDependencies(productToDelete.id, forceDelete);
       
-      console.log('✅ Product deleted from database, updating local state...');
-      
       // Update local state using the hook
       await deleteProduct(productToDelete.id);
-      
-      console.log('✅ Local state updated successfully');
       
       toast("Produto excluído", {
         description: forceDelete 
@@ -105,7 +84,7 @@ export default function Products() {
       await refreshData();
       
     } catch (error: any) {
-      console.error('❌ Erro ao excluir produto:', error);
+      console.error('Error deleting product:', error);
       
       let errorMessage = "Erro ao excluir produto";
       
@@ -140,18 +119,12 @@ export default function Products() {
     const isEditingProduct = !!editingProduct;
     
     try {
-      console.log("💾 Iniciando salvamento do produto:", {
-        isEditing: isEditingProduct,
-        productName: data.name,
-        productCode: data.code
-      });
-
-      // Validar dados de unidades
+      // Validate unit data
       if (!data.primaryUnit) {
         throw new Error("Produto deve ter uma unidade principal");
       }
 
-      // CORRIGIDO: Preserve o preço existente ao atualizar produto
+      // FIXED: Preserve existing price when updating product
       const productData = {
         code: data.code,
         name: data.name,
@@ -162,25 +135,17 @@ export default function Products() {
         categoryId: data.categoryId,
         groupId: data.groupId,
         brandId: data.brandId,
-        // IMPORTANTE: Preservar o preço existente ao editar
+        // IMPORTANT: Preserve existing price when editing
         price: isEditingProduct && editingProduct ? editingProduct.price : 0,
         syncStatus: 'synced' as const,
         createdAt: isEditingProduct && editingProduct ? editingProduct.createdAt : new Date(),
         updatedAt: new Date()
       };
       
-      console.log("💰 Preço sendo preservado:", {
-        isEditingProduct,
-        originalPrice: editingProduct?.price,
-        preservedPrice: productData.price
-      });
-      
       let productId: string;
       
       if (isEditingProduct && editingProduct) {
-        console.log("✏️ Atualizando produto existente:", editingProduct.id);
-        
-        // Atualizar produto sem alterar preço
+        // Update product without changing price
         await updateProduct(editingProduct.id, {
           code: productData.code,
           name: productData.name,
@@ -199,7 +164,6 @@ export default function Products() {
           description: "Produto atualizado com sucesso. Sincronizando unidades..."
         });
       } else {
-        console.log("🆕 Criando novo produto");
         productId = await addProduct(productData);
         
         if (!productId) {
@@ -211,41 +175,32 @@ export default function Products() {
         });
       }
 
-      // Sincronizar unidades usando o novo sistema
-      console.log("🔄 Sincronizando unidades do produto...");
-      
-      // Buscar unidades existentes
+      // Synchronize units using the new system
+      // Fetch existing units
       const existingUnits = isEditingProduct 
         ? await productUnitsMappingService.getProductUnits(productId)
         : [];
       
-      console.log("📋 Unidades existentes:", existingUnits);
-      
-      // Remover todas as unidades existentes para limpar
+      // Remove all existing units to clean up
       for (const existingUnit of existingUnits) {
-        console.log("🗑️ Removendo unidade existente:", existingUnit.value);
         await productUnitsMappingService.removeUnitFromProduct(productId, existingUnit.id);
       }
       
-      // Adicionar unidade principal
-      console.log("👑 Adicionando unidade principal:", data.primaryUnit.value);
+      // Add primary unit
       await productUnitsMappingService.addUnitToProduct(
         productId, 
         data.primaryUnit.id, 
-        true // é unidade principal
+        true // is primary unit
       );
       
-      // Adicionar unidades secundárias
+      // Add secondary units
       for (const secondaryUnit of data.secondaryUnits || []) {
-        console.log("➕ Adicionando unidade secundária:", secondaryUnit.value);
         await productUnitsMappingService.addUnitToProduct(
           productId, 
           secondaryUnit.id, 
-          false // não é unidade principal
+          false // not primary unit
         );
       }
-      
-      console.log("✅ Produto e unidades salvos com sucesso");
       
       toast("Sucesso!", {
         description: isEditingProduct 
@@ -257,7 +212,6 @@ export default function Products() {
       setEditingProduct(null);
       
       // Force immediate refresh of data
-      console.log("🔄 Refreshing product data after save...");
       await refreshData();
       
       // Dispatch event to notify all components of product update
@@ -269,7 +223,7 @@ export default function Products() {
       }));
       
     } catch (error: any) {
-      console.error('❌ Erro ao salvar produto:', error);
+      console.error('Error saving product:', error);
       
       const errorMessage = error.message || "Erro desconhecido ao salvar produto";
       
@@ -284,7 +238,6 @@ export default function Products() {
   };
   
   const handleNewProduct = () => {
-    console.log('🆕 Opening form for new product');
     setEditingProduct(null);
     setIsProductFormOpen(true);
   };
@@ -328,7 +281,12 @@ export default function Products() {
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input placeholder="Buscar por nome ou código do produto..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500" />
+                <Input 
+                  placeholder="Buscar por nome ou código do produto..." 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                  className="pl-10 h-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500" 
+                />
               </div>
               <Button variant="outline" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
@@ -341,10 +299,15 @@ export default function Products() {
         {/* Products Table */}
         <EnhancedCard variant="default">
           <EnhancedCardContent className="p-0">
-            <EnhancedProductsTable products={filteredProducts} isLoading={isLoading} onEdit={handleEditProduct} onDelete={id => {
-            const product = products.find(p => p.id === id);
-            if (product) handleDeleteProduct(product);
-          }} />
+            <EnhancedProductsTable 
+              products={filteredProducts} 
+              isLoading={isLoading} 
+              onEdit={handleEditProduct} 
+              onDelete={id => {
+                const product = products.find(p => p.id === id);
+                if (product) handleDeleteProduct(product);
+              }} 
+            />
           </EnhancedCardContent>
         </EnhancedCard>
 
@@ -352,10 +315,8 @@ export default function Products() {
         <ProductForm 
           open={isProductFormOpen} 
           onOpenChange={open => {
-            console.log('📝 Product form visibility changed:', open);
             setIsProductFormOpen(open);
             if (!open) {
-              console.log('🧹 Clearing editing product state');
               setEditingProduct(null);
             }
           }} 
@@ -375,7 +336,11 @@ export default function Products() {
           product={productToDelete}
         />
 
-        <BulkProductUpload open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} onSuccess={refreshData} />
+        <BulkProductUpload 
+          open={isBulkUploadOpen} 
+          onOpenChange={setIsBulkUploadOpen} 
+          onSuccess={refreshData} 
+        />
       </div>
     </PageLayout>
   );

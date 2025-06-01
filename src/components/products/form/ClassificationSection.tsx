@@ -55,12 +55,6 @@ export const ClassificationSection: React.FC<ClassificationSectionProps> = ({
     brand.name.trim() !== ''
   );
 
-  console.log('🏷️ ClassificationSection - Valid data:', {
-    categoriesCount: validCategories.length,
-    groupsCount: validGroups.length,
-    brandsCount: validBrands.length
-  });
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Categoria */}

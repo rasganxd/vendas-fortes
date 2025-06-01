@@ -41,16 +41,6 @@ export default function ProductForm({
     isLoading: loadingUnits
   } = useProductUnitsMapping(isEditing ? selectedProduct?.id : undefined);
 
-  console.log("🎭 ProductForm - Estado:", {
-    open,
-    isEditing,
-    selectedProduct: selectedProduct?.name,
-    selectedProductId: selectedProduct?.id,
-    existingUnitsCount: existingUnits.length,
-    existingMainUnit: existingMainUnit?.value,
-    loadingUnits
-  });
-
   const {
     form,
     allUnits,
@@ -75,16 +65,6 @@ export default function ProductForm({
   // Show units section when ready
   const showUnitsSection = !isEditing || (isEditing && isInitialized && !loadingUnits);
   const isFormReady = isInitialized && !unitsLoading && !loadingUnits;
-
-  console.log("👁️ ProductForm - Renderização:", {
-    showUnitsSection,
-    isInitialized,
-    loadingUnits,
-    unitsLoading,
-    isFormReady,
-    primaryUnit: primaryUnit?.value,
-    secondaryUnitsCount: secondaryUnits.length
-  });
 
   // Helper function to convert "none" values to empty strings or null
   const sanitizeFormValue = (value: string | undefined | null) => {
@@ -160,10 +140,7 @@ export default function ProductForm({
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => {
-                  console.log('❌ Form cancelled by user');
-                  onOpenChange(false);
-                }} 
+                onClick={() => onOpenChange(false)} 
                 disabled={isSubmitting}
                 className="px-6"
               >
