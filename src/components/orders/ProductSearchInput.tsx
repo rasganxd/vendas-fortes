@@ -39,6 +39,7 @@ export default function ProductSearchInput({
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [priceValidationError, setPriceValidationError] = useState<string>('');
   const [localProducts, setLocalProducts] = useState<Product[]>([]);
+  const [lastProductsRefresh, setLastProductsRefresh] = useState<number>(0);
   
   const quantityInputRef = useRef<HTMLInputElement>(null);
   
@@ -49,6 +50,7 @@ export default function ProductSearchInput({
   useEffect(() => {
     console.log("🔄 Updating local products cache in ProductSearchInput");
     setLocalProducts(products);
+    setLastProductsRefresh(Date.now());
   }, [products]);
   
   // Listen for product updates and refresh immediately
@@ -57,41 +59,55 @@ export default function ProductSearchInput({
       console.log("📦 Products updated event received in ProductSearchInput:", event.detail);
       
       // Force refresh products to get latest data
-      await refreshProducts();
-      
-      // If a product was added, try to find it in the updated list
-      if (event.detail?.action === 'add' && event.detail?.product) {
-        const newProduct = event.detail.product;
-        setLocalProducts(prev => {
-          const exists = prev.find(p => p.id === newProduct.id);
-          if (!exists) {
-            console.log("➕ Adding new product to local cache:", newProduct.name);
-            return [...prev, newProduct];
+      try {
+        await refreshProducts();
+        
+        // Force a fresh fetch if the update was significant
+        if (event.detail?.action === 'update' && event.detail?.productId === selectedProduct?.id) {
+          console.log("🔄 Refreshing specific product data due to update");
+          const freshProducts = await productService.getAll();
+          setLocalProducts(freshProducts);
+          
+          // Update selected product with fresh data
+          const updatedProduct = freshProducts.find(p => p.id === selectedProduct.id);
+          if (updatedProduct) {
+            console.log("📦 Updating selected product with fresh data:", {
+              oldPrice: selectedProduct.price,
+              newPrice: updatedProduct.price
+            });
+            setSelectedProduct(updatedProduct);
+            
+            // Recalculate price with new product data
+            const newPrice = calculateUnitPrice(updatedProduct, selectedUnit || updatedProduct.unit || 'UN');
+            console.log("💰 Recalculated price:", newPrice);
+            setPrice(newPrice);
           }
-          return prev;
-        });
-      }
-      
-      // Force refresh of selected product if it exists
-      if (selectedProduct) {
-        const updatedProducts = centralizedProducts.length > 0 ? centralizedProducts : products;
-        const updatedProduct = updatedProducts.find(p => p.id === selectedProduct.id);
-        if (updatedProduct && updatedProduct.price !== selectedProduct.price) {
-          console.log("Product price updated, refreshing");
-          setSelectedProduct(updatedProduct);
-          const correctPrice = calculateUnitPrice(updatedProduct, selectedUnit || updatedProduct.unit || 'UN');
-          setPrice(correctPrice);
         }
+      } catch (error) {
+        console.error("❌ Error refreshing products:", error);
       }
     };
 
-    const handlePriceUpdated = (event: CustomEvent) => {
+    const handlePriceUpdated = async (event: CustomEvent) => {
       const { productId, newPrice } = event.detail;
+      console.log("💰 Price updated event received:", { productId, newPrice });
+      
       if (selectedProduct && selectedProduct.id === productId) {
-        console.log("Price updated for selected product:", newPrice);
-        const correctPrice = calculateUnitPrice({ ...selectedProduct, price: newPrice }, selectedUnit || selectedProduct.unit || 'UN');
+        console.log("💰 Updating price for selected product");
+        
+        // Update the selected product with new price
+        const updatedProduct = { ...selectedProduct, price: newPrice };
+        setSelectedProduct(updatedProduct);
+        
+        // Recalculate unit price
+        const correctPrice = calculateUnitPrice(updatedProduct, selectedUnit || updatedProduct.unit || 'UN');
+        console.log("💰 New calculated price:", correctPrice);
         setPrice(correctPrice);
-        setSelectedProduct(prev => prev ? { ...prev, price: newPrice } : null);
+        
+        // Update local products cache
+        setLocalProducts(prev => prev.map(p => 
+          p.id === productId ? { ...p, price: newPrice } : p
+        ));
       }
     };
 
@@ -102,23 +118,32 @@ export default function ProductSearchInput({
       window.removeEventListener('productsUpdated', handleProductsUpdated as EventListener);
       window.removeEventListener('productPriceUpdated', handlePriceUpdated as EventListener);
     };
-  }, [selectedProduct, selectedUnit, refreshProducts, centralizedProducts, products]);
+  }, [selectedProduct, selectedUnit, refreshProducts]);
 
-  // Validate price whenever it changes
+  // Validate price whenever it changes - make it async to handle discount validation
   useEffect(() => {
-    if (selectedProduct && price > 0) {
-      const validation = validateProductDiscount(selectedProduct.id, price, localProducts);
-      if (validation === true) {
-        setPriceValidationError('');
+    const validatePrice = async () => {
+      if (selectedProduct && price > 0) {
+        try {
+          const validation = await validateProductDiscount(selectedProduct.id, price, localProducts);
+          if (validation === true) {
+            setPriceValidationError('');
+          } else {
+            setPriceValidationError(validation as string);
+          }
+        } catch (error) {
+          console.error("Error validating price:", error);
+          setPriceValidationError('');
+        }
       } else {
-        setPriceValidationError(validation as string);
+        setPriceValidationError('');
       }
-    } else {
-      setPriceValidationError('');
-    }
+    };
+
+    validatePrice();
   }, [selectedProduct, price, localProducts]);
 
-  // Enhanced product search with fallback to database
+  // Enhanced product search with aggressive cache refresh
   const findProductByCode = async (code: string): Promise<Product | null> => {
     console.log("🔍 Searching for product with code:", code);
     
@@ -138,16 +163,18 @@ export default function ProductSearchInput({
       return product;
     }
     
-    // If still not found, search directly in database as fallback
-    console.log("🔄 Product not found locally, searching in database...");
+    // If still not found, force refresh and search again
+    console.log("🔄 Product not found locally, forcing database refresh...");
     try {
+      await refreshProducts();
       const allProducts = await productService.getAll();
       product = allProducts.find(p => p.code.toString() === code);
       
       if (product) {
-        console.log("✅ Product found in database:", product.name);
+        console.log("✅ Product found in database after refresh:", product.name);
         // Update local cache with fresh data
         setLocalProducts(allProducts);
+        setLastProductsRefresh(Date.now());
         return product;
       }
     } catch (error) {
@@ -261,6 +288,8 @@ export default function ProductSearchInput({
     }
   };
   
+  // ... keep existing code (getConversionDisplay function and component render)
+
   const getConversionDisplay = () => {
     if (!selectedProduct || !selectedUnit || selectedUnit === selectedProduct.unit) {
       return null;

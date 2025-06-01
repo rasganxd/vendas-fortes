@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle, XCircle, Percent } from 'lucide-react';
 import { Product } from '@/types';
 import { cn } from '@/lib/utils';
@@ -16,15 +16,45 @@ export const PriceValidation: React.FC<PriceValidationProps> = ({
   currentPrice,
   className
 }) => {
-  const maxDiscountPercentage = getMaximumDiscountPercentage(product.id, [product]);
+  const [maxDiscountPercentage, setMaxDiscountPercentage] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Load discount settings when component mounts or product changes
+  useEffect(() => {
+    const loadDiscountSettings = async () => {
+      setIsLoading(true);
+      try {
+        const maxDiscount = await getMaximumDiscountPercentage(product.id, [product]);
+        setMaxDiscountPercentage(maxDiscount);
+      } catch (error) {
+        console.error("Error loading discount settings:", error);
+        setMaxDiscountPercentage(0);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDiscountSettings();
+  }, [product.id, product]);
+
   const currentDiscountPercentage = getCurrentDiscountPercentage(product.id, currentPrice, [product]);
   
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className={cn("flex items-center text-sm", className)}>
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600 mr-1"></div>
+        <span className="text-gray-500">Carregando limites de desconto...</span>
+      </div>
+    );
+  }
+  
   // Se não há limite de desconto definido, está válido
-  if (!maxDiscountPercentage) {
+  if (maxDiscountPercentage === 0) {
     return (
       <div className={cn("flex items-center text-sm", className)}>
         <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
-        <span className="text-green-600">Sem limite de desconto</span>
+        <span className="text-green-600">Sem limite de desconto definido</span>
       </div>
     );
   }

@@ -10,25 +10,36 @@ interface UseProductSearchValidationProps {
 export function useProductSearchValidation({ products }: UseProductSearchValidationProps) {
   const [priceValidationErrors, setPriceValidationErrors] = useState<Map<string, string>>(new Map());
 
-  const validatePrice = useCallback((productId: string, price: number): boolean => {
-    const validation = validateProductDiscount(productId, price, products);
-    
-    if (validation === true) {
-      // Remove erro se existir
+  const validatePrice = useCallback(async (productId: string, price: number): Promise<boolean> => {
+    try {
+      const validation = await validateProductDiscount(productId, price, products);
+      
+      if (validation === true) {
+        // Remove erro se existir
+        setPriceValidationErrors(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(productId);
+          return newMap;
+        });
+        return true;
+      } else {
+        // Adiciona erro
+        setPriceValidationErrors(prev => {
+          const newMap = new Map(prev);
+          newMap.set(productId, validation as string);
+          return newMap;
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error("Error validating price:", error);
+      // On error, remove validation error (assume valid)
       setPriceValidationErrors(prev => {
         const newMap = new Map(prev);
         newMap.delete(productId);
         return newMap;
       });
       return true;
-    } else {
-      // Adiciona erro
-      setPriceValidationErrors(prev => {
-        const newMap = new Map(prev);
-        newMap.set(productId, validation as string);
-        return newMap;
-      });
-      return false;
     }
   }, [products]);
 
