@@ -63,28 +63,76 @@ export const useSimplifiedProductFormLogic = ({
     isInitialized
   });
 
+  // Função para obter valores padrão do formulário
+  const getDefaultValues = useCallback(() => {
+    console.log("🔧 Gerando valores padrão:", { isEditing, selectedProduct: selectedProduct?.name });
+    
+    if (isEditing && selectedProduct) {
+      return {
+        code: selectedProduct.code || 0,
+        name: selectedProduct.name || "",
+        cost: selectedProduct.cost || 0,
+        stock: selectedProduct.stock || 0,
+        categoryId: selectedProduct.categoryId || "",
+        groupId: selectedProduct.groupId || "",
+        brandId: selectedProduct.brandId || "",
+        primaryUnitId: "",
+        selectedUnits: [],
+        mainUnitId: "",
+      };
+    } else {
+      return {
+        code: Math.max(...products.map(p => p.code || 0), 0) + 1,
+        name: "",
+        cost: 0,
+        stock: 0,
+        categoryId: "",
+        groupId: "",
+        brandId: "",
+        primaryUnitId: "",
+        selectedUnits: [],
+        mainUnitId: "",
+      };
+    }
+  }, [isEditing, selectedProduct, products]);
+
   const form = useForm<SimplifiedProductFormData>({
     resolver: zodResolver(productFormSchema),
     mode: "onChange",
-    defaultValues: {
-      code: isEditing && selectedProduct ? selectedProduct.code : 
-        Math.max(...products.map(p => p.code || 0), 0) + 1,
-      name: isEditing && selectedProduct ? selectedProduct.name : "",
-      cost: isEditing && selectedProduct ? selectedProduct.cost : 0,
-      stock: isEditing && selectedProduct ? selectedProduct.stock : 0,
-      categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
-      groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
-      brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
-      primaryUnitId: "",
-      selectedUnits: [],
-      mainUnitId: "",
-    },
+    defaultValues: getDefaultValues(),
   });
+
+  // Reset do formulário quando o produto selecionado muda
+  useEffect(() => {
+    console.log("🔄 Resetando formulário devido a mudança no produto:", {
+      isEditing,
+      selectedProduct: selectedProduct?.name,
+      allUnitsLoaded: allUnits.length > 0
+    });
+
+    if (!unitsLoading && allUnits.length > 0) {
+      const defaultValues = getDefaultValues();
+      console.log("📝 Valores padrão para reset:", defaultValues);
+      
+      form.reset(defaultValues);
+      
+      if (isEditing && selectedProduct) {
+        // Para edição, aguardar o carregamento das unidades
+        console.log("⏳ Aguardando carregamento das unidades para produto em edição...");
+      } else {
+        // Para novo produto, limpar tudo
+        console.log("🆕 Configurando para novo produto");
+        setPrimaryUnit(null);
+        setSecondaryUnits([]);
+        setIsInitialized(true);
+      }
+    }
+  }, [isEditing, selectedProduct, form, getDefaultValues, unitsLoading, allUnits.length]);
 
   // Mapear unidades existentes para o novo formato
   const mapExistingUnits = useCallback(() => {
     if (!isEditing || !existingUnits.length || !allUnits.length) {
-      console.log("📋 Sem unidades para mapear");
+      console.log("📋 Sem unidades para mapear ou não está em modo de edição");
       return;
     }
 
@@ -130,31 +178,28 @@ export const useSimplifiedProductFormLogic = ({
     }
     
     form.setValue('selectedUnits', selectedUnitsForCompatibility);
+    setIsInitialized(true);
   }, [isEditing, existingUnits, allUnits, form]);
 
-  // Inicialização
+  // Inicialização das unidades para edição
   useEffect(() => {
-    console.log("🔄 Efeito de inicialização:", {
+    console.log("🔄 Efeito de inicialização das unidades:", {
       isEditing,
       unitsLoading,
       allUnitsCount: allUnits.length,
-      existingUnitsCount: existingUnits.length
+      existingUnitsCount: existingUnits.length,
+      isInitialized
     });
 
-    if (!unitsLoading && allUnits.length > 0) {
-      if (isEditing) {
+    if (!unitsLoading && allUnits.length > 0 && isEditing && !isInitialized) {
+      if (existingUnits.length > 0) {
         mapExistingUnits();
       } else {
-        // Para produtos novos, resetar tudo
-        setPrimaryUnit(null);
-        setSecondaryUnits([]);
-        form.setValue('primaryUnitId', '');
-        form.setValue('mainUnitId', '');
-        form.setValue('selectedUnits', []);
+        console.log("⚠️ Produto em edição mas sem unidades existentes carregadas");
+        setIsInitialized(true);
       }
-      setIsInitialized(true);
     }
-  }, [isEditing, unitsLoading, allUnits, mapExistingUnits, form]);
+  }, [isEditing, unitsLoading, allUnits, existingUnits, isInitialized, mapExistingUnits]);
 
   const handlePrimaryUnitChange = useCallback((unit: ProductUnit | null) => {
     console.log("👑 Mudança de unidade principal:", unit?.value);

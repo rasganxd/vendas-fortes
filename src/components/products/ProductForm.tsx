@@ -41,6 +41,14 @@ export default function ProductForm({
     isLoading: loadingUnits
   } = useProductUnitsMapping(isEditing ? selectedProduct?.id : undefined);
 
+  console.log("🏗️ ProductForm render:", {
+    isEditing,
+    selectedProduct: selectedProduct?.name,
+    open,
+    existingUnitsCount: existingUnits?.length || 0,
+    loadingUnits
+  });
+
   const {
     form,
     allUnits,
@@ -66,6 +74,15 @@ export default function ProductForm({
   const showUnitsSection = !isEditing || (isEditing && isInitialized && !loadingUnits);
   const isFormReady = isInitialized && !unitsLoading && !loadingUnits;
 
+  console.log("📊 Estados do formulário:", {
+    showUnitsSection,
+    isFormReady,
+    isInitialized,
+    unitsLoading,
+    loadingUnits,
+    primaryUnit: primaryUnit?.value
+  });
+
   // Helper function to convert "none" values to empty strings or null
   const sanitizeFormValue = (value: string | undefined | null) => {
     if (!value || value === "none") return null;
@@ -74,8 +91,11 @@ export default function ProductForm({
 
   // Custom submit handler to sanitize values
   const handleFormSubmit = (data: any) => {
+    console.log("📤 Enviando dados do formulário:", data);
+    
     // Prevent submission if form is not ready
     if (!isFormReady || isSubmitting || !primaryUnit) {
+      console.log("⚠️ Formulário não está pronto para envio");
       return;
     }
 
@@ -85,6 +105,8 @@ export default function ProductForm({
       groupId: sanitizeFormValue(data.groupId),
       brandId: sanitizeFormValue(data.brandId)
     };
+    
+    console.log("🧹 Dados sanitizados:", sanitizedData);
     handleSubmit(sanitizedData);
   };
 
