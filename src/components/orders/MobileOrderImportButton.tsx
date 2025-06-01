@@ -108,12 +108,7 @@ export default function MobileOrderImportButton({
           {isImporting && <RefreshCw size={16} className="ml-2 animate-spin" />}
           
           {/* Debug button */}
-          <Button size="sm" variant="ghost" className="ml-2 p-1 h-6 w-6" onClick={e => {
-          e.stopPropagation();
-          showDebugInfo();
-        }}>
-            <Bug size={12} />
-          </Button>
+          
         </Button>
       </DialogTrigger>
       
