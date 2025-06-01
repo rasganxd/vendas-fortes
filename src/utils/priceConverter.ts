@@ -1,4 +1,3 @@
-
 import { Product } from '@/types';
 
 export interface PriceConversion {
@@ -122,10 +121,7 @@ export function calculateQuantityConversion(
  * Calcula o preço correto baseado na unidade selecionada
  * Esta é a função principal que deve ser usada nos componentes
  */
-export function calculateUnitPrice(
-  product: Product,
-  selectedUnit: string
-): number {
+export const calculateUnitPrice = (product: Product, selectedUnit: string): number => {
   console.log('🧮 Calculando preço da unidade:', {
     product: product.name,
     selectedUnit,
@@ -136,54 +132,42 @@ export function calculateUnitPrice(
     subunitRatio: product.subunitRatio
   });
 
-  // Validações básicas
-  if (!product.hasSubunit || !product.subunit || !product.subunitRatio) {
-    console.log('📝 Produto sem subunidade, retornando preço original:', product.price);
+  // Validação básica: se não há preço no produto, retornar 0
+  if (!product.price || product.price === 0) {
+    console.log('⚠️ Produto sem preço válido, retornando 0');
+    return 0;
+  }
+
+  // Se não há unidade selecionada, usar unidade principal
+  if (!selectedUnit) {
+    console.log('📝 Sem unidade selecionada, usando preço original');
     return product.price;
   }
 
-  const mainUnit = product.unit || 'UN';
-  const subunit = product.subunit;
-  const subunitRatio = product.subunitRatio;
-  
-  console.log('🔍 Verificando unidade selecionada:', {
-    selectedUnit,
-    subunit,
-    mainUnit,
-    isSubunit: selectedUnit === subunit,
-    isMainUnit: selectedUnit === mainUnit,
-    subunitRatio
-  });
-  
-  // Se a unidade selecionada é a subunidade, calcular o preço da subunidade
-  if (selectedUnit === subunit) {
-    // Validação para evitar divisão por zero
-    if (subunitRatio === 0) {
-      console.warn('⚠️ SubunitRatio é zero, usando preço original');
+  // Se a unidade selecionada é a principal, retornar preço original
+  if (selectedUnit === product.unit) {
+    console.log('📝 Unidade principal selecionada, retornando preço original:', product.price);
+    return product.price;
+  }
+
+  // Se o produto tem subunidade e a unidade selecionada é a subunidade
+  if (product.hasSubunit && selectedUnit === product.subunit && product.subunitRatio) {
+    // Validar subunitRatio para evitar divisão por zero
+    if (product.subunitRatio <= 0) {
+      console.log('⚠️ SubunitRatio inválido, usando preço original');
       return product.price;
     }
     
-    // Preço da subunidade = preço da unidade principal ÷ quantidade de subunidades
-    const unitPrice = product.price / subunitRatio;
-    console.log(`💰 Calculando preço da ${subunit}: R$ ${product.price} ÷ ${subunitRatio} = R$ ${unitPrice.toFixed(2)}`);
-    return unitPrice;
+    const subunitPrice = product.price / product.subunitRatio;
+    console.log('💰 Calculado preço da subunidade:', subunitPrice);
+    return subunitPrice;
   }
-  
-  // Se a unidade selecionada é a unidade principal, usar o preço do produto
-  if (selectedUnit === mainUnit) {
-    console.log(`💰 Usando preço da ${mainUnit}: R$ ${product.price}`);
-    return product.price;
-  }
-  
-  // Fallback - unidade não reconhecida
-  console.warn('⚠️ Unidade não reconhecida, usando preço original:', {
-    selectedUnit,
-    mainUnit,
-    subunit,
-    price: product.price
-  });
+
+  // Para outras unidades, verificar se há conversão necessária
+  // Por enquanto, retornar o preço original
+  console.log('📝 Unidade não reconhecida, retornando preço original:', product.price);
   return product.price;
-}
+};
 
 /**
  * Converte string de preço brasileiro para número

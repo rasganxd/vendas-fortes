@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Product } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -85,12 +84,20 @@ export default function ProductSearchInput({
 
   const handleProductSelect = (product: Product) => {
     console.log("📦 Produto selecionado:", product.name, {
+      id: product.id,
       price: product.price,
+      cost: product.cost,
       unit: product.unit,
       subunit: product.subunit,
       hasSubunit: product.hasSubunit,
       subunitRatio: product.subunitRatio
     });
+    
+    // Validar se o produto tem preço válido
+    if (!product.price || product.price === 0) {
+      console.warn('⚠️ Produto selecionado sem preço válido:', product.name);
+      // Ainda permitir seleção, mas alertar
+    }
     
     setSelectedProduct(product);
     setProductCode(product.code.toString());
@@ -98,12 +105,17 @@ export default function ProductSearchInput({
     // Set default unit to product's main unit
     const defaultUnit = product.unit || 'UN';
     setSelectedUnit(defaultUnit);
+    console.log('📋 Unidade padrão definida:', defaultUnit);
     
     // Calculate correct price for default unit
     const correctPrice = calculateUnitPrice(product, defaultUnit);
     console.log(`💰 Preço calculado para ${defaultUnit}: R$ ${correctPrice.toFixed(2)}`);
     
-    setPrice(correctPrice);
+    // Garantir que sempre temos um preço válido
+    const finalPrice = correctPrice > 0 ? correctPrice : product.price || 0;
+    console.log(`💰 Preço final definido: R$ ${finalPrice.toFixed(2)}`);
+    
+    setPrice(finalPrice);
 
     // Focus on quantity input after product selection
     setTimeout(() => {
@@ -121,7 +133,11 @@ export default function ProductSearchInput({
       const correctPrice = calculateUnitPrice(selectedProduct, unit);
       console.log(`💰 Novo preço para ${unit}: R$ ${correctPrice.toFixed(2)}`);
       
-      setPrice(correctPrice);
+      // Garantir que sempre temos um preço válido
+      const finalPrice = correctPrice > 0 ? correctPrice : selectedProduct.price || 0;
+      console.log(`💰 Preço final após mudança de unidade: R$ ${finalPrice.toFixed(2)}`);
+      
+      setPrice(finalPrice);
     }
   };
 
@@ -134,6 +150,7 @@ export default function ProductSearchInput({
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const displayValue = e.target.value;
     const numericPrice = parseBrazilianPrice(displayValue);
+    console.log('💰 Preço alterado manualmente:', { displayValue, numericPrice });
     setPrice(numericPrice);
   };
 
@@ -318,6 +335,14 @@ export default function ProductSearchInput({
       {getConversionDisplay() && (
         <div className="mt-2 text-xs text-gray-500">
           {getConversionDisplay()}
+        </div>
+      )}
+      
+      {/* Mostrar alerta se produto sem preço válido */}
+      {selectedProduct && (!selectedProduct.price || selectedProduct.price === 0) && (
+        <div className="mt-2 flex items-center text-sm text-amber-600 bg-amber-50 p-2 rounded">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <span>Atenção: Este produto não possui preço cadastrado. Defina um preço antes de adicionar ao pedido.</span>
         </div>
       )}
       

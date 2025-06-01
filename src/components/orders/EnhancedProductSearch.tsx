@@ -82,12 +82,20 @@ export default function EnhancedProductSearch({
   };
   const handleProductSelect = (product: Product) => {
     console.log("📦 Produto selecionado:", product.name, {
+      id: product.id,
       price: product.price,
+      cost: product.cost,
       unit: product.unit,
       subunit: product.subunit,
       hasSubunit: product.hasSubunit,
       subunitRatio: product.subunitRatio
     });
+
+    // Validar se o produto tem preço válido
+    if (!product.price || product.price === 0) {
+      console.warn('⚠️ Produto selecionado sem preço válido:', product.name);
+    }
+
     setSelectedProduct(product);
     setProductCode(product.code.toString());
 
@@ -111,8 +119,13 @@ export default function EnhancedProductSearch({
         subunitRatio: selectedProduct.subunitRatio,
         selectedUnit: unit
       });
-      setPrice(correctPrice);
-      setPriceDisplayValue(formatBrazilianPrice(correctPrice));
+
+      // Garantir que sempre temos um preço válido
+      const finalPrice = correctPrice > 0 ? correctPrice : selectedProduct.price || 0;
+      console.log(`💰 Preço final definido: R$ ${finalPrice.toFixed(2)}`);
+
+      setPrice(finalPrice);
+      setPriceDisplayValue(formatBrazilianPrice(finalPrice));
     }
   };
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
