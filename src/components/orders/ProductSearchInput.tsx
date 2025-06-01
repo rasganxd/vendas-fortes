@@ -9,6 +9,7 @@ import PriceValidation from '@/components/products/pricing/PriceValidation';
 import ProductSearchDialog from './ProductSearchDialog';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
+import { useProductUnitsMapping } from '@/hooks/useProductUnitsMapping';
 import { calculateUnitPrice, formatBrazilianPrice, parseBrazilianPrice } from '@/utils/priceConverter';
 import { validateProductDiscount } from '@/context/operations/productOperations';
 
@@ -41,6 +42,9 @@ export default function ProductSearchInput({
   
   const products = centralizedProducts.length > 0 ? centralizedProducts : propProducts;
   
+  // Hook para obter unidades do produto selecionado
+  const { productUnits, mainUnit } = useProductUnitsMapping(selectedProduct?.id);
+  
   // Listen for product updates
   useEffect(() => {
     const handleProductsUpdated = () => {
@@ -68,7 +72,7 @@ export default function ProductSearchInput({
     }
   }, [selectedProduct, price, products]);
 
-  // Handle product code input change - REMOVIDA A BUSCA AUTOMÁTICA
+  // Handle product code input change
   const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
     setProductCode(value);
@@ -77,9 +81,6 @@ export default function ProductSearchInput({
     if (selectedProduct && selectedProduct.code.toString() !== value) {
       resetForm();
     }
-
-    // REMOVIDO: Não buscar produto automaticamente durante a digitação
-    // A busca só acontece quando o usuário pressionar Enter
   };
 
   const handleProductSelect = (product: Product) => {
@@ -96,32 +97,43 @@ export default function ProductSearchInput({
     // Validar se o produto tem preço válido
     if (!product.price || product.price === 0) {
       console.warn('⚠️ Produto selecionado sem preço válido:', product.name);
-      // Ainda permitir seleção, mas alertar
     }
     
     setSelectedProduct(product);
     setProductCode(product.code.toString());
     
-    // Set default unit to product's main unit
-    const defaultUnit = product.unit || 'UN';
-    setSelectedUnit(defaultUnit);
-    console.log('📋 Unidade padrão definida:', defaultUnit);
-    
-    // Calculate correct price for default unit
-    const correctPrice = calculateUnitPrice(product, defaultUnit);
-    console.log(`💰 Preço calculado para ${defaultUnit}: R$ ${correctPrice.toFixed(2)}`);
-    
-    // Garantir que sempre temos um preço válido
-    const finalPrice = correctPrice > 0 ? correctPrice : product.price || 0;
-    console.log(`💰 Preço final definido: R$ ${finalPrice.toFixed(2)}`);
-    
-    setPrice(finalPrice);
-
-    // Focus on quantity input after product selection
+    // Aguardar carregamento das unidades do mapeamento
     setTimeout(() => {
+      // Focus on quantity input after product selection
       quantityInputRef.current?.focus();
     }, 100);
   };
+
+  // Effect para definir unidade e preço quando produto ou unidades mudarem
+  useEffect(() => {
+    if (selectedProduct && mainUnit) {
+      console.log('🎯 Definindo unidade principal a partir do mapeamento:', mainUnit.value);
+      setSelectedUnit(mainUnit.value);
+      
+      // Calculate correct price for main unit
+      const correctPrice = calculateUnitPrice(selectedProduct, mainUnit.value);
+      console.log(`💰 Preço calculado para ${mainUnit.value}: R$ ${correctPrice.toFixed(2)}`);
+      
+      const finalPrice = correctPrice > 0 ? correctPrice : selectedProduct.price || 0;
+      console.log(`💰 Preço final definido: R$ ${finalPrice.toFixed(2)}`);
+      
+      setPrice(finalPrice);
+    } else if (selectedProduct && !mainUnit && productUnits.length === 0) {
+      // Fallback para unidade legacy se não há mapeamento
+      const defaultUnit = selectedProduct.unit || 'UN';
+      console.log('📋 Usando unidade legacy como fallback:', defaultUnit);
+      setSelectedUnit(defaultUnit);
+      
+      const correctPrice = calculateUnitPrice(selectedProduct, defaultUnit);
+      const finalPrice = correctPrice > 0 ? correctPrice : selectedProduct.price || 0;
+      setPrice(finalPrice);
+    }
+  }, [selectedProduct, mainUnit, productUnits]);
 
   // Calculate price when unit changes
   const handleUnitChange = (unit: string) => {
@@ -129,11 +141,9 @@ export default function ProductSearchInput({
     setSelectedUnit(unit);
     
     if (selectedProduct) {
-      // Use the new calculateUnitPrice function
       const correctPrice = calculateUnitPrice(selectedProduct, unit);
       console.log(`💰 Novo preço para ${unit}: R$ ${correctPrice.toFixed(2)}`);
       
-      // Garantir que sempre temos um preço válido
       const finalPrice = correctPrice > 0 ? correctPrice : selectedProduct.price || 0;
       console.log(`💰 Preço final após mudança de unidade: R$ ${finalPrice.toFixed(2)}`);
       
@@ -185,24 +195,20 @@ export default function ProductSearchInput({
     setPriceValidationError('');
   };
 
-  // NOVA LÓGICA: Buscar produto apenas quando pressionar Enter
   const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       
       if (productCode) {
-        // Buscar produto pelo código exato
         const product = products.find(p => p.code.toString() === productCode);
         if (product) {
           console.log("🔍 Produto encontrado pelo código:", productCode);
           handleProductSelect(product);
         } else {
           console.log("❌ Produto não encontrado pelo código:", productCode);
-          // Abrir diálogo de busca se não encontrar produto
           setShowProductDialog(true);
         }
       } else {
-        // Se não há código, abrir diálogo de busca
         setShowProductDialog(true);
       }
     }
@@ -220,7 +226,6 @@ export default function ProductSearchInput({
     }
     
     if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
-      // Show how many main units this subunit quantity represents
       const mainUnitQty = (quantity || 0) / selectedProduct.subunitRatio;
       return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }

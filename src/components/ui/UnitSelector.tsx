@@ -10,6 +10,7 @@ import {
 import { Unit } from '@/types/unit';
 import { Product } from '@/types/product';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
+import { useProductUnitsMapping } from '@/hooks/useProductUnitsMapping';
 
 interface UnitSelectorProps {
   units?: Unit[];
@@ -27,9 +28,21 @@ export default function UnitSelector({
   className
 }: UnitSelectorProps) {
   const { units: allUnits } = useProductUnits();
+  const { productUnits, mainUnit } = useProductUnitsMapping(product?.id);
   
-  // If product is provided, show only product-specific units
+  // If product is provided, show product-specific units from mapping
   const availableUnits = React.useMemo(() => {
+    if (product && productUnits.length > 0) {
+      console.log('🎯 Usando unidades do mapeamento para produto:', product.name, productUnits);
+      
+      return productUnits.map(unit => ({
+        value: unit.value,
+        label: unit.label,
+        packageQuantity: unit.packageQuantity
+      }));
+    }
+    
+    // Fallback para unidades legacy do produto
     if (product) {
       const productUnits = [];
       
@@ -44,7 +57,6 @@ export default function UnitSelector({
       
       // Add subunit if exists
       if (product.hasSubunit && product.subunit && product.subunitRatio) {
-        // Calculate price per subunit using the product's subunitRatio
         const pricePerSubunit = product.price / product.subunitRatio;
         
         productUnits.push({
@@ -54,12 +66,22 @@ export default function UnitSelector({
         });
       }
       
+      console.log('📦 Usando unidades legacy para produto:', product.name, productUnits);
       return productUnits;
     }
     
     // Fallback to generic units if no product specified
+    console.log('🔧 Usando unidades genéricas');
     return units;
-  }, [product, units]);
+  }, [product, productUnits, units]);
+
+  // Auto-select main unit if no unit is selected and we have a main unit
+  React.useEffect(() => {
+    if (product && !selectedUnit && mainUnit) {
+      console.log('🎯 Auto-selecionando unidade principal:', mainUnit.value);
+      onUnitChange(mainUnit.value);
+    }
+  }, [product, selectedUnit, mainUnit, onUnitChange]);
 
   return (
     <Select value={selectedUnit} onValueChange={onUnitChange}>
