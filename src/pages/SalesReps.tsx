@@ -4,12 +4,11 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Edit, Trash2, Key } from 'lucide-react';
+import { Plus, Users, Edit, Trash2 } from 'lucide-react';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { SalesRep } from '@/types';
 import { EditSalesRepDialog } from '@/components/personnel/EditSalesRepDialog';
 import DeleteSalesRepDialog from '@/components/personnel/DeleteSalesRepDialog';
-import SalesRepCredentialsDialog from '@/components/personnel/SalesRepCredentialsDialog';
 
 export default function SalesReps() {
   const {
@@ -24,10 +23,8 @@ export default function SalesReps() {
 
   const [editingSalesRep, setEditingSalesRep] = useState<SalesRep | null>(null);
   const [deletingSalesRep, setDeletingSalesRep] = useState<SalesRep | null>(null);
-  const [credentialsSalesRep, setCredentialsSalesRep] = useState<SalesRep | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
 
   const handleEdit = (salesRep: SalesRep) => {
     setEditingSalesRep(salesRep);
@@ -37,11 +34,6 @@ export default function SalesReps() {
   const handleDelete = (salesRep: SalesRep) => {
     setDeletingSalesRep(salesRep);
     setShowDeleteDialog(true);
-  };
-
-  const handleCredentials = (salesRep: SalesRep) => {
-    setCredentialsSalesRep(salesRep);
-    setShowCredentialsDialog(true);
   };
 
   const handleCreateNew = async () => {
@@ -149,14 +141,6 @@ export default function SalesReps() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleCredentials(salesRep)}
-                    >
-                      <Key className="h-3 w-3" />
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
                       onClick={() => handleDelete(salesRep)}
                       className="text-red-600 hover:text-red-700"
                     >
@@ -182,12 +166,6 @@ export default function SalesReps() {
           onOpenChange={setShowDeleteDialog}
           salesRep={deletingSalesRep}
           onDelete={deleteSalesRep}
-        />
-
-        <SalesRepCredentialsDialog
-          open={showCredentialsDialog}
-          onOpenChange={setShowCredentialsDialog}
-          salesRep={credentialsSalesRep}
         />
       </div>
     </PageLayout>

@@ -54,7 +54,6 @@ export const transformCustomerData = (raw: any): Customer | null => {
       city: raw.city || '',
       state: raw.state || '',
       zipCode: raw.zip_code || '',
-      region: raw.region || '',
       category: raw.category || '',
       paymentTerms: raw.payment_terms || '',
       creditLimit: raw.credit_limit || 0,
@@ -70,6 +69,74 @@ export const transformCustomerData = (raw: any): Customer | null => {
     };
   } catch (error) {
     console.error('Error transforming customer data:', error, 'Raw data:', raw);
+    return null;
+  }
+};
+
+/**
+ * Transforms raw Supabase data to Product interface
+ * @param raw - Raw data from Supabase
+ * @returns Product object or null if transformation fails
+ */
+export const transformProductData = (raw: any): any | null => {
+  try {
+    if (!raw || typeof raw !== 'object') {
+      console.error('Invalid product data:', raw);
+      return null;
+    }
+
+    return {
+      id: raw.id,
+      code: raw.code || 0,
+      name: raw.name || '',
+      brand: raw.brand || '',
+      category: raw.category || '',
+      group: raw.group || '',
+      unit: raw.unit || 'UN',
+      price: raw.price || 0,
+      cost: raw.cost || 0,
+      active: raw.active !== false,
+      createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
+      updatedAt: raw.updated_at ? new Date(raw.updated_at) : new Date()
+    };
+  } catch (error) {
+    console.error('Error transforming product data:', error, 'Raw data:', raw);
+    return null;
+  }
+};
+
+/**
+ * Transforms raw Supabase data to Order interface
+ * @param raw - Raw data from Supabase
+ * @returns Order object or null if transformation fails
+ */
+export const transformOrderData = (raw: any): any | null => {
+  try {
+    if (!raw || typeof raw !== 'object') {
+      console.error('Invalid order data:', raw);
+      return null;
+    }
+
+    return {
+      id: raw.id,
+      code: raw.code || 0,
+      customerId: raw.customer_id || '',
+      customerName: raw.customer_name || '',
+      salesRepId: raw.sales_rep_id || '',
+      salesRepName: raw.sales_rep_name || '',
+      date: raw.date ? new Date(raw.date) : new Date(),
+      dueDate: raw.due_date ? new Date(raw.due_date) : null,
+      total: raw.total || 0,
+      discount: raw.discount || 0,
+      status: raw.status || 'pending',
+      paymentStatus: raw.payment_status || 'pending',
+      paymentMethod: raw.payment_method || '',
+      notes: raw.notes || '',
+      createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
+      updatedAt: raw.updated_at ? new Date(raw.updated_at) : new Date()
+    };
+  } catch (error) {
+    console.error('Error transforming order data:', error, 'Raw data:', raw);
     return null;
   }
 };
