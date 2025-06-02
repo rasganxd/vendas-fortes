@@ -40,6 +40,10 @@ export interface DeliveryRoute {
   description?: string;
   active: boolean;
   stops: RouteStop[];
+  status?: string; // Add status property
+  date?: Date; // Add date property
+  vehicleId?: string; // Add vehicleId property
+  vehicleName?: string; // Add vehicleName property
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,4 +57,14 @@ export interface RouteStop {
   actual_time?: string;
   status: 'pending' | 'completed' | 'skipped';
   notes?: string;
+  orderId?: string; // Add orderId property
+  customerName?: string; // Add customerName property
+  address?: string; // Add address property
+  city?: string; // Add city property
+  state?: string; // Add state property
+  zip?: string; // Add zip property
+  position?: number; // Add position property
+  lat?: number; // Add lat property
+  lng?: number; // Add lng property
+  completed?: boolean; // Add completed property
 }

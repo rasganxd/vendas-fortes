@@ -70,6 +70,7 @@ interface AppDataContextType {
   settings?: AppSettings;
   isLoadingSettings?: boolean;
   refreshSettings?: () => Promise<void>;
+  connectionStatus: 'online' | 'offline' | 'connecting' | 'error';
 }
 
 const defaultAppContext: AppDataContextType = {
@@ -109,7 +110,8 @@ const defaultAppContext: AppDataContextType = {
   refreshData: async () => { },
   settings: undefined,
   isLoadingSettings: false,
-  refreshSettings: async () => { }
+  refreshSettings: async () => { },
+  connectionStatus: 'online'
 };
 
 export const AppDataContext = createContext(defaultAppContext);
@@ -151,6 +153,13 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
   // Loads
   const [loads, setLoads] = useState<Load[]>([]);
   const [isLoadingLoads, setIsLoadingLoads] = useState(false);
+
+  // Settings
+  const [settings, setSettings] = useState<AppSettings | undefined>();
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+
+  // Connection status
+  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'connecting' | 'error'>('online');
 
   // Customers Operations
   const refreshCustomers = async () => {
@@ -453,7 +462,10 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     // Settings
     settings,
     isLoadingSettings,
-    refreshSettings
+    refreshSettings,
+
+    // Connection status
+    connectionStatus
   };
 
   return (
@@ -463,4 +475,5 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 };
 
+export { AppDataProvider };
 export default AppDataProvider;

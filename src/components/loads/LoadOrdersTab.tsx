@@ -42,8 +42,8 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
 
   // Filter orders that aren't already part of the load
   const filteredOrders = orders.filter(order => {
-    const isInLoad = currentItems.some(item => item.orderId === order.id);
-    const matchesSearch = order.customerName.toLowerCase().includes(search.toLowerCase()) || 
+    const isInLoad = currentItems.some(item => item.order_id === order.id || item.orderId === order.id);
+    const matchesSearch = order.customer_name?.toLowerCase().includes(search.toLowerCase()) || 
                           order.id.toLowerCase().includes(search.toLowerCase());
     return !isInLoad && matchesSearch;
   });
@@ -60,7 +60,8 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
 
   const handleAddSelectedOrders = () => {
     if (selectedOrderIds.length === 0) {
-      toast("Nenhum pedido selecionado", {
+      toast({
+        title: "Nenhum pedido selecionado",
         description: "Selecione pelo menos um pedido para adicionar à carga."
       });
       return;
@@ -70,18 +71,22 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
     
     const newLoadItems: LoadItem[] = [];
     ordersToAdd.forEach(order => {
-      order.items.forEach(item => {
+      order.items?.forEach(item => {
         newLoadItems.push({
           id: uuid(),
-          loadId: '',  // This will be set when the load is created
+          load_id: '',  // This will be set when the load is created
+          loadId: '',
+          order_id: order.id,
           orderId: order.id,
           productId: item.productId || '',
-          productName: item.productName,
+          productName: item.product_name,
           quantity: item.quantity,
           price: item.price,
-          productCode: item.productCode,
-          customerId: order.customerId,
-          status: 'pending'
+          productCode: item.product_code,
+          customerId: order.customer_id,
+          status: 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
       });
     });
@@ -90,15 +95,17 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
     setSelectedOrderIds([]);
     setSearch('');
     
-    toast("Pedidos adicionados", {
+    toast({
+      title: "Pedidos adicionados",
       description: `${ordersToAdd.length} pedido(s) adicionado(s) à carga.`
     });
   };
 
   const handleRemoveOrder = (orderId: string) => {
-    setCurrentItems(currentItems.filter(item => item.orderId !== orderId));
+    setCurrentItems(currentItems.filter(item => item.order_id !== orderId && item.orderId !== orderId));
     
-    toast("Pedido removido", {
+    toast({
+      title: "Pedido removido",
       description: "O pedido foi removido da carga."
     });
   };
@@ -118,7 +125,7 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
             </TableHeader>
             <TableBody>
               {Array.from(
-                new Set(currentItems.map(item => item.orderId))
+                new Set(currentItems.map(item => item.order_id || item.orderId).filter(Boolean))
               ).map(orderId => {
                 const { customerCode, orderTotal } = orderId ? getOrderInfo(orderId) : { customerCode: "-", orderTotal: 0 };
                 return (
@@ -184,7 +191,7 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
             </TableHeader>
             <TableBody>
               {filteredOrders.map((order) => {
-                const customer = customers.find(c => c.id === order.customerId);
+                const customer = customers.find(c => c.id === order.customer_id);
                 const customerCode = customer?.code || "-";
                 return (
                   <TableRow key={order.id}>
@@ -195,9 +202,9 @@ export const LoadOrdersTab = ({ currentItems, setCurrentItems }: LoadOrdersTabPr
                       />
                     </TableCell>
                     <TableCell>{customerCode}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>{order.customer_name}</TableCell>
                     <TableCell>R$ {order.total.toFixed(2)}</TableCell>
-                    <TableCell>{order.items.length} item(s)</TableCell>
+                    <TableCell>{order.items?.length || 0} item(s)</TableCell>
                   </TableRow>
                 );
               })}

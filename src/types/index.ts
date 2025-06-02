@@ -6,7 +6,7 @@ export type { Customer } from './customer';
 export type { Order, OrderItem } from './order';
 
 // Payment types
-export type { PaymentMethod, PaymentTable, Payment } from './payment';
+export type { PaymentMethod, PaymentTable, Payment, PaymentStatus } from './payment';
 
 // Product types
 export type { Product, ProductCategory, ProductGroup, ProductBrand } from './product';
