@@ -781,6 +781,87 @@ export type Database = {
           },
         ]
       }
+      product_brands: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      product_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      product_groups: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
@@ -792,6 +873,7 @@ export type Database = {
           group_id: string | null
           id: string
           main_unit_id: string
+          max_discount_percent: number | null
           name: string
           stock: number
           sub_unit_id: string | null
@@ -807,6 +889,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           main_unit_id: string
+          max_discount_percent?: number | null
           name: string
           stock?: number
           sub_unit_id?: string | null
@@ -822,6 +905,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           main_unit_id?: string
+          max_discount_percent?: number | null
           name?: string
           stock?: number
           sub_unit_id?: string | null

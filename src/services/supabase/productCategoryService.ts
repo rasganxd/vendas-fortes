@@ -1,16 +1,31 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { ProductCategory } from '@/types';
 
-// Mock service para funcionar sem tabela no banco
 export const productCategoryService = {
   async getAll(): Promise<ProductCategory[]> {
     try {
-      console.log("Getting all product categories (mock data)...");
+      console.log("Getting all product categories from Supabase...");
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('*')
+        .order('name');
       
-      // Retorna dados mock já que a tabela product_categories não existe
-      const categories: ProductCategory[] = [];
+      if (error) {
+        console.error("Error getting product categories:", error);
+        return [];
+      }
       
-      console.log(`Retrieved ${categories.length} product categories (mock)`);
+      const categories = data?.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        notes: item.notes || '',
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at)
+      })) || [];
+      
+      console.log(`Retrieved ${categories.length} product categories from Supabase`);
       return categories;
     } catch (error) {
       console.error("Error getting all product categories:", error);
@@ -19,25 +34,124 @@ export const productCategoryService = {
   },
   
   async getById(id: string): Promise<ProductCategory | null> {
-    console.log("Getting product category by ID (mock):", id);
-    return null;
+    try {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') return null;
+        return null;
+      }
+      
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        notes: data.notes || '',
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
+    } catch (error) {
+      console.error("Error getting product category by ID:", error);
+      return null;
+    }
   },
   
   async getByName(name: string): Promise<ProductCategory | null> {
-    console.log("Getting product category by name (mock):", name);
-    return null;
+    try {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('*')
+        .eq('name', name)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') return null;
+        return null;
+      }
+      
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        notes: data.notes || '',
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
+    } catch (error) {
+      console.error("Error getting product category by name:", error);
+      return null;
+    }
   },
   
   async add(category: Omit<ProductCategory, 'id'>): Promise<string> {
-    console.log("Adding product category (mock):", category);
-    return 'mock-id';
+    try {
+      const categoryData = {
+        name: category.name,
+        description: category.description,
+        notes: category.notes
+      };
+      
+      const { data, error } = await supabase
+        .from('product_categories')
+        .insert(categoryData)
+        .select('id')
+        .single();
+      
+      if (error) {
+        console.error("Error adding product category:", error);
+        throw error;
+      }
+      
+      return data.id;
+    } catch (error) {
+      console.error("Error adding product category:", error);
+      throw error;
+    }
   },
   
   async update(id: string, category: Partial<ProductCategory>): Promise<void> {
-    console.log("Updating product category (mock):", id, category);
+    try {
+      const updateData: any = {};
+      
+      if (category.name !== undefined) updateData.name = category.name;
+      if (category.description !== undefined) updateData.description = category.description;
+      if (category.notes !== undefined) updateData.notes = category.notes;
+      
+      updateData.updated_at = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from('product_categories')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) {
+        console.error("Error updating product category:", error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("Error updating product category:", error);
+      throw error;
+    }
   },
   
   async delete(id: string): Promise<void> {
-    console.log("Deleting product category (mock):", id);
+    try {
+      const { error } = await supabase
+        .from('product_categories')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error("Error deleting product category:", error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("Error deleting product category:", error);
+      throw error;
+    }
   }
 };
