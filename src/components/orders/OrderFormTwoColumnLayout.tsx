@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import OrderFormHeader from './OrderFormHeader';
 import OrderFormFields from './OrderFormFields';
-import OrderFormActions from './OrderFormActions';
+import OrderActionBar from './OrderActionBar';
 import EnhancedProductSearch from './EnhancedProductSearch';
 import OrderSummaryPanel from './OrderSummaryPanel';
 import EnhancedOrderItemsTable from './EnhancedOrderItemsTable';
@@ -90,6 +90,18 @@ export default function OrderFormTwoColumnLayout({
         </CardContent>
       </Card>
 
+      {/* Action Bar - Always visible at top */}
+      <OrderActionBar
+        selectedCustomer={selectedCustomer}
+        selectedSalesRep={selectedSalesRep}
+        orderItems={orderItems}
+        isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        connectionStatus={connectionStatus}
+        handleViewRecentPurchases={handleViewRecentPurchases}
+        handleCreateOrder={handleCreateOrder}
+      />
+
       {/* Expanded Two Column Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left Column - Form Fields (3/4 width on XL screens) */}
@@ -166,17 +178,6 @@ export default function OrderFormTwoColumnLayout({
             selectedPaymentTable={selectedPaymentTable}
             calculateTotal={calculateTotal}
             isEditMode={isEditMode}
-          />
-
-          <OrderFormActions
-            selectedCustomer={selectedCustomer}
-            selectedSalesRep={selectedSalesRep}
-            orderItems={orderItems}
-            isSubmitting={isSubmitting}
-            isEditMode={isEditMode}
-            connectionStatus={connectionStatus}
-            handleViewRecentPurchases={handleViewRecentPurchases}
-            handleCreateOrder={handleCreateOrder}
           />
         </div>
       </div>

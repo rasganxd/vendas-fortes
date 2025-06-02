@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Unit } from '@/types/unit';
+import { Unit } from '@/services/supabase/unitService';
 import { Product } from '@/types/product';
 import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 
@@ -35,26 +35,26 @@ export default function UnitSelector({
       
       // Always add main unit
       if (product.unit) {
+        const mainUnitData = allUnits.find(u => u.code === product.unit);
         productUnits.push({
-          value: product.unit,
-          label: product.unit,
+          code: product.unit,
+          description: mainUnitData?.description || product.unit,
           conversionRate: 1 // Main unit is always 1
         });
       }
       
       // Add subunit if exists
       if (product.hasSubunit && product.subunit) {
-        // Get the main unit's conversion rate to calculate subunit info
-        const mainUnitData = allUnits.find(u => u.value === product.unit);
-        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
+        const subUnitData = allUnits.find(u => u.code === product.subunit);
+        const mainUnitData = allUnits.find(u => u.code === product.unit);
         
         // Calculate price per subunit for display
-        const pricePerSubunit = product.price / mainUnitConversionRate;
+        const pricePerSubunit = product.price / (mainUnitData?.conversionRate || 1);
         
         productUnits.push({
-          value: product.subunit,
-          label: `${product.subunit} (R$ ${pricePerSubunit.toFixed(2).replace('.', ',')})`,
-          conversionRate: mainUnitConversionRate
+          code: product.subunit,
+          description: `${subUnitData?.description || product.subunit} (R$ ${pricePerSubunit.toFixed(2).replace('.', ',')})`,
+          conversionRate: mainUnitData?.conversionRate || 1
         });
       }
       
@@ -62,7 +62,11 @@ export default function UnitSelector({
     }
     
     // Fallback to generic units if no product specified
-    return units;
+    return units.map(unit => ({
+      code: unit.code,
+      description: unit.description,
+      conversionRate: unit.conversionRate || 1
+    }));
   }, [product, units, allUnits]);
 
   return (
@@ -72,8 +76,8 @@ export default function UnitSelector({
       </SelectTrigger>
       <SelectContent>
         {availableUnits.map(unit => (
-          <SelectItem key={unit.value} value={unit.value}>
-            {unit.label || unit.value}
+          <SelectItem key={unit.code} value={unit.code}>
+            {unit.description || unit.code}
           </SelectItem>
         ))}
       </SelectContent>
