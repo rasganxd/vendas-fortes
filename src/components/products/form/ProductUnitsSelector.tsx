@@ -46,28 +46,23 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
   const [addUnitDialogOpen, setAddUnitDialogOpen] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string>('');
 
-  console.log("🔍 ProductUnitsSelector state:", {
+  console.log("🔍 ProductUnitsSelector:", {
     allUnits: allUnits.length,
     selectedUnits: selectedUnits.length,
-    isLoading,
-    selectedUnitId
+    mainUnitId,
+    isLoading
   });
 
-  // Filter available units that haven't been selected yet
+  // Filtrar unidades disponíveis que ainda não foram selecionadas
   const availableUnits = allUnits.filter(
     unit => !selectedUnits.some(su => su.unitId === unit.id)
   );
 
-  console.log("📋 Available units:", availableUnits);
-
   const handleAddUnit = () => {
-    if (!selectedUnitId) {
-      console.log("⚠️ No unit selected");
-      return;
-    }
+    if (!selectedUnitId) return;
     
     const unit = allUnits.find(u => u.id === selectedUnitId);
-    console.log("➕ Adding unit:", { selectedUnitId, unit });
+    console.log("➕ Adicionando unidade:", { selectedUnitId, unit });
     
     if (unit) {
       onAddUnit({
@@ -76,9 +71,7 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
         label: unit.label,
         packageQuantity: unit.packageQuantity
       });
-      console.log("✅ Unit added successfully");
-    } else {
-      console.log("❌ Unit not found:", selectedUnitId);
+      console.log("✅ Unidade adicionada");
     }
     
     setAddUnitDialogOpen(false);
@@ -95,98 +88,112 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
       return productPrice;
     }
     
-    // Lógica corrigida: 
-    // Se a unidade principal tem 18 unidades e custa R$ 69,00
-    // E queremos o preço de uma unidade com 1 unidade
-    // Preço da unidade = preço principal / (packageQuantity principal / packageQuantity da unidade)
-    // Exemplo: R$ 69,00 / (18 / 1) = R$ 69,00 / 18 = R$ 3,83
+    // Fator de conversão: quantidade da unidade principal / quantidade da unidade atual
     const conversionRatio = mainUnit.packageQuantity / unit.packageQuantity;
     return productPrice / conversionRatio;
   };
 
   if (isLoading) {
     return (
-      <Card className={className}>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" />
-          <span className="text-sm text-muted-foreground">Carregando unidades...</span>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8 border rounded-md bg-gray-50">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        <span className="text-sm text-muted-foreground">Carregando unidades disponíveis...</span>
+      </div>
     );
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">Unidades do Produto</CardTitle>
-          <Button 
-            size="sm" 
-            variant="outline"
-            type="button"
-            onClick={() => setAddUnitDialogOpen(true)}
-            disabled={availableUnits.length === 0}
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Adicionar
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {selectedUnits.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nenhuma unidade selecionada. Adicione pelo menos uma unidade.
+    <div className={className}>
+      {/* Header com botão de adicionar */}
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-sm font-medium">Unidades Selecionadas</h4>
+        <Button 
+          size="sm" 
+          variant="outline"
+          type="button"
+          onClick={() => setAddUnitDialogOpen(true)}
+          disabled={availableUnits.length === 0}
+          className="flex items-center gap-1"
+        >
+          <Plus className="h-3 w-3" />
+          Adicionar Unidade
+        </Button>
+      </div>
+
+      {/* Lista de unidades selecionadas */}
+      {selectedUnits.length === 0 ? (
+        <div className="border rounded-md p-6 text-center bg-gray-50">
+          <p className="text-sm text-muted-foreground mb-2">
+            Nenhuma unidade selecionada
           </p>
-        ) : (
-          <div className="space-y-2">
-            {selectedUnits.map(unit => (
-              <div 
-                key={unit.unitId}
-                className="flex items-center justify-between p-2 border rounded-md"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{unit.unitValue}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {unit.unitLabel}
-                  </span>
-                  {unit.isMainUnit && (
-                    <Badge variant="default" className="text-xs">
-                      <Crown className="h-3 w-3 mr-1" />
-                      Principal
-                    </Badge>
-                  )}
+          <p className="text-xs text-muted-foreground">
+            Clique em "Adicionar Unidade" para começar
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2 border rounded-md p-3">
+          {selectedUnits.map(unit => (
+            <div 
+              key={unit.unitId}
+              className={`flex items-center justify-between p-3 border rounded-md transition-colors ${
+                unit.isMainUnit ? 'bg-blue-50 border-blue-200' : 'bg-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{unit.unitValue}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {unit.unitLabel}
+                    </span>
+                    {unit.isMainUnit && (
+                      <Badge variant="default" className="text-xs flex items-center gap-1">
+                        <Crown className="h-3 w-3" />
+                        Principal
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {unit.packageQuantity} {unit.packageQuantity === 1 ? 'unidade' : 'unidades'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {productPrice > 0 && (
+                  <span className="text-sm font-medium text-green-600">
                     {formatCurrency(calculateUnitPrice(unit))}
                   </span>
-                  {!unit.isMainUnit && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      type="button"
-                      onClick={() => onSetMainUnit(unit.unitId)}
-                      className="h-6 px-2 text-xs"
-                    >
-                      Definir como principal
-                    </Button>
-                  )}
+                )}
+                
+                {!unit.isMainUnit && (
                   <Button
                     size="sm"
                     variant="outline"
                     type="button"
-                    onClick={() => onRemoveUnit(unit.unitId)}
-                    className="h-6 w-6 p-0"
-                    disabled={selectedUnits.length === 1}
+                    onClick={() => onSetMainUnit(unit.unitId)}
+                    className="h-7 px-2 text-xs"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    Tornar principal
                   </Button>
-                </div>
+                )}
+                
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => onRemoveUnit(unit.unitId)}
+                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  disabled={selectedUnits.length === 1}
+                  title={selectedUnits.length === 1 ? "Não é possível remover a única unidade" : "Remover unidade"}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Dialog para adicionar unidade */}
       <Dialog open={addUnitDialogOpen} onOpenChange={setAddUnitDialogOpen}>
@@ -194,7 +201,7 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
           <DialogHeader>
             <DialogTitle>Adicionar Unidade ao Produto</DialogTitle>
             <DialogDescription>
-              Selecione uma unidade para associar a este produto
+              Selecione uma unidade de medida para associar a este produto
             </DialogDescription>
           </DialogHeader>
           
@@ -206,21 +213,35 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
               <SelectContent>
                 {availableUnits.map(unit => (
                   <SelectItem key={unit.id} value={unit.id}>
-                    {unit.value} - {unit.label} ({unit.packageQuantity} unidades)
+                    <div className="flex items-center justify-between w-full">
+                      <span>{unit.value} - {unit.label}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        ({unit.packageQuantity} {unit.packageQuantity === 1 ? 'unidade' : 'unidades'})
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             
             {availableUnits.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Todas as unidades disponíveis já foram adicionadas.
-              </p>
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <p className="text-sm text-amber-800">
+                  Todas as unidades disponíveis já foram adicionadas ao produto.
+                </p>
+              </div>
             )}
           </div>
           
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setAddUnitDialogOpen(false)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setAddUnitDialogOpen(false);
+                setSelectedUnitId('');
+              }}
+            >
               Cancelar
             </Button>
             <Button 
@@ -233,6 +254,6 @@ export const ProductUnitsSelector: React.FC<ProductUnitsSelectorProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 };

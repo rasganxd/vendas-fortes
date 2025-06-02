@@ -1533,6 +1533,10 @@ export type Database = {
           error_messages: string[]
         }[]
       }
+      migrate_legacy_product_units: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       sync_customers_to_route: {
         Args: { p_route_id: string; p_sales_rep_id: string }
         Returns: number
