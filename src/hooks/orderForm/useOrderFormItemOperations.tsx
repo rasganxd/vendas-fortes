@@ -182,8 +182,9 @@ export const useOrderFormItemOperations = (
         
         const updatedItems = currentItems.filter(item => item.productId !== productId);
         
-        if (isEditMode && currentOrderId) {
-          orderItemService.removeItemFromOrder(currentOrderId, productId).then(() => {
+        if (isEditMode && currentOrderId && itemToRemove.productCode) {
+          // Convert productId to productCode for removal
+          orderItemService.removeItemFromOrder(currentOrderId, itemToRemove.productCode).then(() => {
             orderItemService.updateOrderTotal(currentOrderId);
             console.log("✅ Item removed from database");
           }).catch(error => {
