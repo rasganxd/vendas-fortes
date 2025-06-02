@@ -1,18 +1,15 @@
 
 import React from 'react';
-import { Product } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
 import ProductSearchInput from './ProductSearchInput';
 
 interface ProductAdditionProps {
-  products: Product[];
-  handleAddItem: (product: Product, quantity: number, price: number) => void;
+  handleAddItem: (productName: string, quantity: number, price: number) => void;
   productInputRef: React.RefObject<HTMLInputElement>;
   isEditMode: boolean;
 }
 
 export default function ProductAddition({
-  products,
   handleAddItem,
   productInputRef,
   isEditMode
@@ -26,7 +23,6 @@ export default function ProductAddition({
           </h4>
         </div>
         <ProductSearchInput 
-          products={products} 
           addItemToOrder={handleAddItem} 
           inlineLayout={true} 
           inputRef={productInputRef} 

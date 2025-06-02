@@ -1,139 +1,263 @@
-import { useEffect, useState } from 'react';
-import { useAppContext } from '@/hooks/useAppContext';
+
+import React from 'react';
+import { useAppData } from '@/context/providers/AppDataProvider';
 import PageLayout from '@/components/layout/PageLayout';
-import DashboardCard from '@/components/dashboard/DashboardCard';
-import SalesChart from '@/components/dashboard/SalesChart';
-import RecentOrdersTable from '@/components/dashboard/RecentOrdersTable';
-import { Users, Package, ShoppingCart, DollarSign, TrendingUp, AlertTriangle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { EnhancedCard, EnhancedCardContent, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
+import { 
+  ShoppingCart, 
+  Users, 
+  TrendingUp, 
+  CreditCard,
+  Calendar,
+  MapPin,
+  Truck,
+  Receipt
+} from 'lucide-react';
 
 export default function Dashboard() {
-  const { customers, products, orders, payments } = useAppContext();
-  const [currentTime, setCurrentTime] = useState(new Date());
-  
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000); // Update every minute
-    
-    return () => clearInterval(timer);
-  }, []);
-  
-  // Calculate total sales amount
-  const totalSales = orders.reduce((total, order) => total + order.total, 0);
-  
-  // Calculate total payments received
-  const totalPayments = payments
-    .filter(payment => payment.status === 'completed')
-    .reduce((total, payment) => total + payment.amount, 0);
-  
-  // Count confirmed orders
-  const confirmedOrders = orders.filter(order => order.status === 'confirmed').length;
-  
-  // Calculate pending payments amount
-  const pendingPayments = totalSales - totalPayments;
-  
-  // Get low stock products
-  const lowStockProducts = products
-    .filter(product => product.stock < 100)
-    .sort((a, b) => a.stock - b.stock);
-  
-  // Get recent orders
-  const recentOrders = [...orders]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+  const {
+    customers,
+    salesReps,
+    orders,
+    paymentMethods,
+    paymentTables,
+    isLoadingCustomers,
+    isLoadingSalesReps,
+    isLoadingOrders,
+    isLoadingPaymentMethods,
+    isLoadingPaymentTables
+  } = useAppData();
 
-  // Format today's date
-  const formattedDate = format(currentTime, "EEEE, d 'de' MMMM", { locale: ptBR });
-  const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+  // Calculate metrics
+  const totalOrders = orders.length;
+  const totalCustomers = customers.length;
+  const totalSalesReps = salesReps.length;
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
   
+  // Recent orders (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const recentOrders = orders.filter(order => new Date(order.date) >= thirtyDaysAgo);
+  
+  // Pending orders
+  const pendingOrders = orders.filter(order => order.status === 'pending');
+  
+  // Active customers
+  const activeCustomers = customers.filter(customer => customer.active);
+
+  const stats = [
+    {
+      title: 'Total de Pedidos',
+      value: totalOrders.toString(),
+      icon: ShoppingCart,
+      description: `${recentOrders.length} nos últimos 30 dias`,
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Clientes Ativos',
+      value: activeCustomers.length.toString(),
+      icon: Users,
+      description: `${totalCustomers} total`,
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Receita Total',
+      value: totalRevenue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }),
+      icon: TrendingUp,
+      description: 'Todos os pedidos',
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'Pedidos Pendentes',
+      value: pendingOrders.length.toString(),
+      icon: Calendar,
+      description: 'Aguardando confirmação',
+      color: 'bg-yellow-500'
+    }
+  ];
+
+  const quickActions = [
+    {
+      title: 'Novo Pedido',
+      description: 'Criar um novo pedido',
+      icon: ShoppingCart,
+      href: '/pedidos',
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Gerenciar Clientes',
+      description: 'Adicionar ou editar clientes',
+      icon: Users,
+      href: '/clientes',
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Rotas de Entrega',
+      description: 'Organizar entregas',
+      icon: MapPin,
+      href: '/rotas-entrega',
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'Gerenciar Veículos',
+      description: 'Controlar frota',
+      icon: Truck,
+      href: '/veiculos',
+      color: 'bg-orange-500'
+    },
+    {
+      title: 'Métodos de Pagamento',
+      description: 'Configurar pagamentos',
+      icon: CreditCard,
+      href: '/metodos-pagamento',
+      color: 'bg-indigo-500'
+    },
+    {
+      title: 'Relatórios',
+      description: 'Visualizar estatísticas',
+      icon: Receipt,
+      href: '/relatorios',
+      color: 'bg-pink-500'
+    }
+  ];
+
+  const isLoading = isLoadingCustomers || isLoadingSalesReps || isLoadingOrders || 
+                    isLoadingPaymentMethods || isLoadingPaymentTables;
+
+  if (isLoading) {
+    return (
+      <PageLayout title="Dashboard" subtitle="Visão geral do sistema">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </PageLayout>
+    );
+  }
+
   return (
-    <PageLayout title="Dashboard">
-      <div className="mb-6">
-        <h2 className="text-xl text-gray-500 font-medium">
-          Bem-vindo ao SalesTrack
-        </h2>
-        <p className="text-sm text-gray-500">
-          {capitalizedDate} • {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <DashboardCard
-          title="Total de Vendas"
-          value={totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          icon={<DollarSign size={20} className="text-blue-600" />}
-          trend={{ value: 12.5, isPositive: true }}
-          valueClassName="text-blue-700"
-          className="bg-gradient-to-br from-blue-200 to-blue-100 border-blue-300"
-        />
-        <DashboardCard
-          title="Pagamentos Recebidos"
-          value={totalPayments.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          icon={<TrendingUp size={20} className="text-green-600" />}
-          trend={{ value: 8.2, isPositive: true }}
-          valueClassName="text-green-700"
-          className="bg-gradient-to-br from-green-200 to-green-100 border-green-300"
-        />
-        <DashboardCard
-          title="Clientes Ativos"
-          value={customers.length}
-          icon={<Users size={20} className="text-purple-600" />}
-          trend={{ value: 4.1, isPositive: true }}
-          valueClassName="text-purple-700"
-          className="bg-gradient-to-br from-purple-200 to-purple-100 border-purple-300"
-        />
-        <DashboardCard
-          title="Pedidos Pendentes"
-          value={confirmedOrders}
-          icon={<ShoppingCart size={20} className="text-amber-600" />}
-          trend={{ value: 1.5, isPositive: false }}
-          valueClassName="text-amber-700"
-          className="bg-gradient-to-br from-amber-200 to-amber-100 border-amber-300"
-        />
-      </div>
+    <PageLayout 
+      title="Dashboard" 
+      subtitle="Visão geral do sistema"
+      description="Acompanhe as principais métricas e acesse rapidamente as funcionalidades"
+    >
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => (
+            <EnhancedCard key={index} variant="glass">
+              <EnhancedCardContent className="p-6">
+                <div className="flex items-center">
+                  <div className={`p-3 rounded-lg ${stat.color} bg-opacity-10`}>
+                    <stat.icon className={`h-6 w-6 ${stat.color.replace('bg-', 'text-')}`} />
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-xs text-gray-500">{stat.description}</p>
+                  </div>
+                </div>
+              </EnhancedCardContent>
+            </EnhancedCard>
+          ))}
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <SalesChart title="Desempenho de Vendas" className="lg:col-span-2" />
-        
-        <Card className="border border-red-200 shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Produtos em Baixo Estoque</CardTitle>
-              <Badge variant="destructive" className="gap-1">
-                <AlertTriangle size={12} />
-                <span>{lowStockProducts.length}</span>
-              </Badge>
-            </div>
-            <CardDescription>Produtos que precisam de reposição</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {lowStockProducts.length > 0 ? (
-              <ul className="space-y-3">
-                {lowStockProducts.slice(0, 5).map(product => (
-                  <li key={product.id} className="flex items-center justify-between p-2 rounded-md bg-red-50/80">
-                    <div>
-                      <p className="font-medium text-gray-700">{product.name}</p>
-                      <p className="text-xs text-gray-500">{product.code}</p>
+        {/* Quick Actions */}
+        <EnhancedCard variant="default">
+          <EnhancedCardHeader>
+            <EnhancedCardTitle>Ações Rápidas</EnhancedCardTitle>
+          </EnhancedCardHeader>
+          <EnhancedCardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {quickActions.map((action, index) => (
+                <a
+                  key={index}
+                  href={action.href}
+                  className="group p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-center">
+                    <div className={`p-2 rounded-lg ${action.color} bg-opacity-10 group-hover:bg-opacity-20 transition-colors`}>
+                      <action.icon className={`h-5 w-5 ${action.color.replace('bg-', 'text-')}`} />
                     </div>
-                    <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                      product.stock < 50 ? 'bg-red-200 text-red-700' : 'bg-amber-200 text-amber-700'
-                    }`}>
-                      {product.stock} {product.unit}
-                    </span>
-                  </li>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {action.title}
+                      </h3>
+                      <p className="text-xs text-gray-500">{action.description}</p>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </EnhancedCardContent>
+        </EnhancedCard>
+
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <EnhancedCard variant="default">
+            <EnhancedCardHeader>
+              <EnhancedCardTitle>Pedidos Recentes</EnhancedCardTitle>
+            </EnhancedCardHeader>
+            <EnhancedCardContent>
+              <div className="space-y-3">
+                {recentOrders.slice(0, 5).map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">Pedido #{order.code}</p>
+                      <p className="text-xs text-gray-500">{order.customerName || 'Cliente não informado'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-green-600">
+                        {order.total.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        })}
+                      </p>
+                      <p className="text-xs text-gray-500">{order.status}</p>
+                    </div>
+                  </div>
                 ))}
-              </ul>
-            ) : (
-              <div className="flex items-center justify-center h-32 text-gray-500">
-                Nenhum produto com estoque baixo
+                {recentOrders.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    Nenhum pedido recente
+                  </div>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </EnhancedCardContent>
+          </EnhancedCard>
+
+          <EnhancedCard variant="default">
+            <EnhancedCardHeader>
+              <EnhancedCardTitle>Resumo do Sistema</EnhancedCardTitle>
+            </EnhancedCardHeader>
+            <EnhancedCardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Vendedores Ativos</span>
+                  <span className="font-medium">{salesReps.filter(rep => rep.active).length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Métodos de Pagamento</span>
+                  <span className="font-medium">{paymentMethods.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Tabelas de Pagamento</span>
+                  <span className="font-medium">{paymentTables.filter(table => table.active).length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Pedidos Confirmados</span>
+                  <span className="font-medium">{orders.filter(order => order.status === 'confirmed').length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Pedidos Entregues</span>
+                  <span className="font-medium">{orders.filter(order => order.status === 'delivered').length}</span>
+                </div>
+              </div>
+            </EnhancedCardContent>
+          </EnhancedCard>
+        </div>
       </div>
     </PageLayout>
   );

@@ -355,7 +355,6 @@ export type Database = {
           order_id: string | null
           price: number
           product_code: number | null
-          product_id: string | null
           product_name: string | null
           quantity: number
           total: number
@@ -370,7 +369,6 @@ export type Database = {
           order_id?: string | null
           price: number
           product_code?: number | null
-          product_id?: string | null
           product_name?: string | null
           quantity: number
           total: number
@@ -385,7 +383,6 @@ export type Database = {
           order_id?: string | null
           price?: number
           product_code?: number | null
-          product_id?: string | null
           product_name?: string | null
           quantity?: number
           total?: number
@@ -401,13 +398,6 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "order_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
         ]
       }
       order_items_mobile: {
@@ -418,7 +408,6 @@ export type Database = {
           order_id: string | null
           price: number
           product_code: number | null
-          product_id: string | null
           product_name: string | null
           quantity: number
           total: number
@@ -433,7 +422,6 @@ export type Database = {
           order_id?: string | null
           price: number
           product_code?: number | null
-          product_id?: string | null
           product_name?: string | null
           quantity: number
           total: number
@@ -448,7 +436,6 @@ export type Database = {
           order_id?: string | null
           price?: number
           product_code?: number | null
-          product_id?: string | null
           product_name?: string | null
           quantity?: number
           total?: number
@@ -801,283 +788,6 @@ export type Database = {
           },
         ]
       }
-      product_brands: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      product_categories: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      product_discount_settings: {
-        Row: {
-          created_at: string
-          id: string
-          max_discount_percentage: number | null
-          product_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          max_discount_percentage?: number | null
-          product_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          max_discount_percentage?: number | null
-          product_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_discount_settings_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: true
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_groups: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      product_units: {
-        Row: {
-          created_at: string
-          id: string
-          is_default: boolean
-          label: string
-          package_quantity: number
-          updated_at: string
-          value: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_default?: boolean
-          label: string
-          package_quantity?: number
-          updated_at?: string
-          value: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_default?: boolean
-          label?: string
-          package_quantity?: number
-          updated_at?: string
-          value?: string
-        }
-        Relationships: []
-      }
-      product_units_mapping: {
-        Row: {
-          created_at: string
-          id: string
-          is_main_unit: boolean
-          product_id: string
-          unit_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_main_unit?: boolean
-          product_id: string
-          unit_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_main_unit?: boolean
-          product_id?: string
-          unit_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_units_mapping_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_units_mapping_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "product_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      products: {
-        Row: {
-          brand_id: string | null
-          category_id: string | null
-          code: number | null
-          cost: number | null
-          created_at: string | null
-          description: string | null
-          group_id: string | null
-          has_subunit: boolean | null
-          id: string
-          main_unit_id: string | null
-          max_price: number | null
-          min_price: number | null
-          min_stock: number | null
-          name: string
-          price: number
-          stock: number | null
-          subunit: string | null
-          subunit_ratio: number | null
-          sync_status: string | null
-          unit: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          brand_id?: string | null
-          category_id?: string | null
-          code?: number | null
-          cost?: number | null
-          created_at?: string | null
-          description?: string | null
-          group_id?: string | null
-          has_subunit?: boolean | null
-          id?: string
-          main_unit_id?: string | null
-          max_price?: number | null
-          min_price?: number | null
-          min_stock?: number | null
-          name: string
-          price: number
-          stock?: number | null
-          subunit?: string | null
-          subunit_ratio?: number | null
-          sync_status?: string | null
-          unit?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          brand_id?: string | null
-          category_id?: string | null
-          code?: number | null
-          cost?: number | null
-          created_at?: string | null
-          description?: string | null
-          group_id?: string | null
-          has_subunit?: boolean | null
-          id?: string
-          main_unit_id?: string | null
-          max_price?: number | null
-          min_price?: number | null
-          min_stock?: number | null
-          name?: string
-          price?: number
-          stock?: number | null
-          subunit?: string | null
-          subunit_ratio?: number | null
-          sync_status?: string | null
-          unit?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "products_brand_id_fkey"
-            columns: ["brand_id"]
-            isOneToOne: false
-            referencedRelation: "product_brands"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "product_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "product_groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_main_unit_id_fkey"
-            columns: ["main_unit_id"]
-            isOneToOne: false
-            referencedRelation: "product_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       sale_items: {
         Row: {
           created_at: string | null
@@ -1107,13 +817,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "sale_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "sale_items_sale_id_fkey"
             columns: ["sale_id"]
@@ -1426,30 +1129,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_unit_conversion_factor: {
-        Args: { p_from_unit_id: string; p_to_unit_id: string }
-        Returns: number
-      }
-      check_product_dependencies: {
-        Args: { p_product_id: string }
-        Returns: {
-          dependency_type: string
-          dependency_count: number
-          can_delete: boolean
-          details: Json
-        }[]
-      }
       cleanup_expired_tokens: {
         Args: Record<PropertyKey, never>
         Returns: number
-      }
-      delete_product_simple: {
-        Args: { p_product_id: string }
-        Returns: Json
-      }
-      delete_product_with_dependencies: {
-        Args: { p_product_id: string; p_force_delete?: boolean }
-        Returns: Json
       }
       generate_api_token: {
         Args: {
@@ -1484,23 +1166,9 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      get_next_product_code: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       get_next_sales_rep_code: {
         Args: Record<PropertyKey, never>
         Returns: number
-      }
-      get_product_units: {
-        Args: { p_product_id: string }
-        Returns: {
-          unit_id: string
-          unit_value: string
-          unit_label: string
-          package_quantity: number
-          is_main_unit: boolean
-        }[]
       }
       get_route_with_customers: {
         Args: { p_route_id: string }
@@ -1532,10 +1200,6 @@ export type Database = {
           failed_count: number
           error_messages: string[]
         }[]
-      }
-      migrate_legacy_product_units: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       sync_customers_to_route: {
         Args: { p_route_id: string; p_sales_rep_id: string }

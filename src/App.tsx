@@ -1,90 +1,62 @@
 
-import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
-import { ThemeProvider } from '@/components/theme-provider';
-import SideNav from '@/components/layout/SideNav';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppProvider } from '@/context/AppContextProvider';
-import Index from '@/pages/Index';
+import { AppDataProvider } from '@/context/providers/AppDataProvider';
+import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
-import Customers from '@/pages/Customers';
-import Products from '@/pages/Products';
-import ProductUnits from '@/pages/ProductUnits';
-import ProductPricingPage from '@/pages/ProductPricing';
-import ProductClassifications from '@/pages/ProductClassifications';
 import Orders from '@/pages/Orders';
-import NewOrder from '@/pages/NewOrder';
-import Loads from '@/pages/Loads';
-import BuildLoad from '@/pages/BuildLoad';
-import RoutesPage from '@/pages/RoutesPage';
+import Customers from '@/pages/Customers';
 import SalesReps from '@/pages/SalesReps';
-import Vehicles from '@/pages/Vehicles';
-import PaymentTables from '@/pages/PaymentTables';
 import PaymentMethods from '@/pages/PaymentMethods';
+import PaymentTables from '@/pages/PaymentTables';
+import Vehicles from '@/pages/Vehicles';
+import DeliveryRoutes from '@/pages/DeliveryRoutes';
+import Loads from '@/pages/Loads';
 import Payments from '@/pages/Payments';
-import PaymentsList from '@/pages/PaymentsList';
+import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
-import SystemMaintenance from '@/pages/SystemMaintenance';
-import NotFound from '@/pages/NotFound';
-import './App.css';
+import Sync from '@/pages/Sync';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
-  console.log("App: Rendering App component");
-  
-  // Check if running on mobile device
-  useEffect(() => {
-    console.log("App: Running main useEffect");
-    
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-      console.log("App: Running on mobile device");
-      document.body.classList.add('mobile-device');
-    } else {
-      console.log("App: Running on desktop device");
-    }
-  }, []);
-
-  console.log("App: Rendering application");
-
   return (
-    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-      <AppProvider>
+    <QueryClientProvider client={queryClient}>
+      <AppDataProvider>
         <Router>
-          <SidebarProvider defaultOpen>
-            <div className="flex min-h-screen w-full">
-              <SideNav />
-              <div className="flex-1 relative">
-                <RouterRoutes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/clientes" element={<Customers />} />
-                  <Route path="/produtos" element={<Products />} />
-                  <Route path="/produtos/unidades" element={<ProductUnits />} />
-                  <Route path="/produtos/precificacao" element={<ProductPricingPage />} />
-                  <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
-                  <Route path="/pedidos" element={<Orders />} />
-                  <Route path="/pedidos/novo" element={<NewOrder />} />
-                  <Route path="/cargas" element={<Loads />} />
-                  <Route path="/cargas/:id" element={<BuildLoad />} />
-                  <Route path="/rotas" element={<RoutesPage />} />
-                  <Route path="/vendedores" element={<SalesReps />} />
-                  <Route path="/veiculos" element={<Vehicles />} />
-                  <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
-                  <Route path="/metodos-pagamento" element={<PaymentMethods />} />
-                  <Route path="/pagamentos" element={<Payments />} />
-                  <Route path="/lista-pagamentos" element={<PaymentsList />} />
-                  <Route path="/configuracoes" element={<Settings />} />
-                  <Route path="/manutencao" element={<SystemMaintenance />} />
-                  <Route path="*" element={<NotFound />} />
-                </RouterRoutes>
-              </div>
-            </div>
-            <Toaster />
-          </SidebarProvider>
+          <div className="min-h-screen bg-background">
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/pedidos" element={<Orders />} />
+                <Route path="/clientes" element={<Customers />} />
+                <Route path="/vendedores" element={<SalesReps />} />
+                <Route path="/metodos-pagamento" element={<PaymentMethods />} />
+                <Route path="/tabelas-pagamento" element={<PaymentTables />} />
+                <Route path="/veiculos" element={<Vehicles />} />
+                <Route path="/rotas-entrega" element={<DeliveryRoutes />} />
+                <Route path="/cargas" element={<Loads />} />
+                <Route path="/pagamentos" element={<Payments />} />
+                <Route path="/relatorios" element={<Reports />} />
+                <Route path="/configuracoes" element={<Settings />} />
+                <Route path="/sincronizacao" element={<Sync />} />
+              </Routes>
+            </Layout>
+          </div>
         </Router>
-      </AppProvider>
-    </ThemeProvider>
+        <Toaster />
+      </AppDataProvider>
+    </QueryClientProvider>
   );
 }
 
