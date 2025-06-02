@@ -788,6 +788,69 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          active: boolean
+          brand_id: string | null
+          category_id: string | null
+          code: number
+          cost_price: number
+          created_at: string
+          group_id: string | null
+          id: string
+          main_unit_id: string
+          name: string
+          stock: number
+          sub_unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          brand_id?: string | null
+          category_id?: string | null
+          code?: number
+          cost_price?: number
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          main_unit_id: string
+          name: string
+          stock?: number
+          sub_unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          brand_id?: string | null
+          category_id?: string | null
+          code?: number
+          cost_price?: number
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          main_unit_id?: string
+          name?: string
+          stock?: number
+          sub_unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_main_unit_id_fkey"
+            columns: ["main_unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_sub_unit_id_fkey"
+            columns: ["sub_unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_items: {
         Row: {
           created_at: string | null
@@ -1190,6 +1253,10 @@ export type Database = {
         Returns: number
       }
       get_next_order_code: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_next_product_code: {
         Args: Record<PropertyKey, never>
         Returns: number
       }

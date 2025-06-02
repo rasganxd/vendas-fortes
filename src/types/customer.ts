@@ -45,4 +45,5 @@ export interface CustomerFormValues {
   salesRepId: string;
   createdAt: Date;
   updatedAt: Date;
+  active: boolean;
 }

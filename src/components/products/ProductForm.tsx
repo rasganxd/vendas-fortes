@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -21,20 +23,22 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Product } from '@/types/product';
-import { useUnits } from '@/hooks/useUnits';
+import { useAppData } from '@/context/providers/AppDataProvider';
 
-interface ProductFormValues {
-  code: number;
-  name: string;
-  main_unit_id: string;
-  sub_unit_id?: string;
-  cost_price: number;
-  stock: number;
-  category_id?: string;
-  group_id?: string;
-  brand_id?: string;
-  active: boolean;
-}
+const productFormSchema = z.object({
+  code: z.number().min(1, "Código deve ser maior que 0"),
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  main_unit_id: z.string().min(1, "Unidade principal é obrigatória"),
+  sub_unit_id: z.string().optional(),
+  cost_price: z.number().min(0, "Preço de custo deve ser maior ou igual a 0"),
+  stock: z.number().min(0, "Estoque deve ser maior ou igual a 0"),
+  category_id: z.string().optional(),
+  group_id: z.string().optional(),
+  brand_id: z.string().optional(),
+  active: z.boolean(),
+});
+
+type ProductFormValues = z.infer<typeof productFormSchema>;
 
 interface ProductFormProps {
   product?: Product;
@@ -43,11 +47,12 @@ interface ProductFormProps {
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, onCancel }) => {
-  const { units } = useUnits();
+  const { units } = useAppData();
   
   const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productFormSchema),
     defaultValues: {
-      code: product?.code || 0,
+      code: product?.code || 1,
       name: product?.name || '',
       main_unit_id: product?.main_unit_id || '',
       sub_unit_id: product?.sub_unit_id || '',

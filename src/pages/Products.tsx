@@ -19,15 +19,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useProducts } from '@/hooks/useProducts';
+import { useAppData } from '@/context/providers/AppDataProvider';
 import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import ProductForm from '@/components/products/ProductForm';
 import DeleteProductDialog from '@/components/products/DeleteProductDialog';
 import { Product } from '@/types/product';
+import { toast } from '@/components/ui/use-toast';
 
 const ProductsPage = () => {
-  const { products, isLoading, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { 
+    products, 
+    isLoadingProducts, 
+    addProduct, 
+    updateProduct, 
+    deleteProduct,
+    units 
+  } = useAppData();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewProductDialog, setShowNewProductDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -38,12 +47,27 @@ const ProductsPage = () => {
     product.code.toString().includes(searchTerm)
   );
 
+  const getUnitName = (unitId: string | undefined) => {
+    if (!unitId) return '—';
+    const unit = units.find(u => u.id === unitId);
+    return unit ? `${unit.code} - ${unit.description}` : unitId;
+  };
+
   const handleCreateProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      await createProduct(productData);
+      await addProduct(productData);
       setShowNewProductDialog(false);
+      toast({
+        title: "Produto criado",
+        description: `${productData.name} foi cadastrado com sucesso.`,
+      });
     } catch (error) {
       console.error('Erro ao criar produto:', error);
+      toast({
+        title: "Erro ao criar produto",
+        description: "Não foi possível cadastrar o produto.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -53,8 +77,17 @@ const ProductsPage = () => {
     try {
       await updateProduct(editingProduct.id, productData);
       setEditingProduct(null);
+      toast({
+        title: "Produto atualizado",
+        description: `${productData.name} foi atualizado com sucesso.`,
+      });
     } catch (error) {
       console.error('Erro ao atualizar produto:', error);
+      toast({
+        title: "Erro ao atualizar produto",
+        description: "Não foi possível atualizar o produto.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -64,12 +97,21 @@ const ProductsPage = () => {
     try {
       await deleteProduct(deletingProduct.id);
       setDeletingProduct(null);
+      toast({
+        title: "Produto excluído",
+        description: `${deletingProduct.name} foi excluído com sucesso.`,
+      });
     } catch (error) {
       console.error('Erro ao excluir produto:', error);
+      toast({
+        title: "Erro ao excluir produto",
+        description: "Não foi possível excluir o produto.",
+        variant: "destructive",
+      });
     }
   };
 
-  if (isLoading) {
+  if (isLoadingProducts) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex justify-center items-center h-64">
@@ -136,7 +178,6 @@ const ProductsPage = () => {
                   <TableHead>Unidade Principal</TableHead>
                   <TableHead>Preço de Custo</TableHead>
                   <TableHead>Estoque</TableHead>
-                  <TableHead>Categoria</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -147,7 +188,7 @@ const ProductsPage = () => {
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.code}</TableCell>
                       <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.main_unit_id}</TableCell>
+                      <TableCell>{getUnitName(product.main_unit_id)}</TableCell>
                       <TableCell>
                         {product.cost_price.toLocaleString('pt-BR', { 
                           style: 'currency', 
@@ -155,7 +196,6 @@ const ProductsPage = () => {
                         })}
                       </TableCell>
                       <TableCell>{product.stock}</TableCell>
-                      <TableCell>{product.category_id || '—'}</TableCell>
                       <TableCell>
                         <Badge variant={product.active ? "default" : "secondary"}>
                           {product.active ? "Ativo" : "Inativo"}
@@ -184,7 +224,7 @@ const ProductsPage = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       {searchTerm ? 'Nenhum produto encontrado.' : 'Nenhum produto cadastrado.'}
                     </TableCell>
                   </TableRow>

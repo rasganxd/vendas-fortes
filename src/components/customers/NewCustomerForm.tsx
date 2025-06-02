@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -33,25 +32,35 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       salesRepId: '',
       createdAt: new Date(),
       updatedAt: new Date(),
-      visitSequence: 1
+      visitSequence: 1,
+      active: true
     }
   });
 
   const handleSubmit = (data: CustomerFormValues) => {
-    // Ensure zip and zipCode are consistent
-    data.zipCode = data.zip;
+    // Convert form values to Customer format
+    const customerData: Omit<Customer, 'id'> = {
+      code: data.code,
+      name: data.name,
+      company_name: data.companyName,
+      document: data.document,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      zip_code: data.zip,
+      notes: data.notes,
+      visit_days: data.visitDays,
+      visit_frequency: data.visitFrequency,
+      visit_sequence: data.visitSequence,
+      sales_rep_id: data.salesRepId,
+      active: data.active,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt
+    };
     
-    // Ensure code is a number
-    if (typeof data.code === 'string') {
-      data.code = parseInt(data.code, 10);
-    }
-    
-    // Ensure visitDays is an array
-    if (!Array.isArray(data.visitDays)) {
-      data.visitDays = data.visitDays ? [data.visitDays as unknown as string] : [];
-    }
-    
-    onSubmit(data);
+    onSubmit(customerData);
   };
 
   return (

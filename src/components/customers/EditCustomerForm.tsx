@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Customer, CustomerFormValues } from '@/types/customer';
@@ -19,16 +18,14 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
   // Standardize the customer data before setting form defaults
   const standardizedCustomer = {
     ...customer,
-    // Ensure zip is set
-    zip: customer.zip || customer.zipCode || '',
-    // Ensure zipCode is also set for backward compatibility
-    zipCode: customer.zipCode || customer.zip || '',
-    // Ensure visitDays is an array
-    visitDays: Array.isArray(customer.visitDays) ? customer.visitDays : (customer.visitDays ? [customer.visitDays] : []),
-    // Ensure salesRepId is properly set (use camelCase)
-    salesRepId: customer.salesRepId || '',
-    // Ensure companyName is set
-    companyName: customer.companyName || ''
+    // Convert database fields to form fields
+    zip: customer.zip_code || '',
+    zipCode: customer.zip_code || '',
+    visitDays: Array.isArray(customer.visit_days) ? customer.visit_days : (customer.visit_days ? [customer.visit_days] : []),
+    salesRepId: customer.sales_rep_id || '',
+    companyName: customer.company_name || '',
+    visitFrequency: customer.visit_frequency || 'weekly',
+    visitSequence: customer.visit_sequence || 1
   };
 
   console.log("📝 Editing customer with standardized data:", standardizedCustomer);
@@ -39,7 +36,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       name: standardizedCustomer.name,
       companyName: standardizedCustomer.companyName,
       document: standardizedCustomer.document || '',
-      phone: standardizedCustomer.phone,
+      phone: standardizedCustomer.phone || '',
       address: standardizedCustomer.address || '',
       city: standardizedCustomer.city || '',
       state: standardizedCustomer.state || '',
@@ -47,31 +44,35 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       zipCode: standardizedCustomer.zipCode,
       notes: standardizedCustomer.notes || '',
       visitDays: standardizedCustomer.visitDays || [],
-      visitFrequency: standardizedCustomer.visitFrequency || 'weekly',
-      visitSequence: standardizedCustomer.visitSequence || 1,
+      visitFrequency: standardizedCustomer.visitFrequency,
+      visitSequence: standardizedCustomer.visitSequence,
       email: standardizedCustomer.email || '',
       salesRepId: standardizedCustomer.salesRepId,
       createdAt: standardizedCustomer.createdAt,
-      updatedAt: standardizedCustomer.updatedAt || new Date()
+      updatedAt: standardizedCustomer.updatedAt || new Date(),
+      active: standardizedCustomer.active
     }
   });
 
   const handleSubmit = (data: CustomerFormValues) => {
-    // Ensure data consistency before submitting
-    const processedData = {
-      ...data,
-      zipCode: data.zip, // Keep backward compatibility
-      
-      // Ensure code is a number
-      code: typeof data.code === 'string' ? parseInt(data.code, 10) : data.code,
-      
-      // Ensure visitDays is an array
-      visitDays: Array.isArray(data.visitDays) ? data.visitDays : (data.visitDays ? [data.visitDays as unknown as string] : []),
-      
-      // Ensure visitSequence is a number
-      visitSequence: typeof data.visitSequence === 'string' ? parseInt(data.visitSequence, 10) : data.visitSequence,
-      
-      // Set updatedAt
+    // Convert form values back to Customer database format
+    const processedData: Partial<Customer> = {
+      code: data.code,
+      name: data.name,
+      company_name: data.companyName,
+      document: data.document,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      zip_code: data.zip,
+      notes: data.notes,
+      visit_days: data.visitDays,
+      visit_frequency: data.visitFrequency,
+      visit_sequence: data.visitSequence,
+      sales_rep_id: data.salesRepId,
+      active: data.active,
       updatedAt: new Date()
     };
     
