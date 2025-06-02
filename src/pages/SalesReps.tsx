@@ -1,11 +1,10 @@
 
-
 import React, { useState } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Edit, Trash2, Key, Link } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, Key } from 'lucide-react';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { SalesRep } from '@/types';
 import { EditSalesRepDialog } from '@/components/personnel/EditSalesRepDialog';
@@ -64,7 +63,7 @@ export default function SalesReps() {
   const handleSave = async (salesRep: Omit<SalesRep, 'id'>): Promise<string> => {
     if (editingSalesRep?.id) {
       await updateSalesRep(editingSalesRep.id, salesRep);
-      return editingSalesRep.id; // Return the existing ID since updateSalesRep returns void
+      return editingSalesRep.id;
     } else {
       return await addSalesRep(salesRep);
     }
@@ -120,17 +119,9 @@ export default function SalesReps() {
                       <CardTitle className="text-lg">{salesRep.name}</CardTitle>
                       <p className="text-sm text-gray-500">Código: {salesRep.code}</p>
                     </div>
-                    <div className="flex gap-1">
-                      <Badge variant={salesRep.active ? "default" : "secondary"}>
-                        {salesRep.active ? "Ativo" : "Inativo"}
-                      </Badge>
-                      {salesRep.authUserId && (
-                        <Badge variant="outline" className="text-green-600">
-                          <Link className="h-3 w-3 mr-1" />
-                          Vinculado
-                        </Badge>
-                      )}
-                    </div>
+                    <Badge variant={salesRep.active ? "default" : "secondary"}>
+                      {salesRep.active ? "Ativo" : "Inativo"}
+                    </Badge>
                   </div>
                 </CardHeader>
                 
@@ -141,11 +132,6 @@ export default function SalesReps() {
                     )}
                     {salesRep.email && (
                       <p><span className="font-medium">Email:</span> {salesRep.email}</p>
-                    )}
-                    {salesRep.authUserId && (
-                      <p className="text-green-600">
-                        <span className="font-medium">Auth ID:</span> {salesRep.authUserId.substring(0, 8)}...
-                      </p>
                     )}
                   </div>
 
@@ -207,4 +193,3 @@ export default function SalesReps() {
     </PageLayout>
   );
 }
-

@@ -9,12 +9,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SalesRep } from '@/types';
 import { DialogFooter } from '../ui/dialog';
 import { Switch } from '../ui/switch';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
 
 interface EditSalesRepDialogProps {
   open: boolean;
@@ -22,11 +19,6 @@ interface EditSalesRepDialogProps {
   salesRep: Partial<SalesRep> | null;
   onSave?: (salesRep: Omit<SalesRep, 'id'>) => Promise<string>;
   onRefresh?: () => void;
-}
-
-interface AuthUser {
-  id: string;
-  email: string;
 }
 
 export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
@@ -41,43 +33,14 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
     name: '',
     phone: '',
     email: '',
-    authUserId: undefined,
     active: true
   });
-
-  const [authUsers, setAuthUsers] = useState<AuthUser[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
 
   React.useEffect(() => {
     if (salesRep) {
       setFormData(salesRep);
     }
   }, [salesRep]);
-
-  useEffect(() => {
-    if (open) {
-      loadAuthUsers();
-    }
-  }, [open]);
-
-  const loadAuthUsers = async () => {
-    try {
-      setLoadingUsers(true);
-      // Note: This is a workaround since we can't directly query auth.users
-      // In a real implementation, you might need an edge function or admin panel
-      // For now, we'll just show a text input for the auth_user_id
-      console.log('Auth users would be loaded here');
-    } catch (error) {
-      console.error('Error loading auth users:', error);
-      toast({
-        title: "Aviso",
-        description: "Use o ID do usuário da aba Authentication > Users do Supabase",
-        variant: "default"
-      });
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -98,7 +61,6 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           name: formData.name,
           phone: formData.phone || '',
           email: formData.email,
-          authUserId: formData.authUserId || undefined,
           active: formData.active ?? true,
           createdAt: new Date(),
           updatedAt: new Date()
@@ -169,21 +131,6 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
               value={formData.phone || ''}
               onChange={handleChange}
               placeholder="(11) 99999-9999"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="authUserId">
-              ID do Usuário Supabase
-              <span className="text-xs text-gray-500 block">
-                Encontre em Authentication {'>'} Users {'>'} ID do usuário
-              </span>
-            </Label>
-            <Input
-              id="authUserId"
-              value={formData.authUserId || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, authUserId: e.target.value || undefined }))}
-              placeholder="UUID do usuário autenticado"
             />
           </div>
 
