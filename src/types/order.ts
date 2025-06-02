@@ -1,62 +1,48 @@
 
-export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'canceled';
-export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'partial';
-
-/**
- * Order
- */
-export interface Order {
-  id: string;
-  code: number;
-  customerId: string;
-  customerName: string;
-  salesRepId: string;
-  salesRepName: string;
-  date: Date;
-  dueDate: Date;
-  deliveryDate?: Date;
-  items: OrderItem[];
-  total: number;
-  discount: number;
-  status: OrderStatus;
-  paymentStatus: PaymentStatus;
-  paymentMethod: string;
-  paymentMethodId: string;
-  paymentTableId: string;
-  paymentTable?: string;
-  payments: any[];
-  notes: string;
-  createdAt: Date;
-  updatedAt: Date;
-  archived: boolean;
-  deliveryAddress: string;
-  deliveryCity: string;
-  deliveryState: string;
-  deliveryZip: string;
-}
-
-/**
- * Order Item
- */
 export interface OrderItem {
   id: string;
-  orderId?: string;
-  productId?: string;
-  productName: string;
-  productCode: number;
+  order_id?: string;
+  product_code?: number;
+  product_name?: string;
   quantity: number;
-  unitPrice: number;
+  unit_price?: number;
   price: number;
   discount?: number;
   total: number;
-  unit?: string; // Added unit field to differentiate items by unit
+  unit?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-/**
- * Payment Summary
- */
-export interface PaymentSummary {
-  paid: number;
-  pending: number;
+export interface Order {
+  id: string;
+  code: number;
+  customer_id?: string;
+  customer_name?: string;
+  sales_rep_id?: string;
+  sales_rep_name?: string;
+  date: Date;
+  due_date?: Date;
+  delivery_date?: Date;
   total: number;
+  discount?: number;
+  status: string;
+  payment_status?: string;
+  payment_method?: string;
+  payment_method_id?: string;
+  payment_table_id?: string;
+  payment_table?: string;
+  payments?: any[];
+  notes?: string;
+  delivery_address?: string;
+  delivery_city?: string;
+  delivery_state?: string;
+  delivery_zip?: string;
+  mobile_order_id?: string;
+  sync_status?: string;
+  source_project: string;
+  archived?: boolean;
+  imported?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

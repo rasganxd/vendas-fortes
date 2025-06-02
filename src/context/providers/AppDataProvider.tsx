@@ -36,7 +36,7 @@ interface AppDataContextType {
   // Global refresh
   refreshData: () => Promise<void>;
   
-  // Mock settings for compatibility
+  // Settings
   settings: {
     companyName: string;
   };
@@ -124,7 +124,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Global refresh
     refreshData,
     
-    // Mock settings for compatibility
+    // Settings
     settings: {
       companyName: 'Minha Empresa'
     }
