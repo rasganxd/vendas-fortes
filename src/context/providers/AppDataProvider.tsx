@@ -1,9 +1,9 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Customer } from '@/types';
 import { Unit } from '@/types/unit';
-import { PaymentMethod } from '@/types/paymentMethod';
-import { PaymentTable } from '@/types/paymentTable';
-import { DeliveryRoute } from '@/types/deliveryRoute';
+import { PaymentMethod } from '@/types/payment';
+import { PaymentTable } from '@/types/payment';
+import { DeliveryRoute } from '@/types/delivery';
 import { Vehicle } from '@/types/vehicle';
 import { Load } from '@/types/delivery';
 import { SalesRep } from '@/types';
@@ -93,7 +93,7 @@ const defaultAppContext: AppDataContextProps = {
 };
 
 export const AppDataContext = createContext(defaultAppContext);
-export const useAppContext = () => useContext(AppDataContext);
+export const useAppData = () => useContext(AppDataContext);
 
 const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Customers

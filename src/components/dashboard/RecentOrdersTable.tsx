@@ -60,13 +60,13 @@ export default function RecentOrdersTable({ orders }: RecentOrdersTableProps) {
           {orders.length > 0 ? (
             orders.map((order) => (
               <TableRow key={order.id} className="hover:bg-slate-50">
-                <TableCell className="font-medium">{order.customerName}</TableCell>
+                <TableCell className="font-medium">{order.customer_name}</TableCell>
                 <TableCell>{formatDateToBR(order.createdAt)}</TableCell>
                 <TableCell>
                   {order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </TableCell>
                 <TableCell>{formatStatus(order.status)}</TableCell>
-                <TableCell>{formatPaymentStatus(order.paymentStatus)}</TableCell>
+                <TableCell>{formatPaymentStatus(order.payment_status || 'pending')}</TableCell>
               </TableRow>
             ))
           ) : (
@@ -80,4 +80,4 @@ export default function RecentOrdersTable({ orders }: RecentOrdersTableProps) {
       </Table>
     </div>
   );
-}
+};

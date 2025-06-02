@@ -58,7 +58,7 @@ const BuildLoadOrdersTable: React.FC<BuildLoadOrdersTableProps> = ({
               />
             </TableCell>
             <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
-            <TableCell>{order.customerName}</TableCell>
+            <TableCell>{order.customer_name}</TableCell>
             <TableCell>Disponível</TableCell>
           </TableRow>
         ))}
@@ -70,7 +70,7 @@ const BuildLoadOrdersTable: React.FC<BuildLoadOrdersTableProps> = ({
               </div>
             </TableCell>
             <TableCell className="font-medium text-gray-500">{order.id.substring(0, 8)}</TableCell>
-            <TableCell className="text-gray-500">{order.customerName}</TableCell>
+            <TableCell className="text-gray-500">{order.customer_name}</TableCell>
             <TableCell>
               <span className="text-amber-600 flex items-center gap-1">
                 <Lock size={14} /> Bloqueado
