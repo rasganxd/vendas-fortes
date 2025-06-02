@@ -1,50 +1,293 @@
 
-import { Product } from '@/types';
+import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
+import { toast } from '@/components/ui/use-toast';
+import { productService } from '@/services/supabase/productService';
+import { productBrandService } from '@/services/supabase/productBrandService';
+import { productCategoryService } from '@/services/supabase/productCategoryService';
+import { productGroupService } from '@/services/supabase/productGroupService';
+import { productLocalService } from '@/services/local/productLocalService';
 
+// Cache keys
+const PRODUCTS_CACHE_KEY = 'app_products_cache';
+const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_timestamp';
+
+/**
+ * Adds a new product to the system
+ */
+export const addProduct = async (
+  product: Omit<Product, 'id'>,
+  products: Product[],
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>
+): Promise<string> => {
+  try {
+    // Garantir que o produto tenha um código
+    const productCode = product.code || (products.length > 0 
+      ? Math.max(...products.map(p => p.code || 0)) + 1 
+      : 1);
+    
+    const productWithCode = { 
+      ...product, 
+      code: productCode,
+      // Ensure we have a price value (default to cost if not provided)
+      price: product.price !== undefined ? product.price : product.cost,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    console.log("Adding product:", productWithCode);
+    
+    // Add to Supabase
+    const newProduct = await productService.create(productWithCode);
+    console.log("Product created:", newProduct);
+    
+    // Atualizar o estado local - ensure we're using the correct setter pattern for state updates
+    setProducts(currentProducts => [...currentProducts, newProduct]);
+    
+    toast({
+      title: "Produto adicionado",
+      description: "Produto adicionado com sucesso!"
+    });
+    return newProduct.id;
+  } catch (error) {
+    console.error("Erro ao adicionar produto:", error);
+    toast({
+      title: "Erro ao adicionar produto",
+      description: "Houve um problema ao adicionar o produto.",
+      variant: "destructive"
+    });
+    return "";
+  }
+};
+
+/**
+ * Updates an existing product
+ */
+export const updateProduct = async (
+  id: string,
+  productData: Partial<Product>,
+  products: Product[],
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>
+): Promise<void> => {
+  try {
+    // Nunca permitir que o código seja indefinido ou nulo ao atualizar
+    const updateData = { ...productData, updatedAt: new Date() };
+    if (updateData.code === undefined || updateData.code === null) {
+      const existingProduct = products.find(p => p.id === id);
+      if (existingProduct && existingProduct.code) {
+        updateData.code = existingProduct.code;
+      }
+    }
+    
+    // Update in Supabase
+    await productService.update(id, updateData);
+    console.log("Product updated, ID:", id, "Data:", updateData);
+    
+    // Atualizar o estado local usando a função de atualização correta
+    setProducts(currentProducts => 
+      currentProducts.map(p => p.id === id ? { ...p, ...updateData } : p)
+    );
+    
+    toast({
+      title: "Produto atualizado",
+      description: "Produto atualizado com sucesso!"
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar produto:", error);
+    toast({
+      title: "Erro ao atualizar produto",
+      description: "Houve um problema ao atualizar o produto.",
+      variant: "destructive"
+    });
+  }
+};
+
+/**
+ * Deletes a product with improved sync
+ */
+export const deleteProduct = async (
+  id: string,
+  products: Product[],
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>
+): Promise<void> => {
+  try {
+    console.log(`Deleting product ${id}`);
+    
+    // Delete from Supabase first
+    await productService.delete(id);
+    
+    // Update local state
+    const updatedProducts = products.filter(product => product.id !== id);
+    setProducts(updatedProducts);
+    
+    // Update localStorage cache
+    localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+    localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+    
+    toast({
+      title: "Produto excluído",
+      description: "Produto excluído com sucesso!"
+    });
+    
+    return;
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    toast({
+      title: "Erro ao excluir produto",
+      description: "Houve um problema ao excluir o produto.",
+      variant: "destructive"
+    });
+    throw error;
+  }
+};
+
+/**
+ * Validates if a discounted price is acceptable for a product
+ */
 export const validateProductDiscount = (
   productId: string,
-  price: number,
+  discountedPrice: number,
   products: Product[]
-): string | true => {
+): string | boolean => {
   const product = products.find(p => p.id === productId);
+  if (!product) return true;
   
-  if (!product) {
-    return 'Produto não encontrado';
+  // Check if price is positive
+  if (discountedPrice <= 0) {
+    return "O preço deve ser maior que zero";
   }
-
-  const costPrice = product.cost_price || 0;
   
-  if (price < costPrice) {
-    return `Preço não pode ser menor que o custo (R$ ${costPrice.toFixed(2)})`;
+  // Check minimum price if defined
+  if (product.minPrice && discountedPrice < product.minPrice) {
+    return `O preço não pode ser menor que R$ ${product.minPrice.toFixed(2)}`;
   }
-
+  
+  // Check maximum price if defined
+  if (product.maxPrice && discountedPrice > product.maxPrice) {
+    return `O preço não pode ser maior que R$ ${product.maxPrice.toFixed(2)}`;
+  }
+  
   return true;
 };
 
-export const calculateUnitPrice = (product: Product, unit: string): number => {
-  const basePrice = product.price || product.cost_price * 1.3;
+/**
+ * Gets the minimum price for a product
+ */
+export const getMinimumPrice = (productId: string, products: Product[]): number => {
+  const product = products.find(p => p.id === productId);
+  if (!product) return 0;
   
-  // If unit matches subunit and has ratio, calculate proportional price
-  if (product.hasSubunit && product.subunit === unit && product.subunitRatio) {
-    return basePrice / product.subunitRatio;
+  // Return the defined minimum price or 0
+  return product.minPrice || 0;
+};
+
+/**
+ * Gets the maximum price for a product
+ */
+export const getMaximumPrice = (productId: string, products: Product[]): number => {
+  const product = products.find(p => p.id === productId);
+  if (!product) return 0;
+  
+  // Return the defined maximum price or 0 (no limit)
+  return product.maxPrice || 0;
+};
+
+/**
+ * Validates if a price is within the defined range for a product
+ */
+export const isPriceWithinRange = (
+  productId: string,
+  price: number,
+  products: Product[]
+): boolean => {
+  const validation = validateProductDiscount(productId, price, products);
+  return validation === true;
+};
+
+/**
+ * Adds multiple products at once
+ */
+export const addBulkProducts = async (
+  products: Omit<Product, 'id'>[],
+  currentProducts: Product[],
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>,
+  updateProgress: (progress: number) => void
+): Promise<string[]> => {
+  try {
+    // Preparar dados para armazenamento local
+    const productsWithData = products.map(product => {
+      // Garantir que o produto tenha um código
+      const productCode = product.code || (currentProducts.length > 0 
+        ? Math.max(...currentProducts.map(p => p.code || 0)) + 1 
+        : 1);
+      return { 
+        ...product, 
+        code: productCode,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    });
+    
+    // Add to local storage
+    console.log("Adding bulk products:", productsWithData);
+    const ids = await productLocalService.createBulk(productsWithData);
+    console.log("Products added with IDs:", ids);
+    
+    // Create products with IDs
+    const newProducts = productsWithData.map((product, index) => ({
+      ...product,
+      id: ids[index]
+    }));
+    
+    // Update state
+    setProducts(currentProducts => [...currentProducts, ...newProducts]);
+    
+    toast({
+      title: "Produtos adicionados",
+      description: `${newProducts.length} produtos foram adicionados com sucesso!`
+    });
+    
+    return ids;
+  } catch (error) {
+    console.error("Erro ao adicionar produtos em massa:", error);
+    toast({
+      title: "Erro ao adicionar produtos",
+      description: "Houve um problema ao adicionar os produtos em massa.",
+      variant: "destructive"
+    });
+    return [];
   }
-  
-  return basePrice;
 };
 
-export const formatBrazilianPrice = (price: number): string => {
-  return price.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-};
-
-export const parseBrazilianPrice = (priceString: string): number => {
-  // Remove non-numeric characters except comma and dot
-  const cleanString = priceString.replace(/[^\d,.-]/g, '');
-  
-  // Replace comma with dot for parsing
-  const numberString = cleanString.replace(',', '.');
-  
-  return parseFloat(numberString) || 0;
+/**
+ * Syncs products with Supabase
+ */
+export const syncProductsWithSupabase = async (
+  products: Product[],
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>,
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+  try {
+    console.log("Syncing products with Supabase...");
+    setIsLoading(true);
+    
+    // Get products from Supabase
+    const supabaseProducts = await productService.getAll();
+    console.log(`Retrieved ${supabaseProducts.length} products from Supabase`);
+    
+    setProducts(supabaseProducts);
+    
+    toast({
+      title: "Produtos sincronizados",
+      description: `${supabaseProducts.length} produtos sincronizados com sucesso.`
+    });
+  } catch (error) {
+    console.error('Error syncing products with Supabase:', error);
+    toast({
+      title: "Erro na sincronização",
+      description: "Não foi possível sincronizar os produtos.",
+      variant: "destructive"
+    });
+  } finally {
+    setIsLoading(false);
+  }
 };

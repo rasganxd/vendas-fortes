@@ -3,20 +3,30 @@ export interface Product {
   id: string;
   code: number;
   name: string;
-  main_unit_id: string;
-  sub_unit_id?: string;
-  cost_price: number;
-  price?: number; // Add price property
-  cost?: number; // Alias for cost_price
+  description: string;
+  price: number;
+  cost: number;
   stock: number;
-  category_id?: string;
-  group_id?: string;
-  brand_id?: string;
-  active: boolean;
-  unit?: string; // Add unit property
-  subunit?: string; // Add subunit property
-  hasSubunit?: boolean; // Add hasSubunit property
-  subunitRatio?: number; // Add subunitRatio property
+  minStock: number;
+  minPrice?: number;
+  maxPrice?: number;
+  groupId?: string;
+  categoryId?: string;
+  brandId?: string;
+  unit?: string;
+  subunit?: string;
+  hasSubunit?: boolean;
+  subunitRatio?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  syncStatus?: 'synced' | 'pending' | 'error';
+}
+
+export interface ProductGroup {
+  id: string;
+  name: string;
+  description: string;
+  notes: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,17 +34,8 @@ export interface Product {
 export interface ProductCategory {
   id: string;
   name: string;
-  description?: string;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ProductGroup {
-  id: string;
-  name: string;
-  description?: string;
-  notes?: string;
+  description: string;
+  notes: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,8 +43,8 @@ export interface ProductGroup {
 export interface ProductBrand {
   id: string;
   name: string;
-  description?: string;
-  notes?: string;
+  description: string;
+  notes: string;
   createdAt: Date;
   updatedAt: Date;
 }

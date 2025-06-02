@@ -1,61 +1,62 @@
 
-export interface OrderItem {
-  id: string;
-  order_id?: string;
-  productId?: string; // Add productId property
-  product_code?: number;
-  product_name?: string;
-  productName?: string; // Alias for compatibility
-  productCode?: number; // Alias for compatibility
-  quantity: number;
-  unit_price?: number;
-  unitPrice?: number; // Alias for compatibility
-  price: number;
-  discount?: number;
-  total: number;
-  unit?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'canceled';
+export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'partial';
 
+/**
+ * Order
+ */
 export interface Order {
   id: string;
   code: number;
-  customer_id?: string;
-  customerId?: string; // Alias for compatibility
-  customer_name?: string;
-  customerName?: string; // Alias for compatibility
-  sales_rep_id?: string;
-  sales_rep_name?: string;
+  customerId: string;
+  customerName: string;
+  salesRepId: string;
+  salesRepName: string;
   date: Date;
-  due_date?: Date;
-  delivery_date?: Date;
+  dueDate: Date;
+  deliveryDate?: Date;
+  items: OrderItem[];
   total: number;
-  discount?: number;
-  status: string;
-  payment_status?: string;
-  paymentStatus?: string; // Alias for compatibility
-  payment_method?: string;
-  paymentMethod?: string; // Alias for compatibility
-  payment_method_id?: string;
-  payment_table_id?: string;
-  payment_table?: string;
-  payments?: any[];
-  notes?: string;
-  delivery_address?: string;
-  deliveryAddress?: string; // Alias for compatibility
-  delivery_city?: string;
-  deliveryCity?: string; // Alias for compatibility
-  delivery_state?: string;
-  deliveryState?: string; // Alias for compatibility
-  delivery_zip?: string;
-  deliveryZip?: string; // Alias for compatibility
-  mobile_order_id?: string;
-  sync_status?: string;
-  source_project: string;
-  archived?: boolean;
-  imported?: boolean;
-  items?: OrderItem[]; // Add items property
+  discount: number;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: string;
+  paymentMethodId: string;
+  paymentTableId: string;
+  paymentTable?: string;
+  payments: any[];
+  notes: string;
   createdAt: Date;
   updatedAt: Date;
+  archived: boolean;
+  deliveryAddress: string;
+  deliveryCity: string;
+  deliveryState: string;
+  deliveryZip: string;
+}
+
+/**
+ * Order Item
+ */
+export interface OrderItem {
+  id: string;
+  orderId?: string;
+  productId?: string;
+  productName: string;
+  productCode: number;
+  quantity: number;
+  unitPrice: number;
+  price: number;
+  discount?: number;
+  total: number;
+  unit?: string; // Added unit field to differentiate items by unit
+}
+
+/**
+ * Payment Summary
+ */
+export interface PaymentSummary {
+  paid: number;
+  pending: number;
+  total: number;
 }

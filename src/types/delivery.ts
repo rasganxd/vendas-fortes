@@ -1,70 +1,117 @@
 
-export interface LoadItem {
-  id: string;
-  load_id?: string;
-  loadId?: string; // Alias for compatibility
-  order_id?: string;
-  orderId?: string; // Alias for compatibility
-  productId?: string;
-  productName?: string;
-  productCode?: number;
-  quantity?: number;
-  price?: number;
-  customerId?: string;
-  status?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Load {
-  id: string;
-  code: number;
-  name?: string; // Add name property
-  date: Date;
-  status: string;
-  notes?: string;
-  total_value?: number;
-  sales_rep_id?: string;
-  vehicle_id?: string;
-  vehicleName?: string; // Add vehicleName property
-  locked?: boolean; // Add locked property
-  orderIds?: string[]; // Add orderIds property
-  items?: LoadItem[]; // Add items property
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { OrderItem } from './order';
 
 export interface DeliveryRoute {
   id: string;
   name: string;
   description?: string;
-  active: boolean;
+  active?: boolean;
+  status: "completed" | "pending" | "in-progress" | "planning" | "assigned";
+  date: Date;
+  driverId: string;
+  driverName: string;
+  vehicleId: string;
+  vehicleName: string;
   stops: RouteStop[];
-  status?: string; // Add status property
-  date?: Date; // Add date property
-  vehicleId?: string; // Add vehicleId property
-  vehicleName?: string; // Add vehicleName property
   createdAt: Date;
   updatedAt: Date;
+  salesRepId?: string;
+  salesRepName?: string;
+  lastUpdated?: Date;
+  customers?: Customer[];
+}
+
+// Import Customer type from customer.ts
+interface Customer {
+  id: string;
+  code: number;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  email: string;
+  notes: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deliveryRouteId?: string;
 }
 
 export interface RouteStop {
   id: string;
-  route_id: string;
-  customer_id: string;
+  orderId: string;
+  customerId: string;
+  customerName: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  zipCode?: string;
   sequence: number;
-  estimated_time?: string;
-  actual_time?: string;
-  status: 'pending' | 'completed' | 'skipped';
+  position: number;
+  status: 'pending' | 'completed' | 'in-progress';
+  completed: boolean;
+  lat: number;
+  lng: number;
   notes?: string;
-  orderId?: string; // Add orderId property
-  customerName?: string; // Add customerName property
-  address?: string; // Add address property
-  city?: string; // Add city property
-  state?: string; // Add state property
-  zip?: string; // Add zip property
-  position?: number; // Add position property
-  lat?: number; // Add lat property
-  lng?: number; // Add lng property
-  completed?: boolean; // Add completed property
+}
+
+export interface Vehicle {
+  id: string;
+  name: string;
+  plateNumber: string;
+  licensePlate: string;
+  type: string;
+  capacity?: number;
+  model?: string;
+  driverName?: string;
+  active?: boolean;
+  status?: string;
+  notes?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Load {
+  id: string;
+  name: string;
+  code?: number;
+  description?: string;
+  date: Date;
+  vehicleId?: string;
+  vehicleName?: string;
+  driverId?: string;
+  driverName?: string;
+  salesRepId?: string;
+  salesRepName?: string;
+  routeId?: string;
+  routeName?: string;
+  status: 'pending' | 'loading' | 'loaded' | 'in_transit' | 'delivered' | 'completed' | 'planning';
+  departureDate?: Date;
+  deliveryDate?: Date;
+  returnDate?: Date;
+  notes?: string;
+  items?: LoadItem[];
+  orders?: string[];
+  orderIds?: string[];
+  total?: number;
+  locked?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface LoadItem {
+  id: string;
+  loadId: string;
+  productId: string;
+  productName: string;
+  productCode: number;
+  quantity: number;
+  price: number;
+  total?: number;
+  orderId?: string;
+  orderItemId?: string;
+  customerId?: string;
+  status: 'pending' | 'loaded' | 'delivered' | 'returned';
 }

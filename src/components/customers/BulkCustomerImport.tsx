@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -73,7 +72,8 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
         const selectedSalesRep = salesReps.find(rep => rep.id === selectedSalesRepId);
         if (selectedSalesRep) {
           customers.forEach(customer => {
-            customer.sales_rep_id = selectedSalesRep.id;
+            customer.salesRepId = selectedSalesRep.id;
+            customer.salesRepName = selectedSalesRep.name;
           });
         }
       }
@@ -124,7 +124,8 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       if (selectedSalesRep) {
         const updatedCustomers = parsedCustomers.map(customer => ({
           ...customer,
-          sales_rep_id: selectedSalesRep.id,
+          salesRepId: selectedSalesRep.id,
+          salesRepName: selectedSalesRep.name,
         }));
         setParsedCustomers(updatedCustomers);
       }
@@ -251,8 +252,8 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
                     <TableCell>{customer.name}</TableCell>
                     <TableCell>{customer.city}</TableCell>
                     <TableCell>{customer.state}</TableCell>
-                    <TableCell>{customer.sales_rep_id}</TableCell>
-                    <TableCell>{customer.visit_sequence}</TableCell>
+                    <TableCell>{customer.salesRepName}</TableCell>
+                    <TableCell>{customer.visitSequence}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

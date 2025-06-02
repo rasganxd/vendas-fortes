@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Order, PaymentTable } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -113,12 +114,11 @@ const PendingPaymentsTab: React.FC<PendingPaymentsTabProps> = ({
 
     try {
       await addPayment({
-        order_id: orderId, // Use snake_case
-        customer_name: order.customerName, // Add required customer_name
+        orderId: orderId,
         amount: amount,
-        payment_method: method, // Use snake_case
-        payment_date: now, // Use snake_case
+        method: method as string,
         status: 'completed',
+        date: now,
         notes: `Pagamento de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
         createdAt: now,
         updatedAt: now

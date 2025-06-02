@@ -5,8 +5,6 @@ import { productCategoryService } from '@/services/supabase/productCategoryServi
 import { toast } from '@/components/ui/use-toast';
 
 export const useProductCategories = () => {
-  console.log("=== useProductCategories iniciado ===");
-  
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
@@ -21,7 +19,7 @@ export const useProductCategories = () => {
         
         console.log("Fetching product categories from Supabase");
         const categories = await productCategoryService.getAll();
-        console.log(`Loaded ${categories.length} product categories from Supabase:`, categories);
+        console.log(`Loaded ${categories.length} product categories from Supabase`);
         
         setProductCategories(categories);
       } catch (error) {
@@ -29,7 +27,6 @@ export const useProductCategories = () => {
         setProductCategories([]);
       } finally {
         setIsLoading(false);
-        console.log("useProductCategories - loading finished");
       }
     };
 
@@ -38,15 +35,10 @@ export const useProductCategories = () => {
 
   const addProductCategory = async (category: Omit<ProductCategory, 'id'>) => {
     try {
-      console.log("addProductCategory - adding:", category);
       const id = await productCategoryService.add(category);
       
       const newCategory = { ...category, id } as ProductCategory;
-      setProductCategories((prev) => {
-        const updated = [...prev, newCategory];
-        console.log("addProductCategory - updated categories:", updated);
-        return updated;
-      });
+      setProductCategories((prev) => [...prev, newCategory]);
       
       toast({
         title: 'Categoria adicionada',
@@ -67,7 +59,6 @@ export const useProductCategories = () => {
 
   const updateProductCategory = async (id: string, category: Partial<ProductCategory>) => {
     try {
-      console.log("updateProductCategory - updating:", id, category);
       await productCategoryService.update(id, category);
       
       setProductCategories((prev) =>
@@ -90,7 +81,6 @@ export const useProductCategories = () => {
 
   const deleteProductCategory = async (id: string) => {
     try {
-      console.log("deleteProductCategory - deleting:", id);
       await productCategoryService.delete(id);
       
       setProductCategories((prev) => prev.filter((item) => item.id !== id));
@@ -108,12 +98,6 @@ export const useProductCategories = () => {
       });
     }
   };
-
-  console.log("useProductCategories - current state:", {
-    categoriesCount: productCategories.length,
-    isLoading,
-    hasAttemptedLoad
-  });
 
   return {
     productCategories,

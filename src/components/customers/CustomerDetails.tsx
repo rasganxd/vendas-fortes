@@ -77,6 +77,10 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                   <TableCell>{customer.email || '—'}</TableCell>
                 </TableRow>
                 <TableRow>
+                  <TableCell className="font-medium">Vendedor</TableCell>
+                  <TableCell>{customer.salesRepName || '—'}</TableCell>
+                </TableRow>
+                <TableRow>
                   <TableCell className="font-medium">Criado em</TableCell>
                   <TableCell>{customer.createdAt ? formatDateToBR(customer.createdAt) : '—'}</TableCell>
                 </TableRow>
@@ -110,7 +114,7 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">CEP</TableCell>
-                  <TableCell>{customer.zip_code || '—'}</TableCell>
+                  <TableCell>{customer.zip || customer.zipCode || '—'}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -126,19 +130,19 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
               <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
                 <div>
                   <div className="text-sm font-medium text-gray-500">Frequência</div>
-                  <div>{getFrequencyLabel(customer.visit_frequency)}</div>
+                  <div>{getFrequencyLabel(customer.visitFrequency)}</div>
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-500">Sequência</div>
-                  <div>{customer.visit_sequence || '—'}</div>
+                  <div>{customer.visitSequence || '—'}</div>
                 </div>
               </div>
 
               <div>
                 <div className="text-sm font-medium text-gray-500 mb-2">Dias de Visita</div>
                 <div className="flex flex-wrap gap-2">
-                  {customer.visit_days && customer.visit_days.length > 0 
-                    ? customer.visit_days.map(day => (
+                  {customer.visitDays && customer.visitDays.length > 0 
+                    ? customer.visitDays.map(day => (
                         <Badge key={day} variant="outline" className="bg-slate-100">{getDayLabel(day)}</Badge>
                       ))
                     : <span className="text-gray-500">Nenhum dia definido</span>

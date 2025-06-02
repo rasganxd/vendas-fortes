@@ -1,52 +1,46 @@
 
 export interface Customer {
   id: string;
-  code?: number;
-  name: string;
-  email?: string;
-  phone?: string;
-  document?: string;
-  company_name?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  zipCode?: string; // Alias for compatibility
-  region?: string;
-  category?: string;
-  payment_terms?: string;
-  credit_limit?: number;
-  notes?: string;
-  active: boolean;
-  sales_rep_id?: string;
-  salesRepId?: string; // Alias for compatibility
-  delivery_route_id?: string;
-  visit_frequency?: string;
-  visit_days?: string[];
-  visit_sequence?: number;
-  visitSequence?: number; // Alias for compatibility
+  code: number;
+  name: string; // This will be "Nome Fantasia"
+  companyName?: string; // This will be "Razão Social"
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  zipCode?: string; // Keep for backward compatibility, but prefer using zip
+  notes: string;
   createdAt: Date;
   updatedAt: Date;
+  document?: string;
+  visitDays?: string[];
+  visitFrequency?: string;
+  visitSequence?: number;
+  salesRepId?: string; // Changed from sales_rep_id to camelCase
+  deliveryRouteId?: string;
+  salesRepName?: string;
+  syncPending?: boolean; // Add this property to track sync status
 }
 
-export interface CustomerFormValues {
+export type CustomerFormValues = {
   code: number;
-  name: string;
-  companyName: string;
+  name: string; // This will be "Nome Fantasia"
+  companyName: string; // This will be "Razão Social"
   document: string;
   phone: string;
   address: string;
   city: string;
   state: string;
   zip: string;
-  zipCode: string;
+  zipCode?: string; // Keep for backward compatibility, but prefer using zip
   notes: string;
   visitDays: string[];
   visitFrequency: string;
-  visitSequence: number;
   email: string;
-  salesRepId: string;
   createdAt: Date;
   updatedAt: Date;
-  active: boolean;
-}
+  visitSequence: number;
+  salesRepId: string; // Changed to camelCase
+};

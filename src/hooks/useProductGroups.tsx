@@ -5,8 +5,6 @@ import { productGroupService } from '@/services/supabase/productGroupService';
 import { toast } from '@/components/ui/use-toast';
 
 export const useProductGroups = () => {
-  console.log("=== useProductGroups iniciado ===");
-  
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
@@ -21,7 +19,7 @@ export const useProductGroups = () => {
         
         console.log("Fetching product groups from Supabase");
         const groups = await productGroupService.getAll();
-        console.log(`Loaded ${groups.length} product groups from Supabase:`, groups);
+        console.log(`Loaded ${groups.length} product groups from Supabase`);
         
         setProductGroups(groups);
       } catch (error) {
@@ -29,7 +27,6 @@ export const useProductGroups = () => {
         setProductGroups([]);
       } finally {
         setIsLoading(false);
-        console.log("useProductGroups - loading finished");
       }
     };
 
@@ -38,15 +35,10 @@ export const useProductGroups = () => {
 
   const addProductGroup = async (group: Omit<ProductGroup, 'id'>) => {
     try {
-      console.log("addProductGroup - adding:", group);
       const id = await productGroupService.add(group);
       
       const newGroup = { ...group, id } as ProductGroup;
-      setProductGroups((prev) => {
-        const updated = [...prev, newGroup];
-        console.log("addProductGroup - updated groups:", updated);
-        return updated;
-      });
+      setProductGroups((prev) => [...prev, newGroup]);
       
       toast({
         title: 'Grupo adicionado',
@@ -67,7 +59,6 @@ export const useProductGroups = () => {
 
   const updateProductGroup = async (id: string, group: Partial<ProductGroup>) => {
     try {
-      console.log("updateProductGroup - updating:", id, group);
       await productGroupService.update(id, group);
       
       setProductGroups((prev) =>
@@ -90,7 +81,6 @@ export const useProductGroups = () => {
 
   const deleteProductGroup = async (id: string) => {
     try {
-      console.log("deleteProductGroup - deleting:", id);
       await productGroupService.delete(id);
       
       setProductGroups((prev) => prev.filter((item) => item.id !== id));
@@ -108,12 +98,6 @@ export const useProductGroups = () => {
       });
     }
   };
-
-  console.log("useProductGroups - current state:", {
-    groupsCount: productGroups.length,
-    isLoading,
-    hasAttemptedLoad
-  });
 
   return {
     productGroups,

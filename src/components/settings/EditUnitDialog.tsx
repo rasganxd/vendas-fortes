@@ -29,19 +29,17 @@ export default function EditUnitDialog({
   onSave,
 }: EditUnitDialogProps) {
   const [editData, setEditData] = useState({
-    id: '',
     value: '',
     label: '',
-    packageQuantity: 1
+    conversionRate: 1
   });
 
   useEffect(() => {
     if (unit) {
       setEditData({
-        id: unit.id,
         value: unit.value,
         label: unit.label,
-        packageQuantity: unit.packageQuantity || 1
+        conversionRate: unit.conversionRate || 1
       });
     }
   }, [unit]);
@@ -59,10 +57,9 @@ export default function EditUnitDialog({
     }
 
     const updatedUnit: Unit = {
-      id: editData.id,
       value: editData.value.toUpperCase(),
       label: editData.label,
-      packageQuantity: editData.packageQuantity
+      conversionRate: editData.conversionRate
     };
 
     onSave(updatedUnit);
@@ -100,14 +97,14 @@ export default function EditUnitDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="editPackageQuantity">Quantidade na Embalagem</Label>
+            <Label htmlFor="editConversionRate">Taxa de Conversão</Label>
             <Input
-              id="editPackageQuantity"
+              id="editConversionRate"
               type="number"
-              value={editData.packageQuantity}
+              value={editData.conversionRate}
               onChange={(e) => setEditData(prev => ({ 
                 ...prev, 
-                packageQuantity: parseFloat(e.target.value) || 1 
+                conversionRate: parseFloat(e.target.value) || 1 
               }))}
               min="0.001"
               step="0.001"

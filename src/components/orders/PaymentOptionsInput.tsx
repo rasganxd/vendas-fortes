@@ -63,9 +63,8 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
         name: newTableName,
         description: `Tabela de pagamento criada para ${customerName} (${customerId})`,
         installments: [],
-        terms: {},
+        terms: [],
         notes: `Condições especiais para o cliente ${customerName}.`,
-        active: true, // Add the missing active property
         createdAt: new Date(),
         updatedAt: new Date()
       });

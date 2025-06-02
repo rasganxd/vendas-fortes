@@ -1,7 +1,8 @@
 
 import React from 'react';
+import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Product } from '@/types';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PriceValidationProps {
   product: Product;
@@ -9,39 +10,55 @@ interface PriceValidationProps {
   className?: string;
 }
 
-const PriceValidation: React.FC<PriceValidationProps> = ({
+export const PriceValidation: React.FC<PriceValidationProps> = ({
   product,
   currentPrice,
-  className = ''
+  className
 }) => {
-  const costPrice = product.cost_price || 0;
-  const suggestedPrice = product.price || costPrice * 1.3; // 30% markup default
+  const { minPrice } = product;
   
-  const isValid = currentPrice >= costPrice;
-  const isOptimal = currentPrice >= suggestedPrice * 0.9; // Within 10% of suggested
-
-  if (!isValid) {
+  // Se não há preço mínimo definido, está válido
+  if (!minPrice) {
     return (
-      <div className={`flex items-center text-red-600 ${className}`}>
-        <AlertTriangle className="h-4 w-4 mr-2" />
-        <span>Preço abaixo do custo (R$ {costPrice.toFixed(2)})</span>
+      <div className={cn("flex items-center text-sm", className)}>
+        <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+        <span className="text-green-600">Sem limite</span>
       </div>
     );
   }
-
-  if (!isOptimal) {
+  
+  // Verificar se o preço está acima do mínimo
+  const isBelowMin = currentPrice < minPrice;
+  
+  if (isBelowMin) {
     return (
-      <div className={`flex items-center text-yellow-600 ${className}`}>
-        <AlertTriangle className="h-4 w-4 mr-2" />
-        <span>Preço baixo. Sugerido: R$ {suggestedPrice.toFixed(2)}</span>
+      <div className={cn("flex items-center text-sm", className)}>
+        <XCircle className="h-4 w-4 text-red-500 mr-1" />
+        <span className="text-red-600">
+          Abaixo do mínimo (R$ {minPrice.toFixed(2)})
+        </span>
       </div>
     );
   }
-
+  
+  // Verificar se está próximo do limite mínimo (warning)
+  const isNearMin = currentPrice <= minPrice * 1.1;
+  
+  if (isNearMin) {
+    return (
+      <div className={cn("flex items-center text-sm", className)}>
+        <AlertTriangle className="h-4 w-4 text-yellow-500 mr-1" />
+        <span className="text-yellow-600">
+          Próximo do mínimo (R$ {minPrice.toFixed(2)})
+        </span>
+      </div>
+    );
+  }
+  
   return (
-    <div className={`flex items-center text-green-600 ${className}`}>
-      <CheckCircle className="h-4 w-4 mr-2" />
-      <span>Preço adequado</span>
+    <div className={cn("flex items-center text-sm", className)}>
+      <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+      <span className="text-green-600">Válido</span>
     </div>
   );
 };

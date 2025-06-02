@@ -30,8 +30,8 @@ const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) =
       
       // Filter customers that belong to this specific sales rep
       const salesRepCustomers = allCustomers.filter(customer => {
-        console.log(`Customer ${customer.name} - sales_rep_id: ${customer.sales_rep_id}, looking for: ${salesRep.id}`);
-        return customer.sales_rep_id === salesRep.id;
+        console.log(`Customer ${customer.name} - salesRepId: ${customer.salesRepId}, looking for: ${salesRep.id}`);
+        return customer.salesRepId === salesRep.id;
       });
       
       console.log(`✅ Found ${salesRepCustomers.length} customers for sales rep ${salesRep.name} (ID: ${salesRep.id})`);
@@ -82,11 +82,16 @@ const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) =
                     <div className="text-sm text-gray-500">{customer.phone}</div>
                   )}
                   <div className="text-xs text-blue-600 mt-1">
-                    Sales Rep ID: {customer.sales_rep_id || 'Não definido'}
+                    Sales Rep ID: {customer.salesRepId || 'Não definido'}
                   </div>
                 </div>
                 <div className="text-right">
                   <Badge variant="outline">#{customer.code}</Badge>
+                  {customer.salesRepName && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {customer.salesRepName}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

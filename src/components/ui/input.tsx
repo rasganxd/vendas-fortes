@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
@@ -14,8 +15,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           // Price mask formatting - improved for Brazilian currency
           let inputValue = e.target.value;
           
-          // Remove all non-digit characters except comma
+          // Remove all non-digit characters except comma and dot
           inputValue = inputValue.replace(/[^\d,]/g, '');
+          
+          // Replace dot with comma if present
+          inputValue = inputValue.replace(/\./g, ',');
           
           // Ensure only one comma
           const parts = inputValue.split(',');
@@ -26,12 +30,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           // Limit decimal places to 2
           if (parts.length === 2 && parts[1].length > 2) {
             inputValue = parts[0] + ',' + parts[1].substring(0, 2);
-          }
-          
-          // Add thousands separators to integer part
-          if (parts[0].length > 3) {
-            const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-            inputValue = integerPart + (parts[1] !== undefined ? ',' + parts[1] : '');
           }
           
           const newEvent = {

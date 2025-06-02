@@ -1,30 +1,20 @@
 
-// Customer types
-export type { Customer } from './customer';
+// Re-export types from individual files for convenience
+export * from './customer';
+export * from './order';
+export * from './payment';
+export * from './personnel';
+export * from './product';
+export * from './system';
+export * from './ui';
 
-// Order types
-export type { Order, OrderItem } from './order';
-
-// Payment types
-export type { PaymentMethod, PaymentTable, Payment, PaymentStatus } from './payment';
-
-// Product types
-export type { Product, ProductCategory, ProductGroup, ProductBrand } from './product';
-
-// Personnel types
-export type { SalesRep } from './personnel';
-
-// Delivery types
-export type { Load, LoadItem, DeliveryRoute, RouteStop } from './delivery';
-
-// Vehicle types
+// Export Vehicle type specifically from vehicle.ts to avoid ambiguity
 export type { Vehicle } from './vehicle';
 
-// Unit types
-export type { Unit } from './unit';
-
-// System types
-export type { AppSettings } from './system';
-
-// UI types
-export type { SortConfig } from './ui';
+// Export delivery types excluding Vehicle to avoid conflict
+export type { 
+  DeliveryRoute, 
+  RouteStop, 
+  Load, 
+  LoadItem 
+} from './delivery';

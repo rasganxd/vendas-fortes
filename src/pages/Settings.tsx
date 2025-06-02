@@ -1,84 +1,34 @@
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import PageLayout from '@/components/layout/PageLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanySettings from '@/components/settings/CompanySettings';
+import SalesForceDataGenerator from '@/components/settings/SalesForceDataGenerator';
 import ApiTokensPanel from '@/components/settings/ApiTokensPanel';
 import MobileOrderImportPanel from '@/components/settings/MobileOrderImportPanel';
-import SyncUpdateMonitor from '@/components/settings/SyncUpdateMonitor';
-import PageLayout from '@/components/layout/PageLayout';
-import { Settings as SettingsIcon, Building, Download, Activity } from 'lucide-react';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('company');
-
   return (
-    <PageLayout title="Configurações do Sistema">
-      <div className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="company" className="flex items-center gap-2">
-              <Building className="h-4 w-4" />
-              Empresa
-            </TabsTrigger>
-            <TabsTrigger value="mobile-orders" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Pedidos Mobile
-            </TabsTrigger>
-            <TabsTrigger value="sync-monitor" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Monitor Sync
-            </TabsTrigger>
-            <TabsTrigger value="api-tokens" className="flex items-center gap-2">
-              <SettingsIcon className="h-4 w-4" />
-              API
-            </TabsTrigger>
+    <PageLayout title="Configurações">
+      <div className="space-y-4">
+        <Tabs defaultValue="company" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-flex">
+            <TabsTrigger value="company">Dados da Empresa</TabsTrigger>
+            <TabsTrigger value="salesforce">Gerar Dados Força de Vendas</TabsTrigger>
+            <TabsTrigger value="api">API REST & Mobile</TabsTrigger>
+            <TabsTrigger value="import">Importação Mobile</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="company" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações da Empresa</CardTitle>
-                <CardDescription>
-                  Configure as informações básicas da sua empresa
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CompanySettings />
-              </CardContent>
-            </Card>
+          <TabsContent value="company" className="mt-4">
+            <CompanySettings />
           </TabsContent>
-
-          <TabsContent value="mobile-orders" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Importação de Pedidos Mobile</CardTitle>
-                <CardDescription>
-                  Configure e monitore a importação de pedidos do aplicativo móvel
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MobileOrderImportPanel />
-              </CardContent>
-            </Card>
+          <TabsContent value="salesforce" className="mt-4">
+            <SalesForceDataGenerator />
           </TabsContent>
-
-          <TabsContent value="sync-monitor" className="space-y-4">
-            <SyncUpdateMonitor />
+          <TabsContent value="api" className="mt-4">
+            <ApiTokensPanel />
           </TabsContent>
-
-          <TabsContent value="api-tokens" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tokens de API</CardTitle>
-                <CardDescription>
-                  Gerencie os tokens de acesso para integração com APIs externas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ApiTokensPanel />
-              </CardContent>
-            </Card>
+          <TabsContent value="import" className="mt-4">
+            <MobileOrderImportPanel />
           </TabsContent>
         </Tabs>
       </div>

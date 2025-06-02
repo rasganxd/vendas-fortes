@@ -1,45 +1,75 @@
 
+export interface Payment {
+  id: string;
+  orderId: string;
+  date: Date;
+  amount: number;
+  method: string;
+  notes: string;
+  createdAt: Date;
+  updatedAt: Date;
+  status?: string;
+  
+  // Additional properties used in PromissoryNoteView
+  dueDate?: Date;
+  amountInWords?: string;
+  paymentLocation?: string;
+  emissionLocation?: string;
+  customerName?: string;
+  customerDocument?: string;
+  customerAddress?: string;
+  installments?: PaymentInstallment[];
+  paymentDate?: Date;
+  
+  // Mobile sync properties
+  salesRepId?: string;
+  syncedToMobile?: boolean;
+  lastSyncDate?: Date;
+}
+
+export interface PaymentInstallment {
+  dueDate: Date;
+  amount: number;
+}
+
 export interface PaymentMethod {
   id: string;
   name: string;
-  description?: string;
-  notes?: string;
+  description: string;
+  notes: string;
   createdAt: Date;
   updatedAt: Date;
+  type?: string;
+  active?: boolean;
 }
 
 export interface PaymentTable {
   id: string;
   name: string;
-  description?: string;
-  payment_location?: string;
-  paymentLocation?: string; // Alias for compatibility
-  payable_to?: string;
-  payableTo?: string; // Alias for compatibility
+  description: string;
+  installments: PaymentTableInstallment[];
+  notes: string;
+  createdAt: Date;
+  updatedAt: Date;
   type?: string;
-  installments?: any[];
-  terms?: any;
-  notes?: string;
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  terms?: PaymentTableTerm[];
+  payableTo?: string;
+  paymentLocation?: string;
+  active?: boolean;
 }
 
-export interface Payment {
+export interface PaymentTableInstallment {
+  installment: number;
+  percentage: number;
+  days: number;
+  id?: string;
+  description?: string;
+}
+
+export interface PaymentTableTerm {
   id: string;
-  order_id?: string;
-  orderId?: string; // Alias for compatibility
-  amount: number;
-  payment_date: Date;
-  date?: Date; // Alias for compatibility
-  payment_method: string;
-  method?: string; // Alias for compatibility
-  customer_name: string;
-  status: string;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  days: number;
+  percentage: number;
+  description?: string;
+  installment: number;
 }
-
-// Export PaymentStatus type
-export type PaymentStatus = 'pending' | 'completed' | 'cancelled' | 'failed';

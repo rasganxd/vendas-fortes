@@ -1,17 +1,14 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, AlertTriangle } from 'lucide-react';
+import { Search, Package, Plus, Barcode } from 'lucide-react';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
-import ProductSearchDialog from './ProductSearchDialog';
-import PriceValidation from '@/components/products/pricing/PriceValidation';
-import { useProductUnitsMapping } from '@/hooks/useProductUnitsMapping';
-import { calculateUnitPrice, formatBrazilianPrice, parseBrazilianPrice } from '@/utils/priceConverter';
-import { validateProductDiscount } from '@/context/operations/productOperations';
+import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
 
 interface EnhancedProductSearchProps {
   products: Product[];
@@ -27,89 +24,58 @@ export default function EnhancedProductSearch({
   productInputRef,
   isEditMode
 }: EnhancedProductSearchProps) {
-  const [productCode, setProductCode] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState('');
+  const [showResults, setShowResults] = useState(false);
   const [priceDisplayValue, setPriceDisplayValue] = useState('');
-  const [priceValidationError, setPriceValidationError] = useState<string>('');
-  const [showProductDialog, setShowProductDialog] = useState(false);
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Hook para obter unidades do produto selecionado
-  const { productUnits, mainUnit } = useProductUnitsMapping(selectedProduct?.id);
+  // Check if search term is a product code (numeric)
+  const isCodeSearch = /^\d+$/.test(searchTerm.trim());
 
-  // Validate price whenever it changes
-  useEffect(() => {
-    if (selectedProduct && price > 0) {
-      const validation = validateProductDiscount(selectedProduct.id, price, products);
-      if (validation === true) {
-        setPriceValidationError('');
-      } else {
-        setPriceValidationError(validation as string);
-      }
+  // Filter products based on search term
+  const filteredProducts = products.filter(product => {
+    if (isCodeSearch) {
+      // For code search, match exact code
+      return product.code.toString() === searchTerm.trim();
     } else {
-      setPriceValidationError('');
+      // For name search, match name containing the search term
+      return product.name.toLowerCase().includes(searchTerm.toLowerCase());
     }
-  }, [selectedProduct, price, products]);
+  }).slice(0, 8); // Limit to 8 results
 
-  // Initialize price and unit when product or units change
   useEffect(() => {
-    if (selectedProduct && mainUnit) {
-      console.log('🎯 Definindo unidade principal do mapeamento:', mainUnit.value);
-      setSelectedUnit(mainUnit.value);
-
-      const correctPrice = calculateUnitPrice(selectedProduct, mainUnit.value);
-      console.log(`💰 Preço inicial para ${selectedProduct.name} - ${mainUnit.value}: R$ ${correctPrice.toFixed(2)}`);
-      setPrice(correctPrice);
-      setPriceDisplayValue(formatBrazilianPrice(correctPrice));
-    } else if (selectedProduct && !mainUnit && productUnits.length === 0) {
-      // Fallback para unidade legacy
-      const defaultUnit = selectedProduct.unit || 'UN';
-      console.log('📋 Usando unidade legacy como fallback:', defaultUnit);
-      setSelectedUnit(defaultUnit);
-
-      const correctPrice = calculateUnitPrice(selectedProduct, defaultUnit);
-      setPrice(correctPrice);
-      setPriceDisplayValue(formatBrazilianPrice(correctPrice));
+    if (selectedProduct) {
+      const mainUnit = selectedProduct.unit || 'UN';
+      setSelectedUnit(mainUnit);
+      setPrice(selectedProduct.price || 0);
+      setPriceDisplayValue(formatBrazilianPrice(selectedProduct.price || 0));
     }
-  }, [selectedProduct, mainUnit, productUnits]);
+  }, [selectedProduct]);
 
-  // Handle product code input change
-  const handleProductCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d]/g, ''); // Only numbers
-    setProductCode(value);
-
-    // Reset selected product if code changes
-    if (selectedProduct && selectedProduct.code.toString() !== value) {
-      setSelectedProduct(null);
-      setPrice(0);
-      setPriceDisplayValue('');
-      setSelectedUnit('');
-      setPriceValidationError('');
+  // Auto-select product when searching by code
+  useEffect(() => {
+    if (isCodeSearch && filteredProducts.length === 1 && !selectedProduct) {
+      const product = filteredProducts[0];
+      setSelectedProduct(product);
+      setShowResults(false);
+      
+      // Focus on quantity input
+      setTimeout(() => {
+        quantityInputRef.current?.focus();
+      }, 100);
     }
-  };
+  }, [isCodeSearch, filteredProducts, selectedProduct]);
 
   const handleProductSelect = (product: Product) => {
-    console.log("📦 Produto selecionado:", product.name, {
-      id: product.id,
-      price: product.price,
-      cost: product.cost,
-      unit: product.unit,
-      subunit: product.subunit,
-      hasSubunit: product.hasSubunit,
-      subunitRatio: product.subunitRatio
-    });
-
-    if (!product.price || product.price === 0) {
-      console.warn('⚠️ Produto selecionado sem preço válido:', product.name);
-    }
-
     setSelectedProduct(product);
-    setProductCode(product.code.toString());
-
+    setSearchTerm(product.name);
+    setShowResults(false);
+    
     // Focus on quantity input
     setTimeout(() => {
       quantityInputRef.current?.focus();
@@ -117,67 +83,65 @@ export default function EnhancedProductSearch({
   };
 
   const handleUnitChange = (unit: string) => {
-    console.log("🔄 Mudança de unidade para:", unit, "no produto:", selectedProduct?.name);
+    if (!selectedProduct) return;
+    
+    const currentUnit = selectedUnit;
     setSelectedUnit(unit);
     
-    if (selectedProduct) {
-      const correctPrice = calculateUnitPrice(selectedProduct, unit);
-      console.log(`💰 Novo preço calculado para ${unit}: R$ ${correctPrice.toFixed(2)}`);
-
-      const finalPrice = correctPrice > 0 ? correctPrice : selectedProduct.price || 0;
-      console.log(`💰 Preço final definido: R$ ${finalPrice.toFixed(2)}`);
-
-      setPrice(finalPrice);
-      setPriceDisplayValue(formatBrazilianPrice(finalPrice));
-    }
+    // Convert price between units
+    const conversion = convertPriceBetweenUnits(
+      selectedProduct,
+      currentUnit,
+      unit,
+      price
+    );
+    
+    setPrice(conversion.price);
+    setPriceDisplayValue(formatBrazilianPrice(conversion.price));
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const displayValue = e.target.value;
     setPriceDisplayValue(displayValue);
-
+    
+    // Convert to number for calculations
     const numericPrice = parseBrazilianPrice(displayValue);
     setPrice(numericPrice);
   };
 
-  const isPriceValid = !priceValidationError && price > 0;
-
   const handleAdd = () => {
-    if (selectedProduct && quantity > 0 && isPriceValid) {
-      console.log("🛒 Adicionando ao pedido:", {
-        product: selectedProduct.name,
-        quantity,
-        price,
-        unit: selectedUnit
-      });
+    if (selectedProduct && quantity > 0) {
       handleAddItem(selectedProduct, quantity, price, selectedUnit);
-
+      
+      // Reset form
       setSelectedProduct(null);
-      setProductCode('');
+      setSearchTerm('');
       setQuantity(1);
       setPrice(0);
       setPriceDisplayValue('');
       setSelectedUnit('');
-      setPriceValidationError('');
-
+      
+      // Focus back on search
       productInputRef.current?.focus();
     }
   };
 
-  const handleProductCodeKeyDown = (e: React.KeyboardEvent) => {
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (productCode) {
-        const product = products.find(p => p.code.toString() === productCode);
-        if (product) {
-          console.log("🔍 Produto encontrado pelo código:", productCode);
-          handleProductSelect(product);
-        } else {
-          console.log("❌ Produto não encontrado pelo código:", productCode);
-          setShowProductDialog(true);
+      if (isCodeSearch) {
+        // For code search, if we found a product, it's already selected by useEffect
+        if (selectedProduct) {
+          quantityInputRef.current?.focus();
         }
-      } else {
-        setShowProductDialog(true);
+      } else if (filteredProducts.length > 0) {
+        // For name search, select first result
+        handleProductSelect(filteredProducts[0]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isCodeSearch) {
+        setShowResults(true);
       }
     }
   };
@@ -185,57 +149,105 @@ export default function EnhancedProductSearch({
   const handleQuantityKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (isPriceValid) {
-        handleAdd();
-      }
+      handleAdd();
     }
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Reset selected product when search changes
+    if (selectedProduct && selectedProduct.name !== value) {
+      setSelectedProduct(null);
+      setPrice(0);
+      setPriceDisplayValue('');
+      setSelectedUnit('');
+    }
+    
+    // Show results only for name search (not code search) and when there's input
+    const isCode = /^\d+$/.test(value.trim());
+    setShowResults(!isCode && value.length > 0);
+  };
+
+  // Get quantity conversion display
   const getQuantityConversion = () => {
     if (!selectedProduct || !selectedProduct.hasSubunit || !selectedUnit) {
       return '';
     }
-    if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit && selectedProduct.subunitRatio) {
-      const mainUnitQty = quantity / selectedProduct.subunitRatio;
-      return `${quantity} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
-    }
-    return '';
+    
+    return calculateQuantityConversion(
+      selectedProduct,
+      quantity,
+      selectedUnit,
+      selectedProduct.unit || 'UN'
+    );
   };
 
-  const getPriceConversionDisplay = () => {
-    if (!selectedProduct || !selectedProduct.hasSubunit || !selectedUnit) {
-      return null;
-    }
-    if (selectedUnit === selectedProduct.subunit && selectedProduct.subunitRatio) {
-      return;
-    } else if (selectedUnit === selectedProduct.unit && selectedProduct.hasSubunit) {
-      return <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
-          ✓ Preço da unidade principal ({selectedProduct.unit})
-        </div>;
-    }
-    return null;
-  };
-
-  return <div className="space-y-4">
+  return (
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
           <Package size={20} />
           Busca de Produtos
         </h3>
-      </div>
-
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <Input ref={productInputRef} type="text" placeholder="Digite o código do produto e pressione Enter..." value={productCode} onChange={handleProductCodeChange} onKeyDown={handleProductCodeKeyDown} className="h-11 text-base" disabled={isEditMode} />
+        <div className="text-xs text-gray-500">
+          F2: Buscar produto
         </div>
-        <Button onClick={() => setShowProductDialog(true)} variant="outline" size="default" className="h-11 px-3" disabled={isEditMode}>
-          <Search size={18} />
-        </Button>
       </div>
 
-      <ProductSearchDialog open={showProductDialog} onClose={() => setShowProductDialog(false)} products={products} onSelectProduct={handleProductSelect} />
+      {/* Search Input */}
+      <div className="relative z-[100]">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            ref={productInputRef}
+            type="text"
+            placeholder="Buscar por nome ou código..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
+            onFocus={() => {
+              if (!isCodeSearch && searchTerm.length > 0) {
+                setShowResults(true);
+              }
+            }}
+            className="pl-10 pr-4 h-11 text-base"
+            disabled={isEditMode}
+          />
+          <Barcode className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        </div>
 
-      {selectedProduct && <Card className={`border-2 ${isPriceValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+        {/* Search Results - Only show for name search */}
+        {showResults && !isCodeSearch && filteredProducts.length > 0 && (
+          <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                onClick={() => handleProductSelect(product)}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{product.name}</div>
+                    <div className="text-sm text-gray-500">Cód: {product.code}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-green-600">
+                      {product.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </div>
+                    <div className="text-xs text-gray-500">{product.unit}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Product Addition Form */}
+      {selectedProduct && (
+        <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -251,51 +263,68 @@ export default function EnhancedProductSearch({
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Quantidade</label>
-                  <QuantityInput quantity={quantity} onQuantityChange={e => setQuantity(parseInt(e.target.value) || 1)} onIncrement={() => setQuantity(prev => prev + 1)} onDecrement={() => setQuantity(prev => Math.max(1, prev - 1))} inputRef={quantityInputRef} onKeyDown={handleQuantityKeyDown} />
+                  <QuantityInput
+                    quantity={quantity}
+                    onQuantityChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    onIncrement={() => setQuantity(prev => prev + 1)}
+                    onDecrement={() => setQuantity(prev => Math.max(1, prev - 1))}
+                    inputRef={quantityInputRef}
+                    onKeyDown={handleQuantityKeyDown}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Unidade</label>
-                  <UnitSelector selectedUnit={selectedUnit} onUnitChange={handleUnitChange} product={selectedProduct} className="h-10" />
+                  <UnitSelector
+                    selectedUnit={selectedUnit}
+                    onUnitChange={handleUnitChange}
+                    product={selectedProduct}
+                    className="h-10"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Preço Unitário</label>
-                  <Input type="text" mask="price" value={priceDisplayValue} onChange={handlePriceChange} placeholder="0,00" className={`h-10 ${!isPriceValid ? 'border-red-500 bg-red-50' : ''}`} />
+                  <Input
+                    type="text"
+                    mask="price"
+                    value={priceDisplayValue}
+                    onChange={handlePriceChange}
+                    placeholder="0,00"
+                    className="h-10"
+                  />
                 </div>
 
                 <div className="flex items-end">
-                  <Button ref={addButtonRef} onClick={handleAdd} className={`w-full h-10 ${isPriceValid ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400'}`} disabled={!selectedProduct || quantity <= 0 || !isPriceValid}>
+                  <Button
+                    ref={addButtonRef}
+                    onClick={handleAdd}
+                    className="w-full h-10 bg-green-600 hover:bg-green-700"
+                    disabled={!selectedProduct || quantity <= 0}
+                  >
                     <Plus size={16} className="mr-2" />
                     Adicionar
                   </Button>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <PriceValidation product={selectedProduct} currentPrice={price} className="text-sm" />
-                
-                {priceValidationError && <div className="flex items-center text-sm text-red-600 bg-red-100 p-2 rounded">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    <span>{priceValidationError}</span>
-                  </div>}
-              </div>
-
-              {getPriceConversionDisplay()}
-
-              {getQuantityConversion()}
+              {/* Quantity conversion display */}
+              {getQuantityConversion() && (
+                <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                  Conversão: {getQuantityConversion()}
+                </div>
+              )}
 
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Total:</span>
-                <span className={`font-bold text-lg ${isPriceValid ? 'text-green-600' : 'text-red-600'}`}>
-                  {(quantity * price).toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
+                <span className="font-bold text-green-600 text-lg">
+                  {(quantity * price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
               </div>
             </div>
           </CardContent>
-        </Card>}
-    </div>;
+        </Card>
+      )}
+    </div>
+  );
 }

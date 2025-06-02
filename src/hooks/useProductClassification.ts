@@ -7,8 +7,6 @@ import { useProductGroups } from './useProductGroups';
 import { useProductBrands } from './useProductBrands';
 
 export const useProductClassification = () => {
-  console.log("=== useProductClassification iniciado ===");
-  
   // Use the individual hooks for categories, groups, and brands
   const {
     productCategories,
@@ -39,19 +37,14 @@ export const useProductClassification = () => {
 
   // Add debugging to see if data is loading correctly
   useEffect(() => {
-    console.log("useProductClassification - Debug data:");
-    console.log("- productCategories:", productCategories?.length || 0, "items");
-    console.log("- productGroups:", productGroups?.length || 0, "items");
-    console.log("- productBrands:", productBrands?.length || 0, "items");
-    console.log("- isLoadingCategories:", isLoadingCategories);
-    console.log("- isLoadingGroups:", isLoadingGroups);
-    console.log("- isLoadingBrands:", isLoadingBrands);
-  }, [productCategories, productGroups, productBrands, isLoadingCategories, isLoadingGroups, isLoadingBrands]);
+    console.log("useProductClassification - productCategories:", productCategories);
+    console.log("useProductClassification - productGroups:", productGroups);
+    console.log("useProductClassification - productBrands:", productBrands);
+  }, [productCategories, productGroups, productBrands]);
 
   // Category operations with toast notifications
   const handleAddCategory = async (category: Omit<ProductCategory, 'id'>) => {
     try {
-      console.log("Adicionando categoria:", category);
       const id = await addProductCategory(category);
       toast("Categoria adicionada com sucesso");
       return id;
@@ -66,7 +59,6 @@ export const useProductClassification = () => {
 
   const handleUpdateCategory = async (id: string, category: Partial<ProductCategory>) => {
     try {
-      console.log("Atualizando categoria:", id, category);
       await updateProductCategory(id, category);
       toast("Categoria atualizada com sucesso");
     } catch (error) {
@@ -79,7 +71,6 @@ export const useProductClassification = () => {
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      console.log("Excluindo categoria:", id);
       await deleteProductCategory(id);
       toast("Categoria excluída com sucesso");
     } catch (error) {
@@ -93,7 +84,6 @@ export const useProductClassification = () => {
   // Group operations with toast notifications
   const handleAddGroup = async (group: Omit<ProductGroup, 'id'>) => {
     try {
-      console.log("Adicionando grupo:", group);
       const id = await addProductGroup(group);
       toast("Grupo adicionado com sucesso");
       return id;
@@ -108,7 +98,6 @@ export const useProductClassification = () => {
 
   const handleUpdateGroup = async (id: string, group: Partial<ProductGroup>) => {
     try {
-      console.log("Atualizando grupo:", id, group);
       await updateProductGroup(id, group);
       toast("Grupo atualizado com sucesso");
     } catch (error) {
@@ -121,7 +110,6 @@ export const useProductClassification = () => {
 
   const handleDeleteGroup = async (id: string) => {
     try {
-      console.log("Excluindo grupo:", id);
       await deleteProductGroup(id);
       toast("Grupo excluído com sucesso");
     } catch (error) {
@@ -135,7 +123,6 @@ export const useProductClassification = () => {
   // Brand operations with toast notifications
   const handleAddBrand = async (brand: Omit<ProductBrand, 'id'>) => {
     try {
-      console.log("Adicionando marca:", brand);
       const id = await addProductBrand(brand);
       toast("Marca adicionada com sucesso");
       return id;
@@ -150,7 +137,6 @@ export const useProductClassification = () => {
 
   const handleUpdateBrand = async (id: string, brand: Partial<ProductBrand>) => {
     try {
-      console.log("Atualizando marca:", id, brand);
       await updateProductBrand(id, brand);
       toast("Marca atualizada com sucesso");
     } catch (error) {
@@ -163,7 +149,6 @@ export const useProductClassification = () => {
 
   const handleDeleteBrand = async (id: string) => {
     try {
-      console.log("Excluindo marca:", id);
       await deleteProductBrand(id);
       toast("Marca excluída com sucesso");
     } catch (error) {
@@ -173,12 +158,6 @@ export const useProductClassification = () => {
       });
     }
   };
-
-  console.log("useProductClassification - retornando dados:", {
-    categoriesCount: productCategories?.length || 0,
-    groupsCount: productGroups?.length || 0,
-    brandsCount: productBrands?.length || 0
-  });
 
   return {
     // Data

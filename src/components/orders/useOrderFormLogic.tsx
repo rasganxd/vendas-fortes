@@ -22,7 +22,7 @@ interface UseOrderFormLogicProps {
   handleViewRecentPurchases: () => void;
   customerInputValue: string;
   salesRepInputValue: string;
-  handleAddItem: (product: Product, quantity: number, price: number, unit?: string) => void;
+  handleAddItem: (product: Product, quantity: number, price: number) => void;
   handleRemoveItem: (productId: string) => void;
   connectionStatus: ConnectionStatusType;
 }

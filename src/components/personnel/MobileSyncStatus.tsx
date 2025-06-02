@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -52,6 +51,19 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
     }
   }, [statusMessage]);
 
+  // Filter function to remove temporary documents from results
+  const filterTemporaryDocs = (logs: SyncLogEntry[]): SyncLogEntry[] => {
+    if (!logs || !Array.isArray(logs)) return [];
+    
+    return logs.filter(log => {
+      // Skip documents that are marked as temporary
+      if (!log || typeof log !== 'object') return false;
+      
+      // Keep only documents with valid properties
+      return log.id && log.event_type && log.created_at;
+    });
+  };
+
   const loadSyncLogs = async () => {
     if (!salesRepId) {
       console.error("MobileSyncStatus: No salesRepId provided");
@@ -67,11 +79,8 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
       console.log(`MobileSyncStatus: Loading sync logs for sales rep ID ${salesRepId}`);
       const data = await mobileSyncService.getSyncLogs();
       
-      // Filtrar logs por vendedor se necessário
-      const filteredData = salesRepId ? 
-        data.filter(log => log.sales_rep_id === salesRepId) : 
-        data;
-      
+      // Filter out temporary documents
+      const filteredData = filterTemporaryDocs(data || []);
       setSyncLogs(filteredData);
       
       if (filteredData && filteredData.length > 0) {
@@ -79,13 +88,11 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
         const dateObj = new Date(createdAt);
         
         setLastSynced(dateObj.toLocaleString());
-        setStatusMessage(`Dados carregados com sucesso. ${filteredData.length} logs encontrados.`);
+        setStatusMessage("Dados carregados com sucesso.");
         setStatusType('success');
-        
-        console.log(`✅ Found ${filteredData.length} sync logs for sales rep ${salesRepId}`);
       } else {
         console.log("MobileSyncStatus: No sync logs found for this sales rep");
-        setStatusMessage("Nenhum histórico de sincronização encontrado para este vendedor.");
+        setStatusMessage("Nenhum histórico de sincronização encontrado.");
         setStatusType('info');
         setLastSynced(null);
       }
@@ -213,7 +220,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           Status de Sincronização Mobile
         </CardTitle>
         <CardDescription className="text-blue-700">
-          Status e histórico de sincronização do aplicativo mobile - Com RLS corrigido
+          Status e histórico de sincronização do aplicativo mobile via API direta
         </CardDescription>
       </CardHeader>
       <CardContent className="p-5">
@@ -231,11 +238,10 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           
           <div className="mt-3 pt-2 border-t border-blue-200 text-xs text-blue-600">
             <div className="bg-blue-100 p-2 rounded">
-              <p><strong>🔧 Status do Sistema:</strong></p>
-              <p>✅ RLS Policies: Configuradas corretamente</p>
-              <p>✅ Logging: Sistema com retry implementado</p>
-              <p>✅ Sync Updates: Conectado aos logs</p>
-              <p className="text-xs mt-1">Sistema pronto para receber sincronizações mobile</p>
+              <p><strong>Configuração API Móvel:</strong></p>
+              <p>URL: https://ufvnubabpcyimahbubkd.supabase.co</p>
+              <p>Chave: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmdm51YmFicGN5aW1haGJ1YmtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MzQ1NzIsImV4cCI6MjA2MzQxMDU3Mn0.rL_UAaLky3SaSAigQPrWAZjhkM8FBmeO0w-pEiB5aro</p>
+              <p className="text-xs mt-1">Configure o app móvel com essas informações para conexão direta</p>
             </div>
           </div>
         </div>
@@ -258,9 +264,8 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                 <TableRow>
                   <TableHead className="text-blue-800">Status</TableHead>
                   <TableHead className="text-blue-800">Tipo</TableHead>
-                  <TableHead className="text-blue-800">Dados</TableHead>
-                  <TableHead className="text-blue-800">Qtd</TableHead>
                   <TableHead className="text-blue-800">Dispositivo</TableHead>
+                  <TableHead className="text-blue-800">IP</TableHead>
                   <TableHead className="text-blue-800">Data</TableHead>
                 </TableRow>
               </TableHeader>
@@ -272,9 +277,8 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
                       {log.event_type === 'upload' ? 'Envio' : 
                        log.event_type === 'download' ? 'Recebimento' : 'Erro'}
                     </TableCell>
-                    <TableCell>{log.data_type || '—'}</TableCell>
-                    <TableCell>{log.records_count || 0}</TableCell>
                     <TableCell>{log.device_id || '—'}</TableCell>
+                    <TableCell>{log.device_ip || '—'}</TableCell>
                     <TableCell>
                       {formatDate(log.created_at)}
                     </TableCell>
@@ -287,7 +291,7 @@ const MobileSyncStatus: React.FC<MobileSyncStatusProps> = ({ salesRepId }) => {
           <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
             <Smartphone className="h-10 w-10 mx-auto mb-3 text-blue-400 opacity-70" />
             <p>Nenhum registro de sincronização encontrado</p>
-            <p className="text-sm mt-2">Agora com RLS corrigido - logs serão registrados corretamente!</p>
+            <p className="text-sm mt-2">Quando um dispositivo móvel sincronizar dados, o histórico aparecerá aqui.</p>
           </div>
         )}
       </CardContent>
