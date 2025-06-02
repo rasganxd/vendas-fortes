@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Key, Plus, Trash2, AlertCircle, CheckCircle, Smartphone, Shield, Code } from "lucide-react";
+import { Copy, Key, Plus, Trash2, AlertCircle, CheckCircle, Smartphone, Shield, Code, Wifi, WifiOff } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { apiTokenService, ApiToken, CreateTokenRequest } from '@/services/supabase/apiTokenService';
 import { useSalesReps } from '@/hooks/useSalesReps';
@@ -42,8 +42,33 @@ const ApiTokensPanel: React.FC = () => {
   const [generatedToken, setGeneratedToken] = useState<string>('');
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const [isCreatingToken, setIsCreatingToken] = useState(false);
+  const [apiStatus, setApiStatus] = useState<{ isOnline: boolean; lastChecked?: Date }>({
+    isOnline: false
+  });
 
   const { salesReps, isLoading: salesRepsLoading } = useSalesReps();
+
+  // Quick API status check
+  const checkApiStatus = async () => {
+    try {
+      const response = await fetch('https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/orders-api', {
+        method: 'OPTIONS',
+      });
+      setApiStatus({
+        isOnline: response.ok,
+        lastChecked: new Date()
+      });
+    } catch (error) {
+      setApiStatus({
+        isOnline: false,
+        lastChecked: new Date()
+      });
+    }
+  };
+
+  useEffect(() => {
+    checkApiStatus();
+  }, []);
 
   // Debug logging for sales reps
   useEffect(() => {
@@ -231,6 +256,37 @@ const ApiTokensPanel: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Status da API */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {apiStatus.isOnline ? (
+              <Wifi className="h-5 w-5 text-green-500" />
+            ) : (
+              <WifiOff className="h-5 w-5 text-red-500" />
+            )}
+            Status da API
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">
+                API de Pedidos: {apiStatus.isOnline ? 'Online' : 'Offline'}
+              </p>
+              {apiStatus.lastChecked && (
+                <p className="text-sm text-muted-foreground">
+                  Verificado em: {apiStatus.lastChecked.toLocaleString()}
+                </p>
+              )}
+            </div>
+            <Badge variant={apiStatus.isOnline ? "default" : "destructive"}>
+              {apiStatus.isOnline ? 'Conectado' : 'Desconectado'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
