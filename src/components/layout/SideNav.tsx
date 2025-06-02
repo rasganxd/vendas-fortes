@@ -16,13 +16,15 @@ import {
   Receipt,
   BarChart3,
   Settings,
-  RefreshCw
+  RefreshCw,
+  Box
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Pedidos', href: '/pedidos', icon: ShoppingCart },
   { name: 'Clientes', href: '/clientes', icon: Users },
+  { name: 'Produtos', href: '/produtos', icon: Box },
   { name: 'Vendedores', href: '/vendedores', icon: UserCheck },
   { name: 'Métodos de Pagamento', href: '/metodos-pagamento', icon: CreditCard },
   { name: 'Tabelas de Pagamento', href: '/tabelas-pagamento', icon: Calculator },

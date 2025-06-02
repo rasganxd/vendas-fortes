@@ -25,3 +25,24 @@ export interface Customer {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface CustomerFormValues {
+  code: number;
+  name: string;
+  companyName: string;
+  document: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  zipCode: string;
+  notes: string;
+  visitDays: string[];
+  visitFrequency: string;
+  visitSequence: number;
+  email: string;
+  salesRepId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
