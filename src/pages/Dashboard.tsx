@@ -3,6 +3,7 @@ import React from 'react';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import PageLayout from '@/components/layout/PageLayout';
 import { EnhancedCard, EnhancedCardContent, EnhancedCardHeader, EnhancedCardTitle } from '@/components/ui/enhanced-card';
+import RecentOrdersTable from '@/components/dashboard/RecentOrdersTable';
 import { 
   ShoppingCart, 
   Users, 
@@ -16,11 +17,11 @@ import {
 
 export default function Dashboard() {
   const {
-    customers,
-    salesReps,
-    orders,
-    paymentMethods,
-    paymentTables,
+    customers = [],
+    salesReps = [],
+    orders = [],
+    paymentMethods = [],
+    paymentTables = [],
     isLoadingCustomers,
     isLoadingSalesReps,
     isLoadingOrders,
@@ -28,22 +29,22 @@ export default function Dashboard() {
     isLoadingPaymentTables
   } = useAppData();
 
-  // Calculate metrics
-  const totalOrders = orders.length;
-  const totalCustomers = customers.length;
-  const totalSalesReps = salesReps.length;
-  const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  // Calculate metrics with safe defaults
+  const totalOrders = orders?.length || 0;
+  const totalCustomers = customers?.length || 0;
+  const totalSalesReps = salesReps?.length || 0;
+  const totalRevenue = orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
   
   // Recent orders (last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const recentOrders = orders.filter(order => new Date(order.date) >= thirtyDaysAgo);
+  const recentOrders = orders?.filter(order => new Date(order.date) >= thirtyDaysAgo) || [];
   
   // Pending orders
-  const pendingOrders = orders.filter(order => order.status === 'pending');
+  const pendingOrders = orders?.filter(order => order.status === 'pending') || [];
   
   // Active customers
-  const activeCustomers = customers.filter(customer => customer.active);
+  const activeCustomers = customers?.filter(customer => customer.active) || [];
 
   const stats = [
     {
@@ -201,30 +202,7 @@ export default function Dashboard() {
               <EnhancedCardTitle>Pedidos Recentes</EnhancedCardTitle>
             </EnhancedCardHeader>
             <EnhancedCardContent>
-              <div className="space-y-3">
-                {recentOrders.slice(0, 5).map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Pedido #{order.code}</p>
-                      <p className="text-xs text-gray-500">{order.customerName || 'Cliente não informado'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-green-600">
-                        {order.total.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        })}
-                      </p>
-                      <p className="text-xs text-gray-500">{order.status}</p>
-                    </div>
-                  </div>
-                ))}
-                {recentOrders.length === 0 && (
-                  <div className="text-center py-4 text-gray-500">
-                    Nenhum pedido recente
-                  </div>
-                )}
-              </div>
+              <RecentOrdersTable orders={recentOrders.slice(0, 5)} />
             </EnhancedCardContent>
           </EnhancedCard>
 
@@ -236,23 +214,23 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Vendedores Ativos</span>
-                  <span className="font-medium">{salesReps.filter(rep => rep.active).length}</span>
+                  <span className="font-medium">{salesReps?.filter(rep => rep.active).length || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Métodos de Pagamento</span>
-                  <span className="font-medium">{paymentMethods.length}</span>
+                  <span className="font-medium">{paymentMethods?.length || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Tabelas de Pagamento</span>
-                  <span className="font-medium">{paymentTables.filter(table => table.active).length}</span>
+                  <span className="font-medium">{paymentTables?.filter(table => table.active).length || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Pedidos Confirmados</span>
-                  <span className="font-medium">{orders.filter(order => order.status === 'confirmed').length}</span>
+                  <span className="font-medium">{orders?.filter(order => order.status === 'confirmed').length || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Pedidos Entregues</span>
-                  <span className="font-medium">{orders.filter(order => order.status === 'delivered').length}</span>
+                  <span className="font-medium">{orders?.filter(order => order.status === 'delivered').length || 0}</span>
                 </div>
               </div>
             </EnhancedCardContent>
