@@ -875,6 +875,7 @@ export type Database = {
           main_unit_id: string
           max_discount_percent: number | null
           name: string
+          sale_price: number
           stock: number
           sub_unit_id: string | null
           updated_at: string
@@ -891,6 +892,7 @@ export type Database = {
           main_unit_id: string
           max_discount_percent?: number | null
           name: string
+          sale_price?: number
           stock?: number
           sub_unit_id?: string | null
           updated_at?: string
@@ -907,6 +909,7 @@ export type Database = {
           main_unit_id?: string
           max_discount_percent?: number | null
           name?: string
+          sale_price?: number
           stock?: number
           sub_unit_id?: string | null
           updated_at?: string

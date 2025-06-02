@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
@@ -25,7 +24,7 @@ export const productService = {
       name: item.name,
       description: '', // Database doesn't have description field, so use empty string
       cost: item.cost_price || 0,
-      price: item.cost_price || 0, // Using cost_price as base price for now
+      price: item.sale_price || 0, // CORRIGIDO: usar sale_price em vez de cost_price
       stock: item.stock || 0,
       minStock: 0,
       maxDiscountPercent: item.max_discount_percent || 0,
@@ -66,7 +65,7 @@ export const productService = {
       name: data.name,
       description: '', // Database doesn't have description field, so use empty string
       cost: data.cost_price || 0,
-      price: data.cost_price || 0,
+      price: data.sale_price || 0, // CORRIGIDO: usar sale_price em vez de cost_price
       stock: data.stock || 0,
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,
@@ -119,6 +118,7 @@ export const productService = {
       code: product.code,
       name: product.name,
       cost_price: product.cost || 0,
+      sale_price: product.price || product.cost || 0, // CORRIGIDO: usar sale_price
       stock: product.stock || 0,
       max_discount_percent: product.maxDiscountPercent || 0,
       category_id: product.categoryId || null,
@@ -153,7 +153,7 @@ export const productService = {
       name: data.name,
       description: '',
       cost: data.cost_price,
-      price: data.cost_price,
+      price: data.sale_price, // CORRIGIDO: usar sale_price
       stock: data.stock,
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,
@@ -201,6 +201,7 @@ export const productService = {
     if (product.code !== undefined) updateData.code = product.code;
     if (product.name !== undefined) updateData.name = product.name;
     if (product.cost !== undefined) updateData.cost_price = product.cost;
+    if (product.price !== undefined) updateData.sale_price = product.price; // CORRIGIDO: usar sale_price
     if (product.stock !== undefined) updateData.stock = product.stock;
     if (product.maxDiscountPercent !== undefined) updateData.max_discount_percent = product.maxDiscountPercent;
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
@@ -208,6 +209,8 @@ export const productService = {
     if (product.brandId !== undefined) updateData.brand_id = product.brandId;
     if (mainUnitId !== undefined) updateData.main_unit_id = mainUnitId;
     if (subUnitId !== undefined) updateData.sub_unit_id = subUnitId;
+
+    console.log('Updating product with data:', updateData);
 
     const { data, error } = await supabase
       .from('products')
@@ -232,7 +235,7 @@ export const productService = {
       name: data.name,
       description: '',
       cost: data.cost_price,
-      price: data.cost_price,
+      price: data.sale_price, // CORRIGIDO: usar sale_price
       stock: data.stock,
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,
