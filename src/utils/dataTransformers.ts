@@ -1,4 +1,3 @@
-
 import { SalesRep } from '@/types';
 import { Customer } from '@/types';
 
@@ -53,8 +52,8 @@ export const transformCustomerData = (raw: any): Customer | null => {
       address: raw.address || '',
       city: raw.city || '',
       state: raw.state || '',
+      zip: raw.zip_code || '',
       zipCode: raw.zip_code || '',
-      category: raw.category || '',
       paymentTerms: raw.payment_terms || '',
       creditLimit: raw.credit_limit || 0,
       visitFrequency: raw.visit_frequency || '',
