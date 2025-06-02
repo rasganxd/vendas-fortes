@@ -85,12 +85,12 @@ export default function ProductSearchInput({
       
       // If product has subunit and selected unit is the subunit
       if (selectedProduct.hasSubunit && selectedProduct.subunit === unit) {
-        // Get the main unit's conversion rate
-        const mainUnitData = units.find(u => u.value === selectedProduct.unit);
-        const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
+        // Get the main unit's package quantity
+        const mainUnitData = units.find(u => u.code === selectedProduct.unit);
+        const mainUnitPackageQuantity = mainUnitData?.package_quantity || 1;
         
-        // Price per subunit = main unit price / main unit conversion rate
-        convertedPrice = selectedProduct.price / mainUnitConversionRate;
+        // Price per subunit = main unit price / main unit package quantity
+        convertedPrice = selectedProduct.price / mainUnitPackageQuantity;
       }
       
       originalHandlePriceChange({ target: { value: convertedPrice.toFixed(2).replace('.', ',') } } as any);
@@ -117,12 +117,12 @@ export default function ProductSearchInput({
     }
     
     if (selectedProduct.hasSubunit && selectedProduct.subunit === selectedUnit) {
-      // Get the main unit's conversion rate  
-      const mainUnitData = units.find(u => u.value === selectedProduct.unit);
-      const mainUnitConversionRate = mainUnitData?.conversionRate || 1;
+      // Get the main unit's package quantity
+      const mainUnitData = units.find(u => u.code === selectedProduct.unit);
+      const mainUnitPackageQuantity = mainUnitData?.package_quantity || 1;
       
       // Show how many main units this subunit quantity represents
-      const mainUnitQty = (quantity || 0) / mainUnitConversionRate;
+      const mainUnitQty = (quantity || 0) / mainUnitPackageQuantity;
       return `${quantity || 0} ${selectedUnit} = ${mainUnitQty.toFixed(3)} ${selectedProduct.unit}`;
     }
     

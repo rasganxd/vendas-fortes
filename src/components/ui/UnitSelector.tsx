@@ -39,7 +39,7 @@ export default function UnitSelector({
         productUnits.push({
           code: product.unit,
           description: mainUnitData?.description || product.unit,
-          conversionRate: 1 // Main unit is always 1
+          packageQuantity: 1 // Main unit is always 1
         });
       }
       
@@ -49,12 +49,13 @@ export default function UnitSelector({
         const mainUnitData = allUnits.find(u => u.code === product.unit);
         
         // Calculate price per subunit for display
-        const pricePerSubunit = product.price / (mainUnitData?.conversionRate || 1);
+        const packageQuantity = mainUnitData?.package_quantity || 1;
+        const pricePerSubunit = product.price / packageQuantity;
         
         productUnits.push({
           code: product.subunit,
           description: `${subUnitData?.description || product.subunit} (R$ ${pricePerSubunit.toFixed(2).replace('.', ',')})`,
-          conversionRate: mainUnitData?.conversionRate || 1
+          packageQuantity: packageQuantity
         });
       }
       
@@ -65,7 +66,7 @@ export default function UnitSelector({
     return units.map(unit => ({
       code: unit.code,
       description: unit.description,
-      conversionRate: unit.conversionRate || 1
+      packageQuantity: unit.package_quantity || 1
     }));
   }, [product, units, allUnits]);
 

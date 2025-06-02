@@ -25,3 +25,4 @@ export { vehicleService } from './supabase/vehicleService';
 export { apiTokenService } from './supabase/apiTokenService';
 export { mobileOrderImportService } from './supabase/mobileOrderImportService';
 export { mobileOrderService } from './supabase/mobileOrderService';
+export { mobileIntegrationService } from './supabase/mobileIntegrationService';
