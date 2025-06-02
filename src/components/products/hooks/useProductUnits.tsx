@@ -14,36 +14,37 @@ export const useProductUnits = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadUnits = async () => {
-      try {
-        setIsLoading(true);
-        console.log("🔄 Loading units for product form...");
-        
-        const dbUnits = await unitService.getAll();
-        
-        // Convert database units to the format expected by the product form
-        const formattedUnits: Unit[] = dbUnits.map(unit => ({
-          value: unit.code,
-          label: `${unit.description} (${unit.code})`,
-          conversionRate: 1 // Default conversion rate - can be enhanced later
-        }));
-        
-        console.log("✅ Units loaded for product form:", formattedUnits.length, formattedUnits);
-        setUnits(formattedUnits);
-      } catch (error) {
-        console.error('❌ Error loading units for product form:', error);
-        // Fallback to empty array instead of default units
-        setUnits([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const loadUnits = async () => {
+    try {
+      setIsLoading(true);
+      console.log("🔄 Loading units for product form...");
+      
+      const dbUnits = await unitService.getAll();
+      
+      // Convert database units to the format expected by the product form
+      const formattedUnits: Unit[] = dbUnits.map(unit => ({
+        value: unit.code,
+        label: `${unit.description} (${unit.code})`,
+        conversionRate: 1 // Default conversion rate - can be enhanced later
+      }));
+      
+      console.log("✅ Units loaded for product form:", formattedUnits.length, formattedUnits);
+      setUnits(formattedUnits);
+    } catch (error) {
+      console.error('❌ Error loading units for product form:', error);
+      // Fallback to empty array instead of default units
+      setUnits([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadUnits();
 
-    // Listen for unit updates
+    // Listen for unit updates from other components
     const handleUnitsUpdated = () => {
+      console.log("🔄 Units updated event received, reloading...");
       loadUnits();
     };
 

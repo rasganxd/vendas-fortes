@@ -33,6 +33,11 @@ export const useUnits = () => {
     loadUnits();
   }, [hasLoaded]);
 
+  const notifyUnitsUpdated = () => {
+    // Dispatch custom event to notify other components about units update
+    window.dispatchEvent(new CustomEvent('unitsUpdated'));
+  };
+
   const addUnit = async (unit: Omit<Unit, 'id' | 'created_at' | 'updated_at'>): Promise<string> => {
     try {
       const newId = await unitService.create(unit);
@@ -43,6 +48,7 @@ export const useUnits = () => {
         updated_at: new Date().toISOString()
       };
       setUnits(prev => [...prev, newUnit]);
+      notifyUnitsUpdated(); // Notify other components
       return newId;
     } catch (error) {
       console.error('Error adding unit:', error);
@@ -54,6 +60,7 @@ export const useUnits = () => {
     try {
       await unitService.update(id, unit);
       setUnits(prev => prev.map(u => u.id === id ? { ...u, ...unit, updated_at: new Date().toISOString() } : u));
+      notifyUnitsUpdated(); // Notify other components
     } catch (error) {
       console.error('Error updating unit:', error);
       throw error;
@@ -64,6 +71,7 @@ export const useUnits = () => {
     try {
       await unitService.delete(id);
       setUnits(prev => prev.filter(u => u.id !== id));
+      notifyUnitsUpdated(); // Notify other components
     } catch (error) {
       console.error('Error deleting unit:', error);
       throw error;
