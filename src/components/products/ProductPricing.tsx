@@ -12,6 +12,10 @@ import { ArrowLeft, Loader2, Save, Search, Calculator } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import BulkPricingModal from './pricing/BulkPricingModal';
+import SaveConfirmationDialog from './pricing/SaveConfirmationDialog';
+import SaveProgressDialog from './pricing/SaveProgressDialog';
+import ProductRowIndicator from './pricing/ProductRowIndicator';
+
 interface BulkPricingChanges {
   selectedProducts: string[];
   priceChanges?: {
@@ -20,6 +24,15 @@ interface BulkPricingChanges {
   };
   maxDiscountChange?: number;
 }
+
+interface PriceChange {
+  product: any;
+  oldPrice: number;
+  newPrice: number;
+  oldMaxDiscount: number;
+  newMaxDiscount: number;
+}
+
 const ProductPricing = () => {
   const navigate = useNavigate();
   const {
@@ -29,6 +42,7 @@ const ProductPricing = () => {
     updateProduct,
     isLoadingProducts
   } = useAppData();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [filteredProducts, setFilteredProducts] = useState(products);
@@ -41,6 +55,15 @@ const ProductPricing = () => {
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [pendingSave, setPendingSave] = useState<any>(null);
   const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
+
+  // New states for enhanced confirmation
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
+  const [saveTotal, setSaveTotal] = useState(0);
+  const [currentSaving, setCurrentSaving] = useState<string>('');
+  const [saveErrors, setSaveErrors] = useState<string[]>([]);
+  const [productStatuses, setProductStatuses] = useState<Record<string, 'saved' | 'error' | 'saving' | 'none'>>({});
 
   // Initialize product prices and max discounts from products
   useEffect(() => {
@@ -69,13 +92,18 @@ const ProductPricing = () => {
     }
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory, selectedGroup]);
+
+  // Calculate markup and minimum price
   const calculateMarkup = (cost: number, price: number): number => {
     if (cost === 0) return 0;
     return (price - cost) / cost * 100;
   };
+
   const calculateMinimumPrice = (price: number, maxDiscount: number): number => {
     return price * (1 - maxDiscount / 100);
   };
+
+  // Handle select all and select product
   const handleSelectAll = () => {
     if (selectedProducts.size === filteredProducts.length) {
       setSelectedProducts(new Set());
@@ -84,6 +112,7 @@ const ProductPricing = () => {
       setSelectedProducts(allIds);
     }
   };
+
   const handleSelectProduct = (id: string) => {
     const newSelected = new Set(selectedProducts);
     if (newSelected.has(id)) {
@@ -93,6 +122,8 @@ const ProductPricing = () => {
     }
     setSelectedProducts(newSelected);
   };
+
+  // Handle price change and max discount change
   const handlePriceChange = (productId: string, newPrice: number) => {
     setProductPrices(prev => ({
       ...prev,
@@ -100,6 +131,7 @@ const ProductPricing = () => {
     }));
     setHasChanges(true);
   };
+
   const handleMaxDiscountChange = (productId: string, newMaxDiscount: number) => {
     setProductMaxDiscounts(prev => ({
       ...prev,
@@ -107,23 +139,18 @@ const ProductPricing = () => {
     }));
     setHasChanges(true);
   };
+
+  // Handle bulk pricing changes
   const handleBulkPricingChanges = (changes: BulkPricingChanges) => {
-    const newPrices = {
-      ...productPrices
-    };
-    const newMaxDiscounts = {
-      ...productMaxDiscounts
-    };
+    const newPrices = { ...productPrices };
+    const newMaxDiscounts = { ...productMaxDiscounts };
+
     changes.selectedProducts.forEach(productId => {
       const product = products.find(p => p.id === productId);
       if (!product) return;
 
-      // Apply price changes
       if (changes.priceChanges) {
-        const {
-          mode,
-          value
-        } = changes.priceChanges;
+        const { mode, value } = changes.priceChanges;
         if (mode === 'percentage') {
           const markup = product.cost * (value / 100);
           newPrices[productId] = product.cost + markup;
@@ -134,11 +161,11 @@ const ProductPricing = () => {
         }
       }
 
-      // Apply max discount changes
       if (changes.maxDiscountChange !== undefined && changes.maxDiscountChange >= 0) {
         newMaxDiscounts[productId] = changes.maxDiscountChange;
       }
     });
+
     setProductPrices(newPrices);
     setProductMaxDiscounts(newMaxDiscounts);
     setHasChanges(true);
@@ -146,6 +173,161 @@ const ProductPricing = () => {
       description: `Preços de ${changes.selectedProducts.length} produtos atualizados em massa.`
     });
   };
+
+  // Get price changes for confirmation
+  const getPriceChanges = (): PriceChange[] => {
+    const changes: PriceChange[] = [];
+    for (const productId of Object.keys(productPrices)) {
+      const product = products.find(p => p.id === productId);
+      if (!product) continue;
+
+      const oldPrice = product.price || 0;
+      const newPrice = productPrices[productId];
+      const oldMaxDiscount = productMaxDiscounts[productId] || 0;
+      const newMaxDiscount = productMaxDiscounts[productId] || 0;
+
+      if (oldPrice !== newPrice || oldMaxDiscount !== newMaxDiscount) {
+        changes.push({
+          product,
+          oldPrice,
+          newPrice,
+          oldMaxDiscount,
+          newMaxDiscount
+        });
+      }
+    }
+    return changes;
+  };
+
+  // Show confirmation dialog before saving
+  const initiateRiseSave = () => {
+    if (!hasChanges) return;
+    
+    const changes = getPriceChanges();
+    if (changes.length === 0) {
+      toast("Nenhuma alteração", {
+        description: "Não há alterações para salvar."
+      });
+      return;
+    }
+
+    setShowConfirmation(true);
+  };
+
+  // Enhanced save function with progress tracking
+  const saveAllPrices = async (forceOverride = false) => {
+    if (!hasChanges) return;
+
+    const changes = getPriceChanges();
+    if (changes.length === 0) return;
+
+    // Validate prices if not forcing override
+    if (!forceOverride) {
+      const issues = validatePriceChanges();
+      if (issues.length > 0) {
+        setPendingSave({ issues });
+        setShowOverrideDialog(true);
+        return;
+      }
+    }
+
+    setShowConfirmation(false);
+    setShowProgress(true);
+    setSaveProgress(0);
+    setSaveTotal(changes.length);
+    setSaveErrors([]);
+    setProductStatuses({});
+
+    try {
+      let successCount = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < changes.length; i++) {
+        const change = changes[i];
+        setCurrentSaving(change.product.name);
+        setSaveProgress(i + 1);
+
+        // Update product status to saving
+        setProductStatuses(prev => ({
+          ...prev,
+          [change.product.id]: 'saving'
+        }));
+
+        try {
+          const updateData: any = {};
+          
+          if (change.oldPrice !== change.newPrice) {
+            updateData.price = change.newPrice;
+          }
+          if (change.oldMaxDiscount !== change.newMaxDiscount) {
+            updateData.maxDiscountPercent = change.newMaxDiscount;
+          }
+
+          await updateProduct(change.product.id, updateData);
+          successCount++;
+
+          // Update product status to saved
+          setProductStatuses(prev => ({
+            ...prev,
+            [change.product.id]: 'saved'
+          }));
+
+          // Clear status after delay
+          setTimeout(() => {
+            setProductStatuses(prev => ({
+              ...prev,
+              [change.product.id]: 'none'
+            }));
+          }, 3000);
+
+        } catch (error) {
+          console.error(`Erro ao salvar produto ${change.product.name}:`, error);
+          const errorMsg = `${change.product.name}: Erro ao salvar`;
+          errors.push(errorMsg);
+
+          // Update product status to error
+          setProductStatuses(prev => ({
+            ...prev,
+            [change.product.id]: 'error'
+          }));
+        }
+
+        // Small delay between saves
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      setSaveErrors(errors);
+
+      // Show completion for a moment
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      if (successCount > 0) {
+        toast("Preços salvos", {
+          description: errors.length > 0 
+            ? `${successCount} produtos salvos com sucesso. ${errors.length} com problemas.`
+            : `${successCount} produtos salvos com sucesso.`
+        });
+        setHasChanges(false);
+      }
+
+    } catch (error) {
+      console.error("Erro geral ao salvar preços:", error);
+      toast("Erro ao salvar", {
+        description: "Ocorreu um erro geral ao salvar os preços.",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    } finally {
+      setShowProgress(false);
+      setShowOverrideDialog(false);
+      setPendingSave(null);
+      setCurrentSaving('');
+    }
+  };
+
+  // Validate price changes
   const validatePriceChanges = () => {
     const issues = [];
     for (const productId of Object.keys(productPrices)) {
@@ -155,7 +337,6 @@ const ProductPricing = () => {
       const maxDiscount = productMaxDiscounts[productId] || 0;
       const minimumPrice = calculateMinimumPrice(currentPrice, maxDiscount);
 
-      // Check if price is reasonable compared to cost
       if (currentPrice < product.cost) {
         issues.push({
           product,
@@ -167,80 +348,17 @@ const ProductPricing = () => {
     }
     return issues;
   };
-  const saveAllPrices = async (forceOverride = false) => {
-    if (!hasChanges) return;
 
-    // Validate prices if not forcing override
-    if (!forceOverride) {
-      const issues = validatePriceChanges();
-      if (issues.length > 0) {
-        setPendingSave({
-          issues
-        });
-        setShowOverrideDialog(true);
-        return;
-      }
-    }
-    setIsLoading(true);
-    try {
-      const updates = [];
-      for (const productId of Object.keys(productPrices)) {
-        const product = products.find(p => p.id === productId);
-        if (!product) continue;
-        const updateData: any = {};
-        let hasUpdates = false;
-        if (product.price !== productPrices[productId]) {
-          updateData.price = productPrices[productId];
-          hasUpdates = true;
-        }
-        if ((product.maxDiscountPercent || 0) !== (productMaxDiscounts[productId] || 0)) {
-          updateData.maxDiscountPercent = productMaxDiscounts[productId] || 0;
-          hasUpdates = true;
-        }
-        if (hasUpdates) {
-          updates.push({
-            id: productId,
-            updates: updateData
-          });
-        }
-      }
-      if (updates.length > 0) {
-        for (const update of updates) {
-          await updateProduct(update.id, update.updates);
-        }
-        toast("Preços salvos", {
-          description: `Preços de ${updates.length} produtos foram salvos com sucesso.`
-        });
-        setHasChanges(false);
-      } else {
-        toast("Nenhuma alteração", {
-          description: "Não há alterações para salvar."
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao salvar preços:", error);
-      toast("Erro ao salvar", {
-        description: "Ocorreu um erro ao salvar os preços dos produtos.",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
-    } finally {
-      setIsLoading(false);
-      setShowOverrideDialog(false);
-      setPendingSave(null);
-    }
-  };
+  // Format price input
   const formatPriceInput = (value: string): number => {
     const numericValue = value.replace(/\D/g, '');
     return parseFloat(numericValue) / 100 || 0;
   };
+
   return <>
       <Card className="w-full">
         <CardHeader>
           <div className="flex justify-between items-center">
-            
             <Button onClick={() => setBulkPricingOpen(true)} className="bg-green-600 hover:bg-green-700">
               <Calculator className="mr-2 h-4 w-4" />
               Precificação em Massa
@@ -281,7 +399,7 @@ const ProductPricing = () => {
               </Select>
             </div>
             
-            {/* Products table */}
+            {/* Products table with enhanced visual feedback */}
             <div>
               {isLoadingProducts ? <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
@@ -311,7 +429,10 @@ const ProductPricing = () => {
                   const maxDiscount = productMaxDiscounts[product.id] || 0;
                   const minimumPrice = calculateMinimumPrice(currentPrice, maxDiscount);
                   const markup = calculateMarkup(product.cost, currentPrice);
-                  return <TableRow key={product.id}>
+                  const status = productStatuses[product.id] || 'none';
+                  
+                  return <TableRow key={product.id} className="relative">
+                            <ProductRowIndicator status={status} />
                             <TableCell>
                               <Checkbox checked={selectedProducts.has(product.id)} onCheckedChange={() => handleSelectProduct(product.id)} aria-label={`Selecionar ${product.name}`} />
                             </TableCell>
@@ -344,9 +465,9 @@ const ProductPricing = () => {
                 </Table>}
             </div>
 
-            {/* Save button */}
+            {/* Enhanced save button */}
             <div className="flex justify-end mt-4">
-              <Button onClick={() => saveAllPrices(false)} disabled={isLoading || !hasChanges}>
+              <Button onClick={initiateRiseSave} disabled={isLoading || !hasChanges} className="bg-blue-600 hover:bg-blue-700">
                 {isLoading ? <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Salvando...
@@ -359,6 +480,23 @@ const ProductPricing = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Enhanced confirmation dialogs */}
+      <SaveConfirmationDialog
+        open={showConfirmation}
+        onOpenChange={setShowConfirmation}
+        priceChanges={getPriceChanges()}
+        onConfirm={() => saveAllPrices(false)}
+      />
+
+      <SaveProgressDialog
+        open={showProgress}
+        progress={saveProgress}
+        total={saveTotal}
+        currentProduct={currentSaving}
+        errors={saveErrors}
+        isComplete={saveProgress === saveTotal && saveTotal > 0}
+      />
 
       {/* Bulk Pricing Modal */}
       <BulkPricingModal open={bulkPricingOpen} onOpenChange={setBulkPricingOpen} products={products} productCategories={productCategories} productGroups={productGroups} onApplyChanges={handleBulkPricingChanges} />
@@ -395,4 +533,5 @@ const ProductPricing = () => {
       </AlertDialog>
     </>;
 };
+
 export default ProductPricing;
