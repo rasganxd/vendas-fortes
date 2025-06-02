@@ -19,7 +19,7 @@ export const productService = {
       id: item.id,
       code: item.code,
       name: item.name,
-      description: item.description || '',
+      description: '', // Database doesn't have description field, so use empty string
       cost: item.cost_price || 0,
       price: item.cost_price || 0, // Using cost_price as base price for now
       stock: item.stock || 0,
@@ -56,7 +56,7 @@ export const productService = {
       id: data.id,
       code: data.code,
       name: data.name,
-      description: data.description || '',
+      description: '', // Database doesn't have description field, so use empty string
       cost: data.cost_price || 0,
       price: data.cost_price || 0,
       stock: data.stock || 0,
