@@ -6,7 +6,11 @@ export const productService = {
   async getAll(): Promise<Product[]> {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        *,
+        main_unit:units!products_main_unit_id_fkey(code, description),
+        sub_unit:units!products_sub_unit_id_fkey(code, description)
+      `)
       .order('code');
     
     if (error) {
@@ -26,9 +30,9 @@ export const productService = {
       minStock: 0,
       maxDiscountPercent: item.max_discount_percent || 0,
       maxPrice: undefined,
-      unit: 'UN',
-      subunit: undefined,
-      hasSubunit: false,
+      unit: item.main_unit?.code || 'UN',
+      subunit: item.sub_unit?.code || undefined,
+      hasSubunit: !!item.sub_unit_id,
       subunitRatio: 1,
       categoryId: item.category_id,
       groupId: item.group_id,
@@ -42,7 +46,11 @@ export const productService = {
   async getById(id: string): Promise<Product | null> {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        *,
+        main_unit:units!products_main_unit_id_fkey(code, description),
+        sub_unit:units!products_sub_unit_id_fkey(code, description)
+      `)
       .eq('id', id)
       .single();
     
@@ -63,9 +71,9 @@ export const productService = {
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,
       maxPrice: undefined,
-      unit: 'UN',
-      subunit: undefined,
-      hasSubunit: false,
+      unit: data.main_unit?.code || 'UN',
+      subunit: data.sub_unit?.code || undefined,
+      hasSubunit: !!data.sub_unit_id,
       subunitRatio: 1,
       categoryId: data.category_id,
       groupId: data.group_id,
@@ -76,8 +84,35 @@ export const productService = {
     };
   },
 
+  async getUnitIdByCode(unitCode: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('units')
+      .select('id')
+      .eq('code', unitCode)
+      .single();
+    
+    if (error) {
+      console.error('Erro ao buscar unidade por código:', error);
+      return null;
+    }
+    
+    return data?.id || null;
+  },
+
   async create(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
     console.log('Creating product with data:', product);
+    
+    // Get unit IDs from codes
+    const mainUnitId = await this.getUnitIdByCode(product.unit || 'UN');
+    let subUnitId = null;
+    
+    if (product.hasSubunit && product.subunit) {
+      subUnitId = await this.getUnitIdByCode(product.subunit);
+    }
+    
+    if (!mainUnitId) {
+      throw new Error(`Unidade principal '${product.unit}' não encontrada`);
+    }
     
     // Prepare data for Supabase
     const productData = {
@@ -89,7 +124,8 @@ export const productService = {
       category_id: product.categoryId || null,
       group_id: product.groupId || null,
       brand_id: product.brandId || null,
-      main_unit_id: '00000000-0000-0000-0000-000000000001', // Default unit ID
+      main_unit_id: mainUnitId,
+      sub_unit_id: subUnitId,
       active: true
     };
 
@@ -98,7 +134,11 @@ export const productService = {
     const { data, error } = await supabase
       .from('products')
       .insert([productData])
-      .select()
+      .select(`
+        *,
+        main_unit:units!products_main_unit_id_fkey(code, description),
+        sub_unit:units!products_sub_unit_id_fkey(code, description)
+      `)
       .single();
     
     if (error) {
@@ -118,9 +158,9 @@ export const productService = {
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,
       maxPrice: undefined,
-      unit: 'UN',
-      subunit: undefined,
-      hasSubunit: false,
+      unit: data.main_unit?.code || 'UN',
+      subunit: data.sub_unit?.code || undefined,
+      hasSubunit: !!data.sub_unit_id,
       subunitRatio: 1,
       categoryId: data.category_id,
       groupId: data.group_id,
@@ -135,6 +175,26 @@ export const productService = {
   },
 
   async update(id: string, product: Partial<Product>): Promise<Product> {
+    // Get unit IDs from codes if units are being updated
+    let mainUnitId = undefined;
+    let subUnitId = undefined;
+    
+    if (product.unit) {
+      mainUnitId = await this.getUnitIdByCode(product.unit);
+      if (!mainUnitId) {
+        throw new Error(`Unidade principal '${product.unit}' não encontrada`);
+      }
+    }
+    
+    if (product.hasSubunit && product.subunit) {
+      subUnitId = await this.getUnitIdByCode(product.subunit);
+      if (!subUnitId) {
+        throw new Error(`Sub-unidade '${product.subunit}' não encontrada`);
+      }
+    } else if (product.hasSubunit === false) {
+      subUnitId = null;
+    }
+    
     // Prepare data for Supabase
     const updateData: any = {};
     
@@ -146,12 +206,18 @@ export const productService = {
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
     if (product.groupId !== undefined) updateData.group_id = product.groupId;
     if (product.brandId !== undefined) updateData.brand_id = product.brandId;
+    if (mainUnitId !== undefined) updateData.main_unit_id = mainUnitId;
+    if (subUnitId !== undefined) updateData.sub_unit_id = subUnitId;
 
     const { data, error } = await supabase
       .from('products')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        main_unit:units!products_main_unit_id_fkey(code, description),
+        sub_unit:units!products_sub_unit_id_fkey(code, description)
+      `)
       .single();
     
     if (error) {
@@ -171,9 +237,9 @@ export const productService = {
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,
       maxPrice: undefined,
-      unit: 'UN',
-      subunit: undefined,
-      hasSubunit: false,
+      unit: data.main_unit?.code || 'UN',
+      subunit: data.sub_unit?.code || undefined,
+      hasSubunit: !!data.sub_unit_id,
       subunitRatio: 1,
       categoryId: data.category_id,
       groupId: data.group_id,

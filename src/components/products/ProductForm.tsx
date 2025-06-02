@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Form,
@@ -92,22 +91,47 @@ const ProductForm: React.FC<ProductFormProps> = ({
       console.log("🏷️ Brands:", productBrands?.length || 0, productBrands);
     }
   }, [open, productCategories, productGroups, productBrands]);
+
+  // Get next available product code
+  const getNextProductCode = () => {
+    if (products.length === 0) return 1;
+    return Math.max(...products.map(p => p.code || 0), 0) + 1;
+  };
+
+  // Get default values for the form
+  const getDefaultValues = () => {
+    if (isEditing && selectedProduct) {
+      return {
+        code: selectedProduct.code,
+        name: selectedProduct.name,
+        cost: selectedProduct.cost,
+        unit: selectedProduct.unit || "UN",
+        hasSubunit: selectedProduct.hasSubunit || false,
+        subunit: selectedProduct.subunit || "",
+        stock: selectedProduct.stock,
+        categoryId: selectedProduct.categoryId || "none",
+        groupId: selectedProduct.groupId || "none",
+        brandId: selectedProduct.brandId || "none",
+      };
+    } else {
+      return {
+        code: getNextProductCode(),
+        name: "",
+        cost: 0,
+        unit: "UN",
+        hasSubunit: false,
+        subunit: "",
+        stock: 0,
+        categoryId: "none",
+        groupId: "none",
+        brandId: "none",
+      };
+    }
+  };
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
-    defaultValues: {
-      code: isEditing && selectedProduct ? selectedProduct.code : 
-        Math.max(...products.map(p => p.code || 0), 0) + 1,
-      name: isEditing && selectedProduct ? selectedProduct.name : "",
-      cost: isEditing && selectedProduct ? selectedProduct.cost : 0,
-      unit: isEditing && selectedProduct ? selectedProduct.unit || "UN" : "UN",
-      hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
-      subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
-      stock: isEditing && selectedProduct ? selectedProduct.stock : 0,
-      categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "none" : "none",
-      groupId: isEditing && selectedProduct ? selectedProduct.groupId || "none" : "none",
-      brandId: isEditing && selectedProduct ? selectedProduct.brandId || "none" : "none",
-    },
+    defaultValues: getDefaultValues(),
   });
   
   // Watch hasSubunit to show/hide subunit fields
@@ -122,23 +146,24 @@ const ProductForm: React.FC<ProductFormProps> = ({
     return subunitData?.conversionRate || 1;
   };
   
-  // Update form values when selected product changes
+  // Reset form when dialog opens/closes or when editing state changes
   useEffect(() => {
-    if (isEditing && selectedProduct) {
-      form.reset({
-        code: selectedProduct.code,
-        name: selectedProduct.name,
-        cost: selectedProduct.cost,
-        unit: selectedProduct.unit || "UN",
-        hasSubunit: selectedProduct.hasSubunit || false,
-        subunit: selectedProduct.subunit || "",
-        stock: selectedProduct.stock,
-        categoryId: selectedProduct.categoryId || "none",
-        groupId: selectedProduct.groupId || "none",
-        brandId: selectedProduct.brandId || "none",
-      });
+    if (open) {
+      const defaultValues = getDefaultValues();
+      console.log("🔄 Resetting form with values:", defaultValues);
+      form.reset(defaultValues);
     }
-  }, [selectedProduct, isEditing, form]);
+  }, [open, isEditing, selectedProduct, products]);
+
+  // Reset form completely when dialog closes
+  useEffect(() => {
+    if (!open) {
+      console.log("🧹 Dialog closed, clearing form");
+      setTimeout(() => {
+        form.reset(getDefaultValues());
+      }, 100);
+    }
+  }, [open]);
 
   const handleSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
@@ -155,6 +180,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
       };
       
       await onSubmit(processedData);
+      
+      // Reset form after successful submission
+      if (!isEditing) {
+        form.reset(getDefaultValues());
+      }
+      
       toast("Produto salvo com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
@@ -164,6 +195,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
     }
   };
 
+  const handleDialogClose = (newOpen: boolean) => {
+    if (!newOpen) {
+      // Reset form when closing
+      form.reset(getDefaultValues());
+    }
+    onOpenChange(newOpen);
+  };
+
   // Check if classifications data is loading or available
   const isLoadingClassifications = !productCategories || !productGroups || !productBrands;
   const hasCategories = Array.isArray(productCategories) && productCategories.length > 0;
@@ -171,7 +210,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const hasBrands = Array.isArray(productBrands) && productBrands.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar" : "Adicionar"} Produto</DialogTitle>
@@ -241,7 +280,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <FormItem>
                     <FormLabel>Unidade Principal</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a unidade" />
                         </SelectTrigger>
