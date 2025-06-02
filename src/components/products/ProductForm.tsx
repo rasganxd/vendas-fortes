@@ -104,9 +104,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
       hasSubunit: isEditing && selectedProduct ? selectedProduct.hasSubunit || false : false,
       subunit: isEditing && selectedProduct ? selectedProduct.subunit || "" : "",
       stock: isEditing && selectedProduct ? selectedProduct.stock : 0,
-      categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
-      groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
-      brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
+      categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "none" : "none",
+      groupId: isEditing && selectedProduct ? selectedProduct.groupId || "none" : "none",
+      brandId: isEditing && selectedProduct ? selectedProduct.brandId || "none" : "none",
     },
   });
   
@@ -133,9 +133,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
         hasSubunit: selectedProduct.hasSubunit || false,
         subunit: selectedProduct.subunit || "",
         stock: selectedProduct.stock,
-        categoryId: selectedProduct.categoryId || "",
-        groupId: selectedProduct.groupId || "",
-        brandId: selectedProduct.brandId || "",
+        categoryId: selectedProduct.categoryId || "none",
+        groupId: selectedProduct.groupId || "none",
+        brandId: selectedProduct.brandId || "none",
       });
     }
   }, [selectedProduct, isEditing, form]);
@@ -145,13 +145,16 @@ const ProductForm: React.FC<ProductFormProps> = ({
     try {
       console.log("Submitting form data:", data);
       
-      // Adicionar a taxa de conversão automaticamente baseada na sub-unidade selecionada
-      const formDataWithConversion = {
+      // Convert "none" values back to null/undefined for database
+      const processedData = {
         ...data,
+        categoryId: data.categoryId === "none" ? undefined : data.categoryId,
+        groupId: data.groupId === "none" ? undefined : data.groupId,
+        brandId: data.brandId === "none" ? undefined : data.brandId,
         subunitRatio: hasSubunit && data.subunit ? getSubunitConversionRate() : undefined
       };
       
-      await onSubmit(formDataWithConversion);
+      await onSubmit(processedData);
       toast("Produto salvo com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
@@ -343,12 +346,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Categoria" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhuma</SelectItem>
+                            <SelectItem value="none">Nenhuma</SelectItem>
                             {hasCategories ? (
                               productCategories.map(category => (
                                 <SelectItem key={category.id} value={category.id}>
@@ -378,12 +381,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Grupo" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum</SelectItem>
                             {hasGroups ? (
                               productGroups.map(group => (
                                 <SelectItem key={group.id} value={group.id}>
@@ -413,12 +416,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <Select onValueChange={field.onChange} value={field.value || "none"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Marca" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhuma</SelectItem>
+                            <SelectItem value="none">Nenhuma</SelectItem>
                             {hasBrands ? (
                               productBrands.map(brand => (
                                 <SelectItem key={brand.id} value={brand.id}>
