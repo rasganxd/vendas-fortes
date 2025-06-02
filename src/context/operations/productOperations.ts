@@ -1,4 +1,3 @@
-
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -141,71 +140,70 @@ export const deleteProduct = async (
 };
 
 /**
- * Validates if a discounted price is acceptable for a product
+ * Validates if a discount percentage is acceptable for a product
  */
 export const validateProductDiscount = (
   productId: string,
-  discountedPrice: number,
+  discountPercent: number,
   products: Product[]
 ): string | boolean => {
   const product = products.find(p => p.id === productId);
   if (!product) return true;
   
-  // Check if price is positive
-  if (discountedPrice <= 0) {
-    return "O preço deve ser maior que zero";
+  // Check if discount is positive
+  if (discountPercent < 0) {
+    return "O desconto não pode ser negativo";
   }
   
-  // Check minimum price if defined
-  if (product.minPrice && discountedPrice < product.minPrice) {
-    return `O preço não pode ser menor que R$ ${product.minPrice.toFixed(2)}`;
+  // Check if discount exceeds 100%
+  if (discountPercent > 100) {
+    return "O desconto não pode ser maior que 100%";
   }
   
-  // Check maximum price if defined
-  if (product.maxPrice && discountedPrice > product.maxPrice) {
-    return `O preço não pode ser maior que R$ ${product.maxPrice.toFixed(2)}`;
+  // Check maximum discount if defined
+  if (product.maxDiscountPercent && discountPercent > product.maxDiscountPercent) {
+    return `O desconto não pode ser maior que ${product.maxDiscountPercent}%`;
   }
   
   return true;
 };
 
 /**
- * Gets the minimum price for a product
+ * Gets the maximum discount percentage for a product
  */
-export const getMinimumPrice = (productId: string, products: Product[]): number => {
+export const getMaximumDiscount = (productId: string, products: Product[]): number => {
   const product = products.find(p => p.id === productId);
   if (!product) return 0;
   
-  // Return the defined minimum price or 0
-  return product.minPrice || 0;
+  // Return the defined maximum discount or 100% (no limit)
+  return product.maxDiscountPercent || 100;
 };
 
 /**
- * Gets the maximum price for a product
+ * Calculates the minimum effective price based on maximum discount
  */
-export const getMaximumPrice = (productId: string, products: Product[]): number => {
+export const getMinimumEffectivePrice = (productId: string, products: Product[]): number => {
   const product = products.find(p => p.id === productId);
   if (!product) return 0;
   
-  // Return the defined maximum price or 0 (no limit)
-  return product.maxPrice || 0;
+  if (!product.maxDiscountPercent) return 0; // No minimum if no discount limit
+  
+  // Calculate minimum price: price * (1 - maxDiscount/100)
+  return product.price * (1 - product.maxDiscountPercent / 100);
 };
 
 /**
- * Validates if a price is within the defined range for a product
+ * Validates if a discount percentage is within the defined range for a product
  */
-export const isPriceWithinRange = (
+export const isDiscountWithinRange = (
   productId: string,
-  price: number,
+  discountPercent: number,
   products: Product[]
 ): boolean => {
-  const validation = validateProductDiscount(productId, price, products);
+  const validation = validateProductDiscount(productId, discountPercent, products);
   return validation === true;
 };
 
-/**
- * Adds multiple products at once
- */
 export const addBulkProducts = async (
   products: Omit<Product, 'id'>[],
   currentProducts: Product[],
@@ -258,9 +256,6 @@ export const addBulkProducts = async (
   }
 };
 
-/**
- * Syncs products with Supabase
- */
 export const syncProductsWithSupabase = async (
   products: Product[],
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>,

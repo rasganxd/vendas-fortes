@@ -6,7 +6,8 @@ import {
   updateProduct as updateProductOp, 
   deleteProduct as deleteProductOp,
   validateProductDiscount as validateProductDiscountOp,
-  getMinimumPrice as getMinimumPriceOp,
+  getMaximumDiscount as getMaximumDiscountOp,
+  getMinimumEffectivePrice as getMinimumEffectivePriceOp,
   addBulkProducts as addBulkProductsOp
 } from '@/context/operations/productOperations';
 
@@ -45,12 +46,16 @@ export const useProductOperations = (
     }
   };
 
-  const validateProductDiscount = (productId: string, discountedPrice: number): string | boolean => {
-    return validateProductDiscountOp(productId, discountedPrice, products);
+  const validateProductDiscount = (productId: string, discountPercent: number): string | boolean => {
+    return validateProductDiscountOp(productId, discountPercent, products);
   };
 
-  const getMinimumPrice = (productId: string): number => {
-    return getMinimumPriceOp(productId, products);
+  const getMaximumDiscount = (productId: string): number => {
+    return getMaximumDiscountOp(productId, products);
+  };
+
+  const getMinimumEffectivePrice = (productId: string): number => {
+    return getMinimumEffectivePriceOp(productId, products);
   };
 
   const addBulkProducts = async (productsArray: Omit<Product, 'id'>[]): Promise<string[]> => {
@@ -72,7 +77,8 @@ export const useProductOperations = (
     updateProduct,
     deleteProduct,
     validateProductDiscount,
-    getMinimumPrice,
+    getMaximumDiscount,
+    getMinimumEffectivePrice,
     addBulkProducts,
     isProcessing
   };

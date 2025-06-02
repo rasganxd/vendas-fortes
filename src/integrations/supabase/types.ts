@@ -284,13 +284,6 @@ export type Database = {
             referencedRelation: "loads"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "load_items_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
         ]
       }
       loads: {
@@ -307,7 +300,7 @@ export type Database = {
           vehicle_id: string | null
         }
         Insert: {
-          code: number
+          code?: number
           created_at?: string
           date?: string
           id?: string
@@ -355,7 +348,6 @@ export type Database = {
           order_id: string | null
           price: number
           product_code: number | null
-          product_id: string | null
           product_name: string | null
           quantity: number
           total: number
@@ -370,7 +362,6 @@ export type Database = {
           order_id?: string | null
           price: number
           product_code?: number | null
-          product_id?: string | null
           product_name?: string | null
           quantity: number
           total: number
@@ -385,7 +376,6 @@ export type Database = {
           order_id?: string | null
           price?: number
           product_code?: number | null
-          product_id?: string | null
           product_name?: string | null
           quantity?: number
           total?: number
@@ -401,13 +391,6 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "order_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
         ]
       }
       order_items_mobile: {
@@ -418,7 +401,6 @@ export type Database = {
           order_id: string | null
           price: number
           product_code: number | null
-          product_id: string | null
           product_name: string | null
           quantity: number
           total: number
@@ -433,7 +415,6 @@ export type Database = {
           order_id?: string | null
           price: number
           product_code?: number | null
-          product_id?: string | null
           product_name?: string | null
           quantity: number
           total: number
@@ -448,7 +429,6 @@ export type Database = {
           order_id?: string | null
           price?: number
           product_code?: number | null
-          product_id?: string | null
           product_name?: string | null
           quantity?: number
           total?: number
@@ -458,7 +438,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_order_items_mobile_order_id"
+            foreignKeyName: "order_items_mobile_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_mobile"
@@ -501,7 +481,7 @@ export type Database = {
         }
         Insert: {
           archived?: boolean | null
-          code: number
+          code?: number
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
@@ -615,7 +595,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          code: number
+          code?: number
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
@@ -801,165 +781,65 @@ export type Database = {
           },
         ]
       }
-      product_brands: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      product_categories: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      product_groups: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       products: {
         Row: {
+          active: boolean
           brand_id: string | null
           category_id: string | null
-          code: number | null
-          cost: number | null
-          created_at: string | null
-          description: string | null
+          code: number
+          cost_price: number
+          created_at: string
           group_id: string | null
-          has_subunit: boolean | null
           id: string
-          max_price: number | null
-          min_price: number | null
-          min_stock: number | null
+          main_unit_id: string
           name: string
-          price: number
-          stock: number | null
-          subunit: string | null
-          subunit_ratio: number | null
-          sync_status: string | null
-          unit: string | null
-          updated_at: string | null
+          stock: number
+          sub_unit_id: string | null
+          updated_at: string
         }
         Insert: {
+          active?: boolean
           brand_id?: string | null
           category_id?: string | null
-          code?: number | null
-          cost?: number | null
-          created_at?: string | null
-          description?: string | null
+          code?: number
+          cost_price?: number
+          created_at?: string
           group_id?: string | null
-          has_subunit?: boolean | null
           id?: string
-          max_price?: number | null
-          min_price?: number | null
-          min_stock?: number | null
+          main_unit_id: string
           name: string
-          price: number
-          stock?: number | null
-          subunit?: string | null
-          subunit_ratio?: number | null
-          sync_status?: string | null
-          unit?: string | null
-          updated_at?: string | null
+          stock?: number
+          sub_unit_id?: string | null
+          updated_at?: string
         }
         Update: {
+          active?: boolean
           brand_id?: string | null
           category_id?: string | null
-          code?: number | null
-          cost?: number | null
-          created_at?: string | null
-          description?: string | null
+          code?: number
+          cost_price?: number
+          created_at?: string
           group_id?: string | null
-          has_subunit?: boolean | null
           id?: string
-          max_price?: number | null
-          min_price?: number | null
-          min_stock?: number | null
+          main_unit_id?: string
           name?: string
-          price?: number
-          stock?: number | null
-          subunit?: string | null
-          subunit_ratio?: number | null
-          sync_status?: string | null
-          unit?: string | null
-          updated_at?: string | null
+          stock?: number
+          sub_unit_id?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "products_brand_id_fkey"
-            columns: ["brand_id"]
+            foreignKeyName: "products_main_unit_id_fkey"
+            columns: ["main_unit_id"]
             isOneToOne: false
-            referencedRelation: "product_brands"
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "products_category_id_fkey"
-            columns: ["category_id"]
+            foreignKeyName: "products_sub_unit_id_fkey"
+            columns: ["sub_unit_id"]
             isOneToOne: false
-            referencedRelation: "product_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "product_groups"
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]
@@ -1059,7 +939,7 @@ export type Database = {
         Insert: {
           active?: boolean
           auth_user_id?: string | null
-          code: number
+          code?: number
           created_at?: string
           email?: string | null
           id?: string
@@ -1252,6 +1132,33 @@ export type Database = {
           id?: string
           is_active?: boolean
           metadata?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      units: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          id: string
+          packaging: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          packaging?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          packaging?: string | null
           updated_at?: string
         }
         Relationships: []

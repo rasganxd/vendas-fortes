@@ -8,7 +8,7 @@ export interface Product {
   cost: number;
   stock: number;
   minStock: number;
-  minPrice?: number;
+  maxDiscountPercent?: number; // % máxima de desconto (0-100)
   maxPrice?: number;
   groupId?: string;
   categoryId?: string;
