@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Form,
@@ -82,25 +83,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { units } = useProductUnits();
   
-  // Add debug logging for classification data
+  // Log classification data for debugging
   useEffect(() => {
-    console.log("ProductForm received productCategories:", productCategories?.length || 0, "items");
-    console.log("ProductForm received productGroups:", productGroups?.length || 0, "items");
-    console.log("ProductForm received productBrands:", productBrands?.length || 0, "items");
-    
-    // Log the actual data for debugging
-    if (productGroups?.length === 0) {
-      console.log("No product groups received");
-    } else {
-      console.log("First few product groups:", productGroups?.slice(0, 3));
+    if (open) {
+      console.log("🔍 ProductForm - Classification data received:");
+      console.log("📂 Categories:", productCategories?.length || 0, productCategories);
+      console.log("📦 Groups:", productGroups?.length || 0, productGroups);
+      console.log("🏷️ Brands:", productBrands?.length || 0, productBrands);
     }
-    
-    if (productBrands?.length === 0) {
-      console.log("No product brands received");
-    } else {
-      console.log("First few product brands:", productBrands?.slice(0, 3));
-    }
-  }, [productCategories, productGroups, productBrands]);
+  }, [open, productCategories, productGroups, productBrands]);
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
@@ -170,13 +161,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
     }
   };
 
-  // Check if classifications data is available
+  // Check if classifications data is loading or available
+  const isLoadingClassifications = !productCategories || !productGroups || !productBrands;
   const hasCategories = Array.isArray(productCategories) && productCategories.length > 0;
   const hasGroups = Array.isArray(productGroups) && productGroups.length > 0;
   const hasBrands = Array.isArray(productBrands) && productBrands.length > 0;
-  
-  // Loading state for classifications
-  const isLoadingClassifications = productCategories === undefined || productGroups === undefined || productBrands === undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -354,18 +343,22 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
-                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
                           <SelectTrigger>
                             <SelectValue placeholder="Categoria" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Nenhuma</SelectItem>
+                            <SelectItem value="">Nenhuma</SelectItem>
                             {hasCategories ? (
                               productCategories.map(category => (
-                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </SelectItem>
                               ))
                             ) : (
-                              <SelectItem value="no-categories" disabled>Nenhuma categoria cadastrada</SelectItem>
+                              <SelectItem value="no-data" disabled>
+                                Nenhuma categoria encontrada
+                              </SelectItem>
                             )}
                           </SelectContent>
                         </Select>
@@ -385,18 +378,22 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
-                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
                           <SelectTrigger>
                             <SelectValue placeholder="Grupo" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Nenhum</SelectItem>
+                            <SelectItem value="">Nenhum</SelectItem>
                             {hasGroups ? (
                               productGroups.map(group => (
-                                <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                                <SelectItem key={group.id} value={group.id}>
+                                  {group.name}
+                                </SelectItem>
                               ))
                             ) : (
-                              <SelectItem value="no-groups" disabled>Nenhum grupo cadastrado</SelectItem>
+                              <SelectItem value="no-data" disabled>
+                                Nenhum grupo encontrado
+                              </SelectItem>
                             )}
                           </SelectContent>
                         </Select>
@@ -416,18 +413,22 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       {isLoadingClassifications ? (
                         <Skeleton className="h-10 w-full" />
                       ) : (
-                        <Select onValueChange={field.onChange} value={field.value || "none"}>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
                           <SelectTrigger>
                             <SelectValue placeholder="Marca" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Nenhuma</SelectItem>
+                            <SelectItem value="">Nenhuma</SelectItem>
                             {hasBrands ? (
                               productBrands.map(brand => (
-                                <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                                <SelectItem key={brand.id} value={brand.id}>
+                                  {brand.name}
+                                </SelectItem>
                               ))
                             ) : (
-                              <SelectItem value="no-brands" disabled>Nenhuma marca cadastrada</SelectItem>
+                              <SelectItem value="no-data" disabled>
+                                Nenhuma marca encontrada
+                              </SelectItem>
                             )}
                           </SelectContent>
                         </Select>

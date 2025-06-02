@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,9 +10,6 @@ import PageLayout from '@/components/layout/PageLayout';
 import ProductsTable from '@/components/products/ProductsTable';
 import ProductForm from '@/components/products/ProductForm';
 import { useConnection } from '@/context/providers/ConnectionProvider';
-import { useProductBrands } from '@/hooks/useProductBrands';
-import { useProductCategories } from '@/hooks/useProductCategories';
-import { useProductGroups } from '@/hooks/useProductGroups';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Tags, Ruler } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,7 +28,7 @@ import ProductPricing from '@/components/products/ProductPricing';
 export default function Products() {
   const navigate = useNavigate();
   
-  // Use centralized products from AppData
+  // Use centralized products and classifications from AppData
   const {
     products,
     isLoadingProducts,
@@ -42,15 +38,13 @@ export default function Products() {
     refreshProducts,
     productBrands,
     productCategories,
-    productGroups
+    productGroups,
+    isLoadingProductBrands,
+    isLoadingProductCategories,
+    isLoadingProductGroups
   } = useAppData();
   
   const { connectionStatus } = useConnection();
-  
-  // Get direct access to classification hooks for additional data
-  const { productBrands: hookProductBrands } = useProductBrands();
-  const { productGroups: hookProductGroups } = useProductGroups();
-  const { productCategories: hookProductCategories } = useProductCategories();
   
   // Use product classification hook for classifications tab
   const {
@@ -121,18 +115,18 @@ export default function Products() {
     };
   }, []);
 
-  // Use the most complete dataset available
-  const safeProductGroups = Array.isArray(productGroups) && productGroups.length > 0 
-    ? productGroups 
-    : Array.isArray(hookProductGroups) ? hookProductGroups : [];
-    
-  const safeProductCategories = Array.isArray(productCategories) && productCategories.length > 0 
-    ? productCategories 
-    : Array.isArray(hookProductCategories) ? hookProductCategories : [];
-    
-  const safeProductBrands = Array.isArray(productBrands) && productBrands.length > 0 
-    ? productBrands 
-    : Array.isArray(hookProductBrands) ? hookProductBrands : [];
+  // Debug log for classification data
+  useEffect(() => {
+    console.log("🔍 Products page - Classification data from AppData:");
+    console.log("📂 Categories:", productCategories?.length || 0, "items");
+    console.log("📦 Groups:", productGroups?.length || 0, "items");
+    console.log("🏷️ Brands:", productBrands?.length || 0, "items");
+    console.log("⏳ Loading states:", {
+      categories: isLoadingProductCategories,
+      groups: isLoadingProductGroups,
+      brands: isLoadingProductBrands
+    });
+  }, [productCategories, productGroups, productBrands, isLoadingProductCategories, isLoadingProductGroups, isLoadingProductBrands]);
 
   // Category handlers
   const openAddCategoryDialog = () => {
@@ -241,6 +235,8 @@ export default function Products() {
 
   const handleSubmit = async (data: any) => {
     try {
+      console.log("🚀 Submitting product with classification data:", data);
+      
       const productData: Partial<Product> = {
         code: data.code,
         name: data.name,
@@ -250,12 +246,14 @@ export default function Products() {
         hasSubunit: data.hasSubunit || false,
         subunit: data.hasSubunit ? data.subunit : null,
         subunitRatio: data.hasSubunit ? (data.subunitRatio || 1) : 1,
-        categoryId: data.categoryId && data.categoryId !== "none" ? data.categoryId : null,
-        groupId: data.groupId && data.groupId !== "none" ? data.groupId : null,
-        brandId: data.brandId && data.brandId !== "none" ? data.brandId : null,
+        categoryId: data.categoryId && data.categoryId !== "" ? data.categoryId : null,
+        groupId: data.groupId && data.groupId !== "" ? data.groupId : null,
+        brandId: data.brandId && data.brandId !== "" ? data.brandId : null,
         stock: data.stock || 0,
         minStock: 0
       };
+
+      console.log("📝 Final product data to save:", productData);
 
       if (isEditing && selectedProduct) {
         await updateProduct(selectedProduct.id, productData);
@@ -438,9 +436,9 @@ export default function Products() {
         isEditing={isEditing} 
         selectedProduct={selectedProduct} 
         products={products} 
-        productCategories={safeProductCategories} 
-        productGroups={safeProductGroups} 
-        productBrands={safeProductBrands} 
+        productCategories={productCategories || []} 
+        productGroups={productGroups || []} 
+        productBrands={productBrands || []} 
         onSubmit={handleSubmit} 
       />
 
