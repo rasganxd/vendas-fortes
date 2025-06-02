@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -90,7 +91,6 @@ export const useSalesReps = () => {
           code: salesRep.code,
           phone: salesRep.phone || '',
           email: salesRep.email || '',
-          auth_user_id: salesRep.authUserId || null,
           active: salesRep.active,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -141,7 +141,6 @@ export const useSalesReps = () => {
           code: salesRep.code,
           phone: salesRep.phone,
           email: salesRep.email,
-          auth_user_id: salesRep.authUserId || null,
           active: salesRep.active,
           updated_at: new Date().toISOString()
         })
@@ -161,7 +160,6 @@ export const useSalesReps = () => {
       });
       
       console.log("=== SALES REP UPDATE COMPLETED ===");
-      // No return value needed for Promise<void>
     } catch (error) {
       console.error("❌ Error updating sales rep:", error);
       toast({

@@ -1,260 +1,136 @@
-/**
- * Transforms data from snake_case to camelCase or vice versa
- */
 
-import { SalesRep } from '@/types/personnel';
-
-type CamelCase<T extends string> = T extends `${infer First}_${infer Rest}`
-  ? `${First}${Capitalize<CamelCase<Rest>>}`
-  : T;
-
-type CamelCaseObject<T> = {
-  [K in keyof T as CamelCase<K & string>]: T[K] extends object ? CamelCaseObject<T[K]> : T[K]
-};
+import { SalesRep } from '@/types';
+import { Customer } from '@/types';
 
 /**
- * Convert snake_case keys to camelCase
- * @param obj - Object with snake_case keys
- * @returns Object with camelCase keys
+ * Transforms raw Supabase data to SalesRep interface
+ * @param raw - Raw data from Supabase
+ * @returns SalesRep object or null if transformation fails
  */
-export function toCamelCase<T extends object>(obj: T): CamelCaseObject<T> {
-  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
-    return obj as unknown as CamelCaseObject<T>;
-  }
-
-  return Object.keys(obj).reduce((result, key) => {
-    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()) as keyof T;
-    const value = obj[key as keyof T];
-    const camelValue = value !== null && typeof value === 'object' && !Array.isArray(value)
-      ? toCamelCase(value as object)
-      : value;
-
-    return {
-      ...result,
-      [camelKey]: camelValue
-    };
-  }, {} as CamelCaseObject<T>);
-}
-
-/**
- * Convert camelCase keys to snake_case
- * @param obj - Object with camelCase keys
- * @returns Object with snake_case keys
- */
-export function toSnakeCase<T extends object>(obj: T): Record<string, unknown> {
-  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
-    return obj as unknown as Record<string, unknown>;
-  }
-
-  return Object.keys(obj).reduce((result, key) => {
-    const snakeKey = key.replace(/([A-Z])/g, letter => `_${letter.toLowerCase()}`);
-    const value = obj[key as keyof T];
-    const snakeValue = value !== null && typeof value === 'object' && !Array.isArray(value)
-      ? toSnakeCase(value as object)
-      : value;
-
-    return {
-      ...result,
-      [snakeKey]: snakeValue
-    };
-  }, {} as Record<string, unknown>);
-}
-
-/**
- * Transforms an object to prepare it for Supabase insert/update
- * Converts dates to ISO strings and camelCase to snake_case
- */
-export const prepareForSupabase = (data: any): Record<string, unknown> => {
-  const cleanData = { ...data };
-  
-  // Remove undefined values and problematic fields
-  Object.keys(cleanData).forEach(key => {
-    if (cleanData[key] === undefined || key === 'id' || key === 'createdAt' || key === 'updatedAt') {
-      delete cleanData[key];
-    }
-  });
-  
-  // Process the data: Convert Date objects to ISO strings
-  const processedData = Object.entries(cleanData).reduce((acc, [key, value]) => {
-    if (value instanceof Date) {
-      acc[key] = value.toISOString();
-    } else {
-      acc[key] = value;
-    }
-    return acc;
-  }, {} as Record<string, any>);
-  
-  // Convert all keys to snake_case
-  const snakeCaseData = toSnakeCase(processedData);
-  
-  console.log("Original data:", data);
-  console.log("Processed data (before snake_case conversion):", processedData);
-  console.log("Final snake_case data:", snakeCaseData);
-  
-  return snakeCaseData;
-};
-
-/**
- * Transform a Supabase customer record to our internal Customer type
- */
-export const transformCustomerData = (data: any) => {
-  if (!data) return null;
-  
-  const transformed = toCamelCase(data);
-  
-  return {
-    id: data.id || '',
-    code: data.code || 0,
-    name: transformed.name || '',
-    companyName: transformed.companyName || data.company_name || '',
-    phone: transformed.phone || '',
-    email: transformed.email || '',
-    address: transformed.address || '',
-    city: transformed.city || '',
-    state: transformed.state || '',
-    zip: transformed.zipCode || data.zip_code || '',
-    zipCode: data.zip_code || transformed.zipCode || '',
-    document: transformed.document || data.document || '',
-    notes: transformed.notes || data.notes || '',
-    visitDays: transformed.visitDays || data.visit_days || [],
-    visitFrequency: transformed.visitFrequency || data.visit_frequency || '',
-    visitSequence: transformed.visitSequence || data.visit_sequence || 0,
-    salesRepId: data.sales_rep_id || transformed.salesRepId || undefined,
-    deliveryRouteId: data.delivery_route_id || transformed.deliveryRouteId || undefined,
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-  };
-};
-
-/**
- * Transform a Supabase product record to our internal Product type
- */
-export const transformProductData = (data: any) => {
-  if (!data) return null;
-  
-  const transformed = toCamelCase(data);
-  return {
-    id: data.id || '',
-    code: data.code || 0,
-    name: transformed.name || '',
-    description: transformed.description || '',
-    price: transformed.price || 0,
-    cost: transformed.cost || 0,
-    stock: transformed.stock || 0,
-    minStock: data.min_stock || transformed.minStock || 0,
-    unit: transformed.unit || '',
-    groupId: data.group_id || transformed.groupId || undefined,
-    categoryId: data.category_id || transformed.categoryId || undefined,
-    brandId: data.brand_id || transformed.brandId || undefined,
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-  };
-};
-
-/**
- * Transform a Supabase product category record to our internal ProductCategory type
- */
-export const transformProductCategoryData = (data: any) => {
-  const transformed = toCamelCase(data);
-  return {
-    ...transformed,
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-  };
-};
-
-/**
- * Transform a Supabase sales rep record to our internal SalesRep type
- */
-export const transformSalesRepData = (supabaseData: any): SalesRep | null => {
-  if (!supabaseData) return null;
-  
+export const transformSalesRepData = (raw: any): SalesRep | null => {
   try {
+    if (!raw || typeof raw !== 'object') {
+      console.error('Invalid sales rep data:', raw);
+      return null;
+    }
+
     return {
-      id: supabaseData.id,
-      code: supabaseData.code,
-      name: supabaseData.name,
-      phone: supabaseData.phone || '',
-      email: supabaseData.email || '',
-      authUserId: supabaseData.auth_user_id || undefined,
-      active: supabaseData.active,
-      createdAt: new Date(supabaseData.created_at),
-      updatedAt: new Date(supabaseData.updated_at)
+      id: raw.id,
+      code: raw.code || 0,
+      name: raw.name || '',
+      phone: raw.phone || '',
+      email: raw.email || '',
+      active: raw.active !== false, // Default to true if not specified
+      createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
+      updatedAt: raw.updated_at ? new Date(raw.updated_at) : new Date()
     };
   } catch (error) {
-    console.error('Error transforming sales rep data:', error);
+    console.error('Error transforming sales rep data:', error, 'Raw data:', raw);
     return null;
   }
 };
 
 /**
- * Transform a Supabase order record to our internal Order type
+ * Transforms raw Supabase data to Customer interface
+ * @param raw - Raw data from Supabase
+ * @returns Customer object or null if transformation fails
  */
-export const transformOrderData = (data: any) => {
-  if (!data) return null;
-  
-  const transformed = toCamelCase(data);
-  return {
-    id: data.id || '',
-    code: transformed.code || 0,
-    customerId: transformed.customerId || '',
-    customerName: transformed.customerName || '',
-    salesRepId: transformed.salesRepId || '',
-    salesRepName: transformed.salesRepName || '',
-    date: data.date ? new Date(data.date) : new Date(),
-    dueDate: data.due_date ? new Date(data.due_date) : new Date(),
-    items: transformed.items || [],
-    total: transformed.total || 0,
-    discount: transformed.discount || 0,
-    status: transformed.status || 'pending',
-    paymentStatus: transformed.paymentStatus || 'pending',
-    paymentMethod: transformed.paymentMethod || '',
-    paymentMethodId: transformed.paymentMethodId || '',
-    paymentTableId: transformed.paymentTableId || '',
-    payments: transformed.payments || [],
-    notes: transformed.notes || '',
-    createdAt: data.created_at ? new Date(data.created_at) : new Date(),
-    updatedAt: data.updated_at ? new Date(data.updated_at) : new Date(),
-    archived: transformed.archived || false,
-    deliveryAddress: transformed.deliveryAddress || '',
-    deliveryCity: transformed.deliveryCity || '',
-    deliveryState: transformed.deliveryState || '',
-    deliveryZip: transformed.deliveryZip || '',
-  };
+export const transformCustomerData = (raw: any): Customer | null => {
+  try {
+    if (!raw || typeof raw !== 'object') {
+      console.error('Invalid customer data:', raw);
+      return null;
+    }
+
+    return {
+      id: raw.id,
+      code: raw.code || 0,
+      name: raw.name || '',
+      companyName: raw.company_name || '',
+      document: raw.document || '',
+      email: raw.email || '',
+      phone: raw.phone || '',
+      address: raw.address || '',
+      city: raw.city || '',
+      state: raw.state || '',
+      zipCode: raw.zip_code || '',
+      region: raw.region || '',
+      category: raw.category || '',
+      paymentTerms: raw.payment_terms || '',
+      creditLimit: raw.credit_limit || 0,
+      visitFrequency: raw.visit_frequency || '',
+      visitDays: raw.visit_days || [],
+      visitSequence: raw.visit_sequence || 0,
+      salesRepId: raw.sales_rep_id || '',
+      deliveryRouteId: raw.delivery_route_id || '',
+      notes: raw.notes || '',
+      active: raw.active !== false,
+      createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
+      updatedAt: raw.updated_at ? new Date(raw.updated_at) : new Date()
+    };
+  } catch (error) {
+    console.error('Error transforming customer data:', error, 'Raw data:', raw);
+    return null;
+  }
 };
 
 /**
- * Transform generic data from Supabase
+ * Prepares data for Supabase insertion (converts camelCase to snake_case)
+ * @param entity - Entity object to prepare
+ * @returns Prepared object for Supabase
  */
-export const transformData = (data: any) => {
-  const transformed = toCamelCase(data);
-  
-  const result = {
-    ...transformed,
-  };
-  
-  if (data.created_at) {
-    result.createdAt = new Date(data.created_at);
-  }
-  
-  if (data.updated_at) {
-    result.updatedAt = new Date(data.updated_at);
-  }
-  
-  if (data.date) {
-    result.date = new Date(data.date);
-  }
-  
-  return result;
-};
+export const prepareForSupabase = (entity: any): any => {
+  try {
+    if (!entity || typeof entity !== 'object') {
+      return entity;
+    }
 
-/**
- * Transform an array of data using the provided transformer
- */
-export const transformArray = (data: any[], transformer: (item: any) => any) => {
-  if (!Array.isArray(data)) {
-    console.error('transformArray received non-array input:', data);
-    return [];
+    const prepared: any = {};
+    
+    // Map common fields
+    for (const [key, value] of Object.entries(entity)) {
+      switch (key) {
+        case 'createdAt':
+          prepared.created_at = value instanceof Date ? value.toISOString() : value;
+          break;
+        case 'updatedAt':
+          prepared.updated_at = value instanceof Date ? value.toISOString() : value;
+          break;
+        case 'companyName':
+          prepared.company_name = value;
+          break;
+        case 'zipCode':
+          prepared.zip_code = value;
+          break;
+        case 'paymentTerms':
+          prepared.payment_terms = value;
+          break;
+        case 'creditLimit':
+          prepared.credit_limit = value;
+          break;
+        case 'visitFrequency':
+          prepared.visit_frequency = value;
+          break;
+        case 'visitDays':
+          prepared.visit_days = value;
+          break;
+        case 'visitSequence':
+          prepared.visit_sequence = value;
+          break;
+        case 'salesRepId':
+          prepared.sales_rep_id = value;
+          break;
+        case 'deliveryRouteId':
+          prepared.delivery_route_id = value;
+          break;
+        default:
+          prepared[key] = value;
+      }
+    }
+
+    return prepared;
+  } catch (error) {
+    console.error('Error preparing data for Supabase:', error);
+    return entity;
   }
-  return data.map(transformer);
 };
