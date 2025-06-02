@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ interface FormData {
   code: number;
   name: string;
   cost: number;
-  price: number; // CORRIGIDO: agora separamos preço de venda do custo
+  price: number;
   unit: string;
   hasSubunit: boolean;
   subunit?: string;
@@ -76,7 +77,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           code: selectedProduct.code,
           name: selectedProduct.name,
           cost: selectedProduct.cost,
-          price: selectedProduct.price, // CORRIGIDO: usar o price real do produto
+          price: selectedProduct.price,
           unit: selectedProduct.unit || '',
           hasSubunit: selectedProduct.hasSubunit || false,
           subunit: selectedProduct.subunit || '',
@@ -91,7 +92,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           code: generateNextCode(),
           name: '',
           cost: 0,
-          price: 0, // CORRIGIDO: inicializar com 0 em vez de custo
+          price: 0,
           unit: 'UN',
           hasSubunit: false,
           subunit: '',
@@ -105,7 +106,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, [open, isEditing, selectedProduct, reset, products]);
 
-  // Auto-suggest price based on cost (opcional)
+  // Auto-suggest price based on cost
   useEffect(() => {
     if (!isEditing && costValue > 0) {
       // Sugerir um markup de 30% sobre o custo como preço inicial
@@ -209,7 +210,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {!unitsLoading && units.map((unit) => (
-                  <SelectItem key={unit.id} value={unit.code}>
+                  <SelectItem key={unit.code} value={unit.code}>
                     {unit.code} - {unit.description}
                   </SelectItem>
                 ))}
@@ -236,7 +237,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     {!unitsLoading && units.map((unit) => (
-                      <SelectItem key={unit.id} value={unit.code}>
+                      <SelectItem key={unit.code} value={unit.code}>
                         {unit.code} - {unit.description}
                       </SelectItem>
                     ))}

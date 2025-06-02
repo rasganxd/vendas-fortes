@@ -63,7 +63,7 @@ const ProductPricing = () => {
   const [saveTotal, setSaveTotal] = useState(0);
   const [currentSaving, setCurrentSaving] = useState<string>('');
   const [saveErrors, setSaveErrors] = useState<string[]>([]);
-  const [productStatuses, setProductStatuses] = useState<Record<string, 'saved' | 'error' | 'saving' | 'none'>>({});
+  const [productStatuses, setProductStatuses] = useState<Record<string, 'saved' | 'error' | 'saving' | 'none'>({});
 
   // Initialize product prices and max discounts from products
   useEffect(() => {
@@ -183,7 +183,7 @@ const ProductPricing = () => {
 
       const oldPrice = product.price || 0;
       const newPrice = productPrices[productId];
-      const oldMaxDiscount = productMaxDiscounts[productId] || 0;
+      const oldMaxDiscount = product.maxDiscountPercent || 0; // CORRIGIDO: usar valor original do produto
       const newMaxDiscount = productMaxDiscounts[productId] || 0;
 
       if (oldPrice !== newPrice || oldMaxDiscount !== newMaxDiscount) {
