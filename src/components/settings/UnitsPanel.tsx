@@ -38,7 +38,7 @@ export default function UnitsPanel() {
   const [newUnit, setNewUnit] = useState({ 
     code: '', 
     description: '',
-    packaging: ''
+    package_quantity: '' as string
   });
 
   const handleAddUnit = async () => {
@@ -54,13 +54,20 @@ export default function UnitsPanel() {
     }
 
     try {
+      const packageQuantity = newUnit.package_quantity ? Number(newUnit.package_quantity) : undefined;
+      
+      if (newUnit.package_quantity && (isNaN(packageQuantity!) || packageQuantity! <= 0)) {
+        toast.error("Quantidade na embalagem deve ser um número positivo");
+        return;
+      }
+
       await addUnit({
         code: newUnit.code.toUpperCase(),
         description: newUnit.description,
-        packaging: newUnit.packaging || undefined
+        package_quantity: packageQuantity
       });
       
-      setNewUnit({ code: '', description: '', packaging: '' });
+      setNewUnit({ code: '', description: '', package_quantity: '' });
       setIsOpen(false);
       toast.success("Unidade adicionada com sucesso");
     } catch (error) {
@@ -69,7 +76,10 @@ export default function UnitsPanel() {
   };
 
   const handleEditUnit = (unit: Unit) => {
-    setEditingUnit(unit);
+    setEditingUnit({
+      ...unit,
+      package_quantity: unit.package_quantity || undefined
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -85,11 +95,16 @@ export default function UnitsPanel() {
       return;
     }
 
+    if (editingUnit.package_quantity && editingUnit.package_quantity <= 0) {
+      toast.error("Quantidade na embalagem deve ser um número positivo");
+      return;
+    }
+
     try {
       await updateUnit(editingUnit.id, {
         code: editingUnit.code.toUpperCase(),
         description: editingUnit.description,
-        packaging: editingUnit.packaging || undefined
+        package_quantity: editingUnit.package_quantity || undefined
       });
       
       setIsEditDialogOpen(false);
@@ -180,12 +195,15 @@ export default function UnitsPanel() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="unitPackaging">Embalagem</Label>
+                    <Label htmlFor="unitPackageQuantity">Quantidade na Embalagem</Label>
                     <Input
-                      id="unitPackaging"
-                      placeholder="Ex: Plástico, Papel, Metal (opcional)"
-                      value={newUnit.packaging}
-                      onChange={(e) => setNewUnit(prev => ({ ...prev, packaging: e.target.value }))}
+                      id="unitPackageQuantity"
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder="Ex: 12, 24, 100 (opcional)"
+                      value={newUnit.package_quantity}
+                      onChange={(e) => setNewUnit(prev => ({ ...prev, package_quantity: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -207,7 +225,7 @@ export default function UnitsPanel() {
             <TableRow>
               <TableHead>Código</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Embalagem</TableHead>
+              <TableHead>Qtde Embalagem</TableHead>
               <TableHead className="w-[140px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -216,7 +234,7 @@ export default function UnitsPanel() {
               <TableRow key={unit.id}>
                 <TableCell className="font-medium">{unit.code}</TableCell>
                 <TableCell>{unit.description}</TableCell>
-                <TableCell>{unit.packaging || '-'}</TableCell>
+                <TableCell>{unit.package_quantity || '-'}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button
@@ -272,11 +290,17 @@ export default function UnitsPanel() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="editUnitPackaging">Embalagem</Label>
+                  <Label htmlFor="editUnitPackageQuantity">Quantidade na Embalagem</Label>
                   <Input
-                    id="editUnitPackaging"
-                    value={editingUnit.packaging || ''}
-                    onChange={(e) => setEditingUnit(prev => prev ? { ...prev, packaging: e.target.value } : null)}
+                    id="editUnitPackageQuantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={editingUnit.package_quantity || ''}
+                    onChange={(e) => setEditingUnit(prev => prev ? { 
+                      ...prev, 
+                      package_quantity: e.target.value ? Number(e.target.value) : undefined
+                    } : null)}
                   />
                 </div>
               </div>

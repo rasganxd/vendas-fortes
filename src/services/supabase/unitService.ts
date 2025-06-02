@@ -5,7 +5,7 @@ export interface Unit {
   id: string;
   code: string;
   description: string;
-  packaging?: string;
+  package_quantity?: number;
   created_at: string;
   updated_at: string;
 }

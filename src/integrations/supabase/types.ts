@@ -1226,7 +1226,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
-          packaging: string | null
+          package_quantity: number | null
           updated_at: string
         }
         Insert: {
@@ -1234,7 +1234,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
-          packaging?: string | null
+          package_quantity?: number | null
           updated_at?: string
         }
         Update: {
@@ -1242,7 +1242,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
-          packaging?: string | null
+          package_quantity?: number | null
           updated_at?: string
         }
         Relationships: []
