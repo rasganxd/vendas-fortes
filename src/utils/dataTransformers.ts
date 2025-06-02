@@ -54,8 +54,6 @@ export const transformCustomerData = (raw: any): Customer | null => {
       state: raw.state || '',
       zip: raw.zip_code || '',
       zipCode: raw.zip_code || '',
-      paymentTerms: raw.payment_terms || '',
-      creditLimit: raw.credit_limit || 0,
       visitFrequency: raw.visit_frequency || '',
       visitDays: raw.visit_days || [],
       visitSequence: raw.visit_sequence || 0,
