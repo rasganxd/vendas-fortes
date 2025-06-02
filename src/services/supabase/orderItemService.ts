@@ -37,7 +37,7 @@ class OrderItemService {
       const newItem: OrderItem = {
         id: data.id,
         orderId: data.order_id,
-        productId: data.product_id,
+        productId: data.product_id || '', // Ensure productId exists
         productName: data.product_name,
         productCode: data.product_code || 0,
         quantity: data.quantity,

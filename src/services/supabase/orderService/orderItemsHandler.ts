@@ -18,7 +18,7 @@ export class OrderItemsHandler {
     return (itemsData || []).map(item => ({
       id: item.id,
       orderId: item.order_id,
-      productId: item.product_id,
+      productId: item.product_id || '', // Ensure productId exists
       productName: item.product_name,
       productCode: item.product_code || 0,
       quantity: item.quantity,
@@ -46,7 +46,7 @@ export class OrderItemsHandler {
       acc[item.order_id].push({
         id: item.id,
         orderId: item.order_id,
-        productId: item.product_id,
+        productId: item.product_id || '', // Ensure productId exists
         productName: item.product_name,
         productCode: item.product_code || 0,
         quantity: item.quantity,

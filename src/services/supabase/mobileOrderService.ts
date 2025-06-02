@@ -70,7 +70,18 @@ class MobileOrderService {
 
       return (data || []).map(order => ({
         ...order,
-        items: order.order_items_mobile || []
+        items: (order.order_items_mobile || []).map((item: any) => ({
+          id: item.id,
+          order_id: item.order_id,
+          product_id: item.product_id || '', // Ensure product_id exists
+          product_name: item.product_name,
+          product_code: item.product_code || 0,
+          quantity: item.quantity,
+          unit_price: item.unit_price || item.price,
+          price: item.price,
+          total: item.total,
+          unit: item.unit || 'UN'
+        }))
       }));
     } catch (error) {
       console.error('❌ Error in getPendingOrders:', error);
@@ -103,7 +114,18 @@ class MobileOrderService {
 
       return (data || []).map(order => ({
         ...order,
-        items: order.order_items_mobile || []
+        items: (order.order_items_mobile || []).map((item: any) => ({
+          id: item.id,
+          order_id: item.order_id,
+          product_id: item.product_id || '', // Ensure product_id exists
+          product_name: item.product_name,
+          product_code: item.product_code || 0,
+          quantity: item.quantity,
+          unit_price: item.unit_price || item.price,
+          price: item.price,
+          total: item.total,
+          unit: item.unit || 'UN'
+        }))
       }));
     } catch (error) {
       console.error('❌ Error in getImportedOrders:', error);

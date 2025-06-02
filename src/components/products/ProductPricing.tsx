@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -47,7 +48,7 @@ interface BulkPricingChanges {
     mode: 'percentage' | 'fixed' | 'absolute';
     value: number;
   };
-  minPriceChange?: number;
+  maxDiscountChange?: number;
 }
 
 const ProductPricing = () => {
@@ -67,24 +68,24 @@ const ProductPricing = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [productPrices, setProductPrices] = useState<Record<string, number>>({});
-  const [productMinPrices, setProductMinPrices] = useState<Record<string, number>>({});
+  const [productMaxDiscounts, setProductMaxDiscounts] = useState<Record<string, number>>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [pendingSave, setPendingSave] = useState<any>(null);
   const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
 
-  // Initialize product prices from products
+  // Initialize product prices and max discounts from products
   useEffect(() => {
     const initialPrices: Record<string, number> = {};
-    const initialMinPrices: Record<string, number> = {};
+    const initialMaxDiscounts: Record<string, number> = {};
     
     products.forEach(product => {
       initialPrices[product.id] = product.price || 0;
-      initialMinPrices[product.id] = product.minPrice || 0;
+      initialMaxDiscounts[product.id] = product.maxDiscountPercent || 0;
     });
     
     setProductPrices(initialPrices);
-    setProductMinPrices(initialMinPrices);
+    setProductMaxDiscounts(initialMaxDiscounts);
   }, [products]);
 
   // Filter products based on search and filters
@@ -115,6 +116,10 @@ const ProductPricing = () => {
     return ((price - cost) / cost) * 100;
   };
 
+  const calculateMinimumPrice = (price: number, maxDiscount: number): number => {
+    return price * (1 - maxDiscount / 100);
+  };
+
   const handleSelectAll = () => {
     if (selectedProducts.size === filteredProducts.length) {
       setSelectedProducts(new Set());
@@ -142,17 +147,17 @@ const ProductPricing = () => {
     setHasChanges(true);
   };
 
-  const handleMinPriceChange = (productId: string, newMinPrice: number) => {
-    setProductMinPrices(prev => ({
+  const handleMaxDiscountChange = (productId: string, newMaxDiscount: number) => {
+    setProductMaxDiscounts(prev => ({
       ...prev,
-      [productId]: newMinPrice
+      [productId]: newMaxDiscount
     }));
     setHasChanges(true);
   };
 
   const handleBulkPricingChanges = (changes: BulkPricingChanges) => {
     const newPrices = { ...productPrices };
-    const newMinPrices = { ...productMinPrices };
+    const newMaxDiscounts = { ...productMaxDiscounts };
     
     changes.selectedProducts.forEach(productId => {
       const product = products.find(p => p.id === productId);
@@ -171,14 +176,14 @@ const ProductPricing = () => {
         }
       }
       
-      // Apply min price changes
-      if (changes.minPriceChange && changes.minPriceChange > 0) {
-        newMinPrices[productId] = changes.minPriceChange;
+      // Apply max discount changes
+      if (changes.maxDiscountChange !== undefined && changes.maxDiscountChange >= 0) {
+        newMaxDiscounts[productId] = changes.maxDiscountChange;
       }
     });
 
     setProductPrices(newPrices);
-    setProductMinPrices(newMinPrices);
+    setProductMaxDiscounts(newMaxDiscounts);
     setHasChanges(true);
     
     toast("Preços atualizados", {
@@ -187,35 +192,38 @@ const ProductPricing = () => {
   };
 
   const validatePriceChanges = () => {
-    const outOfRangeProducts = [];
+    const issues = [];
     
     for (const productId of Object.keys(productPrices)) {
       const product = products.find(p => p.id === productId);
       if (!product) continue;
       
       const currentPrice = productPrices[productId];
-      const minPrice = productMinPrices[productId] || product.minPrice;
+      const maxDiscount = productMaxDiscounts[productId] || 0;
+      const minimumPrice = calculateMinimumPrice(currentPrice, maxDiscount);
       
-      if (minPrice && currentPrice < minPrice) {
-        outOfRangeProducts.push({
+      // Check if price is reasonable compared to cost
+      if (currentPrice < product.cost) {
+        issues.push({
           product,
+          issue: 'price_below_cost',
           currentPrice,
-          minPrice
+          cost: product.cost
         });
       }
     }
     
-    return outOfRangeProducts;
+    return issues;
   };
 
   const saveAllPrices = async (forceOverride = false) => {
     if (!hasChanges) return;
     
-    // Validar preços se não forçar override
+    // Validate prices if not forcing override
     if (!forceOverride) {
-      const outOfRangeProducts = validatePriceChanges();
-      if (outOfRangeProducts.length > 0) {
-        setPendingSave({ outOfRangeProducts });
+      const issues = validatePriceChanges();
+      if (issues.length > 0) {
+        setPendingSave({ issues });
         setShowOverrideDialog(true);
         return;
       }
@@ -238,8 +246,8 @@ const ProductPricing = () => {
           hasUpdates = true;
         }
         
-        if ((product.minPrice || 0) !== (productMinPrices[productId] || 0)) {
-          updateData.minPrice = productMinPrices[productId] || null;
+        if ((product.maxDiscountPercent || 0) !== (productMaxDiscounts[productId] || 0)) {
+          updateData.maxDiscountPercent = productMaxDiscounts[productId] || 0;
           hasUpdates = true;
         }
         
@@ -311,7 +319,7 @@ const ProductPricing = () => {
           </div>
           <CardTitle>Precificação de Produtos</CardTitle>
           <CardDescription>
-            Configure os preços de venda e limites dos seus produtos ({products.length} produtos carregados)
+            Configure os preços de venda e limites de desconto dos seus produtos ({products.length} produtos carregados)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -380,22 +388,24 @@ const ProductPricing = () => {
                       <TableHead className="w-20">Código</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead className="w-32">Custo</TableHead>
-                      <TableHead className="w-32">Preço Mín</TableHead>
                       <TableHead className="w-32">Preço Venda</TableHead>
+                      <TableHead className="w-32">% Máx Desc</TableHead>
+                      <TableHead className="w-32">Preço Mín</TableHead>
                       <TableHead className="w-32">Markup %</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredProducts.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado com os filtros aplicados'}
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredProducts.map((product) => {
                         const currentPrice = productPrices[product.id] || 0;
-                        const minPrice = productMinPrices[product.id] || 0;
+                        const maxDiscount = productMaxDiscounts[product.id] || 0;
+                        const minimumPrice = calculateMinimumPrice(currentPrice, maxDiscount);
                         const markup = calculateMarkup(product.cost, currentPrice);
                         
                         return (
@@ -412,16 +422,6 @@ const ProductPricing = () => {
                             <TableCell>{formatCurrency(product.cost)}</TableCell>
                             <TableCell>
                               <Input
-                                value={formatCurrency(minPrice)}
-                                onChange={(e) => {
-                                  const newMinPrice = formatPriceInput(e.target.value);
-                                  handleMinPriceChange(product.id, newMinPrice);
-                                }}
-                                className="w-24"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
                                 value={formatCurrency(currentPrice)}
                                 onChange={(e) => {
                                   const newPrice = formatPriceInput(e.target.value);
@@ -429,6 +429,23 @@ const ProductPricing = () => {
                                 }}
                                 className="w-24"
                               />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                value={maxDiscount || ''}
+                                onChange={(e) => {
+                                  const newMaxDiscount = parseFloat(e.target.value) || 0;
+                                  handleMaxDiscountChange(product.id, newMaxDiscount);
+                                }}
+                                className="w-20"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                              />
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-600">
+                              {formatCurrency(minimumPrice)}
                             </TableCell>
                             <TableCell>
                               <span className={`font-medium ${markup >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -482,20 +499,20 @@ const ProductPricing = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
-              Preços Abaixo do Mínimo
+              Preços com Problemas
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingSave?.outOfRangeProducts?.length} produto(s) têm preços abaixo do mínimo permitido:
+              {pendingSave?.issues?.length} produto(s) têm problemas de precificação:
               <div className="mt-2 space-y-1">
-                {pendingSave?.outOfRangeProducts?.slice(0, 5).map((item: any) => (
+                {pendingSave?.issues?.slice(0, 5).map((item: any) => (
                   <div key={item.product.id} className="text-sm">
                     <strong>{item.product.name}</strong>: {formatCurrency(item.currentPrice)}
-                    {item.minPrice && ` (min: ${formatCurrency(item.minPrice)})`}
+                    {item.issue === 'price_below_cost' && ` (custo: ${formatCurrency(item.cost)})`}
                   </div>
                 ))}
-                {pendingSave?.outOfRangeProducts?.length > 5 && (
+                {pendingSave?.issues?.length > 5 && (
                   <div className="text-sm text-muted-foreground">
-                    ...e mais {pendingSave.outOfRangeProducts.length - 5} produto(s)
+                    ...e mais {pendingSave.issues.length - 5} produto(s)
                   </div>
                 )}
               </div>
