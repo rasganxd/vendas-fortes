@@ -26,7 +26,7 @@ const SaveProgressDialog: React.FC<SaveProgressDialogProps> = ({
 
   return (
     <Dialog open={open}>
-      <DialogContent className="sm:max-w-md" hideCloseButton>
+      <DialogContent className="sm:max-w-md [&>button]:hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isComplete ? (
