@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { Customer } from '@/types';
+import { Customer, Order, Product, Payment } from '@/types';
 import { Unit } from '@/types/unit';
 import { PaymentMethod } from '@/types/payment';
 import { PaymentTable } from '@/types/payment';
@@ -7,7 +7,6 @@ import { DeliveryRoute } from '@/types/delivery';
 import { Vehicle } from '@/types/vehicle';
 import { Load } from '@/types/delivery';
 import { SalesRep } from '@/types';
-import { Product } from '@/types/product';
 import { customerService } from '@/services/supabase/customerService';
 import { unitService } from '@/services/supabase/unitService';
 import { paymentMethodService } from '@/services/supabase/paymentMethodService';
@@ -48,6 +47,18 @@ interface AppDataContextType {
   addProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>;
   updateProduct: (id: string, productData: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  orders: Order[];
+  isLoadingOrders: boolean;
+  refreshOrders: () => Promise<void>;
+  addOrder: (orderData: Omit<Order, 'id'>) => Promise<string>;
+  updateOrder: (id: string, orderData: Partial<Order>) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
+  payments: Payment[];
+  isLoadingPayments: boolean;
+  refreshPayments: () => Promise<void>;
+  addPayment: (paymentData: Omit<Payment, 'id'>) => Promise<string>;
+  updatePayment: (id: string, paymentData: Partial<Payment>) => Promise<void>;
+  deletePayment: (id: string) => Promise<void>;
   units: Unit[];
   isLoadingUnits: boolean;
   refreshUnits: () => Promise<void>;
@@ -60,16 +71,26 @@ interface AppDataContextType {
   deliveryRoutes: DeliveryRoute[];
   isLoadingDeliveryRoutes: boolean;
   refreshDeliveryRoutes: () => Promise<void>;
+  addDeliveryRoute: (routeData: Omit<DeliveryRoute, 'id'>) => Promise<string>;
+  updateDeliveryRoute: (id: string, routeData: Partial<DeliveryRoute>) => Promise<void>;
+  deleteDeliveryRoute: (id: string) => Promise<void>;
   vehicles: Vehicle[];
   isLoadingVehicles: boolean;
   refreshVehicles: () => Promise<void>;
+  addVehicle: (vehicleData: Omit<Vehicle, 'id'>) => Promise<string>;
+  updateVehicle: (id: string, vehicleData: Partial<Vehicle>) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
   loads: Load[];
   isLoadingLoads: boolean;
   refreshLoads: () => Promise<void>;
+  addLoad: (loadData: Omit<Load, 'id'>) => Promise<string>;
+  updateLoad: (id: string, loadData: Partial<Load>) => Promise<void>;
+  deleteLoad: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
   settings?: AppSettings;
   isLoadingSettings?: boolean;
   refreshSettings?: () => Promise<void>;
+  updateSettings?: (settings: Partial<AppSettings>) => Promise<void>;
   connectionStatus: 'online' | 'offline' | 'connecting' | 'error';
 }
 
@@ -89,6 +110,18 @@ const defaultAppContext: AppDataContextType = {
   addProduct: async () => "",
   updateProduct: async () => { },
   deleteProduct: async () => { },
+  orders: [],
+  isLoadingOrders: false,
+  refreshOrders: async () => { },
+  addOrder: async () => "",
+  updateOrder: async () => { },
+  deleteOrder: async () => { },
+  payments: [],
+  isLoadingPayments: false,
+  refreshPayments: async () => { },
+  addPayment: async () => "",
+  updatePayment: async () => { },
+  deletePayment: async () => { },
   units: [],
   isLoadingUnits: false,
   refreshUnits: async () => { },
@@ -101,9 +134,15 @@ const defaultAppContext: AppDataContextType = {
   deliveryRoutes: [],
   isLoadingDeliveryRoutes: false,
   refreshDeliveryRoutes: async () => { },
+  addDeliveryRoute: async () => "",
+  updateDeliveryRoute: async () => { },
+  deleteDeliveryRoute: async () => { },
   vehicles: [],
   isLoadingVehicles: false,
   refreshVehicles: async () => { },
+  addVehicle: async () => "",
+  updateVehicle: async () => { },
+  deleteVehicle: async () => { },
   loads: [],
   isLoadingLoads: false,
   refreshLoads: async () => { },
@@ -111,6 +150,7 @@ const defaultAppContext: AppDataContextType = {
   settings: undefined,
   isLoadingSettings: false,
   refreshSettings: async () => { },
+  updateSettings: async () => { },
   connectionStatus: 'online'
 };
 
@@ -129,6 +169,14 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
   // Products
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  // Orders
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+
+  // Payments
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
 
   // Units
   const [units, setUnits] = useState<Unit[]>([]);
@@ -266,6 +314,91 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     }
   };
 
+  // Orders Operations
+  const refreshOrders = async () => {
+    try {
+      setIsLoadingOrders(true);
+      // Mock data for now
+      setOrders([]);
+    } catch (error) {
+      console.error('Erro ao carregar pedidos:', error);
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
+  const addOrder = async (orderData: Omit<Order, 'id'>): Promise<string> => {
+    try {
+      // Mock implementation
+      const newOrder = { ...orderData, id: Math.random().toString() } as Order;
+      setOrders(prev => [...prev, newOrder]);
+      return newOrder.id;
+    } catch (error) {
+      console.error('Erro ao adicionar pedido:', error);
+      throw error;
+    }
+  };
+
+  const updateOrder = async (id: string, orderData: Partial<Order>) => {
+    try {
+      setOrders(prev => prev.map(order => order.id === id ? { ...order, ...orderData } : order));
+    } catch (error) {
+      console.error('Erro ao atualizar pedido:', error);
+      throw error;
+    }
+  };
+
+  const deleteOrder = async (id: string) => {
+    try {
+      setOrders(prev => prev.filter(order => order.id !== id));
+    } catch (error) {
+      console.error('Erro ao deletar pedido:', error);
+      throw error;
+    }
+  };
+
+  // Payments Operations
+  const refreshPayments = async () => {
+    try {
+      setIsLoadingPayments(true);
+      // Mock data for now
+      setPayments([]);
+    } catch (error) {
+      console.error('Erro ao carregar pagamentos:', error);
+    } finally {
+      setIsLoadingPayments(false);
+    }
+  };
+
+  const addPayment = async (paymentData: Omit<Payment, 'id'>): Promise<string> => {
+    try {
+      const newPayment = { ...paymentData, id: Math.random().toString() } as Payment;
+      setPayments(prev => [...prev, newPayment]);
+      return newPayment.id;
+    } catch (error) {
+      console.error('Erro ao adicionar pagamento:', error);
+      throw error;
+    }
+  };
+
+  const updatePayment = async (id: string, paymentData: Partial<Payment>) => {
+    try {
+      setPayments(prev => prev.map(payment => payment.id === id ? { ...payment, ...paymentData } : payment));
+    } catch (error) {
+      console.error('Erro ao atualizar pagamento:', error);
+      throw error;
+    }
+  };
+
+  const deletePayment = async (id: string) => {
+    try {
+      setPayments(prev => prev.filter(payment => payment.id !== id));
+    } catch (error) {
+      console.error('Erro ao deletar pagamento:', error);
+      throw error;
+    }
+  };
+
   // Units Operations
   const refreshUnits = async () => {
     try {
@@ -344,6 +477,42 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     }
   };
 
+  // Add Delivery Route Operations
+  const addDeliveryRoute = async (routeData: Omit<DeliveryRoute, 'id'>): Promise<string> => {
+    try {
+      const newRoute = await deliveryRouteService.create(routeData);
+      setDeliveryRoutes(prev => [...prev, newRoute]);
+      return newRoute.id;
+    } catch (error) {
+      console.error('Erro ao adicionar rota:', error);
+      throw error;
+    }
+  };
+
+  // Add Vehicle Operations
+  const addVehicle = async (vehicleData: Omit<Vehicle, 'id'>): Promise<string> => {
+    try {
+      const newVehicle = await vehicleService.create(vehicleData);
+      setVehicles(prev => [...prev, newVehicle]);
+      return newVehicle.id;
+    } catch (error) {
+      console.error('Erro ao adicionar veículo:', error);
+      throw error;
+    }
+  };
+
+  // Add Load Operations
+  const addLoad = async (loadData: Omit<Load, 'id'>): Promise<string> => {
+    try {
+      const newLoad = await loadService.create(loadData);
+      setLoads(prev => [...prev, newLoad]);
+      return newLoad.id;
+    } catch (error) {
+      console.error('Erro ao adicionar carga:', error);
+      throw error;
+    }
+  };
+
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
@@ -351,6 +520,8 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
         refreshCustomers(),
         refreshSalesReps(),
         refreshProducts(),
+        refreshOrders(),
+        refreshPayments(),
         refreshUnits(),
         refreshPaymentMethods(),
         refreshPaymentTables(),
@@ -390,11 +561,22 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     refreshSettings();
   }, []);
 
+  const updateSettings = async (newSettings: Partial<AppSettings>) => {
+    try {
+      setSettings(prev => prev ? { ...prev, ...newSettings } : newSettings as AppSettings);
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      throw error;
+    }
+  };
+
   const refreshData = async () => {
     await Promise.all([
       refreshCustomers(),
       refreshSalesReps(),
       refreshProducts(),
+      refreshOrders(),
+      refreshPayments(),
       refreshUnits(),
       refreshPaymentMethods(),
       refreshPaymentTables(),
@@ -426,6 +608,22 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     updateProduct,
     deleteProduct,
 
+    // Orders
+    orders,
+    isLoadingOrders,
+    refreshOrders,
+    addOrder,
+    updateOrder,
+    deleteOrder,
+
+    // Payments
+    payments,
+    isLoadingPayments,
+    refreshPayments,
+    addPayment,
+    updatePayment,
+    deletePayment,
+
     // Units
     units,
     isLoadingUnits,
@@ -445,16 +643,25 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     deliveryRoutes,
     isLoadingDeliveryRoutes,
     refreshDeliveryRoutes,
+    addDeliveryRoute,
+    updateDeliveryRoute,
+    deleteDeliveryRoute,
 
     // Vehicles
     vehicles,
     isLoadingVehicles,
     refreshVehicles,
+    addVehicle,
+    updateVehicle,
+    deleteVehicle,
 
     // Loads
     loads,
     isLoadingLoads,
     refreshLoads,
+    addLoad,
+    updateLoad,
+    deleteLoad,
 
     // General
     refreshData,
@@ -463,6 +670,7 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     settings,
     isLoadingSettings,
     refreshSettings,
+    updateSettings,
 
     // Connection status
     connectionStatus

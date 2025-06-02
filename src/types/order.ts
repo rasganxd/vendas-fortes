@@ -43,9 +43,13 @@ export interface Order {
   payments?: any[];
   notes?: string;
   delivery_address?: string;
+  deliveryAddress?: string; // Alias for compatibility
   delivery_city?: string;
+  deliveryCity?: string; // Alias for compatibility
   delivery_state?: string;
+  deliveryState?: string; // Alias for compatibility
   delivery_zip?: string;
+  deliveryZip?: string; // Alias for compatibility
   mobile_order_id?: string;
   sync_status?: string;
   source_project: string;
