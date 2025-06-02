@@ -33,6 +33,8 @@ interface PriceChange {
   newMaxDiscount: number;
 }
 
+type ProductStatus = 'saved' | 'error' | 'saving' | 'none';
+
 const ProductPricing = () => {
   const navigate = useNavigate();
   const {
@@ -63,7 +65,7 @@ const ProductPricing = () => {
   const [saveTotal, setSaveTotal] = useState(0);
   const [currentSaving, setCurrentSaving] = useState<string>('');
   const [saveErrors, setSaveErrors] = useState<string[]>([]);
-  const [productStatuses, setProductStatuses] = useState<Record<string, 'saved' | 'error' | 'saving' | 'none'>({});
+  const [productStatuses, setProductStatuses] = useState<Record<string, ProductStatus>>({});
 
   // Initialize product prices and max discounts from products
   useEffect(() => {

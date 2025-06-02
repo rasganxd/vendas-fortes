@@ -3,15 +3,8 @@ import { useState, useEffect } from 'react';
 import { Unit as UnitType } from '@/services/supabase/unitService';
 import { unitService } from '@/services/supabase/unitService';
 
-// Legacy Unit interface for compatibility
-interface Unit {
-  value: string;
-  label: string;
-  conversionRate: number;
-}
-
 export const useProductUnits = () => {
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [units, setUnits] = useState<UnitType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadUnits = async () => {
@@ -21,18 +14,10 @@ export const useProductUnits = () => {
       
       const dbUnits = await unitService.getAll();
       
-      // Convert database units to the format expected by the product form
-      const formattedUnits: Unit[] = dbUnits.map(unit => ({
-        value: unit.code,
-        label: `${unit.description} (${unit.code})`,
-        conversionRate: 1 // Default conversion rate - can be enhanced later
-      }));
-      
-      console.log("✅ Units loaded for product form:", formattedUnits.length, formattedUnits);
-      setUnits(formattedUnits);
+      console.log("✅ Units loaded for product form:", dbUnits.length, dbUnits);
+      setUnits(dbUnits);
     } catch (error) {
       console.error('❌ Error loading units for product form:', error);
-      // Fallback to empty array instead of default units
       setUnits([]);
     } finally {
       setIsLoading(false);
@@ -55,14 +40,13 @@ export const useProductUnits = () => {
     };
   }, []);
 
-  const getRelatedUnits = (unit: string): Unit[] => {
+  const getRelatedUnits = (unit: string): UnitType[] => {
     return units;
   };
 
   return {
     units,
     isLoading,
-    defaultUnits: [], // No more default units
     converter: {
       convert: (quantity: number, fromUnit: string, toUnit: string) => quantity,
       calculateUnitPrice: (totalPrice: number, quantity: number) => totalPrice / quantity,
