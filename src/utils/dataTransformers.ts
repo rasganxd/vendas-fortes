@@ -60,7 +60,6 @@ export const transformCustomerData = (raw: any): Customer | null => {
       salesRepId: raw.sales_rep_id || '',
       deliveryRouteId: raw.delivery_route_id || '',
       notes: raw.notes || '',
-      active: raw.active !== false,
       createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
       updatedAt: raw.updated_at ? new Date(raw.updated_at) : new Date()
     };
