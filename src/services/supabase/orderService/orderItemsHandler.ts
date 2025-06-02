@@ -18,7 +18,7 @@ export class OrderItemsHandler {
     return (itemsData || []).map(item => ({
       id: item.id,
       orderId: item.order_id,
-      productId: item.product_id || '', // Ensure productId exists
+      productId: item.product_code?.toString() || '', // Use product_code as productId
       productName: item.product_name,
       productCode: item.product_code || 0,
       quantity: item.quantity,
@@ -46,7 +46,7 @@ export class OrderItemsHandler {
       acc[item.order_id].push({
         id: item.id,
         orderId: item.order_id,
-        productId: item.product_id || '', // Ensure productId exists
+        productId: item.product_code?.toString() || '', // Use product_code as productId
         productName: item.product_name,
         productCode: item.product_code || 0,
         quantity: item.quantity,
@@ -64,7 +64,6 @@ export class OrderItemsHandler {
 
     const orderItems = items.map(item => ({
       order_id: orderId,
-      product_id: item.productId,
       product_name: item.productName,
       product_code: item.productCode,
       quantity: item.quantity,

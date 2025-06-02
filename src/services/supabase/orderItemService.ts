@@ -9,7 +9,6 @@ class OrderItemService {
       
       const orderItemData = {
         order_id: orderId,
-        product_id: item.productId,
         product_name: item.productName,
         product_code: item.productCode,
         quantity: item.quantity,
@@ -17,7 +16,7 @@ class OrderItemService {
         unit_price: item.unitPrice || item.price,
         total: item.total,
         discount: item.discount || 0,
-        unit: item.unit || 'UN', // Store the unit
+        unit: item.unit || 'UN',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -37,7 +36,7 @@ class OrderItemService {
       const newItem: OrderItem = {
         id: data.id,
         orderId: data.order_id,
-        productId: data.product_id || '', // Ensure productId exists
+        productId: data.product_code?.toString() || '', // Use product_code as fallback
         productName: data.product_name,
         productCode: data.product_code || 0,
         quantity: data.quantity,
@@ -56,15 +55,15 @@ class OrderItemService {
     }
   }
 
-  async removeItemFromOrder(orderId: string, productId: string): Promise<void> {
+  async removeItemFromOrder(orderId: string, productCode: number): Promise<void> {
     try {
-      console.log('🗑️ Removing item from order:', orderId, productId);
+      console.log('🗑️ Removing item from order:', orderId, productCode);
       
       const { error } = await supabase
         .from('order_items')
         .delete()
         .eq('order_id', orderId)
-        .eq('product_id', productId);
+        .eq('product_code', productCode);
       
       if (error) {
         console.error('❌ Error removing item from order:', error);

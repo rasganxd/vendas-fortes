@@ -21,7 +21,7 @@ export interface MobileOrder {
 export interface MobileOrderItem {
   id: string;
   order_id: string;
-  product_id: string;
+  product_id?: string; // Make optional since it may not exist
   product_name: string;
   product_code: number;
   quantity: number;
@@ -73,7 +73,7 @@ class MobileOrderService {
         items: (order.order_items_mobile || []).map((item: any) => ({
           id: item.id,
           order_id: item.order_id,
-          product_id: item.product_id || '', // Ensure product_id exists
+          product_id: item.product_code?.toString() || '', // Use product_code as fallback
           product_name: item.product_name,
           product_code: item.product_code || 0,
           quantity: item.quantity,
@@ -117,7 +117,7 @@ class MobileOrderService {
         items: (order.order_items_mobile || []).map((item: any) => ({
           id: item.id,
           order_id: item.order_id,
-          product_id: item.product_id || '', // Ensure product_id exists
+          product_id: item.product_code?.toString() || '', // Use product_code as fallback
           product_name: item.product_name,
           product_code: item.product_code || 0,
           quantity: item.quantity,
