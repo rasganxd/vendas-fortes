@@ -1019,6 +1019,7 @@ export type Database = {
           email: string | null
           id: string
           name: string
+          password: string | null
           phone: string | null
           updated_at: string
         }
@@ -1029,6 +1030,7 @@ export type Database = {
           email?: string | null
           id?: string
           name: string
+          password?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -1039,6 +1041,7 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string
+          password?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -1371,6 +1374,10 @@ export type Database = {
           customer_phone: string
         }[]
       }
+      hash_password: {
+        Args: { password: string }
+        Returns: string
+      }
       import_mobile_orders: {
         Args: { p_sales_rep_id?: string; p_imported_by?: string }
         Returns: {
@@ -1386,6 +1393,10 @@ export type Database = {
       validate_api_token: {
         Args: { token_value: string }
         Returns: string
+      }
+      verify_password: {
+        Args: { password: string; hash: string }
+        Returns: boolean
       }
     }
     Enums: {

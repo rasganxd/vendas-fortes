@@ -35,10 +35,10 @@ serve(async (req) => {
       });
     }
 
-    // Find sales rep by code
+    // Find sales rep by code (incluindo senha para verificação)
     const { data: salesRep, error: salesRepError } = await supabase
       .from('sales_reps')
-      .select('*')
+      .select('id, code, name, email, password')
       .eq('code', salesRepCode)
       .eq('active', true)
       .single();
@@ -54,8 +54,36 @@ serve(async (req) => {
       });
     }
 
-    // For now, accept any password for active sales reps
-    // TODO: Implement proper password hashing and validation
+    // Verificar se o vendedor tem senha cadastrada
+    if (!salesRep.password) {
+      console.error('❌ Sales rep has no password set');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Vendedor não possui senha cadastrada. Entre em contato com o administrador.'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verificar senha usando a função do banco
+    const { data: passwordValid, error: passwordError } = await supabase
+      .rpc('verify_password', { 
+        password: password, 
+        hash: salesRep.password 
+      });
+
+    if (passwordError || !passwordValid) {
+      console.error('❌ Invalid password for sales rep:', salesRep.name);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Senha incorreta'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     console.log('✅ Sales rep authenticated:', salesRep.name);
 
     // Generate API token for the sales rep
@@ -99,6 +127,7 @@ serve(async (req) => {
         code: salesRep.code,
         name: salesRep.name,
         email: salesRep.email
+        // Nota: senha nunca é retornada
       },
       token: tokenData
     }), {

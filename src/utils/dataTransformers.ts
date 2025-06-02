@@ -19,6 +19,7 @@ export const transformSalesRepData = (raw: any): SalesRep | null => {
       name: raw.name || '',
       phone: raw.phone || '',
       email: raw.email || '',
+      // Nota: senha nunca é incluída por segurança
       active: raw.active !== false, // Default to true if not specified
       createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
       updatedAt: raw.updated_at ? new Date(raw.updated_at) : new Date()

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { SalesRep } from '@/types';
 import { DialogFooter } from '../ui/dialog';
 import { Switch } from '../ui/switch';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface EditSalesRepDialogProps {
   open: boolean;
@@ -28,43 +29,87 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
   onSave,
   onRefresh
 }) => {
-  const [formData, setFormData] = React.useState<Partial<SalesRep>>({
+  const [formData, setFormData] = React.useState<Partial<SalesRep & { confirmPassword?: string }>>({
     code: 0,
     name: '',
     phone: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     active: true
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+
   React.useEffect(() => {
     if (salesRep) {
-      setFormData(salesRep);
+      setFormData({
+        ...salesRep,
+        password: '',
+        confirmPassword: ''
+      });
     }
+    setPasswordError('');
   }, [salesRep]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Limpar erro de senha ao digitar
+    if (name === 'password' || name === 'confirmPassword') {
+      setPasswordError('');
+    }
   };
 
   const handleSwitchChange = (checked: boolean) => {
     setFormData(prev => ({ ...prev, active: checked }));
   };
 
+  const validatePassword = () => {
+    // Se é um vendedor novo, senha é obrigatória
+    if (!salesRep?.id && (!formData.password || formData.password.length < 6)) {
+      setPasswordError('Senha deve ter pelo menos 6 caracteres');
+      return false;
+    }
+
+    // Se está alterando senha, deve ter pelo menos 6 caracteres
+    if (formData.password && formData.password.length < 6) {
+      setPasswordError('Senha deve ter pelo menos 6 caracteres');
+      return false;
+    }
+
+    // Se digitou senha, confirmação deve ser igual
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      setPasswordError('Senhas não coincidem');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSave = async () => {
     if (!formData.name || !formData.email) return;
     
+    if (!validatePassword()) return;
+    
     try {
       if (onSave) {
-        await onSave({
+        const dataToSave = {
           code: formData.code || 0,
           name: formData.name,
           phone: formData.phone || '',
           email: formData.email,
           active: formData.active ?? true,
           createdAt: new Date(),
-          updatedAt: new Date()
-        });
+          updatedAt: new Date(),
+          // Incluir senha apenas se foi fornecida
+          ...(formData.password && { password: formData.password })
+        };
+        
+        await onSave(dataToSave);
       }
       
       if (onRefresh) {
@@ -76,6 +121,8 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
       console.error('Error saving sales rep:', error);
     }
   };
+
+  const isNewSalesRep = !salesRep?.id;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -134,6 +181,72 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
             />
           </div>
 
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="password">
+              Senha {isNewSalesRep ? '*' : '(deixe vazio para manter atual)'}
+            </Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password || ''}
+                onChange={handleChange}
+                placeholder={isNewSalesRep ? "Digite a senha" : "Nova senha (opcional)"}
+                required={isNewSalesRep}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {formData.password && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword || ''}
+                  onChange={handleChange}
+                  placeholder="Confirme a senha"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {passwordError && (
+            <div className="text-sm text-red-600">
+              {passwordError}
+            </div>
+          )}
+
           <div className="flex items-center space-x-2">
             <Switch 
               checked={formData.active ?? true} 
@@ -148,7 +261,10 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={!formData.name || !formData.email}>
+          <Button 
+            onClick={handleSave} 
+            disabled={!formData.name || !formData.email || (isNewSalesRep && !formData.password)}
+          >
             Salvar
           </Button>
         </DialogFooter>

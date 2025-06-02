@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,9 +17,10 @@ export const useSalesReps = () => {
       setIsLoading(true);
       console.log("=== LOADING SALES REPS ===");
       
+      // Não incluir senha na consulta por segurança
       const { data, error } = await supabase
         .from('sales_reps')
-        .select('*')
+        .select('id, code, name, phone, email, active, created_at, updated_at')
         .eq('active', true)
         .order('name');
 
@@ -71,6 +71,16 @@ export const useSalesReps = () => {
         });
         return "";
       }
+
+      if (!salesRep.password) {
+        console.error("❌ Validation failed: Password is required for new sales rep");
+        toast({
+          title: "Erro de validação",
+          description: "Senha é obrigatória para novos vendedores",
+          variant: "destructive"
+        });
+        return "";
+      }
       
       // Check for duplicate code
       const existingWithSameCode = salesReps.find(sr => sr.code === salesRep.code);
@@ -83,6 +93,15 @@ export const useSalesReps = () => {
         });
         return "";
       }
+
+      // Hash da senha usando a função do banco
+      const { data: hashedPassword, error: hashError } = await supabase
+        .rpc('hash_password', { password: salesRep.password });
+
+      if (hashError) {
+        console.error('❌ Error hashing password:', hashError);
+        throw hashError;
+      }
       
       const { data, error } = await supabase
         .from('sales_reps')
@@ -91,11 +110,12 @@ export const useSalesReps = () => {
           code: salesRep.code,
           phone: salesRep.phone || '',
           email: salesRep.email || '',
+          password: hashedPassword,
           active: salesRep.active,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .select()
+        .select('id, code, name, phone, email, active, created_at, updated_at')
         .single();
 
       if (error) {
@@ -133,17 +153,32 @@ export const useSalesReps = () => {
     try {
       console.log("=== UPDATING SALES REP ===");
       console.log("ID:", id, "Data:", salesRep);
+
+      let updateData: any = {
+        name: salesRep.name,
+        code: salesRep.code,
+        phone: salesRep.phone,
+        email: salesRep.email,
+        active: salesRep.active,
+        updated_at: new Date().toISOString()
+      };
+
+      // Se senha foi fornecida, fazer hash
+      if (salesRep.password) {
+        const { data: hashedPassword, error: hashError } = await supabase
+          .rpc('hash_password', { password: salesRep.password });
+
+        if (hashError) {
+          console.error('❌ Error hashing password:', hashError);
+          throw hashError;
+        }
+
+        updateData.password = hashedPassword;
+      }
       
       const { error } = await supabase
         .from('sales_reps')
-        .update({
-          name: salesRep.name,
-          code: salesRep.code,
-          phone: salesRep.phone,
-          email: salesRep.email,
-          active: salesRep.active,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', id);
 
       if (error) {
@@ -151,8 +186,9 @@ export const useSalesReps = () => {
         throw error;
       }
       
-      // Update local state
-      setSalesReps(salesReps.map(sr => sr.id === id ? { ...sr, ...salesRep } : sr));
+      // Update local state (sem senha)
+      const { password, ...salesRepWithoutPassword } = salesRep;
+      setSalesReps(salesReps.map(sr => sr.id === id ? { ...sr, ...salesRepWithoutPassword } : sr));
       
       toast({
         title: "✅ Vendedor atualizado",
