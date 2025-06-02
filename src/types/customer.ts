@@ -11,6 +11,7 @@ export interface Customer {
   city?: string;
   state?: string;
   zip_code?: string;
+  zipCode?: string; // Alias for compatibility
   region?: string;
   category?: string;
   payment_terms?: string;
@@ -18,10 +19,12 @@ export interface Customer {
   notes?: string;
   active: boolean;
   sales_rep_id?: string;
+  salesRepId?: string; // Alias for compatibility
   delivery_route_id?: string;
   visit_frequency?: string;
   visit_days?: string[];
   visit_sequence?: number;
+  visitSequence?: number; // Alias for compatibility
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,6 +19,7 @@ import Settings from '@/pages/Settings';
 import Sync from '@/pages/Sync';
 import Units from '@/pages/Units';
 import Products from '@/pages/Products';
+import { ConnectionProvider } from '@/context/providers/ConnectionProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,33 +33,35 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppDataProvider>
-        <Router>
-          <div className="min-h-screen bg-background">
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/pedidos" element={<Orders />} />
-                <Route path="/clientes" element={<Customers />} />
-                <Route path="/produtos" element={<Products />} />
-                <Route path="/vendedores" element={<SalesReps />} />
-                <Route path="/metodos-pagamento" element={<PaymentMethods />} />
-                <Route path="/tabelas-pagamento" element={<PaymentTables />} />
-                <Route path="/unidades" element={<Units />} />
-                <Route path="/veiculos" element={<Vehicles />} />
-                <Route path="/rotas-entrega" element={<DeliveryRoutes />} />
-                <Route path="/cargas" element={<Loads />} />
-                <Route path="/pagamentos" element={<Payments />} />
-                <Route path="/relatorios" element={<Reports />} />
-                <Route path="/configuracoes" element={<Settings />} />
-                <Route path="/sincronizacao" element={<Sync />} />
-              </Routes>
-            </Layout>
-          </div>
-        </Router>
-        <Toaster />
-      </AppDataProvider>
+      <ConnectionProvider>
+        <AppDataProvider>
+          <Router>
+            <div className="min-h-screen bg-background">
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/pedidos" element={<Orders />} />
+                  <Route path="/clientes" element={<Customers />} />
+                  <Route path="/produtos" element={<Products />} />
+                  <Route path="/vendedores" element={<SalesReps />} />
+                  <Route path="/metodos-pagamento" element={<PaymentMethods />} />
+                  <Route path="/tabelas-pagamento" element={<PaymentTables />} />
+                  <Route path="/unidades" element={<Units />} />
+                  <Route path="/veiculos" element={<Vehicles />} />
+                  <Route path="/rotas-entrega" element={<DeliveryRoutes />} />
+                  <Route path="/cargas" element={<Loads />} />
+                  <Route path="/pagamentos" element={<Payments />} />
+                  <Route path="/relatorios" element={<Reports />} />
+                  <Route path="/configuracoes" element={<Settings />} />
+                  <Route path="/sincronizacao" element={<Sync />} />
+                </Routes>
+              </Layout>
+            </div>
+          </Router>
+          <Toaster />
+        </AppDataProvider>
+      </ConnectionProvider>
     </QueryClientProvider>
   );
 }

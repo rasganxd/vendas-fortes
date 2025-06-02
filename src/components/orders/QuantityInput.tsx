@@ -5,53 +5,53 @@ import { Button } from '@/components/ui/button';
 import { Plus, Minus } from 'lucide-react';
 
 interface QuantityInputProps {
-  quantity: number | null;
+  quantity: number;
   onQuantityChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onIncrement: () => void;
   onDecrement: () => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef?: React.RefObject<HTMLInputElement>;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
 }
 
-export default function QuantityInput({
+const QuantityInput: React.FC<QuantityInputProps> = ({
   quantity,
   onQuantityChange,
   onIncrement,
   onDecrement,
-  onKeyDown,
-  inputRef
-}: QuantityInputProps) {
+  inputRef,
+  onKeyDown
+}) => {
   return (
     <div className="flex items-center">
-      <Button 
-        type="button" 
-        variant="outline" 
-        size="icon" 
-        className="h-11 w-11 rounded-r-none border-r-0 hover:bg-gray-50 transition-colors"
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
         onClick={onDecrement}
+        className="h-10 w-8 p-0 rounded-r-none"
       >
-        <Minus size={16} />
+        <Minus size={14} />
       </Button>
-      
       <Input
         ref={inputRef}
-        type="text"
-        className="w-16 h-11 text-center border-x-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
-        value={quantity === null ? '' : quantity.toString()}
+        type="number"
+        value={quantity}
         onChange={onQuantityChange}
         onKeyDown={onKeyDown}
-        placeholder="Qtd"
+        className="h-10 text-center rounded-none border-l-0 border-r-0"
+        min="1"
       />
-      
-      <Button 
-        type="button" 
-        variant="outline" 
-        size="icon" 
-        className="h-11 w-11 rounded-l-none border-l-0 hover:bg-gray-50 transition-colors"
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
         onClick={onIncrement}
+        className="h-10 w-8 p-0 rounded-l-none"
       >
-        <Plus size={16} />
+        <Plus size={14} />
       </Button>
     </div>
   );
-}
+};
+
+export default QuantityInput;

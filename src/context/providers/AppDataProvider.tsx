@@ -18,7 +18,21 @@ import { loadService } from '@/services/supabase/loadService';
 import { salesRepService } from '@/services/supabase/salesRepService';
 import { productService } from '@/services/supabase/productService';
 
-interface AppDataContextProps {
+interface AppSettings {
+  id: string;
+  company: {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    document: string;
+    footer: string;
+  };
+  primary_color?: string;
+  company_logo?: string;
+}
+
+interface AppDataContextType {
   customers: Customer[];
   isLoadingCustomers: boolean;
   refreshCustomers: () => Promise<void>;
@@ -53,9 +67,12 @@ interface AppDataContextProps {
   isLoadingLoads: boolean;
   refreshLoads: () => Promise<void>;
   refreshData: () => Promise<void>;
+  settings?: AppSettings;
+  isLoadingSettings?: boolean;
+  refreshSettings?: () => Promise<void>;
 }
 
-const defaultAppContext: AppDataContextProps = {
+const defaultAppContext: AppDataContextType = {
   customers: [],
   isLoadingCustomers: false,
   refreshCustomers: async () => { },
@@ -89,7 +106,10 @@ const defaultAppContext: AppDataContextProps = {
   loads: [],
   isLoadingLoads: false,
   refreshLoads: async () => { },
-  refreshData: async () => { }
+  refreshData: async () => { },
+  settings: undefined,
+  isLoadingSettings: false,
+  refreshSettings: async () => { }
 };
 
 export const AppDataContext = createContext(defaultAppContext);
@@ -334,6 +354,33 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     loadData();
   }, []);
 
+  const refreshSettings = async () => {
+    try {
+      setIsLoadingSettings(true);
+      // Mock settings for now
+      const mockSettings: AppSettings = {
+        id: 'default',
+        company: {
+          name: 'Minha Empresa',
+          email: 'contato@empresa.com',
+          phone: '(11) 99999-9999',
+          address: 'Rua das Flores, 123',
+          document: '12.345.678/0001-90',
+          footer: 'Obrigado pela preferência!'
+        }
+      };
+      setSettings(mockSettings);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshSettings();
+  }, []);
+
   const refreshData = async () => {
     await Promise.all([
       refreshCustomers(),
@@ -348,7 +395,7 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     ]);
   };
 
-  const contextValue = {
+  const value = {
     // Customers
     customers,
     isLoadingCustomers,
@@ -401,11 +448,16 @@ const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) 
     refreshLoads,
 
     // General
-    refreshData
+    refreshData,
+
+    // Settings
+    settings,
+    isLoadingSettings,
+    refreshSettings
   };
 
   return (
-    <AppDataContext.Provider value={contextValue}>
+    <AppDataContext.Provider value={value}>
       {children}
     </AppDataContext.Provider>
   );
