@@ -11,6 +11,7 @@ export { productService } from './supabase/productService';
 export { productBrandService } from './supabase/productBrandService';
 export { productCategoryService } from './supabase/productCategoryService';
 export { productGroupService } from './supabase/productGroupService';
+export { unitService } from './supabase/unitService';
 export { salesRepService } from './supabase/salesRepService';
 export { mobileSyncService } from './supabase/mobileSyncService';
 export { deliveryRouteService } from './supabase/deliveryRouteService';

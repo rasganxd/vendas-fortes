@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,98 +23,49 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Unit } from '@/types/unit';
-import EditUnitDialog from './EditUnitDialog';
+import { Unit } from '@/services/supabase/unitService';
 import { DeleteDialog } from '@/components/ui/DeleteDialog';
-
-const DEFAULT_UNITS: Unit[] = [
-  { value: 'UN', label: 'Unidade (UN)', conversionRate: 1 },
-  { value: 'KG', label: 'Quilograma (KG)', conversionRate: 1 },
-  { value: 'L', label: 'Litro (L)', conversionRate: 1 },
-  { value: 'ML', label: 'Mililitro (ML)', conversionRate: 0.001 },
-  { value: 'CX', label: 'Caixa (CX)', conversionRate: 24 },
-  { value: 'PCT', label: 'Pacote (PCT)', conversionRate: 12 },
-  { value: 'PAR', label: 'Par (PAR)', conversionRate: 2 },
-  { value: 'DUZIA', label: 'Dúzia (DZ)', conversionRate: 12 },
-  { value: 'ROLO', label: 'Rolo (RL)', conversionRate: 1 },
-  { value: 'METRO', label: 'Metro (M)', conversionRate: 1 }
-];
-
-const STORAGE_KEY = 'product_units';
+import { useUnits } from '@/hooks/useUnits';
 
 export default function UnitsPanel() {
-  const [units, setUnits] = useState<Unit[]>(DEFAULT_UNITS);
+  const { units, isLoading, addUnit, updateUnit, deleteUnit } = useUnits();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
   const [newUnit, setNewUnit] = useState({ 
-    value: '', 
-    label: '', 
-    conversionRate: 1
+    code: '', 
+    description: '',
+    packaging: ''
   });
 
-  // Carregar unidades do localStorage
-  useEffect(() => {
-    const savedUnits = localStorage.getItem(STORAGE_KEY);
-    if (savedUnits) {
-      try {
-        const parsedUnits = JSON.parse(savedUnits);
-        setUnits(parsedUnits);
-      } catch (error) {
-        console.error('Erro ao carregar unidades:', error);
-      }
-    }
-  }, []);
-
-  // Salvar unidades no localStorage
-  const saveUnits = (newUnits: Unit[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUnits));
-    setUnits(newUnits);
-    
-    // Disparar evento para atualizar outros componentes
-    window.dispatchEvent(new CustomEvent('unitsUpdated', { detail: newUnits }));
-  };
-
-  const handleAddUnit = () => {
-    if (!newUnit.value || !newUnit.label) {
-      toast("Erro", {
-        description: "Preencha todos os campos",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
+  const handleAddUnit = async () => {
+    if (!newUnit.code || !newUnit.description) {
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
     // Verificar se a unidade já existe
-    if (units.some(unit => unit.value.toLowerCase() === newUnit.value.toLowerCase())) {
-      toast("Erro", {
-        description: "Esta unidade já existe",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
+    if (units.some(unit => unit.code.toLowerCase() === newUnit.code.toLowerCase())) {
+      toast.error("Esta unidade já existe");
       return;
     }
 
-    const unitToAdd: Unit = {
-      value: newUnit.value.toUpperCase(),
-      label: newUnit.label,
-      conversionRate: newUnit.conversionRate
-    };
-    
-    const updatedUnits = [...units, unitToAdd];
-    saveUnits(updatedUnits);
-    setNewUnit({ value: '', label: '', conversionRate: 1 });
-    setIsOpen(false);
-    
-    toast("Unidade adicionada", {
-      description: "A nova unidade foi adicionada com sucesso"
-    });
+    try {
+      await addUnit({
+        code: newUnit.code.toUpperCase(),
+        description: newUnit.description,
+        packaging: newUnit.packaging || undefined
+      });
+      
+      setNewUnit({ code: '', description: '', packaging: '' });
+      setIsOpen(false);
+      toast.success("Unidade adicionada com sucesso");
+    } catch (error) {
+      toast.error("Erro ao adicionar unidade");
+    }
   };
 
   const handleEditUnit = (unit: Unit) => {
@@ -121,25 +73,31 @@ export default function UnitsPanel() {
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveEditedUnit = (updatedUnit: Unit) => {
+  const handleSaveEditedUnit = async () => {
+    if (!editingUnit) return;
+
     // Verificar se o código da unidade já existe (exceto a própria unidade sendo editada)
-    const existingUnit = units.find(u => u.value.toLowerCase() === updatedUnit.value.toLowerCase() && u.value !== editingUnit?.value);
+    const existingUnit = units.find(u => 
+      u.code.toLowerCase() === editingUnit.code.toLowerCase() && u.id !== editingUnit.id
+    );
     if (existingUnit) {
-      toast("Erro", {
-        description: "Já existe uma unidade com este código",
-        style: {
-          backgroundColor: 'rgb(239, 68, 68)',
-          color: 'white'
-        }
-      });
+      toast.error("Já existe uma unidade com este código");
       return;
     }
 
-    const updatedUnits = units.map(unit => 
-      unit.value === editingUnit?.value ? updatedUnit : unit
-    );
-    saveUnits(updatedUnits);
-    setEditingUnit(null);
+    try {
+      await updateUnit(editingUnit.id, {
+        code: editingUnit.code.toUpperCase(),
+        description: editingUnit.description,
+        packaging: editingUnit.packaging || undefined
+      });
+      
+      setIsEditDialogOpen(false);
+      setEditingUnit(null);
+      toast.success("Unidade atualizada com sucesso");
+    } catch (error) {
+      toast.error("Erro ao atualizar unidade");
+    }
   };
 
   const handleDeleteClick = (unit: Unit) => {
@@ -147,34 +105,37 @@ export default function UnitsPanel() {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!unitToDelete) return;
 
-    // Remover a proteção contra exclusão de unidades padrão - agora permite excluir qualquer uma
-    const updatedUnits = units.filter(unit => unit.value !== unitToDelete.value);
-    saveUnits(updatedUnits);
-    
-    toast("Unidade removida", {
-      description: "A unidade foi removida com sucesso"
-    });
+    try {
+      await deleteUnit(unitToDelete.id);
+      toast.success("Unidade removida com sucesso");
+    } catch (error) {
+      toast.error("Erro ao remover unidade");
+    }
 
     setDeleteDialogOpen(false);
     setUnitToDelete(null);
   };
 
-  const handleResetToDefault = () => {
-    saveUnits(DEFAULT_UNITS);
-    toast("Unidades restauradas", {
-      description: "As unidades foram restauradas para o padrão"
-    });
-  };
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerenciar Unidades de Medida</CardTitle>
+          <CardDescription>Carregando unidades...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Gerenciar Unidades de Medida</CardTitle>
         <CardDescription>
-          Configure as unidades de medida e suas taxas de conversão. A taxa de conversão indica quantas unidades básicas correspondem a 1 desta unidade. Agora você pode excluir qualquer unidade.
+          Configure as unidades de medida do sistema. Essas unidades são carregadas diretamente do banco de dados.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -185,9 +146,6 @@ export default function UnitsPanel() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleResetToDefault}>
-              Restaurar Padrão
-            </Button>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-blue-600 hover:bg-blue-700">
@@ -199,41 +157,35 @@ export default function UnitsPanel() {
                 <DialogHeader>
                   <DialogTitle>Adicionar Nova Unidade</DialogTitle>
                   <DialogDescription>
-                    Cadastre uma nova unidade de medida com sua taxa de conversão
+                    Cadastre uma nova unidade de medida
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="unitValue">Código da Unidade</Label>
+                    <Label htmlFor="unitCode">Código da Unidade*</Label>
                     <Input
-                      id="unitValue"
-                      placeholder="Ex: FARDO, DECA, etc."
-                      value={newUnit.value}
-                      onChange={(e) => setNewUnit(prev => ({ ...prev, value: e.target.value }))}
+                      id="unitCode"
+                      placeholder="Ex: UN, KG, L, CX, etc."
+                      value={newUnit.code}
+                      onChange={(e) => setNewUnit(prev => ({ ...prev, code: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="unitLabel">Nome Completo</Label>
+                    <Label htmlFor="unitDescription">Descrição*</Label>
                     <Input
-                      id="unitLabel"
-                      placeholder="Ex: Fardo (FARDO), Dezena (DECA)"
-                      value={newUnit.label}
-                      onChange={(e) => setNewUnit(prev => ({ ...prev, label: e.target.value }))}
+                      id="unitDescription"
+                      placeholder="Ex: Unidade, Quilograma, Litro, Caixa"
+                      value={newUnit.description}
+                      onChange={(e) => setNewUnit(prev => ({ ...prev, description: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="conversionRate">Taxa de Conversão</Label>
+                    <Label htmlFor="unitPackaging">Embalagem</Label>
                     <Input
-                      id="conversionRate"
-                      type="number"
-                      placeholder="Ex: 24 (1 desta unidade = 24 unidades básicas)"
-                      value={newUnit.conversionRate}
-                      onChange={(e) => setNewUnit(prev => ({ 
-                        ...prev, 
-                        conversionRate: parseFloat(e.target.value) || 1 
-                      }))}
-                      min="0.001"
-                      step="0.001"
+                      id="unitPackaging"
+                      placeholder="Ex: Plástico, Papel, Metal (opcional)"
+                      value={newUnit.packaging}
+                      onChange={(e) => setNewUnit(prev => ({ ...prev, packaging: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -254,21 +206,17 @@ export default function UnitsPanel() {
           <TableHeader>
             <TableRow>
               <TableHead>Código</TableHead>
-              <TableHead>Nome Completo</TableHead>
-              <TableHead>Taxa de Conversão</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Embalagem</TableHead>
               <TableHead className="w-[140px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {units.map((unit) => (
-              <TableRow key={unit.value}>
-                <TableCell className="font-medium">{unit.value}</TableCell>
-                <TableCell>{unit.label}</TableCell>
-                <TableCell>
-                  <span className="text-sm">
-                    1 = {unit.conversionRate} {unit.conversionRate === 1 ? 'unidade básica' : 'unidades básicas'}
-                  </span>
-                </TableCell>
+              <TableRow key={unit.id}>
+                <TableCell className="font-medium">{unit.code}</TableCell>
+                <TableCell>{unit.description}</TableCell>
+                <TableCell>{unit.packaging || '-'}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button
@@ -296,23 +244,60 @@ export default function UnitsPanel() {
           </TableBody>
         </Table>
 
-        <EditUnitDialog
-          unit={editingUnit}
-          isOpen={isEditDialogOpen}
-          onClose={() => {
-            setIsEditDialogOpen(false);
-            setEditingUnit(null);
-          }}
-          onSave={handleSaveEditedUnit}
-          baseUnits={[]}
-        />
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Unidade</DialogTitle>
+              <DialogDescription>
+                Edite os dados da unidade de medida
+              </DialogDescription>
+            </DialogHeader>
+            {editingUnit && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editUnitCode">Código da Unidade*</Label>
+                  <Input
+                    id="editUnitCode"
+                    value={editingUnit.code}
+                    onChange={(e) => setEditingUnit(prev => prev ? { ...prev, code: e.target.value } : null)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editUnitDescription">Descrição*</Label>
+                  <Input
+                    id="editUnitDescription"
+                    value={editingUnit.description}
+                    onChange={(e) => setEditingUnit(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editUnitPackaging">Embalagem</Label>
+                  <Input
+                    id="editUnitPackaging"
+                    value={editingUnit.packaging || ''}
+                    onChange={(e) => setEditingUnit(prev => prev ? { ...prev, packaging: e.target.value } : null)}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveEditedUnit}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <DeleteDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
           title="Excluir Unidade"
-          description={`Tem certeza que deseja excluir a unidade "${unitToDelete?.label}"? Esta ação não pode ser desfeita.`}
+          description={`Tem certeza que deseja excluir a unidade "${unitToDelete?.description}"? Esta ação não pode ser desfeita.`}
           actionLabel="Excluir"
           cancelLabel="Cancelar"
         />

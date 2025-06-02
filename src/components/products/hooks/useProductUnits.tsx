@@ -1,55 +1,72 @@
 
 import { useState, useEffect } from 'react';
-import { Unit } from '@/types/unit';
-import { UnitConverter } from '@/utils/unitConverter';
+import { Unit as UnitType } from '@/services/supabase/unitService';
+import { unitService } from '@/services/supabase/unitService';
 
-const DEFAULT_UNITS: Unit[] = [
-  { value: 'UN', label: 'Unidade (UN)', conversionRate: 1 },
-  { value: 'KG', label: 'Quilograma (KG)', conversionRate: 1 },
-  { value: 'L', label: 'Litro (L)', conversionRate: 1 },
-  { value: 'ML', label: 'Mililitro (ML)', conversionRate: 0.001 },
-  { value: 'CX', label: 'Caixa (CX)', conversionRate: 24 },
-  { value: 'PCT', label: 'Pacote (PCT)', conversionRate: 12 },
-  { value: 'PAR', label: 'Par (PAR)', conversionRate: 2 },
-  { value: 'DUZIA', label: 'Dúzia (DZ)', conversionRate: 12 },
-  { value: 'ROLO', label: 'Rolo (RL)', conversionRate: 1 },
-  { value: 'METRO', label: 'Metro (M)', conversionRate: 1 }
-];
-
-const STORAGE_KEY = 'product_units';
+// Legacy Unit interface for compatibility
+interface Unit {
+  value: string;
+  label: string;
+  conversionRate: number;
+}
 
 export const useProductUnits = () => {
-  const [units, setUnits] = useState<Unit[]>(DEFAULT_UNITS);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedUnits = localStorage.getItem(STORAGE_KEY);
-    if (savedUnits) {
+    const loadUnits = async () => {
       try {
-        const parsedUnits = JSON.parse(savedUnits);
-        setUnits(parsedUnits);
+        setIsLoading(true);
+        console.log("🔄 Loading units for product form...");
+        
+        const dbUnits = await unitService.getAll();
+        
+        // Convert database units to the format expected by the product form
+        const formattedUnits: Unit[] = dbUnits.map(unit => ({
+          value: unit.code,
+          label: `${unit.description} (${unit.code})`,
+          conversionRate: 1 // Default conversion rate - can be enhanced later
+        }));
+        
+        console.log("✅ Units loaded for product form:", formattedUnits.length, formattedUnits);
+        setUnits(formattedUnits);
       } catch (error) {
-        console.error('Erro ao carregar unidades:', error);
-        setUnits(DEFAULT_UNITS);
+        console.error('❌ Error loading units for product form:', error);
+        // Fallback to empty array instead of default units
+        setUnits([]);
+      } finally {
+        setIsLoading(false);
       }
-    }
-
-    const handleUnitsUpdated = (event: CustomEvent) => {
-      setUnits(event.detail);
     };
 
-    window.addEventListener('unitsUpdated', handleUnitsUpdated as EventListener);
+    loadUnits();
+
+    // Listen for unit updates
+    const handleUnitsUpdated = () => {
+      loadUnits();
+    };
+
+    window.addEventListener('unitsUpdated', handleUnitsUpdated);
 
     return () => {
-      window.removeEventListener('unitsUpdated', handleUnitsUpdated as EventListener);
+      window.removeEventListener('unitsUpdated', handleUnitsUpdated);
     };
   }, []);
 
-  const converter = new UnitConverter(units);
+  const getRelatedUnits = (unit: string): Unit[] => {
+    return units;
+  };
 
   return {
     units,
-    defaultUnits: DEFAULT_UNITS,
-    converter,
-    getRelatedUnits: (unit: string) => converter.getRelatedUnits(unit)
+    isLoading,
+    defaultUnits: [], // No more default units
+    converter: {
+      convert: (quantity: number, fromUnit: string, toUnit: string) => quantity,
+      calculateUnitPrice: (totalPrice: number, quantity: number) => totalPrice / quantity,
+      getRelatedUnits
+    },
+    getRelatedUnits
   };
 };
