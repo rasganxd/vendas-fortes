@@ -18,6 +18,7 @@ import Payments from '@/pages/Payments';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import Sync from '@/pages/Sync';
+import Units from '@/pages/Units';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,7 @@ function App() {
                 <Route path="/vendedores" element={<SalesReps />} />
                 <Route path="/metodos-pagamento" element={<PaymentMethods />} />
                 <Route path="/tabelas-pagamento" element={<PaymentTables />} />
+                <Route path="/unidades" element={<Units />} />
                 <Route path="/veiculos" element={<Vehicles />} />
                 <Route path="/rotas-entrega" element={<DeliveryRoutes />} />
                 <Route path="/cargas" element={<Loads />} />

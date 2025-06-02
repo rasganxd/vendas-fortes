@@ -1073,6 +1073,33 @@ export type Database = {
         }
         Relationships: []
       }
+      units: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          id: string
+          packaging: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          packaging?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          packaging?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           active: boolean

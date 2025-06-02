@@ -1,4 +1,3 @@
-
 // Customer types
 export interface Customer {
   id: string;
@@ -286,6 +285,16 @@ export interface ApiToken {
   isActive?: boolean;
   lastUsedAt?: Date;
   expiresAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Unit types
+export interface Unit {
+  id: string;
+  code: string;
+  description: string;
+  packaging?: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -35,6 +35,11 @@ interface AppDataContextType {
   
   // Global refresh
   refreshData: () => Promise<void>;
+  
+  // Mock settings for compatibility
+  settings: {
+    companyName: string;
+  };
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -117,7 +122,12 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     refreshOrders: ordersHook.refreshOrders,
     
     // Global refresh
-    refreshData
+    refreshData,
+    
+    // Mock settings for compatibility
+    settings: {
+      companyName: 'Minha Empresa'
+    }
   };
 
   if (!isInitialized) {
