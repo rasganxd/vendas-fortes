@@ -1,21 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,25 +9,9 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { ArrowLeft, Loader2, Save, Search, Calculator } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import BulkPricingModal from './pricing/BulkPricingModal';
-
 interface BulkPricingChanges {
   selectedProducts: string[];
   priceChanges?: {
@@ -50,17 +20,15 @@ interface BulkPricingChanges {
   };
   maxDiscountChange?: number;
 }
-
 const ProductPricing = () => {
   const navigate = useNavigate();
-  const { 
-    products, 
-    productCategories, 
-    productGroups, 
+  const {
+    products,
+    productCategories,
+    productGroups,
     updateProduct,
-    isLoadingProducts 
+    isLoadingProducts
   } = useAppData();
-  
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [filteredProducts, setFilteredProducts] = useState(products);
@@ -78,12 +46,10 @@ const ProductPricing = () => {
   useEffect(() => {
     const initialPrices: Record<string, number> = {};
     const initialMaxDiscounts: Record<string, number> = {};
-    
     products.forEach(product => {
       initialPrices[product.id] = product.price || 0;
       initialMaxDiscounts[product.id] = product.maxDiscountPercent || 0;
     });
-    
     setProductPrices(initialPrices);
     setProductMaxDiscounts(initialMaxDiscounts);
   }, [products]);
@@ -91,35 +57,25 @@ const ProductPricing = () => {
   // Filter products based on search and filters
   useEffect(() => {
     let filtered = products;
-
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(product => 
-        product.name.toLowerCase().includes(lowerSearchTerm) || 
-        product.code.toString().includes(lowerSearchTerm)
-      );
+      filtered = filtered.filter(product => product.name.toLowerCase().includes(lowerSearchTerm) || product.code.toString().includes(lowerSearchTerm));
     }
-
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(product => product.categoryId === selectedCategory);
     }
-
     if (selectedGroup !== 'all') {
       filtered = filtered.filter(product => product.groupId === selectedGroup);
     }
-
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory, selectedGroup]);
-
   const calculateMarkup = (cost: number, price: number): number => {
     if (cost === 0) return 0;
-    return ((price - cost) / cost) * 100;
+    return (price - cost) / cost * 100;
   };
-
   const calculateMinimumPrice = (price: number, maxDiscount: number): number => {
     return price * (1 - maxDiscount / 100);
   };
-
   const handleSelectAll = () => {
     if (selectedProducts.size === filteredProducts.length) {
       setSelectedProducts(new Set());
@@ -128,7 +84,6 @@ const ProductPricing = () => {
       setSelectedProducts(allIds);
     }
   };
-
   const handleSelectProduct = (id: string) => {
     const newSelected = new Set(selectedProducts);
     if (newSelected.has(id)) {
@@ -138,7 +93,6 @@ const ProductPricing = () => {
     }
     setSelectedProducts(newSelected);
   };
-
   const handlePriceChange = (productId: string, newPrice: number) => {
     setProductPrices(prev => ({
       ...prev,
@@ -146,7 +100,6 @@ const ProductPricing = () => {
     }));
     setHasChanges(true);
   };
-
   const handleMaxDiscountChange = (productId: string, newMaxDiscount: number) => {
     setProductMaxDiscounts(prev => ({
       ...prev,
@@ -154,18 +107,23 @@ const ProductPricing = () => {
     }));
     setHasChanges(true);
   };
-
   const handleBulkPricingChanges = (changes: BulkPricingChanges) => {
-    const newPrices = { ...productPrices };
-    const newMaxDiscounts = { ...productMaxDiscounts };
-    
+    const newPrices = {
+      ...productPrices
+    };
+    const newMaxDiscounts = {
+      ...productMaxDiscounts
+    };
     changes.selectedProducts.forEach(productId => {
       const product = products.find(p => p.id === productId);
       if (!product) return;
-      
+
       // Apply price changes
       if (changes.priceChanges) {
-        const { mode, value } = changes.priceChanges;
+        const {
+          mode,
+          value
+        } = changes.priceChanges;
         if (mode === 'percentage') {
           const markup = product.cost * (value / 100);
           newPrices[productId] = product.cost + markup;
@@ -175,33 +133,28 @@ const ProductPricing = () => {
           newPrices[productId] = value;
         }
       }
-      
+
       // Apply max discount changes
       if (changes.maxDiscountChange !== undefined && changes.maxDiscountChange >= 0) {
         newMaxDiscounts[productId] = changes.maxDiscountChange;
       }
     });
-
     setProductPrices(newPrices);
     setProductMaxDiscounts(newMaxDiscounts);
     setHasChanges(true);
-    
     toast("Preços atualizados", {
       description: `Preços de ${changes.selectedProducts.length} produtos atualizados em massa.`
     });
   };
-
   const validatePriceChanges = () => {
     const issues = [];
-    
     for (const productId of Object.keys(productPrices)) {
       const product = products.find(p => p.id === productId);
       if (!product) continue;
-      
       const currentPrice = productPrices[productId];
       const maxDiscount = productMaxDiscounts[productId] || 0;
       const minimumPrice = calculateMinimumPrice(currentPrice, maxDiscount);
-      
+
       // Check if price is reasonable compared to cost
       if (currentPrice < product.cost) {
         issues.push({
@@ -212,45 +165,38 @@ const ProductPricing = () => {
         });
       }
     }
-    
     return issues;
   };
-
   const saveAllPrices = async (forceOverride = false) => {
     if (!hasChanges) return;
-    
+
     // Validate prices if not forcing override
     if (!forceOverride) {
       const issues = validatePriceChanges();
       if (issues.length > 0) {
-        setPendingSave({ issues });
+        setPendingSave({
+          issues
+        });
         setShowOverrideDialog(true);
         return;
       }
     }
-    
     setIsLoading(true);
-    
     try {
       const updates = [];
-      
       for (const productId of Object.keys(productPrices)) {
         const product = products.find(p => p.id === productId);
         if (!product) continue;
-        
         const updateData: any = {};
         let hasUpdates = false;
-        
         if (product.price !== productPrices[productId]) {
           updateData.price = productPrices[productId];
           hasUpdates = true;
         }
-        
         if ((product.maxDiscountPercent || 0) !== (productMaxDiscounts[productId] || 0)) {
           updateData.maxDiscountPercent = productMaxDiscounts[productId] || 0;
           hasUpdates = true;
         }
-        
         if (hasUpdates) {
           updates.push({
             id: productId,
@@ -258,16 +204,13 @@ const ProductPricing = () => {
           });
         }
       }
-      
       if (updates.length > 0) {
         for (const update of updates) {
           await updateProduct(update.id, update.updates);
         }
-        
         toast("Preços salvos", {
           description: `Preços de ${updates.length} produtos foram salvos com sucesso.`
         });
-        
         setHasChanges(false);
       } else {
         toast("Nenhuma alteração", {
@@ -289,30 +232,16 @@ const ProductPricing = () => {
       setPendingSave(null);
     }
   };
-
   const formatPriceInput = (value: string): number => {
     const numericValue = value.replace(/\D/g, '');
     return parseFloat(numericValue) / 100 || 0;
   };
-
-  return (
-    <>
+  return <>
       <Card className="w-full">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mb-2"
-              onClick={() => navigate('/produtos')}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar para Produtos
-            </Button>
-            <Button 
-              onClick={() => setBulkPricingOpen(true)}
-              className="bg-green-600 hover:bg-green-700"
-            >
+            
+            <Button onClick={() => setBulkPricingOpen(true)} className="bg-green-600 hover:bg-green-700">
               <Calculator className="mr-2 h-4 w-4" />
               Precificação em Massa
             </Button>
@@ -329,61 +258,39 @@ const ProductPricing = () => {
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar produtos..."
-                    className="pl-8"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                  <Input placeholder="Buscar produtos..." className="pl-8" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                 </div>
               </div>
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas Categorias</SelectItem>
-                  {productCategories.map(category => (
-                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                  ))}
+                  {productCategories.map(category => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select
-                value={selectedGroup}
-                onValueChange={setSelectedGroup}
-              >
+              <Select value={selectedGroup} onValueChange={setSelectedGroup}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Grupo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos Grupos</SelectItem>
-                  {productGroups.map(group => (
-                    <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                  ))}
+                  {productGroups.map(group => <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             
             {/* Products table */}
             <div>
-              {isLoadingProducts ? (
-                <div className="flex items-center justify-center py-8">
+              {isLoadingProducts ? <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
                   <span className="ml-2">Carregando produtos...</span>
-                </div>
-              ) : (
-                <Table>
+                </div> : <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">
-                        <Checkbox 
-                          checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
-                          onCheckedChange={handleSelectAll}
-                          aria-label="Selecionar todos"
-                        />
+                        <Checkbox checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length} onCheckedChange={handleSelectAll} aria-label="Selecionar todos" />
                       </TableHead>
                       <TableHead className="w-20">Código</TableHead>
                       <TableHead>Nome</TableHead>
@@ -395,54 +302,33 @@ const ProductPricing = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProducts.length === 0 ? (
-                      <TableRow>
+                    {filteredProducts.length === 0 ? <TableRow>
                         <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado com os filtros aplicados'}
                         </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredProducts.map((product) => {
-                        const currentPrice = productPrices[product.id] || 0;
-                        const maxDiscount = productMaxDiscounts[product.id] || 0;
-                        const minimumPrice = calculateMinimumPrice(currentPrice, maxDiscount);
-                        const markup = calculateMarkup(product.cost, currentPrice);
-                        
-                        return (
-                          <TableRow key={product.id}>
+                      </TableRow> : filteredProducts.map(product => {
+                  const currentPrice = productPrices[product.id] || 0;
+                  const maxDiscount = productMaxDiscounts[product.id] || 0;
+                  const minimumPrice = calculateMinimumPrice(currentPrice, maxDiscount);
+                  const markup = calculateMarkup(product.cost, currentPrice);
+                  return <TableRow key={product.id}>
                             <TableCell>
-                              <Checkbox 
-                                checked={selectedProducts.has(product.id)}
-                                onCheckedChange={() => handleSelectProduct(product.id)}
-                                aria-label={`Selecionar ${product.name}`}
-                              />
+                              <Checkbox checked={selectedProducts.has(product.id)} onCheckedChange={() => handleSelectProduct(product.id)} aria-label={`Selecionar ${product.name}`} />
                             </TableCell>
                             <TableCell>{product.code}</TableCell>
                             <TableCell>{product.name}</TableCell>
                             <TableCell>{formatCurrency(product.cost)}</TableCell>
                             <TableCell>
-                              <Input
-                                value={formatCurrency(currentPrice)}
-                                onChange={(e) => {
-                                  const newPrice = formatPriceInput(e.target.value);
-                                  handlePriceChange(product.id, newPrice);
-                                }}
-                                className="w-24"
-                              />
+                              <Input value={formatCurrency(currentPrice)} onChange={e => {
+                        const newPrice = formatPriceInput(e.target.value);
+                        handlePriceChange(product.id, newPrice);
+                      }} className="w-24" />
                             </TableCell>
                             <TableCell>
-                              <Input
-                                type="number"
-                                value={maxDiscount || ''}
-                                onChange={(e) => {
-                                  const newMaxDiscount = parseFloat(e.target.value) || 0;
-                                  handleMaxDiscountChange(product.id, newMaxDiscount);
-                                }}
-                                className="w-20"
-                                min="0"
-                                max="100"
-                                step="0.1"
-                              />
+                              <Input type="number" value={maxDiscount || ''} onChange={e => {
+                        const newMaxDiscount = parseFloat(e.target.value) || 0;
+                        handleMaxDiscountChange(product.id, newMaxDiscount);
+                      }} className="w-20" min="0" max="100" step="0.1" />
                             </TableCell>
                             <TableCell className="text-sm text-gray-600">
                               {formatCurrency(minimumPrice)}
@@ -452,32 +338,22 @@ const ProductPricing = () => {
                                 {markup.toFixed(1)}%
                               </span>
                             </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
+                          </TableRow>;
+                })}
                   </TableBody>
-                </Table>
-              )}
+                </Table>}
             </div>
 
             {/* Save button */}
             <div className="flex justify-end mt-4">
-              <Button
-                onClick={() => saveAllPrices(false)}
-                disabled={isLoading || !hasChanges}
-              >
-                {isLoading ? (
-                  <>
+              <Button onClick={() => saveAllPrices(false)} disabled={isLoading || !hasChanges}>
+                {isLoading ? <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Salvando...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <Save className="mr-2 h-4 w-4" />
                     Salvar Preços
-                  </>
-                )}
+                  </>}
               </Button>
             </div>
           </div>
@@ -485,14 +361,7 @@ const ProductPricing = () => {
       </Card>
 
       {/* Bulk Pricing Modal */}
-      <BulkPricingModal
-        open={bulkPricingOpen}
-        onOpenChange={setBulkPricingOpen}
-        products={products}
-        productCategories={productCategories}
-        productGroups={productGroups}
-        onApplyChanges={handleBulkPricingChanges}
-      />
+      <BulkPricingModal open={bulkPricingOpen} onOpenChange={setBulkPricingOpen} products={products} productCategories={productCategories} productGroups={productGroups} onApplyChanges={handleBulkPricingChanges} />
 
       {/* Override Dialog */}
       <AlertDialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
@@ -504,17 +373,13 @@ const ProductPricing = () => {
             <AlertDialogDescription>
               {pendingSave?.issues?.length} produto(s) têm problemas de precificação:
               <div className="mt-2 space-y-1">
-                {pendingSave?.issues?.slice(0, 5).map((item: any) => (
-                  <div key={item.product.id} className="text-sm">
+                {pendingSave?.issues?.slice(0, 5).map((item: any) => <div key={item.product.id} className="text-sm">
                     <strong>{item.product.name}</strong>: {formatCurrency(item.currentPrice)}
                     {item.issue === 'price_below_cost' && ` (custo: ${formatCurrency(item.cost)})`}
-                  </div>
-                ))}
-                {pendingSave?.issues?.length > 5 && (
-                  <div className="text-sm text-muted-foreground">
+                  </div>)}
+                {pendingSave?.issues?.length > 5 && <div className="text-sm text-muted-foreground">
                     ...e mais {pendingSave.issues.length - 5} produto(s)
-                  </div>
-                )}
+                  </div>}
               </div>
               <br />
               Deseja salvar mesmo assim?
@@ -528,8 +393,6 @@ const ProductPricing = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
-  );
+    </>;
 };
-
 export default ProductPricing;
