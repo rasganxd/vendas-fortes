@@ -26,15 +26,19 @@ const productFormSchema = z.object({
   categoryId: z.string().optional(),
   groupId: z.string().optional(),
   brandId: z.string().optional(),
-  // New fields for units configuration
+  // Atualizado: tornar selectedUnits obrigatório com pelo menos uma unidade
   selectedUnits: z.array(z.object({
     unitId: z.string(),
     unitValue: z.string(),
     unitLabel: z.string(),
     packageQuantity: z.number(),
     isMainUnit: z.boolean()
-  })).optional(),
-  mainUnitId: z.string().optional(),
+  })).min(1, {
+    message: "É obrigatório selecionar pelo menos uma unidade para o produto."
+  }),
+  mainUnitId: z.string().min(1, {
+    message: "É obrigatório definir uma unidade principal."
+  }),
 });
 
 export type ProductFormData = z.infer<typeof productFormSchema> & ProductFormUnitsData;
@@ -80,6 +84,7 @@ export const useProductFormLogic = ({
       categoryId: isEditing && selectedProduct ? selectedProduct.categoryId || "" : "",
       groupId: isEditing && selectedProduct ? selectedProduct.groupId || "" : "",
       brandId: isEditing && selectedProduct ? selectedProduct.brandId || "" : "",
+      // Atualizado: inicializar com arrays vazios para novos produtos
       selectedUnits: [],
       mainUnitId: null,
     },
@@ -252,6 +257,25 @@ export const useProductFormLogic = ({
     setIsSubmitting(true);
     try {
       console.log("📤 Submitting form data:", data);
+      
+      // Validação adicional para novos produtos
+      if (!isEditing) {
+        if (!data.selectedUnits || data.selectedUnits.length === 0) {
+          toast("Unidades obrigatórias", {
+            description: "É obrigatório selecionar pelo menos uma unidade para o produto"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        
+        if (!data.mainUnitId) {
+          toast("Unidade principal obrigatória", {
+            description: "É obrigatório definir uma unidade principal para o produto"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
       
       if (hasSubunit && !isConversionValid) {
         toast("Configuração inválida", {
