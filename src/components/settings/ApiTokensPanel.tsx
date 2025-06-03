@@ -420,199 +420,125 @@ const ApiTokensPanel: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Documentação da API e Mobile Auth */}
+      {/* Documentação Corrigida da API */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5" />
-            Autenticação Mobile - Guia Completo
-          </CardTitle>
+          <CardTitle>Documentação da API - Endpoints Corretos</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div>
-            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Fluxo de Autenticação
-            </h3>
-            <div className="space-y-3">
-              <div className="border-l-4 border-blue-500 pl-4">
-                <p className="font-medium">1. Criar Credenciais do Vendedor</p>
-                <p className="text-sm text-gray-600">
-                  Na página de vendedores, clique em "Credenciais" para criar email e senha para cada vendedor.
-                </p>
-              </div>
-              <div className="border-l-4 border-green-500 pl-4">
-                <p className="font-medium">2. Login no App Mobile</p>
-                <p className="text-sm text-gray-600">
-                  O vendedor usa email e senha para fazer login no aplicativo mobile.
-                </p>
-              </div>
-              <div className="border-l-4 border-purple-500 pl-4">
-                <p className="font-medium">3. Geração Automática de Token</p>
-                <p className="text-sm text-gray-600">
-                  Após o login, um token de API é gerado automaticamente para acessar os endpoints.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-              <Key className="h-5 w-5" />
-              Endpoints de Autenticação
-            </h3>
-            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-              <div>
-                <Badge variant="outline" className="mb-2">POST</Badge>
-                <code className="block text-sm bg-white p-2 rounded border">
-                  /auth/v1/token?grant_type=password
-                </code>
-                <p className="text-sm text-gray-600 mt-1">
-                  Endpoint do Supabase para login com email/senha
-                </p>
-              </div>
-              <div>
-                <Badge variant="outline" className="mb-2">POST</Badge>
-                <code className="block text-sm bg-white p-2 rounded border">
-                  /auth/v1/logout
-                </code>
-                <p className="text-sm text-gray-600 mt-1">
-                  Endpoint para logout e invalidação da sessão
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-              <Code className="h-5 w-5" />
-              Exemplo de Implementação Mobile
-            </h3>
-            <div className="bg-gray-900 text-white p-4 rounded-lg text-sm">
-              <pre className="whitespace-pre-wrap">
-{`// Login no App Mobile
-const login = async (email, password) => {
-  const response = await fetch(
-    'https://ufvnubabpcyimahbubkd.supabase.co/auth/v1/token?grant_type=password',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-      },
-      body: JSON.stringify({ email, password })
-    }
-  );
-  
-  const data = await response.json();
-  if (data.access_token) {
-    // Salvar token para uso nas requisições
-    localStorage.setItem('auth_token', data.access_token);
-    return data;
-  }
-  throw new Error('Login failed');
-};
-
-// Usar token nas requisições da API
-const createOrder = async (orderData) => {
-  const token = localStorage.getItem('auth_token');
-  
-  const response = await fetch(
-    'https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/orders-api',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': \`Bearer \${token}\`
-      },
-      body: JSON.stringify(orderData)
-    }
-  );
-  
-  return response.json();
-};`}
-              </pre>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-lg mb-3">Segurança e RLS</h3>
-            <div className="space-y-2">
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                <div>
-                  <p className="font-medium">Row Level Security (RLS)</p>
-                  <p className="text-sm text-gray-600">
-                    Cada vendedor vê apenas seus próprios clientes e pedidos
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                <div>
-                  <p className="font-medium">Autenticação JWT</p>
-                  <p className="text-sm text-gray-600">
-                    Tokens JWT do Supabase para autenticação segura
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                <div>
-                  <p className="font-medium">API Keys Alternativas</p>
-                  <p className="text-sm text-gray-600">
-                    Tokens de API personalizados também são suportados
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Documentação da API REST */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Documentação da API REST</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold mb-2">Endpoint Base:</h4>
-            <code className="text-sm bg-white p-2 rounded border block">
-              https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/orders-api
-            </code>
-          </div>
           
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-semibold">Autenticação:</h4>
-              <p className="text-sm text-gray-600 mb-2">Inclua o token no header da requisição:</p>
-              <code className="text-sm bg-gray-100 p-2 rounded border block">
-                x-api-key: seu_token_aqui
+          {/* Orders API (CRUD) */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="h-5 w-5 text-blue-500" />
+              <h3 className="font-semibold text-lg">Orders API (CRUD)</h3>
+              <Badge variant="outline">Protegida</Badge>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg mb-3">
+              <code className="text-sm font-mono">
+                https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/orders-api
               </code>
             </div>
-
-            <div>
-              <h4 className="font-semibold">Endpoints Disponíveis:</h4>
-              <ul className="text-sm space-y-2 mt-2">
-                <li><code>POST /</code> - Criar pedido</li>
-                <li><code>GET /</code> - Listar pedidos (com filtros)</li>
-                <li><code>GET /:id</code> - Buscar pedido por ID</li>
+            
+            <p className="text-sm text-gray-600 mb-3">
+              <strong>Finalidade:</strong> Gerenciar pedidos já importados no sistema. Requer autenticação com token API.
+            </p>
+            
+            <div className="space-y-2">
+              <p className="font-medium text-sm">Endpoints disponíveis:</p>
+              <ul className="text-sm space-y-1 ml-4">
+                <li><code>GET /</code> - Listar pedidos importados (com filtros)</li>
+                <li><code>GET /:id</code> - Buscar pedido específico</li>
                 <li><code>PUT /:id</code> - Atualizar pedido</li>
                 <li><code>DELETE /:id</code> - Excluir pedido</li>
+                <li className="text-red-600"><code>POST /</code> - ⚠️ NÃO aceita criação de pedidos mobile</li>
               </ul>
             </div>
 
-            <div>
-              <h4 className="font-semibold">Filtros Disponíveis (GET /):</h4>
-              <ul className="text-sm space-y-1 mt-2">
-                <li><code>?vendedor_id=uuid</code> - Filtrar por vendedor</li>
-                <li><code>?status=pendente</code> - Filtrar por status</li>
-                <li><code>?data_inicio=2024-01-01</code> - Data inicial</li>
-                <li><code>?data_fim=2024-12-31</code> - Data final</li>
-                <li><code>?cliente=nome</code> - Buscar por nome do cliente</li>
-                <li><code>?limit=50&offset=0</code> - Paginação</li>
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                <strong>Importante:</strong> Esta API é para gerenciar pedidos já no sistema, não para receber novos pedidos do mobile.
+              </p>
+            </div>
+          </div>
+
+          {/* Mobile Import API */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Smartphone className="h-5 w-5 text-green-500" />
+              <h3 className="font-semibold text-lg">Mobile Orders Import API</h3>
+              <Badge variant="default" className="bg-green-500">Para Mobile</Badge>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg mb-3">
+              <code className="text-sm font-mono">
+                https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/mobile-orders-import
+              </code>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-3">
+              <strong>Finalidade:</strong> Receber pedidos enviados pelos aplicativos mobile. Use este endpoint nos apps mobile.
+            </p>
+            
+            <div className="space-y-2">
+              <p className="font-medium text-sm">Endpoints disponíveis:</p>
+              <ul className="text-sm space-y-1 ml-4">
+                <li><code>POST /</code> - Enviar pedidos do mobile</li>
+                <li><code>GET /:sales_rep_id</code> - Listar pedidos pendentes por vendedor</li>
               </ul>
+            </div>
+
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+              <p className="text-sm text-green-800">
+                <strong>Use este endpoint</strong> para enviar pedidos dos aplicativos mobile. Os pedidos ficam pendentes até serem importados manualmente.
+              </p>
+            </div>
+          </div>
+
+          {/* Mobile Sync API */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Code className="h-5 w-5 text-purple-500" />
+              <h3 className="font-semibold text-lg">Mobile Sync API</h3>
+              <Badge variant="default" className="bg-purple-500">Sincronização</Badge>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg mb-3">
+              <code className="text-sm font-mono">
+                https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/mobile-sync
+              </code>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-3">
+              <strong>Finalidade:</strong> Sincronização completa para aplicativos mobile - dados e pedidos.
+            </p>
+            
+            <div className="space-y-2">
+              <p className="font-medium text-sm">Funcionalidades:</p>
+              <ul className="text-sm space-y-1 ml-4">
+                <li>• Baixar produtos e clientes atualizados</li>
+                <li>• Enviar pedidos em lote</li>
+                <li>• Obter estatísticas de sincronização</li>
+                <li>• Gerenciar tokens de sincronização</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Authentication Guide */}
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-3">Autenticação</h3>
+            <div className="space-y-3">
+              <div>
+                <p className="font-medium text-sm">Para Orders API:</p>
+                <code className="text-sm bg-gray-100 p-2 rounded border block mt-1">
+                  x-api-key: seu_token_aqui
+                </code>
+              </div>
+              <div>
+                <p className="font-medium text-sm">Para Mobile APIs:</p>
+                <p className="text-sm text-gray-600">Use as credenciais do vendedor ou tokens de sincronização</p>
+              </div>
             </div>
           </div>
         </CardContent>
