@@ -5,7 +5,6 @@ export interface Customer {
   name: string; // This will be "Nome Fantasia"
   companyName?: string; // This will be "Razão Social"
   phone: string;
-  email: string;
   address: string;
   city: string;
   state: string;
@@ -42,7 +41,6 @@ export type CustomerFormValues = {
   notes: string;
   visitDays: string[];
   visitFrequency: string;
-  email: string;
   createdAt: Date;
   updatedAt: Date;
   visitSequence: number;

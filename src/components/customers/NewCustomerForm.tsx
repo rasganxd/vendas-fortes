@@ -29,7 +29,6 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       notes: '',
       visitDays: [] as string[],
       visitFrequency: 'weekly',
-      email: '',
       salesRepId: '',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -57,11 +56,11 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
-        <div className="max-h-[70vh] overflow-y-auto pr-4 pb-2">
+        <div className="max-h-[75vh] overflow-y-auto pr-4 pb-2">
           <CustomerFormFields form={form} />
         </div>
         
-        <DialogFooter className="mt-3 bg-background pt-2 pb-1">
+        <DialogFooter className="mt-4 bg-background pt-4 pb-1 border-t">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>

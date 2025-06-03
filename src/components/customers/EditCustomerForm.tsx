@@ -49,7 +49,6 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       visitDays: standardizedCustomer.visitDays || [],
       visitFrequency: standardizedCustomer.visitFrequency || 'weekly',
       visitSequence: standardizedCustomer.visitSequence || 1,
-      email: standardizedCustomer.email || '',
       salesRepId: standardizedCustomer.salesRepId,
       createdAt: standardizedCustomer.createdAt,
       updatedAt: standardizedCustomer.updatedAt || new Date()
@@ -82,11 +81,11 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="max-h-[60vh] overflow-y-auto pr-4 pb-4">
+        <div className="max-h-[70vh] overflow-y-auto pr-4 pb-4">
           <CustomerFormFields form={form} />
         </div>
         
-        <DialogFooter className="mt-6 bg-background pt-2 pb-1">
+        <DialogFooter className="mt-6 bg-background pt-4 pb-1 border-t">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
