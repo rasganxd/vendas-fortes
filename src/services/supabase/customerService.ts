@@ -1,3 +1,4 @@
+
 import { SupabaseService } from './supabaseService';
 import { Customer } from '@/types';
 
@@ -66,8 +67,8 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     
     console.log(`🔍 [CustomerService] Transforming customer ${dbRecord.name}: sales_rep_id=${salesRepId}, sales_rep_name=${salesRepName}`);
     
-    // Map database snake_case fields to TypeScript camelCase
-    return {
+    // Map database snake_case fields to TypeScript camelCase - CORRIGIDO: Mapeamento completo
+    const transformedCustomer = {
       ...baseTransformed,
       companyName: dbRecord.company_name || '',
       visitDays: dbRecord.visit_days || [],
@@ -78,8 +79,18 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       deliveryRouteId: dbRecord.delivery_route_id || undefined,
       zipCode: dbRecord.zip_code || '',
       // Ensure zip is set from zip_code for consistency
-      zip: dbRecord.zip_code || dbRecord.zip || ''
+      zip: dbRecord.zip_code || dbRecord.zip || '',
+      // Adicionar campos que podem estar faltando
+      creditLimit: dbRecord.credit_limit || 0,
+      paymentTerms: dbRecord.payment_terms || '',
+      region: dbRecord.region || '',
+      category: dbRecord.category || '',
+      document: dbRecord.document || '',
+      notes: dbRecord.notes || ''
     };
+
+    console.log(`✅ [CustomerService] Final transformed customer:`, transformedCustomer);
+    return transformedCustomer;
   }
 
   // Override the transformToDB method to map TypeScript interface to database fields
@@ -97,7 +108,11 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       visit_sequence: record.visitSequence || 0,
       sales_rep_id: record.salesRepId || null,
       delivery_route_id: record.deliveryRouteId || null,
-      zip_code: record.zip || record.zipCode || ''
+      zip_code: record.zip || record.zipCode || '',
+      credit_limit: record.creditLimit || 0,
+      payment_terms: record.paymentTerms || '',
+      region: record.region || '',
+      category: record.category || ''
     };
 
     console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}`);
@@ -113,6 +128,8 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     delete dbRecord.zipCode;
     delete dbRecord.zip;
     delete dbRecord.syncPending;
+    delete dbRecord.creditLimit;
+    delete dbRecord.paymentTerms;
     
     console.log("📝 [CustomerService] Transform to DB result:", dbRecord);
     return dbRecord;

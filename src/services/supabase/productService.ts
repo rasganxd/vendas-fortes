@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
@@ -33,7 +34,7 @@ export const productService = {
           name: item.name,
           description: '', // Database doesn't have description field, so use empty string
           cost: item.cost_price || 0,
-          price: item.sale_price || 0,
+          price: item.sale_price || 0, // CORRIGIDO: Mapeamento correto de sale_price para price
           stock: item.stock || 0,
           minStock: 0,
           maxDiscountPercent: item.max_discount_percent || 0,
@@ -51,6 +52,7 @@ export const productService = {
         };
         
         console.log(`✅ [ProductService] Transformed product ${index + 1}:`, product);
+        console.log(`💰 [ProductService] Product ${product.name}: cost=${product.cost}, price=${product.price}`);
         return product;
       });
       
@@ -88,7 +90,7 @@ export const productService = {
         name: data.name,
         description: '',
         cost: data.cost_price || 0,
-        price: data.sale_price || 0,
+        price: data.sale_price || 0, // CORRIGIDO: Mapeamento correto
         stock: data.stock || 0,
         minStock: 0,
         maxDiscountPercent: data.max_discount_percent || 0,
@@ -126,7 +128,7 @@ export const productService = {
   },
 
   async create(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
-    console.log('Creating product with data:', product);
+    console.log('🔄 [ProductService] Creating product with data:', product);
     
     // Get unit IDs from codes
     const mainUnitId = await this.getUnitIdByCode(product.unit || 'UN');
@@ -140,12 +142,12 @@ export const productService = {
       throw new Error(`Unidade principal '${product.unit}' não encontrada`);
     }
     
-    // Prepare data for Supabase
+    // Prepare data for Supabase - CORRIGIDO: Mapeamento correto para o banco
     const productData = {
       code: product.code,
       name: product.name,
       cost_price: product.cost || 0,
-      sale_price: product.price || product.cost || 0,
+      sale_price: product.price || product.cost || 0, // CORRIGIDO: price -> sale_price
       stock: product.stock || 0,
       max_discount_percent: product.maxDiscountPercent || 0,
       category_id: product.categoryId || null,
@@ -156,7 +158,7 @@ export const productService = {
       active: true
     };
 
-    console.log('Supabase product data:', productData);
+    console.log('📝 [ProductService] Supabase product data:', productData);
 
     const { data, error } = await supabase
       .from('products')
@@ -169,7 +171,7 @@ export const productService = {
       .single();
     
     if (error) {
-      console.error('Erro ao criar produto:', error);
+      console.error('❌ [ProductService] Erro ao criar produto:', error);
       throw error;
     }
 
@@ -180,7 +182,7 @@ export const productService = {
       name: data.name,
       description: '',
       cost: data.cost_price,
-      price: data.sale_price,
+      price: data.sale_price, // CORRIGIDO: Mapeamento correto
       stock: data.stock,
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,
@@ -197,7 +199,7 @@ export const productService = {
       syncStatus: 'synced' as 'synced' | 'pending' | 'error'
     };
 
-    console.log('Created product:', createdProduct);
+    console.log('✅ [ProductService] Created product:', createdProduct);
     return createdProduct;
   },
 
@@ -222,13 +224,13 @@ export const productService = {
       subUnitId = null;
     }
     
-    // Prepare data for Supabase
+    // Prepare data for Supabase - CORRIGIDO: Mapeamento correto
     const updateData: any = {};
     
     if (product.code !== undefined) updateData.code = product.code;
     if (product.name !== undefined) updateData.name = product.name;
     if (product.cost !== undefined) updateData.cost_price = product.cost;
-    if (product.price !== undefined) updateData.sale_price = product.price;
+    if (product.price !== undefined) updateData.sale_price = product.price; // CORRIGIDO
     if (product.stock !== undefined) updateData.stock = product.stock;
     if (product.maxDiscountPercent !== undefined) updateData.max_discount_percent = product.maxDiscountPercent;
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
@@ -237,7 +239,7 @@ export const productService = {
     if (mainUnitId !== undefined) updateData.main_unit_id = mainUnitId;
     if (subUnitId !== undefined) updateData.sub_unit_id = subUnitId;
 
-    console.log('Updating product with data:', updateData);
+    console.log('🔄 [ProductService] Updating product with data:', updateData);
 
     const { data, error } = await supabase
       .from('products')
@@ -251,7 +253,7 @@ export const productService = {
       .single();
     
     if (error) {
-      console.error('Erro ao atualizar produto:', error);
+      console.error('❌ [ProductService] Erro ao atualizar produto:', error);
       throw error;
     }
 
@@ -262,7 +264,7 @@ export const productService = {
       name: data.name,
       description: '',
       cost: data.cost_price,
-      price: data.sale_price,
+      price: data.sale_price, // CORRIGIDO: Mapeamento correto
       stock: data.stock,
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,

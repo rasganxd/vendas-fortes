@@ -25,6 +25,12 @@ export const useCustomers = () => {
           // Log first customer for debugging
           if (data.length > 0) {
             console.log("👤 [useCustomers] First customer:", data[0]);
+            console.log("🔗 [useCustomers] First customer details:", {
+              name: data[0].name,
+              code: data[0].code,
+              salesRepId: data[0].salesRepId,
+              salesRepName: data[0].salesRepName
+            });
           }
         } else {
           console.warn("⚠️ [useCustomers] Invalid data format received:", typeof data);
@@ -49,6 +55,7 @@ export const useCustomers = () => {
       }
     };
 
+    console.log("🚀 [useCustomers] Initial load triggered");
     loadCustomers();
   }, []);
 

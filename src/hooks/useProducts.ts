@@ -29,6 +29,7 @@ export const useProducts = () => {
         if (age < CACHE_MAX_AGE) {
           console.log("💾 [useProducts] Using cached products data");
           const cachedProducts = JSON.parse(cachedData);
+          console.log("📊 [useProducts] Cached products:", cachedProducts);
           setProducts(cachedProducts);
           setIsLoading(false);
           return;
@@ -43,6 +44,7 @@ export const useProducts = () => {
       console.log("📊 [useProducts] Loaded", fetchedProducts?.length || 0, "products from Supabase");
       
       if (fetchedProducts && Array.isArray(fetchedProducts)) {
+        console.log("🔄 [useProducts] Setting products state...");
         setProducts(fetchedProducts);
         
         // Update cache
@@ -52,6 +54,11 @@ export const useProducts = () => {
         // Log first product for debugging
         if (fetchedProducts.length > 0) {
           console.log("📦 [useProducts] First product:", fetchedProducts[0]);
+          console.log("💰 [useProducts] First product pricing:", {
+            name: fetchedProducts[0].name,
+            cost: fetchedProducts[0].cost,
+            price: fetchedProducts[0].price
+          });
         }
       } else {
         console.warn("⚠️ [useProducts] Invalid data format received:", typeof fetchedProducts);
@@ -142,6 +149,7 @@ export const useProducts = () => {
 
   // Initial load
   useEffect(() => {
+    console.log("🚀 [useProducts] Initial load triggered");
     loadProducts();
   }, []);
 
