@@ -25,6 +25,7 @@ export interface Customer {
   paymentTerms?: string; // Added missing field
   region?: string; // Added missing field
   category?: string; // Added missing field
+  email?: string; // Make email optional for backward compatibility
 }
 
 export type CustomerFormValues = {

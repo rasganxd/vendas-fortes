@@ -9,6 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { useProductUnits } from './hooks/useProductUnits';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Package, Ruler, DollarSign, Tags } from 'lucide-react';
 
 interface ProductFormProps {
   open: boolean;
@@ -130,164 +133,224 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
+          <DialogTitle className="text-xl">
+            {isEditing ? 'Editar Produto' : 'Novo Produto'}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="code">Código</Label>
-              <Input
-                id="code"
-                type="number"
-                {...register('code', { required: 'Código é obrigatório', min: 1 })}
-                className={errors.code ? 'border-red-500' : ''}
-              />
-              {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="stock">Estoque</Label>
-              <Input
-                id="stock"
-                type="number"
-                step="0.01"
-                {...register('stock', { min: 0 })}
-                className={errors.stock ? 'border-red-500' : ''}
-              />
-            </div>
+        
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+          <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
+            
+            {/* Seção Identificação */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Package className="h-5 w-5 text-blue-600" />
+                  Identificação
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="code">Código</Label>
+                    <Input
+                      id="code"
+                      type="number"
+                      {...register('code', { required: 'Código é obrigatório', min: 1 })}
+                      className={errors.code ? 'border-red-500' : ''}
+                    />
+                    {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="name">Nome do Produto</Label>
+                    <Input
+                      id="name"
+                      {...register('name', { required: 'Nome é obrigatório' })}
+                      className={errors.name ? 'border-red-500' : ''}
+                    />
+                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Seção Unidades */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Ruler className="h-5 w-5 text-green-600" />
+                  Unidades
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="unit">Unidade Principal</Label>
+                  <Select value={watch('unit') || 'UN'} onValueChange={(value) => setValue('unit', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma unidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {!unitsLoading && units.map((unit) => (
+                        <SelectItem key={unit.code} value={unit.code}>
+                          {unit.code} - {unit.description}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="UN">UN - Unidade</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="hasSubunit"
+                    checked={hasSubunit}
+                    onCheckedChange={(checked) => setValue('hasSubunit', !!checked)}
+                  />
+                  <Label htmlFor="hasSubunit">Possui sub-unidade</Label>
+                </div>
+
+                {hasSubunit && (
+                  <div>
+                    <Label htmlFor="subunit">Sub-unidade</Label>
+                    <Select value={watch('subunit') || ''} onValueChange={(value) => setValue('subunit', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma sub-unidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {!unitsLoading && units.map((unit) => (
+                          <SelectItem key={unit.code} value={unit.code}>
+                            {unit.code} - {unit.description}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500 mt-1">
+                      A proporção será calculada automaticamente baseada nas unidades cadastradas
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Seção Valores e Estoque */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-purple-600" />
+                  Valores e Estoque
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="cost">Preço de Custo (R$)</Label>
+                    <Input
+                      id="cost"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      {...register('cost', { 
+                        required: 'Custo é obrigatório', 
+                        min: { value: 0, message: 'Custo deve ser positivo' },
+                        valueAsNumber: true
+                      })}
+                      className={errors.cost ? 'border-red-500' : ''}
+                    />
+                    {errors.cost && <p className="text-red-500 text-sm mt-1">{errors.cost.message}</p>}
+                    <p className="text-sm text-gray-500 mt-1">
+                      O preço de venda será definido na aba de Precificação
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="stock">Estoque Atual</Label>
+                    <Input
+                      id="stock"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0"
+                      {...register('stock', { min: 0 })}
+                      className={errors.stock ? 'border-red-500' : ''}
+                    />
+                    {errors.stock && <p className="text-red-500 text-sm mt-1">{errors.stock.message}</p>}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Seção Classificação */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Tags className="h-5 w-5 text-orange-600" />
+                  Classificação
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="categoryId">Categoria</Label>
+                    <Select value={watch('categoryId') || 'none'} onValueChange={(value) => setValue('categoryId', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhuma</SelectItem>
+                        {productCategories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="groupId">Grupo</Label>
+                    <Select value={watch('groupId') || 'none'} onValueChange={(value) => setValue('groupId', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Grupo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhum</SelectItem>
+                        {productGroups.map((group) => (
+                          <SelectItem key={group.id} value={group.id}>
+                            {group.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="brandId">Marca</Label>
+                    <Select value={watch('brandId') || 'none'} onValueChange={(value) => setValue('brandId', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Marca" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhuma</SelectItem>
+                        {productBrands.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div>
-            <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              {...register('name', { required: 'Nome é obrigatório' })}
-              className={errors.name ? 'border-red-500' : ''}
-            />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="cost">Custo (R$)</Label>
-            <Input
-              id="cost"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              {...register('cost', { 
-                required: 'Custo é obrigatório', 
-                min: { value: 0, message: 'Custo deve ser positivo' },
-                valueAsNumber: true // Ensures the value is converted to number
-              })}
-              className={errors.cost ? 'border-red-500' : ''}
-            />
-            {errors.cost && <p className="text-red-500 text-sm mt-1">{errors.cost.message}</p>}
-            <p className="text-sm text-gray-500 mt-1">
-              O preço de venda será definido na aba de Precificação
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor="unit">Unidade Principal</Label>
-            <Select value={watch('unit') || 'UN'} onValueChange={(value) => setValue('unit', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                {!unitsLoading && units.map((unit) => (
-                  <SelectItem key={unit.code} value={unit.code}>
-                    {unit.code} - {unit.description}
-                  </SelectItem>
-                ))}
-                <SelectItem value="UN">UN - Unidade</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasSubunit"
-              checked={hasSubunit}
-              onCheckedChange={(checked) => setValue('hasSubunit', !!checked)}
-            />
-            <Label htmlFor="hasSubunit">Possui sub-unidade</Label>
-          </div>
-
-          {hasSubunit && (
-            <div>
-              <Label htmlFor="subunit">Sub-unidade</Label>
-              <Select value={watch('subunit') || ''} onValueChange={(value) => setValue('subunit', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma sub-unidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {!unitsLoading && units.map((unit) => (
-                    <SelectItem key={unit.code} value={unit.code}>
-                      {unit.code} - {unit.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-gray-500 mt-1">
-                A proporção será calculada automaticamente baseada nas unidades cadastradas
-              </p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="categoryId">Categoria</Label>
-              <Select value={watch('categoryId') || 'none'} onValueChange={(value) => setValue('categoryId', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {productCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="groupId">Grupo</Label>
-              <Select value={watch('groupId') || 'none'} onValueChange={(value) => setValue('groupId', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Grupo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {productGroups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="brandId">Marca</Label>
-              <Select value={watch('brandId') || 'none'} onValueChange={(value) => setValue('brandId', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Marca" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {productBrands.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
+          <Separator />
+          
+          <div className="flex justify-end space-x-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
