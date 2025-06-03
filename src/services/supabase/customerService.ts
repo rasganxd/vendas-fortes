@@ -144,11 +144,12 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
 
   async add(entity: Omit<Customer, 'id'>): Promise<string> {
     try {
-      console.log(`📝 [CustomerService] Adding customer to ${this.tableName}`);
-      console.log("Entity data (before transformation):", entity);
+      console.log(`🔄 [CustomerService] Starting add operation for ${this.tableName}`);
+      console.log("📝 [CustomerService] Entity data (before transformation):", entity);
       
       // Use the parent transformToDB method to properly map fields
       const transformedData = this.transformToDB(entity as Customer);
+      console.log("🔄 [CustomerService] Data after transformation:", transformedData);
       
       const dataWithTimestamps = {
         ...transformedData,
@@ -157,8 +158,9 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
         active: true
       };
       
-      console.log("Data prepared for Supabase:", dataWithTimestamps);
+      console.log("📋 [CustomerService] Data prepared for Supabase:", dataWithTimestamps);
       
+      console.log("🔄 [CustomerService] Calling Supabase insert...");
       const { data, error } = await this.supabase
         .from(this.tableName as any)
         .insert(dataWithTimestamps)
@@ -167,7 +169,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       
       if (error) {
         console.error(`❌ [CustomerService] Supabase error adding to ${this.tableName}:`, error);
-        console.error("Error details:", {
+        console.error("❌ [CustomerService] Error details:", {
           code: error.code,
           message: error.message,
           details: error.details,
@@ -176,11 +178,23 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
         throw error;
       }
       
+      if (!data) {
+        console.error(`❌ [CustomerService] No data returned from insert`);
+        throw new Error("No data returned from Supabase insert");
+      }
+      
       const insertedId = (data as any).id;
-      console.log(`✅ [CustomerService] Added customer to ${this.tableName} with ID:`, insertedId);
+      console.log(`✅ [CustomerService] Customer added to ${this.tableName} with ID:`, insertedId);
+      
+      if (!insertedId) {
+        console.error(`❌ [CustomerService] Insert succeeded but no ID returned`);
+        throw new Error("Insert succeeded but no ID returned");
+      }
+      
       return insertedId;
     } catch (error) {
       console.error(`❌ [CustomerService] Critical error adding to ${this.tableName}:`, error);
+      console.error("❌ [CustomerService] Full error object:", error);
       throw error;
     }
   }

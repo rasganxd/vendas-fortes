@@ -72,34 +72,38 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   useEffect(() => {
     if (open) {
+      console.log('🔄 [ProductForm] Opening form, isEditing:', isEditing, 'selectedProduct:', selectedProduct);
       if (isEditing && selectedProduct) {
+        console.log('📝 [ProductForm] Editing product:', selectedProduct);
         reset({
           code: selectedProduct.code,
           name: selectedProduct.name,
           cost: selectedProduct.cost,
           price: selectedProduct.price,
-          unit: selectedProduct.unit || '',
+          unit: selectedProduct.unit || 'UN',
           hasSubunit: selectedProduct.hasSubunit || false,
-          subunit: selectedProduct.subunit || '',
+          subunit: selectedProduct.subunit || undefined,
           subunitRatio: selectedProduct.subunitRatio || 1,
-          categoryId: selectedProduct.categoryId || '',
-          groupId: selectedProduct.groupId || '',
-          brandId: selectedProduct.brandId || '',
+          categoryId: selectedProduct.categoryId || undefined,
+          groupId: selectedProduct.groupId || undefined,
+          brandId: selectedProduct.brandId || undefined,
           stock: selectedProduct.stock || 0
         });
       } else {
+        const nextCode = generateNextCode();
+        console.log('➕ [ProductForm] Creating new product with code:', nextCode);
         reset({
-          code: generateNextCode(),
+          code: nextCode,
           name: '',
           cost: 0,
           price: 0,
           unit: 'UN',
           hasSubunit: false,
-          subunit: '',
+          subunit: undefined,
           subunitRatio: 1,
-          categoryId: '',
-          groupId: '',
-          brandId: '',
+          categoryId: undefined,
+          groupId: undefined,
+          brandId: undefined,
           stock: 0
         });
       }
@@ -109,15 +113,26 @@ const ProductForm: React.FC<ProductFormProps> = ({
   // Auto-suggest price based on cost
   useEffect(() => {
     if (!isEditing && costValue > 0) {
-      // Sugerir um markup de 30% sobre o custo como preço inicial
       const suggestedPrice = costValue * 1.3;
       setValue('price', parseFloat(suggestedPrice.toFixed(2)));
     }
   }, [costValue, isEditing, setValue]);
 
   const onFormSubmit = (data: FormData) => {
-    console.log("Form data submitted:", data);
-    onSubmit(data);
+    console.log("📋 [ProductForm] Form data submitted:", data);
+    
+    // Clean data for submission
+    const cleanData = {
+      ...data,
+      categoryId: data.categoryId === 'none' ? undefined : data.categoryId,
+      groupId: data.groupId === 'none' ? undefined : data.groupId,
+      brandId: data.brandId === 'none' ? undefined : data.brandId,
+      subunit: data.hasSubunit ? data.subunit : undefined,
+      subunitRatio: data.hasSubunit ? data.subunitRatio : undefined
+    };
+    
+    console.log("✅ [ProductForm] Clean data for submission:", cleanData);
+    onSubmit(cleanData);
   };
 
   const formatPriceInput = (value: string): number => {
@@ -204,7 +219,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
           <div>
             <Label htmlFor="unit">Unidade Principal</Label>
-            <Select value={watch('unit')} onValueChange={(value) => setValue('unit', value)}>
+            <Select value={watch('unit') || 'UN'} onValueChange={(value) => setValue('unit', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma unidade" />
               </SelectTrigger>
@@ -214,6 +229,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
                     {unit.code} - {unit.description}
                   </SelectItem>
                 ))}
+                <SelectItem value="UN">UN - Unidade</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -231,7 +247,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="subunit">Sub-unidade</Label>
-                <Select value={watch('subunit')} onValueChange={(value) => setValue('subunit', value)}>
+                <Select value={watch('subunit') || ''} onValueChange={(value) => setValue('subunit', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma sub-unidade" />
                   </SelectTrigger>
@@ -259,12 +275,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="categoryId">Categoria</Label>
-              <Select value={watch('categoryId')} onValueChange={(value) => setValue('categoryId', value)}>
+              <Select value={watch('categoryId') || 'none'} onValueChange={(value) => setValue('categoryId', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
+                  <SelectItem value="none">Nenhuma</SelectItem>
                   {productCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -275,12 +291,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
             </div>
             <div>
               <Label htmlFor="groupId">Grupo</Label>
-              <Select value={watch('groupId')} onValueChange={(value) => setValue('groupId', value)}>
+              <Select value={watch('groupId') || 'none'} onValueChange={(value) => setValue('groupId', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Grupo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {productGroups.map((group) => (
                     <SelectItem key={group.id} value={group.id}>
                       {group.name}
@@ -291,12 +307,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
             </div>
             <div>
               <Label htmlFor="brandId">Marca</Label>
-              <Select value={watch('brandId')} onValueChange={(value) => setValue('brandId', value)}>
+              <Select value={watch('brandId') || 'none'} onValueChange={(value) => setValue('brandId', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Marca" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
+                  <SelectItem value="none">Nenhuma</SelectItem>
                   {productBrands.map((brand) => (
                     <SelectItem key={brand.id} value={brand.id}>
                       {brand.name}

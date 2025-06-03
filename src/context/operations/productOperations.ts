@@ -1,3 +1,4 @@
+
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -19,6 +20,10 @@ export const addProduct = async (
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ): Promise<string> => {
   try {
+    console.log('🔄 [ProductOperations] Starting product creation...');
+    console.log('📝 [ProductOperations] Input product data:', product);
+    console.log('📊 [ProductOperations] Current products count:', products.length);
+    
     // Garantir que o produto tenha um código
     const productCode = product.code || (products.length > 0 
       ? Math.max(...products.map(p => p.code || 0)) + 1 
@@ -33,25 +38,37 @@ export const addProduct = async (
       updatedAt: new Date()
     };
     
-    console.log("Adding product:", productWithCode);
+    console.log("📋 [ProductOperations] Product with generated data:", productWithCode);
     
     // Add to Supabase
+    console.log("🔄 [ProductOperations] Calling productService.create...");
     const newProduct = await productService.create(productWithCode);
-    console.log("Product created:", newProduct);
+    console.log("✅ [ProductOperations] Product created successfully:", newProduct);
     
     // Atualizar o estado local - ensure we're using the correct setter pattern for state updates
-    setProducts(currentProducts => [...currentProducts, newProduct]);
+    console.log("🔄 [ProductOperations] Updating local state...");
+    setProducts(currentProducts => {
+      const updatedProducts = [...currentProducts, newProduct];
+      console.log("📊 [ProductOperations] Local state updated. New count:", updatedProducts.length);
+      return updatedProducts;
+    });
     
+    console.log("🎉 [ProductOperations] Product creation completed successfully!");
     toast({
       title: "Produto adicionado",
-      description: "Produto adicionado com sucesso!"
+      description: `${newProduct.name} foi adicionado com sucesso!`
     });
     return newProduct.id;
   } catch (error) {
-    console.error("Erro ao adicionar produto:", error);
+    console.error("❌ [ProductOperations] Error adding product:", error);
+    console.error("❌ [ProductOperations] Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      product: product
+    });
     toast({
       title: "Erro ao adicionar produto",
-      description: "Houve um problema ao adicionar o produto.",
+      description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
       variant: "destructive"
     });
     return "";

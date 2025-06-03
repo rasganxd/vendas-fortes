@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabase/customerService';
@@ -53,7 +54,9 @@ export const useCustomers = () => {
 
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
-      console.log("➕ [useCustomers] Adding new customer:", customer);
+      console.log("🔄 [useCustomers] Starting customer creation...");
+      console.log("📝 [useCustomers] Input customer data:", customer);
+      console.log("📊 [useCustomers] Current customers count:", customers.length);
       
       // Validate required fields
       if (!customer.name || customer.name.trim() === '') {
@@ -111,8 +114,13 @@ export const useCustomers = () => {
       
       console.log("📝 [useCustomers] Clean customer data:", cleanCustomer);
       
+      console.log("🔄 [useCustomers] Calling customerService.add...");
       const id = await customerService.add(cleanCustomer);
       console.log("✅ [useCustomers] Customer added with ID:", id);
+      
+      if (!id || id === "") {
+        throw new Error("Customer ID not returned from service");
+      }
       
       // Create the new customer object for local state
       const newCustomer = { 
@@ -121,10 +129,12 @@ export const useCustomers = () => {
       } as Customer;
       
       // Update local state
+      console.log("🔄 [useCustomers] Updating local state...");
       const updatedCustomers = [...customers, newCustomer];
       console.log("📊 [useCustomers] Updating local state with", updatedCustomers.length, "customers");
       setCustomers(updatedCustomers);
       
+      console.log("🎉 [useCustomers] Customer creation completed successfully!");
       toast({
         title: "✅ Cliente adicionado",
         description: `${newCustomer.name} foi adicionado com sucesso!`
@@ -133,6 +143,11 @@ export const useCustomers = () => {
       return id;
     } catch (error) {
       console.error("❌ [useCustomers] Error adding customer:", error);
+      console.error("❌ [useCustomers] Error details:", {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        customer: customer
+      });
       toast({
         title: "❌ Erro ao adicionar cliente",
         description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
