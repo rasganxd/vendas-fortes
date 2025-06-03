@@ -9,6 +9,7 @@ import { Search, Package, Plus, Barcode, Check } from 'lucide-react';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
+import { useUnits } from '@/hooks/useUnits';
 
 interface EnhancedProductSearchProps {
   products: Product[];
@@ -25,8 +26,8 @@ export default function EnhancedProductSearch({
   isEditMode
 }: EnhancedProductSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [foundProduct, setFoundProduct] = useState<Product | null>(null); // Produto encontrado mas não selecionado
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null); // Produto selecionado
+  const [foundProduct, setFoundProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState('');
@@ -38,19 +39,19 @@ export default function EnhancedProductSearch({
   const unitSelectorRef = useRef<HTMLButtonElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
+  const { units } = useUnits();
+
   // Check if search term is a product code (numeric)
   const isCodeSearch = /^\d+$/.test(searchTerm.trim());
 
   // Filter products based on search term
   const filteredProducts = products.filter(product => {
     if (isCodeSearch) {
-      // For code search, match exact code
       return product.code.toString() === searchTerm.trim();
     } else {
-      // For name search, match name containing the search term
       return product.name.toLowerCase().includes(searchTerm.toLowerCase());
     }
-  }).slice(0, 8); // Limit to 8 results
+  }).slice(0, 8);
 
   // Update found product when searching by code (without selecting)
   useEffect(() => {
@@ -90,16 +91,29 @@ export default function EnhancedProductSearch({
     
     setSelectedUnit(unit);
 
-    // Calculate price for the selected unit
-    const basePrice = selectedProduct.price || 0;
+    // Calculate price for the selected unit using real unit data
+    const basePrice = selectedProduct.sale_price || 0;
     let unitPrice = basePrice;
 
-    // If product has subunit and selected unit is the subunit
-    if (selectedProduct.hasSubunit && selectedProduct.subunit === unit) {
-      // Get the main unit's package quantity to calculate subunit price
-      const mainUnitData = { package_quantity: 1 }; // This should come from units data
-      const packageQuantity = mainUnitData.package_quantity || 1;
-      unitPrice = basePrice / packageQuantity;
+    // Find the unit data in the database
+    const unitData = units.find(u => u.code === unit);
+    const mainUnitData = units.find(u => u.id === selectedProduct.main_unit_id);
+    const subUnitData = units.find(u => u.id === selectedProduct.sub_unit_id);
+
+    // If we have subunit and the selected unit is the subunit
+    if (selectedProduct.sub_unit_id && subUnitData && unit === subUnitData.code) {
+      // Find the main unit to get its package quantity
+      if (mainUnitData && mainUnitData.package_quantity) {
+        // Price per subunit = main unit price / main unit package quantity
+        unitPrice = basePrice / mainUnitData.package_quantity;
+        console.log(`🔄 Converting price from main unit (${mainUnitData.code}) to subunit (${subUnitData.code})`);
+        console.log(`📊 Base price: ${basePrice}, Package quantity: ${mainUnitData.package_quantity}, Unit price: ${unitPrice}`);
+      }
+    }
+    // If selected unit is the main unit, use base price
+    else if (mainUnitData && unit === mainUnitData.code) {
+      unitPrice = basePrice;
+      console.log(`💰 Using base price for main unit: ${unitPrice}`);
     }
 
     setPrice(unitPrice);
@@ -151,10 +165,8 @@ export default function EnhancedProductSearch({
       e.preventDefault();
       
       if (isCodeSearch && foundProduct) {
-        // Select the found product
         handleProductSelect(foundProduct);
       } else if (!isCodeSearch && filteredProducts.length > 0) {
-        // For name search, select first result
         handleProductSelect(filteredProducts[0]);
       }
     } else if (e.key === 'ArrowDown') {
@@ -194,10 +206,28 @@ export default function EnhancedProductSearch({
 
   // Get quantity conversion display
   const getQuantityConversion = () => {
-    if (!selectedProduct || !selectedProduct.hasSubunit || !selectedUnit) {
+    if (!selectedProduct || !selectedProduct.sub_unit_id || !selectedUnit) {
       return '';
     }
-    return calculateQuantityConversion(selectedProduct, quantity, selectedUnit, selectedProduct.unit || 'UN');
+
+    const mainUnitData = units.find(u => u.id === selectedProduct.main_unit_id);
+    const subUnitData = units.find(u => u.id === selectedProduct.sub_unit_id);
+    
+    if (!mainUnitData || !subUnitData) return '';
+
+    // If selected unit is subunit, show conversion to main unit
+    if (selectedUnit === subUnitData.code && mainUnitData.package_quantity) {
+      const mainUnitQty = quantity / mainUnitData.package_quantity;
+      return `${quantity} ${subUnitData.code} = ${mainUnitQty.toFixed(3)} ${mainUnitData.code}`;
+    }
+    
+    // If selected unit is main unit, show conversion to subunit
+    if (selectedUnit === mainUnitData.code && mainUnitData.package_quantity) {
+      const subUnitQty = quantity * mainUnitData.package_quantity;
+      return `${quantity} ${mainUnitData.code} = ${subUnitQty} ${subUnitData.code}`;
+    }
+
+    return '';
   };
 
   // Check if we can proceed to next step
@@ -262,12 +292,14 @@ export default function EnhancedProductSearch({
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-green-600">
-                      {product.price?.toLocaleString('pt-BR', {
+                      {product.sale_price?.toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
                       })}
                     </div>
-                    <div className="text-xs text-gray-500">{product.unit}</div>
+                    <div className="text-xs text-gray-500">
+                      {units.find(u => u.id === product.main_unit_id)?.code || 'UN'}
+                    </div>
                   </div>
                 </div>
               </div>
