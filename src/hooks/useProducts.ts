@@ -29,9 +29,14 @@ export const useProducts = () => {
         if (age < CACHE_MAX_AGE) {
           console.log("💾 [useProducts] Using cached products data");
           const cachedProducts = JSON.parse(cachedData);
-          console.log("📊 [useProducts] Cached products:", cachedProducts);
+          console.log("📊 [useProducts] Cached products count:", cachedProducts.length);
           setProducts(cachedProducts);
           setIsLoading(false);
+          
+          // Log first cached product for debugging
+          if (cachedProducts.length > 0) {
+            console.log("📦 [useProducts] First cached product:", cachedProducts[0]);
+          }
           return;
         } else {
           console.log("⏰ [useProducts] Cache expired, fetching fresh data");
@@ -45,21 +50,27 @@ export const useProducts = () => {
       
       if (fetchedProducts && Array.isArray(fetchedProducts)) {
         console.log("🔄 [useProducts] Setting products state...");
+        console.log("🎯 [useProducts] Setting products state with", fetchedProducts.length, "items");
+        
+        // Log detailed info about first product
+        if (fetchedProducts.length > 0) {
+          console.log("📦 [useProducts] First product detailed info:", {
+            id: fetchedProducts[0].id,
+            name: fetchedProducts[0].name,
+            code: fetchedProducts[0].code,
+            cost: fetchedProducts[0].cost,
+            price: fetchedProducts[0].price,
+            stock: fetchedProducts[0].stock
+          });
+        }
+        
         setProducts(fetchedProducts);
         
         // Update cache
         localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
         localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
         
-        // Log first product for debugging
-        if (fetchedProducts.length > 0) {
-          console.log("📦 [useProducts] First product:", fetchedProducts[0]);
-          console.log("💰 [useProducts] First product pricing:", {
-            name: fetchedProducts[0].name,
-            cost: fetchedProducts[0].cost,
-            price: fetchedProducts[0].price
-          });
-        }
+        console.log("✅ [useProducts] Products state updated successfully");
       } else {
         console.warn("⚠️ [useProducts] Invalid data format received:", typeof fetchedProducts);
         setProducts([]);
@@ -76,8 +87,11 @@ export const useProducts = () => {
       const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
       if (cachedData) {
         console.log("💾 [useProducts] Using cached products data as fallback");
-        setProducts(JSON.parse(cachedData));
+        const fallbackProducts = JSON.parse(cachedData);
+        setProducts(fallbackProducts);
+        console.log("📊 [useProducts] Fallback products loaded:", fallbackProducts.length);
       } else {
+        console.log("📋 [useProducts] No cached data available, setting empty array");
         setProducts([]);
       }
       
@@ -106,16 +120,19 @@ export const useProducts = () => {
       const fetchedProducts = await productService.getAll();
       console.log("✅ [useProducts] Forcefully loaded", fetchedProducts?.length || 0, "products from Supabase");
       
-      setProducts(fetchedProducts);
-      
-      // Update cache
-      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
-      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-      
-      toast({
-        title: 'Produtos atualizados',
-        description: `${fetchedProducts.length} produtos carregados com sucesso!`,
-      });
+      if (fetchedProducts && Array.isArray(fetchedProducts)) {
+        console.log("🎯 [useProducts] Force refresh - setting", fetchedProducts.length, "products");
+        setProducts(fetchedProducts);
+        
+        // Update cache
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
+        localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        
+        toast({
+          title: 'Produtos atualizados',
+          description: `${fetchedProducts.length} produtos carregados com sucesso!`,
+        });
+      }
       
       return true;
     } catch (error) {
@@ -157,12 +174,15 @@ export const useProducts = () => {
     try {
       console.log("➕ [useProducts] Adding new product:", product);
       
-      // CORRIGIDO: usar create() método correto
       const newProduct = await productService.create(product);
       console.log("✅ [useProducts] Product created:", newProduct);
       
       // Update local state immediately
-      setProducts((prev) => [...prev, newProduct]);
+      setProducts((prev) => {
+        const updated = [...prev, newProduct];
+        console.log("📊 [useProducts] Updated products state, new count:", updated.length);
+        return updated;
+      });
       
       // Update cache
       const updatedProducts = [...products, newProduct];
@@ -226,7 +246,11 @@ export const useProducts = () => {
       await productService.delete(id);
       
       // Update local state immediately
-      setProducts((prev) => prev.filter((item) => item.id !== id));
+      setProducts((prev) => {
+        const filtered = prev.filter((item) => item.id !== id);
+        console.log("📊 [useProducts] After delete, products count:", filtered.length);
+        return filtered;
+      });
       
       // Update cache
       const updatedProducts = products.filter((item) => item.id !== id);

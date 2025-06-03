@@ -24,20 +24,32 @@ export const productService = {
       console.log("📊 [ProductService] Raw data from Supabase:", data);
       console.log("📊 [ProductService] Data length:", data?.length || 0);
       
-      // Transform database fields to Product interface
-      const transformedProducts = (data || []).map((item, index) => {
-        console.log(`🔄 [ProductService] Transforming product ${index + 1}:`, item);
+      if (!data || data.length === 0) {
+        console.log("📋 [ProductService] No products found in database");
+        return [];
+      }
+      
+      // Transform database fields to Product interface with detailed logging
+      const transformedProducts = data.map((item, index) => {
+        console.log(`🔄 [ProductService] Transforming product ${index + 1}:`, {
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          cost_price: item.cost_price,
+          sale_price: item.sale_price,
+          stock: item.stock
+        });
         
         const product = {
           id: item.id,
           code: item.code,
           name: item.name,
-          description: '', // Database doesn't have description field, so use empty string
-          cost: item.cost_price || 0,
-          price: item.sale_price || 0, // CORRIGIDO: Mapeamento correto de sale_price para price
-          stock: item.stock || 0,
+          description: '', // Database doesn't have description field
+          cost: Number(item.cost_price) || 0, // CORRIGIDO: cost_price → cost
+          price: Number(item.sale_price) || 0, // CORRIGIDO: sale_price → price
+          stock: Number(item.stock) || 0,
           minStock: 0,
-          maxDiscountPercent: item.max_discount_percent || 0,
+          maxDiscountPercent: Number(item.max_discount_percent) || 0,
           maxPrice: undefined,
           unit: item.main_unit?.code || 'UN',
           subunit: item.sub_unit?.code || undefined,
@@ -51,12 +63,19 @@ export const productService = {
           syncStatus: 'synced' as 'synced' | 'pending' | 'error'
         };
         
-        console.log(`✅ [ProductService] Transformed product ${index + 1}:`, product);
-        console.log(`💰 [ProductService] Product ${product.name}: cost=${product.cost}, price=${product.price}`);
+        console.log(`✅ [ProductService] Transformed product ${index + 1}:`, {
+          id: product.id,
+          name: product.name,
+          cost: product.cost,
+          price: product.price,
+          stock: product.stock
+        });
+        
         return product;
       });
       
       console.log("✅ [ProductService] Successfully transformed", transformedProducts.length, "products");
+      console.log("🎯 [ProductService] First product example:", transformedProducts[0]);
       return transformedProducts;
     } catch (error) {
       console.error('❌ [ProductService] Critical error in getAll:', error);
@@ -89,11 +108,11 @@ export const productService = {
         code: data.code,
         name: data.name,
         description: '',
-        cost: data.cost_price || 0,
-        price: data.sale_price || 0, // CORRIGIDO: Mapeamento correto
-        stock: data.stock || 0,
+        cost: Number(data.cost_price) || 0, // CORRIGIDO
+        price: Number(data.sale_price) || 0, // CORRIGIDO
+        stock: Number(data.stock) || 0,
         minStock: 0,
-        maxDiscountPercent: data.max_discount_percent || 0,
+        maxDiscountPercent: Number(data.max_discount_percent) || 0,
         maxPrice: undefined,
         unit: data.main_unit?.code || 'UN',
         subunit: data.sub_unit?.code || undefined,
@@ -146,10 +165,10 @@ export const productService = {
     const productData = {
       code: product.code,
       name: product.name,
-      cost_price: product.cost || 0,
-      sale_price: product.price || product.cost || 0, // CORRIGIDO: price -> sale_price
-      stock: product.stock || 0,
-      max_discount_percent: product.maxDiscountPercent || 0,
+      cost_price: Number(product.cost) || 0, // CORRIGIDO: cost → cost_price
+      sale_price: Number(product.price) || Number(product.cost) || 0, // CORRIGIDO: price → sale_price
+      stock: Number(product.stock) || 0,
+      max_discount_percent: Number(product.maxDiscountPercent) || 0,
       category_id: product.categoryId || null,
       group_id: product.groupId || null,
       brand_id: product.brandId || null,
@@ -181,11 +200,11 @@ export const productService = {
       code: data.code,
       name: data.name,
       description: '',
-      cost: data.cost_price,
-      price: data.sale_price, // CORRIGIDO: Mapeamento correto
-      stock: data.stock,
+      cost: Number(data.cost_price), // CORRIGIDO
+      price: Number(data.sale_price), // CORRIGIDO
+      stock: Number(data.stock),
       minStock: 0,
-      maxDiscountPercent: data.max_discount_percent || 0,
+      maxDiscountPercent: Number(data.max_discount_percent) || 0,
       maxPrice: undefined,
       unit: data.main_unit?.code || 'UN',
       subunit: data.sub_unit?.code || undefined,
@@ -229,10 +248,10 @@ export const productService = {
     
     if (product.code !== undefined) updateData.code = product.code;
     if (product.name !== undefined) updateData.name = product.name;
-    if (product.cost !== undefined) updateData.cost_price = product.cost;
-    if (product.price !== undefined) updateData.sale_price = product.price; // CORRIGIDO
-    if (product.stock !== undefined) updateData.stock = product.stock;
-    if (product.maxDiscountPercent !== undefined) updateData.max_discount_percent = product.maxDiscountPercent;
+    if (product.cost !== undefined) updateData.cost_price = Number(product.cost); // CORRIGIDO
+    if (product.price !== undefined) updateData.sale_price = Number(product.price); // CORRIGIDO
+    if (product.stock !== undefined) updateData.stock = Number(product.stock);
+    if (product.maxDiscountPercent !== undefined) updateData.max_discount_percent = Number(product.maxDiscountPercent);
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
     if (product.groupId !== undefined) updateData.group_id = product.groupId;
     if (product.brandId !== undefined) updateData.brand_id = product.brandId;
@@ -263,11 +282,11 @@ export const productService = {
       code: data.code,
       name: data.name,
       description: '',
-      cost: data.cost_price,
-      price: data.sale_price, // CORRIGIDO: Mapeamento correto
-      stock: data.stock,
+      cost: Number(data.cost_price), // CORRIGIDO
+      price: Number(data.sale_price), // CORRIGIDO
+      stock: Number(data.stock),
       minStock: 0,
-      maxDiscountPercent: data.max_discount_percent || 0,
+      maxDiscountPercent: Number(data.max_discount_percent) || 0,
       maxPrice: undefined,
       unit: data.main_unit?.code || 'UN',
       subunit: data.sub_unit?.code || undefined,

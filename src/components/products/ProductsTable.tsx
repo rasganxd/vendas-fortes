@@ -35,10 +35,33 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
   console.log("🔍 [ProductsTable] Rendering with data:", { 
     productsCount: products?.length || 0, 
     isLoading,
-    firstProduct: products?.[0]
+    productsArray: products
   });
 
+  // Log first few products for debugging
+  if (products && products.length > 0) {
+    console.log("📦 [ProductsTable] First product details:", {
+      id: products[0].id,
+      code: products[0].code,
+      name: products[0].name,
+      price: products[0].price,
+      cost: products[0].cost,
+      stock: products[0].stock
+    });
+    
+    if (products.length > 1) {
+      console.log("📦 [ProductsTable] Second product details:", {
+        id: products[1].id,
+        code: products[1].code,
+        name: products[1].name,
+        price: products[1].price,
+        cost: products[1].cost
+      });
+    }
+  }
+
   if (isLoading) {
+    console.log("⏳ [ProductsTable] Showing loading state");
     return (
       <div className="flex justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -70,13 +93,14 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {products.map((product) => {
-          console.log("📦 [ProductsTable] Rendering product:", {
+        {products.map((product, index) => {
+          console.log(`📦 [ProductsTable] Rendering product ${index + 1}:`, {
             id: product.id,
             code: product.code,
             name: product.name,
             price: product.price,
-            cost: product.cost
+            cost: product.cost,
+            stock: product.stock
           });
           
           return (
