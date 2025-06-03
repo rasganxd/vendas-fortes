@@ -11,6 +11,7 @@ interface QuantityInputProps {
   onDecrement: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   inputRef: React.RefObject<HTMLInputElement>;
+  disabled?: boolean;
 }
 
 export default function QuantityInput({
@@ -19,7 +20,8 @@ export default function QuantityInput({
   onIncrement,
   onDecrement,
   onKeyDown,
-  inputRef
+  inputRef,
+  disabled = false
 }: QuantityInputProps) {
   return (
     <div className="flex items-center">
@@ -29,6 +31,7 @@ export default function QuantityInput({
         size="icon" 
         className="h-11 w-11 rounded-r-none border-r-0 hover:bg-gray-50 transition-colors"
         onClick={onDecrement}
+        disabled={disabled}
       >
         <Minus size={16} />
       </Button>
@@ -41,6 +44,7 @@ export default function QuantityInput({
         onChange={onQuantityChange}
         onKeyDown={onKeyDown}
         placeholder="Qtd"
+        disabled={disabled}
       />
       
       <Button 
@@ -49,6 +53,7 @@ export default function QuantityInput({
         size="icon" 
         className="h-11 w-11 rounded-l-none border-l-0 hover:bg-gray-50 transition-colors"
         onClick={onIncrement}
+        disabled={disabled}
       >
         <Plus size={16} />
       </Button>
