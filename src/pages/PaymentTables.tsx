@@ -18,8 +18,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Trash, Pencil, Plus, Loader2 } from 'lucide-react';
 import { PaymentTable, PaymentTableInstallment, PaymentTableTerm } from '@/types';
 import PageLayout from '@/components/layout/PageLayout';
-import { usePaymentTables } from '@/hooks/usePaymentTables';
-import { useAppContext } from '@/hooks/useAppContext';
+import { useAppData } from '@/context/providers/AppDataProvider';
 
 const paymentTableFormSchema = z.object({
   name: z.string().min(2, {
@@ -41,10 +40,20 @@ export default function PaymentTables() {
     addPaymentTable,
     updatePaymentTable,
     deletePaymentTable
-  } = useAppContext();
+  } = useAppData();
+  
   const [openNewTableDialog, setOpenNewTableDialog] = useState(false);
   const [editTableId, setEditTableId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('📊 [PaymentTables] Component state:', {
+      paymentTablesCount: paymentTables.length,
+      isLoadingPaymentTables,
+      tables: paymentTables.map(t => ({ id: t.id, name: t.name }))
+    });
+  }, [paymentTables, isLoadingPaymentTables]);
 
   // Form for creating/editing a payment table
   const form = useForm<PaymentTableFormValues>({
@@ -357,7 +366,7 @@ function PaymentTableTermsManager({
   const {
     paymentTables,
     updatePaymentTable
-  } = useAppContext();
+  } = useAppData();
   const [days, setDays] = useState(0);
   const [percentage, setPercentage] = useState(0);
   const [description, setDescription] = useState('');

@@ -5,20 +5,21 @@ import { useAppContextHooks } from '@/hooks/useAppContextHooks';
 import { useThemeInitializer } from '@/hooks/useThemeInitializer';
 import { useConnection } from './ConnectionProvider';
 import { useAppOperations } from '@/context/operations/appOperations';
-import { useAppDataState } from './appData/useAppDataState';
-import { useAppDataOperations } from './appData/useAppDataOperations';
 import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useAppData } from './AppDataProvider';
 
 /**
  * Inner provider for the AppContext
- * Combines data and operations from various sources into a unified context
+ * Now uses AppDataProvider as the unified source for core data
  */
 export const AppContextInnerProvider = ({ children }: { children: React.ReactNode }) => {
+  console.log('🚀 [AppContextInnerProvider] Initializing inner provider...');
+  
   // Get connection status
   const connection = useConnection();
   
-  // Get app operations (customer, product brands, etc.)
+  // Get app operations (product brands, payment tables, etc.)
   const appOperations = useAppOperations();
   
   // Get hooks for various data operations
@@ -27,84 +28,33 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   // Get real settings from the database
   const { settings, updateSettings: updateSettingsHook, isLoading: isLoadingSettings } = useAppSettings();
 
+  // Get unified data from AppDataProvider
+  const appData = useAppData();
+
   // Wrap updateSettings to match the expected return type (Promise<void>)
   const updateSettings = async (newSettings: Partial<typeof settings>) => {
     await updateSettingsHook(newSettings);
   };
 
-  // Get app data state directly (products, orders, customers)
-  const {
-    products,
-    isLoadingProducts,
-    addProductHook,
-    updateProductHook,
-    deleteProductHook,
-    forceRefreshProducts,
-    orders,
-    isLoadingOrders,
-    addOrderHook,
-    updateOrderHook,
-    deleteOrderHook,
-    refreshOrdersHook,
-    markOrderAsBeingEdited,
-    unmarkOrderAsBeingEdited,
-    customers,
-    isLoadingCustomers,
-    addCustomerHook,
-    updateCustomerHook,
-    deleteCustomerHook,
-    generateNextCustomerCode
-  } = useAppDataState();
-
-  // Get app data operations with correct parameters
-  const {
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    refreshProducts,
-    addOrder,
-    updateOrder,
-    deleteOrder,
-    refreshOrders,
-    addCustomer,
-    updateCustomer,
-    deleteCustomer
-  } = useAppDataOperations(
-    addProductHook,
-    updateProductHook,
-    deleteProductHook,
-    forceRefreshProducts,
-    addOrderHook,
-    updateOrderHook,
-    deleteOrderHook,
-    refreshOrdersHook,
-    addCustomerHook,
-    updateCustomerHook,
-    deleteCustomerHook
-  );
-
   const refreshData = async (): Promise<boolean> => {
     try {
-      console.log('🔄 Refreshing all app data...');
-      await Promise.all([
-        refreshProducts(),
-        refreshOrders()
-      ]);
-      console.log('✅ All app data refreshed successfully');
-      return true;
+      console.log('🔄 [AppContextInnerProvider] Refreshing all app data...');
+      const result = await appData.refreshData();
+      console.log('✅ [AppContextInnerProvider] All app data refreshed successfully');
+      return result;
     } catch (error) {
-      console.error('❌ Error refreshing data:', error);
+      console.error('❌ [AppContextInnerProvider] Error refreshing data:', error);
       return false;
     }
   };
 
-  useAppDataEventHandlers(refreshData, markOrderAsBeingEdited, unmarkOrderAsBeingEdited);
+  useAppDataEventHandlers(refreshData, () => {}, () => {});
   
   // Initialize theme with the real primary color or fallback
   useThemeInitializer(settings?.theme?.primaryColor || '#3b82f6');
   
   // Log current settings state for debugging
-  console.log('🏢 Current settings in context:', {
+  console.log('🏢 [AppContextInnerProvider] Current settings in context:', {
     settingsLoaded: !!settings,
     companyName: settings?.company?.name,
     isLoadingSettings
@@ -112,29 +62,27 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
 
   // Build the full context value combining all data sources
   const contextValue = {
-    // Core data from unified app data state
-    customers,
-    isLoadingCustomers,
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    generateNextCustomerCode,
+    // Use AppDataProvider as the unified source for core entities
+    customers: appData.customers,
+    isLoadingCustomers: appData.isLoading,
+    addCustomer: appData.addCustomer,
+    updateCustomer: appData.updateCustomer,
+    deleteCustomer: appData.deleteCustomer,
+    generateNextCustomerCode: appData.generateNextCustomerCode,
     
-    // Products data from unified state
-    products,
-    isLoadingProducts,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    refreshProducts,
+    products: appData.products,
+    isLoadingProducts: appData.isLoadingProducts,
+    addProduct: appData.addProduct,
+    updateProduct: appData.updateProduct,
+    deleteProduct: appData.deleteProduct,
+    refreshProducts: appData.refreshProducts,
     
-    // Orders data from unified state
-    orders,
-    isLoadingOrders,
-    addOrder,
-    updateOrder,
-    deleteOrder,
-    refreshOrders,
+    orders: appData.orders,
+    isLoadingOrders: appData.isLoadingOrders,
+    addOrder: appData.addOrder,
+    updateOrder: appData.updateOrder,
+    deleteOrder: appData.deleteOrder,
+    refreshOrders: appData.refreshOrders,
     
     // Product operations from appOperations
     productBrands: appOperations.productBrands,
@@ -285,6 +233,16 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     // Required but not used properties
     isUsingMockData: false
   };
+
+  console.log('✅ [AppContextInnerProvider] Context value assembled:', {
+    customersLength: contextValue.customers.length,
+    productsLength: contextValue.products.length,
+    ordersLength: contextValue.orders.length,
+    paymentTablesLength: contextValue.paymentTables.length,
+    isLoadingCustomers: contextValue.isLoadingCustomers,
+    isLoadingProducts: contextValue.isLoadingProducts,
+    isLoadingPaymentTables: contextValue.isLoadingPaymentTables
+  });
   
   return (
     <AppContext.Provider value={contextValue}>

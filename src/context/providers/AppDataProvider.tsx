@@ -1,4 +1,5 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/appOperations';
 import { useConnection } from './ConnectionProvider';
@@ -132,6 +133,8 @@ export const useAppData = () => {
 };
 
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  console.log('🚀 [AppDataProvider] Initializing AppDataProvider...');
+  
   const appOperations = useAppOperations();
   const connection = useConnection();
   
@@ -183,6 +186,20 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     updateCustomerHook,
     deleteCustomerHook
   );
+
+  // Debug logs to track data flow
+  useEffect(() => {
+    console.log('📊 [AppDataProvider] Data state update:', {
+      customers: customers.length,
+      products: products.length,
+      orders: orders.length,
+      isLoadingCustomers,
+      isLoadingProducts,
+      isLoadingOrders,
+      paymentTables: appOperations.paymentTables.length,
+      isLoadingPaymentTables: appOperations.isLoadingPaymentTables
+    });
+  }, [customers, products, orders, isLoadingCustomers, isLoadingProducts, isLoadingOrders, appOperations.paymentTables, appOperations.isLoadingPaymentTables]);
 
   const refreshData = async (): Promise<boolean> => {
     try {
@@ -289,6 +306,16 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     systemOperations: appOperations.systemOperations,
     refreshData
   };
+
+  console.log('✅ [AppDataProvider] Provider value assembled:', {
+    customersLength: value.customers.length,
+    productsLength: value.products.length,
+    ordersLength: value.orders.length,
+    paymentTablesLength: value.paymentTables.length,
+    isLoadingCustomers: value.isLoading,
+    isLoadingProducts: value.isLoadingProducts,
+    isLoadingPaymentTables: value.isLoadingPaymentTables
+  });
 
   return (
     <AppDataContext.Provider value={value}>

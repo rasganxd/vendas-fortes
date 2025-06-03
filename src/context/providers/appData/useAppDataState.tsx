@@ -4,6 +4,8 @@ import { useOrders } from '@/hooks/useOrders';
 import { useCustomers } from '@/hooks/useCustomers';
 
 export const useAppDataState = () => {
+  console.log('🔄 [useAppDataState] Initializing data state hooks...');
+
   const {
     products,
     isLoading: isLoadingProducts,
@@ -32,6 +34,15 @@ export const useAppDataState = () => {
     deleteCustomer: deleteCustomerHook,
     generateNextCustomerCode
   } = useCustomers();
+
+  console.log('📊 [useAppDataState] Data state summary:', {
+    products: products.length,
+    isLoadingProducts,
+    orders: orders.length,
+    isLoadingOrders,
+    customers: customers.length,
+    isLoadingCustomers
+  });
 
   return {
     products,
