@@ -3,40 +3,31 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wifi, WifiOff, RefreshCw, CheckCircle, XCircle, AlertCircle, Globe, Key, Shield } from "lucide-react";
+import { Wifi, WifiOff, RefreshCw, CheckCircle, XCircle, AlertCircle, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ApiStatus {
   isConnected: boolean;
-  isProtected?: boolean;
   responseTime?: number;
   lastChecked?: Date;
   error?: string;
 }
 
 const ApiStatusPanel: React.FC = () => {
-  const [ordersApiStatus, setOrdersApiStatus] = useState<ApiStatus>({
-    isConnected: false
-  });
-  const [mobileImportStatus, setMobileImportStatus] = useState<ApiStatus>({
-    isConnected: false
-  });
-  const [mobileSyncStatus, setMobileSyncStatus] = useState<ApiStatus>({
+  const [apiStatus, setApiStatus] = useState<ApiStatus>({
     isConnected: false
   });
   const [isTestingConnection, setIsTestingConnection] = useState(false);
 
-  const ORDERS_API_URL = 'https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/orders-api';
-  const MOBILE_IMPORT_URL = 'https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/mobile-orders-import';
   const MOBILE_SYNC_URL = 'https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/mobile-sync';
 
-  const testEndpoint = async (url: string, name: string) => {
+  const testMobileSyncApi = async () => {
     const startTime = Date.now();
     try {
-      console.log(`🔍 Testing ${name} connection to:`, url);
+      console.log('🔍 Testing Mobile Sync API connection...');
 
-      const response = await fetch(url, {
+      const response = await fetch(MOBILE_SYNC_URL, {
         method: 'OPTIONS',
         headers: {
           'Content-Type': 'application/json'
@@ -44,7 +35,7 @@ const ApiStatusPanel: React.FC = () => {
       });
       
       const responseTime = Date.now() - startTime;
-      console.log(`📡 ${name} Response:`, response.status, response.statusText);
+      console.log('📡 Mobile Sync API Response:', response.status, response.statusText);
       
       if (response.ok || response.status === 200) {
         return {
@@ -57,7 +48,7 @@ const ApiStatusPanel: React.FC = () => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      console.error(`❌ ${name} connection test failed:`, error);
+      console.error('❌ Mobile Sync API connection test failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       return {
         isConnected: false,
@@ -67,82 +58,26 @@ const ApiStatusPanel: React.FC = () => {
     }
   };
 
-  const testOrdersApiAuth = async () => {
-    const startTime = Date.now();
-    try {
-      console.log('🔐 Testing Orders API with authentication check...');
-
-      const response = await fetch(ORDERS_API_URL, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const responseTime = Date.now() - startTime;
-      console.log('🔐 Orders API auth test response:', response.status);
-      
-      if (response.status === 401) {
-        // 401 significa que a API está funcionando e protegida
-        return {
-          isConnected: true,
-          isProtected: true,
-          responseTime,
-          lastChecked: new Date(),
-          error: undefined
-        };
-      } else if (response.ok) {
-        return {
-          isConnected: true,
-          isProtected: false,
-          responseTime,
-          lastChecked: new Date(),
-          error: undefined
-        };
-      } else {
-        throw new Error(`HTTP ${response.status}`);
-      }
-    } catch (error) {
-      console.error('❌ Orders API auth test failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      return {
-        isConnected: false,
-        lastChecked: new Date(),
-        error: errorMessage
-      };
-    }
-  };
-
-  const testAllEndpoints = async (showToast = true) => {
+  const testConnection = async (showToast = true) => {
     setIsTestingConnection(true);
     try {
-      console.log('🔍 Testing all API endpoints...');
+      console.log('🔍 Testing Mobile Sync API...');
 
-      // Teste do Orders API (com verificação de auth)
-      const ordersResult = await testOrdersApiAuth();
-      setOrdersApiStatus(ordersResult);
-
-      // Teste do Mobile Import
-      const mobileImportResult = await testEndpoint(MOBILE_IMPORT_URL, 'Mobile Import');
-      setMobileImportStatus(mobileImportResult);
-
-      // Teste do Mobile Sync
-      const mobileSyncResult = await testEndpoint(MOBILE_SYNC_URL, 'Mobile Sync');
-      setMobileSyncStatus(mobileSyncResult);
+      const result = await testMobileSyncApi();
+      setApiStatus(result);
 
       if (showToast) {
-        const allWorking = ordersResult.isConnected && mobileImportResult.isConnected && mobileSyncResult.isConnected;
-        if (allWorking) {
-          toast.success('Todas as APIs estão funcionando!');
+        if (result.isConnected) {
+          toast.success('API Mobile funcionando perfeitamente!');
         } else {
-          toast.error('Algumas APIs apresentaram problemas');
+          toast.error('API Mobile com problemas');
         }
       }
 
     } catch (error) {
-      console.error('❌ Failed to test endpoints:', error);
+      console.error('❌ Failed to test API:', error);
       if (showToast) {
-        toast.error('Erro ao testar endpoints');
+        toast.error('Erro ao testar a API');
       }
     } finally {
       setIsTestingConnection(false);
@@ -150,27 +85,21 @@ const ApiStatusPanel: React.FC = () => {
   };
 
   useEffect(() => {
-    testAllEndpoints(false);
+    testConnection(false);
   }, []);
 
-  const getStatusIcon = (status: ApiStatus) => {
+  const getStatusIcon = () => {
     if (isTestingConnection) {
       return <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />;
     }
-    if (status.isConnected && status.isProtected) {
-      return <Shield className="h-5 w-5 text-green-500" />;
-    }
-    return status.isConnected ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />;
+    return apiStatus.isConnected ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />;
   };
 
-  const getStatusBadge = (status: ApiStatus) => {
+  const getStatusBadge = () => {
     if (isTestingConnection) {
       return <Badge variant="outline">Testando...</Badge>;
     }
-    if (status.isConnected && status.isProtected) {
-      return <Badge variant="default" className="bg-green-500">Protegida (Ativa)</Badge>;
-    }
-    return status.isConnected ? <Badge variant="default" className="bg-green-500">Ativa</Badge> : <Badge variant="destructive">Inativa</Badge>;
+    return apiStatus.isConnected ? <Badge variant="default" className="bg-green-500">Online</Badge> : <Badge variant="destructive">Offline</Badge>;
   };
 
   const formatDate = (date: Date) => {
@@ -181,121 +110,59 @@ const ApiStatusPanel: React.FC = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Globe className="h-5 w-5" />
-          Status das APIs
+          <Smartphone className="h-5 w-5" />
+          Status da API Mobile
         </CardTitle>
+        <p className="text-sm text-gray-600">
+          Verifique se a API está funcionando corretamente para os aplicativos mobile
+        </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Orders API Status */}
+        {/* API Status */}
         <div className="flex items-center justify-between p-4 border rounded-lg">
           <div className="flex items-center gap-3">
-            {getStatusIcon(ordersApiStatus)}
+            {getStatusIcon()}
             <div>
-              <p className="font-medium">API de Pedidos (CRUD)</p>
-              <p className="text-sm text-muted-foreground">
-                {ORDERS_API_URL}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Gerenciar pedidos importados - Requer autenticação
-              </p>
-            </div>
-          </div>
-          {getStatusBadge(ordersApiStatus)}
-        </div>
-
-        {/* Mobile Import API Status */}
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <div className="flex items-center gap-3">
-            {getStatusIcon(mobileImportStatus)}
-            <div>
-              <p className="font-medium">API Mobile Import</p>
-              <p className="text-sm text-muted-foreground">
-                {MOBILE_IMPORT_URL}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Mobile enviar pedidos - Para apps mobile
-              </p>
-            </div>
-          </div>
-          {getStatusBadge(mobileImportStatus)}
-        </div>
-
-        {/* Mobile Sync API Status */}
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <div className="flex items-center gap-3">
-            {getStatusIcon(mobileSyncStatus)}
-            <div>
-              <p className="font-medium">API Mobile Sync</p>
+              <p className="font-medium">API de Sincronização Mobile</p>
               <p className="text-sm text-muted-foreground">
                 {MOBILE_SYNC_URL}
               </p>
               <p className="text-xs text-muted-foreground">
-                Sincronização completa mobile - Dados + Pedidos
+                Endpoint principal para aplicativos mobile
               </p>
             </div>
           </div>
-          {getStatusBadge(mobileSyncStatus)}
+          {getStatusBadge()}
         </div>
 
-        {/* Status Summary */}
-        {(ordersApiStatus.lastChecked || mobileImportStatus.lastChecked || mobileSyncStatus.lastChecked) && (
+        {/* Status Details */}
+        {apiStatus.lastChecked && (
           <div className="text-sm space-y-1 p-3 bg-gray-50 rounded-lg">
-            <p><strong>Última verificação:</strong> {formatDate(new Date())}</p>
-            {ordersApiStatus.responseTime && (
-              <p><strong>Orders API:</strong> {ordersApiStatus.responseTime}ms</p>
+            <p><strong>Última verificação:</strong> {formatDate(apiStatus.lastChecked)}</p>
+            {apiStatus.responseTime && (
+              <p><strong>Tempo de resposta:</strong> {apiStatus.responseTime}ms</p>
             )}
-            {mobileImportStatus.responseTime && (
-              <p><strong>Mobile Import:</strong> {mobileImportStatus.responseTime}ms</p>
-            )}
-            {mobileSyncStatus.responseTime && (
-              <p><strong>Mobile Sync:</strong> {mobileSyncStatus.responseTime}ms</p>
-            )}
+            <p><strong>Status:</strong> {apiStatus.isConnected ? '✅ Funcionando' : '❌ Com problemas'}</p>
           </div>
         )}
 
-        {/* Errors */}
-        {(ordersApiStatus.error || mobileImportStatus.error || mobileSyncStatus.error) && (
-          <div className="space-y-2">
-            {ordersApiStatus.error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-red-800">Orders API</p>
-                    <p className="text-sm text-red-600">{ordersApiStatus.error}</p>
-                  </div>
-                </div>
+        {/* Error Display */}
+        {apiStatus.error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+              <div>
+                <p className="font-medium text-red-800">Problema Detectado</p>
+                <p className="text-sm text-red-600">{apiStatus.error}</p>
               </div>
-            )}
-            {mobileImportStatus.error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-red-800">Mobile Import API</p>
-                    <p className="text-sm text-red-600">{mobileImportStatus.error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {mobileSyncStatus.error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-red-800">Mobile Sync API</p>
-                    <p className="text-sm text-red-600">{mobileSyncStatus.error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
 
         {/* Test Button */}
         <div className="flex gap-2">
           <Button 
-            onClick={() => testAllEndpoints(true)} 
+            onClick={() => testConnection(true)} 
             disabled={isTestingConnection} 
             variant="outline" 
             className="flex-1"
@@ -308,55 +175,44 @@ const ApiStatusPanel: React.FC = () => {
             ) : (
               <>
                 <Wifi className="mr-2 h-4 w-4" />
-                Testar Todas APIs
+                Testar Conexão
               </>
             )}
           </Button>
         </div>
 
-        {/* API Purpose Guide */}
+        {/* Simple Usage Guide */}
         <div className="pt-4 border-t">
-          <h4 className="font-medium mb-3">Guia de Uso das APIs:</h4>
+          <h4 className="font-medium mb-3">Como Usar:</h4>
           <div className="space-y-3 text-sm">
-            <div className="p-3 border rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <Shield className="h-4 w-4 text-blue-500" />
-                <span className="font-medium">Orders API (CRUD)</span>
+            <div className="p-3 border rounded-lg bg-blue-50">
+              <div className="flex items-start gap-2 mb-2">
+                <div className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                <span className="font-medium text-blue-900">Gere um Token</span>
               </div>
-              <p className="text-muted-foreground mb-2">Para gerenciar pedidos já importados</p>
-              <ul className="text-xs space-y-1 text-muted-foreground">
-                <li>• <code>GET /</code> - Listar pedidos importados</li>
-                <li>• <code>GET /:id</code> - Buscar pedido específico</li>
-                <li>• <code>PUT /:id</code> - Atualizar pedido</li>
-                <li>• <code>DELETE /:id</code> - Excluir pedido</li>
-                <li>• ⚠️ Não aceita criação de pedidos mobile</li>
-              </ul>
+              <p className="text-blue-800 text-xs ml-7">
+                Vá na aba "API REST & Mobile" e crie um token para o vendedor
+              </p>
             </div>
 
-            <div className="p-3 border rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="font-medium">Mobile Import API</span>
+            <div className="p-3 border rounded-lg bg-green-50">
+              <div className="flex items-start gap-2 mb-2">
+                <div className="w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                <span className="font-medium text-green-900">Configure o App</span>
               </div>
-              <p className="text-muted-foreground mb-2">Para apps mobile enviarem pedidos</p>
-              <ul className="text-xs space-y-1 text-muted-foreground">
-                <li>• <code>POST /</code> - Enviar pedidos do mobile</li>
-                <li>• Pedidos ficam pendentes até importação manual</li>
-                <li>• Use este endpoint nos apps mobile</li>
-              </ul>
+              <p className="text-green-800 text-xs ml-7">
+                Use este endereço e o token no seu aplicativo mobile
+              </p>
             </div>
 
-            <div className="p-3 border rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <RefreshCw className="h-4 w-4 text-purple-500" />
-                <span className="font-medium">Mobile Sync API</span>
+            <div className="p-3 border rounded-lg bg-purple-50">
+              <div className="flex items-start gap-2 mb-2">
+                <div className="w-5 h-5 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                <span className="font-medium text-purple-900">Sincronize</span>
               </div>
-              <p className="text-muted-foreground mb-2">Sincronização completa mobile</p>
-              <ul className="text-xs space-y-1 text-muted-foreground">
-                <li>• Baixar produtos e clientes atualizados</li>
-                <li>• Enviar pedidos em lote</li>
-                <li>• Obter estatísticas de sincronização</li>
-              </ul>
+              <p className="text-purple-800 text-xs ml-7">
+                O app mobile pode baixar dados e enviar pedidos automaticamente
+              </p>
             </div>
           </div>
         </div>

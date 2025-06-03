@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Key, Plus, Trash2, AlertCircle, CheckCircle, Smartphone, Shield, Code, Wifi, WifiOff } from "lucide-react";
+import { Copy, Key, Plus, Trash2, AlertCircle, CheckCircle, Smartphone, Book } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { apiTokenService, ApiToken, CreateTokenRequest } from '@/services/supabase/apiTokenService';
 import { useSalesReps } from '@/hooks/useSalesReps';
@@ -42,9 +42,6 @@ const ApiTokensPanel: React.FC = () => {
   const [generatedToken, setGeneratedToken] = useState<string>('');
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const [isCreatingToken, setIsCreatingToken] = useState(false);
-  const [apiStatus, setApiStatus] = useState<{ isOnline: boolean; lastChecked?: Date }>({
-    isOnline: false
-  });
 
   const { salesReps, isLoading: salesRepsLoading } = useSalesReps();
 
@@ -291,16 +288,16 @@ const ApiTokensPanel: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
-            Tokens de API REST
+            Tokens para Aplicativos Mobile
           </CardTitle>
           <p className="text-sm text-gray-600">
-            Gerencie tokens de acesso para a API REST de pedidos. Estes tokens permitem que aplicações mobile e externas acessem os endpoints de forma segura.
+            Crie tokens de acesso para que os aplicativos mobile possam se conectar ao sistema.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <Label htmlFor="salesRep">Vendedor</Label>
+              <Label htmlFor="salesRep">Selecione o Vendedor</Label>
               {salesRepsLoading ? (
                 <div className="flex items-center justify-center p-3 border rounded">
                   <LoadingSpinner size="sm" className="mr-2" />
@@ -316,7 +313,7 @@ const ApiTokensPanel: React.FC = () => {
               ) : (
                 <Select value={selectedSalesRep} onValueChange={setSelectedSalesRep}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um vendedor" />
+                    <SelectValue placeholder="Escolha um vendedor" />
                   </SelectTrigger>
                   <SelectContent>
                     {validSalesReps.map((rep) => {
@@ -338,7 +335,7 @@ const ApiTokensPanel: React.FC = () => {
                 className="w-full sm:w-auto"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Novo Token
+                Criar Novo Token
               </Button>
             </div>
           </div>
@@ -420,126 +417,69 @@ const ApiTokensPanel: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Documentação Corrigida da API */}
+      {/* Documentação Simplificada */}
       <Card>
         <CardHeader>
-          <CardTitle>Documentação da API - Endpoints Corretos</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Book className="h-5 w-5" />
+            Como Usar os Tokens
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           
-          {/* Orders API (CRUD) */}
-          <div className="border rounded-lg p-4">
+          {/* Endereço da API */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2 mb-3">
-              <Shield className="h-5 w-5 text-blue-500" />
-              <h3 className="font-semibold text-lg">Orders API (CRUD)</h3>
-              <Badge variant="outline">Protegida</Badge>
+              <Smartphone className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-blue-900">Endereço da API Mobile</h3>
             </div>
             
-            <div className="bg-gray-50 p-4 rounded-lg mb-3">
-              <code className="text-sm font-mono">
-                https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/orders-api
-              </code>
-            </div>
-            
-            <p className="text-sm text-gray-600 mb-3">
-              <strong>Finalidade:</strong> Gerenciar pedidos já importados no sistema. Requer autenticação com token API.
-            </p>
-            
-            <div className="space-y-2">
-              <p className="font-medium text-sm">Endpoints disponíveis:</p>
-              <ul className="text-sm space-y-1 ml-4">
-                <li><code>GET /</code> - Listar pedidos importados (com filtros)</li>
-                <li><code>GET /:id</code> - Buscar pedido específico</li>
-                <li><code>PUT /:id</code> - Atualizar pedido</li>
-                <li><code>DELETE /:id</code> - Excluir pedido</li>
-                <li className="text-red-600"><code>POST /</code> - ⚠️ NÃO aceita criação de pedidos mobile</li>
-              </ul>
-            </div>
-
-            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-sm text-yellow-800">
-                <strong>Importante:</strong> Esta API é para gerenciar pedidos já no sistema, não para receber novos pedidos do mobile.
-              </p>
-            </div>
-          </div>
-
-          {/* Mobile Import API */}
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Smartphone className="h-5 w-5 text-green-500" />
-              <h3 className="font-semibold text-lg">Mobile Orders Import API</h3>
-              <Badge variant="default" className="bg-green-500">Para Mobile</Badge>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg mb-3">
-              <code className="text-sm font-mono">
-                https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/mobile-orders-import
-              </code>
-            </div>
-            
-            <p className="text-sm text-gray-600 mb-3">
-              <strong>Finalidade:</strong> Receber pedidos enviados pelos aplicativos mobile. Use este endpoint nos apps mobile.
-            </p>
-            
-            <div className="space-y-2">
-              <p className="font-medium text-sm">Endpoints disponíveis:</p>
-              <ul className="text-sm space-y-1 ml-4">
-                <li><code>POST /</code> - Enviar pedidos do mobile</li>
-                <li><code>GET /:sales_rep_id</code> - Listar pedidos pendentes por vendedor</li>
-              </ul>
-            </div>
-
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-              <p className="text-sm text-green-800">
-                <strong>Use este endpoint</strong> para enviar pedidos dos aplicativos mobile. Os pedidos ficam pendentes até serem importados manualmente.
-              </p>
-            </div>
-          </div>
-
-          {/* Mobile Sync API */}
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Code className="h-5 w-5 text-purple-500" />
-              <h3 className="font-semibold text-lg">Mobile Sync API</h3>
-              <Badge variant="default" className="bg-purple-500">Sincronização</Badge>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg mb-3">
-              <code className="text-sm font-mono">
+            <div className="bg-white p-3 rounded border">
+              <code className="text-sm font-mono break-all">
                 https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/mobile-sync
               </code>
             </div>
             
-            <p className="text-sm text-gray-600 mb-3">
-              <strong>Finalidade:</strong> Sincronização completa para aplicativos mobile - dados e pedidos.
+            <p className="text-sm text-blue-800 mt-2">
+              Este é o endereço que você deve configurar no seu aplicativo mobile.
             </p>
-            
+          </div>
+
+          {/* Como autenticar */}
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <h4 className="font-semibold text-green-900 mb-2">Como Usar o Token:</h4>
             <div className="space-y-2">
-              <p className="font-medium text-sm">Funcionalidades:</p>
-              <ul className="text-sm space-y-1 ml-4">
-                <li>• Baixar produtos e clientes atualizados</li>
-                <li>• Enviar pedidos em lote</li>
-                <li>• Obter estatísticas de sincronização</li>
-                <li>• Gerenciar tokens de sincronização</li>
-              </ul>
+              <p className="text-sm text-green-800">
+                <strong>1.</strong> Copie o token gerado acima
+              </p>
+              <p className="text-sm text-green-800">
+                <strong>2.</strong> No seu app mobile, inclua este cabeçalho em todas as requisições:
+              </p>
+              <div className="bg-white p-2 rounded border mt-2">
+                <code className="text-xs">Authorization: Bearer seu_token_aqui</code>
+              </div>
             </div>
           </div>
 
-          {/* Authentication Guide */}
-          <div className="border rounded-lg p-4">
-            <h3 className="font-semibold text-lg mb-3">Autenticação</h3>
-            <div className="space-y-3">
-              <div>
-                <p className="font-medium text-sm">Para Orders API:</p>
-                <code className="text-sm bg-gray-100 p-2 rounded border block mt-1">
-                  x-api-key: seu_token_aqui
-                </code>
-              </div>
-              <div>
-                <p className="font-medium text-sm">Para Mobile APIs:</p>
-                <p className="text-sm text-gray-600">Use as credenciais do vendedor ou tokens de sincronização</p>
-              </div>
-            </div>
+          {/* O que a API faz */}
+          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <h4 className="font-semibold text-purple-900 mb-2">O que você pode fazer:</h4>
+            <ul className="text-sm text-purple-800 space-y-1">
+              <li>• <strong>Baixar dados:</strong> Produtos e clientes atualizados</li>
+              <li>• <strong>Enviar pedidos:</strong> Pedidos feitos no mobile</li>
+              <li>• <strong>Ver estatísticas:</strong> Acompanhar sincronizações</li>
+            </ul>
+          </div>
+
+          {/* Dicas importantes */}
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h4 className="font-semibold text-yellow-900 mb-2">💡 Dicas Importantes:</h4>
+            <ul className="text-sm text-yellow-800 space-y-1">
+              <li>• Guarde o token em local seguro no app</li>
+              <li>• Use sempre HTTPS (nunca HTTP)</li>
+              <li>• Teste a conexão antes de usar em produção</li>
+              <li>• Se tiver problemas, verifique se o token está ativo</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
@@ -648,3 +588,185 @@ const ApiTokensPanel: React.FC = () => {
 };
 
 export default ApiTokensPanel;
+
+const [apiStatus, setApiStatus] = useState<{ isOnline: boolean; lastChecked?: Date }>({
+    isOnline: false
+  });
+
+  // Quick API status check
+  const checkApiStatus = async () => {
+    try {
+      const response = await fetch('https://ufvnubabpcyimahbubkd.supabase.co/functions/v1/orders-api', {
+        method: 'OPTIONS',
+      });
+      setApiStatus({
+        isOnline: response.ok,
+        lastChecked: new Date()
+      });
+    } catch (error) {
+      setApiStatus({
+        isOnline: false,
+        lastChecked: new Date()
+      });
+    }
+  };
+
+  useEffect(() => {
+    checkApiStatus();
+  }, []);
+
+  // Debug logging for sales reps
+  useEffect(() => {
+    console.log("=== API TOKENS PANEL DEBUG ===");
+    console.log("Sales reps loading:", salesRepsLoading);
+    console.log("Sales reps data:", salesReps);
+    console.log("Sales reps count:", salesReps?.length || 0);
+    console.log("Selected sales rep:", selectedSalesRep);
+    
+    if (salesReps && salesReps.length > 0) {
+      salesReps.forEach((rep, index) => {
+        console.log(`Sales rep ${index}:`, {
+          id: rep.id,
+          name: rep.name,
+          email: rep.email,
+          code: rep.code,
+          active: rep.active
+        });
+      });
+    }
+  }, [salesReps, salesRepsLoading, selectedSalesRep]);
+
+  const loadTokens = async () => {
+    if (!selectedSalesRep) {
+      setTokens([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log("Loading tokens for sales rep:", selectedSalesRep);
+      const data = await apiTokenService.getTokensBySalesRep(selectedSalesRep);
+      console.log("Loaded tokens:", data);
+      setTokens(data);
+    } catch (error) {
+      console.error('Error loading tokens:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os tokens de API.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTokens();
+  }, [selectedSalesRep]);
+
+  const handleCreateToken = async () => {
+    console.log("=== CREATING TOKEN ===");
+    console.log("Selected sales rep:", selectedSalesRep);
+    console.log("Token name:", newTokenName);
+    console.log("Expiration days:", expirationDays);
+
+    if (!selectedSalesRep || !newTokenName.trim()) {
+      console.log("Validation failed - missing sales rep or token name");
+      toast({
+        title: "Erro",
+        description: "Selecione um vendedor e informe um nome para o token.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreatingToken(true);
+    try {
+      console.log("Creating token for sales rep:", selectedSalesRep, "with name:", newTokenName);
+      
+      // Convert "never" to undefined for no expiration
+      const expirationValue = expirationDays === "never" ? undefined : parseInt(expirationDays);
+      
+      const request: CreateTokenRequest = {
+        sales_rep_id: selectedSalesRep,
+        name: newTokenName.trim(),
+        expires_days: expirationValue
+      };
+
+      console.log("Token request:", request);
+
+      const token = await apiTokenService.generateToken(request);
+      console.log("Token created successfully:", token ? "✅ token received" : "❌ no token returned");
+      
+      if (!token) {
+        throw new Error("Nenhum token foi retornado pelo serviço");
+      }
+
+      setGeneratedToken(token);
+      setShowTokenDialog(true);
+      setIsDialogOpen(false);
+      setNewTokenName('');
+      setExpirationDays('30');
+      
+      // Reload tokens
+      await loadTokens();
+
+      toast({
+        title: "Token criado",
+        description: "Token de API criado com sucesso!"
+      });
+    } catch (error) {
+      console.error('❌ Error creating token:', error);
+      let errorMessage = "Não foi possível criar o token de API.";
+      
+      if (error instanceof Error) {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingToken(false);
+    }
+  };
+
+  const handleRevokeToken = async (tokenId: string) => {
+    try {
+      await apiTokenService.revokeToken(tokenId);
+      await loadTokens();
+      
+      toast({
+        title: "Token revogado",
+        description: "Token de API revogado com sucesso!"
+      });
+    } catch (error) {
+      console.error('Error revoking token:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível revogar o token.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteToken = async (tokenId: string) => {
+    try {
+      await apiTokenService.deleteToken(tokenId);
+      await loadTokens();
+      
+      toast({
+        title: "Token excluído",
+        description: "Token de API excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error('Error deleting token:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o token.",
+        variant: "destructive"
+      });
+    }
+  };
