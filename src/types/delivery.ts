@@ -21,22 +21,8 @@ export interface DeliveryRoute {
   customers?: Customer[];
 }
 
-// Import Customer type from customer.ts
-interface Customer {
-  id: string;
-  code: number;
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  phone: string;
-  email: string;
-  notes: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deliveryRouteId?: string;
-}
+// Import Customer type from customer.ts to avoid conflicts
+import { Customer } from './customer';
 
 export interface RouteStop {
   id: string;
