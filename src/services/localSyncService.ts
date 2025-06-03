@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { DadosVendedor, MobileOrderData, SyncLog, LocalServerStatus, SalesRepSyncStatus } from '@/types/localSync';
-import { Product, Customer, DeliveryRoute, PaymentTable, SalesRep } from '@/types';
+import { Product, Customer, DeliveryRoute, PaymentTable, SalesRep, PaymentTableInstallment } from '@/types';
 import { NetworkUtils } from '@/utils/networkUtils';
 
 export class LocalSyncService {
@@ -235,21 +236,35 @@ export class LocalSyncService {
         updatedAt: new Date(item.last_updated)
       })) as DeliveryRoute[];
 
-      // Transformar tabelas de preço
-      const tabelasTransformadas = (tabelasPreco || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        type: item.type,
-        terms: item.terms,
-        installments: item.installments,
-        notes: item.notes || '',
-        payableTo: item.payable_to || '',
-        paymentLocation: item.payment_location || '',
-        active: item.active,
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at)
-      })) as PaymentTable[];
+      // Transformar tabelas de preço com correção de tipos
+      const tabelasTransformadas = (tabelasPreco || []).map(item => {
+        // Converter installments de Json para PaymentTableInstallment[]
+        let installments: PaymentTableInstallment[] = [];
+        if (item.installments && Array.isArray(item.installments)) {
+          installments = item.installments.map((inst: any) => ({
+            installment: inst.installment || 1,
+            percentage: inst.percentage || 100,
+            days: inst.days || 0,
+            id: inst.id,
+            description: inst.description
+          }));
+        }
+
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          type: item.type,
+          terms: item.terms,
+          installments: installments,
+          notes: item.notes || '',
+          payableTo: item.payable_to || '',
+          paymentLocation: item.payment_location || '',
+          active: item.active,
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at)
+        };
+      }) as PaymentTable[];
 
       const dadosVendedor: DadosVendedor = {
         vendedor: {
@@ -257,7 +272,7 @@ export class LocalSyncService {
           codigo: vendedor.code,
           nome: vendedor.name,
           email: vendedor.email || '',
-          senha: vendedor.password || '' // Para autenticação local no mobile
+          senha: vendedor.password || ''
         },
         produtos: produtosTransformados,
         clientes: clientesTransformados,

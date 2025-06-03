@@ -1,4 +1,7 @@
 
+import { Product, Customer, DeliveryRoute, PaymentTable, SalesRep } from './index';
+import { AppSettings } from './system';
+
 export interface DadosVendedor {
   vendedor: {
     id: string;
@@ -67,7 +70,3 @@ export interface MobileOrderData {
     tabela?: string;
   };
 }
-
-// Re-export types from main index
-export type { Product, Customer, DeliveryRoute, PaymentTable, SalesRep } from './index';
-export type { AppSettings } from './system';

@@ -1,58 +1,83 @@
 
-import { Order } from '@/types';
+import { useCallback } from 'react';
+import { Product, Order, Customer } from '@/types';
 
 export const useAppDataOperations = (
-  addProductHook: any,
-  updateProductHook: any,
-  deleteProductHook: any,
-  forceRefreshProducts: any,
-  addOrderHook: any,
-  updateOrderHook: any,
-  deleteOrderHook: any,
-  refreshOrdersHook: any
+  // Product hooks
+  addProductHook: (product: Omit<Product, 'id'>) => Promise<string>,
+  updateProductHook: (id: string, product: Partial<Product>) => Promise<void>,
+  deleteProductHook: (id: string) => Promise<void>,
+  forceRefreshProducts: () => Promise<boolean>,
+  
+  // Order hooks
+  addOrderHook: (order: Omit<Order, 'id'>) => Promise<string>,
+  updateOrderHook: (id: string, order: Partial<Order>) => Promise<string>,
+  deleteOrderHook: (id: string) => Promise<void>,
+  refreshOrdersHook: () => Promise<void>,
+
+  // Customer hooks
+  addCustomerHook: (customer: Omit<Customer, 'id'>) => Promise<string>,
+  updateCustomerHook: (id: string, customer: Partial<Customer>) => Promise<void>,
+  deleteCustomerHook: (id: string) => Promise<void>
 ) => {
-  const addProduct = async (product: any) => {
-    const result = await addProductHook(product);
-    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'add', productId: result } }));
-    return result;
-  };
+  
+  // Product operations
+  const addProduct = useCallback(async (product: Omit<Product, 'id'>) => {
+    console.log('🔄 [AppDataOperations] Adding product through centralized system');
+    return await addProductHook(product);
+  }, [addProductHook]);
 
-  const updateProduct = async (id: string, product: any) => {
+  const updateProduct = useCallback(async (id: string, product: Partial<Product>) => {
+    console.log('🔄 [AppDataOperations] Updating product through centralized system');
     await updateProductHook(id, product);
-    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'update', productId: id } }));
-  };
+  }, [updateProductHook]);
 
-  const deleteProduct = async (id: string) => {
+  const deleteProduct = useCallback(async (id: string) => {
+    console.log('🔄 [AppDataOperations] Deleting product through centralized system');
     await deleteProductHook(id);
-    window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'delete', productId: id } }));
-  };
+  }, [deleteProductHook]);
 
-  const refreshProducts = async (): Promise<boolean> => {
-    try {
-      const result = await forceRefreshProducts();
-      window.dispatchEvent(new CustomEvent('productsUpdated', { detail: { action: 'refresh' } }));
-      return result;
-    } catch (error) {
-      console.error('Error refreshing products:', error);
-      return false;
-    }
-  };
+  const refreshProducts = useCallback(async () => {
+    console.log('🔄 [AppDataOperations] Refreshing products through centralized system');
+    return await forceRefreshProducts();
+  }, [forceRefreshProducts]);
 
-  const addOrder = async (order: Omit<Order, 'id'>) => {
+  // Order operations
+  const addOrder = useCallback(async (order: Omit<Order, 'id'>) => {
+    console.log('🔄 [AppDataOperations] Adding order through centralized system');
     return await addOrderHook(order);
-  };
+  }, [addOrderHook]);
 
-  const updateOrder = async (id: string, order: Partial<Order>): Promise<string> => {
+  const updateOrder = useCallback(async (id: string, order: Partial<Order>) => {
+    console.log('🔄 [AppDataOperations] Updating order through centralized system');
     return await updateOrderHook(id, order);
-  };
+  }, [updateOrderHook]);
 
-  const deleteOrder = async (id: string) => {
+  const deleteOrder = useCallback(async (id: string) => {
+    console.log('🔄 [AppDataOperations] Deleting order through centralized system');
     await deleteOrderHook(id);
-  };
+  }, [deleteOrderHook]);
 
-  const refreshOrders = async (): Promise<void> => {
+  const refreshOrders = useCallback(async () => {
+    console.log('🔄 [AppDataOperations] Refreshing orders through centralized system');
     await refreshOrdersHook();
-  };
+  }, [refreshOrdersHook]);
+
+  // Customer operations
+  const addCustomer = useCallback(async (customer: Omit<Customer, 'id'>) => {
+    console.log('🔄 [AppDataOperations] Adding customer through centralized system');
+    return await addCustomerHook(customer);
+  }, [addCustomerHook]);
+
+  const updateCustomer = useCallback(async (id: string, customer: Partial<Customer>) => {
+    console.log('🔄 [AppDataOperations] Updating customer through centralized system');
+    await updateCustomerHook(id, customer);
+  }, [updateCustomerHook]);
+
+  const deleteCustomer = useCallback(async (id: string) => {
+    console.log('🔄 [AppDataOperations] Deleting customer through centralized system');
+    await deleteCustomerHook(id);
+  }, [deleteCustomerHook]);
 
   return {
     addProduct,
@@ -62,6 +87,9 @@ export const useAppDataOperations = (
     addOrder,
     updateOrder,
     deleteOrder,
-    refreshOrders
+    refreshOrders,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer
   };
 };

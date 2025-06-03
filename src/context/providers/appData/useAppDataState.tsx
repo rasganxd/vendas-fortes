@@ -1,6 +1,7 @@
 
 import { useProducts } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
+import { useCustomers } from '@/hooks/useCustomers';
 
 export const useAppDataState = () => {
   const {
@@ -23,6 +24,15 @@ export const useAppDataState = () => {
     unmarkOrderAsBeingEdited
   } = useOrders();
 
+  const {
+    customers,
+    isLoading: isLoadingCustomers,
+    addCustomer: addCustomerHook,
+    updateCustomer: updateCustomerHook,
+    deleteCustomer: deleteCustomerHook,
+    generateNextCustomerCode
+  } = useCustomers();
+
   return {
     products,
     isLoadingProducts,
@@ -37,6 +47,12 @@ export const useAppDataState = () => {
     deleteOrderHook,
     refreshOrdersHook,
     markOrderAsBeingEdited,
-    unmarkOrderAsBeingEdited
+    unmarkOrderAsBeingEdited,
+    customers,
+    isLoadingCustomers,
+    addCustomerHook,
+    updateCustomerHook,
+    deleteCustomerHook,
+    generateNextCustomerCode
   };
 };

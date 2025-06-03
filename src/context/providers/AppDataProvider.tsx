@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/appOperations';
@@ -73,7 +72,7 @@ interface AppDataContextType {
   updateLoad: (id: string, load: Partial<Load>) => Promise<void>;
   deleteLoad: (id: string) => Promise<void>;
 
-  // Order data - updated to Promise<string>
+  // Order data
   orders: Order[];
   isLoadingOrders: boolean;
   addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
@@ -150,7 +149,13 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     deleteOrderHook,
     refreshOrdersHook,
     markOrderAsBeingEdited,
-    unmarkOrderAsBeingEdited
+    unmarkOrderAsBeingEdited,
+    customers,
+    isLoadingCustomers,
+    addCustomerHook,
+    updateCustomerHook,
+    deleteCustomerHook,
+    generateNextCustomerCode
   } = useAppDataState();
 
   const {
@@ -161,7 +166,10 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addOrder,
     updateOrder,
     deleteOrder,
-    refreshOrders
+    refreshOrders,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer
   } = useAppDataOperations(
     addProductHook,
     updateProductHook,
@@ -170,20 +178,23 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addOrderHook,
     updateOrderHook,
     deleteOrderHook,
-    refreshOrdersHook
+    refreshOrdersHook,
+    addCustomerHook,
+    updateCustomerHook,
+    deleteCustomerHook
   );
 
   const refreshData = async (): Promise<boolean> => {
     try {
-      console.log('🔄 Refreshing all app data...');
+      console.log('🔄 [AppDataProvider] Refreshing all app data...');
       await Promise.all([
         refreshProducts(),
         refreshOrders()
       ]);
-      console.log('✅ All app data refreshed successfully');
+      console.log('✅ [AppDataProvider] All app data refreshed successfully');
       return true;
     } catch (error) {
-      console.error('❌ Error refreshing data:', error);
+      console.error('❌ [AppDataProvider] Error refreshing data:', error);
       return false;
     }
   };
@@ -191,7 +202,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   useAppDataEventHandlers(refreshData, markOrderAsBeingEdited, unmarkOrderAsBeingEdited);
 
   const value: AppDataContextType = {
-    // Use centralized products from useProducts hook
+    // Centralized customers data
+    customers,
+    isLoading: isLoadingCustomers,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    generateNextCustomerCode,
+    
+    // Centralized products data
     products,
     isLoadingProducts,
     addProduct,
@@ -199,22 +218,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     deleteProduct,
     refreshProducts,
     
-    // Use centralized orders from useOrders hook  
+    // Centralized orders data
     orders,
     isLoadingOrders,
     addOrder,
-    updateOrder, // This now returns Promise<string>
+    updateOrder,
     deleteOrder,
     refreshOrders,
     
-    // Keep existing operations
-    ...appOperations,
-    customers: appOperations.customers,
-    isLoading: appOperations.isLoading,
-    addCustomer: appOperations.addCustomer,
-    updateCustomer: appOperations.updateCustomer,
-    deleteCustomer: appOperations.deleteCustomer,
-    generateNextCustomerCode: appOperations.generateNextCustomerCode,
+    // Keep existing operations for other entities
     productBrands: appOperations.productBrands,
     isLoadingProductBrands: appOperations.isLoadingProductBrands,
     addProductBrand: appOperations.addProductBrand,
