@@ -1,4 +1,3 @@
-
 import { SupabaseService } from './supabaseService';
 import { Customer } from '@/types';
 
@@ -10,7 +9,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
   // Override getAll to include sales rep name and ensure proper filtering
   async getAll(): Promise<Customer[]> {
     try {
-      console.log(`📋 Getting all records from ${this.tableName} with sales rep info`);
+      console.log(`🔄 [CustomerService] Getting all records from ${this.tableName} with sales rep info`);
       
       const { data, error } = await this.supabase
         .from(this.tableName as any)
@@ -24,26 +23,32 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
         .order('name');
       
       if (error) {
-        console.error(`❌ Supabase error getting from ${this.tableName}:`, error);
+        console.error(`❌ [CustomerService] Supabase error getting from ${this.tableName}:`, error);
         throw error;
       }
       
       if (!data) {
-        console.log(`📋 No data found in ${this.tableName}`);
+        console.log(`📋 [CustomerService] No data found in ${this.tableName}`);
         return [];
       }
       
+      console.log(`📊 [CustomerService] Raw data from Supabase:`, data);
+      console.log(`📊 [CustomerService] Data length:`, data.length);
+      
       // Transform data to include sales rep name and log associations
-      const transformedData = data.map(item => {
+      const transformedData = data.map((item, index) => {
+        console.log(`🔄 [CustomerService] Transforming item ${index + 1}:`, item);
         const transformed = this.transformFromDB(item);
-        console.log(`🔗 Customer ${transformed.name} -> Sales Rep ID: ${transformed.salesRepId}, Name: ${transformed.salesRepName}`);
+        console.log(`✅ [CustomerService] Transformed item ${index + 1}:`, transformed);
+        console.log(`🔗 [CustomerService] Customer ${transformed.name} -> Sales Rep ID: ${transformed.salesRepId}, Name: ${transformed.salesRepName}`);
         return transformed;
       });
       
-      console.log(`✅ Retrieved ${transformedData.length} records from ${this.tableName}`);
+      console.log(`✅ [CustomerService] Retrieved ${transformedData.length} records from ${this.tableName}`);
+      console.log(`📋 [CustomerService] Final transformed data:`, transformedData);
       return transformedData;
     } catch (error) {
-      console.error(`❌ Critical error getting from ${this.tableName}:`, error);
+      console.error(`❌ [CustomerService] Critical error getting from ${this.tableName}:`, error);
       throw error;
     }
   }
@@ -59,7 +64,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     const salesRepId = dbRecord.sales_rep_id;
     const salesRepName = salesRepData?.name || undefined;
     
-    console.log(`🔍 Transforming customer ${dbRecord.name}: sales_rep_id=${salesRepId}, sales_rep_name=${salesRepName}`);
+    console.log(`🔍 [CustomerService] Transforming customer ${dbRecord.name}: sales_rep_id=${salesRepId}, sales_rep_name=${salesRepName}`);
     
     // Map database snake_case fields to TypeScript camelCase
     return {
@@ -95,7 +100,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       zip_code: record.zip || record.zipCode || ''
     };
 
-    console.log(`📝 Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}`);
+    console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}`);
 
     // Remove the camelCase fields that don't exist in the database
     delete dbRecord.companyName;
@@ -109,37 +114,37 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     delete dbRecord.zip;
     delete dbRecord.syncPending;
     
-    console.log("📝 Transform to DB result:", dbRecord);
+    console.log("📝 [CustomerService] Transform to DB result:", dbRecord);
     return dbRecord;
   }
 
   async generateNextCode(): Promise<number> {
     try {
-      console.log("🔢 Generating next customer code...");
+      console.log("🔢 [CustomerService] Generating next customer code...");
       const { data, error } = await this.supabase.rpc('get_next_customer_code');
       
       if (error) {
-        console.error('❌ Error calling get_next_customer_code RPC:', error);
+        console.error('❌ [CustomerService] Error calling get_next_customer_code RPC:', error);
         // Fallback: get max code and add 1
-        console.log("🔄 Using fallback method to generate code...");
+        console.log("🔄 [CustomerService] Using fallback method to generate code...");
         const allCustomers = await this.getAll();
         const maxCode = allCustomers.reduce((max, customer) => Math.max(max, customer.code || 0), 0);
         const nextCode = maxCode + 1;
-        console.log("✅ Fallback generated code:", nextCode);
+        console.log("✅ [CustomerService] Fallback generated code:", nextCode);
         return nextCode;
       }
       
-      console.log("✅ RPC generated code:", data);
+      console.log("✅ [CustomerService] RPC generated code:", data);
       return data || 1;
     } catch (error) {
-      console.error('❌ Critical error generating customer code:', error);
+      console.error('❌ [CustomerService] Critical error generating customer code:', error);
       return 1;
     }
   }
 
   async add(entity: Omit<Customer, 'id'>): Promise<string> {
     try {
-      console.log(`📝 Adding customer to ${this.tableName}`);
+      console.log(`📝 [CustomerService] Adding customer to ${this.tableName}`);
       console.log("Entity data (before transformation):", entity);
       
       // Use the parent transformToDB method to properly map fields
@@ -161,7 +166,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
         .single();
       
       if (error) {
-        console.error(`❌ Supabase error adding to ${this.tableName}:`, error);
+        console.error(`❌ [CustomerService] Supabase error adding to ${this.tableName}:`, error);
         console.error("Error details:", {
           code: error.code,
           message: error.message,
@@ -172,17 +177,17 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       }
       
       const insertedId = (data as any).id;
-      console.log(`✅ Added customer to ${this.tableName} with ID:`, insertedId);
+      console.log(`✅ [CustomerService] Added customer to ${this.tableName} with ID:`, insertedId);
       return insertedId;
     } catch (error) {
-      console.error(`❌ Critical error adding to ${this.tableName}:`, error);
+      console.error(`❌ [CustomerService] Critical error adding to ${this.tableName}:`, error);
       throw error;
     }
   }
 
   async update(id: string, entity: Partial<Customer>): Promise<void> {
     try {
-      console.log(`📝 Updating customer ${id} in ${this.tableName}`);
+      console.log(`📝 [CustomerService] Updating customer ${id} in ${this.tableName}`);
       console.log("Entity data (before transformation):", entity);
       
       // Use the transformToDB method to properly map fields
@@ -201,7 +206,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
         .eq('id', id);
       
       if (error) {
-        console.error(`❌ Supabase error updating ${id} in ${this.tableName}:`, error);
+        console.error(`❌ [CustomerService] Supabase error updating ${id} in ${this.tableName}:`, error);
         console.error("Error details:", {
           code: error.code,
           message: error.message,
@@ -211,9 +216,9 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
         throw error;
       }
       
-      console.log(`✅ Updated customer ${id} in ${this.tableName}`);
+      console.log(`✅ [CustomerService] Updated customer ${id} in ${this.tableName}`);
     } catch (error) {
-      console.error(`❌ Critical error updating ${id} in ${this.tableName}:`, error);
+      console.error(`❌ [CustomerService] Critical error updating ${id} in ${this.tableName}:`, error);
       throw error;
     }
   }

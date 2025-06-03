@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabase/customerService';
@@ -12,19 +11,40 @@ export const useCustomers = () => {
     const loadCustomers = async () => {
       try {
         setIsLoading(true);
-        console.log("=== LOADING CUSTOMERS ===");
+        console.log("🔄 [useCustomers] Starting to load customers...");
+        
         const data = await customerService.getAll();
-        console.log("✅ Successfully loaded customers:", data?.length || 0, "items");
-        setCustomers(data);
+        console.log("✅ [useCustomers] Raw data from service:", data);
+        console.log("📊 [useCustomers] Data length:", data?.length || 0);
+        
+        if (data && Array.isArray(data)) {
+          console.log("✅ [useCustomers] Setting customers state with", data.length, "customers");
+          setCustomers(data);
+          
+          // Log first customer for debugging
+          if (data.length > 0) {
+            console.log("👤 [useCustomers] First customer:", data[0]);
+          }
+        } else {
+          console.warn("⚠️ [useCustomers] Invalid data format received:", typeof data);
+          setCustomers([]);
+        }
       } catch (error) {
-        console.error('❌ Error loading customers:', error);
+        console.error('❌ [useCustomers] Error loading customers:', error);
+        console.error('❌ [useCustomers] Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        
+        setCustomers([]);
         toast({
           title: "Erro ao carregar clientes",
-          description: "Houve um problema ao carregar os clientes.",
+          description: "Houve um problema ao carregar os clientes. Verifique o console para mais detalhes.",
           variant: "destructive"
         });
       } finally {
         setIsLoading(false);
+        console.log("🏁 [useCustomers] Loading completed");
       }
     };
 
@@ -33,12 +53,11 @@ export const useCustomers = () => {
 
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
-      console.log("=== ADDING NEW CUSTOMER ===");
-      console.log("Input data:", customer);
+      console.log("➕ [useCustomers] Adding new customer:", customer);
       
       // Validate required fields
       if (!customer.name || customer.name.trim() === '') {
-        console.error("❌ Validation failed: Name is required");
+        console.error("❌ [useCustomers] Validation failed: Name is required");
         toast({
           title: "Erro de validação",
           description: "Nome é obrigatório",
@@ -48,7 +67,7 @@ export const useCustomers = () => {
       }
       
       if (!customer.code) {
-        console.error("❌ Validation failed: Code is required");
+        console.error("❌ [useCustomers] Validation failed: Code is required");
         toast({
           title: "Erro de validação", 
           description: "Código é obrigatório",
@@ -60,7 +79,7 @@ export const useCustomers = () => {
       // Check for duplicate code
       const existingWithSameCode = customers.find(c => c.code === customer.code);
       if (existingWithSameCode) {
-        console.error("❌ Validation failed: Code already exists");
+        console.error("❌ [useCustomers] Validation failed: Code already exists");
         toast({
           title: "Erro de validação",
           description: `Código ${customer.code} já existe`,
@@ -69,7 +88,7 @@ export const useCustomers = () => {
         return "";
       }
       
-      // Prepare clean data for insertion with all required fields
+      // Prepare clean data for insertion
       const cleanCustomer: Omit<Customer, 'id'> = {
         code: typeof customer.code === 'string' ? parseInt(customer.code, 10) : customer.code,
         name: customer.name.trim(),
@@ -84,17 +103,16 @@ export const useCustomers = () => {
         visitDays: customer.visitDays || [],
         visitFrequency: customer.visitFrequency || '',
         visitSequence: customer.visitSequence || 0,
-        salesRepId: customer.salesRepId || undefined, // Use camelCase
+        salesRepId: customer.salesRepId || undefined,
         salesRepName: customer.salesRepName || undefined,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       
-      console.log("📝 Clean customer data for insertion:", cleanCustomer);
-      console.log("🚀 Calling customerService.add...");
+      console.log("📝 [useCustomers] Clean customer data:", cleanCustomer);
       
       const id = await customerService.add(cleanCustomer);
-      console.log("✅ Customer added to Supabase with ID:", id);
+      console.log("✅ [useCustomers] Customer added with ID:", id);
       
       // Create the new customer object for local state
       const newCustomer = { 
@@ -104,7 +122,7 @@ export const useCustomers = () => {
       
       // Update local state
       const updatedCustomers = [...customers, newCustomer];
-      console.log("📊 Updating local state with", updatedCustomers.length, "customers");
+      console.log("📊 [useCustomers] Updating local state with", updatedCustomers.length, "customers");
       setCustomers(updatedCustomers);
       
       toast({
@@ -112,16 +130,9 @@ export const useCustomers = () => {
         description: `${newCustomer.name} foi adicionado com sucesso!`
       });
       
-      console.log("=== CUSTOMER ADDITION COMPLETED SUCCESSFULLY ===");
       return id;
     } catch (error) {
-      console.error("❌ CRITICAL ERROR adding customer:", error);
-      console.error("Error details:", {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        customer
-      });
-      
+      console.error("❌ [useCustomers] Error adding customer:", error);
       toast({
         title: "❌ Erro ao adicionar cliente",
         description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -133,8 +144,7 @@ export const useCustomers = () => {
 
   const updateCustomer = async (id: string, customer: Partial<Customer>) => {
     try {
-      console.log("=== UPDATING CUSTOMER ===");
-      console.log("ID:", id, "Data:", customer);
+      console.log("🔄 [useCustomers] Updating customer:", id, customer);
       
       // Ensure code is a number if present
       if (customer.code && typeof customer.code === 'string') {
@@ -147,9 +157,8 @@ export const useCustomers = () => {
         updatedAt: new Date()
       };
       
-      console.log("🚀 Calling customerService.update...");
       await customerService.update(id, customerWithTimestamp);
-      console.log("✅ Customer updated in Supabase");
+      console.log("✅ [useCustomers] Customer updated in Supabase");
       
       // Update local state
       setCustomers(customers.map(c => c.id === id ? { ...c, ...customerWithTimestamp } : c));
@@ -158,10 +167,8 @@ export const useCustomers = () => {
         title: "✅ Cliente atualizado",
         description: "Cliente atualizado com sucesso!"
       });
-      
-      console.log("=== CUSTOMER UPDATE COMPLETED ===");
     } catch (error) {
-      console.error("❌ Error updating customer:", error);
+      console.error("❌ [useCustomers] Error updating customer:", error);
       toast({
         title: "❌ Erro ao atualizar cliente",
         description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -172,12 +179,10 @@ export const useCustomers = () => {
 
   const deleteCustomer = async (id: string) => {
     try {
-      console.log("=== DELETING CUSTOMER ===");
-      console.log("ID:", id);
+      console.log("🗑️ [useCustomers] Deleting customer:", id);
       
-      console.log("🚀 Calling customerService.delete...");
       await customerService.delete(id);
-      console.log("✅ Customer deleted from Supabase");
+      console.log("✅ [useCustomers] Customer deleted from Supabase");
       
       // Update local state
       setCustomers(customers.filter(c => c.id !== id));
@@ -186,10 +191,8 @@ export const useCustomers = () => {
         title: "✅ Cliente excluído",
         description: "Cliente excluído com sucesso!"
       });
-      
-      console.log("=== CUSTOMER DELETION COMPLETED ===");
     } catch (error) {
-      console.error("❌ Error deleting customer:", error);
+      console.error("❌ [useCustomers] Error deleting customer:", error);
       toast({
         title: "❌ Erro ao excluir cliente",
         description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -202,10 +205,12 @@ export const useCustomers = () => {
     try {
       return await customerService.generateNextCode();
     } catch (error) {
-      console.error('Error generating customer code:', error);
+      console.error('[useCustomers] Error generating customer code:', error);
       return customers.length > 0 ? Math.max(...customers.map(c => c.code || 0)) + 1 : 1;
     }
   };
+
+  console.log("🔍 [useCustomers] Current state - customers:", customers.length, "loading:", isLoading);
 
   return {
     customers,
@@ -220,9 +225,12 @@ export const useCustomers = () => {
 // Export function for backward compatibility
 export const loadCustomers = async (): Promise<Customer[]> => {
   try {
-    return await customerService.getAll();
+    console.log("🔄 [loadCustomers] Loading customers...");
+    const result = await customerService.getAll();
+    console.log("✅ [loadCustomers] Loaded", result?.length || 0, "customers");
+    return result;
   } catch (error) {
-    console.error('Error loading customers:', error);
+    console.error('❌ [loadCustomers] Error loading customers:', error);
     return [];
   }
 };

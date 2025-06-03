@@ -3,84 +3,111 @@ import { Product } from '@/types';
 
 export const productService = {
   async getAll(): Promise<Product[]> {
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        main_unit:units!products_main_unit_id_fkey(code, description),
-        sub_unit:units!products_sub_unit_id_fkey(code, description)
-      `)
-      .order('code');
-    
-    if (error) {
-      console.error('Erro ao buscar produtos:', error);
+    try {
+      console.log("🔄 [ProductService] Starting to fetch products from Supabase...");
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          main_unit:units!products_main_unit_id_fkey(code, description),
+          sub_unit:units!products_sub_unit_id_fkey(code, description)
+        `)
+        .order('code');
+      
+      if (error) {
+        console.error('❌ [ProductService] Erro ao buscar produtos:', error);
+        throw error;
+      }
+      
+      console.log("📊 [ProductService] Raw data from Supabase:", data);
+      console.log("📊 [ProductService] Data length:", data?.length || 0);
+      
+      // Transform database fields to Product interface
+      const transformedProducts = (data || []).map((item, index) => {
+        console.log(`🔄 [ProductService] Transforming product ${index + 1}:`, item);
+        
+        const product = {
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          description: '', // Database doesn't have description field, so use empty string
+          cost: item.cost_price || 0,
+          price: item.sale_price || 0,
+          stock: item.stock || 0,
+          minStock: 0,
+          maxDiscountPercent: item.max_discount_percent || 0,
+          maxPrice: undefined,
+          unit: item.main_unit?.code || 'UN',
+          subunit: item.sub_unit?.code || undefined,
+          hasSubunit: !!item.sub_unit_id,
+          subunitRatio: 1,
+          categoryId: item.category_id,
+          groupId: item.group_id,
+          brandId: item.brand_id,
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at),
+          syncStatus: 'synced' as 'synced' | 'pending' | 'error'
+        };
+        
+        console.log(`✅ [ProductService] Transformed product ${index + 1}:`, product);
+        return product;
+      });
+      
+      console.log("✅ [ProductService] Successfully transformed", transformedProducts.length, "products");
+      return transformedProducts;
+    } catch (error) {
+      console.error('❌ [ProductService] Critical error in getAll:', error);
       throw error;
     }
-    
-    // Transform database fields to Product interface
-    return (data || []).map(item => ({
-      id: item.id,
-      code: item.code,
-      name: item.name,
-      description: '', // Database doesn't have description field, so use empty string
-      cost: item.cost_price || 0,
-      price: item.sale_price || 0, // CORRIGIDO: usar sale_price em vez de cost_price
-      stock: item.stock || 0,
-      minStock: 0,
-      maxDiscountPercent: item.max_discount_percent || 0,
-      maxPrice: undefined,
-      unit: item.main_unit?.code || 'UN',
-      subunit: item.sub_unit?.code || undefined,
-      hasSubunit: !!item.sub_unit_id,
-      subunitRatio: 1,
-      categoryId: item.category_id,
-      groupId: item.group_id,
-      brandId: item.brand_id,
-      createdAt: new Date(item.created_at),
-      updatedAt: new Date(item.updated_at),
-      syncStatus: 'synced' as 'synced' | 'pending' | 'error'
-    }));
   },
 
   async getById(id: string): Promise<Product | null> {
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        main_unit:units!products_main_unit_id_fkey(code, description),
-        sub_unit:units!products_sub_unit_id_fkey(code, description)
-      `)
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      console.error('Erro ao buscar produto:', error);
+    try {
+      console.log("🔍 [ProductService] Fetching product by ID:", id);
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          main_unit:units!products_main_unit_id_fkey(code, description),
+          sub_unit:units!products_sub_unit_id_fkey(code, description)
+        `)
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('❌ [ProductService] Erro ao buscar produto:', error);
+        return null;
+      }
+      
+      // Transform database fields to Product interface
+      return {
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        description: '',
+        cost: data.cost_price || 0,
+        price: data.sale_price || 0,
+        stock: data.stock || 0,
+        minStock: 0,
+        maxDiscountPercent: data.max_discount_percent || 0,
+        maxPrice: undefined,
+        unit: data.main_unit?.code || 'UN',
+        subunit: data.sub_unit?.code || undefined,
+        hasSubunit: !!data.sub_unit_id,
+        subunitRatio: 1,
+        categoryId: data.category_id,
+        groupId: data.group_id,
+        brandId: data.brand_id,
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at),
+        syncStatus: 'synced' as 'synced' | 'pending' | 'error'
+      };
+    } catch (error) {
+      console.error('❌ [ProductService] Error in getById:', error);
       return null;
     }
-    
-    // Transform database fields to Product interface
-    return {
-      id: data.id,
-      code: data.code,
-      name: data.name,
-      description: '', // Database doesn't have description field, so use empty string
-      cost: data.cost_price || 0,
-      price: data.sale_price || 0, // CORRIGIDO: usar sale_price em vez de cost_price
-      stock: data.stock || 0,
-      minStock: 0,
-      maxDiscountPercent: data.max_discount_percent || 0,
-      maxPrice: undefined,
-      unit: data.main_unit?.code || 'UN',
-      subunit: data.sub_unit?.code || undefined,
-      hasSubunit: !!data.sub_unit_id,
-      subunitRatio: 1,
-      categoryId: data.category_id,
-      groupId: data.group_id,
-      brandId: data.brand_id,
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
-      syncStatus: 'synced' as 'synced' | 'pending' | 'error'
-    };
   },
 
   async getUnitIdByCode(unitCode: string): Promise<string | null> {
@@ -118,7 +145,7 @@ export const productService = {
       code: product.code,
       name: product.name,
       cost_price: product.cost || 0,
-      sale_price: product.price || product.cost || 0, // CORRIGIDO: usar sale_price
+      sale_price: product.price || product.cost || 0,
       stock: product.stock || 0,
       max_discount_percent: product.maxDiscountPercent || 0,
       category_id: product.categoryId || null,
@@ -153,7 +180,7 @@ export const productService = {
       name: data.name,
       description: '',
       cost: data.cost_price,
-      price: data.sale_price, // CORRIGIDO: usar sale_price
+      price: data.sale_price,
       stock: data.stock,
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,
@@ -201,7 +228,7 @@ export const productService = {
     if (product.code !== undefined) updateData.code = product.code;
     if (product.name !== undefined) updateData.name = product.name;
     if (product.cost !== undefined) updateData.cost_price = product.cost;
-    if (product.price !== undefined) updateData.sale_price = product.price; // CORRIGIDO: usar sale_price
+    if (product.price !== undefined) updateData.sale_price = product.price;
     if (product.stock !== undefined) updateData.stock = product.stock;
     if (product.maxDiscountPercent !== undefined) updateData.max_discount_percent = product.maxDiscountPercent;
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
@@ -235,7 +262,7 @@ export const productService = {
       name: data.name,
       description: '',
       cost: data.cost_price,
-      price: data.sale_price, // CORRIGIDO: usar sale_price
+      price: data.sale_price,
       stock: data.stock,
       minStock: 0,
       maxDiscountPercent: data.max_discount_percent || 0,

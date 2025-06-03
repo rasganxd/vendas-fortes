@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/supabase/productService';
 import { toast } from '@/components/ui/use-toast';
 
 // Reduced cache time for faster updates
-const CACHE_MAX_AGE = 2 * 60 * 1000; // 2 minutes instead of 5
+const CACHE_MAX_AGE = 2 * 60 * 1000; // 2 minutes
 const PRODUCTS_CACHE_KEY = 'app_products_cache';
 const PRODUCTS_CACHE_TIMESTAMP_KEY = 'app_products_timestamp';
 
@@ -13,9 +14,80 @@ export const useProducts = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // Load products with improved caching and debugging
+  const loadProducts = async () => {
+    try {
+      setIsLoading(true);
+      console.log("🔄 [useProducts] Starting to load products...");
+      
+      // Check cache first
+      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
+      
+      if (cachedData && cachedTimestamp) {
+        const age = Date.now() - parseInt(cachedTimestamp);
+        if (age < CACHE_MAX_AGE) {
+          console.log("💾 [useProducts] Using cached products data");
+          const cachedProducts = JSON.parse(cachedData);
+          setProducts(cachedProducts);
+          setIsLoading(false);
+          return;
+        } else {
+          console.log("⏰ [useProducts] Cache expired, fetching fresh data");
+        }
+      }
+      
+      console.log("🌐 [useProducts] Fetching products from Supabase...");
+      const fetchedProducts = await productService.getAll();
+      console.log("✅ [useProducts] Raw data from service:", fetchedProducts);
+      console.log("📊 [useProducts] Loaded", fetchedProducts?.length || 0, "products from Supabase");
+      
+      if (fetchedProducts && Array.isArray(fetchedProducts)) {
+        setProducts(fetchedProducts);
+        
+        // Update cache
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
+        localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        
+        // Log first product for debugging
+        if (fetchedProducts.length > 0) {
+          console.log("📦 [useProducts] First product:", fetchedProducts[0]);
+        }
+      } else {
+        console.warn("⚠️ [useProducts] Invalid data format received:", typeof fetchedProducts);
+        setProducts([]);
+      }
+      
+    } catch (error) {
+      console.error('❌ [useProducts] Error fetching products:', error);
+      console.error('❌ [useProducts] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Try to use cached data as fallback
+      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
+      if (cachedData) {
+        console.log("💾 [useProducts] Using cached products data as fallback");
+        setProducts(JSON.parse(cachedData));
+      } else {
+        setProducts([]);
+      }
+      
+      toast({
+        title: "Erro ao carregar produtos",
+        description: "Houve um problema ao carregar os produtos. Verifique o console para mais detalhes.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+      console.log("🏁 [useProducts] Loading completed");
+    }
+  };
+
   // Force refresh function
   const forceRefreshProducts = async () => {
-    console.log("Force refreshing products from Supabase");
+    console.log("🔄 [useProducts] Force refreshing products from Supabase");
     setIsLoading(true);
     
     try {
@@ -25,7 +97,7 @@ export const useProducts = () => {
       
       // Fetch from Supabase
       const fetchedProducts = await productService.getAll();
-      console.log(`Forcefully loaded ${fetchedProducts.length} products from Supabase`);
+      console.log("✅ [useProducts] Forcefully loaded", fetchedProducts?.length || 0, "products from Supabase");
       
       setProducts(fetchedProducts);
       
@@ -40,7 +112,7 @@ export const useProducts = () => {
       
       return true;
     } catch (error) {
-      console.error('Error during force refresh of products:', error);
+      console.error('❌ [useProducts] Error during force refresh:', error);
       
       toast({
         title: 'Erro',
@@ -54,55 +126,10 @@ export const useProducts = () => {
     }
   };
 
-  // Load products with improved caching
-  const loadProducts = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Check cache first
-      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
-      const cachedTimestamp = localStorage.getItem(PRODUCTS_CACHE_TIMESTAMP_KEY);
-      
-      if (cachedData && cachedTimestamp) {
-        const age = Date.now() - parseInt(cachedTimestamp);
-        if (age < CACHE_MAX_AGE) {
-          console.log("Using cached products data");
-          setProducts(JSON.parse(cachedData));
-          setIsLoading(false);
-          return;
-        }
-      }
-      
-      console.log("Fetching products from Supabase");
-      const fetchedProducts = await productService.getAll();
-      console.log(`Loaded ${fetchedProducts.length} products from Supabase`);
-      
-      setProducts(fetchedProducts);
-      
-      // Update cache
-      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(fetchedProducts));
-      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
-      
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      
-      // Try to use cached data as fallback
-      const cachedData = localStorage.getItem(PRODUCTS_CACHE_KEY);
-      if (cachedData) {
-        console.log("Using cached products data as fallback");
-        setProducts(JSON.parse(cachedData));
-      } else {
-        setProducts([]);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Listen for product updates from other components
   useEffect(() => {
     const handleProductsUpdated = () => {
-      console.log("Products updated event received, refreshing...");
+      console.log("📡 [useProducts] Products updated event received, refreshing...");
       forceRefreshProducts();
     };
 
@@ -120,7 +147,11 @@ export const useProducts = () => {
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     try {
+      console.log("➕ [useProducts] Adding new product:", product);
+      
+      // CORRIGIDO: usar create() método correto
       const newProduct = await productService.create(product);
+      console.log("✅ [useProducts] Product created:", newProduct);
       
       // Update local state immediately
       setProducts((prev) => [...prev, newProduct]);
@@ -137,7 +168,7 @@ export const useProducts = () => {
       
       return newProduct.id;
     } catch (error) {
-      console.error('Error adding product:', error);
+      console.error('❌ [useProducts] Error adding product:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível adicionar o produto.',
@@ -149,6 +180,8 @@ export const useProducts = () => {
 
   const updateProduct = async (id: string, product: Partial<Product>) => {
     try {
+      console.log("🔄 [useProducts] Updating product:", id, product);
+      
       await productService.update(id, product);
       
       // Update local state immediately
@@ -168,7 +201,7 @@ export const useProducts = () => {
         description: 'Produto atualizado com sucesso!',
       });
     } catch (error) {
-      console.error('Error updating product:', error);
+      console.error('❌ [useProducts] Error updating product:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível atualizar o produto.',
@@ -179,7 +212,7 @@ export const useProducts = () => {
 
   const deleteProduct = async (id: string) => {
     try {
-      console.log(`Deleting product ${id}`);
+      console.log("🗑️ [useProducts] Deleting product:", id);
       
       // Delete from Supabase first
       await productService.delete(id);
@@ -197,7 +230,7 @@ export const useProducts = () => {
         description: 'Produto excluído com sucesso!',
       });
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('❌ [useProducts] Error deleting product:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível excluir o produto.',
@@ -213,11 +246,13 @@ export const useProducts = () => {
       setIsSyncing(false);
       return result;
     } catch (error) {
-      console.error('Error syncing products:', error);
+      console.error('❌ [useProducts] Error syncing products:', error);
       setIsSyncing(false);
       return false;
     }
   };
+
+  console.log("🔍 [useProducts] Current state - products:", products.length, "loading:", isLoading);
 
   return {
     products,
@@ -235,9 +270,12 @@ export const useProducts = () => {
 // Export function for backward compatibility
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
-    return await productService.getAll();
+    console.log("🔄 [fetchProducts] Fetching products...");
+    const result = await productService.getAll();
+    console.log("✅ [fetchProducts] Fetched", result?.length || 0, "products");
+    return result;
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('❌ [fetchProducts] Error:', error);
     return [];
   }
 };
