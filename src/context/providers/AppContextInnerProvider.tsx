@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
@@ -31,7 +32,7 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     await updateSettingsHook(newSettings);
   };
 
-  // Get app data state directly (products, orders)
+  // Get app data state directly (products, orders, customers)
   const {
     products,
     isLoadingProducts,
@@ -46,10 +47,16 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     deleteOrderHook,
     refreshOrdersHook,
     markOrderAsBeingEdited,
-    unmarkOrderAsBeingEdited
+    unmarkOrderAsBeingEdited,
+    customers,
+    isLoadingCustomers,
+    addCustomerHook,
+    updateCustomerHook,
+    deleteCustomerHook,
+    generateNextCustomerCode
   } = useAppDataState();
 
-  // Get app data operations
+  // Get app data operations with correct parameters
   const {
     addProduct,
     updateProduct,
@@ -58,7 +65,10 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     addOrder,
     updateOrder,
     deleteOrder,
-    refreshOrders
+    refreshOrders,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer
   } = useAppDataOperations(
     addProductHook,
     updateProductHook,
@@ -67,7 +77,10 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     addOrderHook,
     updateOrderHook,
     deleteOrderHook,
-    refreshOrdersHook
+    refreshOrdersHook,
+    addCustomerHook,
+    updateCustomerHook,
+    deleteCustomerHook
   );
 
   const refreshData = async (): Promise<boolean> => {
@@ -99,15 +112,15 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
 
   // Build the full context value combining all data sources
   const contextValue = {
-    // Core data from app operations
-    customers: appOperations.customers,
-    isLoadingCustomers: appOperations.isLoading,
-    addCustomer: appOperations.addCustomer,
-    updateCustomer: appOperations.updateCustomer,
-    deleteCustomer: appOperations.deleteCustomer,
-    generateNextCustomerCode: appOperations.generateNextCustomerCode,
+    // Core data from unified app data state
+    customers,
+    isLoadingCustomers,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    generateNextCustomerCode,
     
-    // Products data (override with direct state)
+    // Products data from unified state
     products,
     isLoadingProducts,
     addProduct,
@@ -115,7 +128,7 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     deleteProduct,
     refreshProducts,
     
-    // Orders data (override with direct state)
+    // Orders data from unified state
     orders,
     isLoadingOrders,
     addOrder,

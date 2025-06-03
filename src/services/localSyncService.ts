@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DadosVendedor, MobileOrderData, SyncLog, LocalServerStatus, SalesRepSyncStatus } from '@/types/localSync';
-import { Product, Customer, DeliveryRoute, PaymentTable, SalesRep, PaymentTableInstallment } from '@/types';
+import { Product, Customer, DeliveryRoute, PaymentTable, SalesRep, PaymentTableInstallment, PaymentTableTerm } from '@/types';
 import { NetworkUtils } from '@/utils/networkUtils';
 
 export class LocalSyncService {
@@ -250,12 +249,24 @@ export class LocalSyncService {
           }));
         }
 
+        // Converter terms de Json para PaymentTableTerm[]
+        let terms: PaymentTableTerm[] = [];
+        if (item.terms && Array.isArray(item.terms)) {
+          terms = item.terms.map((term: any) => ({
+            id: term.id || crypto.randomUUID(),
+            days: term.days || 0,
+            percentage: term.percentage || 0,
+            description: term.description || '',
+            installment: term.installment || 1
+          }));
+        }
+
         return {
           id: item.id,
           name: item.name,
           description: item.description || '',
           type: item.type,
-          terms: item.terms,
+          terms: terms,
           installments: installments,
           notes: item.notes || '',
           payableTo: item.payable_to || '',
