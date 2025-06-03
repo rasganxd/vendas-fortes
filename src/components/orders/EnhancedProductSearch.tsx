@@ -89,16 +89,23 @@ export default function EnhancedProductSearch({
   const handleUnitChange = (unit: string) => {
     if (!selectedProduct) return;
     
+    console.log('🔄 Unit changed to:', unit);
+    console.log('📦 Selected product:', selectedProduct.name, 'Sale price:', selectedProduct.sale_price);
+    
     setSelectedUnit(unit);
 
     // Calculate price for the selected unit using real unit data
     const basePrice = selectedProduct.sale_price || 0;
     let unitPrice = basePrice;
 
+    console.log('💰 Base price from product:', basePrice);
+
     // Find the unit data in the database
     const unitData = units.find(u => u.code === unit);
     const mainUnitData = units.find(u => u.id === selectedProduct.main_unit_id);
     const subUnitData = units.find(u => u.id === selectedProduct.sub_unit_id);
+
+    console.log('🔍 Unit data found:', { unitData, mainUnitData, subUnitData });
 
     // If we have subunit and the selected unit is the subunit
     if (selectedProduct.sub_unit_id && subUnitData && unit === subUnitData.code) {
@@ -116,21 +123,30 @@ export default function EnhancedProductSearch({
       console.log(`💰 Using base price for main unit: ${unitPrice}`);
     }
 
+    console.log('💰 Final unit price calculated:', unitPrice);
+    
     setPrice(unitPrice);
-    setPriceDisplayValue(formatBrazilianPrice(unitPrice));
+    
+    // Format and set the display value
+    const formattedPrice = formatBrazilianPrice(unitPrice);
+    console.log('🎨 Formatted price for display:', formattedPrice);
+    setPriceDisplayValue(formattedPrice);
 
     // Focus on price input after unit selection
     setTimeout(() => {
       priceInputRef.current?.focus();
+      priceInputRef.current?.select(); // Select all text for easy editing
     }, 100);
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const displayValue = e.target.value;
+    console.log('💰 Price input changed to:', displayValue);
     setPriceDisplayValue(displayValue);
 
     // Convert to number for calculations
     const numericPrice = parseBrazilianPrice(displayValue);
+    console.log('🔢 Numeric price converted:', numericPrice);
     setPrice(numericPrice);
   };
 
@@ -232,7 +248,7 @@ export default function EnhancedProductSearch({
 
   // Check if we can proceed to next step
   const canSelectUnit = selectedProduct !== null;
-  const canEnterPrice = selectedProduct && selectedUnit;
+  const canEnterPrice = selectedProduct && selectedUnit; // Enable when unit is selected
   const canEnterQuantity = selectedProduct && selectedUnit && price > 0;
   const canAdd = selectedProduct && selectedUnit && quantity > 0 && price > 0;
 
