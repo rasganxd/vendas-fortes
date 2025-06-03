@@ -27,11 +27,9 @@ interface FormData {
   code: number;
   name: string;
   cost: number;
-  price: number;
   unit: string;
   hasSubunit: boolean;
   subunit?: string;
-  subunitRatio?: number;
   categoryId?: string;
   groupId?: string;
   brandId?: string;
@@ -79,11 +77,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
           code: selectedProduct.code,
           name: selectedProduct.name,
           cost: selectedProduct.cost,
-          price: selectedProduct.price,
           unit: selectedProduct.unit || 'UN',
           hasSubunit: selectedProduct.hasSubunit || false,
           subunit: selectedProduct.subunit || undefined,
-          subunitRatio: selectedProduct.subunitRatio || 1,
           categoryId: selectedProduct.categoryId || undefined,
           groupId: selectedProduct.groupId || undefined,
           brandId: selectedProduct.brandId || undefined,
@@ -96,11 +92,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
           code: nextCode,
           name: '',
           cost: 0,
-          price: 0,
           unit: 'UN',
           hasSubunit: false,
           subunit: undefined,
-          subunitRatio: 1,
           categoryId: undefined,
           groupId: undefined,
           brandId: undefined,
@@ -110,25 +104,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
     }
   }, [open, isEditing, selectedProduct, reset, products]);
 
-  // Auto-suggest price based on cost
-  useEffect(() => {
-    if (!isEditing && costValue > 0) {
-      const suggestedPrice = costValue * 1.3;
-      setValue('price', parseFloat(suggestedPrice.toFixed(2)));
-    }
-  }, [costValue, isEditing, setValue]);
-
   const onFormSubmit = (data: FormData) => {
     console.log("📋 [ProductForm] Form data submitted:", data);
     
-    // Clean data for submission
+    // Clean data for submission - price will be set to cost initially
     const cleanData = {
       ...data,
+      price: data.cost, // Set initial price equal to cost
       categoryId: data.categoryId === 'none' ? undefined : data.categoryId,
       groupId: data.groupId === 'none' ? undefined : data.groupId,
       brandId: data.brandId === 'none' ? undefined : data.brandId,
       subunit: data.hasSubunit ? data.subunit : undefined,
-      subunitRatio: data.hasSubunit ? data.subunitRatio : undefined
+      // subunitRatio will be calculated automatically from units table
     };
     
     console.log("✅ [ProductForm] Clean data for submission:", cleanData);
@@ -180,41 +167,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="cost">Custo</Label>
-              <Input
-                id="cost"
-                {...register('cost', { 
-                  required: 'Custo é obrigatório', 
-                  min: { value: 0, message: 'Custo deve ser positivo' }
-                })}
-                onChange={(e) => {
-                  const newCost = formatPriceInput(e.target.value);
-                  setValue('cost', newCost);
-                }}
-                value={formatCurrency(costValue || 0)}
-                className={errors.cost ? 'border-red-500' : ''}
-              />
-              {errors.cost && <p className="text-red-500 text-sm mt-1">{errors.cost.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="price">Preço de Venda</Label>
-              <Input
-                id="price"
-                {...register('price', { 
-                  required: 'Preço de venda é obrigatório', 
-                  min: { value: 0, message: 'Preço deve ser positivo' }
-                })}
-                onChange={(e) => {
-                  const newPrice = formatPriceInput(e.target.value);
-                  setValue('price', newPrice);
-                }}
-                value={formatCurrency(watch('price') || 0)}
-                className={errors.price ? 'border-red-500' : ''}
-              />
-              {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
-            </div>
+          <div>
+            <Label htmlFor="cost">Custo</Label>
+            <Input
+              id="cost"
+              {...register('cost', { 
+                required: 'Custo é obrigatório', 
+                min: { value: 0, message: 'Custo deve ser positivo' }
+              })}
+              onChange={(e) => {
+                const newCost = formatPriceInput(e.target.value);
+                setValue('cost', newCost);
+              }}
+              value={formatCurrency(costValue || 0)}
+              className={errors.cost ? 'border-red-500' : ''}
+            />
+            {errors.cost && <p className="text-red-500 text-sm mt-1">{errors.cost.message}</p>}
+            <p className="text-sm text-gray-500 mt-1">
+              O preço de venda será definido na aba de Precificação
+            </p>
           </div>
 
           <div>
@@ -244,31 +215,23 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </div>
 
           {hasSubunit && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="subunit">Sub-unidade</Label>
-                <Select value={watch('subunit') || ''} onValueChange={(value) => setValue('subunit', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma sub-unidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {!unitsLoading && units.map((unit) => (
-                      <SelectItem key={unit.code} value={unit.code}>
-                        {unit.code} - {unit.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="subunitRatio">Proporção</Label>
-                <Input
-                  id="subunitRatio"
-                  type="number"
-                  step="0.01"
-                  {...register('subunitRatio', { min: 0.01 })}
-                />
-              </div>
+            <div>
+              <Label htmlFor="subunit">Sub-unidade</Label>
+              <Select value={watch('subunit') || ''} onValueChange={(value) => setValue('subunit', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma sub-unidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {!unitsLoading && units.map((unit) => (
+                    <SelectItem key={unit.code} value={unit.code}>
+                      {unit.code} - {unit.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-gray-500 mt-1">
+                A proporção será calculada automaticamente baseada nas unidades cadastradas
+              </p>
             </div>
           )}
 

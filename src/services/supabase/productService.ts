@@ -11,8 +11,8 @@ export const productService = {
         .from('products')
         .select(`
           *,
-          main_unit:units!products_main_unit_id_fkey(code, description),
-          sub_unit:units!products_sub_unit_id_fkey(code, description)
+          main_unit:units!products_main_unit_id_fkey(code, description, package_quantity),
+          sub_unit:units!products_sub_unit_id_fkey(code, description, package_quantity)
         `)
         .order('code');
       
@@ -29,7 +29,7 @@ export const productService = {
         return [];
       }
       
-      // Transform database fields to Product interface with detailed logging
+      // Transform database fields to Product interface with automatic subunit ratio calculation
       const transformedProducts = data.map((item, index) => {
         console.log(`🔄 [ProductService] Transforming product ${index + 1}:`, {
           id: item.id,
@@ -37,16 +37,25 @@ export const productService = {
           name: item.name,
           cost_price: item.cost_price,
           sale_price: item.sale_price,
-          stock: item.stock
+          stock: item.stock,
+          main_unit: item.main_unit,
+          sub_unit: item.sub_unit
         });
+        
+        // Calculate subunit ratio from units data
+        let subunitRatio = 1;
+        if (item.sub_unit && item.main_unit && item.sub_unit.package_quantity) {
+          subunitRatio = Number(item.sub_unit.package_quantity) || 1;
+          console.log(`📦 [ProductService] Calculated subunit ratio for ${item.name}: ${subunitRatio}`);
+        }
         
         const product = {
           id: item.id,
           code: item.code,
           name: item.name,
           description: '', // Database doesn't have description field
-          cost: Number(item.cost_price) || 0, // CORRIGIDO: cost_price → cost
-          price: Number(item.sale_price) || 0, // CORRIGIDO: sale_price → price
+          cost: Number(item.cost_price) || 0,
+          price: Number(item.sale_price) || 0,
           stock: Number(item.stock) || 0,
           minStock: 0,
           maxDiscountPercent: Number(item.max_discount_percent) || 0,
@@ -54,7 +63,7 @@ export const productService = {
           unit: item.main_unit?.code || 'UN',
           subunit: item.sub_unit?.code || undefined,
           hasSubunit: !!item.sub_unit_id,
-          subunitRatio: 1,
+          subunitRatio: subunitRatio, // Calculated from units table
           categoryId: item.category_id,
           groupId: item.group_id,
           brandId: item.brand_id,
@@ -68,7 +77,8 @@ export const productService = {
           name: product.name,
           cost: product.cost,
           price: product.price,
-          stock: product.stock
+          stock: product.stock,
+          subunitRatio: product.subunitRatio
         });
         
         return product;
@@ -91,8 +101,8 @@ export const productService = {
         .from('products')
         .select(`
           *,
-          main_unit:units!products_main_unit_id_fkey(code, description),
-          sub_unit:units!products_sub_unit_id_fkey(code, description)
+          main_unit:units!products_main_unit_id_fkey(code, description, package_quantity),
+          sub_unit:units!products_sub_unit_id_fkey(code, description, package_quantity)
         `)
         .eq('id', id)
         .single();
@@ -102,14 +112,20 @@ export const productService = {
         return null;
       }
       
+      // Calculate subunit ratio from units data
+      let subunitRatio = 1;
+      if (data.sub_unit && data.main_unit && data.sub_unit.package_quantity) {
+        subunitRatio = Number(data.sub_unit.package_quantity) || 1;
+      }
+      
       // Transform database fields to Product interface
       return {
         id: data.id,
         code: data.code,
         name: data.name,
         description: '',
-        cost: Number(data.cost_price) || 0, // CORRIGIDO
-        price: Number(data.sale_price) || 0, // CORRIGIDO
+        cost: Number(data.cost_price) || 0,
+        price: Number(data.sale_price) || 0,
         stock: Number(data.stock) || 0,
         minStock: 0,
         maxDiscountPercent: Number(data.max_discount_percent) || 0,
@@ -117,7 +133,7 @@ export const productService = {
         unit: data.main_unit?.code || 'UN',
         subunit: data.sub_unit?.code || undefined,
         hasSubunit: !!data.sub_unit_id,
-        subunitRatio: 1,
+        subunitRatio: subunitRatio, // Calculated from units table
         categoryId: data.category_id,
         groupId: data.group_id,
         brandId: data.brand_id,
@@ -161,12 +177,12 @@ export const productService = {
       throw new Error(`Unidade principal '${product.unit}' não encontrada`);
     }
     
-    // Prepare data for Supabase - CORRIGIDO: Mapeamento correto para o banco
+    // Prepare data for Supabase - price defaults to cost initially
     const productData = {
       code: product.code,
       name: product.name,
-      cost_price: Number(product.cost) || 0, // CORRIGIDO: cost → cost_price
-      sale_price: Number(product.price) || Number(product.cost) || 0, // CORRIGIDO: price → sale_price
+      cost_price: Number(product.cost) || 0,
+      sale_price: Number(product.price) || Number(product.cost) || 0, // Default to cost if no price provided
       stock: Number(product.stock) || 0,
       max_discount_percent: Number(product.maxDiscountPercent) || 0,
       category_id: product.categoryId || null,
@@ -184,8 +200,8 @@ export const productService = {
       .insert([productData])
       .select(`
         *,
-        main_unit:units!products_main_unit_id_fkey(code, description),
-        sub_unit:units!products_sub_unit_id_fkey(code, description)
+        main_unit:units!products_main_unit_id_fkey(code, description, package_quantity),
+        sub_unit:units!products_sub_unit_id_fkey(code, description, package_quantity)
       `)
       .single();
     
@@ -194,14 +210,20 @@ export const productService = {
       throw error;
     }
 
+    // Calculate subunit ratio from units data
+    let subunitRatio = 1;
+    if (data.sub_unit && data.main_unit && data.sub_unit.package_quantity) {
+      subunitRatio = Number(data.sub_unit.package_quantity) || 1;
+    }
+
     // Transform the response to match our Product interface
     const createdProduct: Product = {
       id: data.id,
       code: data.code,
       name: data.name,
       description: '',
-      cost: Number(data.cost_price), // CORRIGIDO
-      price: Number(data.sale_price), // CORRIGIDO
+      cost: Number(data.cost_price),
+      price: Number(data.sale_price),
       stock: Number(data.stock),
       minStock: 0,
       maxDiscountPercent: Number(data.max_discount_percent) || 0,
@@ -209,7 +231,7 @@ export const productService = {
       unit: data.main_unit?.code || 'UN',
       subunit: data.sub_unit?.code || undefined,
       hasSubunit: !!data.sub_unit_id,
-      subunitRatio: 1,
+      subunitRatio: subunitRatio, // Calculated from units table
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,
@@ -243,13 +265,13 @@ export const productService = {
       subUnitId = null;
     }
     
-    // Prepare data for Supabase - CORRIGIDO: Mapeamento correto
+    // Prepare data for Supabase
     const updateData: any = {};
     
     if (product.code !== undefined) updateData.code = product.code;
     if (product.name !== undefined) updateData.name = product.name;
-    if (product.cost !== undefined) updateData.cost_price = Number(product.cost); // CORRIGIDO
-    if (product.price !== undefined) updateData.sale_price = Number(product.price); // CORRIGIDO
+    if (product.cost !== undefined) updateData.cost_price = Number(product.cost);
+    if (product.price !== undefined) updateData.sale_price = Number(product.price);
     if (product.stock !== undefined) updateData.stock = Number(product.stock);
     if (product.maxDiscountPercent !== undefined) updateData.max_discount_percent = Number(product.maxDiscountPercent);
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
@@ -266,8 +288,8 @@ export const productService = {
       .eq('id', id)
       .select(`
         *,
-        main_unit:units!products_main_unit_id_fkey(code, description),
-        sub_unit:units!products_sub_unit_id_fkey(code, description)
+        main_unit:units!products_main_unit_id_fkey(code, description, package_quantity),
+        sub_unit:units!products_sub_unit_id_fkey(code, description, package_quantity)
       `)
       .single();
     
@@ -276,14 +298,20 @@ export const productService = {
       throw error;
     }
 
+    // Calculate subunit ratio from units data
+    let subunitRatio = 1;
+    if (data.sub_unit && data.main_unit && data.sub_unit.package_quantity) {
+      subunitRatio = Number(data.sub_unit.package_quantity) || 1;
+    }
+
     // Transform the response to match our Product interface
     return {
       id: data.id,
       code: data.code,
       name: data.name,
       description: '',
-      cost: Number(data.cost_price), // CORRIGIDO
-      price: Number(data.sale_price), // CORRIGIDO
+      cost: Number(data.cost_price),
+      price: Number(data.sale_price),
       stock: Number(data.stock),
       minStock: 0,
       maxDiscountPercent: Number(data.max_discount_percent) || 0,
@@ -291,7 +319,7 @@ export const productService = {
       unit: data.main_unit?.code || 'UN',
       subunit: data.sub_unit?.code || undefined,
       hasSubunit: !!data.sub_unit_id,
-      subunitRatio: 1,
+      subunitRatio: subunitRatio, // Calculated from units table
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,

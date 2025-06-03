@@ -4,7 +4,7 @@ export interface Product {
   code: number;
   name: string;
   description: string;
-  price: number;
+  price: number; // This will be 0 initially and updated in pricing
   cost: number;
   stock: number;
   minStock: number;
@@ -16,7 +16,7 @@ export interface Product {
   unit?: string;
   subunit?: string;
   hasSubunit?: boolean;
-  subunitRatio?: number;
+  subunitRatio?: number; // Calculated automatically from units table
   createdAt: Date;
   updatedAt: Date;
   syncStatus?: 'synced' | 'pending' | 'error';
