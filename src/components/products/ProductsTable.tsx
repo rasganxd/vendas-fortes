@@ -32,6 +32,12 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
   onEdit,
   onDelete
 }) => {
+  console.log("🔍 [ProductsTable] Rendering with data:", { 
+    productsCount: products?.length || 0, 
+    isLoading,
+    firstProduct: products?.[0]
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -39,6 +45,17 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
       </div>
     );
   }
+
+  if (!products || products.length === 0) {
+    console.log("📋 [ProductsTable] No products to display");
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">Nenhum produto encontrado. Adicione produtos utilizando o botão acima.</p>
+      </div>
+    );
+  }
+
+  console.log("📊 [ProductsTable] Displaying", products.length, "products");
 
   return (
     <Table>
@@ -53,14 +70,22 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {products && products.length > 0 ? (
-          products.map((product) => (
+        {products.map((product) => {
+          console.log("📦 [ProductsTable] Rendering product:", {
+            id: product.id,
+            code: product.code,
+            name: product.name,
+            price: product.price,
+            cost: product.cost
+          });
+          
+          return (
             <TableRow key={product.id}>
               <TableCell>{product.code}</TableCell>
               <TableCell>{product.name}</TableCell>
-              <TableCell>{formatCurrency(product.cost)}</TableCell>
-              <TableCell>{formatCurrency(product.price)}</TableCell>
-              <TableCell>{product.stock}</TableCell>
+              <TableCell>{formatCurrency(product.cost || 0)}</TableCell>
+              <TableCell>{formatCurrency(product.price || 0)}</TableCell>
+              <TableCell>{product.stock || 0}</TableCell>
               <TableCell className="text-right">
                 <TooltipProvider>
                   <Tooltip>
@@ -102,14 +127,8 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                 </TooltipProvider>
               </TableCell>
             </TableRow>
-          ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan={6} className="text-center py-8">
-              Nenhum produto encontrado. Adicione produtos utilizando o botão acima.
-            </TableCell>
-          </TableRow>
-        )}
+          );
+        })}
       </TableBody>
     </Table>
   );

@@ -22,6 +22,10 @@ export interface Customer {
   deliveryRouteId?: string;
   salesRepName?: string;
   syncPending?: boolean; // Add this property to track sync status
+  creditLimit?: number; // Added missing field
+  paymentTerms?: string; // Added missing field
+  region?: string; // Added missing field
+  category?: string; // Added missing field
 }
 
 export type CustomerFormValues = {
@@ -43,4 +47,8 @@ export type CustomerFormValues = {
   updatedAt: Date;
   visitSequence: number;
   salesRepId: string; // Changed to camelCase
+  creditLimit?: number; // Added missing field
+  paymentTerms?: string; // Added missing field
+  region?: string; // Added missing field
+  category?: string; // Added missing field
 };

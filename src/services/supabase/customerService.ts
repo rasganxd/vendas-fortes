@@ -67,7 +67,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     
     console.log(`🔍 [CustomerService] Transforming customer ${dbRecord.name}: sales_rep_id=${salesRepId}, sales_rep_name=${salesRepName}`);
     
-    // Map database snake_case fields to TypeScript camelCase - CORRIGIDO: Mapeamento completo
+    // Map database snake_case fields to TypeScript camelCase
     const transformedCustomer = {
       ...baseTransformed,
       companyName: dbRecord.company_name || '',
@@ -80,7 +80,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       zipCode: dbRecord.zip_code || '',
       // Ensure zip is set from zip_code for consistency
       zip: dbRecord.zip_code || dbRecord.zip || '',
-      // Adicionar campos que podem estar faltando
+      // Map additional fields with proper defaults
       creditLimit: dbRecord.credit_limit || 0,
       paymentTerms: dbRecord.payment_terms || '',
       region: dbRecord.region || '',
@@ -251,6 +251,30 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     } catch (error) {
       console.error(`❌ [CustomerService] Critical error updating ${id} in ${this.tableName}:`, error);
       throw error;
+    }
+  }
+
+  async generateNextCode(): Promise<number> {
+    try {
+      console.log("🔢 [CustomerService] Generating next customer code...");
+      const { data, error } = await this.supabase.rpc('get_next_customer_code');
+      
+      if (error) {
+        console.error('❌ [CustomerService] Error calling get_next_customer_code RPC:', error);
+        // Fallback: get max code and add 1
+        console.log("🔄 [CustomerService] Using fallback method to generate code...");
+        const allCustomers = await this.getAll();
+        const maxCode = allCustomers.reduce((max, customer) => Math.max(max, customer.code || 0), 0);
+        const nextCode = maxCode + 1;
+        console.log("✅ [CustomerService] Fallback generated code:", nextCode);
+        return nextCode;
+      }
+      
+      console.log("✅ [CustomerService] RPC generated code:", data);
+      return data || 1;
+    } catch (error) {
+      console.error('❌ [CustomerService] Critical error generating customer code:', error);
+      return 1;
     }
   }
 }
