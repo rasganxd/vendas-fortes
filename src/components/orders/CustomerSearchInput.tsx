@@ -53,7 +53,7 @@ export default function CustomerSearchInput({
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="customer">
+        <Label htmlFor="customer" className="text-sm font-medium text-gray-700">
           Cliente
         </Label>
         <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export default function CustomerSearchInput({
               onChange={handleCustomerInputChange}
               onKeyDown={handleKeyDown}
               ref={inputRef}
-              className="w-full pr-10"
+              className="w-full pr-10 h-10"
             />
             {selectedCustomer && (
               <Button 
@@ -88,6 +88,7 @@ export default function CustomerSearchInput({
             variant="outline" 
             size="icon" 
             onClick={() => setIsCustomerSearchOpen(true)}
+            className="h-10 w-10"
           >
             <Search size={18} />
           </Button>

@@ -82,70 +82,66 @@ export default function OrderFormTwoColumnLayout({
   }, [selectedCustomer, selectedSalesRep, orderItems, handleCreateOrder, productInputRef, customerInputRef, salesRepInputRef]);
 
   return (
-    <div className="w-full space-y-4">
-      {/* Header */}
-      <Card className="shadow-sm border-gray-200">
-        <CardContent className="pt-3 pb-3">
-          <OrderFormHeader isEditMode={isEditMode} />
-        </CardContent>
-      </Card>
+    <div className="w-full space-y-6 bg-gray-50 min-h-screen">
+      <div className="bg-white border-b border-gray-200 p-4">
+        <OrderFormHeader isEditMode={isEditMode} />
+      </div>
 
-      {/* Action Bar - Always visible at top */}
-      <OrderActionBar
-        selectedCustomer={selectedCustomer}
-        selectedSalesRep={selectedSalesRep}
-        orderItems={orderItems}
-        isSubmitting={isSubmitting}
-        isEditMode={isEditMode}
-        connectionStatus={connectionStatus}
-        handleViewRecentPurchases={handleViewRecentPurchases}
-        handleCreateOrder={handleCreateOrder}
-      />
+      {/* Action Bar */}
+      <div className="px-4">
+        <OrderActionBar
+          selectedCustomer={selectedCustomer}
+          selectedSalesRep={selectedSalesRep}
+          orderItems={orderItems}
+          isSubmitting={isSubmitting}
+          isEditMode={isEditMode}
+          connectionStatus={connectionStatus}
+          handleViewRecentPurchases={handleViewRecentPurchases}
+          handleCreateOrder={handleCreateOrder}
+        />
+      </div>
 
-      {/* Expanded Two Column Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Left Column - Form Fields (3/4 width on XL screens) */}
-        <div className="xl:col-span-3 space-y-4">
-          {/* Order Form Fields */}
-          <Card className="shadow-sm border-gray-200">
-            <CardContent className="pt-4 pb-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-800">Dados do Pedido</h3>
-                  <div className="text-xs text-gray-500 space-x-4">
-                    <span>F3: Cliente</span>
-                    <span>F4: Vendedor</span>
-                    <span>F2: Produto</span>
-                  </div>
+      {/* Main Content */}
+      <div className="px-4">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Left Column - Form Fields (3/4 width on XL screens) */}
+          <div className="xl:col-span-3 space-y-6">
+            {/* Order Form Fields */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-800">Dados do Pedido</h3>
+                <div className="text-xs text-gray-500 space-x-4 hidden md:flex">
+                  <span className="bg-gray-100 px-2 py-1 rounded">F3: Cliente</span>
+                  <span className="bg-gray-100 px-2 py-1 rounded">F4: Vendedor</span>
+                  <span className="bg-gray-100 px-2 py-1 rounded">F2: Produto</span>
                 </div>
-                
-                <OrderFormFields
-                  customers={customers}
-                  salesReps={salesReps}
-                  paymentTables={paymentTables}
-                  selectedCustomer={selectedCustomer}
-                  setSelectedCustomer={setSelectedCustomer}
-                  selectedSalesRep={selectedSalesRep}
-                  setSelectedSalesRep={setSelectedSalesRep}
-                  selectedPaymentTable={selectedPaymentTable}
-                  setSelectedPaymentTable={setSelectedPaymentTable}
-                  customerInputValue={customerInputValue}
-                  salesRepInputValue={salesRepInputValue}
-                  isEditMode={isEditMode}
-                  salesRepInputRef={salesRepInputRef}
-                  customerInputRef={customerInputRef}
-                  paymentTableRef={paymentTableRef}
-                  onSalesRepNext={onSalesRepNext}
-                  onCustomerNext={onCustomerNext}
-                  onPaymentNext={onPaymentNext}
-                />
               </div>
-            </CardContent>
-          </Card>
+              
+              <OrderFormFields
+                customers={customers}
+                salesReps={salesReps}
+                paymentTables={paymentTables}
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                selectedSalesRep={selectedSalesRep}
+                setSelectedSalesRep={setSelectedSalesRep}
+                selectedPaymentTable={selectedPaymentTable}
+                setSelectedPaymentTable={setSelectedPaymentTable}
+                customerInputValue={customerInputValue}
+                salesRepInputValue={salesRepInputValue}
+                isEditMode={isEditMode}
+                salesRepInputRef={salesRepInputRef}
+                customerInputRef={customerInputRef}
+                paymentTableRef={paymentTableRef}
+                onSalesRepNext={onSalesRepNext}
+                onCustomerNext={onCustomerNext}
+                onPaymentNext={onPaymentNext}
+              />
+            </div>
 
-          {/* Enhanced Product Search - Increased z-index and relative positioning */}
-          <Card className="shadow-sm border-gray-200 relative z-10">
-            <CardContent className="pt-4 pb-4 relative">
+            {/* Enhanced Product Search */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4 relative z-10">
+              <h4 className="text-md font-medium text-gray-800 mb-3">Adicionar Produtos</h4>
               <EnhancedProductSearch
                 products={products}
                 handleAddItem={handleAddItem}
@@ -153,32 +149,32 @@ export default function OrderFormTwoColumnLayout({
                 isEditMode={isEditMode}
                 selectedCustomer={selectedCustomer}
               />
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Order Items Table */}
-          <Card className="shadow-sm border-gray-200">
-            <CardContent className="p-0">
+            {/* Order Items Table */}
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
               <EnhancedOrderItemsTable
                 orderItems={orderItems}
                 handleRemoveItem={handleRemoveItem}
                 calculateTotal={calculateTotal}
                 isEditMode={isEditMode}
               />
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Right Column - Summary Panel (1/4 width on XL screens) */}
-        <div className="xl:col-span-1 space-y-4">
-          <OrderSummaryPanel
-            orderItems={orderItems}
-            selectedCustomer={selectedCustomer}
-            selectedSalesRep={selectedSalesRep}
-            selectedPaymentTable={selectedPaymentTable}
-            calculateTotal={calculateTotal}
-            isEditMode={isEditMode}
-          />
+          {/* Right Column - Summary Panel (1/4 width on XL screens) */}
+          <div className="xl:col-span-1">
+            <div className="sticky top-6">
+              <OrderSummaryPanel
+                orderItems={orderItems}
+                selectedCustomer={selectedCustomer}
+                selectedSalesRep={selectedSalesRep}
+                selectedPaymentTable={selectedPaymentTable}
+                calculateTotal={calculateTotal}
+                isEditMode={isEditMode}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

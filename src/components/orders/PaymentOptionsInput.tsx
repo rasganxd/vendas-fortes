@@ -95,19 +95,18 @@ const PaymentOptionsInput: React.FC<PaymentOptionsInputProps> = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="paymentTable" className="text-xs font-medium text-gray-700 flex items-center gap-1">
-        <CreditCard size={12} />
+      <Label htmlFor="paymentTable" className="text-sm font-medium text-gray-700">
         Forma de Pagamento
       </Label>
       
       {isLoading ? (
         <div className="flex items-center space-x-2 p-2">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span className="text-xs">Carregando...</span>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Carregando...</span>
         </div>
       ) : (
         <Select onValueChange={handlePaymentTableSelect} value={selectedPaymentTable}>
-          <SelectTrigger id="paymentTable" ref={buttonRef} className="h-9 text-sm">
+          <SelectTrigger id="paymentTable" ref={buttonRef} className="h-10 text-sm">
             <SelectValue placeholder="Selecione uma tabela" />
           </SelectTrigger>
           <SelectContent>

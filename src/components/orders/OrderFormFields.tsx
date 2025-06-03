@@ -53,28 +53,28 @@ export default function OrderFormFields({
 
   if (!isEditMode) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <SalesRepSearchInput
-          salesReps={salesReps}
-          selectedSalesRep={selectedSalesRep}
-          setSelectedSalesRep={setSelectedSalesRep}
-          inputRef={salesRepInputRef}
-          onEnterPress={onSalesRepNext}
-          initialInputValue={salesRepInputValue}
-          compact={true}
-        />
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <SalesRepSearchInput
+            salesReps={salesReps}
+            selectedSalesRep={selectedSalesRep}
+            setSelectedSalesRep={setSelectedSalesRep}
+            inputRef={salesRepInputRef}
+            onEnterPress={onSalesRepNext}
+            initialInputValue={salesRepInputValue}
+            compact={true}
+          />
 
-        <CustomerSearchInput
-          customers={customers}
-          selectedCustomer={selectedCustomer}
-          setSelectedCustomer={setSelectedCustomer}
-          inputRef={customerInputRef}
-          onEnterPress={onCustomerNext}
-          initialInputValue={customerInputValue}
-          compact={true}
-        />
+          <CustomerSearchInput
+            customers={customers}
+            selectedCustomer={selectedCustomer}
+            setSelectedCustomer={setSelectedCustomer}
+            inputRef={customerInputRef}
+            onEnterPress={onCustomerNext}
+            initialInputValue={customerInputValue}
+            compact={true}
+          />
 
-        <div className="space-y-1">
           <PaymentOptionsInput
             paymentTables={paymentTables}
             selectedPaymentTable={selectedPaymentTable}
@@ -89,20 +89,28 @@ export default function OrderFormFields({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded">
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Vendedor</label>
-        <div className="text-sm text-gray-900 font-medium">{salesRepInputValue || 'Não selecionado'}</div>
-      </div>
-      
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Cliente</label>
-        <div className="text-sm text-gray-900 font-medium">{customerInputValue || 'Não selecionado'}</div>
-      </div>
-      
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Forma de Pagamento</label>
-        <div className="text-sm text-gray-900 font-medium">{getPaymentTableName()}</div>
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Vendedor</label>
+          <div className="text-sm text-gray-900 font-medium bg-white p-2 rounded border">
+            {salesRepInputValue || 'Não selecionado'}
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
+          <div className="text-sm text-gray-900 font-medium bg-white p-2 rounded border">
+            {customerInputValue || 'Não selecionado'}
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
+          <div className="text-sm text-gray-900 font-medium bg-white p-2 rounded border">
+            {getPaymentTableName()}
+          </div>
+        </div>
       </div>
     </div>
   );
