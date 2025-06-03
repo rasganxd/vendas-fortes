@@ -235,13 +235,14 @@ export default function Products() {
 
   const handleSubmit = async (data: any) => {
     try {
-      console.log("🚀 Submitting product with classification data:", data);
+      console.log("🚀 [Products] Submitting product with data:", data);
+      console.log("💰 [Products] Cost value received:", data.cost, "Type:", typeof data.cost);
       
       const productData: Partial<Product> = {
         code: data.code,
         name: data.name,
-        cost: data.cost,
-        price: data.cost,
+        cost: Number(data.cost), // Ensure it's a number
+        price: Number(data.cost) || 0, // Set price equal to cost initially
         unit: data.unit,
         hasSubunit: data.hasSubunit || false,
         subunit: data.hasSubunit ? data.subunit : null,
@@ -253,23 +254,26 @@ export default function Products() {
         minStock: 0
       };
 
-      console.log("📝 Final product data to save:", productData);
+      console.log("📝 [Products] Final product data to save:", productData);
+      console.log("💰 [Products] Final cost value:", productData.cost, "Type:", typeof productData.cost);
 
       if (isEditing && selectedProduct) {
+        console.log("🔄 [Products] Updating existing product:", selectedProduct.id);
         await updateProduct(selectedProduct.id, productData);
         toast("Produto atualizado", {
           description: "O produto foi atualizado com sucesso"
         });
       } else {
+        console.log("➕ [Products] Creating new product");
         const newProductId = await addProduct(productData as Omit<Product, 'id'>);
-        console.log("Product added with ID:", newProductId);
+        console.log("✅ [Products] Product created with ID:", newProductId);
         toast("Produto adicionado", {
           description: "O produto foi adicionado com sucesso"
         });
       }
       setOpen(false);
     } catch (error) {
-      console.error("Erro ao salvar produto:", error);
+      console.error("❌ [Products] Error saving product:", error);
       toast("Erro", {
         description: "Ocorreu um erro ao salvar o produto",
         style: {

@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { useProductUnits } from './hooks/useProductUnits';
-import { formatCurrency } from '@/lib/utils';
 
 interface ProductFormProps {
   open: boolean;
@@ -59,7 +58,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
   } = useForm<FormData>();
 
   const hasSubunit = watch('hasSubunit');
-  const costValue = watch('cost');
 
   // Generate next product code
   const generateNextCode = () => {
@@ -73,6 +71,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       console.log('🔄 [ProductForm] Opening form, isEditing:', isEditing, 'selectedProduct:', selectedProduct);
       if (isEditing && selectedProduct) {
         console.log('📝 [ProductForm] Editing product:', selectedProduct);
+        console.log('💰 [ProductForm] Setting cost value:', selectedProduct.cost);
         reset({
           code: selectedProduct.code,
           name: selectedProduct.name,
@@ -105,12 +104,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
   }, [open, isEditing, selectedProduct, reset, products]);
 
   const onFormSubmit = (data: FormData) => {
-    console.log("📋 [ProductForm] Form data submitted:", data);
+    console.log("📋 [ProductForm] Raw form data submitted:", data);
+    console.log("💰 [ProductForm] Cost value from form:", data.cost, "Type:", typeof data.cost);
+    
+    // Ensure cost is a proper number
+    const costValue = Number(data.cost);
+    console.log("💰 [ProductForm] Converted cost value:", costValue, "Type:", typeof costValue);
     
     // Clean data for submission - price will be set to cost initially
     const cleanData = {
       ...data,
-      price: data.cost, // Set initial price equal to cost
+      cost: costValue, // Ensure it's a number
+      price: costValue, // Set initial price equal to cost
       categoryId: data.categoryId === 'none' ? undefined : data.categoryId,
       groupId: data.groupId === 'none' ? undefined : data.groupId,
       brandId: data.brandId === 'none' ? undefined : data.brandId,
@@ -119,12 +124,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
     };
     
     console.log("✅ [ProductForm] Clean data for submission:", cleanData);
+    console.log("💰 [ProductForm] Final cost value being sent:", cleanData.cost);
     onSubmit(cleanData);
-  };
-
-  const formatPriceInput = (value: string): number => {
-    const numericValue = value.replace(/\D/g, '');
-    return parseFloat(numericValue) / 100 || 0;
   };
 
   return (
@@ -168,18 +169,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="cost">Custo</Label>
+            <Label htmlFor="cost">Custo (R$)</Label>
             <Input
               id="cost"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
               {...register('cost', { 
                 required: 'Custo é obrigatório', 
-                min: { value: 0, message: 'Custo deve ser positivo' }
+                min: { value: 0, message: 'Custo deve ser positivo' },
+                valueAsNumber: true // Ensures the value is converted to number
               })}
-              onChange={(e) => {
-                const newCost = formatPriceInput(e.target.value);
-                setValue('cost', newCost);
-              }}
-              value={formatCurrency(costValue || 0)}
               className={errors.cost ? 'border-red-500' : ''}
             />
             {errors.cost && <p className="text-red-500 text-sm mt-1">{errors.cost.message}</p>}

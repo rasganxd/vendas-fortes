@@ -164,6 +164,7 @@ export const productService = {
 
   async create(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
     console.log('🔄 [ProductService] Creating product with data:', product);
+    console.log('💰 [ProductService] Cost value received:', product.cost, 'Type:', typeof product.cost);
     
     // Get unit IDs from codes
     const mainUnitId = await this.getUnitIdByCode(product.unit || 'UN');
@@ -177,12 +178,16 @@ export const productService = {
       throw new Error(`Unidade principal '${product.unit}' não encontrada`);
     }
     
+    // Ensure cost is a proper number
+    const costPrice = Number(product.cost) || 0;
+    console.log('💰 [ProductService] Converted cost price:', costPrice, 'Type:', typeof costPrice);
+    
     // Prepare data for Supabase - price defaults to cost initially
     const productData = {
       code: product.code,
       name: product.name,
-      cost_price: Number(product.cost) || 0,
-      sale_price: Number(product.price) || Number(product.cost) || 0, // Default to cost if no price provided
+      cost_price: costPrice, // Use the properly converted number
+      sale_price: Number(product.price) || costPrice, // Default to cost if no price provided
       stock: Number(product.stock) || 0,
       max_discount_percent: Number(product.maxDiscountPercent) || 0,
       category_id: product.categoryId || null,
@@ -194,6 +199,7 @@ export const productService = {
     };
 
     console.log('📝 [ProductService] Supabase product data:', productData);
+    console.log('💰 [ProductService] Final cost_price for database:', productData.cost_price);
 
     const { data, error } = await supabase
       .from('products')
@@ -209,6 +215,9 @@ export const productService = {
       console.error('❌ [ProductService] Erro ao criar produto:', error);
       throw error;
     }
+
+    console.log('📊 [ProductService] Raw response from Supabase:', data);
+    console.log('💰 [ProductService] Returned cost_price from database:', data.cost_price);
 
     // Calculate subunit ratio from units data
     let subunitRatio = 1;
@@ -240,7 +249,7 @@ export const productService = {
       syncStatus: 'synced' as 'synced' | 'pending' | 'error'
     };
 
-    console.log('✅ [ProductService] Created product:', createdProduct);
+    console.log('✅ [ProductService] Created product with final cost:', createdProduct.cost);
     return createdProduct;
   },
 
