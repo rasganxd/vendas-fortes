@@ -34,6 +34,7 @@ export default function EnhancedProductSearch({
   const [priceDisplayValue, setPriceDisplayValue] = useState('');
   
   const quantityInputRef = useRef<HTMLInputElement>(null);
+  const priceInputRef = useRef<HTMLInputElement>(null);
   const unitSelectorRef = useRef<HTMLButtonElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -51,7 +52,7 @@ export default function EnhancedProductSearch({
     }
   }).slice(0, 8); // Limit to 8 results
 
-  // Update found product when searching by code
+  // Update found product when searching by code (without selecting)
   useEffect(() => {
     if (isCodeSearch && filteredProducts.length === 1) {
       const product = filteredProducts[0];
@@ -104,9 +105,9 @@ export default function EnhancedProductSearch({
     setPrice(unitPrice);
     setPriceDisplayValue(formatBrazilianPrice(unitPrice));
 
-    // Focus on quantity input after unit selection
+    // Focus on price input after unit selection
     setTimeout(() => {
-      quantityInputRef.current?.focus();
+      priceInputRef.current?.focus();
     }, 100);
   };
 
@@ -117,6 +118,14 @@ export default function EnhancedProductSearch({
     // Convert to number for calculations
     const numericPrice = parseBrazilianPrice(displayValue);
     setPrice(numericPrice);
+  };
+
+  const handlePriceKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Focus on quantity input after price entry
+      quantityInputRef.current?.focus();
+    }
   };
 
   const handleAdd = () => {
@@ -193,7 +202,8 @@ export default function EnhancedProductSearch({
 
   // Check if we can proceed to next step
   const canSelectUnit = selectedProduct !== null;
-  const canEnterQuantity = selectedProduct && selectedUnit;
+  const canEnterPrice = selectedProduct && selectedUnit;
+  const canEnterQuantity = selectedProduct && selectedUnit && price > 0;
   const canAdd = selectedProduct && selectedUnit && quantity > 0 && price > 0;
 
   return (
@@ -313,6 +323,23 @@ export default function EnhancedProductSearch({
                 </div>
 
                 <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Preço Unitário <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    ref={priceInputRef}
+                    type="text"
+                    mask="price"
+                    value={priceDisplayValue}
+                    onChange={handlePriceChange}
+                    onKeyDown={handlePriceKeyDown}
+                    placeholder="0,00"
+                    className="h-10"
+                    disabled={!canEnterPrice}
+                  />
+                </div>
+
+                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Quantidade</label>
                   <QuantityInput
                     quantity={canEnterQuantity ? quantity : null}
@@ -321,19 +348,6 @@ export default function EnhancedProductSearch({
                     onDecrement={() => setQuantity(prev => Math.max(1, prev - 1))}
                     inputRef={quantityInputRef}
                     onKeyDown={handleQuantityKeyDown}
-                    disabled={!canEnterQuantity}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Preço Unitário</label>
-                  <Input
-                    type="text"
-                    mask="price"
-                    value={priceDisplayValue}
-                    onChange={handlePriceChange}
-                    placeholder="0,00"
-                    className="h-10"
                     disabled={!canEnterQuantity}
                   />
                 </div>
@@ -361,10 +375,10 @@ export default function EnhancedProductSearch({
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Total:</span>
                 <span className="font-bold text-green-600 text-lg">
-                  {canEnterQuantity ? (quantity * price).toLocaleString('pt-BR', {
+                  {canEnterPrice && price > 0 ? (quantity * price).toLocaleString('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'
-                  }) : 'Selecione a unidade'}
+                  }) : 'Defina o preço'}
                 </span>
               </div>
 
@@ -377,6 +391,10 @@ export default function EnhancedProductSearch({
                 <div className={`flex items-center gap-1 ${selectedUnit ? 'text-green-600' : ''}`}>
                   {selectedUnit ? <Check className="text-green-500 h-3 w-3" /> : <div className="w-3 h-3 border border-gray-300 rounded-full" />}
                   <span>Unidade escolhida</span>
+                </div>
+                <div className={`flex items-center gap-1 ${canEnterPrice && price > 0 ? 'text-green-600' : ''}`}>
+                  {canEnterPrice && price > 0 ? <Check className="text-green-500 h-3 w-3" /> : <div className="w-3 h-3 border border-gray-300 rounded-full" />}
+                  <span>Preço definido</span>
                 </div>
                 <div className={`flex items-center gap-1 ${canAdd ? 'text-green-600' : ''}`}>
                   {canAdd ? <Check className="text-green-500 h-3 w-3" /> : <div className="w-3 h-3 border border-gray-300 rounded-full" />}
