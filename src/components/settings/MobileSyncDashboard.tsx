@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,12 +9,11 @@ import {
   RefreshCw, 
   Users, 
   ShoppingCart, 
-  Clock, 
   CheckCircle, 
-  AlertCircle,
   Download,
   Upload,
-  Activity
+  Activity,
+  AlertCircle
 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -302,10 +302,10 @@ const MobileSyncDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Novo: Servidor Local */}
+      {/* Servidor Local */}
       <LocalSyncServerPanel />
 
-      {/* Novo: Status dos Vendedores */}
+      {/* Status dos Vendedores */}
       <SalesRepSyncStatus />
 
       {/* Ações de Importação */}
@@ -347,10 +347,9 @@ const MobileSyncDashboard: React.FC = () => {
       </Card>
 
       <Tabs defaultValue="statistics" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="statistics">Estatísticas por Vendedor</TabsTrigger>
           <TabsTrigger value="logs">Logs de Sincronização</TabsTrigger>
-          <TabsTrigger value="server">Servidor Local</TabsTrigger>
         </TabsList>
 
         <TabsContent value="statistics" className="mt-4">
@@ -455,13 +454,6 @@ const MobileSyncDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="server" className="mt-4">
-          <div className="space-y-6">
-            <LocalSyncServerPanel />
-            <SalesRepSyncStatus />
-          </div>
         </TabsContent>
       </Tabs>
     </div>

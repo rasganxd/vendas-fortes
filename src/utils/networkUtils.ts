@@ -65,11 +65,15 @@ export class NetworkUtils {
 
   static async testConnectivity(ip: string, port: number): Promise<boolean> {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
       const response = await fetch(`http://${ip}:${port}/health`, {
         method: 'GET',
-        timeout: 3000,
-        signal: AbortSignal.timeout(3000)
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
       console.error('Erro ao testar conectividade:', error);

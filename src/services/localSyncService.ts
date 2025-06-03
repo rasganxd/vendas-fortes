@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DadosVendedor, MobileOrderData, SyncLog, LocalServerStatus, SalesRepSyncStatus } from '@/types/localSync';
 import { Product, Customer, DeliveryRoute, PaymentTable, SalesRep } from '@/types';
@@ -70,8 +69,21 @@ export class LocalSyncService {
         return null;
       }
 
-      console.log(`✅ [LocalSyncService] Vendedor ${data.name} validado com sucesso`);
-      return data as SalesRep;
+      // Transform database data to SalesRep type
+      const salesRep: SalesRep = {
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        active: data.active,
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
+
+      console.log(`✅ [LocalSyncService] Vendedor ${salesRep.name} validado com sucesso`);
+      return salesRep;
     } catch (error) {
       console.error('❌ [LocalSyncService] Erro ao validar vendedor:', error);
       return null;
@@ -207,6 +219,38 @@ export class LocalSyncService {
         updatedAt: new Date(item.updated_at)
       })) as Customer[];
 
+      // Transformar rotas
+      const rotasTransformadas = (rotas || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        salesRepId: item.sales_rep_id,
+        salesRepName: item.sales_rep_name || '',
+        driverId: item.driver_id || '',
+        driverName: item.driver_name || '',
+        vehicleId: item.vehicle_id || '',
+        vehicleName: item.vehicle_name || '',
+        active: item.active,
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.last_updated)
+      })) as DeliveryRoute[];
+
+      // Transformar tabelas de preço
+      const tabelasTransformadas = (tabelasPreco || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        type: item.type,
+        terms: item.terms,
+        installments: item.installments,
+        notes: item.notes || '',
+        payableTo: item.payable_to || '',
+        paymentLocation: item.payment_location || '',
+        active: item.active,
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at)
+      })) as PaymentTable[];
+
       const dadosVendedor: DadosVendedor = {
         vendedor: {
           id: vendedor.id,
@@ -217,8 +261,8 @@ export class LocalSyncService {
         },
         produtos: produtosTransformados,
         clientes: clientesTransformados,
-        rotas: (rotas || []) as DeliveryRoute[],
-        tabelasPreco: (tabelasPreco || []) as PaymentTable[],
+        rotas: rotasTransformadas,
+        tabelasPreco: tabelasTransformadas,
         configuracoes: configuracoes || {} as any,
         timestamp: new Date().toISOString(),
         versao: '1.0.0'
