@@ -32,6 +32,19 @@ export interface OrderImportResponse {
   };
 }
 
+export interface SyncDataResponse {
+  success: boolean;
+  data: {
+    products: Product[];
+    customers: Customer[];
+    sync_timestamp: string;
+    summary: {
+      products_updated: number;
+      customers_updated: number;
+    };
+  };
+}
+
 class MobileSyncService {
   // Generate sync token for mobile authentication
   async generateSyncToken(
@@ -87,40 +100,131 @@ class MobileSyncService {
     }
   }
 
-  // Import orders from mobile
-  async importOrdersFromMobile(
-    orders: Partial<Order>[], 
-    syncToken: string,
-    deviceId?: string,
-    deviceIp?: string
-  ): Promise<OrderImportResponse> {
+  // Get sync data using new edge function
+  async getSyncData(salesRepId: string, lastSync?: string): Promise<SyncDataResponse> {
     try {
-      console.log(`📱 Importing ${orders.length} orders from mobile...`);
+      console.log('📥 Getting sync data for sales rep:', salesRepId);
 
-      // Call the edge function for order import
-      const { data, error } = await supabase.functions.invoke('mobile-orders-import', {
-        body: { orders },
-        headers: {
-          'Authorization': `Bearer ${syncToken}`,
-          'Content-Type': 'application/json'
+      const { data, error } = await supabase.functions.invoke('mobile-sync', {
+        body: {
+          action: 'get_sync_data',
+          sales_rep_id: salesRepId,
+          last_sync: lastSync
         }
       });
 
       if (error) {
-        console.error('❌ Error calling import function:', error);
+        console.error('❌ Error calling sync function:', error);
         throw error;
       }
 
-      console.log('✅ Orders import response:', data);
-      return data as OrderImportResponse;
+      console.log('✅ Sync data retrieved successfully');
+      return data as SyncDataResponse;
+
+    } catch (error) {
+      console.error('❌ Failed to get sync data:', error);
+      throw error;
+    }
+  }
+
+  // Upload orders using new edge function
+  async uploadOrders(orders: Partial<Order>[], salesRepId: string): Promise<OrderImportResponse> {
+    try {
+      console.log('📤 Uploading orders via mobile sync function:', orders.length);
+
+      const { data, error } = await supabase.functions.invoke('mobile-sync', {
+        body: {
+          action: 'upload_orders',
+          orders: orders,
+          sales_rep_id: salesRepId
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error calling upload function:', error);
+        throw error;
+      }
+
+      console.log('✅ Orders uploaded successfully');
+      return {
+        success: data.success,
+        message: data.message,
+        results: {
+          imported: data.uploaded,
+          failed: data.failed,
+          errors: data.errors || []
+        }
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to upload orders:', error);
+      throw error;
+    }
+  }
+
+  // Get sync statistics using new edge function
+  async getSyncStatistics(): Promise<any[]> {
+    try {
+      console.log('📊 Getting sync statistics');
+
+      const { data, error } = await supabase.functions.invoke('mobile-sync', {
+        body: {
+          action: 'get_statistics'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error calling statistics function:', error);
+        throw error;
+      }
+
+      console.log('✅ Statistics retrieved successfully');
+      return data.statistics || [];
+
+    } catch (error) {
+      console.error('❌ Failed to get sync statistics:', error);
+      throw error;
+    }
+  }
+
+  // Import orders from mobile using enhanced function
+  async importOrdersFromMobile(
+    salesRepId?: string,
+    importedBy: string = 'desktop'
+  ): Promise<OrderImportResponse> {
+    try {
+      console.log(`📱 Importing orders from mobile (enhanced)...`);
+
+      const { data, error } = await supabase.rpc('import_mobile_orders_enhanced', {
+        p_sales_rep_id: salesRepId || null,
+        p_imported_by: importedBy
+      });
+
+      if (error) {
+        console.error('❌ Error calling enhanced import function:', error);
+        throw error;
+      }
+
+      const result = data[0] || { imported_count: 0, failed_count: 0, error_messages: [] };
+      
+      console.log('✅ Enhanced import completed:', result);
+      
+      // Disparar evento para atualizar listas
+      window.dispatchEvent(new CustomEvent('ordersUpdated'));
+      window.dispatchEvent(new CustomEvent('mobileOrdersUpdated'));
+
+      return {
+        success: true,
+        message: `${result.imported_count} pedidos importados com sucesso`,
+        results: {
+          imported: result.imported_count,
+          failed: result.failed_count,
+          errors: result.error_messages || []
+        }
+      };
 
     } catch (error) {
       console.error('❌ Failed to import orders from mobile:', error);
-      
-      // Log the error
-      await this.logSyncEvent('error', 'orders', 0, undefined, deviceId, deviceIp, 
-        error instanceof Error ? error.message : 'Unknown error');
-      
       throw error;
     }
   }
@@ -222,7 +326,7 @@ class MobileSyncService {
     }
   }
 
-  // Get customers for mobile sync
+  // Get customers for mobile sync (legacy method for compatibility)
   async getCustomersForSync(salesRepId?: string): Promise<Customer[]> {
     try {
       let query = supabase
@@ -252,7 +356,7 @@ class MobileSyncService {
     }
   }
 
-  // Get products for mobile sync
+  // Get products for mobile sync (legacy method for compatibility)
   async getProductsForSync(): Promise<Product[]> {
     try {
       const { data, error } = await supabase
@@ -276,103 +380,6 @@ class MobileSyncService {
     }
   }
 
-  // Upload orders from mobile
-  async uploadOrders(orders: Partial<Order>[], salesRepId?: string): Promise<void> {
-    try {
-      console.log('📤 Uploading orders from mobile:', orders.length);
-
-      if (orders.length === 0) {
-        return;
-      }
-
-      // Transform orders to match database schema
-      const dbOrders = orders.map(order => ({
-        code: order.code || 0,
-        customer_id: order.customerId,
-        customer_name: order.customerName,
-        sales_rep_id: salesRepId || order.salesRepId,
-        sales_rep_name: order.salesRepName,
-        date: order.date ? order.date.toISOString() : new Date().toISOString(),
-        due_date: order.dueDate ? order.dueDate.toISOString() : null,
-        total: order.total || 0,
-        discount: order.discount || 0,
-        status: order.status || 'pending',
-        payment_status: order.paymentStatus || 'pending',
-        payment_method: order.paymentMethod,
-        payment_method_id: order.paymentMethodId,
-        payment_table_id: order.paymentTableId,
-        notes: order.notes,
-        source_project: 'mobile',
-        sync_status: 'synced'
-      }));
-
-      const { error } = await supabase
-        .from('orders')
-        .insert(dbOrders);
-
-      if (error) {
-        console.error('❌ Error uploading orders:', error);
-        await this.logSyncEvent('error', 'orders', orders.length, salesRepId, 
-          undefined, undefined, error.message);
-        throw error;
-      }
-
-      await this.logSyncEvent('upload', 'orders', orders.length, salesRepId);
-      console.log('✅ Orders uploaded successfully');
-    } catch (error) {
-      console.error('❌ Failed to upload orders:', error);
-      throw error;
-    }
-  }
-
-  // Upload customers from mobile
-  async uploadCustomers(customers: Partial<Customer>[], salesRepId?: string): Promise<void> {
-    try {
-      console.log('📤 Uploading customers from mobile:', customers.length);
-
-      if (customers.length === 0) {
-        return;
-      }
-
-      // Transform customers to match database schema
-      const dbCustomers = customers.map(customer => ({
-        code: customer.code,
-        name: customer.name,
-        company_name: customer.companyName,
-        phone: customer.phone,
-        email: customer.email,
-        address: customer.address,
-        city: customer.city,
-        state: customer.state,
-        zip_code: customer.zipCode || customer.zip,
-        document: customer.document,
-        notes: customer.notes,
-        visit_frequency: customer.visitFrequency,
-        visit_days: customer.visitDays,
-        visit_sequence: customer.visitSequence,
-        sales_rep_id: salesRepId || customer.salesRepId,
-        delivery_route_id: customer.deliveryRouteId
-      }));
-
-      const { error } = await supabase
-        .from('customers')
-        .insert(dbCustomers);
-
-      if (error) {
-        console.error('❌ Error uploading customers:', error);
-        await this.logSyncEvent('error', 'customers', customers.length, salesRepId,
-          undefined, undefined, error.message);
-        throw error;
-      }
-
-      await this.logSyncEvent('upload', 'customers', customers.length, salesRepId);
-      console.log('✅ Customers uploaded successfully');
-    } catch (error) {
-      console.error('❌ Failed to upload customers:', error);
-      throw error;
-    }
-  }
-
   // Cleanup expired tokens
   async cleanupExpiredTokens(): Promise<number> {
     try {
@@ -387,6 +394,29 @@ class MobileSyncService {
       return data || 0;
     } catch (error) {
       console.error('❌ Failed to cleanup expired tokens:', error);
+      throw error;
+    }
+  }
+
+  // Mark orders as synced
+  async markOrdersAsSynced(salesRepId: string, orderIds: string[]): Promise<number> {
+    try {
+      console.log('✅ Marking orders as synced:', orderIds.length);
+
+      const { data, error } = await supabase.rpc('mark_orders_as_synced', {
+        p_sales_rep_id: salesRepId,
+        p_order_ids: orderIds
+      });
+
+      if (error) {
+        console.error('❌ Error marking orders as synced:', error);
+        throw error;
+      }
+
+      console.log(`✅ Marked ${data} orders as synced`);
+      return data || 0;
+    } catch (error) {
+      console.error('❌ Failed to mark orders as synced:', error);
       throw error;
     }
   }

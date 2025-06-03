@@ -7,3 +7,9 @@ external_url = "https://ufvnubabpcyimahbubkd.supabase.co"
 
 [functions.mobile-orders-import]
 verify_jwt = false
+
+[functions.mobile-auth]
+verify_jwt = false
+
+[functions.mobile-sync]
+verify_jwt = false
