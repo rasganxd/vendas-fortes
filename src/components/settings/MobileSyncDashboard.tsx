@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Smartphone, 
-  Sync, 
+  RefreshCw, 
   Users, 
   ShoppingCart, 
   Clock, 
@@ -80,8 +79,21 @@ const MobileSyncDashboard: React.FC = () => {
         throw error;
       }
 
-      setSyncLogs(data || []);
-      console.log('✅ Sync logs loaded:', data?.length || 0);
+      // Transform and validate data with proper type casting
+      const transformedLogs: SyncLog[] = (data || []).map(log => ({
+        id: log.id,
+        sales_rep_id: log.sales_rep_id,
+        event_type: log.event_type as 'upload' | 'download' | 'error',
+        data_type: log.data_type,
+        records_count: log.records_count,
+        status: log.status,
+        error_message: log.error_message,
+        created_at: log.created_at,
+        metadata: log.metadata
+      }));
+
+      setSyncLogs(transformedLogs);
+      console.log('✅ Sync logs loaded:', transformedLogs.length);
     } catch (error) {
       console.error('❌ Failed to load sync logs:', error);
       toast.error('Erro ao carregar logs de sincronização');
@@ -278,7 +290,7 @@ const MobileSyncDashboard: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Sync className="h-5 w-5 text-purple-500" />
+              <RefreshCw className="h-5 w-5 text-purple-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Logs Recentes</p>
                 <p className="text-2xl font-bold text-purple-600">{syncLogs.length}</p>
