@@ -1,4 +1,3 @@
-
 import { Product } from '@/types';
 
 export interface PriceConversion {
@@ -16,7 +15,6 @@ export function convertPriceBetweenUnits(
   originalPrice: number,
   units: Array<{ id: string; code: string; package_quantity?: number }>
 ): PriceConversion {
-  // Se for a mesma unidade, não há conversão
   if (fromUnit === toUnit) {
     return {
       price: originalPrice,
@@ -24,44 +22,36 @@ export function convertPriceBetweenUnits(
     };
   }
 
-  // Buscar dados das unidades
   const mainUnit = units.find(u => u.id === product.main_unit_id);
   const subUnit = units.find(u => u.id === product.sub_unit_id);
 
-  if (!mainUnit || !subUnit) {
+  if (!mainUnit || !subUnit || !mainUnit.package_quantity || mainUnit.package_quantity <= 0) {
     return {
       price: originalPrice,
       displayText: ''
     };
   }
 
-  // Conversão de unidade principal para subunidade
+  const conversionRate = mainUnit.package_quantity;
+
+  // Conversão de unidade principal → subunidade
   if (fromUnit === mainUnit.code && toUnit === subUnit.code) {
-    const mainPackageQty = mainUnit.package_quantity || 1;
-    const subPackageQty = subUnit.package_quantity || 1;
-    const conversionRate = mainPackageQty / subPackageQty;
     const convertedPrice = originalPrice / conversionRate;
-    
     return {
       price: convertedPrice,
       displayText: `1 ${subUnit.code} = R$ ${convertedPrice.toFixed(2).replace('.', ',')} (taxa: ${conversionRate})`
     };
   }
 
-  // Conversão de subunidade para unidade principal
+  // Conversão de subunidade → unidade principal
   if (fromUnit === subUnit.code && toUnit === mainUnit.code) {
-    const mainPackageQty = mainUnit.package_quantity || 1;
-    const subPackageQty = subUnit.package_quantity || 1;
-    const conversionRate = mainPackageQty / subPackageQty;
     const convertedPrice = originalPrice * conversionRate;
-    
     return {
       price: convertedPrice,
       displayText: `1 ${mainUnit.code} = R$ ${convertedPrice.toFixed(2).replace('.', ',')} (taxa: ${conversionRate})`
     };
   }
 
-  // Fallback - retorna preço original
   return {
     price: originalPrice,
     displayText: ''
@@ -69,7 +59,7 @@ export function convertPriceBetweenUnits(
 }
 
 /**
- * Calcula a conversão de quantidade entre unidades
+ * Converte quantidade entre unidades
  */
 export function calculateQuantityConversion(
   product: Product,
@@ -78,31 +68,23 @@ export function calculateQuantityConversion(
   toUnit: string,
   units: Array<{ id: string; code: string; package_quantity?: number }>
 ): string {
-  if (fromUnit === toUnit || !product.sub_unit_id) {
-    return '';
-  }
+  if (fromUnit === toUnit || !product.sub_unit_id) return '';
 
   const mainUnit = units.find(u => u.id === product.main_unit_id);
   const subUnit = units.find(u => u.id === product.sub_unit_id);
 
-  if (!mainUnit || !subUnit) {
-    return '';
-  }
+  if (!mainUnit || !subUnit || !mainUnit.package_quantity || mainUnit.package_quantity <= 0) return '';
 
-  // Conversão de subunidade para unidade principal
+  const conversionRate = mainUnit.package_quantity;
+
+  // Subunidade → principal
   if (fromUnit === subUnit.code && toUnit === mainUnit.code) {
-    const mainPackageQty = mainUnit.package_quantity || 1;
-    const subPackageQty = subUnit.package_quantity || 1;
-    const conversionRate = mainPackageQty / subPackageQty;
     const convertedQty = quantity / conversionRate;
     return `${quantity} ${subUnit.code} = ${convertedQty.toFixed(3)} ${mainUnit.code}`;
   }
 
-  // Conversão de unidade principal para subunidade
+  // Principal → subunidade
   if (fromUnit === mainUnit.code && toUnit === subUnit.code) {
-    const mainPackageQty = mainUnit.package_quantity || 1;
-    const subPackageQty = subUnit.package_quantity || 1;
-    const conversionRate = mainPackageQty / subPackageQty;
     const convertedQty = quantity * conversionRate;
     return `${quantity} ${mainUnit.code} = ${convertedQty} ${subUnit.code}`;
   }
@@ -115,11 +97,8 @@ export function calculateQuantityConversion(
  */
 export function parseBrazilianPrice(priceString: string): number {
   if (!priceString) return 0;
-  
-  // Remove espaços e converte vírgula para ponto
   const cleanPrice = priceString.replace(/\s/g, '').replace(',', '.');
   const parsed = parseFloat(cleanPrice);
-  
   return isNaN(parsed) ? 0 : parsed;
 }
 
