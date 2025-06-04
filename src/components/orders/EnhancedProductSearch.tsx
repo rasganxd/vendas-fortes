@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,6 @@ import { Search, Package, Plus, Barcode, Check, AlertTriangle, XCircle } from 'l
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
-import { validateProductDiscount, getMinimumEffectivePrice } from '@/context/operations/productOperations';
 import { useUnits } from '@/hooks/useUnits';
 
 interface EnhancedProductSearchProps {
@@ -17,7 +15,6 @@ interface EnhancedProductSearchProps {
   handleAddItem: (product: Product, quantity: number, price: number, unit?: string) => void;
   productInputRef: React.RefObject<HTMLInputElement>;
   isEditMode: boolean;
-  selectedCustomer: any;
 }
 
 export default function EnhancedProductSearch({
@@ -409,7 +406,6 @@ export default function EnhancedProductSearch({
                   <Input
                     ref={priceInputRef}
                     type="text"
-                    mask="price"
                     value={priceDisplayValue}
                     onChange={handlePriceChange}
                     onKeyDown={handlePriceKeyDown}
