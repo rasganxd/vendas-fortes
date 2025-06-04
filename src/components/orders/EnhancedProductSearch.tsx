@@ -340,13 +340,7 @@ export default function EnhancedProductSearch({
                     <div className="text-sm text-gray-500">Cód: {product.code}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-green-600">
-                      {(product.sale_price || product.price || 0).toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      })}
-                    </div>
-                    <div className="text-xs text-gray-500">{
+                    <div className="text-sm font-medium text-gray-700">{
                       units.find(u => u.id === product.main_unit_id)?.code || product.unit || 'UN'
                     }</div>
                   </div>
