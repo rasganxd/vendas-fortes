@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Barcode, Check } from 'lucide-react';
+import { Search, Package, Plus, Barcode, Check, Edit3, Lock } from 'lucide-react';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
@@ -33,6 +33,7 @@ export default function EnhancedProductSearch({
   const [selectedUnit, setSelectedUnit] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [priceDisplayValue, setPriceDisplayValue] = useState('');
+  const [isPriceEditable, setIsPriceEditable] = useState(false);
   
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +72,7 @@ export default function EnhancedProductSearch({
       setPrice(0);
       setPriceDisplayValue('');
       setQuantity(1);
+      setIsPriceEditable(false);
       
       // Focus on unit selector
       setTimeout(() => {
@@ -94,27 +96,37 @@ export default function EnhancedProductSearch({
     
     setSelectedUnit(unit);
 
-    // Calculate price for the selected unit using real unit data
+    // Use price from pricing tab
     const basePrice = selectedProduct.sale_price || 0;
+    
+    if (basePrice === 0) {
+      console.warn('⚠️ Product has no sale price defined in pricing tab');
+      setPrice(0);
+      setPriceDisplayValue('');
+      return;
+    }
+
     let unitPrice = basePrice;
 
-    console.log('💰 Base price from product:', basePrice);
+    console.log('💰 Base price from pricing tab:', basePrice);
 
     // Find the unit data in the database
-    const unitData = units.find(u => u.code === unit);
     const mainUnitData = units.find(u => u.id === selectedProduct.main_unit_id);
     const subUnitData = units.find(u => u.id === selectedProduct.sub_unit_id);
 
-    console.log('🔍 Unit data found:', { unitData, mainUnitData, subUnitData });
+    console.log('🔍 Unit data found:', { mainUnitData, subUnitData });
 
+    // Apply correct conversion logic: main_unit ÷ sub_unit = conversion_rate
     // If we have subunit and the selected unit is the subunit
     if (selectedProduct.sub_unit_id && subUnitData && unit === subUnitData.code) {
-      // Find the main unit to get its package quantity
+      // Find the conversion rate using package_quantity
       if (mainUnitData && mainUnitData.package_quantity) {
-        // Price per subunit = main unit price / main unit package quantity
-        unitPrice = basePrice / mainUnitData.package_quantity;
+        // Conversion rate = main_unit ÷ sub_unit (package_quantity represents how many sub units in main unit)
+        const conversionRate = mainUnitData.package_quantity;
+        // Sub unit price = main unit price ÷ conversion rate
+        unitPrice = basePrice / conversionRate;
         console.log(`🔄 Converting price from main unit (${mainUnitData.code}) to subunit (${subUnitData.code})`);
-        console.log(`📊 Base price: ${basePrice}, Package quantity: ${mainUnitData.package_quantity}, Unit price: ${unitPrice}`);
+        console.log(`📊 Base price: ${basePrice}, Conversion rate: ${conversionRate}, Sub unit price: ${unitPrice}`);
       }
     }
     // If selected unit is the main unit, use base price
@@ -132,14 +144,26 @@ export default function EnhancedProductSearch({
     console.log('🎨 Formatted price for display:', formattedPrice);
     setPriceDisplayValue(formattedPrice);
 
-    // Focus on price input after unit selection
+    // Reset price editability when unit changes
+    setIsPriceEditable(false);
+
+    // Focus on quantity input after unit selection (price is auto-calculated)
+    setTimeout(() => {
+      quantityInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handlePriceEdit = () => {
+    setIsPriceEditable(true);
     setTimeout(() => {
       priceInputRef.current?.focus();
-      priceInputRef.current?.select(); // Select all text for easy editing
+      priceInputRef.current?.select();
     }, 100);
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isPriceEditable) return;
+    
     const displayValue = e.target.value;
     console.log('💰 Price input changed to:', displayValue);
     setPriceDisplayValue(displayValue);
@@ -153,8 +177,14 @@ export default function EnhancedProductSearch({
   const handlePriceKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      setIsPriceEditable(false);
       // Focus on quantity input after price entry
       quantityInputRef.current?.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      // Reset to calculated price
+      handleUnitChange(selectedUnit);
+      setIsPriceEditable(false);
     }
   };
 
@@ -170,6 +200,7 @@ export default function EnhancedProductSearch({
       setPrice(0);
       setPriceDisplayValue('');
       setSelectedUnit('');
+      setIsPriceEditable(false);
 
       // Focus back on search
       productInputRef.current?.focus();
@@ -213,6 +244,7 @@ export default function EnhancedProductSearch({
       setPrice(0);
       setPriceDisplayValue('');
       setSelectedUnit('');
+      setIsPriceEditable(false);
     }
 
     // Show results only for name search (not code search) and when there's input
@@ -248,9 +280,11 @@ export default function EnhancedProductSearch({
 
   // Check if we can proceed to next step
   const canSelectUnit = selectedProduct !== null;
-  const canEnterPrice = selectedProduct && selectedUnit; // Enable when unit is selected
   const canEnterQuantity = selectedProduct && selectedUnit && price > 0;
   const canAdd = selectedProduct && selectedUnit && quantity > 0 && price > 0;
+
+  // Check if product has pricing configured
+  const hasPricing = selectedProduct && selectedProduct.sale_price && selectedProduct.sale_price > 0;
 
   return (
     <div className="space-y-4">
@@ -351,6 +385,11 @@ export default function EnhancedProductSearch({
                 <div>
                   <div className="font-medium text-gray-900">{selectedProduct.name}</div>
                   <div className="text-sm text-gray-500">Cód: {selectedProduct.code}</div>
+                  {!hasPricing && (
+                    <div className="text-sm text-red-500 flex items-center gap-1 mt-1">
+                      ⚠️ Produto sem preço configurado na precificação
+                    </div>
+                  )}
                 </div>
                 <Badge variant="outline" className="bg-white">
                   {selectedUnit || 'Selecione a unidade'}
@@ -373,18 +412,38 @@ export default function EnhancedProductSearch({
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Preço Unitário <span className="text-red-500">*</span>
+                    <span className="text-xs text-gray-500 ml-1">(da precificação)</span>
                   </label>
-                  <Input
-                    ref={priceInputRef}
-                    type="text"
-                    mask="price"
-                    value={priceDisplayValue}
-                    onChange={handlePriceChange}
-                    onKeyDown={handlePriceKeyDown}
-                    placeholder="0,00"
-                    className="h-10"
-                    disabled={!canEnterPrice}
-                  />
+                  <div className="relative">
+                    <Input
+                      ref={priceInputRef}
+                      type="text"
+                      mask="price"
+                      value={priceDisplayValue}
+                      onChange={handlePriceChange}
+                      onKeyDown={handlePriceKeyDown}
+                      placeholder="0,00"
+                      className="h-10 pr-8"
+                      disabled={!isPriceEditable}
+                      readOnly={!isPriceEditable}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                      onClick={handlePriceEdit}
+                      disabled={!selectedUnit || !hasPricing}
+                      title="Editar preço"
+                    >
+                      {isPriceEditable ? <Lock size={12} /> : <Edit3 size={12} />}
+                    </Button>
+                  </div>
+                  {isPriceEditable && (
+                    <div className="text-xs text-orange-600 mt-1">
+                      ⚠️ Sobrescreve preço da precificação. ESC para cancelar.
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -423,10 +482,10 @@ export default function EnhancedProductSearch({
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Total:</span>
                 <span className="font-bold text-green-600 text-lg">
-                  {canEnterPrice && price > 0 ? (quantity * price).toLocaleString('pt-BR', {
+                  {hasPricing && price > 0 ? (quantity * price).toLocaleString('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'
-                  }) : 'Defina o preço'}
+                  }) : 'Configure preço na precificação'}
                 </span>
               </div>
 
@@ -440,9 +499,9 @@ export default function EnhancedProductSearch({
                   {selectedUnit ? <Check className="text-green-500 h-3 w-3" /> : <div className="w-3 h-3 border border-gray-300 rounded-full" />}
                   <span>Unidade escolhida</span>
                 </div>
-                <div className={`flex items-center gap-1 ${canEnterPrice && price > 0 ? 'text-green-600' : ''}`}>
-                  {canEnterPrice && price > 0 ? <Check className="text-green-500 h-3 w-3" /> : <div className="w-3 h-3 border border-gray-300 rounded-full" />}
-                  <span>Preço definido</span>
+                <div className={`flex items-center gap-1 ${hasPricing && price > 0 ? 'text-green-600' : ''}`}>
+                  {hasPricing && price > 0 ? <Check className="text-green-500 h-3 w-3" /> : <div className="w-3 h-3 border border-gray-300 rounded-full" />}
+                  <span>Preço da precificação</span>
                 </div>
                 <div className={`flex items-center gap-1 ${canAdd ? 'text-green-600' : ''}`}>
                   {canAdd ? <Check className="text-green-500 h-3 w-3" /> : <div className="w-3 h-3 border border-gray-300 rounded-full" />}
