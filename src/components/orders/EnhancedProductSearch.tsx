@@ -1,14 +1,17 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Barcode, Check, AlertTriangle, XCircle } from 'lucide-react';
+import { Package, Plus, Check, AlertTriangle, XCircle } from 'lucide-react';
 import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
+import ProductCodeInput from './ProductCodeInput';
+import ProductSearchDialog from './ProductSearchDialog';
 import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
 import { useUnits } from '@/hooks/useUnits';
+import { Input } from "@/components/ui/input";
 
 interface EnhancedProductSearchProps {
   products: Product[];
@@ -24,62 +27,40 @@ export default function EnhancedProductSearch({
   isEditMode
 }: EnhancedProductSearchProps) {
   const { units } = useUnits();
-  const [searchTerm, setSearchTerm] = useState('');
   const [foundProduct, setFoundProduct] = useState<Product | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState('');
-  const [showResults, setShowResults] = useState(false);
   const [priceDisplayValue, setPriceDisplayValue] = useState('');
+  const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
   
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
   const unitSelectorRef = useRef<HTMLButtonElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Check if search term is a product code (numeric)
-  const isCodeSearch = /^\d+$/.test(searchTerm.trim());
-
-  // Filter products based on search term
-  const filteredProducts = products.filter(product => {
-    if (isCodeSearch) {
-      return product.code.toString() === searchTerm.trim();
-    } else {
-      return product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    }
-  }).slice(0, 8);
-
-  // Update found product when searching by code (without selecting)
-  useEffect(() => {
-    if (isCodeSearch && filteredProducts.length === 1) {
-      const product = filteredProducts[0];
-      setFoundProduct(product);
-      setShowResults(false);
-    } else if (isCodeSearch && filteredProducts.length === 0) {
-      setFoundProduct(null);
-    }
-  }, [isCodeSearch, filteredProducts]);
-
-  // Reset states when selected product changes
-  useEffect(() => {
-    if (selectedProduct) {
-      setSelectedUnit('');
-      setPrice(0);
-      setPriceDisplayValue('');
-      setQuantity(1);
-      
-      setTimeout(() => {
-        unitSelectorRef.current?.focus();
-      }, 100);
-    }
-  }, [selectedProduct]);
+  // Filter products for search dialog
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(productSearch.toLowerCase())
+  ).slice(0, 20);
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
     setFoundProduct(null);
-    setSearchTerm(product.name);
-    setShowResults(false);
+    setIsProductSearchOpen(false);
+    setProductSearch('');
+    
+    // Reset form
+    setSelectedUnit('');
+    setPrice(0);
+    setPriceDisplayValue('');
+    setQuantity(1);
+    
+    setTimeout(() => {
+      unitSelectorRef.current?.focus();
+    }, 100);
   };
 
   const handleUnitChange = (unit: string) => {
@@ -87,23 +68,23 @@ export default function EnhancedProductSearch({
     
     setSelectedUnit(unit);
 
-    // Usar sale_price como preço base (preço da precificação) ou price como fallback
+    // Use sale_price as base price or price as fallback
     const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
     let unitPrice = basePrice;
 
-    // Se produto tem subunidade e a unidade selecionada é a subunidade
+    // If product has subunit and selected unit is the subunit
     if (selectedProduct.sub_unit_id && selectedProduct.main_unit_id) {
-      // Buscar dados das unidades
+      // Get unit data
       const mainUnit = units.find(u => u.id === selectedProduct.main_unit_id);
       const subUnit = units.find(u => u.id === selectedProduct.sub_unit_id);
       
       if (mainUnit && subUnit && selectedProduct.sub_unit_id && unit === subUnit.code) {
-        // Lógica: package_quantity da unidade principal ÷ package_quantity da subunidade = taxa de conversão
+        // Logic: main unit package_quantity ÷ subunit package_quantity = conversion rate
         const mainPackageQty = mainUnit.package_quantity || 1;
         const subPackageQty = subUnit.package_quantity || 1;
         const conversionRate = mainPackageQty / subPackageQty;
         
-        // Preço da subunidade = preço principal ÷ taxa de conversão
+        // Subunit price = main price ÷ conversion rate
         unitPrice = basePrice / conversionRate;
       }
     }
@@ -135,7 +116,7 @@ export default function EnhancedProductSearch({
   const getMinimumPrice = (): number => {
     if (!selectedProduct) return 0;
     
-    // Usar sale_price como preço base ou price como fallback
+    // Use sale_price as base price or price as fallback
     const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
     const maxDiscountPercent = selectedProduct.maxDiscountPercent || selectedProduct.max_discount_percent || 0;
     
@@ -144,7 +125,7 @@ export default function EnhancedProductSearch({
       return basePrice - maxDiscountAmount;
     }
     
-    return 0; // Sem limite de desconto
+    return 0; // No discount limit
   };
 
   const isPriceValid = (): boolean => {
@@ -201,30 +182,12 @@ export default function EnhancedProductSearch({
       // Reset form
       setSelectedProduct(null);
       setFoundProduct(null);
-      setSearchTerm('');
       setQuantity(1);
       setPrice(0);
       setPriceDisplayValue('');
       setSelectedUnit('');
 
       productInputRef.current?.focus();
-    }
-  };
-
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      if (isCodeSearch && foundProduct) {
-        handleProductSelect(foundProduct);
-      } else if (!isCodeSearch && filteredProducts.length > 0) {
-        handleProductSelect(filteredProducts[0]);
-      }
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (!isCodeSearch) {
-        setShowResults(true);
-      }
     }
   };
 
@@ -235,22 +198,6 @@ export default function EnhancedProductSearch({
         handleAdd();
       }
     }
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-
-    setFoundProduct(null);
-    if (selectedProduct && selectedProduct.name !== value) {
-      setSelectedProduct(null);
-      setPrice(0);
-      setPriceDisplayValue('');
-      setSelectedUnit('');
-    }
-
-    const isCode = /^\d+$/.test(value.trim());
-    setShowResults(!isCode && value.length > 0);
   };
 
   const getQuantityConversion = () => {
@@ -264,7 +211,7 @@ export default function EnhancedProductSearch({
     if (!mainUnit || !subUnit) return '';
     
     if (selectedUnit === subUnit.code) {
-      // Convertendo de subunidade para unidade principal
+      // Converting from subunit to main unit
       const mainPackageQty = mainUnit.package_quantity || 1;
       const subPackageQty = subUnit.package_quantity || 1;
       const conversionRate = mainPackageQty / subPackageQty;
@@ -294,77 +241,16 @@ export default function EnhancedProductSearch({
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="relative z-[100]">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            ref={productInputRef}
-            type="text"
-            placeholder="Buscar por nome ou código..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            onKeyDown={handleSearchKeyDown}
-            onFocus={() => {
-              if (!isCodeSearch && searchTerm.length > 0) {
-                setShowResults(true);
-              }
-            }}
-            className="pl-10 pr-4 h-11 text-base"
-            disabled={isEditMode}
-          />
-          {foundProduct && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-              <Check className="text-green-500 h-4 w-4" />
-              <span className="text-xs text-green-600">Pressione Enter</span>
-            </div>
-          )}
-          {!foundProduct && <Barcode className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />}
-        </div>
-
-        {/* Search Results */}
-        {showResults && !isCodeSearch && filteredProducts.length > 0 && (
-          <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
-            {filteredProducts.map(product => (
-              <div
-                key={product.id}
-                className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                onClick={() => handleProductSelect(product)}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{product.name}</div>
-                    <div className="text-sm text-gray-500">Cód: {product.code}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-700">{
-                      units.find(u => u.id === product.main_unit_id)?.code || product.unit || 'UN'
-                    }</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Product found but not selected state */}
-      {foundProduct && !selectedProduct && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-gray-900">{foundProduct.name}</div>
-                <div className="text-sm text-gray-500">Cód: {foundProduct.code}</div>
-              </div>
-              <div className="text-sm text-blue-600 flex items-center gap-2">
-                <Check size={16} />
-                Pressione Enter para selecionar
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Product Code Input + Search Button */}
+      <ProductCodeInput
+        products={products}
+        foundProduct={foundProduct}
+        onProductFound={setFoundProduct}
+        onProductSelect={handleProductSelect}
+        onSearchDialogOpen={() => setIsProductSearchOpen(true)}
+        inputRef={productInputRef}
+        isEditMode={isEditMode}
+      />
 
       {/* Product selection form */}
       {selectedProduct && (
@@ -501,6 +387,16 @@ export default function EnhancedProductSearch({
           </CardContent>
         </Card>
       )}
+
+      {/* Product Search Dialog */}
+      <ProductSearchDialog
+        open={isProductSearchOpen}
+        onOpenChange={setIsProductSearchOpen}
+        products={filteredProducts}
+        productSearch={productSearch}
+        onSearchChange={setProductSearch}
+        onSelectProduct={handleProductSelect}
+      />
     </div>
   );
 }
