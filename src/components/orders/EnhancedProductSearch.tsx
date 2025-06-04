@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import QuantityInput from './QuantityInput';
 import UnitSelector from '@/components/ui/UnitSelector';
 import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
 import { validateProductDiscount, getMinimumEffectivePrice } from '@/context/operations/productOperations';
+import { useUnits } from '@/hooks/useUnits';
 
 interface EnhancedProductSearchProps {
   products: Product[];
@@ -24,6 +26,7 @@ export default function EnhancedProductSearch({
   productInputRef,
   isEditMode
 }: EnhancedProductSearchProps) {
+  const { units } = useUnits();
   const [searchTerm, setSearchTerm] = useState('');
   const [foundProduct, setFoundProduct] = useState<Product | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -87,15 +90,25 @@ export default function EnhancedProductSearch({
     
     setSelectedUnit(unit);
 
-    // Calculate price for the selected unit using sale_price
-    const basePrice = selectedProduct.price || 0;
+    // Usar sale_price como preço base (preço da precificação)
+    const basePrice = selectedProduct.sale_price || 0;
     let unitPrice = basePrice;
 
-    // If product has subunit and selected unit is the subunit
-    if (selectedProduct.hasSubunit && selectedProduct.subunit === unit) {
-      const mainUnitData = { package_quantity: 1 };
-      const packageQuantity = mainUnitData.package_quantity || 1;
-      unitPrice = basePrice / packageQuantity;
+    // Se produto tem subunidade e a unidade selecionada é a subunidade
+    if (selectedProduct.sub_unit_id && selectedProduct.main_unit_id) {
+      // Buscar dados das unidades
+      const mainUnit = units.find(u => u.id === selectedProduct.main_unit_id);
+      const subUnit = units.find(u => u.id === selectedProduct.sub_unit_id);
+      
+      if (mainUnit && subUnit && selectedProduct.sub_unit_id && unit === subUnit.code) {
+        // Lógica: package_quantity da unidade principal ÷ package_quantity da subunidade = taxa de conversão
+        const mainPackageQty = mainUnit.package_quantity || 1;
+        const subPackageQty = subUnit.package_quantity || 1;
+        const conversionRate = mainPackageQty / subPackageQty;
+        
+        // Preço da subunidade = preço principal ÷ taxa de conversão
+        unitPrice = basePrice / conversionRate;
+      }
     }
 
     setPrice(unitPrice);
@@ -124,18 +137,28 @@ export default function EnhancedProductSearch({
   // Validation functions
   const getMinimumPrice = (): number => {
     if (!selectedProduct) return 0;
-    return getMinimumEffectivePrice(selectedProduct.id, products);
+    
+    // Usar sale_price como preço base
+    const basePrice = selectedProduct.sale_price || 0;
+    const maxDiscountPercent = selectedProduct.max_discount_percent || 0;
+    
+    if (maxDiscountPercent > 0) {
+      const maxDiscountAmount = (basePrice * maxDiscountPercent) / 100;
+      return basePrice - maxDiscountAmount;
+    }
+    
+    return 0; // Sem limite de desconto
   };
 
   const isPriceValid = (): boolean => {
     if (!selectedProduct || price <= 0) return false;
     const minimumPrice = getMinimumPrice();
-    return price >= minimumPrice;
+    return minimumPrice === 0 || price >= minimumPrice;
   };
 
   const getDiscountPercent = (): number => {
     if (!selectedProduct || price <= 0) return 0;
-    const basePrice = selectedProduct.price || 0;
+    const basePrice = selectedProduct.sale_price || 0;
     if (basePrice <= 0) return 0;
     return ((basePrice - price) / basePrice) * 100;
   };
@@ -145,9 +168,9 @@ export default function EnhancedProductSearch({
     
     const minimumPrice = getMinimumPrice();
     const discountPercent = getDiscountPercent();
-    const maxDiscount = selectedProduct.maxDiscountPercent || 0;
+    const maxDiscount = selectedProduct.max_discount_percent || 0;
     
-    if (price < minimumPrice) {
+    if (minimumPrice > 0 && price < minimumPrice) {
       return {
         type: 'error' as const,
         message: `Preço abaixo do limite mínimo (R$ ${minimumPrice.toFixed(2)})`
@@ -234,10 +257,25 @@ export default function EnhancedProductSearch({
   };
 
   const getQuantityConversion = () => {
-    if (!selectedProduct || !selectedProduct.hasSubunit || !selectedUnit) {
+    if (!selectedProduct || !selectedProduct.sub_unit_id || !selectedUnit) {
       return '';
     }
-    return calculateQuantityConversion(selectedProduct, quantity, selectedUnit, selectedProduct.unit || 'UN');
+    
+    const mainUnit = units.find(u => u.id === selectedProduct.main_unit_id);
+    const subUnit = units.find(u => u.id === selectedProduct.sub_unit_id);
+    
+    if (!mainUnit || !subUnit) return '';
+    
+    if (selectedUnit === subUnit.code) {
+      // Convertendo de subunidade para unidade principal
+      const mainPackageQty = mainUnit.package_quantity || 1;
+      const subPackageQty = subUnit.package_quantity || 1;
+      const conversionRate = mainPackageQty / subPackageQty;
+      const convertedQty = quantity / conversionRate;
+      return `${quantity} ${subUnit.code} = ${convertedQty.toFixed(3)} ${mainUnit.code}`;
+    }
+    
+    return '';
   };
 
   const canSelectUnit = selectedProduct !== null;
@@ -303,12 +341,14 @@ export default function EnhancedProductSearch({
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-green-600">
-                      {product.price?.toLocaleString('pt-BR', {
+                      {product.sale_price?.toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
                       })}
                     </div>
-                    <div className="text-xs text-gray-500">{product.unit}</div>
+                    <div className="text-xs text-gray-500">{
+                      units.find(u => u.id === product.main_unit_id)?.code || 'UN'
+                    }</div>
                   </div>
                 </div>
               </div>
@@ -344,9 +384,9 @@ export default function EnhancedProductSearch({
                 <div>
                   <div className="font-medium text-gray-900">{selectedProduct.name}</div>
                   <div className="text-sm text-gray-500">Cód: {selectedProduct.code}</div>
-                  {selectedProduct.maxDiscountPercent && (
+                  {selectedProduct.max_discount_percent && (
                     <div className="text-xs text-orange-600">
-                      Desconto máximo: {selectedProduct.maxDiscountPercent}%
+                      Desconto máximo: {selectedProduct.max_discount_percent}%
                     </div>
                   )}
                 </div>

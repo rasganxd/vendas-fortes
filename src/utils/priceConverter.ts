@@ -13,7 +13,8 @@ export function convertPriceBetweenUnits(
   product: Product,
   fromUnit: string,
   toUnit: string,
-  originalPrice: number
+  originalPrice: number,
+  units: Array<{ id: string; code: string; package_quantity?: number }>
 ): PriceConversion {
   // Se for a mesma unidade, não há conversão
   if (fromUnit === toUnit) {
@@ -23,25 +24,40 @@ export function convertPriceBetweenUnits(
     };
   }
 
-  const mainUnit = product.unit || 'UN';
-  const subunit = product.subunit;
-  const subunitRatio = product.subunitRatio || 1;
+  // Buscar dados das unidades
+  const mainUnit = units.find(u => u.id === product.main_unit_id);
+  const subUnit = units.find(u => u.id === product.sub_unit_id);
+
+  if (!mainUnit || !subUnit) {
+    return {
+      price: originalPrice,
+      displayText: ''
+    };
+  }
 
   // Conversão de unidade principal para subunidade
-  if (fromUnit === mainUnit && toUnit === subunit) {
-    const convertedPrice = originalPrice / subunitRatio;
+  if (fromUnit === mainUnit.code && toUnit === subUnit.code) {
+    const mainPackageQty = mainUnit.package_quantity || 1;
+    const subPackageQty = subUnit.package_quantity || 1;
+    const conversionRate = mainPackageQty / subPackageQty;
+    const convertedPrice = originalPrice / conversionRate;
+    
     return {
       price: convertedPrice,
-      displayText: `1 ${subunit} = R$ ${convertedPrice.toFixed(2).replace('.', ',')} (${subunitRatio} ${subunit} por ${mainUnit})`
+      displayText: `1 ${subUnit.code} = R$ ${convertedPrice.toFixed(2).replace('.', ',')} (taxa: ${conversionRate})`
     };
   }
 
   // Conversão de subunidade para unidade principal
-  if (fromUnit === subunit && toUnit === mainUnit) {
-    const convertedPrice = originalPrice * subunitRatio;
+  if (fromUnit === subUnit.code && toUnit === mainUnit.code) {
+    const mainPackageQty = mainUnit.package_quantity || 1;
+    const subPackageQty = subUnit.package_quantity || 1;
+    const conversionRate = mainPackageQty / subPackageQty;
+    const convertedPrice = originalPrice * conversionRate;
+    
     return {
       price: convertedPrice,
-      displayText: `1 ${mainUnit} = R$ ${convertedPrice.toFixed(2).replace('.', ',')} (${subunitRatio} ${subunit} por ${mainUnit})`
+      displayText: `1 ${mainUnit.code} = R$ ${convertedPrice.toFixed(2).replace('.', ',')} (taxa: ${conversionRate})`
     };
   }
 
@@ -59,26 +75,36 @@ export function calculateQuantityConversion(
   product: Product,
   quantity: number,
   fromUnit: string,
-  toUnit: string
+  toUnit: string,
+  units: Array<{ id: string; code: string; package_quantity?: number }>
 ): string {
-  if (fromUnit === toUnit || !product.hasSubunit) {
+  if (fromUnit === toUnit || !product.sub_unit_id) {
     return '';
   }
 
-  const mainUnit = product.unit || 'UN';
-  const subunit = product.subunit;
-  const subunitRatio = product.subunitRatio || 1;
+  const mainUnit = units.find(u => u.id === product.main_unit_id);
+  const subUnit = units.find(u => u.id === product.sub_unit_id);
+
+  if (!mainUnit || !subUnit) {
+    return '';
+  }
 
   // Conversão de subunidade para unidade principal
-  if (fromUnit === subunit && toUnit === mainUnit) {
-    const convertedQty = quantity / subunitRatio;
-    return `${quantity} ${subunit} = ${convertedQty.toFixed(3)} ${mainUnit}`;
+  if (fromUnit === subUnit.code && toUnit === mainUnit.code) {
+    const mainPackageQty = mainUnit.package_quantity || 1;
+    const subPackageQty = subUnit.package_quantity || 1;
+    const conversionRate = mainPackageQty / subPackageQty;
+    const convertedQty = quantity / conversionRate;
+    return `${quantity} ${subUnit.code} = ${convertedQty.toFixed(3)} ${mainUnit.code}`;
   }
 
   // Conversão de unidade principal para subunidade
-  if (fromUnit === mainUnit && toUnit === subunit) {
-    const convertedQty = quantity * subunitRatio;
-    return `${quantity} ${mainUnit} = ${convertedQty} ${subunit}`;
+  if (fromUnit === mainUnit.code && toUnit === subUnit.code) {
+    const mainPackageQty = mainUnit.package_quantity || 1;
+    const subPackageQty = subUnit.package_quantity || 1;
+    const conversionRate = mainPackageQty / subPackageQty;
+    const convertedQty = quantity * conversionRate;
+    return `${quantity} ${mainUnit.code} = ${convertedQty} ${subUnit.code}`;
   }
 
   return '';
