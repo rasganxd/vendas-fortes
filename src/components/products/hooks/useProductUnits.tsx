@@ -16,9 +16,15 @@ export const useProductUnits = () => {
       
       const dbUnits = await unitService.getAll();
       
+      const convertedUnits = dbUnits.map(u => ({
+        value: u.code,
+        label: u.description || u.code,
+        conversionRate: u.package_quantity || 1
+      }));
+      
       console.log("✅ Units loaded for product form:", dbUnits.length, dbUnits);
       setUnits(dbUnits);
-      setConverter(new UnitConverter(dbUnits));
+      setConverter(new UnitConverter(convertedUnits));
     } catch (error) {
       console.error('❌ Error loading units for product form:', error);
       setUnits([]);
