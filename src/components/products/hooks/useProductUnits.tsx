@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { Unit as UnitType } from '@/services/supabase/unitService';
 import { unitService } from '@/services/supabase/unitService';
-import { UnitConverter } from '@/utils/UnitConverter';
+import { UnitConverter } from '@/utils/unitConverter';
 
 export const useProductUnits = () => {
   const [units, setUnits] = useState<UnitType[]>([]);
