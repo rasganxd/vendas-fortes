@@ -1,11 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { Unit as UnitType } from '@/services/supabase/unitService';
 import { unitService } from '@/services/supabase/unitService';
+import { UnitConverter } from '@/utils/UnitConverter';
 
 export const useProductUnits = () => {
   const [units, setUnits] = useState<UnitType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [converterInstance, setConverter] = useState<UnitConverter | null>(null);
 
   const loadUnits = async () => {
     try {
@@ -16,9 +17,11 @@ export const useProductUnits = () => {
       
       console.log("✅ Units loaded for product form:", dbUnits.length, dbUnits);
       setUnits(dbUnits);
+      setConverter(new UnitConverter(dbUnits));
     } catch (error) {
       console.error('❌ Error loading units for product form:', error);
       setUnits([]);
+      setConverter(null);
     } finally {
       setIsLoading(false);
     }
@@ -27,7 +30,6 @@ export const useProductUnits = () => {
   useEffect(() => {
     loadUnits();
 
-    // Listen for unit updates from other components
     const handleUnitsUpdated = () => {
       console.log("🔄 Units updated event received, reloading...");
       loadUnits();
@@ -47,9 +49,9 @@ export const useProductUnits = () => {
   return {
     units,
     isLoading,
-    converter: {
+    converter: converterInstance ?? {
       convert: (quantity: number, fromUnit: string, toUnit: string) => quantity,
-      calculateUnitPrice: (totalPrice: number, quantity: number) => totalPrice / quantity,
+      calculateUnitPrice: (totalPrice: number, quantity: number, unit: string, baseUnit: string) => totalPrice / quantity,
       getRelatedUnits
     },
     getRelatedUnits
