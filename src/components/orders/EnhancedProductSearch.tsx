@@ -72,20 +72,36 @@ export default function EnhancedProductSearch({
     const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
     let unitPrice = basePrice;
 
+    // Get unit data
+    const mainUnit = units.find(u => u.id === selectedProduct.main_unit_id);
+    const subUnit = units.find(u => u.id === selectedProduct.sub_unit_id);
+    
+    console.log('Unit change:', {
+      selectedUnit: unit,
+      mainUnit: mainUnit?.code,
+      subUnit: subUnit?.code,
+      basePrice,
+      mainUnitId: selectedProduct.main_unit_id,
+      subUnitId: selectedProduct.sub_unit_id
+    });
+
     // If product has subunit and selected unit is the subunit
-    if (selectedProduct.sub_unit_id && selectedProduct.main_unit_id) {
-      // Get unit data
-      const mainUnit = units.find(u => u.id === selectedProduct.main_unit_id);
-      const subUnit = units.find(u => u.id === selectedProduct.sub_unit_id);
-      
-      if (mainUnit && subUnit && selectedProduct.sub_unit_id && unit === subUnit.code) {
-        // Logic: main unit package_quantity ÷ subunit package_quantity = conversion rate
+    if (selectedProduct.sub_unit_id && subUnit && mainUnit) {
+      if (unit === subUnit.code) {
+        // Converting from main unit to sub unit
         const mainPackageQty = mainUnit.package_quantity || 1;
         const subPackageQty = subUnit.package_quantity || 1;
         const conversionRate = mainPackageQty / subPackageQty;
         
         // Subunit price = main price ÷ conversion rate
         unitPrice = basePrice / conversionRate;
+        
+        console.log('Converting to subunit:', {
+          mainPackageQty,
+          subPackageQty,
+          conversionRate,
+          unitPrice
+        });
       }
     }
 
@@ -112,17 +128,35 @@ export default function EnhancedProductSearch({
     }
   };
 
+  // Get the current unit price for validations
+  const getCurrentUnitPrice = (): number => {
+    if (!selectedProduct || !selectedUnit) return 0;
+    
+    const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
+    const mainUnit = units.find(u => u.id === selectedProduct.main_unit_id);
+    const subUnit = units.find(u => u.id === selectedProduct.sub_unit_id);
+    
+    // If using subunit, calculate the subunit price
+    if (selectedProduct.sub_unit_id && subUnit && mainUnit && selectedUnit === subUnit.code) {
+      const mainPackageQty = mainUnit.package_quantity || 1;
+      const subPackageQty = subUnit.package_quantity || 1;
+      const conversionRate = mainPackageQty / subPackageQty;
+      return basePrice / conversionRate;
+    }
+    
+    return basePrice;
+  };
+
   // Validation functions
   const getMinimumPrice = (): number => {
     if (!selectedProduct) return 0;
     
-    // Use sale_price as base price or price as fallback
-    const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
+    const currentUnitPrice = getCurrentUnitPrice();
     const maxDiscountPercent = selectedProduct.maxDiscountPercent || selectedProduct.max_discount_percent || 0;
     
     if (maxDiscountPercent > 0) {
-      const maxDiscountAmount = (basePrice * maxDiscountPercent) / 100;
-      return basePrice - maxDiscountAmount;
+      const maxDiscountAmount = (currentUnitPrice * maxDiscountPercent) / 100;
+      return currentUnitPrice - maxDiscountAmount;
     }
     
     return 0; // No discount limit
@@ -136,9 +170,9 @@ export default function EnhancedProductSearch({
 
   const getDiscountPercent = (): number => {
     if (!selectedProduct || price <= 0) return 0;
-    const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
-    if (basePrice <= 0) return 0;
-    return ((basePrice - price) / basePrice) * 100;
+    const currentUnitPrice = getCurrentUnitPrice();
+    if (currentUnitPrice <= 0) return 0;
+    return ((currentUnitPrice - price) / currentUnitPrice) * 100;
   };
 
   const getPriceValidationMessage = () => {
