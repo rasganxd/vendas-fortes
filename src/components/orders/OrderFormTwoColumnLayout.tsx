@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import OrderFormHeader from './OrderFormHeader';
@@ -147,7 +146,6 @@ export default function OrderFormTwoColumnLayout({
                 handleAddItem={handleAddItem}
                 productInputRef={productInputRef}
                 isEditMode={isEditMode}
-                selectedCustomer={selectedCustomer}
               />
             </div>
 
