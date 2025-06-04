@@ -11,6 +11,7 @@ import ProductCodeInput from './ProductCodeInput';
 import ProductSearchDialog from './ProductSearchDialog';
 import { convertPriceBetweenUnits, calculateQuantityConversion, parseBrazilianPrice, formatBrazilianPrice } from '@/utils/priceConverter';
 import { useUnits } from '@/hooks/useUnits';
+import { useProductUnits } from '@/components/products/hooks/useProductUnits';
 import { Input } from "@/components/ui/input";
 
 interface EnhancedProductSearchProps {
@@ -27,6 +28,7 @@ export default function EnhancedProductSearch({
   isEditMode
 }: EnhancedProductSearchProps) {
   const { units } = useUnits();
+  const { converter } = useProductUnits();
   const [foundProduct, setFoundProduct] = useState<Product | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -68,45 +70,25 @@ export default function EnhancedProductSearch({
     
     setSelectedUnit(unit);
 
-    // Use sale_price as base price or price as fallback
+    // Use the UnitConverter to calculate the correct price
     const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
-    let unitPrice = basePrice;
-
-    // Get unit data
-    const mainUnit = units.find(u => u.id === selectedProduct.main_unit_id);
-    const subUnit = units.find(u => u.id === selectedProduct.sub_unit_id);
     
-    console.log('Unit change:', {
-      selectedUnit: unit,
-      mainUnit: mainUnit?.code,
-      subUnit: subUnit?.code,
+    const convertedPrice = converter.calculateUnitPrice(
       basePrice,
-      mainUnitId: selectedProduct.main_unit_id,
-      subUnitId: selectedProduct.sub_unit_id
+      1, // quantidade 1
+      unit, // unidade selecionada (ex: "UN")
+      selectedProduct.unit // unidade base do produto (ex: "CX23")
+    );
+
+    console.log('Unit change with converter:', {
+      selectedUnit: unit,
+      baseUnit: selectedProduct.unit,
+      basePrice,
+      convertedPrice
     });
 
-    // If product has subunit and selected unit is the subunit
-    if (selectedProduct.sub_unit_id && subUnit && mainUnit) {
-      if (unit === subUnit.code) {
-        // Converting from main unit to sub unit
-        const mainPackageQty = mainUnit.package_quantity || 1;
-        const subPackageQty = subUnit.package_quantity || 1;
-        const conversionRate = mainPackageQty / subPackageQty;
-        
-        // Subunit price = main price ÷ conversion rate
-        unitPrice = basePrice / conversionRate;
-        
-        console.log('Converting to subunit:', {
-          mainPackageQty,
-          subPackageQty,
-          conversionRate,
-          unitPrice
-        });
-      }
-    }
-
-    setPrice(unitPrice);
-    setPriceDisplayValue(formatBrazilianPrice(unitPrice));
+    setPrice(convertedPrice);
+    setPriceDisplayValue(formatBrazilianPrice(convertedPrice));
 
     setTimeout(() => {
       priceInputRef.current?.focus();
@@ -133,18 +115,13 @@ export default function EnhancedProductSearch({
     if (!selectedProduct || !selectedUnit) return 0;
     
     const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
-    const mainUnit = units.find(u => u.id === selectedProduct.main_unit_id);
-    const subUnit = units.find(u => u.id === selectedProduct.sub_unit_id);
     
-    // If using subunit, calculate the subunit price
-    if (selectedProduct.sub_unit_id && subUnit && mainUnit && selectedUnit === subUnit.code) {
-      const mainPackageQty = mainUnit.package_quantity || 1;
-      const subPackageQty = subUnit.package_quantity || 1;
-      const conversionRate = mainPackageQty / subPackageQty;
-      return basePrice / conversionRate;
-    }
-    
-    return basePrice;
+    return converter.calculateUnitPrice(
+      basePrice,
+      1, // quantidade 1
+      selectedUnit, // unidade selecionada
+      selectedProduct.unit // unidade base do produto
+    );
   };
 
   // Validation functions
