@@ -90,8 +90,8 @@ export default function EnhancedProductSearch({
     
     setSelectedUnit(unit);
 
-    // Usar sale_price como preço base (preço da precificação)
-    const basePrice = selectedProduct.sale_price || 0;
+    // Usar sale_price como preço base (preço da precificação) ou price como fallback
+    const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
     let unitPrice = basePrice;
 
     // Se produto tem subunidade e a unidade selecionada é a subunidade
@@ -138,9 +138,9 @@ export default function EnhancedProductSearch({
   const getMinimumPrice = (): number => {
     if (!selectedProduct) return 0;
     
-    // Usar sale_price como preço base
-    const basePrice = selectedProduct.sale_price || 0;
-    const maxDiscountPercent = selectedProduct.max_discount_percent || 0;
+    // Usar sale_price como preço base ou price como fallback
+    const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
+    const maxDiscountPercent = selectedProduct.maxDiscountPercent || selectedProduct.max_discount_percent || 0;
     
     if (maxDiscountPercent > 0) {
       const maxDiscountAmount = (basePrice * maxDiscountPercent) / 100;
@@ -158,7 +158,7 @@ export default function EnhancedProductSearch({
 
   const getDiscountPercent = (): number => {
     if (!selectedProduct || price <= 0) return 0;
-    const basePrice = selectedProduct.sale_price || 0;
+    const basePrice = selectedProduct.sale_price || selectedProduct.price || 0;
     if (basePrice <= 0) return 0;
     return ((basePrice - price) / basePrice) * 100;
   };
@@ -168,7 +168,7 @@ export default function EnhancedProductSearch({
     
     const minimumPrice = getMinimumPrice();
     const discountPercent = getDiscountPercent();
-    const maxDiscount = selectedProduct.max_discount_percent || 0;
+    const maxDiscount = selectedProduct.maxDiscountPercent || selectedProduct.max_discount_percent || 0;
     
     if (minimumPrice > 0 && price < minimumPrice) {
       return {
@@ -341,13 +341,13 @@ export default function EnhancedProductSearch({
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-green-600">
-                      {product.sale_price?.toLocaleString('pt-BR', {
+                      {(product.sale_price || product.price || 0).toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
                       })}
                     </div>
                     <div className="text-xs text-gray-500">{
-                      units.find(u => u.id === product.main_unit_id)?.code || 'UN'
+                      units.find(u => u.id === product.main_unit_id)?.code || product.unit || 'UN'
                     }</div>
                   </div>
                 </div>
@@ -384,9 +384,9 @@ export default function EnhancedProductSearch({
                 <div>
                   <div className="font-medium text-gray-900">{selectedProduct.name}</div>
                   <div className="text-sm text-gray-500">Cód: {selectedProduct.code}</div>
-                  {selectedProduct.max_discount_percent && (
+                  {(selectedProduct.maxDiscountPercent || selectedProduct.max_discount_percent) && (
                     <div className="text-xs text-orange-600">
-                      Desconto máximo: {selectedProduct.max_discount_percent}%
+                      Desconto máximo: {selectedProduct.maxDiscountPercent || selectedProduct.max_discount_percent}%
                     </div>
                   )}
                 </div>
