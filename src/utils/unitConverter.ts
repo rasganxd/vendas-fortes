@@ -28,14 +28,20 @@ export class UnitConverter {
   }
   
   /**
-   * Calcula o preço unitário baseado na unidade
+   * Calcula o preço unitário baseado na unidade usando fórmula fracionada
    */
   calculateUnitPrice(totalPrice: number, quantity: number, unit: string, baseUnit: string): number {
-    const unitData = this.units.find(u => u.value === unit);
-    if (!unitData || unit === baseUnit) return totalPrice / quantity;
-    
-    const conversionRate = unitData.conversionRate || 1;
-    return (totalPrice / conversionRate) / quantity;
+    const from = this.units.find(u => u.value === baseUnit);
+    const to = this.units.find(u => u.value === unit);
+
+    if (!from || !to) return totalPrice / quantity;
+
+    const mainQty = from.conversionRate || 1; // package_quantity da unidade base
+    const subQty = to.conversionRate || 1;    // package_quantity da unidade destino
+
+    const factor = mainQty / subQty;
+
+    return (totalPrice / quantity) / factor;
   }
   
   /**

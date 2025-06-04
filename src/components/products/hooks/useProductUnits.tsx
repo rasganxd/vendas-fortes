@@ -23,6 +23,7 @@ export const useProductUnits = () => {
       }));
       
       console.log("✅ Units loaded for product form:", dbUnits.length, dbUnits);
+      console.log("✅ Converted units for UnitConverter:", convertedUnits);
       setUnits(dbUnits);
       setConverter(new UnitConverter(convertedUnits));
     } catch (error) {
