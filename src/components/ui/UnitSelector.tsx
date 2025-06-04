@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Select,
@@ -28,36 +27,38 @@ export default function UnitSelector({
 }: UnitSelectorProps) {
   const { units: allUnits } = useProductUnits();
   
-  // If product is provided, show only product-specific units
   const availableUnits = React.useMemo(() => {
     if (product) {
       const productUnits = [];
-      
-      // Always add main unit
+
+      // Unidade principal
       if (product.unit) {
         const mainUnitData = allUnits.find(u => u.code === product.unit);
-        productUnits.push({
-          code: product.unit,
-          description: mainUnitData?.description || product.unit,
-          packageQuantity: 1 // Main unit is always 1
-        });
+        if (mainUnitData) {
+          productUnits.push({
+            code: product.unit,
+            description: mainUnitData.description || product.unit,
+            packageQuantity: mainUnitData.package_quantity || 1
+          });
+        }
       }
-      
-      // Add subunit if exists (without price display)
+
+      // Subunidade (se existir)
       if (product.hasSubunit && product.subunit) {
         const subUnitData = allUnits.find(u => u.code === product.subunit);
-        
-        productUnits.push({
-          code: product.subunit,
-          description: subUnitData?.description || product.subunit,
-          packageQuantity: 1
-        });
+        if (subUnitData) {
+          productUnits.push({
+            code: product.subunit,
+            description: subUnitData.description || product.subunit,
+            packageQuantity: subUnitData.package_quantity || 1
+          });
+        }
       }
-      
+
       return productUnits;
     }
-    
-    // Fallback to generic units if no product specified
+
+    // Fallback genérico se não houver produto
     return units.map(unit => ({
       code: unit.code,
       description: unit.description,
