@@ -43,19 +43,14 @@ export default function UnitSelector({
         });
       }
       
-      // Add subunit if exists
+      // Add subunit if exists (without price display)
       if (product.hasSubunit && product.subunit) {
         const subUnitData = allUnits.find(u => u.code === product.subunit);
-        const mainUnitData = allUnits.find(u => u.code === product.unit);
-        
-        // Calculate price per subunit for display
-        const packageQuantity = mainUnitData?.package_quantity || 1;
-        const pricePerSubunit = product.price / packageQuantity;
         
         productUnits.push({
           code: product.subunit,
-          description: `${subUnitData?.description || product.subunit} (R$ ${pricePerSubunit.toFixed(2).replace('.', ',')})`,
-          packageQuantity: packageQuantity
+          description: subUnitData?.description || product.subunit,
+          packageQuantity: 1
         });
       }
       
