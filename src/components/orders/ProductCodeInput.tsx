@@ -66,26 +66,5 @@ export default function ProductCodeInput({
     inputRef?.current?.focus();
   };
   const displayValue = foundProduct ? foundProduct.code.toString() : codeInput;
-  return <div className="space-y-2">
-      
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Input type="text" id="product-code" placeholder="Digite o código do produto" value={displayValue} onChange={handleInputChange} onKeyDown={handleKeyDown} ref={inputRef} className="w-full pr-10 h-10" disabled={isEditMode} />
-          {foundProduct ? <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-              <Check className="text-green-500 h-4 w-4" />
-              <Button type="button" variant="ghost" size="icon" onClick={handleClear} className="h-6 w-6">
-                <X size={12} />
-              </Button>
-            </div> : <Barcode className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />}
-        </div>
-        <Button type="button" variant="outline" size="icon" onClick={onSearchDialogOpen} className="h-10 w-10" disabled={isEditMode}>
-          <Search size={18} />
-        </Button>
-      </div>
-      
-      {foundProduct && <div className="text-sm text-green-600 flex items-center gap-2">
-          <Check size={16} />
-          <span>{foundProduct.name} - Pressione Enter para selecionar</span>
-        </div>}
-    </div>;
+  return;
 }
