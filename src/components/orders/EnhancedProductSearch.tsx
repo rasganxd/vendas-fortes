@@ -49,6 +49,7 @@ export default function EnhancedProductSearch({
   ).slice(0, 20);
 
   const handleProductSelect = (product: Product) => {
+    console.log('📦 Product selected in EnhancedProductSearch:', product);
     setSelectedProduct(product);
     setFoundProduct(null);
     setIsProductSearchOpen(false);
@@ -68,6 +69,12 @@ export default function EnhancedProductSearch({
   const handleUnitChange = (unit: string) => {
     if (!selectedProduct) return;
     
+    console.log('🔧 Unit change in EnhancedProductSearch:', {
+      product: selectedProduct.name,
+      selectedUnit: unit,
+      baseUnit: selectedProduct.unit
+    });
+    
     setSelectedUnit(unit);
 
     // Use the UnitConverter to calculate the correct price
@@ -80,7 +87,7 @@ export default function EnhancedProductSearch({
       selectedProduct.unit // unidade base do produto (ex: "CX23")
     );
 
-    console.log('Unit change with converter:', {
+    console.log('💰 Price calculation in EnhancedProductSearch:', {
       selectedUnit: unit,
       baseUnit: selectedProduct.unit,
       basePrice,
@@ -188,6 +195,13 @@ export default function EnhancedProductSearch({
 
   const handleAdd = () => {
     if (selectedProduct && quantity > 0 && selectedUnit && price > 0 && isPriceValid()) {
+      console.log('➕ Adding item in EnhancedProductSearch:', {
+        product: selectedProduct.name,
+        quantity,
+        price,
+        unit: selectedUnit
+      });
+      
       handleAddItem(selectedProduct, quantity, price, selectedUnit);
 
       // Reset form
@@ -199,6 +213,14 @@ export default function EnhancedProductSearch({
       setSelectedUnit('');
 
       productInputRef.current?.focus();
+    } else {
+      console.warn('⚠️ Cannot add item - validation failed:', {
+        hasProduct: !!selectedProduct,
+        quantity,
+        hasUnit: !!selectedUnit,
+        price,
+        isPriceValid: isPriceValid()
+      });
     }
   };
 

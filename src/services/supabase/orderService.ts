@@ -95,25 +95,36 @@ class OrderSupabaseService extends SupabaseService<Order> {
 
   async generateNextCode(): Promise<number> {
     try {
+      console.log('🔢 Generating next order code...');
       const { data, error } = await this.supabase.rpc('get_next_order_code');
       
       if (error) {
-        console.error('Error generating order code:', error);
+        console.error('❌ Error generating order code via RPC:', error);
+        console.log('🔄 Falling back to manual calculation...');
         const allOrders = await this.getAll();
         const maxCode = allOrders.reduce((max, order) => Math.max(max, order.code || 0), 0);
-        return maxCode + 1;
+        const nextCode = maxCode + 1;
+        console.log('✅ Fallback order code generated:', nextCode);
+        return nextCode;
       }
       
+      console.log('✅ Order code generated via RPC:', data);
       return data || 1;
     } catch (error) {
-      console.error('Error generating order code:', error);
+      console.error('❌ Error generating order code:', error);
       return 1;
     }
   }
 
   async addWithItems(orderData: Omit<Order, 'id'>): Promise<string> {
     try {
-      console.log('Adding order with items:', orderData);
+      console.log('📝 Adding order with items:', {
+        code: orderData.code,
+        customerName: orderData.customerName,
+        salesRepName: orderData.salesRepName,
+        total: orderData.total,
+        itemsCount: orderData.items?.length || 0
+      });
       
       const items = orderData.items || [];
       const transformedOrderData = this.transformToDB(orderData);
@@ -124,7 +135,8 @@ class OrderSupabaseService extends SupabaseService<Order> {
         updated_at: new Date().toISOString()
       };
       
-      console.log('Transformed order data for DB:', orderWithTimestamps);
+      console.log('🔄 Inserting order into database...');
+      console.log('📋 Transformed order data for DB:', orderWithTimestamps);
       
       const { data: orderResult, error: orderError } = await this.supabase
         .from('orders')
@@ -133,32 +145,41 @@ class OrderSupabaseService extends SupabaseService<Order> {
         .single();
       
       if (orderError) {
-        console.error('Error adding order:', orderError);
+        console.error('❌ Error adding order to database:', orderError);
         throw orderError;
       }
       
       const orderId = orderResult.id;
-      console.log('Order created with ID:', orderId);
+      console.log('✅ Order created with ID:', orderId);
       
       if (items && items.length > 0) {
         try {
+          console.log(`📦 Adding ${items.length} items to order...`);
           await OrderItemsHandler.insertOrderItems(orderId, items);
+          console.log('✅ Order items added successfully');
         } catch (itemsError) {
+          console.error('❌ Error adding order items, rolling back order:', itemsError);
           await this.supabase.from('orders').delete().eq('id', orderId);
           throw itemsError;
         }
       }
       
+      console.log('🎉 Order creation completed successfully!');
       return orderId;
     } catch (error) {
-      console.error('Error in addWithItems:', error);
+      console.error('❌ Critical error in addWithItems:', error);
       throw error;
     }
   }
 
   async update(id: string, order: Partial<Order>): Promise<void> {
     try {
-      console.log(`📝 Updating order ${id}`);
+      console.log(`📝 Updating order ${id}`, {
+        customerName: order.customerName,
+        salesRepName: order.salesRepName,
+        total: order.total,
+        itemsCount: order.items?.length
+      });
       
       const items = order.items;
       const transformedOrderData = this.transformToDB(order as Order);
@@ -168,7 +189,8 @@ class OrderSupabaseService extends SupabaseService<Order> {
         updated_at: new Date().toISOString()
       };
       
-      console.log('Data prepared for Supabase update:', dataWithTimestamp);
+      console.log('🔄 Updating order in database...');
+      console.log('📋 Data prepared for Supabase update:', dataWithTimestamp);
       
       const { error: orderError } = await this.supabase
         .from('orders')
@@ -180,13 +202,15 @@ class OrderSupabaseService extends SupabaseService<Order> {
         throw orderError;
       }
       
+      console.log('✅ Order updated in database');
+      
       if (items && Array.isArray(items)) {
-        console.log(`📝 Updating ${items.length} items for order ${id}`);
+        console.log(`📦 Updating ${items.length} items for order ${id}`);
         await OrderItemsHandler.updateOrderItems(id, items);
-        console.log('Order items updated successfully');
+        console.log('✅ Order items updated successfully');
       }
       
-      console.log(`✅ Updated order ${id}`);
+      console.log(`🎉 Order ${id} update completed successfully!`);
     } catch (error) {
       console.error(`❌ Critical error updating order ${id}:`, error);
       throw error;

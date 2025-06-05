@@ -39,6 +39,13 @@ export function useOrderOperations({
   const navigate = useNavigate();
 
   const validateOrderForm = useCallback(() => {
+    console.log('🔍 Validating order form:', {
+      hasCustomer: !!selectedCustomer,
+      hasSalesRep: !!selectedSalesRep,
+      itemsCount: orderItems.length,
+      connectionStatus
+    });
+
     if (!selectedCustomer) {
       toast({
         title: "Cliente obrigatório",
@@ -75,12 +82,13 @@ export function useOrderOperations({
       return false;
     }
 
+    console.log('✅ Order form validation passed');
     return true;
   }, [selectedCustomer, selectedSalesRep, orderItems, connectionStatus]);
 
   const createPromissoryNotePayment = useCallback(async (order: Order, paymentTable: PaymentTable) => {
     try {
-      console.log('Creating promissory note payment for order:', order.id);
+      console.log('📝 Creating promissory note payment for order:', order.id);
       
       // Create a payment record for the promissory note
       const now = new Date();
@@ -106,9 +114,9 @@ export function useOrderOperations({
         updatedAt: now
       });
 
-      console.log('Promissory note payment created successfully');
+      console.log('✅ Promissory note payment created successfully');
     } catch (error) {
-      console.error('Error creating promissory note payment:', error);
+      console.error('❌ Error creating promissory note payment:', error);
       // Don't throw error to avoid breaking the order creation
       toast({
         title: "Aviso",
@@ -125,6 +133,14 @@ export function useOrderOperations({
       setIsSubmitting(true);
       setIsSaving(true);
 
+      console.log('🚀 Starting order creation process:', {
+        isEditMode,
+        currentOrderId,
+        customerName: selectedCustomer?.name,
+        salesRepName: selectedSalesRep?.name,
+        itemsCount: orderItems.length
+      });
+
       // Show immediate feedback
       toast({
         title: isEditMode ? "Salvando alterações..." : "Criando pedido...",
@@ -134,7 +150,11 @@ export function useOrderOperations({
       const selectedTable = paymentTables.find(pt => pt.id === selectedPaymentTable);
       const total = orderItems.reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.quantity || 0)), 0);
 
+      console.log('💰 Order total calculated:', total);
+
       if (isEditMode && currentOrderId && originalOrder) {
+        console.log('✏️ Updating existing order:', currentOrderId);
+        
         // Update existing order
         const orderUpdate: Partial<Order> = {
           customerId: selectedCustomer!.id,
@@ -156,13 +176,18 @@ export function useOrderOperations({
           await createPromissoryNotePayment(updatedOrder as Order, selectedTable);
         }
         
+        console.log('✅ Order updated successfully');
+        
         // Smooth transition before navigation
         setTimeout(() => {
           navigate('/pedidos');
         }, 1000);
       } else {
+        console.log('➕ Creating new order');
+        
         // Create new order
         const orderCode = await generateNextCode();
+        console.log('🔢 Generated order code:', orderCode);
         
         const newOrder: Omit<Order, 'id'> = {
           code: orderCode,
@@ -191,7 +216,16 @@ export function useOrderOperations({
           updatedAt: new Date()
         };
 
+        console.log('📋 New order data prepared:', {
+          code: newOrder.code,
+          customer: newOrder.customerName,
+          salesRep: newOrder.salesRepName,
+          total: newOrder.total,
+          itemsCount: newOrder.items.length
+        });
+
         const orderId = await addOrder(newOrder);
+        console.log('✅ Order created with ID:', orderId);
         
         // Check if payment table is promissory note type and create payment
         if (selectedTable && (selectedTable.type === 'promissoria' || selectedTable.type === 'promissory_note')) {
@@ -200,6 +234,7 @@ export function useOrderOperations({
         }
         
         resetForm();
+        console.log('🔄 Form reset completed');
         
         // Smooth transition before navigation
         setTimeout(() => {
@@ -207,7 +242,7 @@ export function useOrderOperations({
         }, 1000);
       }
     } catch (error) {
-      console.error('Error creating/updating order:', error);
+      console.error('❌ Error creating/updating order:', error);
       toast({
         title: isEditMode ? "Erro ao atualizar pedido" : "Erro ao criar pedido",
         description: error instanceof Error ? error.message : "Erro desconhecido",
@@ -216,6 +251,7 @@ export function useOrderOperations({
     } finally {
       setIsSubmitting(false);
       setIsSaving(false);
+      console.log('🏁 Order operation completed');
     }
   }, [
     validateOrderForm, isEditMode, currentOrderId, originalOrder,
