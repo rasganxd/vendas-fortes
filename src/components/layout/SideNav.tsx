@@ -90,7 +90,7 @@ const navigation: NavItem[] = [
   },
   {
     title: "Cargas",
-    href: "/cargas",
+    href: "/carregamentos",
     icon: Package,
     group: "logistics"
   },
