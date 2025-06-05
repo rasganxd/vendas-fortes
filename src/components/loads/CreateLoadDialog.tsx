@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -56,6 +56,11 @@ const CreateLoadDialog: React.FC<CreateLoadDialogProps> = ({
     },
   });
 
+  const handleSubmit = (values: CreateLoadFormValues) => {
+    onCreateLoad(values);
+    form.reset();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
@@ -71,7 +76,7 @@ const CreateLoadDialog: React.FC<CreateLoadDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onCreateLoad)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
             <FormField
               control={form.control}
               name="name"

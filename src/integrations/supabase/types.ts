@@ -291,37 +291,76 @@ export type Database = {
           code: number
           created_at: string
           date: string
+          delivery_date: string | null
+          departure_date: string | null
+          description: string | null
+          driver_id: string | null
+          driver_name: string | null
           id: string
+          locked: boolean
+          name: string
           notes: string | null
+          order_ids: Json | null
+          return_date: string | null
+          route_id: string | null
+          route_name: string | null
           sales_rep_id: string | null
+          sales_rep_name: string | null
           status: string
-          total_value: number | null
+          total: number | null
           updated_at: string
           vehicle_id: string | null
+          vehicle_name: string | null
         }
         Insert: {
           code?: number
           created_at?: string
           date?: string
+          delivery_date?: string | null
+          departure_date?: string | null
+          description?: string | null
+          driver_id?: string | null
+          driver_name?: string | null
           id?: string
+          locked?: boolean
+          name?: string
           notes?: string | null
+          order_ids?: Json | null
+          return_date?: string | null
+          route_id?: string | null
+          route_name?: string | null
           sales_rep_id?: string | null
+          sales_rep_name?: string | null
           status?: string
-          total_value?: number | null
+          total?: number | null
           updated_at?: string
           vehicle_id?: string | null
+          vehicle_name?: string | null
         }
         Update: {
           code?: number
           created_at?: string
           date?: string
+          delivery_date?: string | null
+          departure_date?: string | null
+          description?: string | null
+          driver_id?: string | null
+          driver_name?: string | null
           id?: string
+          locked?: boolean
+          name?: string
           notes?: string | null
+          order_ids?: Json | null
+          return_date?: string | null
+          route_id?: string | null
+          route_name?: string | null
           sales_rep_id?: string | null
+          sales_rep_name?: string | null
           status?: string
-          total_value?: number | null
+          total?: number | null
           updated_at?: string
           vehicle_id?: string | null
+          vehicle_name?: string | null
         }
         Relationships: [
           {

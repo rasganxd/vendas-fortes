@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Load, Order } from '@/types';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { loadService } from '@/services/supabase/loadService';
 import { orderService } from '@/services/supabase/orderService';
 
@@ -34,6 +34,7 @@ export const useLoads = () => {
   // Add a new load
   const addLoad = async (load: Omit<Load, 'id'>) => {
     try {
+      console.log("Adding load:", load);
       const id = await loadService.add(load);
       
       const newLoad: Load = {

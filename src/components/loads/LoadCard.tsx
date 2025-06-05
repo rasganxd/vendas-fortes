@@ -58,6 +58,7 @@ export const LoadCard: React.FC<LoadCardProps> = ({
       case 'loaded':
         return <Badge className="bg-amber-500">Carregado</Badge>;
       case 'in-transit':
+      case 'in_transit':
         return <Badge className="bg-purple-500">Em Trânsito</Badge>;
       case 'delivered':
         return <Badge className="bg-green-500">Entregue</Badge>;
