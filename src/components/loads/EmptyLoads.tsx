@@ -13,7 +13,7 @@ export const EmptyLoads = () => {
       <p className="text-gray-500">Crie uma nova carga para começar</p>
       <Button 
         className="mt-4 bg-sales-800 hover:bg-sales-700"
-        onClick={() => navigate('/cargas/montar')}
+        onClick={() => navigate('/carregamentos/montar')}
       >
         <Plus size={16} className="mr-2" /> Montar Carga
       </Button>

@@ -177,7 +177,7 @@ export default function Loads() {
         </div>
         <Button 
           className="bg-sales-800 hover:bg-sales-700"
-          onClick={() => navigate('/cargas/montar')}
+          onClick={() => navigate('/carregamentos/montar')}
         >
           <Plus size={16} className="mr-2" /> Montar Carga
         </Button>
