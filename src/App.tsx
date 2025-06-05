@@ -63,8 +63,9 @@ function App() {
                   <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
                   <Route path="/pedidos" element={<Orders />} />
                   <Route path="/pedidos/novo" element={<NewOrder />} />
-                  <Route path="/cargas" element={<Loads />} />
-                  <Route path="/cargas/:id" element={<BuildLoad />} />
+                  <Route path="/carregamentos" element={<Loads />} />
+                  <Route path="/carregamentos/montar" element={<BuildLoad />} />
+                  <Route path="/carregamentos/:id" element={<BuildLoad />} />
                   <Route path="/rotas" element={<RoutesPage />} />
                   <Route path="/vendedores" element={<SalesReps />} />
                   <Route path="/veiculos" element={<Vehicles />} />

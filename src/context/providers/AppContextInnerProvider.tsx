@@ -28,8 +28,91 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   // Get real settings from the database
   const { settings, updateSettings: updateSettingsHook, isLoading: isLoadingSettings } = useAppSettings();
 
-  // Get unified data from AppDataProvider
-  const appData = useAppData();
+  // Get unified data from AppDataProvider with error handling
+  let appData;
+  try {
+    appData = useAppData();
+  } catch (error) {
+    console.error('❌ [AppContextInnerProvider] Error accessing AppData:', error);
+    // Provide fallback data structure
+    appData = {
+      customers: [],
+      isLoading: true,
+      addCustomer: async () => '',
+      updateCustomer: async () => {},
+      deleteCustomer: async () => {},
+      generateNextCustomerCode: async () => 1,
+      products: [],
+      isLoadingProducts: true,
+      addProduct: async () => '',
+      updateProduct: async () => {},
+      deleteProduct: async () => {},
+      refreshProducts: async () => true,
+      orders: [],
+      isLoadingOrders: true,
+      addOrder: async () => '',
+      updateOrder: async () => '',
+      deleteOrder: async () => {},
+      refreshOrders: async () => {},
+      refreshData: async () => true,
+      // Add other required properties with safe defaults
+      productBrands: [],
+      isLoadingProductBrands: false,
+      addProductBrand: async () => '',
+      updateProductBrand: async () => {},
+      deleteProductBrand: async () => {},
+      productCategories: [],
+      isLoadingProductCategories: false,
+      addProductCategory: async () => '',
+      updateProductCategory: async () => {},
+      deleteProductCategory: async () => {},
+      productGroups: [],
+      isLoadingProductGroups: false,
+      addProductGroup: async () => '',
+      updateProductGroup: async () => {},
+      deleteProductGroup: async () => {},
+      salesReps: [],
+      isLoadingSalesReps: false,
+      addSalesRep: async () => '',
+      updateSalesRep: async () => {},
+      deleteSalesRep: async () => {},
+      vehicles: [],
+      isLoadingVehicles: false,
+      addVehicle: async () => '',
+      updateVehicle: async () => {},
+      deleteVehicle: async () => {},
+      deliveryRoutes: [],
+      isLoadingDeliveryRoutes: false,
+      addDeliveryRoute: async () => '',
+      updateDeliveryRoute: async () => {},
+      deleteDeliveryRoute: async () => {},
+      loads: [],
+      isLoadingLoads: false,
+      addLoad: async () => '',
+      updateLoad: async () => {},
+      deleteLoad: async () => {},
+      payments: [],
+      isLoadingPayments: false,
+      addPayment: async () => '',
+      updatePayment: async () => {},
+      deletePayment: async () => {},
+      paymentMethods: [],
+      isLoadingPaymentMethods: false,
+      addPaymentMethod: async () => '',
+      updatePaymentMethod: async () => {},
+      deletePaymentMethod: async () => {},
+      paymentTables: [],
+      isLoadingPaymentTables: false,
+      addPaymentTable: async () => '',
+      updatePaymentTable: async () => {},
+      deletePaymentTable: async () => {},
+      connectionStatus: 'connecting' as const,
+      lastConnectAttempt: null,
+      reconnectToSupabase: async () => {},
+      testConnection: async () => false,
+      settings: undefined
+    };
+  }
 
   // Wrap updateSettings to match the expected return type (Promise<void>)
   const updateSettings = async (newSettings: Partial<typeof settings>) => {
