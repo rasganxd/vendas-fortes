@@ -130,7 +130,7 @@ export const useLoads = () => {
   const getOrdersFromLoad = async (loadId: string): Promise<Order[]> => {
     try {
       const load = loads.find(l => l.id === loadId);
-      if (!load || !load.orderIds) return [];
+      if (!load || !load.orderIds || load.orderIds.length === 0) return [];
 
       const orders = await Promise.all(
         load.orderIds.map(orderId => orderService.getById(orderId))
