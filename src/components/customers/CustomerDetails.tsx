@@ -1,25 +1,17 @@
-
 import React from 'react';
 import { Customer } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableRow 
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { formatDateToBR } from '@/lib/date-utils';
 import { Badge } from '@/components/ui/badge';
 import { VisitFrequencyOptions, DaysOfWeekOptions } from './constants';
-
 interface CustomerDetailsProps {
   customer: Customer;
   onEdit: () => void;
   onDelete: () => void;
 }
-
 const CustomerDetails: React.FC<CustomerDetailsProps> = ({
   customer,
   onEdit,
@@ -37,9 +29,7 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
     const option = DaysOfWeekOptions.find(opt => opt.value === value);
     return option ? option.label : value;
   };
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">{customer.name}</h2>
         <div className="flex space-x-2">
@@ -73,16 +63,16 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                   <TableCell>{customer.phone || '—'}</TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium">Email</TableCell>
-                  <TableCell>{customer.email || '—'}</TableCell>
+                  
+                  
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Vendedor</TableCell>
                   <TableCell>{customer.salesRepName || '—'}</TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium">Criado em</TableCell>
-                  <TableCell>{customer.createdAt ? formatDateToBR(customer.createdAt) : '—'}</TableCell>
+                  
+                  
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Atualizado em</TableCell>
@@ -141,31 +131,22 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
               <div>
                 <div className="text-sm font-medium text-gray-500 mb-2">Dias de Visita</div>
                 <div className="flex flex-wrap gap-2">
-                  {customer.visitDays && customer.visitDays.length > 0 
-                    ? customer.visitDays.map(day => (
-                        <Badge key={day} variant="outline" className="bg-slate-100">{getDayLabel(day)}</Badge>
-                      ))
-                    : <span className="text-gray-500">Nenhum dia definido</span>
-                  }
+                  {customer.visitDays && customer.visitDays.length > 0 ? customer.visitDays.map(day => <Badge key={day} variant="outline" className="bg-slate-100">{getDayLabel(day)}</Badge>) : <span className="text-gray-500">Nenhum dia definido</span>}
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {customer.notes && (
-          <Card>
+        {customer.notes && <Card>
             <CardHeader className="pb-2">
               <h3 className="text-lg font-medium">Observações</h3>
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-line">{customer.notes}</p>
             </CardContent>
-          </Card>
-        )}
+          </Card>}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default CustomerDetails;
