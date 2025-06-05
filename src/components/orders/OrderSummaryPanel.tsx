@@ -65,13 +65,8 @@ export default function OrderSummaryPanel({
             </div>
             
             {orderItems.length > 0 && <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Valor médio por item:</span>
-                <span>
-                  {averageItemValue.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
-                </span>
+                
+                
               </div>}
           </div>
         </CardContent>
