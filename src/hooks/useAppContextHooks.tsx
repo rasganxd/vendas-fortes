@@ -1,4 +1,5 @@
 
+
 import { useProductOperations } from './useProductOperations';
 import { useCustomers } from './useCustomers';
 import { useProducts } from './useProducts';
@@ -41,3 +42,4 @@ export const useAppContextHooks = () => {
     generateNextOrderCode: orders.generateNextCode || (async () => 1)
   };
 };
+

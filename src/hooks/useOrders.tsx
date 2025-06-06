@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { Order } from '@/types';
 import { orderService } from '@/services/supabase/orderService';
@@ -17,7 +18,7 @@ export const useOrders = () => {
   const refreshOrders = async () => {
     try {
       setIsLoading(true);
-      const ordersData = await orderService.getAllOrders();
+      const ordersData = await orderService.getAll();
       setOrders(ordersData);
     } catch (error) {
       console.error('Error refreshing orders:', error);
@@ -30,7 +31,7 @@ export const useOrders = () => {
 
   const addOrder = async (orderData: Omit<Order, 'id'>): Promise<string> => {
     try {
-      const orderId = await orderService.createOrder(orderData);
+      const orderId = await orderService.addWithItems(orderData);
       await refreshOrders();
       return orderId;
     } catch (error) {
@@ -41,7 +42,7 @@ export const useOrders = () => {
 
   const updateOrder = async (id: string, updates: Partial<Order>): Promise<string> => {
     try {
-      await orderService.updateOrder(id, updates);
+      await orderService.update(id, updates);
       await refreshOrders();
       return id;
     } catch (error) {
@@ -52,7 +53,7 @@ export const useOrders = () => {
 
   const deleteOrder = async (id: string): Promise<void> => {
     try {
-      await orderService.deleteOrder(id);
+      await orderService.delete(id);
       await refreshOrders();
     } catch (error) {
       console.error('Error deleting order:', error);
@@ -87,3 +88,4 @@ export const useOrders = () => {
     unmarkOrderAsBeingEdited
   };
 };
+
