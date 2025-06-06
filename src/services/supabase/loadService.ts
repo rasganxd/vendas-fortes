@@ -24,11 +24,11 @@ class LoadSupabaseService {
 
   async add(load: Omit<Load, 'id'>): Promise<string> {
     try {
-      // Prepara o objeto para inserção no banco
+      // Prepara o objeto para inserção no banco com conversões necessárias
       const loadToInsert = {
         name: load.name,
         description: load.description,
-        date: load.date,
+        date: load.date.toISOString(), // Convert Date to string
         vehicle_id: load.vehicleId,
         vehicle_name: load.vehicleName,
         sales_rep_id: load.salesRepId,
@@ -42,9 +42,9 @@ class LoadSupabaseService {
         notes: load.notes,
         order_ids: load.orderIds || [],
         total: load.total || 0,
-        departure_date: load.departureDate,
-        delivery_date: load.deliveryDate,
-        return_date: load.returnDate,
+        departure_date: load.departureDate?.toISOString() || null,
+        delivery_date: load.deliveryDate?.toISOString() || null,
+        return_date: load.returnDate?.toISOString() || null,
         code: load.code
       };
 
@@ -95,10 +95,11 @@ class LoadSupabaseService {
         driverName: load.driver_name || '',
         routeId: load.route_id || '',
         routeName: load.route_name || '',
-        status: load.status || 'planning',
+        // Garantir que o status seja um dos valores permitidos pelo tipo
+        status: this.validateStatus(load.status || 'planning'),
         locked: load.locked || false,
         notes: load.notes || '',
-        orderIds: load.order_ids || [],
+        orderIds: this.parseOrderIds(load.order_ids) || [],
         total: load.total || 0,
         departureDate: load.departure_date ? new Date(load.departure_date) : undefined,
         deliveryDate: load.delivery_date ? new Date(load.delivery_date) : undefined,
@@ -119,7 +120,7 @@ class LoadSupabaseService {
 
       if (load.name !== undefined) loadToUpdate.name = load.name;
       if (load.description !== undefined) loadToUpdate.description = load.description;
-      if (load.date !== undefined) loadToUpdate.date = load.date;
+      if (load.date !== undefined) loadToUpdate.date = load.date.toISOString();
       if (load.vehicleId !== undefined) loadToUpdate.vehicle_id = load.vehicleId;
       if (load.vehicleName !== undefined) loadToUpdate.vehicle_name = load.vehicleName;
       if (load.salesRepId !== undefined) loadToUpdate.sales_rep_id = load.salesRepId;
@@ -133,9 +134,9 @@ class LoadSupabaseService {
       if (load.notes !== undefined) loadToUpdate.notes = load.notes;
       if (load.orderIds !== undefined) loadToUpdate.order_ids = load.orderIds;
       if (load.total !== undefined) loadToUpdate.total = load.total;
-      if (load.departureDate !== undefined) loadToUpdate.departure_date = load.departureDate;
-      if (load.deliveryDate !== undefined) loadToUpdate.delivery_date = load.deliveryDate;
-      if (load.returnDate !== undefined) loadToUpdate.return_date = load.returnDate;
+      if (load.departureDate !== undefined) loadToUpdate.departure_date = load.departureDate?.toISOString() || null;
+      if (load.deliveryDate !== undefined) loadToUpdate.delivery_date = load.deliveryDate?.toISOString() || null;
+      if (load.returnDate !== undefined) loadToUpdate.return_date = load.returnDate?.toISOString() || null;
 
       const { error } = await supabase
         .from('loads')
@@ -202,10 +203,10 @@ class LoadSupabaseService {
         driverName: data.driver_name || '',
         routeId: data.route_id || '',
         routeName: data.route_name || '',
-        status: data.status || 'planning',
+        status: this.validateStatus(data.status || 'planning'),
         locked: data.locked || false,
         notes: data.notes || '',
-        orderIds: data.order_ids || [],
+        orderIds: this.parseOrderIds(data.order_ids) || [],
         total: data.total || 0,
         departureDate: data.departure_date ? new Date(data.departure_date) : undefined,
         deliveryDate: data.delivery_date ? new Date(data.delivery_date) : undefined,
@@ -216,6 +217,47 @@ class LoadSupabaseService {
     } catch (error) {
       console.error('Error in getById load:', error);
       return null;
+    }
+  }
+
+  // Helper method para validar o status de acordo com os valores permitidos
+  private validateStatus(status: string): "pending" | "loading" | "loaded" | "in_transit" | "delivered" | "completed" | "planning" {
+    const validStatuses = ["pending", "loading", "loaded", "in_transit", "delivered", "completed", "planning"];
+    
+    // Se o status recebido é 'in-transit', retorna 'in_transit' (com sublinhado)
+    if (status === 'in-transit') return 'in_transit';
+    
+    // Verifica se o status está na lista de valores válidos
+    if (validStatuses.includes(status)) {
+      return status as "pending" | "loading" | "loaded" | "in_transit" | "delivered" | "completed" | "planning";
+    }
+    
+    // Se não for válido, retorna o valor default
+    return 'planning';
+  }
+
+  // Helper method para converter o campo order_ids de JSON para array
+  private parseOrderIds(orderIds: any): string[] {
+    if (!orderIds) return [];
+    
+    // Se já for um array, retorna direto
+    if (Array.isArray(orderIds)) return orderIds;
+    
+    // Se for um JSON como string, tenta fazer parse
+    if (typeof orderIds === 'string') {
+      try {
+        const parsed = JSON.parse(orderIds);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    
+    // Se for um objeto JSON, converte para array
+    try {
+      return Array.isArray(orderIds) ? orderIds : [];
+    } catch {
+      return [];
     }
   }
 }
