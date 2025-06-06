@@ -114,6 +114,25 @@ const Orders = () => {
     return `R$ ${value?.toFixed(2) || '0.00'}`;
   };
 
+  // Handle confirm delete with proper cleanup
+  const handleConfirmDelete = async () => {
+    if (!selectedOrder) return;
+    
+    try {
+      console.log("Orders Page: Confirming deletion of order:", selectedOrder.id);
+      await deleteOrder(selectedOrder.id);
+      
+      // Close dialog and clear selected order after successful deletion
+      setIsDeleteDialogOpen(false);
+      setSelectedOrder(null);
+      
+      console.log("Orders Page: Order deletion completed successfully");
+    } catch (error) {
+      console.error("Orders Page: Error during order deletion:", error);
+      // Error is already handled in useOrdersOperations with toast
+    }
+  };
+
   // Filter orders based on search term and sort
   const filteredOrders = orders
     ? orders.filter(order => {
@@ -225,9 +244,7 @@ const Orders = () => {
             selectedOrder={selectedOrder}
             isOpen={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            onConfirmDelete={() => {
-              deleteOrder(selectedOrder.id);
-            }}
+            onConfirmDelete={handleConfirmDelete}
           />
         </>
       )}
