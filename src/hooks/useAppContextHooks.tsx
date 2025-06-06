@@ -1,6 +1,5 @@
 
 import { useProductOperations } from './useProductOperations';
-import { useOrderOperations } from './useOrderOperations';
 import { useCustomers } from './useCustomers';
 import { useProducts } from './useProducts';
 import { useDeliveryRoutes } from './useDeliveryRoutes';
@@ -13,7 +12,6 @@ import { useRoutes } from './useRoutes';
 
 export const useAppContextHooks = () => {
   const productOperations = useProductOperations();
-  const orderOperations = useOrderOperations();
   const customers = useCustomers();
   const products = useProducts();
   const deliveryRoutes = useDeliveryRoutes();
@@ -26,7 +24,6 @@ export const useAppContextHooks = () => {
 
   return {
     ...productOperations,
-    ...orderOperations,
     ...customers,
     ...products,
     ...deliveryRoutes,

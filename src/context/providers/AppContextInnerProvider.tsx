@@ -1,9 +1,9 @@
+
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
 import { useThemeInitializer } from '@/hooks/useThemeInitializer';
 import { useConnection } from './ConnectionProvider';
-import { useAppOperations } from '@/context/operations/useAppOperations';
 import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useAppData } from './AppDataProvider';
@@ -12,7 +12,6 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
   console.log('🚀 [AppContextInnerProvider] Initializing inner provider...');
   
   const connection = useConnection();
-  const appOperations = useAppOperations();
   const hookOperations = useAppContextHooks();
   const { settings, updateSettings: updateSettingsHook, isLoading: isLoadingSettings } = useAppSettings();
 
@@ -146,69 +145,69 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     deleteOrder: appData.deleteOrder,
     refreshOrders: appData.refreshOrders,
     
-    productBrands: appOperations.productBrands,
-    isLoadingProductBrands: appOperations.isLoadingProductBrands,
-    addProductBrand: appOperations.addProductBrand,
-    updateProductBrand: appOperations.updateProductBrand,
-    deleteProductBrand: appOperations.deleteProductBrand,
+    productBrands: appData.productBrands,
+    isLoadingProductBrands: appData.isLoadingProductBrands,
+    addProductBrand: appData.addProductBrand,
+    updateProductBrand: appData.updateProductBrand,
+    deleteProductBrand: appData.deleteProductBrand,
     
-    productCategories: appOperations.productCategories,
-    isLoadingProductCategories: appOperations.isLoadingProductCategories,
-    addProductCategory: appOperations.addProductCategory,
-    updateProductCategory: appOperations.updateProductCategory,
-    deleteProductCategory: appOperations.deleteProductCategory,
+    productCategories: appData.productCategories,
+    isLoadingProductCategories: appData.isLoadingProductCategories,
+    addProductCategory: appData.addProductCategory,
+    updateProductCategory: appData.updateProductCategory,
+    deleteProductCategory: appData.deleteProductCategory,
     
-    productGroups: appOperations.productGroups,
-    isLoadingProductGroups: appOperations.isLoadingProductGroups,
-    addProductGroup: appOperations.addProductGroup,
-    updateProductGroup: appOperations.updateProductGroup,
-    deleteProductGroup: appOperations.deleteProductGroup,
+    productGroups: appData.productGroups,
+    isLoadingProductGroups: appData.isLoadingProductGroups,
+    addProductGroup: appData.addProductGroup,
+    updateProductGroup: appData.updateProductGroup,
+    deleteProductGroup: appData.deleteProductGroup,
     
-    salesReps: appOperations.salesReps,
-    isLoadingSalesReps: appOperations.isLoadingSalesReps,
-    addSalesRep: appOperations.addSalesRep,
-    updateSalesRep: appOperations.updateSalesRep,
-    deleteSalesRep: appOperations.deleteSalesRep,
+    salesReps: appData.salesReps,
+    isLoadingSalesReps: appData.isLoadingSalesReps,
+    addSalesRep: appData.addSalesRep,
+    updateSalesRep: appData.updateSalesRep,
+    deleteSalesRep: appData.deleteSalesRep,
     
-    vehicles: appOperations.vehicles,
-    isLoadingVehicles: appOperations.isLoadingVehicles,
-    addVehicle: appOperations.addVehicle,
-    updateVehicle: appOperations.updateVehicle,
-    deleteVehicle: appOperations.deleteVehicle,
+    vehicles: appData.vehicles,
+    isLoadingVehicles: appData.isLoadingVehicles,
+    addVehicle: appData.addVehicle,
+    updateVehicle: appData.updateVehicle,
+    deleteVehicle: appData.deleteVehicle,
     
-    deliveryRoutes: appOperations.deliveryRoutes,
-    isLoadingDeliveryRoutes: appOperations.isLoadingDeliveryRoutes,
-    addDeliveryRoute: appOperations.addDeliveryRoute,
-    updateDeliveryRoute: appOperations.updateDeliveryRoute,
-    deleteDeliveryRoute: appOperations.deleteDeliveryRoute,
+    deliveryRoutes: appData.deliveryRoutes,
+    isLoadingDeliveryRoutes: appData.isLoadingDeliveryRoutes,
+    addDeliveryRoute: appData.addDeliveryRoute,
+    updateDeliveryRoute: appData.updateDeliveryRoute,
+    deleteDeliveryRoute: appData.deleteDeliveryRoute,
     
-    loads: appOperations.loads,
-    isLoadingLoads: appOperations.isLoadingLoads,
-    addLoad: appOperations.addLoad,
-    updateLoad: appOperations.updateLoad,
-    deleteLoad: appOperations.deleteLoad,
+    loads: appData.loads,
+    isLoadingLoads: appData.isLoadingLoads,
+    addLoad: appData.addLoad,
+    updateLoad: appData.updateLoad,
+    deleteLoad: appData.deleteLoad,
     
-    payments: appOperations.payments,
-    isLoadingPayments: appOperations.isLoadingPayments,
-    addPayment: appOperations.addPayment,
-    updatePayment: appOperations.updatePayment,
-    deletePayment: appOperations.deletePayment,
+    payments: appData.payments,
+    isLoadingPayments: appData.isLoadingPayments,
+    addPayment: appData.addPayment,
+    updatePayment: appData.updatePayment,
+    deletePayment: appData.deletePayment,
     createAutomaticPaymentRecord: hookOperations.createAutomaticPaymentRecord,
     
-    paymentMethods: appOperations.paymentMethods,
-    isLoadingPaymentMethods: appOperations.isLoadingPaymentMethods,
-    addPaymentMethod: appOperations.addPaymentMethod,
-    updatePaymentMethod: appOperations.updatePaymentMethod,
-    deletePaymentMethod: appOperations.deletePaymentMethod,
+    paymentMethods: appData.paymentMethods,
+    isLoadingPaymentMethods: appData.isLoadingPaymentMethods,
+    addPaymentMethod: appData.addPaymentMethod,
+    updatePaymentMethod: appData.updatePaymentMethod,
+    deletePaymentMethod: appData.deletePaymentMethod,
     
-    paymentTables: appOperations.paymentTables,
-    isLoadingPaymentTables: appOperations.isLoadingPaymentTables,
-    addPaymentTable: appOperations.addPaymentTable,
-    updatePaymentTable: appOperations.updatePaymentTable,
-    deletePaymentTable: appOperations.deletePaymentTable,
+    paymentTables: appData.paymentTables,
+    isLoadingPaymentTables: appData.isLoadingPaymentTables,
+    addPaymentTable: appData.addPaymentTable,
+    updatePaymentTable: appData.updatePaymentTable,
+    deletePaymentTable: appData.deletePaymentTable,
     
     routes: hookOperations.routes || [],
-    isLoadingRoutes: hookOperations.isLoadingRoutes || false,
+    isLoadingRoutes: hookOperations.isLoading || false,
     addRoute: hookOperations.addRoute || (async () => ''),
     updateRoute: hookOperations.updateRoute || (async () => {}),
     deleteRoute: hookOperations.deleteRoute || (async () => {}),

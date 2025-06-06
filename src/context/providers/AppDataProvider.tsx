@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/useAppOperations';
@@ -111,11 +112,6 @@ interface AppDataContextType {
   settings?: {
     primaryColor?: string;
   };
-
-  // Operations grouped
-  productOperations?: any;
-  customerOperations?: any;
-  systemOperations?: any;
 
   // Data refresh function
   refreshData: () => Promise<boolean>;
@@ -295,9 +291,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     settings: {
       primaryColor: '#3b82f6'
     },
-    productOperations: appOperations.productOperations,
-    customerOperations: appOperations.customerOperations,
-    systemOperations: appOperations.systemOperations,
     refreshData
   };
 
