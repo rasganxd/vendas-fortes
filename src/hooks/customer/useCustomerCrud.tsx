@@ -13,13 +13,17 @@ export const useCustomerCrud = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const newCustomer = await customerService.add(customerData);
-      // Handle null response and ensure we have a valid Customer object
-      if (newCustomer && typeof newCustomer === 'object' && newCustomer.id) {
+      const newCustomerId = await customerService.add(customerData);
+      // customerService.add returns a string ID, not a Customer object
+      if (newCustomerId && typeof newCustomerId === 'string') {
+        const newCustomer: Customer = {
+          ...customerData,
+          id: newCustomerId
+        };
         setCustomers(prev => [...prev, newCustomer]);
-        return newCustomer.id;
+        return newCustomerId;
       } else {
-        throw new Error('Invalid customer data returned from service');
+        throw new Error('Invalid customer ID returned from service');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar cliente';
@@ -34,16 +38,14 @@ export const useCustomerCrud = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const updatedCustomer = await customerService.update(id, customerData);
-      // Handle null response and ensure we have a valid Customer object
-      if (updatedCustomer && typeof updatedCustomer === 'object' && updatedCustomer.id) {
-        setCustomers(prev => prev.map(customer => 
-          customer.id === id ? updatedCustomer : customer
-        ));
-        return updatedCustomer;
-      } else {
-        throw new Error('Invalid customer data returned from service');
-      }
+      // customerService.update returns void, so we construct the updated customer locally
+      await customerService.update(id, customerData);
+      
+      setCustomers(prev => prev.map(customer => 
+        customer.id === id ? { ...customer, ...customerData } : customer
+      ));
+      
+      return { id, ...customerData } as Customer;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar cliente';
       setError(errorMessage);
