@@ -19,7 +19,11 @@ export const useAppContextHooks = () => {
   const vehicles = useVehicles();
   const paymentMethods = usePaymentMethods();
   const paymentTables = usePaymentTables();
-  const orders = useOrders();
+  const orders = useOrders(
+    () => {}, // refreshCallback
+    () => {}, // markAsBeingEdited
+    () => {}  // unmarkAsBeingEdited
+  );
   const routes = useRoutes();
 
   return {

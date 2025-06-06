@@ -14,8 +14,13 @@ export const useCustomerCrud = () => {
     setError(null);
     try {
       const newCustomer = await customerService.add(customerData);
-      setCustomers(prev => [...prev, newCustomer]);
-      return newCustomer.id;
+      // Ensure we're adding a Customer object, not just an ID
+      if (typeof newCustomer === 'object' && newCustomer.id) {
+        setCustomers(prev => [...prev, newCustomer]);
+        return newCustomer.id;
+      } else {
+        throw new Error('Invalid customer data returned from service');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar cliente';
       setError(errorMessage);
@@ -30,10 +35,15 @@ export const useCustomerCrud = () => {
     setError(null);
     try {
       const updatedCustomer = await customerService.update(id, customerData);
-      setCustomers(prev => prev.map(customer => 
-        customer.id === id ? updatedCustomer : customer
-      ));
-      return updatedCustomer;
+      // Ensure we're working with a Customer object
+      if (typeof updatedCustomer === 'object' && updatedCustomer.id) {
+        setCustomers(prev => prev.map(customer => 
+          customer.id === id ? updatedCustomer : customer
+        ));
+        return updatedCustomer;
+      } else {
+        throw new Error('Invalid customer data returned from service');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar cliente';
       setError(errorMessage);
