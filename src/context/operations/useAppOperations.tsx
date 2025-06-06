@@ -1,5 +1,4 @@
 
-import { useAppContext } from '@/hooks/useAppContext';
 import { useProductBrands } from '@/hooks/useProductBrands';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useProductGroups } from '@/hooks/useProductGroups';
@@ -14,7 +13,7 @@ export const useAppOperations = () => {
   // Get product brands operations
   const {
     productBrands,
-    isLoadingProductBrands,
+    isLoading: isLoadingProductBrands,
     addProductBrand,
     updateProductBrand,
     deleteProductBrand
@@ -23,7 +22,7 @@ export const useAppOperations = () => {
   // Get product categories operations
   const {
     productCategories,
-    isLoadingProductCategories,
+    isLoading: isLoadingProductCategories,
     addProductCategory,
     updateProductCategory,
     deleteProductCategory
@@ -32,7 +31,7 @@ export const useAppOperations = () => {
   // Get product groups operations
   const {
     productGroups,
-    isLoadingProductGroups,
+    isLoading: isLoadingProductGroups,
     addProductGroup,
     updateProductGroup,
     deleteProductGroup
@@ -41,7 +40,7 @@ export const useAppOperations = () => {
   // Get sales reps operations
   const {
     salesReps,
-    isLoadingSalesReps,
+    isLoading: isLoadingSalesReps,
     addSalesRep,
     updateSalesRep,
     deleteSalesRep
@@ -50,7 +49,7 @@ export const useAppOperations = () => {
   // Get vehicles operations
   const {
     vehicles,
-    isLoadingVehicles,
+    isLoading: isLoadingVehicles,
     addVehicle,
     updateVehicle,
     deleteVehicle
@@ -59,7 +58,7 @@ export const useAppOperations = () => {
   // Get delivery routes operations
   const {
     deliveryRoutes,
-    isLoadingDeliveryRoutes,
+    isLoading: isLoadingDeliveryRoutes,
     addDeliveryRoute,
     updateDeliveryRoute,
     deleteDeliveryRoute
@@ -68,7 +67,7 @@ export const useAppOperations = () => {
   // Get payment methods operations
   const {
     paymentMethods,
-    isLoadingPaymentMethods,
+    isLoading: isLoadingPaymentMethods,
     addPaymentMethod,
     updatePaymentMethod,
     deletePaymentMethod
@@ -77,7 +76,7 @@ export const useAppOperations = () => {
   // Get payment tables operations
   const {
     paymentTables,
-    isLoadingPaymentTables,
+    isLoading: isLoadingPaymentTables,
     addPaymentTable,
     updatePaymentTable,
     deletePaymentTable
@@ -86,7 +85,7 @@ export const useAppOperations = () => {
   // Get payments operations
   const {
     payments,
-    isLoadingPayments,
+    isLoading: isLoadingPayments,
     addPayment,
     updatePayment,
     deletePayment

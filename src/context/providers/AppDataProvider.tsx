@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/useAppOperations';
@@ -187,7 +186,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     deleteCustomerHook
   );
 
-  // Debug logs to track data flow
   useEffect(() => {
     console.log('📊 [AppDataProvider] Data state update:', {
       customers: customers.length,
@@ -219,7 +217,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   useAppDataEventHandlers(refreshData, markOrderAsBeingEdited, unmarkOrderAsBeingEdited);
 
   const value: AppDataContextType = {
-    // Centralized customers data
     customers,
     isLoading: isLoadingCustomers,
     addCustomer,
@@ -227,7 +224,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     deleteCustomer,
     generateNextCustomerCode,
     
-    // Centralized products data
     products,
     isLoadingProducts,
     addProduct,
@@ -235,7 +231,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     deleteProduct,
     refreshProducts,
     
-    // Centralized orders data
     orders,
     isLoadingOrders,
     addOrder,
@@ -243,7 +238,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     deleteOrder,
     refreshOrders,
     
-    // Keep existing operations for other entities
     productBrands: appOperations.productBrands,
     isLoadingProductBrands: appOperations.isLoadingProductBrands,
     addProductBrand: appOperations.addProductBrand,

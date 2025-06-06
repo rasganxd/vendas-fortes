@@ -9,13 +9,13 @@ export const useCustomerCrud = () => {
   const [error, setError] = useState<string | null>(null);
   const { customers, setCustomers } = useAppContext();
 
-  const createCustomer = async (customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createCustomer = async (customerData: Omit<Customer, 'id'>) => {
     setIsLoading(true);
     setError(null);
     try {
       const newCustomer = await customerService.add(customerData);
       setCustomers(prev => [...prev, newCustomer]);
-      return newCustomer;
+      return newCustomer.id;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar cliente';
       setError(errorMessage);
