@@ -109,10 +109,10 @@ export default function EnhancedOrderItemsTable({
             const isEditing = editingItem === item.id;
             const itemKey = getItemKey(item, index);
             return <tr key={itemKey} className="border-t hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-4 text-gray-800 font-mono">
+                    <td className="text-gray-800 font-mono px-[9px] py-[13px]">
                       {item.productCode || '—'}
                     </td>
-                    <td className="text-gray-800 font-medium px-[8px] py-[8px]">
+                    <td className="text-gray-800 font-medium py-[8px] px-[7px]">
                       <div className="max-w-xs truncate" title={item.productName}>
                         {item.productName}
                       </div>
@@ -135,7 +135,7 @@ export default function EnhancedOrderItemsTable({
                     ...prev,
                     price: parseFloat(value) || 0
                   }));
-                }} className="w-24 h-8 text-right" /> : <span className="text-gray-800 font-medium">
+                }} className="w-24 h-8 text-right" /> : <span className="text-gray-800 font-medium text-sm">
                           {(item.unitPrice || item.price || 0).toLocaleString('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'
@@ -143,7 +143,7 @@ export default function EnhancedOrderItemsTable({
                         </span>}
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <span className="font-bold text-gray-900 text-base">
+                      <span className="font-bold text-gray-900 text-sm">
                         {((item.unitPrice || item.price || 0) * item.quantity).toLocaleString('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'
