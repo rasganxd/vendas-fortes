@@ -1,5 +1,5 @@
 
-
+import { useState } from 'react';
 import { useProductOperations } from './useProductOperations';
 import { useCustomers } from './useCustomers';
 import { useProducts } from './useProducts';
@@ -13,9 +13,16 @@ import { useRoutes } from './useRoutes';
 import { useLoads } from './useLoads';
 
 export const useAppContextHooks = () => {
-  const productOperations = useProductOperations();
-  const customers = useCustomers();
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
+  
   const products = useProducts();
+  const productOperations = useProductOperations(
+    products.products,
+    products.setProducts,
+    setIsUsingMockData
+  );
+  
+  const customers = useCustomers();
   const deliveryRoutes = useDeliveryRoutes();
   const salesReps = useSalesReps();
   const vehicles = useVehicles();
@@ -42,4 +49,3 @@ export const useAppContextHooks = () => {
     generateNextOrderCode: orders.generateNextCode || (async () => 1)
   };
 };
-
