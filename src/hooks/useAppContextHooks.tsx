@@ -20,20 +20,7 @@ export const useAppContextHooks = () => {
   const paymentMethods = usePaymentMethods();
   const paymentTables = usePaymentTables();
   
-  // Create the required callback functions for useOrders
-  const markOrderAsBeingEdited = (orderId: string) => {
-    console.log('Order marked as being edited:', orderId);
-  };
-  
-  const unmarkOrderAsBeingEdited = (orderId: string) => {
-    console.log('Order unmarked as being edited:', orderId);
-  };
-  
-  const refreshOrdersCallback = async () => {
-    console.log('Orders refresh callback triggered');
-  };
-  
-  // Pass the required callbacks to useOrders
+  // Use the orders hook without any arguments as it doesn't expect any
   const orders = useOrders();
   const routes = useRoutes();
 
