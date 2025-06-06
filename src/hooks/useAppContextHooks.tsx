@@ -20,7 +20,7 @@ export const useAppContextHooks = () => {
   const paymentMethods = usePaymentMethods();
   const paymentTables = usePaymentTables();
   
-  // Use the orders hook without any arguments as it doesn't expect any
+  // Use the orders hook - it doesn't expect any arguments based on its implementation
   const orders = useOrders();
   const routes = useRoutes();
 

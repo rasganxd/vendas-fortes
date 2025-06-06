@@ -33,7 +33,8 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
     
     orders.forEach(order => {
       order.items.forEach(item => {
-        const key = `${item.productCode}-${item.productName}`;
+        // Include unit in the key to separate products with different units
+        const key = `${item.productCode}-${item.productName}-${item.unit || 'UN'}`;
         const existingProduct = productsMap.get(key);
         
         if (existingProduct) {
@@ -46,7 +47,7 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
             productCode: item.productCode || 0,
             productName: item.productName,
             quantity: item.quantity,
-            unit: item.unit || 'un',
+            unit: item.unit || 'UN',
             unitPrice: item.unitPrice,
             total: item.total,
             ordersContaining: [order.id.substring(0, 8)]
@@ -136,6 +137,7 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
               <th className="border border-gray-400 p-2 text-left font-bold">Código</th>
               <th className="border border-gray-400 p-2 text-left font-bold">Produto</th>
               <th className="border border-gray-400 p-2 text-center font-bold">Qtd. Total</th>
+              <th className="border border-gray-400 p-2 text-center font-bold">Unidade</th>
               <th className="border border-gray-400 p-2 text-right font-bold">Valor Unit.</th>
               <th className="border border-gray-400 p-2 text-right font-bold">Total</th>
               <th className="border border-gray-400 p-2 text-center font-bold">Conferido</th>
@@ -147,6 +149,7 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
                 <td className="border border-gray-400 p-2 font-mono">{product.productCode}</td>
                 <td className="border border-gray-400 p-2">{product.productName}</td>
                 <td className="border border-gray-400 p-2 text-center font-bold">{product.quantity}</td>
+                <td className="border border-gray-400 p-2 text-center">{product.unit}</td>
                 <td className="border border-gray-400 p-2 text-right">
                   {product.unitPrice.toLocaleString('pt-BR', {
                     style: 'currency',
@@ -165,7 +168,7 @@ const LoadPickingList = ({ orders, onClose, loadName = "Carregamento" }: LoadPic
               </tr>
             ))}
             <tr className="bg-sales-50 print:bg-gray-100 font-bold text-sales-800 print:text-black">
-              <td className="border border-gray-400 p-2" colSpan={4}>TOTAL GERAL</td>
+              <td className="border border-gray-400 p-2" colSpan={5}>TOTAL GERAL</td>
               <td className="border border-gray-400 p-2 text-right font-bold">
                 {totalValue.toLocaleString('pt-BR', {
                   style: 'currency',

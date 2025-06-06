@@ -127,6 +127,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                   <tr className="border-b bg-gray-50">
                     <th className="text-left p-3">Produto</th>
                     <th className="text-center p-3">Qtd</th>
+                    <th className="text-center p-3">Unidade</th>
                     <th className="text-right p-3">Preço Unit.</th>
                     <th className="text-right p-3">Total</th>
                   </tr>
@@ -137,13 +138,14 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                       <tr key={item.id || index} className="border-b">
                         <td className="p-3">{item.productName}</td>
                         <td className="text-center p-3">{item.quantity}</td>
+                        <td className="text-center p-3">{item.unit || 'UN'}</td>
                         <td className="text-right p-3">{formatCurrency(item.unitPrice)}</td>
                         <td className="text-right p-3 font-semibold">{formatCurrency(item.total)}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="text-center p-4 text-gray-500">
+                      <td colSpan={5} className="text-center p-4 text-gray-500">
                         Nenhum item encontrado
                       </td>
                     </tr>
@@ -294,7 +296,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                   padding-bottom: 0.2cm;
                 }
                 
-                /* Enhanced table styles */
+                /* Enhanced table styles with unit column */
                 .individual-print-container .order-table {
                   width: 100%;
                   border-collapse: collapse;
@@ -479,10 +481,11 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
               <table className="order-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '50%' }}>Produto</th>
-                    <th className="text-center" style={{ width: '15%' }}>Qtd</th>
-                    <th className="text-right" style={{ width: '17.5%' }}>Preço Unit.</th>
-                    <th className="text-right" style={{ width: '17.5%' }}>Total</th>
+                    <th style={{ width: '40%' }}>Produto</th>
+                    <th className="text-center" style={{ width: '12%' }}>Qtd</th>
+                    <th className="text-center" style={{ width: '10%' }}>Unidade</th>
+                    <th className="text-right" style={{ width: '19%' }}>Preço Unit.</th>
+                    <th className="text-right" style={{ width: '19%' }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -491,6 +494,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                       <tr key={item.id || index}>
                         <td style={{ fontWeight: '500', color: '#495057' }}>{item.productName}</td>
                         <td className="text-center">{item.quantity}</td>
+                        <td className="text-center">{item.unit || 'UN'}</td>
                         <td className="text-right">
                           {formatCurrency(item.unitPrice)}
                         </td>
@@ -501,7 +505,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', color: '#6c757d', fontStyle: 'italic', padding: '0.5cm' }}>
+                      <td colSpan={5} style={{ textAlign: 'center', color: '#6c757d', fontStyle: 'italic', padding: '0.5cm' }}>
                         Nenhum item encontrado
                       </td>
                     </tr>

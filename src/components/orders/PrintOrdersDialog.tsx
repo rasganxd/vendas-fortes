@@ -238,7 +238,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           padding-bottom: 0.1cm;
         }
         
-        /* Enhanced table styles */
+        /* Enhanced table styles with unit column */
         .order-table {
           width: 100%;
           border-collapse: collapse;
@@ -429,10 +429,11 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             <table class="order-table">
               <thead>
                 <tr>
-                  <th style="width: 50%;">Produto</th>
-                  <th class="text-center" style="width: 15%;">Qtd</th>
-                  <th class="text-right" style="width: 17.5%;">Preço Unit.</th>
-                  <th class="text-right" style="width: 17.5%;">Total</th>
+                  <th style="width: 40%;">Produto</th>
+                  <th class="text-center" style="width: 12%;">Qtd</th>
+                  <th class="text-center" style="width: 10%;">Unidade</th>
+                  <th class="text-right" style="width: 19%;">Preço Unit.</th>
+                  <th class="text-right" style="width: 19%;">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -440,12 +441,13 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
                   <tr>
                     <td style="font-weight: 500; color: #495057;">${item.productName}</td>
                     <td class="text-center">${item.quantity}</td>
+                    <td class="text-center">${item.unit || 'UN'}</td>
                     <td class="text-right">${formatCurrency(item.unitPrice)}</td>
                     <td class="text-right" style="font-weight: 700; color: #28a745;">${formatCurrency(item.total)}</td>
                   </tr>
                 `).join('') : `
                   <tr>
-                    <td colspan="4" style="text-align: center; color: #6c757d; font-style: italic; padding: 0.4cm;">
+                    <td colspan="5" style="text-align: center; color: #6c757d; font-style: italic; padding: 0.4cm;">
                       Nenhum item encontrado
                     </td>
                   </tr>
