@@ -1,12 +1,13 @@
+
 import React, { useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import OrderFormHeader from './OrderFormHeader';
 import OrderFormFields from './OrderFormFields';
-import OrderActionBar from './OrderActionBar';
 import EnhancedProductSearch from './EnhancedProductSearch';
 import OrderSummaryPanel from './OrderSummaryPanel';
 import EnhancedOrderItemsTable from './EnhancedOrderItemsTable';
 import { OrderFormLayoutProps } from './types';
+
 export default function OrderFormTwoColumnLayout({
   // Form state
   customers,
@@ -73,16 +74,11 @@ export default function OrderFormTwoColumnLayout({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedCustomer, selectedSalesRep, orderItems, handleCreateOrder, productInputRef, customerInputRef, salesRepInputRef]);
-  return <div className="w-full space-y-6 bg-gray-50 min-h-screen">
-      
 
-      {/* Action Bar */}
-      <div className="px-4">
-        <OrderActionBar selectedCustomer={selectedCustomer} selectedSalesRep={selectedSalesRep} orderItems={orderItems} isSubmitting={isSubmitting} isEditMode={isEditMode} connectionStatus={connectionStatus} handleViewRecentPurchases={handleViewRecentPurchases} handleCreateOrder={handleCreateOrder} />
-      </div>
-
+  return (
+    <div className="w-full space-y-6 bg-gray-50 min-h-screen">
       {/* Main Content */}
-      <div className="px-4">
+      <div className="px-4 pt-6">
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           {/* Left Column - Form Fields (3/4 width on XL screens) */}
           <div className="xl:col-span-3 space-y-6">
@@ -97,28 +93,69 @@ export default function OrderFormTwoColumnLayout({
                 </div>
               </div>
               
-              <OrderFormFields customers={customers} salesReps={salesReps} paymentTables={paymentTables} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} selectedSalesRep={selectedSalesRep} setSelectedSalesRep={setSelectedSalesRep} selectedPaymentTable={selectedPaymentTable} setSelectedPaymentTable={setSelectedPaymentTable} customerInputValue={customerInputValue} salesRepInputValue={salesRepInputValue} isEditMode={isEditMode} salesRepInputRef={salesRepInputRef} customerInputRef={customerInputRef} paymentTableRef={paymentTableRef} onSalesRepNext={onSalesRepNext} onCustomerNext={onCustomerNext} onPaymentNext={onPaymentNext} />
+              <OrderFormFields 
+                customers={customers}
+                salesReps={salesReps}
+                paymentTables={paymentTables}
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                selectedSalesRep={selectedSalesRep}
+                setSelectedSalesRep={setSelectedSalesRep}
+                selectedPaymentTable={selectedPaymentTable}
+                setSelectedPaymentTable={setSelectedPaymentTable}
+                customerInputValue={customerInputValue}
+                salesRepInputValue={salesRepInputValue}
+                isEditMode={isEditMode}
+                salesRepInputRef={salesRepInputRef}
+                customerInputRef={customerInputRef}
+                paymentTableRef={paymentTableRef}
+                onSalesRepNext={onSalesRepNext}
+                onCustomerNext={onCustomerNext}
+                onPaymentNext={onPaymentNext}
+              />
             </div>
 
             {/* Enhanced Product Search */}
             <div className="bg-white border border-gray-200 rounded-lg p-4 relative z-10">
               <h4 className="text-md font-medium text-gray-800 mb-3">Adicionar Produtos</h4>
-              <EnhancedProductSearch products={products} handleAddItem={handleAddItem} productInputRef={productInputRef} isEditMode={isEditMode} />
+              <EnhancedProductSearch 
+                products={products}
+                handleAddItem={handleAddItem}
+                productInputRef={productInputRef}
+                isEditMode={isEditMode}
+              />
             </div>
 
             {/* Order Items Table */}
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <EnhancedOrderItemsTable orderItems={orderItems} handleRemoveItem={handleRemoveItem} calculateTotal={calculateTotal} isEditMode={isEditMode} />
+              <EnhancedOrderItemsTable 
+                orderItems={orderItems}
+                handleRemoveItem={handleRemoveItem}
+                calculateTotal={calculateTotal}
+                isEditMode={isEditMode}
+              />
             </div>
           </div>
 
           {/* Right Column - Summary Panel (1/4 width on XL screens) */}
           <div className="xl:col-span-1">
             <div className="sticky top-6">
-              <OrderSummaryPanel orderItems={orderItems} selectedCustomer={selectedCustomer} selectedSalesRep={selectedSalesRep} selectedPaymentTable={selectedPaymentTable} calculateTotal={calculateTotal} isEditMode={isEditMode} />
+              <OrderSummaryPanel 
+                orderItems={orderItems}
+                selectedCustomer={selectedCustomer}
+                selectedSalesRep={selectedSalesRep}
+                selectedPaymentTable={selectedPaymentTable}
+                calculateTotal={calculateTotal}
+                isEditMode={isEditMode}
+                isSubmitting={isSubmitting}
+                connectionStatus={connectionStatus}
+                handleViewRecentPurchases={handleViewRecentPurchases}
+                handleCreateOrder={handleCreateOrder}
+              />
             </div>
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }

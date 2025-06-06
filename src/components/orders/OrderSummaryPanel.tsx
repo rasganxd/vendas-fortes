@@ -1,9 +1,13 @@
+
 import React from 'react';
 import { OrderItem, Customer, SalesRep } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, User, UserCheck, CreditCard, Package, Calculator } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ShoppingCart, User, UserCheck, CreditCard, Package, Calculator, Search, Loader } from 'lucide-react';
+import { ConnectionStatus } from '@/context/AppContextTypes';
+
 interface OrderSummaryPanelProps {
   orderItems: OrderItem[];
   selectedCustomer: Customer | null;
@@ -11,19 +15,32 @@ interface OrderSummaryPanelProps {
   selectedPaymentTable: string;
   calculateTotal: () => number;
   isEditMode: boolean;
+  // Action button props
+  isSubmitting: boolean;
+  connectionStatus: ConnectionStatus;
+  handleViewRecentPurchases: () => void;
+  handleCreateOrder: () => Promise<void>;
 }
+
 export default function OrderSummaryPanel({
   orderItems,
   selectedCustomer,
   selectedSalesRep,
   selectedPaymentTable,
   calculateTotal,
-  isEditMode
+  isEditMode,
+  isSubmitting,
+  connectionStatus,
+  handleViewRecentPurchases,
+  handleCreateOrder
 }: OrderSummaryPanelProps) {
   const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = calculateTotal();
-  const averageItemValue = orderItems.length > 0 ? totalValue / orderItems.length : 0;
-  return <div className="space-y-4">
+  const canCreateOrder = selectedCustomer && selectedSalesRep && orderItems.length > 0 && connectionStatus !== 'offline';
+  const isOffline = connectionStatus === 'offline';
+
+  return (
+    <div className="space-y-4">
       {/* Order Status */}
       <Card className="shadow-sm border-gray-200">
         <CardHeader className="pb-3">
@@ -58,27 +75,55 @@ export default function OrderSummaryPanel({
               <span className="font-medium text-gray-800">Valor Total:</span>
               <span className="text-xl font-bold text-green-600">
                 {totalValue.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
               </span>
             </div>
-            
-            {orderItems.length > 0 && <div className="flex items-center justify-between text-xs text-gray-500">
-                
-                
-              </div>}
+          </div>
+
+          <Separator />
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleViewRecentPurchases}
+              disabled={!selectedCustomer || isSubmitting}
+              className="w-full transition-colors bg-white hover:bg-blue-50 border-blue-200"
+            >
+              <Search size={16} className="mr-2" />
+              Últimas Compras
+            </Button>
+
+            {isOffline && (
+              <div className="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded-md border border-orange-200 text-center">
+                Modo Offline
+              </div>
+            )}
+
+            <Button
+              onClick={handleCreateOrder}
+              disabled={!canCreateOrder || isSubmitting}
+              className="w-full transition-all duration-200 hover:scale-105 bg-green-600 hover:bg-green-700"
+              size="lg"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center space-x-2">
+                  <Loader className="h-4 w-4 animate-spin" />
+                  <span>{isEditMode ? 'Salvando...' : 'Criando...'}</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <ShoppingCart size={16} />
+                  <span>{isEditMode ? 'Salvar Pedido' : 'Criar Pedido'}</span>
+                </div>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
-
-      {/* Customer Info */}
-      
-
-      {/* Order Validation */}
-      
-
-      {/* Keyboard shortcuts help */}
-      
-    </div>;
+    </div>
+  );
 }
