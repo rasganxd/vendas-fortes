@@ -22,7 +22,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Order } from '@/types';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import OrderSelectionSection from '@/components/loads/OrderSelectionSection';
 import LoadSummarySection from '@/components/loads/LoadSummarySection';
 
@@ -67,35 +67,19 @@ export default function BuildLoad() {
 
   const validateForm = (): boolean => {
     if (!loadName) {
-      toast({
-        title: "Erro",
-        description: "Nome da carga é obrigatório",
-        variant: "destructive"
-      });
+      toast.error("Nome da carga é obrigatório");
       return false;
     }
     if (!selectedVehicleId) {
-      toast({
-        title: "Erro",
-        description: "Veículo é obrigatório",
-        variant: "destructive"
-      });
+      toast.error("Veículo é obrigatório");
       return false;
     }
     if (!selectedSalesRepId) {
-      toast({
-        title: "Erro",
-        description: "Representante é obrigatório",
-        variant: "destructive"
-      });
+      toast.error("Representante é obrigatório");
       return false;
     }
     if (selectedOrderIds.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Selecione pelo menos um pedido para a carga",
-        variant: "destructive"
-      });
+      toast.error("Selecione pelo menos um pedido para a carga");
       return false;
     }
     return true;
@@ -106,13 +90,20 @@ export default function BuildLoad() {
   
     try {
       setIsSaving(true);
+      
+      // Get selected vehicle and sales rep names
+      const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
+      const selectedSalesRep = salesReps.find(sr => sr.id === selectedSalesRepId);
+      
       const loadData = {
         name: loadName,
         vehicleId: selectedVehicleId,
+        vehicleName: selectedVehicle?.name,
         date: loadDate,
         status: "pending" as const,
         notes: loadNotes,
         salesRepId: selectedSalesRepId,
+        salesRepName: selectedSalesRep?.name,
         orderIds: selectedOrderIds,
         locked: false,
         createdAt: new Date(),
@@ -120,21 +111,15 @@ export default function BuildLoad() {
         total: calculateLoadTotal()
       };
     
+      console.log('🚛 Creating load with data:', loadData);
       const loadId = await addLoad(loadData);
+      console.log('✅ Load created with ID:', loadId);
     
-      toast({
-        title: "Carregamento criado",
-        description: "O carregamento foi criado com sucesso!"
-      });
-    
+      toast.success("Carregamento criado com sucesso!");
       navigate(`/carregamentos`);
     } catch (error) {
-      console.error("Erro ao salvar carregamento:", error);
-      toast({
-        title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o carregamento.",
-        variant: "destructive"
-      });
+      console.error("❌ Error creating load:", error);
+      toast.error("Ocorreu um erro ao salvar o carregamento.");
     } finally {
       setIsSaving(false);
     }

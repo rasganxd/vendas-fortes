@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -20,12 +21,12 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { formatDateToBR, ensureDate } from '@/lib/date-utils';
 import { FileCheck, Weight, Calendar, Truck, Package } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Loads() {
   const navigate = useNavigate();
-  const { loads, customers } = useAppContext();
+  const { loads, customers, orders, updateLoad, deleteLoad } = useAppContext();
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -35,7 +36,11 @@ export default function Loads() {
 
   const handleViewLoad = async (load: Load) => {
     setSelectedLoad(load);
-    setLoadOrders([]);
+    // Get orders for this load
+    const ordersForLoad = orders.filter(order => 
+      load.orderIds?.includes(order.id)
+    );
+    setLoadOrders(ordersForLoad);
     setIsViewDialogOpen(true);
   };
 
@@ -54,7 +59,11 @@ export default function Loads() {
 
   const handlePrintLoad = async (load: Load) => {
     setSelectedLoad(load);
-    setLoadOrders([]);
+    // Get orders for this load
+    const ordersForLoad = orders.filter(order => 
+      load.orderIds?.includes(order.id)
+    );
+    setLoadOrders(ordersForLoad);
     setIsPrintDialogOpen(true);
   };
 
@@ -62,28 +71,24 @@ export default function Loads() {
     if (!selectedLoad) return;
     
     try {
-      // Implementar delete load logic aqui
+      await deleteLoad(selectedLoad.id);
       setIsDeleteDialogOpen(false);
-      toast({
-        title: "Carga excluída",
-        description: "A carga foi excluída com sucesso."
-      });
+      setSelectedLoad(null);
     } catch (error) {
       console.error("Erro ao excluir carga:", error);
-      toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir a carga.",
-        variant: "destructive"
-      });
+      // Error is already handled in useLoads with toast
     }
   };
 
   const handleUpdateLoad = async (id: string, updatedLoad: Partial<Load>) => {
-    // Implementar update load logic aqui
-    toast({
-      title: "Carga atualizada",
-      description: "As alterações foram salvas com sucesso."
-    });
+    try {
+      await updateLoad(id, updatedLoad);
+      setIsEditDialogOpen(false);
+      setSelectedLoad(null);
+    } catch (error) {
+      console.error("Erro ao atualizar carga:", error);
+      // Error is already handled in useLoads with toast
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -94,7 +99,7 @@ export default function Loads() {
         return <Badge className="bg-blue-500">Carregando</Badge>;
       case 'loaded':
         return <Badge className="bg-amber-500">Carregado</Badge>;
-      case 'in-transit':
+      case 'in_transit':
         return <Badge className="bg-purple-500">Em Trânsito</Badge>;
       case 'delivered':
         return <Badge className="bg-green-500">Entregue</Badge>;
@@ -190,6 +195,19 @@ export default function Loads() {
                   <span>Veículo:</span>
                   <span>{load.vehicleName || 'Não atribuído'}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span>Pedidos:</span>
+                  <span>{load.orderIds?.length || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total:</span>
+                  <span className="font-medium">
+                    {(load.total || 0).toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    })}
+                  </span>
+                </div>
               </div>
               <div className="flex gap-2 mt-4">
                 <Button variant="outline" size="sm" onClick={() => handleViewLoad(load)}>
@@ -197,6 +215,9 @@ export default function Loads() {
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleEditLoad(load)}>
                   Editar
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handlePrintLoad(load)}>
+                  <Printer className="h-4 w-4" />
                 </Button>
                 <Button 
                   variant="outline" 
@@ -214,7 +235,54 @@ export default function Loads() {
         {loads.length === 0 && <EmptyLoads />}
       </div>
       
-      
+      {/* View Load Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Carga: {selectedLoad?.name}</DialogTitle>
+          </DialogHeader>
+          
+          {selectedLoad && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong>Status:</strong> {getStatusBadge(selectedLoad.status)}
+                </div>
+                <div>
+                  <strong>Data:</strong> {formatDateToBR(ensureDate(selectedLoad.date))}
+                </div>
+                <div>
+                  <strong>Veículo:</strong> {selectedLoad.vehicleName || 'Não atribuído'}
+                </div>
+                <div>
+                  <strong>Representante:</strong> {selectedLoad.salesRepName || 'Não atribuído'}
+                </div>
+                <div>
+                  <strong>Total:</strong> {(selectedLoad.total || 0).toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
+                </div>
+                <div>
+                  <strong>Pedidos:</strong> {selectedLoad.orderIds?.length || 0}
+                </div>
+              </div>
+              
+              {selectedLoad.notes && (
+                <div>
+                  <strong>Observações:</strong>
+                  <p className="mt-1 text-gray-600">{selectedLoad.notes}</p>
+                </div>
+              )}
+              
+              <div>
+                <strong>Pedidos incluídos:</strong>
+                {renderSimplifiedOrdersList(loadOrders)}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       
       <EditLoadDialog 
         open={isEditDialogOpen}

@@ -9,6 +9,7 @@ import { usePaymentMethods } from './usePaymentMethods';
 import { usePaymentTables } from './usePaymentTables';
 import { useOrders } from './useOrders';
 import { useRoutes } from './useRoutes';
+import { useLoads } from './useLoads';
 
 export const useAppContextHooks = () => {
   const productOperations = useProductOperations();
@@ -19,10 +20,9 @@ export const useAppContextHooks = () => {
   const vehicles = useVehicles();
   const paymentMethods = usePaymentMethods();
   const paymentTables = usePaymentTables();
-  
-  // Use the orders hook without any arguments
   const orders = useOrders();
   const routes = useRoutes();
+  const loads = useLoads();
 
   return {
     ...productOperations,
@@ -35,6 +35,7 @@ export const useAppContextHooks = () => {
     ...paymentTables,
     ...orders,
     ...routes,
+    ...loads,
     // Add missing properties for compatibility
     createAutomaticPaymentRecord: async () => {},
     generateNextOrderCode: async () => 1
