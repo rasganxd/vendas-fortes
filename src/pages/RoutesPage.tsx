@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { RoutesList } from '@/components/routes/RoutesList';
@@ -13,13 +14,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDateToBR } from '@/lib/date-utils';
-import { MapPin, Truck, Route, Navigation, RefreshCw } from 'lucide-react';
-import { GenerateRouteUpdateDialog } from '@/components/routes/GenerateRouteUpdateDialog';
+import { MapPin, Truck, Route, Navigation } from 'lucide-react';
+
 export default function Routes() {
   const {
     routes,
     vehicles,
-    salesReps,
     selectedRoute,
     isViewDialogOpen,
     setIsViewDialogOpen,
@@ -31,20 +31,16 @@ export default function Routes() {
     setIsEditRouteDialogOpen,
     isDeleteConfirmOpen,
     setIsDeleteConfirmOpen,
-    isGenerateUpdateDialogOpen,
-    setIsGenerateUpdateDialogOpen,
     isDeleting,
     handleViewRoute,
     handleEditRoute,
     handleDeleteRoute,
-    handleGenerateUpdate,
     confirmDeleteRoute,
     handleAddOrderToRoute,
     addOrderToRoute,
     removeOrderFromRoute,
     handleCreateNewRoute,
     handleSaveRouteChanges,
-    handleGenerateRouteUpdate,
     getUnassignedOrders
   } = useRoutesPage();
 
@@ -79,7 +75,9 @@ export default function Routes() {
         return status;
     }
   };
-  return <PageLayout title="Roteirização de Entregas">
+
+  return (
+    <PageLayout title="Roteirização de Entregas">
       <RoutesHeader onNewRoute={() => setIsNewRouteDialogOpen(true)} />
       
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -105,58 +103,75 @@ export default function Routes() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {routes.length > 0 ? routes.map(route => <TableRow key={route.id}>
-                        <TableCell className="font-medium">
+                  {routes.length > 0 ? routes.map(route => (
+                    <TableRow key={route.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center">
+                          <Route size={16} className="mr-2 text-sales-800" />
+                          {route.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {route.salesRepName ? (
                           <div className="flex items-center">
-                            <Route size={16} className="mr-2 text-sales-800" />
-                            {route.name}
+                            <span className="text-sm">{route.salesRepName}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {route.salesRepName ? <div className="flex items-center">
-                              <span className="text-sm">{route.salesRepName}</span>
-                              {route.lastUpdated && <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                                  Atualizado
-                                </span>}
-                            </div> : <span className="text-gray-400 text-sm">Não atribuído</span>}
-                        </TableCell>
-                        <TableCell>
-                          {route.vehicleName ? <div className="flex items-center">
-                              <Truck size={16} className="mr-1 text-gray-500" />
-                              {route.vehicleName}
-                            </div> : <span className="text-gray-400 text-sm">Não atribuído</span>}
-                        </TableCell>
-                        <TableCell>{formatDateToBR(route.date)}</TableCell>
-                        <TableCell>
-                          <Badge className={`${getStatusColor(route.status)} font-normal`}>
-                            {getStatusLabel(route.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="outline" size="sm" onClick={() => handleViewRoute(route)}>
-                              Ver
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleEditRoute(route)}>
-                              Editar
-                            </Button>
-                            
-                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteRoute(route.id)}>
-                              Excluir
-                            </Button>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Não atribuído</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {route.vehicleName ? (
+                          <div className="flex items-center">
+                            <Truck size={16} className="mr-1 text-gray-500" />
+                            {route.vehicleName}
                           </div>
-                        </TableCell>
-                      </TableRow>) : <TableRow>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Não atribuído</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDateToBR(route.date)}</TableCell>
+                      <TableCell>
+                        <Badge className={`${getStatusColor(route.status)} font-normal`}>
+                          {getStatusLabel(route.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="outline" size="sm" onClick={() => handleViewRoute(route)}>
+                            Ver
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleEditRoute(route)}>
+                            Editar
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-destructive hover:text-destructive" 
+                            onClick={() => handleDeleteRoute(route.id)}
+                          >
+                            Excluir
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center">
                         <div className="flex flex-col items-center justify-center text-gray-500">
                           <MapPin size={24} className="mb-2" />
                           <p>Nenhuma rota cadastrada</p>
-                          <Button variant="link" onClick={() => setIsNewRouteDialogOpen(true)} className="mt-2">
+                          <Button 
+                            variant="link" 
+                            onClick={() => setIsNewRouteDialogOpen(true)} 
+                            className="mt-2"
+                          >
                             Criar Nova Rota
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>}
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -202,7 +217,11 @@ export default function Routes() {
               </div>
               
               <div className="mt-4">
-                <Button className="w-full bg-sales-800 hover:bg-sales-700 text-sm py-1" onClick={() => setIsNewRouteDialogOpen(true)} size="sm">
+                <Button 
+                  className="w-full bg-sales-800 hover:bg-sales-700 text-sm py-1" 
+                  onClick={() => setIsNewRouteDialogOpen(true)} 
+                  size="sm"
+                >
                   Nova Rota
                 </Button>
               </div>
@@ -211,16 +230,42 @@ export default function Routes() {
         </Card>
       </div>
       
-      <RouteDetailDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} route={selectedRoute} onAddOrder={handleAddOrderToRoute} onRemoveStop={removeOrderFromRoute} />
+      <RouteDetailDialog 
+        open={isViewDialogOpen} 
+        onOpenChange={setIsViewDialogOpen} 
+        route={selectedRoute} 
+        onAddOrder={handleAddOrderToRoute} 
+        onRemoveStop={removeOrderFromRoute} 
+      />
       
-      <AddOrderDialog open={isAddOrderDialogOpen} onOpenChange={setIsAddOrderDialogOpen} orders={getUnassignedOrders()} onAddOrder={addOrderToRoute} />
+      <AddOrderDialog 
+        open={isAddOrderDialogOpen} 
+        onOpenChange={setIsAddOrderDialogOpen} 
+        orders={getUnassignedOrders()} 
+        onAddOrder={addOrderToRoute} 
+      />
       
-      <NewRouteDialog open={isNewRouteDialogOpen} onOpenChange={setIsNewRouteDialogOpen} vehicles={vehicles} onCreateRoute={handleCreateNewRoute} />
+      <NewRouteDialog 
+        open={isNewRouteDialogOpen} 
+        onOpenChange={setIsNewRouteDialogOpen} 
+        vehicles={vehicles} 
+        onCreateRoute={handleCreateNewRoute} 
+      />
 
-      <EditRouteDialog open={isEditRouteDialogOpen} onOpenChange={setIsEditRouteDialogOpen} route={selectedRoute} vehicles={vehicles} onSave={handleSaveRouteChanges} />
+      <EditRouteDialog 
+        open={isEditRouteDialogOpen} 
+        onOpenChange={setIsEditRouteDialogOpen} 
+        route={selectedRoute} 
+        vehicles={vehicles} 
+        onSave={handleSaveRouteChanges} 
+      />
 
-      <DeleteRouteDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} onConfirm={confirmDeleteRoute} isDeleting={isDeleting} />
-
-      <GenerateRouteUpdateDialog open={isGenerateUpdateDialogOpen} onOpenChange={setIsGenerateUpdateDialogOpen} routeId={selectedRoute?.id || ''} routeName={selectedRoute?.name || ''} salesReps={salesReps} onGenerateUpdate={handleGenerateRouteUpdate} />
-    </PageLayout>;
+      <DeleteRouteDialog 
+        open={isDeleteConfirmOpen} 
+        onOpenChange={setIsDeleteConfirmOpen} 
+        onConfirm={confirmDeleteRoute} 
+        isDeleting={isDeleting} 
+      />
+    </PageLayout>
+  );
 }
