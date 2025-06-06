@@ -25,7 +25,8 @@ export class OrderItemsHandler {
       unitPrice: item.unit_price || item.price,
       price: item.price,
       discount: item.discount || 0,
-      total: item.total
+      total: item.total,
+      unit: item.unit || 'UN'
     }));
   }
 
@@ -53,7 +54,8 @@ export class OrderItemsHandler {
         unitPrice: item.unit_price || item.price,
         price: item.price,
         discount: item.discount || 0,
-        total: item.total
+        total: item.total,
+        unit: item.unit || 'UN'
       });
       return acc;
     }, {});
@@ -71,6 +73,7 @@ export class OrderItemsHandler {
       unit_price: item.unitPrice || item.price,
       total: item.total,
       discount: item.discount || 0,
+      unit: item.unit || 'UN',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
