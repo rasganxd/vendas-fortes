@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
@@ -212,8 +211,8 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     updateRoute: hookOperations.updateRoute || (async () => {}),
     deleteRoute: hookOperations.deleteRoute || (async () => {}),
     
-    getOrderById: hookOperations.getOrderById,
-    generateNextOrderCode: hookOperations.generateNextOrderCode,
+    getOrderById: hookOperations.getOrderById || (async () => null),
+    generateNextOrderCode: hookOperations.generateNextOrderCode || (async () => 1),
     
     connectionStatus: connection.connectionStatus as 'online' | 'offline' | 'connecting' | 'error',
     lastConnectAttempt: connection.lastConnectAttempt,

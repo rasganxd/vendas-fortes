@@ -38,6 +38,6 @@ export const useAppContextHooks = () => {
     ...loads,
     // Add missing properties for compatibility
     createAutomaticPaymentRecord: async () => {},
-    generateNextOrderCode: async () => 1
+    generateNextOrderCode: orders.generateNextCode || (async () => 1)
   };
 };

@@ -35,7 +35,7 @@ export class LoadService {
       deliveryDate: load.delivery_date ? new Date(load.delivery_date) : undefined,
       returnDate: load.return_date ? new Date(load.return_date) : undefined,
       notes: load.notes,
-      orderIds: load.order_ids || [],
+      orderIds: Array.isArray(load.order_ids) ? load.order_ids as string[] : [],
       total: load.total || 0,
       locked: load.locked || false,
       createdAt: new Date(load.created_at),
