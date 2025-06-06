@@ -14,8 +14,8 @@ export const useCustomerCrud = () => {
     setError(null);
     try {
       const newCustomer = await customerService.add(customerData);
-      // Ensure we're adding a Customer object, not just an ID
-      if (typeof newCustomer === 'object' && newCustomer.id) {
+      // Handle null response and ensure we have a valid Customer object
+      if (newCustomer && typeof newCustomer === 'object' && newCustomer.id) {
         setCustomers(prev => [...prev, newCustomer]);
         return newCustomer.id;
       } else {
@@ -35,8 +35,8 @@ export const useCustomerCrud = () => {
     setError(null);
     try {
       const updatedCustomer = await customerService.update(id, customerData);
-      // Ensure we're working with a Customer object
-      if (typeof updatedCustomer === 'object' && updatedCustomer.id) {
+      // Handle null response and ensure we have a valid Customer object
+      if (updatedCustomer && typeof updatedCustomer === 'object' && updatedCustomer.id) {
         setCustomers(prev => prev.map(customer => 
           customer.id === id ? updatedCustomer : customer
         ));
