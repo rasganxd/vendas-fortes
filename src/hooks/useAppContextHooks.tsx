@@ -9,6 +9,7 @@ import { useVehicles } from './useVehicles';
 import { usePaymentMethods } from './usePaymentMethods';
 import { usePaymentTables } from './usePaymentTables';
 import { useOrders } from './useOrders';
+import { useRoutes } from './useRoutes';
 
 export const useAppContextHooks = () => {
   const productOperations = useProductOperations();
@@ -21,6 +22,7 @@ export const useAppContextHooks = () => {
   const paymentMethods = usePaymentMethods();
   const paymentTables = usePaymentTables();
   const orders = useOrders();
+  const routes = useRoutes();
 
   return {
     ...productOperations,
@@ -32,6 +34,10 @@ export const useAppContextHooks = () => {
     ...vehicles,
     ...paymentMethods,
     ...paymentTables,
-    ...orders
+    ...orders,
+    ...routes,
+    // Add missing properties for compatibility
+    createAutomaticPaymentRecord: async () => {},
+    generateNextOrderCode: async () => 1
   };
 };

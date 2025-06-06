@@ -4,7 +4,7 @@ import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
 import { useThemeInitializer } from '@/hooks/useThemeInitializer';
 import { useConnection } from './ConnectionProvider';
-import { useAppOperations } from '@/context/operations/appOperations';
+import { useAppOperations } from '@/context/operations/useAppOperations';
 import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useAppData } from './AppDataProvider';
@@ -237,11 +237,11 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     deletePaymentTable: appOperations.deletePaymentTable,
     
     // Routes operations from hook operations
-    routes: hookOperations.routes,
-    isLoadingRoutes: hookOperations.isLoadingRoutes,
-    addRoute: hookOperations.addRoute,
-    updateRoute: hookOperations.updateRoute,
-    deleteRoute: hookOperations.deleteRoute,
+    routes: hookOperations.routes || [],
+    isLoadingRoutes: hookOperations.isLoadingRoutes || false,
+    addRoute: hookOperations.addRoute || (async () => ''),
+    updateRoute: hookOperations.updateRoute || (async () => {}),
+    deleteRoute: hookOperations.deleteRoute || (async () => {}),
     
     // Hook operations that might not be in appOperations
     getOrderById: hookOperations.getOrderById,

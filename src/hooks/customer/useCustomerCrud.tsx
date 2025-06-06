@@ -13,7 +13,7 @@ export const useCustomerCrud = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const newCustomer = await customerService.create(customerData);
+      const newCustomer = await customerService.add(customerData);
       setCustomers(prev => [...prev, newCustomer]);
       return newCustomer;
     } catch (err) {

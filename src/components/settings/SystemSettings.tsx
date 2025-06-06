@@ -1,8 +1,6 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Smartphone } from "lucide-react";
-import CompactMobileSyncPanel from './CompactMobileSyncPanel';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { toast } from 'sonner';
 
@@ -65,29 +63,35 @@ export default function SystemSettings() {
       <div className="space-y-1">
         <h2 className="text-2xl font-bold tracking-tight text-gray-900">Configurações do Sistema</h2>
         <p className="text-sm text-muted-foreground">
-          Gerencie as configurações técnicas e sincronização da sua aplicação.
+          Gerencie as configurações técnicas da sua aplicação.
         </p>
       </div>
       
-      {/* Card de sincronização móvel - mais compacto */}
+      {/* Card de configurações de tema */}
       <Card className="overflow-hidden border border-gray-100 shadow-sm transition-all duration-200 hover:shadow-md">
         <CardHeader className="border-b pb-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-primary/10 p-2">
-              <Smartphone className="text-primary h-5 w-5" />
-            </div>
+          <CardTitle className="text-lg">
+            Configurações de Tema
+          </CardTitle>
+          <CardDescription className="mt-1">
+            Personalize a aparência da aplicação.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-4">
             <div>
-              <CardTitle className="text-lg">
-                Sincronização Móvel
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Gerencie a conexão e sincronização com dispositivos móveis.
-              </CardDescription>
+              <label className="text-sm font-medium">Cor Principal</label>
+              <div className="mt-2 flex items-center space-x-3">
+                <input
+                  type="color"
+                  value={selectedColor}
+                  onChange={(e) => handleColorChange(e.target.value)}
+                  className="w-12 h-8 rounded border"
+                />
+                <span className="text-sm text-gray-600">{selectedColor}</span>
+              </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <CompactMobileSyncPanel salesRepId={defaultSalesRepId} />
         </CardContent>
       </Card>
     </div>
