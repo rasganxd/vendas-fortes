@@ -22,6 +22,7 @@ serve(async (req) => {
     );
 
     if (req.method !== 'POST') {
+      console.log('❌ Method not allowed:', req.method);
       return new Response(
         JSON.stringify({ error: 'Method not allowed' }),
         { 
@@ -32,11 +33,15 @@ serve(async (req) => {
     }
 
     const { code, password } = await req.json();
+    console.log(`🔍 Attempting login for sales rep code: ${code}`);
 
     if (!code || !password) {
       console.log('❌ Missing code or password');
       return new Response(
-        JSON.stringify({ error: 'Código e senha são obrigatórios' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'Código e senha são obrigatórios' 
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -44,9 +49,8 @@ serve(async (req) => {
       );
     }
 
-    console.log(`🔍 Attempting login for sales rep code: ${code}`);
-
     // Get sales rep by code
+    console.log(`📋 Searching for sales rep with code: ${code}`);
     const { data: salesRep, error: fetchError } = await supabase
       .from('sales_reps')
       .select('id, code, name, phone, email, password, active')
@@ -55,9 +59,12 @@ serve(async (req) => {
       .single();
 
     if (fetchError || !salesRep) {
-      console.log('❌ Sales rep not found:', fetchError);
+      console.log('❌ Sales rep not found or fetch error:', fetchError);
       return new Response(
-        JSON.stringify({ error: 'Vendedor não encontrado ou inativo' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'Vendedor não encontrado ou inativo' 
+        }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -65,10 +72,15 @@ serve(async (req) => {
       );
     }
 
+    console.log(`✅ Sales rep found: ${salesRep.name} (ID: ${salesRep.id})`);
+
     if (!salesRep.password) {
       console.log('❌ Sales rep has no password set');
       return new Response(
-        JSON.stringify({ error: 'Senha não configurada para este vendedor' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'Senha não configurada para este vendedor' 
+        }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -77,6 +89,7 @@ serve(async (req) => {
     }
 
     // Verify password using database function
+    console.log('🔓 Verifying password using bcrypt function...');
     const { data: isValidPassword, error: verifyError } = await supabase
       .rpc('verify_password', { 
         password: password, 
@@ -86,7 +99,10 @@ serve(async (req) => {
     if (verifyError) {
       console.log('❌ Error verifying password:', verifyError);
       return new Response(
-        JSON.stringify({ error: 'Erro interno do servidor' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'Erro interno do servidor' 
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -94,10 +110,15 @@ serve(async (req) => {
       );
     }
 
+    console.log(`🔍 Password verification result: ${isValidPassword}`);
+
     if (!isValidPassword) {
-      console.log('❌ Invalid password for sales rep:', code);
+      console.log(`❌ Invalid password for sales rep: ${code} (${salesRep.name})`);
       return new Response(
-        JSON.stringify({ error: 'Código ou senha incorretos' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'Código ou senha incorretos' 
+        }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -105,7 +126,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ Sales rep login successful:', salesRep.name);
+    console.log(`✅ Sales rep login successful: ${salesRep.name} (Code: ${salesRep.code})`);
 
     // Return sales rep data without password
     const { password: _, ...salesRepData } = salesRep;
@@ -125,7 +146,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Critical error in sales rep login:', error);
     return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor' }),
+      JSON.stringify({ 
+        success: false,
+        error: 'Erro interno do servidor' 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
