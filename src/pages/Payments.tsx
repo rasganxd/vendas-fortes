@@ -13,7 +13,6 @@ import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { toast } from '@/components/ui/use-toast';
 import { usePayments } from '@/hooks/usePayments';
-import { loadOrders } from '@/hooks/useOrders';
 
 export default function Payments() {
   const [searchParams] = useSearchParams();
@@ -22,12 +21,10 @@ export default function Payments() {
   
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl === 'promissory' ? 'promissory' : 'pending');
   
-  const { customers } = useAppContext();
+  const { customers, orders, isLoadingOrders } = useAppContext();
   const { paymentMethods } = usePaymentMethods();
   const { paymentTables } = usePaymentTables();
   const { payments, addPayment, isLoading } = usePayments();
-  const [orders, setOrders] = useState([]);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
 
   // Handle URL parameters for tab selection
   useEffect(() => {
@@ -42,23 +39,6 @@ export default function Payments() {
       setActiveTab(tabValue);
     }
   }, [tabFromUrl]);
-
-  // Load orders
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setIsLoadingOrders(true);
-        const loadedOrders = await loadOrders();
-        setOrders(loadedOrders);
-      } catch (error) {
-        console.error("Error loading orders:", error);
-      } finally {
-        setIsLoadingOrders(false);
-      }
-    };
-
-    fetchOrders();
-  }, []);
 
   // Get pending payment orders (orders that have a balance due)
   const pendingPaymentOrders = orders
