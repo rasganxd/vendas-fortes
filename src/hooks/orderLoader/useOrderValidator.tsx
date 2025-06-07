@@ -23,9 +23,12 @@ export const useOrderValidator = () => {
           unitPrice: 0,
           price: 0,
           discount: 0,
-          total: 0
+          total: 0,
+          unit: 'UN' // Default unit for unknown items
         };
       }
+      
+      console.log(`🔧 Validating item: ${item.productName}, unit: ${item.unit}`);
       
       return {
         id: item.id || uuidv4(),
@@ -36,7 +39,8 @@ export const useOrderValidator = () => {
         unitPrice: Math.max(item.unitPrice || item.price || 0, 0),
         price: Math.max(item.price || item.unitPrice || 0, 0),
         discount: Math.max(item.discount || 0, 0),
-        total: Math.max((item.unitPrice || item.price || 0) * (item.quantity || 1), 0)
+        total: Math.max((item.unitPrice || item.price || 0) * (item.quantity || 1), 0),
+        unit: item.unit || 'UN' // Preserve original unit or use fallback
       };
     });
   };

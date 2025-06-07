@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OrderItem } from '@/types';
 import { Button } from "@/components/ui/button";
@@ -75,32 +76,37 @@ export default function OrderItemsTable({
               </tr>
             </thead>
             <tbody>
-              {orderItems.map((item, index) => (
-                <tr key={getItemKey(item, index)} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-800">{item.productCode || '—'}</td>
-                  <td className="px-4 py-3 text-gray-800 font-medium">{item.productName}</td>
-                  <td className="px-4 py-3 text-center text-gray-800">{item.quantity}</td>
-                  <td className="px-4 py-3 text-center text-gray-600">{item.unit || 'UN'}</td>
-                  <td className="px-4 py-3 text-right text-gray-800">
-                    {(item.unitPrice || item.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                    {((item.unitPrice || item.price || 0) * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveClick(item, index)}
-                      type="button"
-                      className="hover:bg-red-50 hover:text-red-600 transition-colors"
-                      title={`Remover ${item.productName} (${item.unit || 'UN'}) do pedido`}
-                    >
-                      <Trash2 size={16} className="text-red-500 hover:text-red-600" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {orderItems.map((item, index) => {
+                console.log(`🏷️ Displaying item: ${item.productName}, unit: ${item.unit}`);
+                return (
+                  <tr key={getItemKey(item, index)} className="border-t hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-800">{item.productCode || '—'}</td>
+                    <td className="px-4 py-3 text-gray-800 font-medium">{item.productName}</td>
+                    <td className="px-4 py-3 text-center text-gray-800">{item.quantity}</td>
+                    <td className="px-4 py-3 text-center text-gray-600">
+                      {item.unit && item.unit.trim() !== '' ? item.unit : 'UN'}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-800">
+                      {(item.unitPrice || item.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                      {((item.unitPrice || item.price || 0) * item.quantity).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleRemoveClick(item, index)}
+                        type="button"
+                        className="hover:bg-red-50 hover:text-red-600 transition-colors"
+                        title={`Remover ${item.productName} (${item.unit || 'UN'}) do pedido`}
+                      >
+                        <Trash2 size={16} className="text-red-500 hover:text-red-600" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="border-t-2 bg-gray-50">
