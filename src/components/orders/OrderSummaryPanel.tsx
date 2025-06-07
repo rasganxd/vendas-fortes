@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OrderItem, Customer, SalesRep } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,6 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, User, UserCheck, CreditCard, Package, Calculator, Search, Loader } from 'lucide-react';
 import { ConnectionStatus } from '@/context/AppContextTypes';
-
 interface OrderSummaryPanelProps {
   orderItems: OrderItem[];
   selectedCustomer: Customer | null;
@@ -21,7 +19,6 @@ interface OrderSummaryPanelProps {
   handleViewRecentPurchases: () => void;
   handleCreateOrder: () => Promise<void>;
 }
-
 export default function OrderSummaryPanel({
   orderItems,
   selectedCustomer,
@@ -38,9 +35,7 @@ export default function OrderSummaryPanel({
   const totalValue = calculateTotal();
   const canCreateOrder = selectedCustomer && selectedSalesRep && orderItems.length > 0 && connectionStatus !== 'offline';
   const isOffline = connectionStatus === 'offline';
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       {/* Order Status */}
       <Card className="shadow-sm border-gray-200">
         <CardHeader className="pb-3">
@@ -72,12 +67,12 @@ export default function OrderSummaryPanel({
             <Separator />
             
             <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-800">Valor Total:</span>
-              <span className="text-xl font-bold text-green-600">
+              <span className="font-medium text-gray-800 text-sm">Valor Total:</span>
+              <span className="font-bold text-green-600 text-lg">
                 {totalValue.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL'
-                })}
+                style: 'currency',
+                currency: 'BRL'
+              })}
               </span>
             </div>
           </div>
@@ -86,44 +81,26 @@ export default function OrderSummaryPanel({
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleViewRecentPurchases}
-              disabled={!selectedCustomer || isSubmitting}
-              className="w-full transition-colors bg-white hover:bg-blue-50 border-blue-200"
-            >
+            <Button type="button" variant="outline" onClick={handleViewRecentPurchases} disabled={!selectedCustomer || isSubmitting} className="w-full transition-colors bg-white hover:bg-blue-50 border-blue-200">
               <Search size={16} className="mr-2" />
               Últimas Compras
             </Button>
 
-            {isOffline && (
-              <div className="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded-md border border-orange-200 text-center">
+            {isOffline && <div className="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded-md border border-orange-200 text-center">
                 Modo Offline
-              </div>
-            )}
+              </div>}
 
-            <Button
-              onClick={handleCreateOrder}
-              disabled={!canCreateOrder || isSubmitting}
-              className="w-full transition-all duration-200 hover:scale-105 bg-green-600 hover:bg-green-700"
-              size="lg"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center space-x-2">
+            <Button onClick={handleCreateOrder} disabled={!canCreateOrder || isSubmitting} className="w-full transition-all duration-200 hover:scale-105 bg-green-600 hover:bg-green-700" size="lg">
+              {isSubmitting ? <div className="flex items-center space-x-2">
                   <Loader className="h-4 w-4 animate-spin" />
                   <span>{isEditMode ? 'Salvando...' : 'Criando...'}</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
+                </div> : <div className="flex items-center space-x-2">
                   <ShoppingCart size={16} />
                   <span>{isEditMode ? 'Salvar Pedido' : 'Criar Pedido'}</span>
-                </div>
-              )}
+                </div>}
             </Button>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
