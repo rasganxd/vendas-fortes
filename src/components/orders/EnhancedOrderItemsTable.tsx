@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit2, Check, X, Search } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
-
 interface EnhancedOrderItemsTableProps {
   orderItems: OrderItem[];
   handleRemoveItem: (productId: string) => void;
@@ -180,17 +179,7 @@ export default function EnhancedOrderItemsTable({
             <div className="px-3 py-3">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                 {/* Left: Items summary */}
-                <div className="flex items-center gap-3 text-xs font-medium text-gray-700">
-                  <span>Produtos: {filteredItems.length}</span>
-                  <Separator orientation="vertical" className="h-3" />
-                  <span>Qtde Total: {totalQuantity}</span>
-                  {searchFilter && <>
-                      <Separator orientation="vertical" className="h-3" />
-                      <Badge variant="secondary" className="text-xs">
-                        Filtrado
-                      </Badge>
-                    </>}
-                </div>
+                
                 
                 {/* Center: Average value */}
                 
