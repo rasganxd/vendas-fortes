@@ -29,6 +29,7 @@ Deno.serve(async (req) => {
     console.log(`🔐 [sales-rep-login] Attempting login for code: ${code}`);
 
     if (!code || !password) {
+      console.log(`❌ [sales-rep-login] Missing credentials - code: ${!!code}, password: ${!!password}`);
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Código e senha são obrigatórios' 
@@ -39,6 +40,7 @@ Deno.serve(async (req) => {
     }
 
     // Get sales rep by code
+    console.log(`🔍 [sales-rep-login] Looking for sales rep with code: ${code}`);
     const { data: salesRep, error: salesRepError } = await supabase
       .from('sales_reps')
       .select('*')
@@ -47,17 +49,32 @@ Deno.serve(async (req) => {
       .single();
 
     if (salesRepError || !salesRep) {
-      console.log(`❌ [sales-rep-login] Sales rep not found for code: ${code}`);
+      console.log(`❌ [sales-rep-login] Sales rep not found for code: ${code}`, salesRepError);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Vendedor não encontrado' 
+        error: 'Vendedor não encontrado ou inativo' 
       }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
+    console.log(`✅ [sales-rep-login] Found sales rep: ${salesRep.name} (ID: ${salesRep.id})`);
+
+    // Check if password is set
+    if (!salesRep.password) {
+      console.log(`❌ [sales-rep-login] No password set for sales rep: ${salesRep.name}`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Senha não configurada para este vendedor. Entre em contato com o administrador.' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Verify password using the database function
+    console.log(`🔐 [sales-rep-login] Verifying password for: ${salesRep.name}`);
     const { data: isValidPassword, error: passwordError } = await supabase
       .rpc('verify_password', {
         password: password,
@@ -68,7 +85,7 @@ Deno.serve(async (req) => {
       console.log(`❌ [sales-rep-login] Password verification error:`, passwordError);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Erro na verificação da senha' 
+        error: 'Erro na verificação da senha. Tente novamente.' 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -87,8 +104,11 @@ Deno.serve(async (req) => {
     }
 
     // Generate a mobile session token
-    const sessionToken = `mobile_session_${salesRep.id}_${Date.now()}`;
+    const sessionToken = `mobile_session_${salesRep.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    
     console.log(`✅ [sales-rep-login] Login successful for: ${salesRep.name}`);
+    console.log(`🎫 [sales-rep-login] Generated session token for: ${salesRep.name}`);
 
     // Return sales rep data without password and with session token
     const { password: _, ...salesRepData } = salesRep;
@@ -97,7 +117,8 @@ Deno.serve(async (req) => {
       success: true, 
       salesRep: salesRepData,
       sessionToken: sessionToken,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+      expiresAt: expiresAt.toISOString(),
+      message: `Bem-vindo, ${salesRep.name}!`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -106,7 +127,8 @@ Deno.serve(async (req) => {
     console.error('❌ [sales-rep-login] Critical error:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Erro interno durante autenticação' 
+      error: 'Erro interno durante autenticação. Tente novamente.',
+      details: error.message 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

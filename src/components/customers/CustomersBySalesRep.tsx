@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Customer, SalesRep } from '@/types';
 import { customerService } from '@/services';
-import { Users, MapPin } from 'lucide-react';
+import { Users, MapPin, RefreshCw, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { toast } from '@/components/ui/use-toast';
 
 interface CustomersBySalesRepProps {
   salesRep: SalesRep;
@@ -15,6 +16,7 @@ interface CustomersBySalesRepProps {
 const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCustomers();
@@ -23,24 +25,57 @@ const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) =
   const loadCustomers = async () => {
     try {
       setIsLoading(true);
-      console.log(`🔍 Loading customers for sales rep ID: ${salesRep.id}`);
+      setError(null);
+      console.log(`🔍 [CustomersBySalesRep] Loading customers for sales rep: ${salesRep.name} (ID: ${salesRep.id})`);
       
       const allCustomers = await customerService.getAll();
-      console.log(`📋 Total customers loaded: ${allCustomers.length}`);
+      console.log(`📋 [CustomersBySalesRep] Total customers loaded: ${allCustomers.length}`);
       
       // Filter customers that belong to this specific sales rep
       const salesRepCustomers = allCustomers.filter(customer => {
-        console.log(`Customer ${customer.name} - salesRepId: ${customer.salesRepId}, looking for: ${salesRep.id}`);
-        return customer.salesRepId === salesRep.id;
+        const match = customer.salesRepId === salesRep.id;
+        console.log(`🔍 [CustomersBySalesRep] Customer ${customer.name} - salesRepId: ${customer.salesRepId}, target: ${salesRep.id}, match: ${match}`);
+        return match;
       });
       
-      console.log(`✅ Found ${salesRepCustomers.length} customers for sales rep ${salesRep.name} (ID: ${salesRep.id})`);
+      console.log(`✅ [CustomersBySalesRep] Found ${salesRepCustomers.length} customers for sales rep ${salesRep.name} (ID: ${salesRep.id})`);
+      
+      if (salesRepCustomers.length > 0) {
+        console.log(`📋 [CustomersBySalesRep] Customer list:`, salesRepCustomers.map(c => ({
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          salesRepId: c.salesRepId,
+          salesRepName: c.salesRepName
+        })));
+      }
+      
       setCustomers(salesRepCustomers);
+      
+      // Show success message
+      toast({
+        title: "Clientes carregados",
+        description: `${salesRepCustomers.length} cliente(s) encontrado(s) para ${salesRep.name}`,
+      });
+      
     } catch (error) {
-      console.error('❌ Error loading customers:', error);
+      console.error('❌ [CustomersBySalesRep] Error loading customers:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setError(errorMessage);
+      
+      toast({
+        title: "Erro ao carregar clientes",
+        description: errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    console.log(`🔄 [CustomersBySalesRep] Manual refresh requested for ${salesRep.name}`);
+    loadCustomers();
   };
 
   if (isLoading) {
@@ -48,6 +83,22 @@ const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) =
       <Card>
         <CardContent className="flex justify-center items-center h-32">
           <LoadingSpinner size="md" />
+          <span className="ml-2">Carregando clientes...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col justify-center items-center h-32 space-y-4">
+          <AlertCircle className="h-8 w-8 text-red-500" />
+          <p className="text-red-600 text-center">{error}</p>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Tentar novamente
+          </Button>
         </CardContent>
       </Card>
     );
@@ -56,33 +107,47 @@ const CustomersBySalesRep: React.FC<CustomersBySalesRepProps> = ({ salesRep }) =
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Clientes de {salesRep.name} (ID: {salesRep.id})
-          <Badge variant="secondary">{customers.length}</Badge>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Clientes de {salesRep.name}
+            <Badge variant="secondary">{customers.length}</Badge>
+          </CardTitle>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
+        </div>
+        <div className="text-sm text-gray-500">
+          Vendedor ID: {salesRep.id} | Código: {salesRep.code}
+        </div>
       </CardHeader>
       <CardContent>
         {customers.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>Nenhum cliente associado a este vendedor</p>
+            <p className="font-medium">Nenhum cliente associado</p>
+            <p className="text-sm">Este vendedor ainda não possui clientes cadastrados</p>
           </div>
         ) : (
           <div className="space-y-3">
             {customers.map((customer) => (
-              <div key={customer.id} className="flex items-center justify-between p-3 border rounded-lg">
+              <div key={customer.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                 <div className="flex-1">
                   <div className="font-medium">{customer.name}</div>
+                  {customer.companyName && (
+                    <div className="text-sm text-gray-600">{customer.companyName}</div>
+                  )}
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
+                    {customer.neighborhood && `${customer.neighborhood}, `}
                     {customer.city}, {customer.state}
                   </div>
                   {customer.phone && (
                     <div className="text-sm text-gray-500">{customer.phone}</div>
                   )}
                   <div className="text-xs text-blue-600 mt-1">
-                    Sales Rep ID: {customer.salesRepId || 'Não definido'}
+                    ID: {customer.id} | Sales Rep ID: {customer.salesRepId}
                   </div>
                 </div>
                 <div className="text-right">

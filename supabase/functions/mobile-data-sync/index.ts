@@ -29,6 +29,17 @@ Deno.serve(async (req) => {
     const { salesRepCode, action, lastSync }: SyncRequest = await req.json();
     console.log(`📱 [mobile-data-sync] Action: ${action}, Sales Rep Code: ${salesRepCode}`);
 
+    // Validate sales rep code for all actions except get_sales_rep
+    if (action !== 'get_sales_rep' && !salesRepCode) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Sales rep code is required' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     switch (action) {
       case 'get_sales_rep':
         if (!salesRepCode) {
@@ -74,24 +85,18 @@ Deno.serve(async (req) => {
         });
 
       case 'get_customers':
-        if (!salesRepCode) {
-          return new Response(JSON.stringify({ 
-            success: false, 
-            error: 'Sales rep code is required' 
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
-
+        console.log(`📱 [mobile-data-sync] Getting customers for sales rep code: ${salesRepCode}`);
+        
         // First get the sales rep ID
         const { data: rep, error: repError } = await supabase
           .from('sales_reps')
-          .select('id')
+          .select('id, name')
           .eq('code', salesRepCode)
+          .eq('active', true)
           .single();
 
         if (repError || !rep) {
+          console.log(`❌ [mobile-data-sync] Sales rep not found for code: ${salesRepCode}`, repError);
           return new Response(JSON.stringify({ 
             success: false, 
             error: 'Sales rep not found' 
@@ -101,11 +106,15 @@ Deno.serve(async (req) => {
           });
         }
 
+        console.log(`✅ [mobile-data-sync] Found sales rep: ${rep.name} (ID: ${rep.id})`);
+
+        // Get customers filtered by sales rep ID
         const { data: customers, error: customersError } = await supabase
           .from('customers')
           .select('*')
           .eq('sales_rep_id', rep.id)
-          .eq('active', true);
+          .eq('active', true)
+          .order('name');
 
         if (customersError) {
           console.log(`❌ [mobile-data-sync] Error fetching customers:`, customersError);
@@ -118,14 +127,32 @@ Deno.serve(async (req) => {
           });
         }
 
+        console.log(`✅ [mobile-data-sync] Found ${customers?.length || 0} customers for sales rep ${rep.name}`);
+        
+        // Log customer details for debugging
+        if (customers && customers.length > 0) {
+          console.log(`📋 [mobile-data-sync] Customer details:`, customers.map(c => ({
+            id: c.id,
+            code: c.code,
+            name: c.name,
+            sales_rep_id: c.sales_rep_id
+          })));
+        }
+
         return new Response(JSON.stringify({ 
           success: true, 
-          customers: customers || []
+          customers: customers || [],
+          salesRepInfo: {
+            id: rep.id,
+            name: rep.name,
+            code: salesRepCode
+          }
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
 
       case 'get_products':
+        // Products are global, not filtered by sales rep
         const { data: products, error: productsError } = await supabase
           .from('products')
           .select(`
@@ -134,7 +161,8 @@ Deno.serve(async (req) => {
             product_categories(name),
             product_brands(name)
           `)
-          .eq('active', true);
+          .eq('active', true)
+          .order('name');
 
         if (productsError) {
           console.log(`❌ [mobile-data-sync] Error fetching products:`, productsError);
@@ -147,6 +175,8 @@ Deno.serve(async (req) => {
           });
         }
 
+        console.log(`✅ [mobile-data-sync] Found ${products?.length || 0} products`);
+
         return new Response(JSON.stringify({ 
           success: true, 
           products: products || []
@@ -155,14 +185,16 @@ Deno.serve(async (req) => {
         });
 
       case 'sync_orders':
-        // Get orders for the sales rep
+        // Get orders for the specific sales rep
         const { data: repForOrders, error: repOrdersError } = await supabase
           .from('sales_reps')
-          .select('id')
+          .select('id, name')
           .eq('code', salesRepCode)
+          .eq('active', true)
           .single();
 
         if (repOrdersError || !repForOrders) {
+          console.log(`❌ [mobile-data-sync] Sales rep not found for orders: ${salesRepCode}`, repOrdersError);
           return new Response(JSON.stringify({ 
             success: false, 
             error: 'Sales rep not found' 
@@ -171,6 +203,8 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
+
+        console.log(`📋 [mobile-data-sync] Getting orders for sales rep: ${repForOrders.name} (ID: ${repForOrders.id})`);
 
         let ordersQuery = supabase
           .from('orders')
@@ -183,9 +217,10 @@ Deno.serve(async (req) => {
         // Add lastSync filter if provided
         if (lastSync) {
           ordersQuery = ordersQuery.gte('updated_at', lastSync);
+          console.log(`📅 [mobile-data-sync] Filtering orders since: ${lastSync}`);
         }
 
-        const { data: orders, error: ordersError } = await ordersQuery;
+        const { data: orders, error: ordersError } = await ordersQuery.order('created_at', { ascending: false });
 
         if (ordersError) {
           console.log(`❌ [mobile-data-sync] Error fetching orders:`, ordersError);
@@ -198,10 +233,17 @@ Deno.serve(async (req) => {
           });
         }
 
+        console.log(`✅ [mobile-data-sync] Found ${orders?.length || 0} orders for sales rep ${repForOrders.name}`);
+
         return new Response(JSON.stringify({ 
           success: true, 
           orders: orders || [],
-          syncTime: new Date().toISOString()
+          syncTime: new Date().toISOString(),
+          salesRepInfo: {
+            id: repForOrders.id,
+            name: repForOrders.name,
+            code: salesRepCode
+          }
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
@@ -220,7 +262,8 @@ Deno.serve(async (req) => {
     console.error('❌ [mobile-data-sync] Critical error:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: error.message 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

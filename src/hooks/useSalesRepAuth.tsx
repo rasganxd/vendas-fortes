@@ -9,6 +9,7 @@ interface LoginResponse {
   salesRep?: Omit<SalesRep, 'password'>;
   sessionToken?: string;
   error?: string;
+  message?: string;
 }
 
 export const useSalesRepAuth = () => {
@@ -21,37 +22,50 @@ export const useSalesRepAuth = () => {
   const authenticate = async (code: number, password: string): Promise<LoginResponse> => {
     try {
       setIsLoading(true);
-      console.log(`🔐 Authenticating sales rep with code: ${code}`);
+      console.log(`🔐 [useSalesRepAuth] Authenticating sales rep with code: ${code}`);
+
+      // Validate inputs
+      if (!code || !password) {
+        return {
+          success: false,
+          error: 'Código e senha são obrigatórios'
+        };
+      }
 
       // Try Supabase Edge Function first
       try {
-        console.log('🌐 Trying Supabase authentication...');
+        console.log('🌐 [useSalesRepAuth] Trying Supabase authentication...');
         
         const { data, error } = await supabase.functions.invoke('sales-rep-login', {
           body: { code, password }
         });
 
         if (error) {
-          console.error('❌ Supabase function error:', error);
+          console.error('❌ [useSalesRepAuth] Supabase function error:', error);
           throw error;
         }
 
+        console.log('📋 [useSalesRepAuth] Supabase response:', { success: data?.success, hasToken: !!data?.sessionToken });
+
         if (data?.success) {
-          console.log('✅ Supabase authentication successful');
+          console.log('✅ [useSalesRepAuth] Supabase authentication successful for:', data.salesRep?.name);
           
-          // Store session token for mobile sync
+          // Store session data for mobile sync
           if (data.sessionToken) {
             localStorage.setItem('mobile_session_token', data.sessionToken);
             localStorage.setItem('mobile_session_expires', data.expiresAt);
             localStorage.setItem('current_sales_rep', JSON.stringify(data.salesRep));
+            console.log('💾 [useSalesRepAuth] Session data stored locally');
           }
           
           return {
             success: true,
             salesRep: data.salesRep,
-            sessionToken: data.sessionToken
+            sessionToken: data.sessionToken,
+            message: data.message || `Bem-vindo, ${data.salesRep?.name}!`
           };
         } else {
+          console.log('❌ [useSalesRepAuth] Supabase authentication failed:', data?.error);
           return {
             success: false,
             error: data?.error || 'Erro de autenticação'
@@ -59,28 +73,31 @@ export const useSalesRepAuth = () => {
         }
 
       } catch (supabaseError) {
-        console.log('❌ Supabase authentication failed, trying local fallback:', supabaseError);
+        console.log('❌ [useSalesRepAuth] Supabase authentication failed, trying local fallback:', supabaseError);
         
         // Fallback to local authentication
-        console.log('💾 Trying local authentication...');
+        console.log('💾 [useSalesRepAuth] Trying local authentication...');
         const localResult = await salesRepAuthService.authenticate(code, password);
         
         if (localResult.success) {
-          console.log('✅ Local authentication successful');
+          console.log('✅ [useSalesRepAuth] Local authentication successful for:', localResult.salesRep?.name);
           // Store local session
           localStorage.setItem('current_sales_rep', JSON.stringify(localResult.salesRep));
+          return {
+            ...localResult,
+            message: `Bem-vindo, ${localResult.salesRep?.name}! (Modo offline)`
+          };
         } else {
-          console.log('❌ Local authentication failed:', localResult.error);
+          console.log('❌ [useSalesRepAuth] Local authentication failed:', localResult.error);
+          return localResult;
         }
-        
-        return localResult;
       }
 
     } catch (error) {
-      console.error('❌ Critical error during authentication:', error);
+      console.error('❌ [useSalesRepAuth] Critical error during authentication:', error);
       return {
         success: false,
-        error: 'Erro interno durante autenticação'
+        error: 'Erro interno durante autenticação. Verifique sua conexão e tente novamente.'
       };
     } finally {
       setIsLoading(false);
