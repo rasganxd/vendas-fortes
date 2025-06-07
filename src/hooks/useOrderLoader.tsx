@@ -67,11 +67,15 @@ export function useOrderLoader(props: UseOrderLoaderProps) {
         
         let orderToEdit: Order | null = null;
         
+        // FIXED: Always prioritize preloadedOrder to avoid double loading
         if (props.preloadedOrder && props.preloadedOrder.id === orderToLoad) {
-          console.log("✅ Using preloaded order data:", props.preloadedOrder.id);
+          console.log("✅ Using preloaded order data (avoiding double fetch):", props.preloadedOrder.id);
           orderToEdit = props.preloadedOrder;
+        } else if (!props.preloadedOrder) {
+          console.log("🔍 No preloaded order, fetching from service:", orderToLoad);
+          orderToEdit = await getOrderById(orderToLoad);
         } else {
-          console.log("🔍 Fetching order data from service:", orderToLoad);
+          console.log("⚠️ PreloadedOrder ID mismatch, fetching from service");
           orderToEdit = await getOrderById(orderToLoad);
         }
         
@@ -84,7 +88,8 @@ export function useOrderLoader(props: UseOrderLoaderProps) {
         const validatedItems = validateAndFixOrderItems(orderToEdit);
         populateOrderForm(orderToEdit, orderToLoad, validatedItems);
         
-        if (!props.preloadedOrder) {
+        // Only show toast if we actually fetched from service (not preloaded)
+        if (!props.preloadedOrder || props.preloadedOrder.id !== orderToLoad) {
           toast({
             title: "Pedido carregado",
             description: `Editando pedido #${orderToEdit.code || orderToLoad.substring(0, 6)}`

@@ -85,7 +85,7 @@ export function useProductSearch({
     setPrice(parseFloat(value) || 0);
   };
 
-  // Enhanced handleAddToOrder with debounce and validation
+  // OPTIMIZED: Simplified debounce and validation logic
   const handleAddToOrder = useCallback(() => {
     console.log("🛒 === ADDING ITEM TO ORDER (PRODUCT SEARCH) ===");
     console.log("📦 Selected product:", selectedProduct?.name, selectedProduct?.id);
@@ -99,13 +99,8 @@ export function useProductSearch({
       return;
     }
     
-    if (!selectedProduct) {
-      console.warn("⚠️ No product selected");
-      return;
-    }
-    
-    if (quantity === null || quantity <= 0) {
-      console.warn("⚠️ Invalid quantity:", quantity);
+    if (!selectedProduct || quantity === null || quantity <= 0) {
+      console.warn("⚠️ Invalid product or quantity");
       return;
     }
     
@@ -114,46 +109,39 @@ export function useProductSearch({
       clearTimeout(addTimeoutRef.current);
     }
     
-    // Set timeout to prevent rapid additions
+    // OPTIMIZED: Reduced timeout from 1000ms to 200ms for better responsiveness
     addTimeoutRef.current = setTimeout(() => {
-      if (selectedProduct && (quantity !== null && quantity > 0)) {
-        try {
-          setIsAddingItem(true);
-          console.log("✅ Calling addItemToOrder with:", {
-            product: selectedProduct.name,
-            quantity,
-            price
-          });
-          
-          // Call the addItemToOrder function passed from parent
-          addItemToOrder(selectedProduct, quantity, price);
-          
-          console.log("✅ Item successfully added, resetting form");
-          
-          // Reset all form fields immediately
-          resetForm();
-          
-          // Focus back on the search input with a small delay
-          setTimeout(() => {
-            if (inputRef?.current) {
-              inputRef.current.focus();
-              console.log("🎯 Focus returned to search input");
-            }
-          }, 100);
-        } catch (error) {
-          console.error("❌ Error adding item to order:", error);
-        } finally {
-          // Reset adding flag after a delay
-          setTimeout(() => {
-            setIsAddingItem(false);
-          }, 1000);
-        }
-      } else {
-        console.warn("⚠️ Cannot add item - missing product or invalid quantity");
-        console.warn("📦 Selected product:", selectedProduct);
-        console.warn("🔢 Quantity:", quantity);
+      try {
+        setIsAddingItem(true);
+        console.log("✅ Adding item to order:", {
+          product: selectedProduct.name,
+          quantity,
+          price
+        });
+        
+        addItemToOrder(selectedProduct, quantity, price);
+        
+        console.log("✅ Item successfully added, resetting form");
+        
+        // Reset form immediately
+        resetForm();
+        
+        // Focus back on search input
+        setTimeout(() => {
+          if (inputRef?.current) {
+            inputRef.current.focus();
+            console.log("🎯 Focus returned to search input");
+          }
+        }, 50);
+      } catch (error) {
+        console.error("❌ Error adding item to order:", error);
+      } finally {
+        // OPTIMIZED: Reduced delay from 1000ms to 300ms
+        setTimeout(() => {
+          setIsAddingItem(false);
+        }, 300);
       }
-    }, 300); // 300ms debounce
+    }, 200);
   }, [selectedProduct, quantity, price, addItemToOrder, inputRef, isAddingItem]);
 
   // Enhanced form reset function
@@ -199,8 +187,8 @@ export function useProductSearch({
     };
   }, []);
   
-  // Get filtered products with caching
-  const getFilteredProducts = () => {
+  // OPTIMIZED: Memoized filtered products calculation
+  const getFilteredProducts = useCallback(() => {
     if (!searchTerm) return [];
     
     // Check cache first
@@ -224,7 +212,7 @@ export function useProductSearch({
     productSearchCache.set(cacheKey, filtered);
     
     return filtered;
-  };
+  }, [searchTerm, products]);
   
   const filteredProducts = getFilteredProducts();
   
