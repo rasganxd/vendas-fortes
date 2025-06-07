@@ -71,6 +71,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     const transformedCustomer = {
       ...baseTransformed,
       companyName: dbRecord.company_name || '',
+      neighborhood: dbRecord.neighborhood || '', // Novo campo bairro
       visitDays: dbRecord.visit_days || [],
       visitFrequency: dbRecord.visit_frequency || '',
       visitSequence: dbRecord.visit_sequence || 0,
@@ -103,6 +104,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     const dbRecord = {
       ...baseTransformed,
       company_name: record.companyName || '',
+      neighborhood: record.neighborhood || '', // Novo campo bairro
       visit_days: record.visitDays || [],
       visit_frequency: record.visitFrequency || '',
       visit_sequence: record.visitSequence || 0,

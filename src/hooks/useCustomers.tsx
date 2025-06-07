@@ -105,6 +105,7 @@ export const useCustomers = () => {
         phone: customer.phone || '',
         email: customer.email || '',
         address: customer.address || '',
+        neighborhood: customer.neighborhood || '', // Novo campo bairro
         city: customer.city || '',
         state: customer.state || '',
         zip: customer.zip || '',

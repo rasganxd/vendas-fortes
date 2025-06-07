@@ -6,6 +6,7 @@ export interface Customer {
   companyName?: string; // This will be "Razão Social"
   phone: string;
   address: string;
+  neighborhood?: string; // Novo campo para bairro
   city: string;
   state: string;
   zip: string;
@@ -35,6 +36,7 @@ export type CustomerFormValues = {
   document: string;
   phone: string;
   address: string;
+  neighborhood?: string; // Novo campo para bairro
   city: string;
   state: string;
   zip: string;

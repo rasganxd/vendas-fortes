@@ -130,13 +130,14 @@ function parseCustomerLine(line: string, lineNumber: number): Omit<Customer, 'id
       companyName: companyName || '',
       phone: phone || '',
       address: fullAddress || '',
+      neighborhood: neighborhood || '', // Campo bairro incluído
       city: city || '',
       state: state || '',
       zip: zip?.replace(/[^0-9]/g, '') || '', // Remove non-numeric characters
       zipCode: zip?.replace(/[^0-9]/g, '') || '',
       document: document?.replace(/[^0-9]/g, '') || '', // Remove non-numeric characters
       email: '',
-      notes: neighborhood ? `Bairro: ${neighborhood}` : '',
+      notes: '',
       visitDays: ['monday'], // Default to Monday
       visitFrequency: 'weekly', // Default to weekly
       visitSequence: isNaN(visitSequence) ? 0 : visitSequence,
@@ -147,6 +148,7 @@ function parseCustomerLine(line: string, lineNumber: number): Omit<Customer, 'id
     console.log(`[SpreadsheetParser] Parsed customer on line ${lineNumber}:`, {
       code: customer.code,
       name: customer.name,
+      neighborhood: customer.neighborhood,
       city: customer.city,
       state: customer.state
     });

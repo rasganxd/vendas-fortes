@@ -23,6 +23,8 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
     zip: customer.zip || customer.zipCode || '',
     // Ensure zipCode is also set for backward compatibility
     zipCode: customer.zipCode || customer.zip || '',
+    // Ensure neighborhood is set
+    neighborhood: customer.neighborhood || '',
     // Ensure visitDays is an array
     visitDays: Array.isArray(customer.visitDays) ? customer.visitDays : (customer.visitDays ? [customer.visitDays] : []),
     // Ensure salesRepId is properly set (use camelCase)
@@ -41,6 +43,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       document: standardizedCustomer.document || '',
       phone: standardizedCustomer.phone,
       address: standardizedCustomer.address || '',
+      neighborhood: standardizedCustomer.neighborhood,
       city: standardizedCustomer.city || '',
       state: standardizedCustomer.state || '',
       zip: standardizedCustomer.zip,

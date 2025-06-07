@@ -22,6 +22,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       document: '',
       phone: '',
       address: '',
+      neighborhood: '', // Novo campo bairro
       city: '',
       state: '',
       zip: '',
