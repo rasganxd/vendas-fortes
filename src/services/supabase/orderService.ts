@@ -1,4 +1,3 @@
-
 import { SupabaseService } from './supabaseService';
 import { Order, OrderItem } from '@/types';
 import { OrderTransformations } from './orderService/orderTransformations';
@@ -15,6 +14,44 @@ class OrderSupabaseService extends SupabaseService<Order> {
 
   protected transformToDB(record: Partial<Order>): any {
     return OrderTransformations.transformToDB(record);
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      console.log(`🗑️ Starting order deletion process for order: ${id}`);
+      
+      // First, delete all order items
+      console.log('📦 Deleting order items first...');
+      const { error: itemsError } = await this.supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', id);
+      
+      if (itemsError) {
+        console.error('❌ Error deleting order items:', itemsError);
+        throw itemsError;
+      }
+      
+      console.log('✅ Order items deleted successfully');
+      
+      // Then delete the order
+      console.log('📋 Deleting order...');
+      const { error: orderError } = await this.supabase
+        .from('orders')
+        .delete()
+        .eq('id', id);
+      
+      if (orderError) {
+        console.error('❌ Error deleting order:', orderError);
+        throw orderError;
+      }
+      
+      console.log('✅ Order deleted successfully');
+      console.log(`🎉 Order deletion completed for order: ${id}`);
+    } catch (error) {
+      console.error(`❌ Critical error deleting order ${id}:`, error);
+      throw error;
+    }
   }
 
   async getById(id: string): Promise<Order | null> {
