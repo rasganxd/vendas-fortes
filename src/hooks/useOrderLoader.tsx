@@ -53,7 +53,13 @@ export function useOrderLoader(props: UseOrderLoaderProps) {
   useEffect(() => {
     const orderIdToLoad = props.orderId || searchParams.get('id');
     
+    // Early return if no order ID or already loading/loaded
     if (!orderIdToLoad || loadingRef.current || loadedOrderIdRef.current === orderIdToLoad) {
+      return;
+    }
+
+    // Early return if we don't have the required data yet
+    if (!props.customers.length || !props.salesReps.length || !props.paymentTables.length) {
       return;
     }
 
@@ -67,15 +73,12 @@ export function useOrderLoader(props: UseOrderLoaderProps) {
         
         let orderToEdit: Order | null = null;
         
-        // FIXED: Always prioritize preloadedOrder to avoid double loading
+        // Always prioritize preloadedOrder to avoid double loading
         if (props.preloadedOrder && props.preloadedOrder.id === orderToLoad) {
-          console.log("✅ Using preloaded order data (avoiding double fetch):", props.preloadedOrder.id);
+          console.log("✅ Using preloaded order data:", props.preloadedOrder.id);
           orderToEdit = props.preloadedOrder;
-        } else if (!props.preloadedOrder) {
-          console.log("🔍 No preloaded order, fetching from service:", orderToLoad);
-          orderToEdit = await getOrderById(orderToLoad);
         } else {
-          console.log("⚠️ PreloadedOrder ID mismatch, fetching from service");
+          console.log("🔍 Fetching order from service:", orderToLoad);
           orderToEdit = await getOrderById(orderToLoad);
         }
         
@@ -83,12 +86,13 @@ export function useOrderLoader(props: UseOrderLoaderProps) {
           throw new Error("Pedido não encontrado");
         }
         
+        // Mark as loaded before processing to prevent duplicate loads
         loadedOrderIdRef.current = orderToLoad;
         
         const validatedItems = validateAndFixOrderItems(orderToEdit);
         populateOrderForm(orderToEdit, orderToLoad, validatedItems);
         
-        // Only show toast if we actually fetched from service (not preloaded)
+        // Only show toast if we actually fetched from service
         if (!props.preloadedOrder || props.preloadedOrder.id !== orderToLoad) {
           toast({
             title: "Pedido carregado",
@@ -119,11 +123,13 @@ export function useOrderLoader(props: UseOrderLoaderProps) {
     };
     
     loadOrder(orderIdToLoad);
-  }, [props.preloadedOrder, props.orderId, searchParams, getOrderById, props.customers, props.salesReps, props.paymentTables, navigate, validateAndFixOrderItems, populateOrderForm]);
+  }, [props.orderId, searchParams.get('id'), props.customers.length, props.salesReps.length, props.paymentTables.length]); // Simplified dependencies
 
+  // Reset when component unmounts
   useEffect(() => {
     return () => {
       loadingRef.current = false;
+      loadedOrderIdRef.current = null;
     };
   }, []);
 

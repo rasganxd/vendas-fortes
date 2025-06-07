@@ -1,107 +1,19 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import OrderFormContainer from '@/components/orders/OrderFormContainer';
-import { OrderLoadingSkeleton } from '@/components/ui/order-skeleton';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useOrders } from '@/hooks/useOrders';
-import { Order } from '@/types';
+import { useSearchParams } from 'react-router-dom';
 
 export default function NewOrder() {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('id');
-  const { getOrderById } = useOrders();
-  const navigate = useNavigate();
-  
-  const [isValidating, setIsValidating] = useState(false);
-  const [isValid, setIsValid] = useState(true);
-  const [orderData, setOrderData] = useState<Order | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [showContent, setShowContent] = useState(!orderId); // Show immediately if no orderId
-  
-  // Validate order ID to prevent navigation to invalid orders
-  useEffect(() => {
-    const validateOrderId = async () => {
-      if (orderId) {
-        try {
-          setIsValidating(true);
-          setValidationError(null);
-          console.log("Validating order ID:", orderId);
-          
-          // Get order data - will be passed to OrderFormContainer to prevent duplicate requests
-          const order = await getOrderById(orderId);
-          
-          if (!order) {
-            console.error("Order not found with ID:", orderId);
-            setIsValid(false);
-            setValidationError(`Pedido com ID ${orderId} não encontrado`);
-            
-            // Navigate back to orders after delay
-            setTimeout(() => {
-              navigate('/pedidos', { 
-                state: { error: `Pedido com ID ${orderId} não encontrado` }
-              });
-            }, 3000);
-          } else {
-            console.log("Order validated successfully:", order.id);
-            setOrderData(order);
-            setIsValid(true);
-            // Show content with smooth transition
-            setTimeout(() => setShowContent(true), 100);
-          }
-        } catch (error) {
-          console.error("Error validating order ID:", error);
-          setIsValid(false);
-          setValidationError(error instanceof Error ? error.message : "Erro ao validar pedido");
-        } finally {
-          setIsValidating(false);
-        }
-      }
-    };
-    
-    validateOrderId();
-  }, [orderId, getOrderById, navigate]);
   
   const pageTitle = orderId ? "Edição de Pedido" : "Digitação de Pedidos";
   
-  if (orderId && isValidating) {
-    return (
-      <PageLayout title={pageTitle} fullWidth={true}>
-        <div className="w-full">
-          <OrderLoadingSkeleton />
-        </div>
-      </PageLayout>
-    );
-  }
-  
-  if (orderId && !isValid && !isValidating) {
-    return (
-      <PageLayout title="Pedido não encontrado" fullWidth={true}>
-        <div className="w-full">
-          <div className="flex justify-center items-center h-64 animate-fade-in">
-            <div className="text-center">
-              <div className="rounded-full h-12 w-12 border-2 border-red-500 mx-auto mb-4 flex items-center justify-center">
-                <span className="text-red-500 text-xl">!</span>
-              </div>
-              <p className="text-lg text-gray-700 mb-2">Pedido não encontrado</p>
-              <p className="text-sm text-gray-500">{validationError || "O pedido solicitado não está disponível ou foi excluído."}</p>
-              <button 
-                onClick={() => navigate('/pedidos')} 
-                className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded transition-colors"
-              >
-                Voltar para lista de pedidos
-              </button>
-            </div>
-          </div>
-        </div>
-      </PageLayout>
-    );
-  }
-  
   return (
     <PageLayout title={pageTitle} showConnectionStatus={true} fullWidth={true}>
-      <div className={`w-full transition-opacity duration-300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
-        <OrderFormContainer preloadedOrder={orderData} orderId={orderId} />
+      <div className="w-full">
+        <OrderFormContainer orderId={orderId} />
       </div>
     </PageLayout>
   );

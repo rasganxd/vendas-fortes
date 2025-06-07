@@ -80,7 +80,6 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     if (isEditMode && currentOrderId) {
       console.log("🔒 Order is now being edited:", currentOrderId);
       
-      // Dispatch event to mark order as being edited
       window.dispatchEvent(new CustomEvent('orderEditStarted', { 
         detail: { orderId: currentOrderId } 
       }));
@@ -94,7 +93,6 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     }
   }, [isEditMode, currentOrderId]);
 
-  // Connect the Recent Purchases functionality
   const handleViewRecentPurchases = useCallback(() => {
     if (recentPurchasesRef.current) {
       recentPurchasesRef.current.handleViewRecentPurchases();
@@ -132,10 +130,10 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     handleAddItem, handleRemoveItem
   ]);
 
-  // Show error state with smooth transition
+  // Show error state
   if (loadError) {
     return (
-      <div className="flex justify-center items-center h-64 animate-fade-in">
+      <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <div className="rounded-full h-12 w-12 border-2 border-red-500 mx-auto mb-4 flex items-center justify-center">
             <span className="text-red-500 text-xl">!</span>
@@ -153,13 +151,13 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     );
   }
 
-  // Show skeleton loading state
+  // Show loading state only when actually loading
   if (isLoading) {
     return <OrderFormSkeleton />;
   }
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <OrderForm {...formProps} />
 
       <RecentPurchasesManager
