@@ -7,6 +7,7 @@ import { salesRepAuthService } from '@/services/local/salesRepAuthService';
 interface LoginResponse {
   success: boolean;
   salesRep?: Omit<SalesRep, 'password'>;
+  sessionToken?: string;
   error?: string;
 }
 
@@ -37,9 +38,18 @@ export const useSalesRepAuth = () => {
 
         if (data?.success) {
           console.log('✅ Supabase authentication successful');
+          
+          // Store session token for mobile sync
+          if (data.sessionToken) {
+            localStorage.setItem('mobile_session_token', data.sessionToken);
+            localStorage.setItem('mobile_session_expires', data.expiresAt);
+            localStorage.setItem('current_sales_rep', JSON.stringify(data.salesRep));
+          }
+          
           return {
             success: true,
-            salesRep: data.salesRep
+            salesRep: data.salesRep,
+            sessionToken: data.sessionToken
           };
         } else {
           return {
@@ -57,6 +67,8 @@ export const useSalesRepAuth = () => {
         
         if (localResult.success) {
           console.log('✅ Local authentication successful');
+          // Store local session
+          localStorage.setItem('current_sales_rep', JSON.stringify(localResult.salesRep));
         } else {
           console.log('❌ Local authentication failed:', localResult.error);
         }
@@ -80,7 +92,20 @@ export const useSalesRepAuth = () => {
    */
   const getSalesRepByCode = async (code: number): Promise<SalesRep | null> => {
     try {
-      // Try local service first for better performance
+      // Try Supabase first
+      try {
+        const { data, error } = await supabase.functions.invoke('mobile-data-sync', {
+          body: { action: 'get_sales_rep', salesRepCode: code }
+        });
+
+        if (data?.success && data.salesRep) {
+          return data.salesRep;
+        }
+      } catch (supabaseError) {
+        console.log('Supabase unavailable, trying local service');
+      }
+
+      // Fallback to local service
       return await salesRepAuthService.getSalesRepByCode(code);
     } catch (error) {
       console.error('Error getting sales rep by code:', error);
@@ -88,9 +113,47 @@ export const useSalesRepAuth = () => {
     }
   };
 
+  /**
+   * Check if current session is valid
+   */
+  const isSessionValid = (): boolean => {
+    const token = localStorage.getItem('mobile_session_token');
+    const expires = localStorage.getItem('mobile_session_expires');
+    
+    if (!token || !expires) {
+      return false;
+    }
+    
+    return new Date(expires) > new Date();
+  };
+
+  /**
+   * Get current authenticated sales rep
+   */
+  const getCurrentSalesRep = (): SalesRep | null => {
+    try {
+      const stored = localStorage.getItem('current_sales_rep');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  /**
+   * Logout and clear session
+   */
+  const logout = () => {
+    localStorage.removeItem('mobile_session_token');
+    localStorage.removeItem('mobile_session_expires');
+    localStorage.removeItem('current_sales_rep');
+  };
+
   return {
     authenticate,
     getSalesRepByCode,
+    isSessionValid,
+    getCurrentSalesRep,
+    logout,
     isLoading
   };
 };

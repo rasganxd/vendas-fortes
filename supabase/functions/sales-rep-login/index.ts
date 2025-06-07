@@ -1,159 +1,115 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+interface LoginRequest {
+  code: number;
+  password: string;
+}
+
+Deno.serve(async (req) => {
+  console.log(`🔐 [sales-rep-login] ${req.method} request received`);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('🔐 Sales rep login API called');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    if (req.method !== 'POST') {
-      console.log('❌ Method not allowed:', req.method);
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        { 
-          status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const { code, password } = await req.json();
-    console.log(`🔍 Attempting login for sales rep code: ${code}`);
+    const { code, password }: LoginRequest = await req.json();
+    console.log(`🔐 [sales-rep-login] Attempting login for code: ${code}`);
 
     if (!code || !password) {
-      console.log('❌ Missing code or password');
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'Código e senha são obrigatórios' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Código e senha são obrigatórios' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Get sales rep by code
-    console.log(`📋 Searching for sales rep with code: ${code}`);
-    const { data: salesRep, error: fetchError } = await supabase
+    const { data: salesRep, error: salesRepError } = await supabase
       .from('sales_reps')
-      .select('id, code, name, phone, email, password, active')
+      .select('*')
       .eq('code', code)
       .eq('active', true)
       .single();
 
-    if (fetchError || !salesRep) {
-      console.log('❌ Sales rep not found or fetch error:', fetchError);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'Vendedor não encontrado ou inativo' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (salesRepError || !salesRep) {
+      console.log(`❌ [sales-rep-login] Sales rep not found for code: ${code}`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Vendedor não encontrado' 
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log(`✅ Sales rep found: ${salesRep.name} (ID: ${salesRep.id})`);
-
-    if (!salesRep.password) {
-      console.log('❌ Sales rep has no password set');
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'Senha não configurada para este vendedor' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Verify password using database function
-    console.log('🔓 Verifying password using bcrypt function...');
-    const { data: isValidPassword, error: verifyError } = await supabase
-      .rpc('verify_password', { 
-        password: password, 
-        hash: salesRep.password 
+    // Verify password using the database function
+    const { data: isValidPassword, error: passwordError } = await supabase
+      .rpc('verify_password', {
+        password: password,
+        hash: salesRep.password
       });
 
-    if (verifyError) {
-      console.log('❌ Error verifying password:', verifyError);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'Erro interno do servidor' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (passwordError) {
+      console.log(`❌ [sales-rep-login] Password verification error:`, passwordError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Erro na verificação da senha' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
-
-    console.log(`🔍 Password verification result: ${isValidPassword}`);
 
     if (!isValidPassword) {
-      console.log(`❌ Invalid password for sales rep: ${code} (${salesRep.name})`);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'Código ou senha incorretos' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      console.log(`❌ [sales-rep-login] Invalid password for code: ${code}`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Código ou senha incorretos' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log(`✅ Sales rep login successful: ${salesRep.name} (Code: ${salesRep.code})`);
+    // Generate a mobile session token
+    const sessionToken = `mobile_session_${salesRep.id}_${Date.now()}`;
+    console.log(`✅ [sales-rep-login] Login successful for: ${salesRep.name}`);
 
-    // Return sales rep data without password
+    // Return sales rep data without password and with session token
     const { password: _, ...salesRepData } = salesRep;
-    
-    return new Response(
-      JSON.stringify({
-        success: true,
-        salesRep: salesRepData,
-        message: 'Login realizado com sucesso'
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      salesRep: salesRepData,
+      sessionToken: sessionToken,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
-    console.error('❌ Critical error in sales rep login:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false,
-        error: 'Erro interno do servidor' 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    console.error('❌ [sales-rep-login] Critical error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Erro interno durante autenticação' 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 });

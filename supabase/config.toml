@@ -13,3 +13,9 @@ verify_jwt = false
 
 [functions.mobile-sync]
 verify_jwt = false
+
+[functions.mobile-data-sync]
+verify_jwt = false
+
+[functions.sales-rep-login]
+verify_jwt = false
