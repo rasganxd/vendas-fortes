@@ -1,3 +1,4 @@
+
 // Export all services from a single file for easier imports
 export * from './local/index';
 
@@ -19,6 +20,7 @@ export { paymentService } from './supabase/paymentService';
 export { paymentMethodService } from './supabase/paymentMethodService';
 export { paymentTableService } from './supabase/paymentTableService';
 export { vehicleService } from './supabase/vehicleService';
+export { LoadService } from './supabase/loadService';
 
 // Sales rep authentication service
 export { salesRepAuthService } from './local/salesRepAuthService';

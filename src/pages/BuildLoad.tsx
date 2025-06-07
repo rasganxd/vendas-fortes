@@ -38,6 +38,16 @@ export default function BuildLoad() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 [BuildLoad] Context data:', {
+      salesRepsCount: salesReps.length,
+      vehiclesCount: vehicles.length,
+      ordersCount: orders.length,
+      addLoadType: typeof addLoad
+    });
+  }, [salesReps, vehicles, orders, addLoad]);
+
   const handleOrderSelect = (order: Order, isChecked: boolean) => {
     if (isChecked) {
       setSelectedOrderIds(prev => [...prev, order.id]);
@@ -66,6 +76,13 @@ export default function BuildLoad() {
   };
 
   const validateForm = (): boolean => {
+    console.log('🔍 [BuildLoad] Validating form:', {
+      loadName,
+      selectedVehicleId,
+      selectedSalesRepId,
+      selectedOrderIds: selectedOrderIds.length
+    });
+
     if (!loadName) {
       toast.error("Nome da carga é obrigatório");
       return false;
@@ -86,7 +103,12 @@ export default function BuildLoad() {
   };
 
   const handleSaveLoad = async () => {
-    if (!validateForm()) return;
+    console.log('🚛 [BuildLoad] Starting load save process...');
+    
+    if (!validateForm()) {
+      console.log('❌ [BuildLoad] Form validation failed');
+      return;
+    }
   
     try {
       setIsSaving(true);
@@ -111,14 +133,22 @@ export default function BuildLoad() {
         total: calculateLoadTotal()
       };
     
-      console.log('🚛 Creating load with data:', loadData);
+      console.log('🚛 [BuildLoad] Creating load with data:', loadData);
+      console.log('🔍 [BuildLoad] AddLoad function type:', typeof addLoad);
+      
+      if (typeof addLoad !== 'function') {
+        console.error('❌ [BuildLoad] addLoad is not a function:', addLoad);
+        toast.error("Erro interno: função de salvamento não disponível");
+        return;
+      }
+
       const loadId = await addLoad(loadData);
-      console.log('✅ Load created with ID:', loadId);
+      console.log('✅ [BuildLoad] Load created with ID:', loadId);
     
       toast.success("Carregamento criado com sucesso!");
       navigate(`/carregamentos`);
     } catch (error) {
-      console.error("❌ Error creating load:", error);
+      console.error("❌ [BuildLoad] Error creating load:", error);
       toast.error("Ocorreu um erro ao salvar o carregamento.");
     } finally {
       setIsSaving(false);

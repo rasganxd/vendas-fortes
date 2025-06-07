@@ -8,6 +8,7 @@ import { useDeliveryRoutes } from '@/hooks/useDeliveryRoutes';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { usePaymentTables } from '@/hooks/usePaymentTables';
 import { usePayments } from '@/hooks/usePayments';
+import { useLoads } from '@/hooks/useLoads';
 
 export const useAppOperations = () => {
   // Get product brands operations
@@ -91,6 +92,15 @@ export const useAppOperations = () => {
     deletePayment
   } = usePayments();
 
+  // Get loads operations
+  const {
+    loads,
+    isLoading: isLoadingLoads,
+    addLoad,
+    updateLoad,
+    deleteLoad
+  } = useLoads();
+
   return {
     // Product brands
     productBrands,
@@ -155,11 +165,11 @@ export const useAppOperations = () => {
     updatePayment,
     deletePayment,
     
-    // Empty loads array for compatibility
-    loads: [],
-    isLoadingLoads: false,
-    addLoad: async () => '',
-    updateLoad: async () => {},
-    deleteLoad: async () => {}
+    // Loads - now using real functions instead of empty stubs
+    loads,
+    isLoadingLoads,
+    addLoad,
+    updateLoad,
+    deleteLoad
   };
 };
