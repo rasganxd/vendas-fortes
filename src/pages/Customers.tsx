@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import NewCustomerDialog from '@/components/customers/NewCustomerDialog';
 import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
 import ViewCustomerDialog from '@/components/customers/ViewCustomerDialog';
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
+import BulkCustomerImportDialog from '@/components/customers/BulkCustomerImportDialog';
 import { Customer } from '@/types';
 
 export default function Customers() {
@@ -28,6 +29,7 @@ export default function Customers() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [newCustomerCode, setNewCustomerCode] = useState<number>(1);
 
@@ -99,6 +101,7 @@ export default function Customers() {
     setIsEditDialogOpen(false);
     setIsViewDialogOpen(false);
     setIsDeleteDialogOpen(false);
+    setIsBulkImportDialogOpen(false);
     setSelectedCustomer(null);
   };
   const handleEditFromView = () => {
@@ -150,6 +153,13 @@ export default function Customers() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={() => setIsBulkImportDialogOpen(true)}
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+          >
+            <Upload size={16} className="mr-2" /> Importação em Massa
+          </Button>
           <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
             <Plus size={16} className="mr-2" /> Novo Cliente
           </Button>
@@ -218,6 +228,11 @@ export default function Customers() {
         onOpenChange={setIsDeleteDialogOpen}
         customer={selectedCustomer}
         onDelete={handleDeleteConfirm}
+      />
+
+      <BulkCustomerImportDialog
+        open={isBulkImportDialogOpen}
+        onOpenChange={setIsBulkImportDialogOpen}
       />
     </PageLayout>
   );

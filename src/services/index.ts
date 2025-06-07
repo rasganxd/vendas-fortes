@@ -24,3 +24,7 @@ export { LoadService } from './supabase/loadService';
 
 // Sales rep authentication service
 export { salesRepAuthService } from './local/salesRepAuthService';
+
+// Customer parsers
+export { parseCustomerSpreadsheet, validateCustomerData } from '../utils/customerSpreadsheetParser';
+export { parseCustomerReportText } from '../utils/customerParser';

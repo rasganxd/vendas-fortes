@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,11 +12,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Customer } from '@/types/customer';
-import { toast } from '@/hooks/use-toast';
-import { Upload, AlertCircle } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { Upload, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { parseCustomerSpreadsheet, validateCustomerData } from '@/utils/customerSpreadsheetParser';
 import { parseCustomerReportText } from '@/utils/customerParser';
 import { useSalesReps } from '@/hooks/useSalesReps';
-import { SalesRep } from '@/types/personnel';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,7 @@ import {
 } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 interface BulkCustomerImportProps {
   onImportCustomers: (customers: Omit<Customer, 'id'>[]) => Promise<string[]>;
@@ -41,28 +43,47 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
 }) => {
   const [rawText, setRawText] = useState<string>('');
   const [parsedCustomers, setParsedCustomers] = useState<Omit<Customer, 'id'>[]>([]);
+  const [validationResults, setValidationResults] = useState<{
+    valid: Omit<Customer, 'id'>[];
+    invalid: { customer: Omit<Customer, 'id'>; errors: string[] }[];
+  }>({ valid: [], invalid: [] });
   const [selectedSalesRepId, setSelectedSalesRepId] = useState<string>('');
-  const [formatType, setFormatType] = useState<string>('simple'); // 'simple' or 'multiline'
+  const [formatType, setFormatType] = useState<string>('spreadsheet'); // 'spreadsheet' or 'report'
   const { salesReps } = useSalesReps();
   
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setRawText(e.target.value);
+    // Clear previous results when text changes
+    setParsedCustomers([]);
+    setValidationResults({ valid: [], invalid: [] });
   };
 
   const handleParseCustomers = () => {
     try {
       if (!rawText.trim()) {
-        toast.error("Texto vazio", { 
-          description: "Por favor, insira o relatório de clientes." 
+        toast({
+          title: "Texto vazio",
+          description: "Por favor, insira os dados dos clientes.",
+          variant: "destructive"
         });
         return;
       }
 
-      const customers = parseCustomerReportText(rawText);
+      console.log(`[BulkImport] Parsing customers with format: ${formatType}`);
+      
+      let customers: Omit<Customer, 'id'>[];
+      
+      if (formatType === 'spreadsheet') {
+        customers = parseCustomerSpreadsheet(rawText);
+      } else {
+        customers = parseCustomerReportText(rawText);
+      }
       
       if (customers.length === 0) {
-        toast.error("Nenhum cliente encontrado", { 
-          description: "Não foi possível encontrar clientes no texto fornecido. Verifique o formato do relatório." 
+        toast({
+          title: "Nenhum cliente encontrado",
+          description: "Não foi possível encontrar clientes no texto fornecido. Verifique o formato dos dados.",
+          variant: "destructive"
         });
         return;
       }
@@ -78,39 +99,60 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
         }
       }
       
-      setParsedCustomers(customers);
+      // Validate customers
+      const validation = validateCustomerData(customers);
+      setValidationResults(validation);
+      setParsedCustomers([...validation.valid, ...validation.invalid.map(item => item.customer)]);
       
-      toast("Análise concluída", {
-        description: `${customers.length} clientes encontrados no relatório.`
+      console.log(`[BulkImport] Parsed ${customers.length} customers: ${validation.valid.length} valid, ${validation.invalid.length} invalid`);
+      
+      toast({
+        title: "Análise concluída",
+        description: `${customers.length} clientes encontrados. ${validation.valid.length} válidos, ${validation.invalid.length} com problemas.`
       });
     } catch (error) {
-      console.error("Erro ao analisar clientes:", error);
-      toast.error("Erro ao analisar relatório", {
-        description: "Ocorreu um erro ao processar o texto. Verifique o formato e tente novamente."
+      console.error("[BulkImport] Error parsing customers:", error);
+      toast({
+        title: "Erro ao analisar dados",
+        description: "Ocorreu um erro ao processar os dados. Verifique o formato e tente novamente.",
+        variant: "destructive"
       });
     }
   };
 
   const handleImportCustomers = async () => {
-    if (parsedCustomers.length === 0) {
-      toast.error("Nenhum cliente para importar", {
-        description: "Analise o relatório antes de importar os clientes."
+    if (validationResults.valid.length === 0) {
+      toast({
+        title: "Nenhum cliente válido para importar",
+        description: "Corrija os problemas encontrados antes de importar.",
+        variant: "destructive"
       });
       return;
     }
 
+    if (validationResults.invalid.length > 0) {
+      const proceed = confirm(
+        `Existem ${validationResults.invalid.length} clientes com problemas que não serão importados. Deseja continuar importando apenas os ${validationResults.valid.length} clientes válidos?`
+      );
+      if (!proceed) return;
+    }
+
     try {
-      const results = await onImportCustomers(parsedCustomers);
-      toast("Importação concluída", {
+      const results = await onImportCustomers(validationResults.valid);
+      toast({
+        title: "Importação concluída",
         description: `${results.length} clientes importados com sucesso.`
       });
       // Clear the form after successful import
       setRawText('');
       setParsedCustomers([]);
+      setValidationResults({ valid: [], invalid: [] });
     } catch (error) {
-      console.error("Erro ao importar clientes:", error);
-      toast.error("Erro na importação", {
-        description: "Ocorreu um erro ao importar os clientes. Verifique o console para mais detalhes."
+      console.error("[BulkImport] Error importing customers:", error);
+      toast({
+        title: "Erro na importação",
+        description: "Ocorreu um erro ao importar os clientes. Verifique o console para mais detalhes.",
+        variant: "destructive"
       });
     }
   };
@@ -128,6 +170,10 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
           salesRepName: selectedSalesRep.name,
         }));
         setParsedCustomers(updatedCustomers);
+        
+        // Re-validate with updated data
+        const validation = validateCustomerData(updatedCustomers);
+        setValidationResults(validation);
       }
     }
   };
@@ -136,18 +182,27 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
     setFormatType(value);
     // Clear any previously parsed customers when changing format
     setParsedCustomers([]);
+    setValidationResults({ valid: [], invalid: [] });
   };
 
   const getFormatPlaceholder = () => {
-    if (formatType === 'simple') {
-      return `CLIEN RAZAO SOCIAL                   NOME FANTASIA        COMPRADOR        ENDERECO                       BAIRRO       CIDADE
-        3 JOSE MARIA RODRIGUES DOS SANTO CATADOR INDIVIDUAL                    RUA ALBINO CAMPOS COLETTI318D  SANTO ANTONIOCHAPECO`;
+    if (formatType === 'spreadsheet') {
+      return `CLIEN	RAZÃO SOCIAL	NOME FANTASIA	ENDEREÇO	NÚMERO	BAIRRO	CEP	CIDADE	FONE	CPF/CNPJ	VEN	SEQ DE VISITA	ESTADO
+1	JOSE MARIA RODRIGUES	CATADOR INDIVIDUAL	RUA ALBINO CAMPOS	318D	SANTO ANTONIO	89800-000	CHAPECO	(49) 99999-9999	123.456.789-00	001	1	SC`;
     } else {
       return `CLIEN RAZAO SOCIAL                CANAL                          EMP
 ENDERECO                        BAIRRO              CEP         EXCL ESP
 CIDADE                      UF  COMPRADOR           FONE        ANIVER.
 CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
     }
+  };
+
+  const getCustomerValidationStatus = (customer: Omit<Customer, 'id'>) => {
+    const invalidItem = validationResults.invalid.find(item => item.customer.code === customer.code);
+    if (invalidItem) {
+      return { status: 'invalid', errors: invalidItem.errors };
+    }
+    return { status: 'valid', errors: [] };
   };
 
   return (
@@ -160,7 +215,7 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Formato de importação</AlertTitle>
             <AlertDescription>
-              Selecione o formato do relatório que você deseja importar.
+              Selecione o formato dos dados que você deseja importar.
             </AlertDescription>
           </Alert>
 
@@ -170,12 +225,12 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
             className="flex space-x-4"
           >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="simple" id="simple" />
-              <Label htmlFor="simple">Formato Simplificado (Uma linha por cliente)</Label>
+              <RadioGroupItem value="spreadsheet" id="spreadsheet" />
+              <Label htmlFor="spreadsheet">Planilha (Excel/CSV com colunas separadas)</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="multiline" id="multiline" />
-              <Label htmlFor="multiline">Formato Original (Várias linhas por cliente)</Label>
+              <RadioGroupItem value="report" id="report" />
+              <Label htmlFor="report">Relatório de sistema (formato texto)</Label>
             </div>
           </RadioGroup>
           
@@ -200,7 +255,7 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
           
           <div>
             <Label htmlFor="importText">
-              Cole aqui o conteúdo do relatório de clientes ({formatType === 'simple' ? 'uma linha por cliente' : 'múltiplas linhas por cliente'})
+              Cole aqui os dados dos clientes ({formatType === 'spreadsheet' ? 'dados da planilha' : 'relatório do sistema'})
             </Label>
             <Textarea
               id="importText"
@@ -214,17 +269,37 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
           
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleParseCustomers} type="button" variant="outline">
-              Analisar Relatório
+              Analisar Dados
             </Button>
             <Button
               onClick={handleImportCustomers}
               type="button"
-              disabled={parsedCustomers.length === 0 || isImporting}
+              disabled={validationResults.valid.length === 0 || isImporting}
             >
               <Upload className="w-4 h-4 mr-2" />
-              {isImporting ? "Importando..." : "Importar Clientes"}
+              {isImporting ? "Importando..." : `Importar ${validationResults.valid.length} Clientes`}
             </Button>
           </div>
+          
+          {validationResults.invalid.length > 0 && (
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertTitle>Problemas encontrados</AlertTitle>
+              <AlertDescription>
+                {validationResults.invalid.length} clientes têm problemas e não serão importados. Verifique a tabela abaixo.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {validationResults.valid.length > 0 && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertTitle>Clientes válidos</AlertTitle>
+              <AlertDescription>
+                {validationResults.valid.length} clientes estão prontos para importação.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </Card>
 
@@ -234,28 +309,53 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
             Clientes encontrados ({parsedCustomers.length})
           </h3>
           <div className="overflow-x-auto">
-            <Table>
+            <Table maxHeight="400px">
               <TableHeader>
                 <TableRow>
+                  <TableHead>Status</TableHead>
                   <TableHead>Código</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Cidade</TableHead>
                   <TableHead>UF</TableHead>
                   <TableHead>Vendedor</TableHead>
                   <TableHead>Seq. Visita</TableHead>
+                  <TableHead>Problemas</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {parsedCustomers.map((customer, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{customer.code}</TableCell>
-                    <TableCell>{customer.name}</TableCell>
-                    <TableCell>{customer.city}</TableCell>
-                    <TableCell>{customer.state}</TableCell>
-                    <TableCell>{customer.salesRepName}</TableCell>
-                    <TableCell>{customer.visitSequence}</TableCell>
-                  </TableRow>
-                ))}
+                {parsedCustomers.map((customer, index) => {
+                  const validation = getCustomerValidationStatus(customer);
+                  return (
+                    <TableRow key={index}>
+                      <TableCell>
+                        {validation.status === 'valid' ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Válido
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Erro
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{customer.code}</TableCell>
+                      <TableCell>{customer.name}</TableCell>
+                      <TableCell>{customer.city}</TableCell>
+                      <TableCell>{customer.state}</TableCell>
+                      <TableCell>{customer.salesRepName || '-'}</TableCell>
+                      <TableCell>{customer.visitSequence}</TableCell>
+                      <TableCell>
+                        {validation.errors.length > 0 && (
+                          <div className="text-sm text-red-600">
+                            {validation.errors.join(', ')}
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
