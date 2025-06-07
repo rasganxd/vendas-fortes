@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { OrderItem } from '@/types';
 import { Button } from "@/components/ui/button";
@@ -112,7 +113,7 @@ export default function EnhancedOrderItemsTable({
                     <td className="text-gray-800 font-mono px-[9px] py-[13px]">
                       {item.productCode || '—'}
                     </td>
-                    <td className="text-gray-800 font-medium py-[8px] px-[7px]">
+                    <td className="text-gray-800 font-medium py-[8px] px-[7px] text-sm">
                       <div className="max-w-xs truncate" title={item.productName}>
                         {item.productName}
                       </div>
