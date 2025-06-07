@@ -1,3 +1,4 @@
+
 import { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Button } from '@/components/ui/button';
@@ -5,11 +6,13 @@ import { Order } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
 import { Printer, Package, TruckIcon, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 interface LoadPickingListProps {
   orders: Order[];
   onClose: () => void;
   loadName?: string;
 }
+
 interface AggregatedProduct {
   productId: string;
   productCode: string | number;
@@ -20,6 +23,7 @@ interface AggregatedProduct {
   total: number;
   ordersContaining: string[]; // Track which orders contain this product
 }
+
 const LoadPickingList = ({
   orders,
   onClose,
@@ -55,11 +59,13 @@ const LoadPickingList = ({
     });
     return Array.from(productsMap.values()).sort((a, b) => String(a.productCode).localeCompare(String(b.productCode)));
   };
+
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
     documentTitle: `Romaneio_Separacao_${loadName.replace(/\s/g, '_')}`,
     onAfterPrint: onClose
   });
+
   const aggregatedProducts = getAggregatedProducts();
 
   // Calcular o total de valor da carga
@@ -67,7 +73,9 @@ const LoadPickingList = ({
 
   // Número de entregas (pedidos)
   const deliveryCount = orders.length;
-  return <div className="space-y-4">
+
+  return (
+    <div className="space-y-4">
       {/* Versão para impressão */}
       <div ref={componentRef} className="p-4 print:p-8">
         <div className="text-center mb-6 print:mb-8">
@@ -113,9 +121,9 @@ const LoadPickingList = ({
             <CardContent className="py-2 px-4">
               <p className="text-xl font-bold text-sales-800 print:text-black">
                 {totalValue.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
               </p>
             </CardContent>
           </Card>
@@ -135,34 +143,36 @@ const LoadPickingList = ({
             </tr>
           </thead>
           <tbody>
-            {aggregatedProducts.map((product, index) => <tr key={index} className="hover:bg-gray-50 print:hover:bg-white">
+            {aggregatedProducts.map((product, index) => (
+              <tr key={index} className="hover:bg-gray-50 print:hover:bg-white">
                 <td className="border border-gray-400 p-2 font-mono">{product.productCode}</td>
                 <td className="border border-gray-400 p-2">{product.productName}</td>
                 <td className="border border-gray-400 p-2 text-center font-bold">{product.quantity}</td>
                 <td className="border border-gray-400 p-2 text-center">{product.unit}</td>
                 <td className="border border-gray-400 p-2 text-right">
                   {product.unitPrice.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
                 </td>
                 <td className="border border-gray-400 p-2 text-right font-bold">
                   {product.total.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
                 </td>
                 <td className="border border-gray-400 p-2 text-center">
                   <div className="h-5 w-5 border-2 border-gray-400 rounded-sm mx-auto print:border-black"></div>
                 </td>
-              </tr>)}
+              </tr>
+            ))}
             <tr className="bg-sales-50 print:bg-gray-100 font-bold text-sales-800 print:text-black">
               <td className="border border-gray-400 p-2" colSpan={5}>TOTAL GERAL</td>
               <td className="border border-gray-400 p-2 text-right font-bold">
                 {totalValue.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
               </td>
               <td className="border border-gray-400 p-2"></td>
             </tr>
@@ -171,9 +181,15 @@ const LoadPickingList = ({
         
         {/* Lista de pedidos incluídos */}
         <div className="mt-6 print:mt-8">
-          
+          <h3 className="text-lg font-bold text-sales-800 print:text-black mb-4">
+            Pedidos Incluídos no Carregamento
+          </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-            {orders.map(order => {})}
+            {orders.map(order => (
+              <div key={order.id} className="bg-gray-50 print:bg-white p-2 rounded border print:border-gray-400">
+                <span className="font-mono text-xs">#{order.code}</span> - {order.customerName}
+              </div>
+            ))}
           </div>
         </div>
         
@@ -198,6 +214,8 @@ const LoadPickingList = ({
           <Printer size={16} /> Imprimir Romaneio
         </Button>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default LoadPickingList;
