@@ -1,4 +1,3 @@
-
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -228,45 +227,88 @@ export const addBulkProducts = async (
   updateProgress: (progress: number) => void
 ): Promise<string[]> => {
   try {
-    // Preparar dados para armazenamento local
-    const productsWithData = products.map(product => {
-      // Garantir que o produto tenha um código
-      const productCode = product.code || (currentProducts.length > 0 
-        ? Math.max(...currentProducts.map(p => p.code || 0)) + 1 
-        : 1);
-      return { 
-        ...product, 
-        code: productCode,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+    console.log('🔄 [ProductOperations] Starting bulk product import...');
+    console.log('📊 [ProductOperations] Products to import:', products.length);
+    
+    const createdIds: string[] = [];
+    const createdProducts: Product[] = [];
+    const errors: string[] = [];
+    
+    // Process each product individually
+    for (let i = 0; i < products.length; i++) {
+      const product = products[i];
+      const progress = ((i + 1) / products.length) * 100;
+      updateProgress(progress);
+      
+      try {
+        console.log(`🔄 [ProductOperations] Processing product ${i + 1}/${products.length}: ${product.name}`);
+        
+        // Garantir que o produto tenha um código único
+        const productCode = product.code || (currentProducts.length > 0 
+          ? Math.max(...currentProducts.map(p => p.code || 0), ...createdProducts.map(p => p.code || 0)) + 1 + i 
+          : 1 + i);
+        
+        const productWithCode = { 
+          ...product, 
+          code: productCode,
+          // Ensure we have a price value (default to cost if not provided)
+          price: product.price !== undefined ? product.price : product.cost,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        console.log(`📝 [ProductOperations] Product ${i + 1} with code:`, productWithCode.code);
+        
+        // Save to Supabase
+        const newProduct = await productService.create(productWithCode);
+        console.log(`✅ [ProductOperations] Product ${i + 1} created successfully:`, newProduct.id);
+        
+        createdIds.push(newProduct.id);
+        createdProducts.push(newProduct);
+        
+      } catch (error) {
+        console.error(`❌ [ProductOperations] Error creating product ${i + 1}:`, error);
+        const errorMessage = `Produto ${product.name}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`;
+        errors.push(errorMessage);
+      }
+    }
+    
+    // Update local state with successfully created products
+    if (createdProducts.length > 0) {
+      console.log(`🔄 [ProductOperations] Updating local state with ${createdProducts.length} products...`);
+      setProducts(currentProducts => [...currentProducts, ...createdProducts]);
+    }
+    
+    // Show results to user
+    if (errors.length > 0) {
+      console.warn(`⚠️ [ProductOperations] ${errors.length} products failed to import:`, errors);
+      toast({
+        title: "Importação parcialmente concluída",
+        description: `${createdProducts.length} produtos importados com sucesso. ${errors.length} falharam.`,
+        variant: errors.length === products.length ? "destructive" : "default"
+      });
+    } else {
+      console.log(`🎉 [ProductOperations] All ${createdProducts.length} products imported successfully!`);
+      toast({
+        title: "Produtos importados",
+        description: `${createdProducts.length} produtos foram importados com sucesso!`
+      });
+    }
+    
+    // Log detailed results
+    console.log('📊 [ProductOperations] Bulk import results:', {
+      total: products.length,
+      success: createdProducts.length,
+      failed: errors.length,
+      successIds: createdIds
     });
     
-    // Add to local storage
-    console.log("Adding bulk products:", productsWithData);
-    const ids = await productLocalService.createBulk(productsWithData);
-    console.log("Products added with IDs:", ids);
-    
-    // Create products with IDs
-    const newProducts = productsWithData.map((product, index) => ({
-      ...product,
-      id: ids[index]
-    }));
-    
-    // Update state
-    setProducts(currentProducts => [...currentProducts, ...newProducts]);
-    
-    toast({
-      title: "Produtos adicionados",
-      description: `${newProducts.length} produtos foram adicionados com sucesso!`
-    });
-    
-    return ids;
+    return createdIds;
   } catch (error) {
-    console.error("Erro ao adicionar produtos em massa:", error);
+    console.error("❌ [ProductOperations] Critical error in bulk product import:", error);
     toast({
-      title: "Erro ao adicionar produtos",
-      description: "Houve um problema ao adicionar os produtos em massa.",
+      title: "Erro na importação em massa",
+      description: `Erro crítico: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
       variant: "destructive"
     });
     return [];
