@@ -20,8 +20,5 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Export AppContextProvider as an alias for AppProvider for backward compatibility
-export const AppContextProvider = AppProvider;
-
 // Export the context from AppContext.tsx
 export { AppContext } from './AppContext';

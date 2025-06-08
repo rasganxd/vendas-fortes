@@ -1,89 +1,89 @@
 
-import { Suspense, lazy } from 'react';
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
-import { AppContextProvider } from '@/context/AppContextProvider';
-import { Loader2 } from 'lucide-react';
-import MainLayout from './components/layout/MainLayout';
-
-// Lazy load components
-const Index = lazy(() => import("./pages/Index"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Products = lazy(() => import("./pages/Products"));
-const Orders = lazy(() => import("./pages/Orders"));
-const NewOrder = lazy(() => import("./pages/NewOrder"));
-const MobileOrdersImport = lazy(() => import("./pages/MobileOrdersImport"));
-const Customers = lazy(() => import("./pages/Customers"));
-const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
-const PaymentTables = lazy(() => import("./pages/PaymentTables"));
-const ProductPricing = lazy(() => import("./pages/ProductPricing"));
-const ProductClassifications = lazy(() => import("./pages/ProductClassifications"));
-const SalesReps = lazy(() => import("./pages/SalesReps"));
-const Settings = lazy(() => import("./pages/Settings"));
-const SystemMaintenance = lazy(() => import("./pages/SystemMaintenance"));
-const Vehicles = lazy(() => import("./pages/Vehicles"));
-const RoutesPage = lazy(() => import("./pages/RoutesPage"));
-const Loads = lazy(() => import("./pages/Loads"));
-const BuildLoad = lazy(() => import("./pages/BuildLoad"));
-const Payments = lazy(() => import("./pages/Payments"));
-const PaymentsList = lazy(() => import("./pages/PaymentsList"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-
-const queryClient = new QueryClient();
-
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <Loader2 className="h-8 w-8 animate-spin" />
-  </div>
-);
+import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Toaster } from '@/components/ui/sonner';
+import { ThemeProvider } from '@/components/theme-provider';
+import SideNav from '@/components/layout/SideNav';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppProvider } from '@/context/AppContextProvider';
+import Index from '@/pages/Index';
+import Dashboard from '@/pages/Dashboard';
+import Customers from '@/pages/Customers';
+import Products from '@/pages/Products';
+import ProductPricingPage from '@/pages/ProductPricing';
+import ProductClassifications from '@/pages/ProductClassifications';
+import Orders from '@/pages/Orders';
+import NewOrder from '@/pages/NewOrder';
+import Loads from '@/pages/Loads';
+import BuildLoad from '@/pages/BuildLoad';
+import RoutesPage from '@/pages/RoutesPage';
+import SalesReps from '@/pages/SalesReps';
+import Vehicles from '@/pages/Vehicles';
+import PaymentTables from '@/pages/PaymentTables';
+import PaymentMethods from '@/pages/PaymentMethods';
+import Payments from '@/pages/Payments';
+import PaymentsList from '@/pages/PaymentsList';
+import Settings from '@/pages/Settings';
+import SystemMaintenance from '@/pages/SystemMaintenance';
+import NotFound from '@/pages/NotFound';
+import './App.css';
 
 function App() {
+  console.log("App: Rendering App component");
+  
+  // Check if running on mobile device
+  useEffect(() => {
+    console.log("App: Running main useEffect");
+    
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      console.log("App: Running on mobile device");
+      document.body.classList.add('mobile-device');
+    } else {
+      console.log("App: Running on desktop device");
+    }
+  }, []);
+
+  console.log("App: Rendering application");
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-        <TooltipProvider>
-          <AppContextProvider>
-            <BrowserRouter>
-              <div className="min-h-screen bg-background">
-                <Suspense fallback={<LoadingSpinner />}>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route element={<MainLayout />}>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/produtos" element={<Products />} />
-                      <Route path="/pedidos" element={<Orders />} />
-                      <Route path="/pedidos/novo" element={<NewOrder />} />
-                      <Route path="/pedidos/importar-mobile" element={<MobileOrdersImport />} />
-                      <Route path="/clientes" element={<Customers />} />
-                      <Route path="/formas-pagamento" element={<PaymentMethods />} />
-                      <Route path="/tabelas-pagamento" element={<PaymentTables />} />
-                      <Route path="/produtos/precos" element={<ProductPricing />} />
-                      <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
-                      <Route path="/vendedores" element={<SalesReps />} />
-                      <Route path="/configuracoes" element={<Settings />} />
-                      <Route path="/manutencao" element={<SystemMaintenance />} />
-                      <Route path="/veiculos" element={<Vehicles />} />
-                      <Route path="/rotas" element={<RoutesPage />} />
-                      <Route path="/cargas" element={<Loads />} />
-                      <Route path="/cargas/montar" element={<BuildLoad />} />
-                      <Route path="/pagamentos" element={<Payments />} />
-                      <Route path="/pagamentos/lista" element={<PaymentsList />} />
-                    </Route>
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
+    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+      <AppProvider>
+        <Router>
+          <SidebarProvider defaultOpen>
+            <div className="flex min-h-screen w-full">
+              <SideNav />
+              <div className="flex-1 relative">
+                <RouterRoutes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/clientes" element={<Customers />} />
+                  <Route path="/produtos" element={<Products />} />
+                  <Route path="/produtos/precificacao" element={<ProductPricingPage />} />
+                  <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
+                  <Route path="/pedidos" element={<Orders />} />
+                  <Route path="/pedidos/novo" element={<NewOrder />} />
+                  <Route path="/carregamentos" element={<Loads />} />
+                  <Route path="/carregamentos/montar" element={<BuildLoad />} />
+                  <Route path="/carregamentos/:id" element={<BuildLoad />} />
+                  <Route path="/rotas" element={<RoutesPage />} />
+                  <Route path="/vendedores" element={<SalesReps />} />
+                  <Route path="/veiculos" element={<Vehicles />} />
+                  <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
+                  <Route path="/metodos-pagamento" element={<PaymentMethods />} />
+                  <Route path="/pagamentos" element={<Payments />} />
+                  <Route path="/lista-pagamentos" element={<PaymentsList />} />
+                  <Route path="/configuracoes" element={<Settings />} />
+                  <Route path="/manutencao" element={<SystemMaintenance />} />
+                  <Route path="*" element={<NotFound />} />
+                </RouterRoutes>
               </div>
-              <Toaster />
-              <Sonner />
-            </BrowserRouter>
-          </AppContextProvider>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+            </div>
+            <Toaster />
+          </SidebarProvider>
+        </Router>
+      </AppProvider>
+    </ThemeProvider>
   );
 }
 

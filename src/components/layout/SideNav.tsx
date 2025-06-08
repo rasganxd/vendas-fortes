@@ -1,133 +1,207 @@
-
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { 
-  Home, 
-  Package, 
-  ShoppingCart, 
-  Users, 
-  CreditCard, 
-  Receipt,
-  Smartphone,
-  Settings, 
-  Wrench,
+import { Link, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  ListChecks,
+  Package,
+  Users,
+  Settings,
   Truck,
-  Route,
-  Package2,
-  Banknote,
-  List
+  FileText,
+  Coins,
+  Database,
+  CreditCard,
+  UserRound,
+  LucideIcon,
+  ChevronRight,
+  PlusCircle
 } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
 
-interface SideNavProps {
-  isCollapsed: boolean;
-}
+import { 
+  Sidebar, 
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton
+} from "@/components/ui/sidebar";
 
-export default function SideNav({ isCollapsed }: SideNavProps) {
+import { NavItem } from "@/types";
+import { CustomScrollArea } from "@/components/ui/custom-scroll-area";
+import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/theme-provider";
+import { useAppContext } from "@/hooks/useAppContext";
+import { useEffect } from "react";
+
+// Define navigation items - removido o item "Classificações"
+const navigation: NavItem[] = [
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    group: "geral"
+  },
+  {
+    title: "Clientes",
+    href: "/clientes",
+    icon: Users,
+    group: "cadastro"
+  },
+  {
+    title: "Produtos",
+    href: "/produtos",
+    icon: Package,
+    group: "cadastro"
+  },
+  {
+    title: "Vendedores",
+    href: "/vendedores",
+    icon: UserRound,
+    group: "cadastro"
+  },
+  {
+    title: "Pedidos",
+    href: "/pedidos",
+    icon: FileText,
+    group: "vendas"
+  },
+  {
+    title: "Digitar Pedido",
+    href: "/pedidos/novo",
+    icon: PlusCircle,
+    group: "vendas"
+  },
+  {
+    title: "Pagamentos",
+    href: "/pagamentos",
+    icon: Coins,
+    group: "financeiro"
+  },
+  {
+    title: "Tabelas Pagto",
+    href: "/pagamentos/tabelas", 
+    icon: CreditCard,
+    group: "financeiro"
+  },
+  {
+    title: "Rotas",
+    href: "/rotas",
+    icon: ListChecks,
+    group: "logistics"
+  },
+  {
+    title: "Cargas",
+    href: "/carregamentos",
+    icon: Package,
+    group: "logistics"
+  },
+  {
+    title: "Veículos",
+    href: "/veiculos",
+    icon: Truck,
+    group: "logistics"
+  },
+  {
+    title: "Config",
+    href: "/configuracoes",
+    icon: Settings,
+    group: "sistema"
+  },
+  {
+    title: "Manutenção",
+    href: "/manutencao",
+    icon: Database,
+    group: "sistema"
+  },
+];
+
+export default function SideNav() {
   const location = useLocation();
-  const navigate = useNavigate();
-
-  const menuItems = [
-    { 
-      icon: Home, 
-      label: "Dashboard", 
-      path: "/dashboard",
-      description: "Visão geral do sistema"
-    },
-    { 
-      icon: Package, 
-      label: "Produtos", 
-      path: "/produtos",
-      description: "Gestão de produtos"
-    },
-    { 
-      icon: ShoppingCart, 
-      label: "Pedidos", 
-      path: "/pedidos",
-      description: "Gestão de pedidos"
-    },
-    { 
-      icon: Smartphone, 
-      label: "Import. Mobile", 
-      path: "/pedidos/importar-mobile",
-      description: "Importar pedidos mobile"
-    },
-    { 
-      icon: Users, 
-      label: "Clientes", 
-      path: "/clientes",
-      description: "Gestão de clientes"
-    },
-    { 
-      icon: CreditCard, 
-      label: "Pagamentos", 
-      path: "/pagamentos",
-      description: "Gestão de pagamentos"
-    },
-    { 
-      icon: Receipt, 
-      label: "Vendedores", 
-      path: "/vendedores",
-      description: "Gestão de vendedores"
-    },
-    { 
-      icon: Truck, 
-      label: "Veículos", 
-      path: "/veiculos",
-      description: "Gestão de veículos"
-    },
-    { 
-      icon: Route, 
-      label: "Rotas", 
-      path: "/rotas",
-      description: "Gestão de rotas"
-    },
-    { 
-      icon: Package2, 
-      label: "Cargas", 
-      path: "/cargas",
-      description: "Gestão de cargas"
-    },
-    { 
-      icon: Settings, 
-      label: "Configurações", 
-      path: "/configuracoes",
-      description: "Configurações do sistema"
+  const { theme } = useTheme();
+  const { settings } = useAppContext();
+  
+  // Listen for theme changes with simplified effect
+  useEffect(() => {
+    // Add dynamic-sidebar class to the sidebar header to allow styling from CSS
+    const sidebarHeader = document.querySelector('.dynamic-sidebar-header') as HTMLElement;
+    if (sidebarHeader) {
+      sidebarHeader.style.backgroundColor = '#4a86e8'; // Soft blue color for sidebar header
+      sidebarHeader.style.color = '#ffffff';
     }
-  ];
+    
+    console.log("Theme change detected in SideNav");
+  }, []);
+  
+  // Group the navigation items by their group
+  const groupedNavItems = navigation.reduce((groups, item) => {
+    const group = item.group || 'other';
+    const groupArray = groups[group] || [];
+    groupArray.push(item);
+    groups[group] = groupArray;
+    return groups;
+  }, {} as Record<string, NavItem[]>);
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
+  // Labels for groups
+  const groupLabels: Record<string, string> = {
+    geral: "GERAL",
+    cadastro: "CADASTRO",
+    vendas: "VENDAS",
+    financeiro: "FINANCEIRO",
+    logistics: "LOGÍSTICA",
+    sistema: "SISTEMA"
   };
-
+  
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 py-4">
-        <nav className="grid gap-1 px-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            
-            return (
-              <Button
-                key={item.path}
-                variant={isActive ? "secondary" : "ghost"}
-                className={cn(
-                  "justify-start h-10 px-3",
-                  isActive && "bg-secondary text-secondary-foreground font-medium",
-                  isCollapsed && "px-2"
-                )}
-                onClick={() => handleNavigation(item.path)}
-              >
-                <Icon className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
-                {!isCollapsed && (
-                  <span className="truncate">{item.label}</span>
-                )}
-              </Button>
-            );
-          })}
-        </nav>
-      </div>
-    </div>
+    <Sidebar variant="sidebar" collapsible="icon" className="border-r shadow-medium bg-blue-50">
+      <SidebarHeader className="px-5 py-4 flex items-center justify-between dynamic-sidebar-header transition-colors">
+        <h1 className="text-xl font-bold text-white">SalesTrack</h1>
+      </SidebarHeader>
+      <CustomScrollArea hideScrollbar={true} className="h-[calc(100vh-64px)]">
+        <SidebarContent className="py-4 px-3">
+          <SidebarMenu>
+            {Object.entries(groupedNavItems).map(([group, items]) => (
+              <div key={group} className="mb-6">
+                <h3 className="text-xs uppercase font-semibold text-blue-800/80 px-3 mb-2 flex items-center">
+                  <ChevronRight size={14} className="mr-1 text-blue-800/80" />
+                  {groupLabels[group] || group}
+                </h3>
+                {items.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  const IconComponent = item.icon as LucideIcon;
+                  
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={isActive} 
+                        tooltip={item.title} 
+                        size="sm"
+                        className={cn(
+                          "transition-all duration-200 rounded-lg",
+                          isActive ? 
+                            "active-menu-item font-medium" : 
+                            "text-blue-900 hover:bg-blue-100 hover:text-blue-700"
+                        )}
+                      >
+                        <Link to={item.href} className="flex items-center px-3 py-2 text-sm">
+                          {IconComponent && (
+                            <div className={cn(
+                              "mr-3 flex items-center justify-center w-6 h-6 rounded-md",
+                              isActive ? "active-icon" : "text-blue-700"
+                            )}>
+                              <IconComponent size={18} />
+                            </div>
+                          )}
+                          <span className="truncate">{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </div>
+            ))}
+          </SidebarMenu>
+        </SidebarContent>
+      </CustomScrollArea>
+    </Sidebar>
   );
 }
