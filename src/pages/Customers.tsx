@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import PageLayout from '@/components/layout/PageLayout';
@@ -13,6 +14,22 @@ import ViewCustomerDialog from '@/components/customers/ViewCustomerDialog';
 import DeleteCustomerDialog from '@/components/customers/DeleteCustomerDialog';
 import BulkCustomerImportDialog from '@/components/customers/BulkCustomerImportDialog';
 import { Customer } from '@/types';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Customers() {
   const {
@@ -32,6 +49,17 @@ export default function Customers() {
   const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [newCustomerCode, setNewCustomerCode] = useState<number>(1);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  
+  // Calculate pagination data
+  const totalItems = filteredCustomers.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCustomers = filteredCustomers.slice(startIndex, endIndex);
 
   // Debug logs
   console.log('🔍 [Customers Page] Current state:', {
@@ -74,28 +102,129 @@ export default function Customers() {
       console.log('📊 [Customers Page] Showing all customers:', customers.length);
       setFilteredCustomers(customers);
     }
+    // Reset to first page when filtering
+    setCurrentPage(1);
   }, [customers, searchTerm]);
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1); // Reset to first page
+  };
+
+  const renderPaginationLinks = () => {
+    const links = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        links.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              onClick={() => handlePageChange(i)}
+              isActive={currentPage === i}
+              className="cursor-pointer"
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+    } else {
+      // Show smart pagination with ellipsis
+      links.push(
+        <PaginationItem key={1}>
+          <PaginationLink
+            onClick={() => handlePageChange(1)}
+            isActive={currentPage === 1}
+            className="cursor-pointer"
+          >
+            1
+          </PaginationLink>
+        </PaginationItem>
+      );
+
+      if (currentPage > 3) {
+        links.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        links.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              onClick={() => handlePageChange(i)}
+              isActive={currentPage === i}
+              className="cursor-pointer"
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+
+      if (currentPage < totalPages - 2) {
+        links.push(
+          <PaginationItem key="ellipsis2">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+
+      if (totalPages > 1) {
+        links.push(
+          <PaginationItem key={totalPages}>
+            <PaginationLink
+              onClick={() => handlePageChange(totalPages)}
+              isActive={currentPage === totalPages}
+              className="cursor-pointer"
+            >
+              {totalPages}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+    }
+
+    return links;
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
   const handleNewCustomer = async () => {
     const nextCode = await generateNextCustomerCode();
     setNewCustomerCode(nextCode);
     setIsNewCustomerDialogOpen(true);
   };
+
   const handleViewCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsViewDialogOpen(true);
   };
+
   const handleEditCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsEditDialogOpen(true);
   };
+
   const handleDeleteCustomer = (id: string, customer: Customer) => {
     setSelectedCustomer(customer);
     setIsDeleteDialogOpen(true);
   };
+
   const handleCloseDialogs = () => {
     setIsNewCustomerDialogOpen(false);
     setIsEditDialogOpen(false);
@@ -104,24 +233,29 @@ export default function Customers() {
     setIsBulkImportDialogOpen(false);
     setSelectedCustomer(null);
   };
+
   const handleEditFromView = () => {
     setIsViewDialogOpen(false);
     setIsEditDialogOpen(true);
   };
+
   const handleDeleteFromView = () => {
     setIsViewDialogOpen(false);
     setIsDeleteDialogOpen(true);
   };
+
   const handleNewCustomerSubmit = (data: any) => {
     console.log('✅ New customer submitted successfully:', data);
     setIsNewCustomerDialogOpen(false);
   };
+
   const handleEditCustomerSubmit = async (data: any) => {
     if (selectedCustomer) {
       await updateCustomer(selectedCustomer.id, data);
       setIsEditDialogOpen(false);
     }
   };
+
   const handleDeleteConfirm = async (id: string) => {
     await deleteCustomer(id);
     setIsDeleteDialogOpen(false);
@@ -149,7 +283,8 @@ export default function Customers() {
         <div>
           <h2 className="text-lg font-medium">Gerencie os clientes da sua empresa</h2>
           <p className="text-sm text-muted-foreground">
-            {customers.length} clientes carregados
+            {totalItems} clientes {searchTerm ? 'encontrados' : 'cadastrados'}
+            {totalItems > 0 && ` • Mostrando ${startIndex + 1}-${Math.min(endIndex, totalItems)} de ${totalItems}`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -168,7 +303,7 @@ export default function Customers() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -178,11 +313,20 @@ export default function Customers() {
                 className="pl-8"
               />
             </div>
-            {customers.length > 0 && (
-              <Badge variant="outline">
-                {filteredCustomers.length} de {customers.length}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Itens por página:</span>
+              <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -191,12 +335,39 @@ export default function Customers() {
               <p>Nenhum cliente encontrado. Adicione o primeiro cliente!</p>
             </div>
           ) : (
-            <CustomersTable
-              customers={filteredCustomers}
-              onEdit={handleEditCustomer}
-              onDelete={handleDeleteCustomer}
-              onView={handleViewCustomer}
-            />
+            <>
+              <CustomersTable
+                customers={currentCustomers}
+                onEdit={handleEditCustomer}
+                onDelete={handleDeleteCustomer}
+                onView={handleViewCustomer}
+              />
+              
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                      {renderPaginationLinks()}
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
