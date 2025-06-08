@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AppContextProvider } from '@/context/AppContextProvider';
 import { Loader2 } from 'lucide-react';
+import MainLayout from './components/layout/MainLayout';
 
 // Lazy load components
 const Index = lazy(() => import("./pages/Index"));
@@ -51,25 +52,27 @@ function App() {
                 <Suspense fallback={<LoadingSpinner />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/produtos" element={<Products />} />
-                    <Route path="/pedidos" element={<Orders />} />
-                    <Route path="/pedidos/novo" element={<NewOrder />} />
-                    <Route path="/pedidos/importar-mobile" element={<MobileOrdersImport />} />
-                    <Route path="/clientes" element={<Customers />} />
-                    <Route path="/formas-pagamento" element={<PaymentMethods />} />
-                    <Route path="/tabelas-pagamento" element={<PaymentTables />} />
-                    <Route path="/produtos/precos" element={<ProductPricing />} />
-                    <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
-                    <Route path="/vendedores" element={<SalesReps />} />
-                    <Route path="/configuracoes" element={<Settings />} />
-                    <Route path="/manutencao" element={<SystemMaintenance />} />
-                    <Route path="/veiculos" element={<Vehicles />} />
-                    <Route path="/rotas" element={<RoutesPage />} />
-                    <Route path="/cargas" element={<Loads />} />
-                    <Route path="/cargas/montar" element={<BuildLoad />} />
-                    <Route path="/pagamentos" element={<Payments />} />
-                    <Route path="/pagamentos/lista" element={<PaymentsList />} />
+                    <Route element={<MainLayout />}>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/produtos" element={<Products />} />
+                      <Route path="/pedidos" element={<Orders />} />
+                      <Route path="/pedidos/novo" element={<NewOrder />} />
+                      <Route path="/pedidos/importar-mobile" element={<MobileOrdersImport />} />
+                      <Route path="/clientes" element={<Customers />} />
+                      <Route path="/formas-pagamento" element={<PaymentMethods />} />
+                      <Route path="/tabelas-pagamento" element={<PaymentTables />} />
+                      <Route path="/produtos/precos" element={<ProductPricing />} />
+                      <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
+                      <Route path="/vendedores" element={<SalesReps />} />
+                      <Route path="/configuracoes" element={<Settings />} />
+                      <Route path="/manutencao" element={<SystemMaintenance />} />
+                      <Route path="/veiculos" element={<Vehicles />} />
+                      <Route path="/rotas" element={<RoutesPage />} />
+                      <Route path="/cargas" element={<Loads />} />
+                      <Route path="/cargas/montar" element={<BuildLoad />} />
+                      <Route path="/pagamentos" element={<Payments />} />
+                      <Route path="/pagamentos/lista" element={<PaymentsList />} />
+                    </Route>
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
