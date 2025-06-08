@@ -1,6 +1,7 @@
 
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'canceled';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'partial';
+export type ImportStatus = 'pending' | 'imported' | 'rejected';
 
 /**
  * Order
@@ -33,6 +34,11 @@ export interface Order {
   deliveryCity: string;
   deliveryState: string;
   deliveryZip: string;
+  sourceProject: string;
+  mobileOrderId?: string;
+  importStatus: ImportStatus;
+  importedAt?: Date;
+  importedBy?: string;
 }
 
 /**
