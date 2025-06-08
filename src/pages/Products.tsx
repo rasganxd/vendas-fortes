@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { useAppData } from '@/context/providers/AppDataProvider';
 import PageLayout from '@/components/layout/PageLayout';
 import ProductsTable from '@/components/products/ProductsTable';
 import ProductForm from '@/components/products/ProductForm';
+import BulkProductUpload from '@/components/products/BulkProductUpload';
 import { useConnection } from '@/context/providers/ConnectionProvider';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Tags, Ruler } from 'lucide-react';
