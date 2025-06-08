@@ -61,12 +61,23 @@ export const useProductOperations = (
   const addBulkProducts = async (productsArray: Omit<Product, 'id'>[]): Promise<string[]> => {
     setIsProcessing(true);
     try {
-      // Create a dummy progress updater function that matches the expected type
-      const progressUpdater = (_progress: number) => {
-        // We don't actually use this value, but it satisfies the type requirements
+      console.log(`🔄 [useProductOperations] Starting bulk import of ${productsArray.length} products...`);
+      console.log(`📊 [useProductOperations] Current products count: ${products.length}`);
+      
+      // Create a progress updater function
+      const progressUpdater = (progress: number) => {
+        console.log(`📈 [useProductOperations] Bulk import progress: ${progress.toFixed(1)}%`);
       };
       
-      return await addBulkProductsOp(productsArray, products, setProducts, progressUpdater);
+      // Call the bulk import operation with proper state management
+      const result = await addBulkProductsOp(productsArray, products, setProducts, progressUpdater);
+      
+      console.log(`✅ [useProductOperations] Bulk import completed. Created ${result.length} products`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ [useProductOperations] Bulk import failed:', error);
+      throw error;
     } finally {
       setIsProcessing(false);
     }

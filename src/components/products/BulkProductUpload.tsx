@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { 
@@ -195,6 +194,8 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
     setIsProcessing(true);
     
     try {
+      console.log('🔄 [BulkProductUpload] Starting bulk upload process...');
+      
       // Filter out products with errors
       const validProducts = preview.filter(p => !p.hasError);
       
@@ -203,6 +204,8 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
         setIsProcessing(false);
         return;
       }
+
+      console.log(`📊 [BulkProductUpload] Preparing ${validProducts.length} valid products for import`);
 
       // Convert to Product format with all required fields
       const productsToImport = validProducts.map(product => ({
@@ -220,9 +223,10 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
         updatedAt: new Date()  // Required field
       }));
 
-      console.log("Products being prepared for upload:", productsToImport);
+      console.log("📝 [BulkProductUpload] Products being prepared for upload:", productsToImport);
+      
       const ids = await addBulkProducts(productsToImport);
-      console.log("Product IDs after upload:", ids);
+      console.log("✅ [BulkProductUpload] Bulk upload completed. Product IDs:", ids);
       
       const errorsCount = preview.filter(p => p.hasError).length;
       const successMessage = errorsCount > 0 
@@ -230,9 +234,16 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
         : `${validProducts.length} produtos importados com sucesso!`;
       
       toast.success(successMessage);
+      
+      // Close dialog and reset state
       onOpenChange(false);
+      setPreview([]);
+      setShowPreview(false);
+      setCsvData(SAMPLE_DATA);
+      
+      console.log('🎉 [BulkProductUpload] Upload process completed successfully');
     } catch (error) {
-      console.error("Error uploading bulk products:", error);
+      console.error("❌ [BulkProductUpload] Error uploading bulk products:", error);
       toast.error("Erro ao importar produtos em massa.");
     } finally {
       setIsProcessing(false);

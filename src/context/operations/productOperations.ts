@@ -1,3 +1,4 @@
+
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -276,7 +277,21 @@ export const addBulkProducts = async (
     // Update local state with successfully created products
     if (createdProducts.length > 0) {
       console.log(`🔄 [ProductOperations] Updating local state with ${createdProducts.length} products...`);
-      setProducts(currentProducts => [...currentProducts, ...createdProducts]);
+      setProducts(currentProducts => {
+        const updatedProducts = [...currentProducts, ...createdProducts];
+        console.log(`📊 [ProductOperations] Local state updated. New total count: ${updatedProducts.length}`);
+        
+        // Update cache with new products
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(updatedProducts));
+        localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+        
+        return updatedProducts;
+      });
+      
+      // Trigger a global products updated event to refresh any other components listening
+      const event = new CustomEvent('productsUpdated', { detail: { count: createdProducts.length } });
+      window.dispatchEvent(event);
+      console.log(`📡 [ProductOperations] Dispatched productsUpdated event for ${createdProducts.length} products`);
     }
     
     // Show results to user
