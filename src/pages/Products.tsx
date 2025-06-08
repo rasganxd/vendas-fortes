@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,22 @@ import { DeleteConfirmationDialog } from '@/components/products/DeleteConfirmati
 import { useProductClassification } from '@/hooks/useProductClassification';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import ProductPricing from '@/components/products/ProductPricing';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Products() {
   const navigate = useNavigate();
@@ -73,6 +90,17 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  
+  // Calculate pagination data
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
   // Classification dialog states
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
@@ -101,6 +129,8 @@ export default function Products() {
     } else {
       setFilteredProducts(products);
     }
+    // Reset to first page when filtering
+    setCurrentPage(1);
   }, [products, searchTerm]);
 
   // Listen for product updates to refresh the list
@@ -129,6 +159,100 @@ export default function Products() {
       brands: isLoadingProductBrands
     });
   }, [productCategories, productGroups, productBrands, isLoadingProductCategories, isLoadingProductGroups, isLoadingProductBrands]);
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1); // Reset to first page
+  };
+
+  const renderPaginationLinks = () => {
+    const links = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        links.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              onClick={() => handlePageChange(i)}
+              isActive={currentPage === i}
+              className="cursor-pointer"
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+    } else {
+      // Show smart pagination with ellipsis
+      links.push(
+        <PaginationItem key={1}>
+          <PaginationLink
+            onClick={() => handlePageChange(1)}
+            isActive={currentPage === 1}
+            className="cursor-pointer"
+          >
+            1
+          </PaginationLink>
+        </PaginationItem>
+      );
+
+      if (currentPage > 3) {
+        links.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        links.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              onClick={() => handlePageChange(i)}
+              isActive={currentPage === i}
+              className="cursor-pointer"
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+
+      if (currentPage < totalPages - 2) {
+        links.push(
+          <PaginationItem key="ellipsis2">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+
+      if (totalPages > 1) {
+        links.push(
+          <PaginationItem key={totalPages}>
+            <PaginationLink
+              onClick={() => handlePageChange(totalPages)}
+              isActive={currentPage === totalPages}
+              className="cursor-pointer"
+            >
+              {totalPages}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+    }
+
+    return links;
+  };
 
   // Category handlers
   const openAddCategoryDialog = () => {
@@ -310,7 +434,8 @@ export default function Products() {
               <div>
                 <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
                 <p className="text-sm text-gray-600">
-                  {filteredProducts.length} produtos {searchTerm ? 'encontrados' : 'cadastrados'}
+                  {totalItems} produtos {searchTerm ? 'encontrados' : 'cadastrados'}
+                  {totalItems > 0 && ` • Mostrando ${startIndex + 1}-${Math.min(endIndex, totalItems)} de ${totalItems}`}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -327,7 +452,7 @@ export default function Products() {
             
             <Card>
               <CardHeader>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-between">
                   <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -337,15 +462,54 @@ export default function Products() {
                       className="pl-8"
                     />
                   </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Itens por página:</span>
+                    <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <ProductsTable 
-                  products={filteredProducts} 
+                  products={currentProducts} 
                   isLoading={isLoadingProducts} 
                   onEdit={handleEdit} 
                   onDelete={handleDelete} 
                 />
+                
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-muted-foreground">
+                      Página {currentPage} de {totalPages}
+                    </div>
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        {renderPaginationLinks()}
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
