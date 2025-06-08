@@ -6,6 +6,7 @@ import { useConnection } from './ConnectionProvider';
 import { useAppDataState } from './appData/useAppDataState';
 import { useAppDataOperations } from './appData/useAppDataOperations';
 import { useAppDataEventHandlers } from './appData/useAppDataEventHandlers';
+import { useProductOperations } from '@/hooks/useProductOperations';
 
 interface AppDataContextType {
   // Customer data
@@ -23,6 +24,7 @@ interface AppDataContextType {
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   refreshProducts: () => Promise<boolean>;
+  addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>;
 
   // Product Brand data
   productBrands: ProductBrand[];
@@ -182,6 +184,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     deleteCustomerHook
   );
 
+  // Add product operations for bulk operations
+  const productOperations = useProductOperations(
+    products,
+    (newProducts) => {
+      // This will be handled by the product operations
+    },
+    () => {}
+  );
+
   useEffect(() => {
     console.log('📊 [AppDataProvider] Data state update:', {
       customers: customers.length,
@@ -226,6 +237,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     updateProduct,
     deleteProduct,
     refreshProducts,
+    addBulkProducts: productOperations.addBulkProducts,
     
     orders,
     isLoadingOrders,

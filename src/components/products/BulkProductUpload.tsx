@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useAppContext } from '@/hooks/useAppContext';
+import { useAppData } from '@/context/providers/AppDataProvider';
 import { formatCurrency } from '@/lib/utils';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Product } from '@/types';
@@ -35,7 +35,7 @@ const SAMPLE_DATA = `CODIGO	NOME DO PRODUTO	UN	PRECO_CUSTO
 48	AGUA FLORESTA SEM GAS 500ML	DZ12	9.000000`;
 
 const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChange }) => {
-  const { addBulkProducts } = useAppContext();
+  const { addBulkProducts } = useAppData();
   const { units } = useUnits();
   const [csvData, setCsvData] = useState(SAMPLE_DATA);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -204,17 +204,20 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
         return;
       }
 
-      // Convert to Product format
+      // Convert to Product format with all required fields
       const productsToImport = validProducts.map(product => ({
         code: product.code,
         name: product.name,
+        description: '', // Required field, set to empty string
         cost: product.cost,
         price: product.cost, // Set initial price equal to cost
         unit: product.unit,
         stock: 0,
         minStock: 0,
         hasSubunit: false,
-        subunitRatio: 1
+        subunitRatio: 1,
+        createdAt: new Date(), // Required field
+        updatedAt: new Date()  // Required field
       }));
 
       console.log("Products being prepared for upload:", productsToImport);

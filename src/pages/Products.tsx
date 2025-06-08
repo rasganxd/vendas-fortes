@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, DollarSign } from 'lucide-react';
+import { Search, DollarSign, Upload } from 'lucide-react';
 import { toast } from "sonner";
 import { Product } from '@/types';
 import { useAppData } from '@/context/providers/AppDataProvider';
@@ -68,6 +67,7 @@ export default function Products() {
   } = useProductClassification();
   
   const [open, setOpen] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -314,6 +314,10 @@ export default function Products() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <Button onClick={() => setBulkUploadOpen(true)} variant="outline" className="bg-green-50 hover:bg-green-100 border-green-200">
+                  <Upload size={16} className="mr-2" />
+                  Importar em Massa
+                </Button>
                 <Button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700">
                   <Plus size={16} className="mr-2" />
                   Novo Produto
@@ -446,6 +450,11 @@ export default function Products() {
         productGroups={productGroups || []} 
         productBrands={productBrands || []} 
         onSubmit={handleSubmit} 
+      />
+
+      <BulkProductUpload 
+        open={bulkUploadOpen} 
+        onOpenChange={setBulkUploadOpen} 
       />
 
       {/* Classification Dialogs */}
