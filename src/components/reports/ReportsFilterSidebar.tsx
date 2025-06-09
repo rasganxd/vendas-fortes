@@ -73,7 +73,7 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
           <Select
             value={filters.period || 'month'}
             onValueChange={(value) => onFiltersChange({ 
-              period: value as ReportFilters['period'],
+              period: value === 'all' ? undefined : value as ReportFilters['period'],
               startDate: undefined,
               endDate: undefined
             })}
@@ -124,20 +124,27 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
         <div className="space-y-2">
           <Label className="text-sm font-medium">Vendedor</Label>
           <Select
-            value={filters.salesRepId || ''}
+            value={filters.salesRepId || 'all'}
             onValueChange={(value) => {
-              const salesRep = salesReps.find(rep => rep.id === value);
-              onFiltersChange({ 
-                salesRepId: value || undefined,
-                salesRepName: salesRep?.name || undefined
-              });
+              if (value === 'all') {
+                onFiltersChange({ 
+                  salesRepId: undefined,
+                  salesRepName: undefined
+                });
+              } else {
+                const salesRep = salesReps.find(rep => rep.id === value);
+                onFiltersChange({ 
+                  salesRepId: value,
+                  salesRepName: salesRep?.name || undefined
+                });
+              }
             }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Todos os vendedores" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os vendedores</SelectItem>
+              <SelectItem value="all">Todos os vendedores</SelectItem>
               {salesReps.map((rep) => (
                 <SelectItem key={rep.id} value={rep.id}>
                   {rep.name}
@@ -151,20 +158,27 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
         <div className="space-y-2">
           <Label className="text-sm font-medium">Cliente</Label>
           <Select
-            value={filters.customerId || ''}
+            value={filters.customerId || 'all'}
             onValueChange={(value) => {
-              const customer = customers.find(cust => cust.id === value);
-              onFiltersChange({ 
-                customerId: value || undefined,
-                customerName: customer?.name || undefined
-              });
+              if (value === 'all') {
+                onFiltersChange({ 
+                  customerId: undefined,
+                  customerName: undefined
+                });
+              } else {
+                const customer = customers.find(cust => cust.id === value);
+                onFiltersChange({ 
+                  customerId: value,
+                  customerName: customer?.name || undefined
+                });
+              }
             }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Todos os clientes" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os clientes</SelectItem>
+              <SelectItem value="all">Todos os clientes</SelectItem>
               {customers.slice(0, 50).map((customer) => (
                 <SelectItem key={customer.id} value={customer.id}>
                   {customer.name}
@@ -178,14 +192,16 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
         <div className="space-y-2">
           <Label className="text-sm font-medium">Status do Pedido</Label>
           <Select
-            value={filters.orderStatus || ''}
-            onValueChange={(value) => onFiltersChange({ orderStatus: value || undefined })}
+            value={filters.orderStatus || 'all'}
+            onValueChange={(value) => onFiltersChange({ 
+              orderStatus: value === 'all' ? undefined : value 
+            })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Todos os status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os status</SelectItem>
+              <SelectItem value="all">Todos os status</SelectItem>
               <SelectItem value="pending">Pendente</SelectItem>
               <SelectItem value="confirmed">Confirmado</SelectItem>
               <SelectItem value="processing">Processando</SelectItem>
