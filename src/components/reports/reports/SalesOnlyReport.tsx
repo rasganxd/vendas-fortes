@@ -4,11 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ReportFilters, ReportsData } from '@/types/reports';
-import { formatCurrency, formatDate } from '@/lib/format-utils';
+import { formatCurrency, formatDateBR } from '@/lib/format-utils';
 
 interface SalesOnlyReportProps {
   data: ReportsData;
   filters: ReportFilters;
+}
+
+interface PaymentMethodStats {
+  count: number;
+  total: number;
 }
 
 const SalesOnlyReport: React.FC<SalesOnlyReportProps> = ({ data, filters }) => {
@@ -87,7 +92,7 @@ const SalesOnlyReport: React.FC<SalesOnlyReportProps> = ({ data, filters }) => {
               {completedOrders.slice(0, 50).map(order => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">#{order.code}</TableCell>
-                  <TableCell>{formatDate(order.date)}</TableCell>
+                  <TableCell>{formatDateBR(order.date)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
                   <TableCell>{order.salesRepName}</TableCell>
                   <TableCell>
@@ -121,19 +126,19 @@ const SalesOnlyReport: React.FC<SalesOnlyReportProps> = ({ data, filters }) => {
                 acc[method].count++;
                 acc[method].total += order.total;
                 return acc;
-              }, {})
-            ).map(([method, data]) => (
+              }, {} as Record<string, PaymentMethodStats>)
+            ).map(([method, stats]) => (
               <div key={method} className="flex justify-between items-center py-2 border-b">
                 <div>
                   <p className="font-medium">{method}</p>
                   <p className="text-sm text-muted-foreground">
-                    {data.count} vendas
+                    {stats.count} vendas
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold">{formatCurrency(data.total)}</p>
+                  <p className="font-bold">{formatCurrency(stats.total)}</p>
                   <p className="text-sm text-muted-foreground">
-                    {((data.total / totalSales) * 100).toFixed(1)}% do total
+                    {((stats.total / totalSales) * 100).toFixed(1)}% do total
                   </p>
                 </div>
               </div>

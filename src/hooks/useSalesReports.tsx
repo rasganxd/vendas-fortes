@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { ReportFilters, ReportsData, SummaryData } from '@/types/reports';
+import { ReportFilters, ReportsData, SummaryData, TopProduct } from '@/types/reports';
 import { useOrders } from '@/hooks/useOrders';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -112,7 +112,7 @@ export const useSalesReports = (filters: ReportFilters) => {
     }).sort((a, b) => b.totalRevenue - a.totalRevenue) || [];
 
     // Calcular top produtos
-    const productStats = {};
+    const productStats: Record<string, TopProduct & { ordersCount: Set<string> }> = {};
     filteredOrders.forEach(order => {
       order.items?.forEach(item => {
         const key = `${item.productCode}_${item.productName}`;
@@ -132,9 +132,13 @@ export const useSalesReports = (filters: ReportFilters) => {
       });
     });
 
-    const topProducts = Object.values(productStats)
+    const topProducts: TopProduct[] = Object.values(productStats)
       .map(product => ({
-        ...product,
+        id: product.id,
+        name: product.name,
+        code: product.code,
+        totalQuantity: product.totalQuantity,
+        totalRevenue: product.totalRevenue,
         ordersCount: product.ordersCount.size
       }))
       .sort((a, b) => b.totalRevenue - a.totalRevenue);

@@ -18,7 +18,7 @@ const SalesChartsCollection: React.FC<SalesChartsCollectionProps> = ({ data }) =
   const statusData = data.orders?.reduce((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
-  }, {}) || {};
+  }, {} as Record<string, number>) || {};
 
   const statusChartData = Object.entries(statusData).map(([status, count]) => ({
     name: status,
@@ -37,7 +37,7 @@ const SalesChartsCollection: React.FC<SalesChartsCollectionProps> = ({ data }) =
     const date = new Date(order.date).toLocaleDateString('pt-BR');
     acc[date] = (acc[date] || 0) + order.total;
     return acc;
-  }, {}) || {};
+  }, {} as Record<string, number>) || {};
 
   const timelineChartData = Object.entries(timelineData)
     .slice(-7) // Últimos 7 dias
@@ -91,7 +91,7 @@ const SalesChartsCollection: React.FC<SalesChartsCollectionProps> = ({ data }) =
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip 
-                  formatter={(value, name) => [
+                  formatter={(value: number, name: string) => [
                     name === 'receita' ? formatCurrency(value) : value,
                     name === 'receita' ? 'Receita' : 'Pedidos'
                   ]}
@@ -116,7 +116,7 @@ const SalesChartsCollection: React.FC<SalesChartsCollectionProps> = ({ data }) =
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip 
-                  formatter={(value) => [formatCurrency(value), 'Receita']}
+                  formatter={(value: number) => [formatCurrency(value), 'Receita']}
                 />
                 <Line 
                   type="monotone" 

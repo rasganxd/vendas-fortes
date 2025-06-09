@@ -20,7 +20,7 @@ const BasicReport: React.FC<BasicReportProps> = ({ data, filters }) => {
   const statusSummary = data.orders?.reduce((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
-  }, {}) || {};
+  }, {} as Record<string, number>) || {};
 
   return (
     <div className="space-y-6 p-6">
@@ -67,7 +67,7 @@ const BasicReport: React.FC<BasicReportProps> = ({ data, filters }) => {
         </CardHeader>
         <CardContent className="space-y-4">
           {Object.entries(statusSummary).map(([status, count]) => {
-            const percentage = totalOrders > 0 ? ((count as number) / totalOrders) * 100 : 0;
+            const percentage = totalOrders > 0 ? (count / totalOrders) * 100 : 0;
             
             return (
               <div key={status} className="space-y-2">

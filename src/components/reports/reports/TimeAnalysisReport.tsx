@@ -10,6 +10,21 @@ interface TimeAnalysisReportProps {
   filters: ReportFilters;
 }
 
+interface TimelineItem {
+  date: string;
+  revenue: number;
+  orders: number;
+  customers: Set<string>;
+}
+
+interface ProcessedTimelineItem {
+  date: string;
+  revenue: number;
+  orders: number;
+  customers: number;
+  averageTicket: number;
+}
+
 const TimeAnalysisReport: React.FC<TimeAnalysisReportProps> = ({ data, filters }) => {
   console.log('📊 [TimeAnalysisReport] Rendering with data:', data);
 
@@ -31,11 +46,13 @@ const TimeAnalysisReport: React.FC<TimeAnalysisReportProps> = ({ data, filters }
     acc[date].customers.add(order.customerId);
     
     return acc;
-  }, {}) || {};
+  }, {} as Record<string, TimelineItem>) || {};
 
-  const chartData = Object.values(timelineData)
+  const chartData: ProcessedTimelineItem[] = Object.values(timelineData)
     .map(item => ({
-      ...item,
+      date: item.date,
+      revenue: item.revenue,
+      orders: item.orders,
       customers: item.customers.size,
       averageTicket: item.orders > 0 ? item.revenue / item.orders : 0
     }))
@@ -53,23 +70,24 @@ const TimeAnalysisReport: React.FC<TimeAnalysisReportProps> = ({ data, filters }
     acc[weekday].orders += 1;
     
     return acc;
-  }, {}) || {};
+  }, {} as Record<string, { day: string; revenue: number; orders: number }>) || {};
 
   const weekdayChartData = Object.values(weekdayData);
 
   // Dados por hora
   const hourlyData = data.orders?.reduce((acc, order) => {
     const hour = new Date(order.date).getHours();
+    const hourKey = `${hour}:00`;
     
-    if (!acc[hour]) {
-      acc[hour] = { hour: `${hour}:00`, revenue: 0, orders: 0 };
+    if (!acc[hourKey]) {
+      acc[hourKey] = { hour: hourKey, revenue: 0, orders: 0 };
     }
     
-    acc[hour].revenue += order.total;
-    acc[hour].orders += 1;
+    acc[hourKey].revenue += order.total;
+    acc[hourKey].orders += 1;
     
     return acc;
-  }, {}) || {};
+  }, {} as Record<string, { hour: string; revenue: number; orders: number }>) || {};
 
   const hourlyChartData = Object.values(hourlyData).sort((a, b) => 
     parseInt(a.hour.split(':')[0]) - parseInt(b.hour.split(':')[0])
@@ -94,7 +112,7 @@ const TimeAnalysisReport: React.FC<TimeAnalysisReportProps> = ({ data, filters }
                 <YAxis />
                 <Tooltip 
                   labelFormatter={(value) => new Date(value).toLocaleDateString('pt-BR')}
-                  formatter={(value, name) => [
+                  formatter={(value: number, name: string) => [
                     name === 'revenue' ? formatCurrency(value) : value,
                     name === 'revenue' ? 'Receita' : 
                     name === 'orders' ? 'Pedidos' : 'Clientes'
@@ -127,7 +145,7 @@ const TimeAnalysisReport: React.FC<TimeAnalysisReportProps> = ({ data, filters }
                   <XAxis dataKey="day" />
                   <YAxis />
                   <Tooltip 
-                    formatter={(value, name) => [
+                    formatter={(value: number, name: string) => [
                       name === 'revenue' ? formatCurrency(value) : value,
                       name === 'revenue' ? 'Receita' : 'Pedidos'
                     ]}
@@ -151,7 +169,7 @@ const TimeAnalysisReport: React.FC<TimeAnalysisReportProps> = ({ data, filters }
                   <XAxis dataKey="hour" />
                   <YAxis />
                   <Tooltip 
-                    formatter={(value, name) => [
+                    formatter={(value: number, name: string) => [
                       name === 'orders' ? value : formatCurrency(value),
                       name === 'orders' ? 'Pedidos' : 'Receita'
                     ]}
@@ -187,7 +205,7 @@ const TimeAnalysisReport: React.FC<TimeAnalysisReportProps> = ({ data, filters }
                 <YAxis yAxisId="right" orientation="right" />
                 <Tooltip 
                   labelFormatter={(value) => new Date(value).toLocaleDateString('pt-BR')}
-                  formatter={(value, name) => [
+                  formatter={(value: number, name: string) => [
                     name === 'revenue' || name === 'averageTicket' ? formatCurrency(value) : value,
                     name === 'revenue' ? 'Receita' : 
                     name === 'orders' ? 'Pedidos' : 

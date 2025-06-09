@@ -11,6 +11,21 @@ interface ProductsBySalesRepProps {
   filters: ReportFilters;
 }
 
+interface ProductInfo {
+  name: string;
+  code: number;
+  quantity: number;
+  revenue: number;
+  orders: Set<string>;
+}
+
+interface SalesRepInfo {
+  name: string;
+  products: Record<string, ProductInfo>;
+  totalRevenue: number;
+  totalQuantity: number;
+}
+
 const ProductsBySalesRep: React.FC<ProductsBySalesRepProps> = ({ data, filters }) => {
   console.log('📊 [ProductsBySalesRep] Rendering with data:', data);
 
@@ -49,7 +64,7 @@ const ProductsBySalesRep: React.FC<ProductsBySalesRepProps> = ({ data, filters }
     });
     
     return acc;
-  }, {}) || {};
+  }, {} as Record<string, SalesRepInfo>) || {};
 
   return (
     <div className="space-y-6 p-6">
