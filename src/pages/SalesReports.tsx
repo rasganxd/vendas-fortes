@@ -43,12 +43,13 @@ const SalesReports = () => {
         subtitle="Análise detalhada de performance de vendas"
         description="Visualize e analise dados de vendas com filtros avançados"
         showConnectionStatus={false}
+        fullWidth={true}
       >
-        <div className="flex gap-6">
-          <div className="w-80">
-            <Skeleton className="h-96 w-full" />
+        <div className="h-[calc(100vh-200px)] flex gap-4">
+          <div className="w-64 flex-shrink-0">
+            <Skeleton className="h-full w-full" />
           </div>
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 min-w-0 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-24 w-full" />
@@ -68,10 +69,11 @@ const SalesReports = () => {
       subtitle="Análise detalhada de performance de vendas"
       description="Visualize e analise dados de vendas com filtros avançados"
       showConnectionStatus={false}
+      fullWidth={true}
     >
-      <div className="flex gap-6">
+      <div className="h-[calc(100vh-200px)] flex gap-4 overflow-hidden">
         {/* Sidebar de filtros */}
-        <div className="flex-shrink-0">
+        <div className="w-64 flex-shrink-0">
           <ReportsFilterSidebar
             filters={filters}
             onFiltersChange={updateFilters}
@@ -82,9 +84,9 @@ const SalesReports = () => {
         </div>
 
         {/* Área principal */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Barra de ações */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <FileText size={16} />
               <span>{salesReportData.length} registros encontrados</span>
@@ -121,14 +123,16 @@ const SalesReports = () => {
             </div>
           </div>
 
-          {/* Visualizador de relatórios */}
-          <ReportViewer
-            salesReportData={salesReportData}
-            metrics={metrics}
-            salesRepPerformance={salesRepPerformance}
-            topProducts={topProducts}
-            chartData={chartData}
-          />
+          {/* Visualizador de relatórios com scroll */}
+          <div className="flex-1 overflow-y-auto">
+            <ReportViewer
+              salesReportData={salesReportData}
+              metrics={metrics}
+              salesRepPerformance={salesRepPerformance}
+              topProducts={topProducts}
+              chartData={chartData}
+            />
+          </div>
         </div>
       </div>
     </PageLayout>

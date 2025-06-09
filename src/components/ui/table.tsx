@@ -7,13 +7,15 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement> & { maxHeight?: string }
 >(({ className, maxHeight = "400px", ...props }, ref) => (
-  <div className="w-full">
+  <div className="w-full overflow-hidden">
     <ScrollArea className={cn("rounded-md border", `max-h-[${maxHeight}]`)}>
-      <table
-        ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
+      <div className="overflow-x-auto">
+        <table
+          ref={ref}
+          className={cn("w-full caption-bottom text-sm min-w-full", className)}
+          {...props}
+        />
+      </div>
     </ScrollArea>
   </div>
 ))

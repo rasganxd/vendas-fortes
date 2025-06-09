@@ -37,18 +37,18 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     },
     {
       id: 'sales-only',
-      name: 'Somente Vendas',
+      name: 'Vendas',
       description: 'Foco nas transações de vendas'
     },
     {
       id: 'products-by-salesrep',
-      name: 'Produtos por Vendedor',
-      description: 'Análise de produtos vendidos por vendedor'
+      name: 'Produtos/Vendedor',
+      description: 'Análise de produtos por vendedor'
     }
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Cards de resumo */}
       <ReportSummaryCards metrics={metrics} />
       
@@ -60,35 +60,35 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       />
       
       {/* Relatórios em abas */}
-      <Tabs defaultValue="complete" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="complete" className="space-y-3">
+        <TabsList className="grid w-full grid-cols-4 h-9">
           {reportTypes.map((report) => (
             <TabsTrigger 
               key={report.id} 
               value={report.id}
-              className="text-sm"
+              className="text-xs px-2"
             >
               {report.name}
             </TabsTrigger>
           ))}
         </TabsList>
         
-        <TabsContent value="complete" className="space-y-4">
+        <TabsContent value="complete" className="space-y-3 mt-3">
           <CompleteReport data={salesReportData} />
         </TabsContent>
         
-        <TabsContent value="basic" className="space-y-4">
+        <TabsContent value="basic" className="space-y-3 mt-3">
           <BasicReport 
             metrics={metrics} 
             salesRepPerformance={salesRepPerformance} 
           />
         </TabsContent>
         
-        <TabsContent value="sales-only" className="space-y-4">
+        <TabsContent value="sales-only" className="space-y-3 mt-3">
           <SalesOnlyReport data={salesReportData} />
         </TabsContent>
         
-        <TabsContent value="products-by-salesrep" className="space-y-4">
+        <TabsContent value="products-by-salesrep" className="space-y-3 mt-3">
           <ProductsBySalesRep 
             salesRepPerformance={salesRepPerformance}
             topProducts={topProducts}

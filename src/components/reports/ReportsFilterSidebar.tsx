@@ -41,14 +41,14 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
   const activeFiltersCount = getActiveFiltersCount();
 
   return (
-    <Card className="w-80 h-fit">
-      <CardHeader className="pb-3">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Filter size={20} />
+          <CardTitle className="text-base flex items-center gap-2">
+            <Filter size={18} />
             Filtros
             {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary" className="ml-1 text-xs">
                 {activeFiltersCount}
               </Badge>
             )}
@@ -58,18 +58,18 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
               variant="ghost" 
               size="sm" 
               onClick={onClearFilters}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 h-6 w-6 p-0"
             >
-              <X size={16} />
+              <X size={14} />
             </Button>
           )}
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="flex-1 overflow-y-auto space-y-3 text-sm">
         {/* Período */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Período</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium">Período</Label>
           <Select
             value={filters.period || 'month'}
             onValueChange={(value) => onFiltersChange({ 
@@ -78,7 +78,7 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
               endDate: undefined
             })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-8">
               <SelectValue placeholder="Selecione o período" />
             </SelectTrigger>
             <SelectContent>
@@ -94,21 +94,23 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
 
         {/* Datas personalizadas */}
         {filters.period === 'custom' && (
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Data Inicial</Label>
+          <div className="space-y-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Data Inicial</Label>
               <Input
                 type="date"
+                className="h-8"
                 value={filters.startDate ? filters.startDate.toISOString().split('T')[0] : ''}
                 onChange={(e) => onFiltersChange({ 
                   startDate: e.target.value ? new Date(e.target.value) : undefined 
                 })}
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Data Final</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Data Final</Label>
               <Input
                 type="date"
+                className="h-8"
                 value={filters.endDate ? filters.endDate.toISOString().split('T')[0] : ''}
                 onChange={(e) => onFiltersChange({ 
                   endDate: e.target.value ? new Date(e.target.value) : undefined 
@@ -121,8 +123,8 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
         <Separator />
 
         {/* Vendedor */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Vendedor</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium">Vendedor</Label>
           <Select
             value={filters.salesRepId || 'all'}
             onValueChange={(value) => {
@@ -140,7 +142,7 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
               }
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-8">
               <SelectValue placeholder="Todos os vendedores" />
             </SelectTrigger>
             <SelectContent>
@@ -155,8 +157,8 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
         </div>
 
         {/* Cliente */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Cliente</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium">Cliente</Label>
           <Select
             value={filters.customerId || 'all'}
             onValueChange={(value) => {
@@ -174,7 +176,7 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
               }
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-8">
               <SelectValue placeholder="Todos os clientes" />
             </SelectTrigger>
             <SelectContent>
@@ -189,15 +191,15 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
         </div>
 
         {/* Status do Pedido */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Status do Pedido</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium">Status do Pedido</Label>
           <Select
             value={filters.orderStatus || 'all'}
             onValueChange={(value) => onFiltersChange({ 
               orderStatus: value === 'all' ? undefined : value 
             })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-8">
               <SelectValue placeholder="Todos os status" />
             </SelectTrigger>
             <SelectContent>
@@ -214,14 +216,15 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
         <Separator />
 
         {/* Valor */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Faixa de Valor</Label>
-          <div className="space-y-2">
+        <div className="space-y-2">
+          <Label className="text-xs font-medium">Faixa de Valor</Label>
+          <div className="space-y-1.5">
             <div>
               <Label className="text-xs text-gray-500">Valor Mínimo</Label>
               <Input
                 type="number"
                 placeholder="0,00"
+                className="h-8"
                 value={filters.minValue || ''}
                 onChange={(e) => onFiltersChange({ 
                   minValue: e.target.value ? parseFloat(e.target.value) : undefined 
@@ -233,6 +236,7 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
               <Input
                 type="number"
                 placeholder="999999,00"
+                className="h-8"
                 value={filters.maxValue || ''}
                 onChange={(e) => onFiltersChange({ 
                   maxValue: e.target.value ? parseFloat(e.target.value) : undefined 
@@ -246,31 +250,31 @@ export const ReportsFilterSidebar: React.FC<ReportsFilterSidebarProps> = ({
         {activeFiltersCount > 0 && (
           <>
             <Separator />
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Filtros Ativos</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Filtros Ativos</Label>
               <div className="flex flex-wrap gap-1">
                 {filters.salesRepName && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                     Vendedor: {filters.salesRepName}
                   </Badge>
                 )}
                 {filters.customerName && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                     Cliente: {filters.customerName}
                   </Badge>
                 )}
                 {filters.orderStatus && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                     Status: {filters.orderStatus}
                   </Badge>
                 )}
                 {filters.minValue !== undefined && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                     Min: {formatCurrency(filters.minValue)}
                   </Badge>
                 )}
                 {filters.maxValue !== undefined && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                     Máx: {formatCurrency(filters.maxValue)}
                   </Badge>
                 )}

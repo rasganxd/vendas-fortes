@@ -56,21 +56,21 @@ export const ReportSummaryCards: React.FC<ReportSummaryCardsProps> = ({ metrics 
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-4">
       {cards.map((card, index) => {
         const Icon = card.icon;
         return (
           <Card key={index} className="border border-gray-200">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                  <p className="text-xl font-bold text-gray-900 mt-1" title={card.value}>
-                    {card.value.length > 15 ? `${card.value.substring(0, 15)}...` : card.value}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-gray-600 truncate">{card.title}</p>
+                  <p className="text-lg font-bold text-gray-900 mt-0.5 truncate" title={card.value}>
+                    {card.value.length > 12 ? `${card.value.substring(0, 12)}...` : card.value}
                   </p>
                 </div>
-                <div className={`${card.bgColor} ${card.color} p-2 rounded-lg`}>
-                  <Icon size={20} />
+                <div className={`${card.bgColor} ${card.color} p-1.5 rounded-lg flex-shrink-0`}>
+                  <Icon size={18} />
                 </div>
               </div>
             </CardContent>
