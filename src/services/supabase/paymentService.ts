@@ -87,7 +87,7 @@ class PaymentSupabaseService extends SupabaseService<Payment> {
       const transformedRecord = this.transformToDB(record as Payment);
       
       const { data, error } = await this.supabase
-        .from(this.tableName)
+        .from('payments')
         .insert(transformedRecord)
         .select('id')
         .single();
