@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Select, 
@@ -36,7 +35,24 @@ export default function PromissoryNotesTab({
   // Get only orders that use promissory note payment tables
   const promissoryOrders = orders.filter(order => {
     const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
-    return paymentTable?.type === 'promissoria';
+    const isPromissory = paymentTable?.type === 'promissoria' || paymentTable?.type === 'promissory_note';
+    
+    console.log('🔍 Checking order for promissory type:', {
+      orderId: order.id,
+      orderCode: order.code,
+      paymentTableId: order.paymentTableId,
+      paymentTableName: paymentTable?.name,
+      paymentTableType: paymentTable?.type,
+      isPromissory
+    });
+    
+    return isPromissory;
+  });
+
+  console.log('📋 Promissory orders found:', {
+    totalOrders: orders.length,
+    promissoryOrdersCount: promissoryOrders.length,
+    promissoryOrderCodes: promissoryOrders.map(o => o.code)
   });
   
   // Handle highlighted order from URL parameter
@@ -269,6 +285,9 @@ export default function PromissoryNotesTab({
         <p className="text-sm text-gray-400 mt-2">
           Notas promissórias são geradas automaticamente quando pedidos são criados
           com tabelas de pagamento do tipo "Promissória".
+        </p>
+        <p className="text-xs text-gray-400 mt-2">
+          Debug: {orders.length} pedidos total, {paymentTables.length} tabelas de pagamento
         </p>
       </div>
     );

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Payment } from '@/types';
 import { toast } from '@/components/ui/use-toast';
@@ -57,16 +56,73 @@ export const usePayments = () => {
   // Add a new payment
   const addPayment = async (payment: Omit<Payment, 'id'>) => {
     try {
-      const id = await paymentService.add(payment);
+      console.log('💳 Adding payment to database:', {
+        orderId: payment.orderId,
+        amount: payment.amount,
+        method: payment.method,
+        status: payment.status,
+        customerName: payment.customerName,
+        dueDate: payment.dueDate,
+        notes: payment.notes
+      });
+
+      // Validate required fields
+      if (!payment.orderId) {
+        throw new Error('Order ID is required');
+      }
+      if (!payment.amount || payment.amount <= 0) {
+        throw new Error('Valid payment amount is required');
+      }
+      if (!payment.method) {
+        throw new Error('Payment method is required');
+      }
+      if (!payment.customerName) {
+        throw new Error('Customer name is required');
+      }
+
+      // Ensure all required fields are present with proper types
+      const paymentData = {
+        orderId: payment.orderId,
+        amount: Number(payment.amount),
+        method: String(payment.method),
+        status: payment.status || 'completed',
+        date: payment.date || new Date(),
+        dueDate: payment.dueDate || new Date(),
+        notes: payment.notes || '',
+        customerName: String(payment.customerName),
+        createdAt: payment.createdAt || new Date(),
+        updatedAt: payment.updatedAt || new Date(),
+        // Include additional fields that might be needed
+        amountInWords: payment.amountInWords,
+        paymentLocation: payment.paymentLocation,
+        emissionLocation: payment.emissionLocation,
+        customerDocument: payment.customerDocument,
+        customerAddress: payment.customerAddress,
+        installments: payment.installments,
+        paymentDate: payment.paymentDate,
+        salesRepId: payment.salesRepId,
+        syncedToMobile: payment.syncedToMobile,
+        lastSyncDate: payment.lastSyncDate
+      };
+
+      console.log('📝 Processed payment data for database:', paymentData);
+      
+      const id = await paymentService.add(paymentData);
+      
+      if (!id) {
+        throw new Error('Failed to get payment ID from service');
+      }
+      
+      console.log('✅ Payment added to database with ID:', id);
       
       const newPayment: Payment = {
-        ...payment,
-        id,
-        createdAt: payment.createdAt || new Date(),
-        updatedAt: payment.updatedAt || new Date()
+        ...paymentData,
+        id
       };
       
-      setPayments([...payments, newPayment]);
+      setPayments(prevPayments => [...prevPayments, newPayment]);
+      
+      console.log('✅ Payment added to local state successfully');
       
       toast({
         title: "Pagamento adicionado",
@@ -75,10 +131,10 @@ export const usePayments = () => {
       
       return id;
     } catch (error) {
-      console.error("Erro ao adicionar pagamento:", error);
+      console.error("❌ Error adding payment:", error);
       toast({
         title: "Erro ao adicionar pagamento",
-        description: "Houve um problema ao adicionar o pagamento.",
+        description: error instanceof Error ? error.message : "Houve um problema ao adicionar o pagamento.",
         variant: "destructive"
       });
       return "";
