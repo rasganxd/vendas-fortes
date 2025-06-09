@@ -29,8 +29,6 @@ export interface SalesMetrics {
   totalRevenue: number;
   totalOrders: number;
   averageOrderValue: number;
-  topSalesRep: string;
-  topCustomer: string;
   totalProducts: number;
 }
 

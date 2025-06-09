@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, ShoppingCart, DollarSign, Users, Package, Award } from 'lucide-react';
+import { TrendingUp, ShoppingCart, DollarSign, Package } from 'lucide-react';
 import { SalesMetrics } from '@/types/reports';
 import { formatCurrency, formatNumber } from '@/lib/format-utils';
 
@@ -33,20 +33,6 @@ export const ReportSummaryCards: React.FC<ReportSummaryCardsProps> = ({ metrics 
       bgColor: 'bg-purple-50'
     },
     {
-      title: 'Top Vendedor',
-      value: metrics.topSalesRep || 'N/A',
-      icon: Award,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50'
-    },
-    {
-      title: 'Top Cliente',
-      value: metrics.topCustomer || 'N/A',
-      icon: Users,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50'
-    },
-    {
       title: 'Produtos Vendidos',
       value: formatNumber(metrics.totalProducts),
       icon: Package,
@@ -56,7 +42,7 @@ export const ReportSummaryCards: React.FC<ReportSummaryCardsProps> = ({ metrics 
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       {cards.map((card, index) => {
         const Icon = card.icon;
         return (

@@ -98,24 +98,6 @@ export const useSalesReports = () => {
     const totalOrders = filteredOrders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-    // Top vendedor
-    const salesRepRevenue = new Map<string, number>();
-    filteredOrders.forEach(order => {
-      const current = salesRepRevenue.get(order.salesRepName) || 0;
-      salesRepRevenue.set(order.salesRepName, current + order.total);
-    });
-    const topSalesRep = Array.from(salesRepRevenue.entries())
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-
-    // Top cliente
-    const customerRevenue = new Map<string, number>();
-    filteredOrders.forEach(order => {
-      const current = customerRevenue.get(order.customerName) || 0;
-      customerRevenue.set(order.customerName, current + order.total);
-    });
-    const topCustomer = Array.from(customerRevenue.entries())
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-
     // Contar produtos únicos
     const uniqueProducts = new Set<string>();
     filteredOrders.forEach(order => {
@@ -128,8 +110,6 @@ export const useSalesReports = () => {
       totalRevenue,
       totalOrders,
       averageOrderValue,
-      topSalesRep,
-      topCustomer,
       totalProducts: uniqueProducts.size
     };
   }, [filteredOrders]);
@@ -200,7 +180,6 @@ export const useSalesReports = () => {
 
       // Produtos únicos por vendedor
       const uniqueProducts = new Set<string>();
-      const productRevenue = new Map<string, number>();
 
       filteredOrders
         .filter(order => order.salesRepId === salesRepId)
@@ -208,8 +187,6 @@ export const useSalesReports = () => {
           order.items?.forEach(item => {
             const productKey = item.productId || item.productName;
             uniqueProducts.add(productKey);
-            const current = productRevenue.get(productKey) || 0;
-            productRevenue.set(productKey, current + item.total);
           });
         });
 
