@@ -151,7 +151,7 @@ export const useSalesReports = () => {
         const existing = productData.get(key) || {
           id: item.productId || key,
           name: item.productName,
-          code: typeof item.productCode === 'number' ? item.productCode : parseInt(item.productCode?.toString() || '0', 10),
+          code: item.productCode ? Number(item.productCode) : 0,
           totalQuantity: 0,
           totalRevenue: 0,
           ordersCount: 0
