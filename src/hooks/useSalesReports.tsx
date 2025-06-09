@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { ReportFilters, ReportsData, SummaryData, TopProduct } from '@/types/reports';
 import { useOrders } from '@/hooks/useOrders';
@@ -115,7 +114,7 @@ export const useSalesReports = (filters: ReportFilters) => {
     const productStats: Record<string, {
       id: string;
       name: string;
-      code: string;
+      code: number;
       totalQuantity: number;
       totalRevenue: number;
       ordersCount: number;
@@ -128,7 +127,7 @@ export const useSalesReports = (filters: ReportFilters) => {
           productStats[key] = {
             id: key,
             name: item.productName,
-            code: item.productCode,
+            code: Number(item.productCode),
             totalQuantity: 0,
             totalRevenue: 0,
             ordersCount: 0

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,12 +24,23 @@ import {
   Wrench
 } from 'lucide-react';
 
+interface MenuItem {
+  title: string;
+  icon: any;
+  path: string;
+  group: string;
+}
+
+interface GroupLabels {
+  [key: string]: string;
+}
+
 const SideNav = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     {
       title: 'Dashboard',
       icon: Home,
@@ -129,7 +139,7 @@ const SideNav = () => {
     }
   ];
 
-  const groupLabels = {
+  const groupLabels: GroupLabels = {
     main: 'Principal',
     sales: 'Vendas',
     inventory: 'Estoque',
@@ -140,13 +150,13 @@ const SideNav = () => {
     admin: 'Administração'
   };
 
-  const groupedItems = menuItems.reduce((acc, item) => {
+  const groupedItems: Record<string, MenuItem[]> = menuItems.reduce((acc, item) => {
     if (!acc[item.group]) {
       acc[item.group] = [];
     }
     acc[item.group].push(item);
     return acc;
-  }, {});
+  }, {} as Record<string, MenuItem[]>);
 
   return (
     <div className={cn(

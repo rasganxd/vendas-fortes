@@ -28,7 +28,7 @@ export const formatPercent = (value: number): string => {
 // Função para converter número em palavras (versão simplificada)
 export const formatCurrencyInWords = (value: number): string => {
   // Implementação simplificada - retorna apenas o valor em reais por extenso
-  const integerPart = Math.floor(value);
+  let integerPart = Math.floor(value);
   const decimalPart = Math.round((value - integerPart) * 100);
   
   if (integerPart === 0 && decimalPart === 0) {
