@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,9 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 import { useAppData } from '@/context/providers/AppDataProvider';
-import { ArrowLeft, Loader2, Save, Search, Calculator } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Search, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import BulkPricingModal from './pricing/BulkPricingModal';
 import SaveConfirmationDialog from './pricing/SaveConfirmationDialog';
 import SaveProgressDialog from './pricing/SaveProgressDialog';
@@ -58,6 +60,10 @@ const ProductPricing = () => {
   const [pendingSave, setPendingSave] = useState<any>(null);
   const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
   // New states for enhanced confirmation
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
@@ -66,6 +72,13 @@ const ProductPricing = () => {
   const [currentSaving, setCurrentSaving] = useState<string>('');
   const [saveErrors, setSaveErrors] = useState<string[]>([]);
   const [productStatuses, setProductStatuses] = useState<Record<string, ProductStatus>>({});
+
+  // Calculate pagination values
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
   // Initialize product prices and max discounts from products
   useEffect(() => {
@@ -93,7 +106,20 @@ const ProductPricing = () => {
       filtered = filtered.filter(product => product.groupId === selectedGroup);
     }
     setFilteredProducts(filtered);
+    
+    // Reset to first page when filters change
+    setCurrentPage(1);
   }, [products, searchTerm, selectedCategory, selectedGroup]);
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1);
+  };
 
   // Calculate markup and minimum price
   const calculateMarkup = (cost: number, price: number): number => {
@@ -105,14 +131,22 @@ const ProductPricing = () => {
     return price * (1 - maxDiscount / 100);
   };
 
-  // Handle select all and select product
+  // Handle select all and select product (for current page only)
   const handleSelectAll = () => {
-    if (selectedProducts.size === filteredProducts.length) {
-      setSelectedProducts(new Set());
+    const currentPageProductIds = currentProducts.map(product => product.id);
+    const currentPageSelected = currentPageProductIds.filter(id => selectedProducts.has(id));
+    
+    const newSelected = new Set(selectedProducts);
+    
+    if (currentPageSelected.length === currentPageProductIds.length) {
+      // Unselect all products on current page
+      currentPageProductIds.forEach(id => newSelected.delete(id));
     } else {
-      const allIds = new Set(filteredProducts.map(product => product.id));
-      setSelectedProducts(allIds);
+      // Select all products on current page
+      currentPageProductIds.forEach(id => newSelected.add(id));
     }
+    
+    setSelectedProducts(newSelected);
   };
 
   const handleSelectProduct = (id: string) => {
@@ -185,7 +219,7 @@ const ProductPricing = () => {
 
       const oldPrice = product.price || 0;
       const newPrice = productPrices[productId];
-      const oldMaxDiscount = product.maxDiscountPercent || 0; // CORRIGIDO: usar valor original do produto
+      const oldMaxDiscount = product.maxDiscountPercent || 0;
       const newMaxDiscount = productMaxDiscounts[productId] || 0;
 
       if (oldPrice !== newPrice || oldMaxDiscount !== newMaxDiscount) {
@@ -357,6 +391,39 @@ const ProductPricing = () => {
     return parseFloat(numericValue) / 100 || 0;
   };
 
+  // Check if all products on current page are selected
+  const currentPageProductIds = currentProducts.map(product => product.id);
+  const currentPageSelected = currentPageProductIds.filter(id => selectedProducts.has(id));
+  const isCurrentPageFullySelected = currentPageProductIds.length > 0 && currentPageSelected.length === currentPageProductIds.length;
+
+  // Render pagination links
+  const renderPaginationLinks = () => {
+    const links = [];
+    const maxLinksToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxLinksToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxLinksToShow - 1);
+
+    if (endPage - startPage + 1 < maxLinksToShow) {
+      startPage = Math.max(1, endPage - maxLinksToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      links.push(
+        <PaginationItem key={i}>
+          <PaginationLink
+            onClick={() => handlePageChange(i)}
+            isActive={currentPage === i}
+            className="cursor-pointer"
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return links;
+  };
+
   return <>
       <Card className="w-full">
         <CardHeader>
@@ -400,6 +467,28 @@ const ProductPricing = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Pagination controls - Top */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">Itens por página:</span>
+                <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} produtos
+                {selectedProducts.size > 0 && ` (${selectedProducts.size} selecionados)`}
+              </div>
+            </div>
             
             {/* Products table with enhanced visual feedback */}
             <div>
@@ -410,7 +499,11 @@ const ProductPricing = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">
-                        <Checkbox checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length} onCheckedChange={handleSelectAll} aria-label="Selecionar todos" />
+                        <Checkbox 
+                          checked={isCurrentPageFullySelected} 
+                          onCheckedChange={handleSelectAll} 
+                          aria-label="Selecionar todos da página" 
+                        />
                       </TableHead>
                       <TableHead className="w-20">Código</TableHead>
                       <TableHead>Nome</TableHead>
@@ -422,11 +515,14 @@ const ProductPricing = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProducts.length === 0 ? <TableRow>
+                    {currentProducts.length === 0 ? <TableRow>
                         <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                          {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado com os filtros aplicados'}
+                          {filteredProducts.length === 0 ? 
+                            (products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado com os filtros aplicados') :
+                            'Nenhum produto nesta página'
+                          }
                         </TableCell>
-                      </TableRow> : filteredProducts.map(product => {
+                      </TableRow> : currentProducts.map(product => {
                   const currentPrice = productPrices[product.id] || 0;
                   const maxDiscount = productMaxDiscounts[product.id] || 0;
                   const minimumPrice = calculateMinimumPrice(currentPrice, maxDiscount);
@@ -466,6 +562,29 @@ const ProductPricing = () => {
                   </TableBody>
                 </Table>}
             </div>
+
+            {/* Pagination controls - Bottom */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    {renderPaginationLinks()}
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
 
             {/* Enhanced save button */}
             <div className="flex justify-end mt-4">
