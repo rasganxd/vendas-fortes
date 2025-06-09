@@ -212,6 +212,8 @@ export function useOrderOperations({
           deliveryZip: '',
           notes: '',
           items: orderItems,
+          importStatus: 'imported',
+          sourceProject: 'admin',
           createdAt: new Date(),
           updatedAt: new Date()
         };
