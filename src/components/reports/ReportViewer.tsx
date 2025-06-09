@@ -5,24 +5,21 @@ import { CompleteReport } from './reports/CompleteReport';
 import { BasicReport } from './reports/BasicReport';
 import { SalesOnlyReport } from './reports/SalesOnlyReport';
 import { ProductsBySalesRep } from './reports/ProductsBySalesRep';
-import { SalesChartsCollection } from './SalesChartsCollection';
 import { ReportSummaryCards } from './ReportSummaryCards';
-import { ReportType, SalesReportData, SalesMetrics, SalesRepPerformance, TopProduct, ChartData } from '@/types/reports';
+import { ReportType, SalesReportData, SalesMetrics, SalesRepPerformance, TopProduct } from '@/types/reports';
 
 interface ReportViewerProps {
   salesReportData: SalesReportData[];
   metrics: SalesMetrics;
   salesRepPerformance: SalesRepPerformance[];
   topProducts: TopProduct[];
-  chartData: ChartData[];
 }
 
 export const ReportViewer: React.FC<ReportViewerProps> = ({
   salesReportData,
   metrics,
   salesRepPerformance,
-  topProducts,
-  chartData
+  topProducts
 }) => {
   const reportTypes: ReportType[] = [
     {
@@ -48,47 +45,40 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   ];
 
   return (
-    <div className="space-y-3 min-h-0">
+    <div className="space-y-4 min-h-0">
       {/* Cards de resumo */}
       <ReportSummaryCards metrics={metrics} />
       
-      {/* Gráficos */}
-      <SalesChartsCollection 
-        chartData={chartData}
-        salesRepPerformance={salesRepPerformance}
-        topProducts={topProducts}
-      />
-      
       {/* Relatórios em abas */}
-      <Tabs defaultValue="complete" className="space-y-2 min-h-0">
-        <TabsList className="grid w-full grid-cols-4 h-8">
+      <Tabs defaultValue="complete" className="space-y-3 min-h-0">
+        <TabsList className="grid w-full grid-cols-4 h-9">
           {reportTypes.map((report) => (
             <TabsTrigger 
               key={report.id} 
               value={report.id}
-              className="text-xs px-1"
+              className="text-sm px-2"
             >
               {report.name}
             </TabsTrigger>
           ))}
         </TabsList>
         
-        <TabsContent value="complete" className="space-y-2 mt-2 min-h-0">
+        <TabsContent value="complete" className="space-y-3 mt-3 min-h-0">
           <CompleteReport data={salesReportData} />
         </TabsContent>
         
-        <TabsContent value="basic" className="space-y-2 mt-2 min-h-0">
+        <TabsContent value="basic" className="space-y-3 mt-3 min-h-0">
           <BasicReport 
             metrics={metrics} 
             salesRepPerformance={salesRepPerformance} 
           />
         </TabsContent>
         
-        <TabsContent value="sales-only" className="space-y-2 mt-2 min-h-0">
+        <TabsContent value="sales-only" className="space-y-3 mt-3 min-h-0">
           <SalesOnlyReport data={salesReportData} />
         </TabsContent>
         
-        <TabsContent value="products-by-salesrep" className="space-y-2 mt-2 min-h-0">
+        <TabsContent value="products-by-salesrep" className="space-y-3 mt-3 min-h-0">
           <ProductsBySalesRep 
             salesRepPerformance={salesRepPerformance}
             topProducts={topProducts}

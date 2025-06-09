@@ -15,7 +15,6 @@ const SalesReports = () => {
     metrics,
     salesRepPerformance,
     topProducts,
-    chartData,
     filters,
     updateFilters,
     clearFilters,
@@ -45,18 +44,17 @@ const SalesReports = () => {
         showConnectionStatus={false}
         fullWidth={true}
       >
-        <div className="h-[calc(100vh-160px)] flex gap-3 overflow-hidden">
-          <div className="w-60 flex-shrink-0">
+        <div className="h-[calc(100vh-160px)] flex gap-4 overflow-hidden">
+          <div className="w-64 flex-shrink-0">
             <Skeleton className="h-full w-full" />
           </div>
-          <div className="flex-1 min-w-0 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="flex-1 min-w-0 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full" />
+                <Skeleton key={i} className="h-24 w-full" />
               ))}
             </div>
-            <Skeleton className="h-60 w-full" />
-            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-96 w-full" />
           </div>
         </div>
       </PageLayout>
@@ -71,9 +69,9 @@ const SalesReports = () => {
       showConnectionStatus={false}
       fullWidth={true}
     >
-      <div className="h-[calc(100vh-160px)] flex gap-3 overflow-hidden">
+      <div className="h-[calc(100vh-160px)] flex gap-4 overflow-hidden">
         {/* Sidebar de filtros */}
-        <div className="w-60 flex-shrink-0">
+        <div className="w-64 flex-shrink-0">
           <ReportsFilterSidebar
             filters={filters}
             onFiltersChange={updateFilters}
@@ -86,7 +84,7 @@ const SalesReports = () => {
         {/* Área principal */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Barra de ações */}
-          <div className="flex items-center justify-between mb-3 flex-shrink-0">
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <FileText size={16} />
               <span>{salesReportData.length} registros encontrados</span>
@@ -97,7 +95,7 @@ const SalesReports = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleExportPDF}
-                className="flex items-center gap-1.5 h-8 px-3"
+                className="flex items-center gap-1.5 h-9 px-3"
               >
                 <Download size={14} />
                 PDF
@@ -106,7 +104,7 @@ const SalesReports = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleExportExcel}
-                className="flex items-center gap-1.5 h-8 px-3"
+                className="flex items-center gap-1.5 h-9 px-3"
               >
                 <Download size={14} />
                 Excel
@@ -115,7 +113,7 @@ const SalesReports = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 h-8 px-3"
+                className="flex items-center gap-1.5 h-9 px-3"
               >
                 <Printer size={14} />
                 Imprimir
@@ -130,7 +128,6 @@ const SalesReports = () => {
               metrics={metrics}
               salesRepPerformance={salesRepPerformance}
               topProducts={topProducts}
-              chartData={chartData}
             />
           </div>
         </div>
