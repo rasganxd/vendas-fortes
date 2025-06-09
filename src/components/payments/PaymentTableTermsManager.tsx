@@ -30,17 +30,39 @@ export const PaymentTableTermsManager: React.FC<PaymentTableTermsManagerProps> =
   const currentTable = paymentTables.find(t => t.id === tableId);
 
   useEffect(() => {
-    if (tableId) {
-      const table = paymentTables.find(t => t.id === tableId);
-      if (table && Array.isArray(table.terms)) {
-        setCurrentTerms(table.terms);
-      } else {
-        setCurrentTerms([]);
+    console.log('🔄 [PaymentTableTermsManager] Loading terms for table:', tableId);
+    console.log('🔄 [PaymentTableTermsManager] Current table:', currentTable);
+    
+    if (tableId && currentTable) {
+      // Try to load from terms first, then fallback to installments
+      let termsToLoad: PaymentTableTerm[] = [];
+      
+      if (currentTable.terms && Array.isArray(currentTable.terms) && currentTable.terms.length > 0) {
+        console.log('📋 [PaymentTableTermsManager] Loading from terms field:', currentTable.terms);
+        termsToLoad = currentTable.terms;
+      } else if (currentTable.installments && Array.isArray(currentTable.installments) && currentTable.installments.length > 0) {
+        console.log('📋 [PaymentTableTermsManager] Converting from installments field:', currentTable.installments);
+        // Convert installments to terms format
+        termsToLoad = currentTable.installments.map((installment, index) => ({
+          id: installment.id || generateId(),
+          days: installment.days,
+          percentage: installment.percentage,
+          description: installment.description || '',
+          installment: installment.installment || index + 1
+        }));
       }
+      
+      console.log('✅ [PaymentTableTermsManager] Setting current terms:', termsToLoad);
+      setCurrentTerms(termsToLoad);
+    } else {
+      console.log('❌ [PaymentTableTermsManager] No table found or invalid tableId');
+      setCurrentTerms([]);
     }
-  }, [tableId, paymentTables]);
+  }, [tableId, currentTable]);
 
   const handleAddTerm = () => {
+    console.log('➕ [PaymentTableTermsManager] Adding new term:', { days, percentage, description });
+    
     if (days > 0 && percentage > 0) {
       const newTerm: PaymentTableTerm = {
         id: generateId(),
@@ -49,43 +71,94 @@ export const PaymentTableTermsManager: React.FC<PaymentTableTermsManagerProps> =
         description,
         installment: currentTerms.length + 1
       };
-      setCurrentTerms([...currentTerms, newTerm]);
+      
+      console.log('✅ [PaymentTableTermsManager] New term created:', newTerm);
+      const updatedTerms = [...currentTerms, newTerm];
+      setCurrentTerms(updatedTerms);
+      
+      // Clear form
       setDays(0);
       setPercentage(0);
       setDescription('');
+      
+      console.log('📝 [PaymentTableTermsManager] Updated terms list:', updatedTerms);
     } else {
+      console.log('❌ [PaymentTableTermsManager] Invalid term data:', { days, percentage });
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Os campos de dias e percentagem são obrigatórios."
+        description: "Os campos de dias e percentagem são obrigatórios e devem ser maiores que zero."
       });
     }
   };
 
   const handleRemoveTerm = (id: string) => {
-    setCurrentTerms(prevTerms => prevTerms.filter(term => term.id !== id));
+    console.log('🗑️ [PaymentTableTermsManager] Removing term with id:', id);
+    const updatedTerms = currentTerms.filter(term => term.id !== id);
+    console.log('📝 [PaymentTableTermsManager] Updated terms after removal:', updatedTerms);
+    setCurrentTerms(updatedTerms);
   };
 
   const handleSaveTerms = async () => {
     try {
       setIsSaving(true);
-
-      await updatePaymentTable(tableId, {
-        terms: currentTerms,
-        installments: currentTerms.map(term => ({
-          installment: term.installment,
-          percentage: term.percentage,
-          days: term.days,
-          description: term.description
-        }))
-      });
       
+      console.log('💾 [PaymentTableTermsManager] Starting save process...');
+      console.log('📊 [PaymentTableTermsManager] Current table before save:', currentTable);
+      console.log('📋 [PaymentTableTermsManager] Terms to save:', currentTerms);
+
+      // Validate terms
+      if (currentTerms.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Adicione pelo menos uma condição de pagamento antes de salvar."
+        });
+        return;
+      }
+
+      // Validate percentage total
+      const totalPercentage = currentTerms.reduce((sum, term) => sum + term.percentage, 0);
+      console.log('📊 [PaymentTableTermsManager] Total percentage:', totalPercentage);
+      
+      if (totalPercentage !== 100) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: `A soma das percentagens deve ser 100%. Atual: ${totalPercentage.toFixed(1)}%`
+        });
+        return;
+      }
+
+      // Convert terms to installments format for compatibility
+      const installments = currentTerms.map(term => ({
+        installment: term.installment,
+        percentage: term.percentage,
+        days: term.days,
+        description: term.description,
+        id: term.id
+      }));
+
+      console.log('🔄 [PaymentTableTermsManager] Converted installments:', installments);
+
+      const updateData: Partial<PaymentTable> = {
+        terms: currentTerms,
+        installments: installments,
+        // Ensure type is preserved if it's a promissory note table
+        ...(currentTable?.type === 'promissoria' && { type: 'promissoria' })
+      };
+
+      console.log('📤 [PaymentTableTermsManager] Update data to send:', updateData);
+
+      await updatePaymentTable(tableId, updateData);
+      
+      console.log('✅ [PaymentTableTermsManager] Terms saved successfully');
       toast({
         title: "Condições salvas",
         description: "As condições de pagamento foram salvas com sucesso."
       });
     } catch (error) {
-      console.error("Erro ao salvar condições:", error);
+      console.error("❌ [PaymentTableTermsManager] Error saving terms:", error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -96,12 +169,16 @@ export const PaymentTableTermsManager: React.FC<PaymentTableTermsManagerProps> =
     }
   };
 
+  // Calculate remaining percentage
+  const usedPercentage = currentTerms.reduce((sum, term) => sum + term.percentage, 0);
+  const remainingPercentage = 100 - usedPercentage;
+
   return (
     <Card className="mt-4">
       <CardHeader>
         <CardTitle>Condições de Pagamento</CardTitle>
         <CardDescription>
-          {currentTable ? `Gerenciar condições para: ${currentTable.name}` : 'Condições de pagamento'}
+          {currentTable ? `Gerenciar condições para: ${currentTable.name} (${currentTable.type || 'tipo não definido'})` : 'Condições de pagamento'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -113,16 +190,25 @@ export const PaymentTableTermsManager: React.FC<PaymentTableTermsManagerProps> =
               id="days"
               value={days || ''}
               onChange={e => setDays(Number(e.target.value))}
+              min="0"
             />
           </div>
           <div>
-            <Label htmlFor="percentage">Percentagem</Label>
+            <Label htmlFor="percentage">Percentagem (%)</Label>
             <Input
               type="number"
               id="percentage"
               value={percentage || ''}
               onChange={e => setPercentage(Number(e.target.value))}
+              min="0"
+              max={remainingPercentage}
+              step="0.1"
             />
+            {remainingPercentage < 100 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Restante: {remainingPercentage.toFixed(1)}%
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="description">Descrição</Label>
@@ -131,15 +217,23 @@ export const PaymentTableTermsManager: React.FC<PaymentTableTermsManagerProps> =
               id="description"
               value={description}
               onChange={e => setDescription(e.target.value)}
+              placeholder="Ex: Entrada, 30 dias, etc."
             />
           </div>
         </div>
         
         <div className="flex justify-between mb-6">
-          <Button onClick={handleAddTerm}>
+          <Button 
+            onClick={handleAddTerm}
+            disabled={!days || !percentage || percentage <= 0 || days <= 0}
+          >
             <Plus className="mr-2 h-4 w-4" /> Adicionar Condição
           </Button>
-          <Button onClick={handleSaveTerms} disabled={isSaving} variant="outline">
+          <Button 
+            onClick={handleSaveTerms} 
+            disabled={isSaving || currentTerms.length === 0} 
+            variant="outline"
+          >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar Todas as Condições
           </Button>
@@ -147,7 +241,12 @@ export const PaymentTableTermsManager: React.FC<PaymentTableTermsManagerProps> =
         
         {currentTerms.length > 0 ? (
           <div className="mt-4">
-            <h4 className="text-md font-semibold mb-2">Condições Adicionadas</h4>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-md font-semibold">Condições Adicionadas</h4>
+              <span className={`text-sm font-medium ${usedPercentage === 100 ? 'text-green-600' : 'text-orange-600'}`}>
+                Total: {usedPercentage.toFixed(1)}% / 100%
+              </span>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>

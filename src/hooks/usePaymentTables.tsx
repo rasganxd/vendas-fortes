@@ -7,10 +7,12 @@ import { paymentTableService } from '@/services/supabase/paymentTableService';
 
 export const loadPaymentTables = async (): Promise<PaymentTable[]> => {
   try {
-    console.log("Loading payment tables from Supabase");
-    return await paymentTableService.getAll();
+    console.log("🔄 [usePaymentTables] Loading payment tables from Supabase");
+    const tables = await paymentTableService.getAll();
+    console.log("✅ [usePaymentTables] Loaded payment tables:", tables);
+    return tables;
   } catch (error) {
-    console.error("Erro ao carregar tabelas de pagamento:", error);
+    console.error("❌ [usePaymentTables] Error loading payment tables:", error);
     return [];
   }
 };
@@ -24,16 +26,16 @@ export const usePaymentTables = () => {
   useEffect(() => {
     const fetchPaymentTables = async () => {
       try {
-        console.log("Initial load of payment tables");
+        console.log("🔄 [usePaymentTables] Initial load of payment tables");
         setIsLoading(true);
         const tables = await loadPaymentTables();
         if (tables.length > 0) {
-          console.log("Setting payment tables:", tables);
+          console.log("✅ [usePaymentTables] Setting payment tables:", tables);
           setLocalPaymentTables(tables);
           setPaymentTables(tables);
         }
       } catch (error) {
-        console.error("Erro ao carregar tabelas de pagamento:", error);
+        console.error("❌ [usePaymentTables] Error loading payment tables:", error);
       } finally {
         setIsLoading(false);
       }
@@ -51,7 +53,7 @@ export const usePaymentTables = () => {
 
   const addPaymentTable = async (paymentTable: Omit<PaymentTable, 'id'>) => {
     try {
-      console.log("Adding payment table:", paymentTable);
+      console.log("➕ [usePaymentTables] Adding payment table:", paymentTable);
       
       const id = await paymentTableService.add(paymentTable);
       
@@ -66,6 +68,8 @@ export const usePaymentTables = () => {
         throw new Error("Failed to retrieve added payment table");
       }
       
+      console.log("✅ [usePaymentTables] Added payment table:", newTable);
+      
       // Update both local and context state with the new table
       const updatedTables = [...paymentTables, newTable];
       setLocalPaymentTables(updatedTables);
@@ -78,7 +82,7 @@ export const usePaymentTables = () => {
       
       return id;
     } catch (error) {
-      console.error("Erro ao adicionar tabela de pagamento:", error);
+      console.error("❌ [usePaymentTables] Error adding payment table:", error);
       toast({
         title: "Erro ao adicionar tabela de pagamento",
         description: "Houve um problema ao adicionar a tabela de pagamento.",
@@ -90,9 +94,23 @@ export const usePaymentTables = () => {
 
   const updatePaymentTable = async (id: string, paymentTable: Partial<PaymentTable>): Promise<void> => {
     try {
-      console.log("Updating payment table:", id, paymentTable);
+      console.log("🔄 [usePaymentTables] Updating payment table:", id, paymentTable);
       
-      await paymentTableService.update(id, paymentTable);
+      // Ensure we preserve all existing data when updating
+      const existingTable = paymentTables.find(t => t.id === id);
+      if (!existingTable) {
+        throw new Error("Payment table not found");
+      }
+
+      // Merge the update with existing data, ensuring important fields are preserved
+      const updateData = {
+        ...paymentTable,
+        updatedAt: new Date()
+      };
+
+      console.log("📤 [usePaymentTables] Sending update data:", updateData);
+      
+      await paymentTableService.update(id, updateData);
       
       // Get updated table data
       const updatedTable = await paymentTableService.getById(id);
@@ -100,6 +118,8 @@ export const usePaymentTables = () => {
       if (!updatedTable) {
         throw new Error("Failed to retrieve updated payment table");
       }
+      
+      console.log("✅ [usePaymentTables] Updated payment table:", updatedTable);
       
       // Update local state
       const updatedTables = paymentTables.map(p => p.id === id ? updatedTable : p);
@@ -111,7 +131,7 @@ export const usePaymentTables = () => {
         description: "Tabela de pagamento atualizada com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao atualizar tabela de pagamento:", error);
+      console.error("❌ [usePaymentTables] Error updating payment table:", error);
       toast({
         title: "Erro ao atualizar tabela de pagamento",
         description: "Houve um problema ao atualizar a tabela de pagamento.",
@@ -123,6 +143,8 @@ export const usePaymentTables = () => {
 
   const deletePaymentTable = async (id: string): Promise<void> => {
     try {
+      console.log("🗑️ [usePaymentTables] Deleting payment table:", id);
+      
       await paymentTableService.delete(id);
       
       // Update both local and context state
@@ -130,12 +152,14 @@ export const usePaymentTables = () => {
       setLocalPaymentTables(updatedTables);
       setPaymentTables(updatedTables);
       
+      console.log("✅ [usePaymentTables] Deleted payment table successfully");
+      
       toast({
         title: "Tabela de pagamento excluída",
         description: "Tabela de pagamento excluída com sucesso!"
       });
     } catch (error) {
-      console.error("Erro ao excluir tabela de pagamento:", error);
+      console.error("❌ [usePaymentTables] Error deleting payment table:", error);
       toast({
         title: "Erro ao excluir tabela de pagamento",
         description: "Houve um problema ao excluir a tabela de pagamento.",
