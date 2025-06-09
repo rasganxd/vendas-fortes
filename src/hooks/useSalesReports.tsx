@@ -112,7 +112,15 @@ export const useSalesReports = (filters: ReportFilters) => {
     }).sort((a, b) => b.totalRevenue - a.totalRevenue) || [];
 
     // Calcular top produtos
-    const productStats: Record<string, TopProduct & { ordersCount: Set<string> }> = {};
+    const productStats: Record<string, {
+      id: string;
+      name: string;
+      code: string;
+      totalQuantity: number;
+      totalRevenue: number;
+      ordersCount: number;
+    }> = {};
+    
     filteredOrders.forEach(order => {
       order.items?.forEach(item => {
         const key = `${item.productCode}_${item.productName}`;
@@ -123,24 +131,16 @@ export const useSalesReports = (filters: ReportFilters) => {
             code: item.productCode,
             totalQuantity: 0,
             totalRevenue: 0,
-            ordersCount: new Set()
+            ordersCount: 0
           };
         }
         productStats[key].totalQuantity += item.quantity;
         productStats[key].totalRevenue += item.total;
-        productStats[key].ordersCount.add(order.id);
+        productStats[key].ordersCount++;
       });
     });
 
     const topProducts: TopProduct[] = Object.values(productStats)
-      .map(product => ({
-        id: product.id,
-        name: product.name,
-        code: product.code,
-        totalQuantity: product.totalQuantity,
-        totalRevenue: product.totalRevenue,
-        ordersCount: product.ordersCount.size
-      }))
       .sort((a, b) => b.totalRevenue - a.totalRevenue);
 
     // Calcular dados de resumo

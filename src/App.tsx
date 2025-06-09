@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { AppContextProvider } from "@/context/providers/AppContextInnerProvider";
+import { AppContextInnerProvider } from "@/context/providers/AppContextInnerProvider";
 import { ConnectionProvider } from "@/context/providers/ConnectionProvider";
 import { SideNav } from "@/components/layout/SideNav";
 import Index from "./pages/Index";
@@ -37,7 +37,7 @@ function App() {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
           <ConnectionProvider>
-            <AppContextProvider>
+            <AppContextInnerProvider>
               <Toaster />
               <BrowserRouter>
                 <div className="min-h-screen flex">
@@ -69,7 +69,7 @@ function App() {
                   </main>
                 </div>
               </BrowserRouter>
-            </AppContextProvider>
+            </AppContextInnerProvider>
           </ConnectionProvider>
         </TooltipProvider>
       </ThemeProvider>
