@@ -13,7 +13,8 @@ import {
   UserRound,
   LucideIcon,
   ChevronRight,
-  PlusCircle
+  PlusCircle,
+  BarChart3
 } from "lucide-react";
 
 import { 
@@ -32,7 +33,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useAppContext } from "@/hooks/useAppContext";
 import { useEffect } from "react";
 
-// Define navigation items - removido o item "Classificações"
+// Define navigation items - adicionado item "Relatórios de Vendas"
 const navigation: NavItem[] = [
   {
     title: "Dashboard",
@@ -68,6 +69,12 @@ const navigation: NavItem[] = [
     title: "Digitar Pedido",
     href: "/pedidos/novo",
     icon: PlusCircle,
+    group: "vendas"
+  },
+  {
+    title: "Relatórios de Vendas",
+    href: "/relatorios-vendas",
+    icon: BarChart3,
     group: "vendas"
   },
   {
