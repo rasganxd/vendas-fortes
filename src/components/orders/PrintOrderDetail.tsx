@@ -2,6 +2,7 @@
 import React from 'react';
 import { Order } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useCustomers } from '@/hooks/useCustomers';
 import { formatDateToBR } from '@/lib/date-utils';
 import { formatCurrency } from '@/lib/format-utils';
 
@@ -11,8 +12,12 @@ interface PrintOrderDetailProps {
 
 export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => {
   const { settings } = useAppContext();
+  const { customers } = useCustomers();
   const companyData = settings?.company;
   const isNegativeOrder = order.total === 0 && order.rejectionReason;
+  
+  // Find customer data for address information
+  const customer = customers.find(c => c.id === order.customerId);
 
   const handlePrint = () => {
     // Don't print if settings are still loading
@@ -319,6 +324,27 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       return reasons[reason as keyof typeof reasons] || reason || 'Não informado';
     };
 
+    // Format customer address (same logic as PrintOrdersDialog)
+    const formatCustomerAddress = () => {
+      // Priority: order delivery address > customer address
+      const address = order.deliveryAddress || customer?.address || '';
+      const city = order.deliveryCity || customer?.city || '';
+      const state = order.deliveryState || customer?.state || '';
+      const zip = order.deliveryZip || customer?.zip || '';
+      
+      if (!address && !city && !state && !zip) {
+        return 'Não informado';
+      }
+      
+      let addressParts = [];
+      if (address) addressParts.push(address);
+      if (city) addressParts.push(city);
+      if (state) addressParts.push(state);
+      if (zip) addressParts.push(`CEP: ${zip}`);
+      
+      return addressParts.join(', ');
+    };
+
     // Generate order HTML using the same structure as PrintOrdersDialog
     const generateOrderHTML = () => {
       return `
@@ -345,6 +371,13 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
             <div class="info-box">
               <h3>Dados do Vendedor</h3>
               <p><span>Nome:</span> ${order.salesRepName || 'N/A'}</p>
+            </div>
+          </div>
+          
+          <div class="info-container">
+            <div class="info-box">
+              <h3>Endereço de Entrega</h3>
+              <p>${formatCustomerAddress()}</p>
             </div>
           </div>
           
