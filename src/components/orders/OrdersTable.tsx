@@ -2,16 +2,9 @@
 import React from 'react';
 import { Order } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDateToBR } from '@/lib/date-utils';
-import { MoreVertical, Eye, Edit, Trash2, Copy } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Eye, Edit, Trash2, Copy } from 'lucide-react';
 
 interface OrdersTableProps {
   filteredOrders: Order[];
@@ -34,20 +27,9 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   handleDeleteOrder,
   formatCurrency
 }) => {
-  const handleCopyOrderCode = (code: number) => {
-    navigator.clipboard.writeText(code.toString());
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'default';
-      case 'cancelled':
-        return 'destructive';
-      case 'pending':
-        return 'secondary';
-      default:
-        return 'outline';
+  const handleCopyCustomerCode = (customerCode: number | undefined) => {
+    if (customerCode) {
+      navigator.clipboard.writeText(customerCode.toString());
     }
   };
 
@@ -63,7 +45,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               />
             </th>
             <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Código
+              Código Cliente
             </th>
             <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
               Cliente
@@ -76,9 +58,6 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
             </th>
             <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
               Total
-            </th>
-            <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
             </th>
             <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
               Ações
@@ -100,16 +79,18 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                 <td className="p-3">
                   <div className="flex items-center space-x-2">
                     <span className="font-mono text-sm font-medium">
-                      {order.code}
+                      {order.customerId || '-'}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => handleCopyOrderCode(order.code)}
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
+                    {order.customerId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => handleCopyCustomerCode(order.customerId as any)}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 </td>
                 <td className="p-3">
@@ -133,37 +114,37 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                   </div>
                 </td>
                 <td className="p-3">
-                  <Badge variant={getStatusBadgeVariant(order.status)}>
-                    {order.status}
-                  </Badge>
-                </td>
-                <td className="p-3">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewOrder(order)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        Ver detalhes
-                      </DropdownMenuItem>
-                      {!isNegativeOrder && (
-                        <DropdownMenuItem onClick={() => handleEditOrder(order)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem 
-                        onClick={() => handleDeleteOrder(order)}
-                        className="text-red-600"
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleViewOrder(order)}
+                      title="Ver detalhes"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    {!isNegativeOrder && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleEditOrder(order)}
+                        title="Editar"
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleDeleteOrder(order)}
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             );
