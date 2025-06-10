@@ -115,12 +115,6 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                   <div>
                     <span className="font-medium">Método:</span> {selectedOrder.paymentMethod || 'N/A'}
                   </div>
-                  <div>
-                    <span className="font-medium">Status:</span> 
-                    <Badge variant="outline" className="ml-2">
-                      {selectedOrder.paymentStatus || 'N/A'}
-                    </Badge>
-                  </div>
                 </div>
               </div>
 
