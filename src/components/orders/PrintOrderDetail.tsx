@@ -324,20 +324,22 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       return reasons[reason as keyof typeof reasons] || reason || 'Não informado';
     };
 
-    // Format customer address (same logic as PrintOrdersDialog)
+    // Format customer address with neighborhood
     const formatCustomerAddress = () => {
       // Priority: order delivery address > customer address
       const address = order.deliveryAddress || customer?.address || '';
+      const neighborhood = customer?.neighborhood || '';
       const city = order.deliveryCity || customer?.city || '';
       const state = order.deliveryState || customer?.state || '';
       const zip = order.deliveryZip || customer?.zip || '';
       
-      if (!address && !city && !state && !zip) {
+      if (!address && !neighborhood && !city && !state && !zip) {
         return 'Não informado';
       }
       
       let addressParts = [];
       if (address) addressParts.push(address);
+      if (neighborhood) addressParts.push(neighborhood);
       if (city) addressParts.push(city);
       if (state) addressParts.push(state);
       if (zip) addressParts.push(`CEP: ${zip}`);
@@ -368,13 +370,6 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
               <p><span>Nome:</span> ${order.customerName || 'N/A'}</p>
             </div>
             
-            <div class="info-box">
-              <h3>Dados do Vendedor</h3>
-              <p><span>Nome:</span> ${order.salesRepName || 'N/A'}</p>
-            </div>
-          </div>
-          
-          <div class="info-container">
             <div class="info-box">
               <h3>Endereço de Entrega</h3>
               <p>${formatCustomerAddress()}</p>

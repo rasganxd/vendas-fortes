@@ -417,6 +417,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             <div class="info-box">
               <h3>Endereço de Entrega</h3>
               <p>${order.deliveryAddress || orderCustomer?.address || ''}
+              ${orderCustomer?.neighborhood ? `, ${orderCustomer.neighborhood}` : ''}
               ${(order.deliveryCity || orderCustomer?.city) ? `, ${order.deliveryCity || orderCustomer?.city}` : ''}
               ${(order.deliveryState || orderCustomer?.state) ? ` - ${order.deliveryState || orderCustomer?.state}` : ''}
               ${(orderCustomer?.zipCode) ? `, ${orderCustomer.zipCode}` : ''}</p>
