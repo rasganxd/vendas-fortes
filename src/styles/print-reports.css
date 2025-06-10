@@ -17,16 +17,53 @@
     width: 100%;
     background: white !important;
     color: black !important;
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 11px;
+    line-height: 1.3;
+    font-family: Arial, sans-serif;
   }
   
   .print-header {
     page-break-inside: avoid;
+    margin-bottom: 20px;
+  }
+  
+  .print-header h1 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  
+  .print-header h2 {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  
+  .print-header h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .print-header h4 {
+    font-size: 12px;
+    margin-bottom: 4px;
   }
   
   table {
     page-break-inside: auto;
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 10px;
+  }
+  
+  table th,
+  table td {
+    border: 1px solid #333 !important;
+    padding: 4px 6px;
+    text-align: left;
+  }
+  
+  table th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold;
   }
   
   tr {
@@ -41,7 +78,9 @@
   /* Esconder elementos desnecessários na impressão */
   .print-hide,
   button,
-  .no-print {
+  .no-print,
+  .ui-dialog,
+  .ui-tabs-nav {
     display: none !important;
   }
   
@@ -53,7 +92,7 @@
   
   /* Configurações de página */
   @page {
-    margin: 1.5cm;
+    margin: 1.5cm 1cm;
     size: A4;
   }
   
@@ -65,6 +104,28 @@
   .avoid-break {
     page-break-inside: avoid;
   }
+  
+  /* Melhorar espaçamento dos filtros */
+  .print-header .grid {
+    display: block !important;
+  }
+  
+  .print-header .grid > div {
+    display: inline-block;
+    width: 23%;
+    margin-right: 2%;
+    margin-bottom: 8px;
+    vertical-align: top;
+  }
+  
+  /* Checkbox styling para impressão */
+  .print-header .w-3 {
+    width: 10px !important;
+    height: 10px !important;
+    display: inline-block;
+    border: 1px solid #333 !important;
+    margin-right: 4px;
+  }
 }
 
 /* Estilos para visualização */
@@ -74,10 +135,35 @@
   margin: 0 auto;
   background: white;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  min-height: 297mm;
 }
 
 .print-preview {
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
+}
+
+/* Melhorar responsividade do cabeçalho */
+.print-header .grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .print-header .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .print-header .grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Estilo para checkboxes visuais */
+.print-header .w-3.h-3 {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 2px;
 }

@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { FileText, Download, Printer } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { ReportsFilterSidebar } from '@/components/reports/ReportsFilterSidebar';
 import { ReportViewer } from '@/components/reports/ReportViewer';
-import { PrintReportDialog } from '@/components/reports/PrintReportDialog';
+import { EnhancedPrintReportDialog } from '@/components/reports/print/EnhancedPrintReportDialog';
 import { useSalesReports } from '@/hooks/useSalesReports';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -78,10 +77,11 @@ const SalesReports = () => {
     setShowPrintDialog(true);
   };
 
-  const handleGeneratePrint = (reportType: ReportType['id']) => {
-    // A lógica de impressão será manipulada pelo ReportViewer
-    console.log(`Gerando relatório ${reportType} para impressão`);
-    toast.success('Relatório gerado! Use Ctrl+P para imprimir.');
+  const handleGeneratePrint = (reportType: ReportType['id'], reportFilters: any, options: any) => {
+    console.log(`Gerando relatório ${reportType} com configurações avançadas`);
+    console.log('Filtros:', reportFilters);
+    console.log('Opções:', options);
+    toast.success('Relatório configurado! Use Ctrl+P para imprimir.');
   };
 
   if (isLoading) {
@@ -161,13 +161,13 @@ const SalesReports = () => {
                 Excel
               </Button>
               <Button 
-                variant="outline" 
+                variant="default" 
                 size="sm" 
                 onClick={handlePrintReport}
-                className="flex items-center gap-1.5 h-9 px-3"
+                className="flex items-center gap-1.5 h-9 px-3 bg-blue-600 hover:bg-blue-700"
               >
                 <Printer size={14} />
-                Gerar Relatório
+                Configurar Relatório
               </Button>
             </div>
           </div>
@@ -186,12 +186,13 @@ const SalesReports = () => {
         </div>
       </div>
 
-      {/* Dialog de seleção de relatório para impressão */}
-      <PrintReportDialog
+      {/* Dialog de configuração avançada de relatório */}
+      <EnhancedPrintReportDialog
         open={showPrintDialog}
         onOpenChange={setShowPrintDialog}
         onPrint={handleGeneratePrint}
         appliedFilters={appliedFilters}
+        currentFilters={filters}
       />
     </PageLayout>
   );
