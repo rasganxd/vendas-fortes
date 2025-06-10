@@ -1,3 +1,4 @@
+
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'canceled';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'partial';
 export type ImportStatus = 'pending' | 'imported' | 'rejected';
@@ -19,6 +20,7 @@ export interface Order {
   code: number;
   customerId: string;
   customerName: string;
+  customerCode?: number; // Código numérico do cliente
   salesRepId: string;
   salesRepName: string;
   date: Date;

@@ -10,6 +10,7 @@ export class OrderTransformations {
       code: dbRecord.code,
       customerId: dbRecord.customer_id || '',
       customerName: dbRecord.customer_name || '',
+      customerCode: dbRecord.customer_code || undefined,
       salesRepId: dbRecord.sales_rep_id || '',
       salesRepName: dbRecord.sales_rep_name || '',
       date: dbRecord.date ? new Date(dbRecord.date) : new Date(),
@@ -35,7 +36,9 @@ export class OrderTransformations {
       importedAt: dbRecord.imported_at ? new Date(dbRecord.imported_at) : undefined,
       importedBy: dbRecord.imported_by || undefined,
       sourceProject: dbRecord.source_project || 'admin',
-      mobileOrderId: dbRecord.mobile_order_id || undefined
+      mobileOrderId: dbRecord.mobile_order_id || undefined,
+      rejectionReason: dbRecord.rejection_reason || undefined,
+      visitNotes: dbRecord.visit_notes || undefined
     };
   }
 
@@ -66,7 +69,9 @@ export class OrderTransformations {
       imported_at: record.importedAt ? record.importedAt.toISOString() : null,
       imported_by: record.importedBy,
       source_project: record.sourceProject,
-      mobile_order_id: record.mobileOrderId
+      mobile_order_id: record.mobileOrderId,
+      rejection_reason: record.rejectionReason,
+      visit_notes: record.visitNotes
     };
 
     console.log("📝 Transform to DB result:", dbRecord);

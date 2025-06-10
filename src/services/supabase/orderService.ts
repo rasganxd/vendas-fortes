@@ -60,7 +60,10 @@ class OrderSupabaseService extends SupabaseService<Order> {
       
       const { data: orderData, error: orderError } = await this.supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          customers!inner(code)
+        `)
         .eq('id', id)
         .single();
       
@@ -80,6 +83,7 @@ class OrderSupabaseService extends SupabaseService<Order> {
       
       const orderWithItems = {
         ...orderData,
+        customer_code: orderData.customers?.code,
         items: items
       };
       
@@ -99,7 +103,10 @@ class OrderSupabaseService extends SupabaseService<Order> {
       
       const { data: ordersData, error: ordersError } = await this.supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          customers(code)
+        `)
         .order('created_at', { ascending: false });
       
       if (ordersError) {
@@ -117,6 +124,7 @@ class OrderSupabaseService extends SupabaseService<Order> {
       const orders = ordersData.map(orderData => {
         const orderWithItems = {
           ...orderData,
+          customer_code: orderData.customers?.code,
           items: itemsByOrderId[orderData.id] || []
         };
         return this.transformFromDB(orderWithItems);

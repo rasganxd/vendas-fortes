@@ -79,14 +79,14 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                 <td className="p-3">
                   <div className="flex items-center space-x-2">
                     <span className="font-mono text-sm font-medium">
-                      {order.customerId || '-'}
+                      {order.customerCode || '-'}
                     </span>
-                    {order.customerId && (
+                    {order.customerCode && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0"
-                        onClick={() => handleCopyCustomerCode(order.customerId as any)}
+                        onClick={() => handleCopyCustomerCode(order.customerCode)}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
