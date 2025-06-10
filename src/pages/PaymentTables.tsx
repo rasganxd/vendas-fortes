@@ -9,6 +9,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { PaymentTableForm } from '@/components/payments/PaymentTableForm';
 import { PaymentTablesList } from '@/components/payments/PaymentTablesList';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 
 export default function PaymentTables() {
   const {
@@ -21,6 +22,8 @@ export default function PaymentTables() {
   
   const [openNewTableDialog, setOpenNewTableDialog] = useState(false);
   const [editTableId, setEditTableId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [tableToDelete, setTableToDelete] = useState<string | null>(null);
 
   // Debug logging
   useEffect(() => {
@@ -46,22 +49,29 @@ export default function PaymentTables() {
     setOpenNewTableDialog(true);
   };
 
-  const handleDeleteTable = async (tableId: string) => {
-    if (window.confirm("Tem certeza que deseja excluir esta tabela?")) {
-      try {
-        await deletePaymentTable(tableId);
-        toast({
-          title: "Tabela excluída",
-          description: "A tabela foi excluída com sucesso."
-        });
-      } catch (error) {
-        console.error("Erro ao excluir tabela:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Ocorreu um erro ao excluir a tabela."
-        });
-      }
+  const handleDeleteTable = (tableId: string) => {
+    setTableToDelete(tableId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteTable = async () => {
+    if (!tableToDelete) return;
+    
+    try {
+      await deletePaymentTable(tableToDelete);
+      toast({
+        title: "Tabela excluída",
+        description: "A tabela foi excluída com sucesso."
+      });
+    } catch (error) {
+      console.error("Erro ao excluir tabela:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir a tabela."
+      });
+    } finally {
+      setTableToDelete(null);
     }
   };
 
@@ -69,6 +79,10 @@ export default function PaymentTables() {
     setOpenNewTableDialog(false);
     setEditTableId(null);
   };
+
+  const tableToDeleteName = tableToDelete 
+    ? paymentTables.find(t => t.id === tableToDelete)?.name 
+    : '';
 
   return (
     <PageLayout title="Tabelas de Pagamento">
@@ -112,6 +126,17 @@ export default function PaymentTables() {
               />
             </DialogContent>
           </Dialog>
+
+          <ConfirmationDialog
+            open={deleteConfirmOpen}
+            onOpenChange={setDeleteConfirmOpen}
+            onConfirm={confirmDeleteTable}
+            title="Excluir Tabela de Pagamento"
+            description="Tem certeza que deseja excluir a tabela"
+            itemName={tableToDeleteName}
+            actionLabel="Excluir"
+            cancelLabel="Cancelar"
+          />
         </CardContent>
       </Card>
     </PageLayout>
