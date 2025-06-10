@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { OrderTypeBadge } from './OrderTypeBadge';
 import { RejectionReasonBadge } from './RejectionReasonBadge';
+import { PrintOrderDetail } from './PrintOrderDetail';
 import { formatDateToBR } from '@/lib/date-utils';
 import { Calendar, User, CreditCard, Package, MessageSquare, FileText } from 'lucide-react';
 
@@ -37,10 +38,11 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center space-x-2">
-              <span>Detalhes do Pedido #{selectedOrder.code}</span>
+            <div className="flex items-center space-x-2">
+              <DialogTitle>Detalhes do Pedido #{selectedOrder.code}</DialogTitle>
               <OrderTypeBadge order={selectedOrder} />
-            </DialogTitle>
+            </div>
+            <PrintOrderDetail order={selectedOrder} />
           </div>
         </DialogHeader>
 
@@ -64,12 +66,6 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
                 <Calendar className="w-4 h-4 text-gray-500" />
                 <span className="font-medium">Data:</span>
                 <span>{formatDateToBR(selectedOrder.date)}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm">
-                <span className="font-medium">Status:</span>
-                <Badge variant={selectedOrder.status === 'completed' ? 'default' : 'secondary'}>
-                  {selectedOrder.status}
-                </Badge>
               </div>
             </div>
           </div>
