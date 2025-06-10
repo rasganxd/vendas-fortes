@@ -155,7 +155,21 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addCustomerHook,
     updateCustomerHook,
     deleteCustomerHook,
-    generateNextCustomerCode
+    generateNextCustomerCode,
+    payments,
+    isLoadingPayments,
+    refreshPayments,
+    addPaymentHook,
+    updatePaymentHook,
+    deletePaymentHook,
+    confirmPaymentHook,
+    calculatePaymentTotal,
+    createAutomaticPaymentRecord,
+    paymentTables,
+    isLoadingPaymentTables,
+    addPaymentTableHook,
+    updatePaymentTableHook,
+    deletePaymentTableHook
   } = useAppDataState();
 
   const {
@@ -169,7 +183,17 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     refreshOrders,
     addCustomer,
     updateCustomer,
-    deleteCustomer
+    deleteCustomer,
+    refreshPayments: refreshPaymentsOp,
+    addPayment,
+    updatePayment,
+    deletePayment,
+    confirmPayment,
+    calculatePaymentTotal: calculatePaymentTotalOp,
+    createAutomaticPaymentRecord: createAutomaticPaymentRecordOp,
+    addPaymentTable,
+    updatePaymentTable,
+    deletePaymentTable
   } = useAppDataOperations(
     addProductHook,
     updateProductHook,
@@ -181,7 +205,17 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     refreshOrdersHook,
     addCustomerHook,
     updateCustomerHook,
-    deleteCustomerHook
+    deleteCustomerHook,
+    refreshPayments,
+    addPaymentHook,
+    updatePaymentHook,
+    deletePaymentHook,
+    confirmPaymentHook,
+    calculatePaymentTotal,
+    createAutomaticPaymentRecord,
+    addPaymentTableHook,
+    updatePaymentTableHook,
+    deletePaymentTableHook
   );
 
   // Add product operations for bulk operations
@@ -201,10 +235,10 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       isLoadingCustomers,
       isLoadingProducts,
       isLoadingOrders,
-      paymentTables: appOperations.paymentTables.length,
-      isLoadingPaymentTables: appOperations.isLoadingPaymentTables
+      paymentTables: paymentTables.length,
+      isLoadingPaymentTables
     });
-  }, [customers, products, orders, isLoadingCustomers, isLoadingProducts, isLoadingOrders, appOperations.paymentTables, appOperations.isLoadingPaymentTables]);
+  }, [customers, products, orders, isLoadingCustomers, isLoadingProducts, isLoadingOrders, paymentTables, isLoadingPaymentTables]);
 
   const refreshData = async (): Promise<boolean> => {
     try {
@@ -281,21 +315,21 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     addLoad: appOperations.addLoad,
     updateLoad: appOperations.updateLoad,
     deleteLoad: appOperations.deleteLoad,
-    payments: appOperations.payments,
-    isLoadingPayments: appOperations.isLoadingPayments,
-    addPayment: appOperations.addPayment,
-    updatePayment: appOperations.updatePayment,
-    deletePayment: appOperations.deletePayment,
+    payments,
+    isLoadingPayments,
+    addPayment,
+    updatePayment,
+    deletePayment,
     paymentMethods: appOperations.paymentMethods,
     isLoadingPaymentMethods: appOperations.isLoadingPaymentMethods,
     addPaymentMethod: appOperations.addPaymentMethod,
     updatePaymentMethod: appOperations.updatePaymentMethod,
     deletePaymentMethod: appOperations.deletePaymentMethod,
-    paymentTables: appOperations.paymentTables,
-    isLoadingPaymentTables: appOperations.isLoadingPaymentTables,
-    addPaymentTable: appOperations.addPaymentTable,
-    updatePaymentTable: appOperations.updatePaymentTable,
-    deletePaymentTable: appOperations.deletePaymentTable,
+    paymentTables,
+    isLoadingPaymentTables,
+    addPaymentTable,
+    updatePaymentTable,
+    deletePaymentTable,
     connectionStatus: connection.connectionStatus,
     lastConnectAttempt: connection.lastConnectAttempt,
     reconnectToSupabase: connection.reconnectToSupabase,

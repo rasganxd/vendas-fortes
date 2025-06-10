@@ -40,15 +40,53 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const remainingAmount = order.total - totalPaid;
   
+  // Calculate correct due date based on payment table terms
+  const calculateDueDate = () => {
+    if (!paymentTable || !paymentTable.terms || paymentTable.terms.length === 0) {
+      // Fallback: if no terms, use installments or default to 30 days
+      const installments = paymentTable?.installments || [];
+      if (installments.length > 0) {
+        const orderDate = new Date(order.date);
+        const dueDate = new Date(orderDate);
+        dueDate.setDate(orderDate.getDate() + (installments[0].days || 30));
+        return dueDate;
+      }
+      // Default to 30 days from order date
+      const orderDate = new Date(order.date);
+      const dueDate = new Date(orderDate);
+      dueDate.setDate(orderDate.getDate() + 30);
+      return dueDate;
+    }
+    
+    // Use the first term to calculate due date
+    const firstTerm = paymentTable.terms[0];
+    const orderDate = new Date(order.date);
+    const dueDate = new Date(orderDate);
+    dueDate.setDate(orderDate.getDate() + (firstTerm.days || 30));
+    
+    console.log('🗓️ Calculating due date for promissory note:', {
+      orderDate: orderDate.toISOString(),
+      termDays: firstTerm.days,
+      calculatedDueDate: dueDate.toISOString()
+    });
+    
+    return dueDate;
+  };
+  
   // Use the first payment for the promissory note details, or create defaults if no payments
   const payment = payments.length > 0 ? payments[0] : {
     amount: remainingAmount,
-    dueDate: order.dueDate,
+    dueDate: calculateDueDate(),
     date: order.date,
     customerName: customer?.name || order.customerName,
     customerDocument: customer?.document,
     customerAddress: customer?.address
   };
+
+  // Override the due date with our calculated one if using fallback payment
+  if (payments.length === 0) {
+    payment.dueDate = calculateDueDate();
+  }
 
   return (
     <div className="relative">
@@ -96,7 +134,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
         {/* Main Content - Compact */}
         <div className="mb-3 text-justify text-sm leading-tight">
           <p className="mb-2">
-            Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || order.dueDate || new Date())}</span>,
+            Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || new Date())}</span>,
             pagarei por esta única via de NOTA PROMISSÓRIA a {companyData?.name || "___________________"},
             ou à sua ordem, a quantia de {formatCurrency(remainingAmount || payment.amount || 0)} ({payment.amountInWords || formatCurrencyInWords(remainingAmount || payment.amount)}),
             em moeda corrente deste país.
@@ -120,6 +158,10 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
         {/* Payment Details - Compact */}
         <div className="mb-3 text-xs">
           <p><span className="font-semibold">Referente ao pedido:</span> #{order.code || order.id}</p>
+          <p><span className="font-semibold">Data do pedido:</span> {formatDateToBR(order.date)}</p>
+          {paymentTable && (
+            <p><span className="font-semibold">Forma de pagamento:</span> {paymentTable.name}</p>
+          )}
           {order.notes && (
             <p><span className="font-semibold">Observações:</span> {order.notes}</p>
           )}

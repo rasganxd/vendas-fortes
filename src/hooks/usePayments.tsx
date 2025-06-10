@@ -298,7 +298,7 @@ export const usePayments = () => {
     }
   };
 
-  // Create an automatic payment record
+  // Create an automatic payment record with correct due date calculation
   const createAutomaticPaymentRecord = async (order: Order) => {
     try {
       if (!order.paymentTableId) {
@@ -315,22 +315,46 @@ export const usePayments = () => {
         return;
       }
       
-      // Create payment records for each term
-      for (const term of paymentTable.terms || []) {
-        const paymentDate = new Date();
-        paymentDate.setDate(paymentDate.getDate() + term.days);
+      console.log('🗓️ Creating automatic payment record for order:', {
+        orderId: order.id,
+        orderDate: order.date,
+        paymentTableName: paymentTable.name,
+        terms: paymentTable.terms,
+        installments: paymentTable.installments
+      });
+      
+      // Use terms if available, otherwise fallback to installments
+      const termsToUse = paymentTable.terms && paymentTable.terms.length > 0 
+        ? paymentTable.terms 
+        : paymentTable.installments || [];
+      
+      // Create payment records for each term/installment
+      for (const term of termsToUse) {
+        // Calculate due date correctly based on order date + term days
+        const orderDate = new Date(order.date);
+        const dueDate = new Date(orderDate);
+        dueDate.setDate(orderDate.getDate() + (term.days || 0));
         
-        const paymentAmount = order.total * (term.percentage / 100);
+        const paymentAmount = order.total * ((term.percentage || 100) / 100);
+        
+        console.log('💰 Creating payment term:', {
+          installment: term.installment,
+          days: term.days,
+          percentage: term.percentage,
+          orderDate: orderDate.toISOString(),
+          calculatedDueDate: dueDate.toISOString(),
+          amount: paymentAmount
+        });
         
         const payment = {
           orderId: order.id,
           customerName: order.customerName,
           amount: paymentAmount,
-          method: order.paymentMethod,
+          method: order.paymentMethod || 'Dinheiro',
           status: 'pending',
           date: new Date(),
-          dueDate: paymentDate,
-          notes: `Parcela ${term.installment} - ${term.days} dias`,
+          dueDate: dueDate,
+          notes: `Parcela ${term.installment || 1} - ${term.days || 0} dias`,
           createdAt: new Date(),
           updatedAt: new Date()
         };
