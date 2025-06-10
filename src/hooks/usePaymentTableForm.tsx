@@ -4,7 +4,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "@/components/ui/use-toast";
-import { PaymentTable } from '@/types';
+import { PaymentTable, PaymentTableTerm } from '@/types';
+
+const paymentTermSchema = z.object({
+  days: z.number().min(0, "Dias deve ser maior ou igual a 0"),
+  percentage: z.number().min(0, "Percentual deve ser maior que 0").max(100, "Percentual deve ser menor ou igual a 100"),
+  description: z.string().optional(),
+});
 
 const paymentTableFormSchema = z.object({
   name: z.string().min(2, {
@@ -14,7 +20,15 @@ const paymentTableFormSchema = z.object({
   type: z.string().default("boleto"),
   payable_to: z.string().optional(),
   payment_location: z.string().optional(),
-  active: z.boolean().default(true)
+  active: z.boolean().default(true),
+  terms: z.array(paymentTermSchema).optional().refine((terms) => {
+    // Se o tipo for promissória e houver termos, validar que a soma seja 100%
+    if (terms && terms.length > 0) {
+      const totalPercentage = terms.reduce((sum, term) => sum + term.percentage, 0);
+      return Math.abs(totalPercentage - 100) < 0.01; // Tolerância para erros de ponto flutuante
+    }
+    return true;
+  }, "A soma dos percentuais deve ser 100%")
 });
 
 type PaymentTableFormValues = z.infer<typeof paymentTableFormSchema>;
@@ -36,13 +50,48 @@ export const usePaymentTableForm = (
       type: "boleto",
       payable_to: "",
       payment_location: "",
-      active: true
+      active: true,
+      terms: []
     }
   });
+
+  const watchedType = form.watch("type");
+
+  const addTerm = () => {
+    const currentTerms = form.getValues("terms") || [];
+    const newTerm = {
+      days: 0,
+      percentage: 0,
+      description: ""
+    };
+    form.setValue("terms", [...currentTerms, newTerm]);
+  };
+
+  const removeTerm = (index: number) => {
+    const currentTerms = form.getValues("terms") || [];
+    const updatedTerms = currentTerms.filter((_, i) => i !== index);
+    form.setValue("terms", updatedTerms);
+  };
+
+  const updateTerm = (index: number, field: keyof typeof paymentTermSchema._type, value: any) => {
+    const currentTerms = form.getValues("terms") || [];
+    const updatedTerms = [...currentTerms];
+    updatedTerms[index] = { ...updatedTerms[index], [field]: value };
+    form.setValue("terms", updatedTerms);
+  };
 
   const onSubmit = async (values: PaymentTableFormValues) => {
     try {
       setIsSubmitting(true);
+
+      // Converter os termos para o formato esperado
+      const terms: PaymentTableTerm[] = (values.terms || []).map((term, index) => ({
+        id: `term-${index}`,
+        days: term.days,
+        percentage: term.percentage,
+        description: term.description || "",
+        installment: index + 1
+      }));
 
       const paymentTable: Omit<PaymentTable, 'id'> = {
         name: values.name,
@@ -51,8 +100,8 @@ export const usePaymentTableForm = (
         payableTo: values.payable_to || "",
         paymentLocation: values.payment_location || "",
         active: values.active,
-        installments: [],
-        terms: [],
+        installments: [], // Manter vazio por compatibilidade
+        terms: terms,
         notes: "",
         createdAt: new Date(),
         updatedAt: new Date()
@@ -90,13 +139,21 @@ export const usePaymentTableForm = (
     if (editTableId) {
       const tableToEdit = paymentTables.find(table => table.id === editTableId);
       if (tableToEdit) {
+        // Converter os termos existentes para o formato do formulário
+        const formTerms = (tableToEdit.terms || []).map(term => ({
+          days: term.days,
+          percentage: term.percentage,
+          description: term.description || ""
+        }));
+
         form.reset({
           name: tableToEdit.name,
           description: tableToEdit.description,
           type: tableToEdit.type || "boleto",
           payable_to: tableToEdit.payableTo,
           payment_location: tableToEdit.paymentLocation,
-          active: tableToEdit.active !== undefined ? tableToEdit.active : true
+          active: tableToEdit.active !== undefined ? tableToEdit.active : true,
+          terms: formTerms
         });
       }
     } else {
@@ -106,7 +163,8 @@ export const usePaymentTableForm = (
         type: "boleto",
         payable_to: "",
         payment_location: "",
-        active: true
+        active: true,
+        terms: []
       });
     }
   }, [editTableId, form, paymentTables]);
@@ -114,6 +172,10 @@ export const usePaymentTableForm = (
   return {
     form,
     onSubmit: form.handleSubmit(onSubmit),
-    isSubmitting
+    isSubmitting,
+    watchedType,
+    addTerm,
+    removeTerm,
+    updateTerm
   };
 };

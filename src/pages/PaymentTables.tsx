@@ -97,7 +97,7 @@ export default function PaymentTables() {
           />
 
           <Dialog open={openNewTableDialog} onOpenChange={setOpenNewTableDialog}>
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editTableId ? "Editar Tabela" : "Adicionar Tabela"}</DialogTitle>
                 <DialogDescription>

@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { usePaymentTableForm } from '@/hooks/usePaymentTableForm';
 import { PaymentTable } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface PaymentTableFormProps {
   paymentTables: PaymentTable[];
@@ -28,13 +29,24 @@ export const PaymentTableForm: React.FC<PaymentTableFormProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { form, onSubmit, isSubmitting } = usePaymentTableForm(
+  const { 
+    form, 
+    onSubmit, 
+    isSubmitting, 
+    watchedType,
+    addTerm,
+    removeTerm,
+    updateTerm
+  } = usePaymentTableForm(
     paymentTables,
     addPaymentTable,
     updatePaymentTable,
     editTableId,
     onSuccess
   );
+
+  const terms = form.watch("terms") || [];
+  const isPromissoryType = watchedType === "promissoria";
 
   return (
     <Form {...form}>
@@ -52,6 +64,7 @@ export const PaymentTableForm: React.FC<PaymentTableFormProps> = ({
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="description"
@@ -65,6 +78,7 @@ export const PaymentTableForm: React.FC<PaymentTableFormProps> = ({
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="type"
@@ -89,6 +103,84 @@ export const PaymentTableForm: React.FC<PaymentTableFormProps> = ({
             </FormItem>
           )}
         />
+
+        {isPromissoryType && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Condições de Pagamento</CardTitle>
+              <p className="text-sm text-gray-600">
+                Configure os prazos e percentuais para nota promissória
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {terms.map((term, index) => (
+                <div key={index} className="flex gap-2 items-end p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium">Dias</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={term.days}
+                      onChange={(e) => updateTerm(index, 'days', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-sm font-medium">Percentual (%)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="0"
+                      value={term.percentage}
+                      onChange={(e) => updateTerm(index, 'percentage', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="flex-2">
+                    <label className="text-sm font-medium">Descrição</label>
+                    <Input
+                      placeholder="Descrição da condição"
+                      value={term.description}
+                      onChange={(e) => updateTerm(index, 'description', e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeTerm(index)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addTerm}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Condição
+              </Button>
+              
+              {terms.length > 0 && (
+                <div className="text-sm text-gray-600">
+                  Total: {terms.reduce((sum, term) => sum + term.percentage, 0).toFixed(2)}%
+                  {Math.abs(terms.reduce((sum, term) => sum + term.percentage, 0) - 100) > 0.01 && (
+                    <span className="text-red-600 ml-2">
+                      (deve somar 100%)
+                    </span>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        
         <FormField
           control={form.control}
           name="payable_to"
@@ -102,6 +194,7 @@ export const PaymentTableForm: React.FC<PaymentTableFormProps> = ({
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="payment_location"
@@ -115,6 +208,7 @@ export const PaymentTableForm: React.FC<PaymentTableFormProps> = ({
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="active"
@@ -135,6 +229,7 @@ export const PaymentTableForm: React.FC<PaymentTableFormProps> = ({
             </FormItem>
           )}
         />
+        
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
