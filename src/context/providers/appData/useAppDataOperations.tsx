@@ -1,6 +1,7 @@
 
 import { useCallback } from 'react';
 import { Product, Order, Customer } from '@/types';
+import { Payment, PaymentTable } from '@/types/payment';
 
 export const useAppDataOperations = (
   // Product hooks
@@ -18,7 +19,21 @@ export const useAppDataOperations = (
   // Customer hooks
   addCustomerHook: (customer: Omit<Customer, 'id'>) => Promise<string>,
   updateCustomerHook: (id: string, customer: Partial<Customer>) => Promise<void>,
-  deleteCustomerHook: (id: string) => Promise<void>
+  deleteCustomerHook: (id: string) => Promise<void>,
+
+  // Payment hooks
+  refreshPayments: (silent?: boolean) => Promise<void>,
+  addPaymentHook: (payment: Omit<Payment, 'id'>) => Promise<string>,
+  updatePaymentHook: (id: string, payment: Partial<Payment>) => Promise<void>,
+  deletePaymentHook: (id: string) => Promise<void>,
+  confirmPaymentHook: (orderId: string, paymentInfo: any) => Promise<boolean>,
+  calculatePaymentTotal: (orderId: string) => number,
+  createAutomaticPaymentRecord: (order: Order) => Promise<void>,
+
+  // Payment Table hooks
+  addPaymentTableHook: (table: Omit<PaymentTable, 'id'>) => Promise<string>,
+  updatePaymentTableHook: (id: string, table: Partial<PaymentTable>) => Promise<void>,
+  deletePaymentTableHook: (id: string) => Promise<void>
 ) => {
   
   // Product operations
@@ -78,6 +93,12 @@ export const useAppDataOperations = (
     try {
       const result = await addOrderHook(order);
       console.log('✅ [AppDataOperations] Order added successfully:', result);
+      
+      // Dispatch custom event for order creation
+      window.dispatchEvent(new CustomEvent('orderCreated', {
+        detail: { orderId: result, order }
+      }));
+      
       return result;
     } catch (error) {
       console.error('❌ [AppDataOperations] Order add failed:', error);
@@ -91,6 +112,12 @@ export const useAppDataOperations = (
     try {
       const result = await updateOrderHook(id, order);
       console.log('✅ [AppDataOperations] Order updated successfully:', result);
+      
+      // Dispatch custom event for order update
+      window.dispatchEvent(new CustomEvent('orderUpdated', {
+        detail: { orderId: id, order }
+      }));
+      
       return result;
     } catch (error) {
       console.error('❌ [AppDataOperations] Order update failed:', error);
@@ -104,6 +131,12 @@ export const useAppDataOperations = (
     try {
       await deleteOrderHook(id);
       console.log('✅ [AppDataOperations] Order deleted successfully');
+      
+      // Dispatch custom event for order deletion
+      window.dispatchEvent(new CustomEvent('orderDeleted', {
+        detail: { orderId: id }
+      }));
+      
     } catch (error) {
       console.error('❌ [AppDataOperations] Order delete failed:', error);
       throw error;
@@ -159,6 +192,95 @@ export const useAppDataOperations = (
     }
   }, [deleteCustomerHook]);
 
+  // Payment operations
+  const addPayment = useCallback(async (payment: Omit<Payment, 'id'>) => {
+    console.log('🔄 [AppDataOperations] Adding payment through centralized system');
+    console.log('📝 [AppDataOperations] Payment data:', payment);
+    try {
+      const result = await addPaymentHook(payment);
+      console.log('✅ [AppDataOperations] Payment added successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [AppDataOperations] Payment add failed:', error);
+      throw error;
+    }
+  }, [addPaymentHook]);
+
+  const updatePayment = useCallback(async (id: string, payment: Partial<Payment>) => {
+    console.log('🔄 [AppDataOperations] Updating payment through centralized system');
+    console.log('📝 [AppDataOperations] Payment ID:', id, 'Data:', payment);
+    try {
+      await updatePaymentHook(id, payment);
+      console.log('✅ [AppDataOperations] Payment updated successfully');
+    } catch (error) {
+      console.error('❌ [AppDataOperations] Payment update failed:', error);
+      throw error;
+    }
+  }, [updatePaymentHook]);
+
+  const deletePayment = useCallback(async (id: string) => {
+    console.log('🔄 [AppDataOperations] Deleting payment through centralized system');
+    console.log('📝 [AppDataOperations] Payment ID:', id);
+    try {
+      await deletePaymentHook(id);
+      console.log('✅ [AppDataOperations] Payment deleted successfully');
+    } catch (error) {
+      console.error('❌ [AppDataOperations] Payment delete failed:', error);
+      throw error;
+    }
+  }, [deletePaymentHook]);
+
+  const confirmPayment = useCallback(async (orderId: string, paymentInfo: any) => {
+    console.log('🔄 [AppDataOperations] Confirming payment through centralized system');
+    console.log('📝 [AppDataOperations] Order ID:', orderId, 'Info:', paymentInfo);
+    try {
+      const result = await confirmPaymentHook(orderId, paymentInfo);
+      console.log('✅ [AppDataOperations] Payment confirmed successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [AppDataOperations] Payment confirmation failed:', error);
+      throw error;
+    }
+  }, [confirmPaymentHook]);
+
+  // Payment Table operations
+  const addPaymentTable = useCallback(async (table: Omit<PaymentTable, 'id'>) => {
+    console.log('🔄 [AppDataOperations] Adding payment table through centralized system');
+    console.log('📝 [AppDataOperations] Payment table data:', table);
+    try {
+      const result = await addPaymentTableHook(table);
+      console.log('✅ [AppDataOperations] Payment table added successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [AppDataOperations] Payment table add failed:', error);
+      throw error;
+    }
+  }, [addPaymentTableHook]);
+
+  const updatePaymentTable = useCallback(async (id: string, table: Partial<PaymentTable>) => {
+    console.log('🔄 [AppDataOperations] Updating payment table through centralized system');
+    console.log('📝 [AppDataOperations] Payment table ID:', id, 'Data:', table);
+    try {
+      await updatePaymentTableHook(id, table);
+      console.log('✅ [AppDataOperations] Payment table updated successfully');
+    } catch (error) {
+      console.error('❌ [AppDataOperations] Payment table update failed:', error);
+      throw error;
+    }
+  }, [updatePaymentTableHook]);
+
+  const deletePaymentTable = useCallback(async (id: string) => {
+    console.log('🔄 [AppDataOperations] Deleting payment table through centralized system');
+    console.log('📝 [AppDataOperations] Payment table ID:', id);
+    try {
+      await deletePaymentTableHook(id);
+      console.log('✅ [AppDataOperations] Payment table deleted successfully');
+    } catch (error) {
+      console.error('❌ [AppDataOperations] Payment table delete failed:', error);
+      throw error;
+    }
+  }, [deletePaymentTableHook]);
+
   return {
     addProduct,
     updateProduct,
@@ -170,6 +292,16 @@ export const useAppDataOperations = (
     refreshOrders,
     addCustomer,
     updateCustomer,
-    deleteCustomer
+    deleteCustomer,
+    refreshPayments,
+    addPayment,
+    updatePayment,
+    deletePayment,
+    confirmPayment,
+    calculatePaymentTotal,
+    createAutomaticPaymentRecord,
+    addPaymentTable,
+    updatePaymentTable,
+    deletePaymentTable
   };
 };

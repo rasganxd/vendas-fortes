@@ -2,6 +2,8 @@
 import { useProducts } from '@/hooks/useProducts';
 import { useOrders } from '@/hooks/useOrders';
 import { useCustomers } from '@/hooks/useCustomers';
+import { usePayments } from '@/hooks/usePayments';
+import { usePaymentTables } from '@/hooks/usePaymentTables';
 
 export const useAppDataState = () => {
   console.log('🔄 [useAppDataState] Initializing data state hooks...');
@@ -35,13 +37,37 @@ export const useAppDataState = () => {
     generateNextCustomerCode
   } = useCustomers();
 
+  const {
+    payments,
+    isLoading: isLoadingPayments,
+    refreshPayments,
+    addPayment: addPaymentHook,
+    updatePayment: updatePaymentHook,
+    deletePayment: deletePaymentHook,
+    confirmPayment: confirmPaymentHook,
+    calculateTotal: calculatePaymentTotal,
+    createAutomaticPaymentRecord
+  } = usePayments();
+
+  const {
+    paymentTables,
+    isLoading: isLoadingPaymentTables,
+    addPaymentTable: addPaymentTableHook,
+    updatePaymentTable: updatePaymentTableHook,
+    deletePaymentTable: deletePaymentTableHook
+  } = usePaymentTables();
+
   console.log('📊 [useAppDataState] Data state summary:', {
     products: products.length,
     isLoadingProducts,
     orders: orders.length,
     isLoadingOrders,
     customers: customers.length,
-    isLoadingCustomers
+    isLoadingCustomers,
+    payments: payments.length,
+    isLoadingPayments,
+    paymentTables: paymentTables.length,
+    isLoadingPaymentTables
   });
 
   return {
@@ -64,6 +90,20 @@ export const useAppDataState = () => {
     addCustomerHook,
     updateCustomerHook,
     deleteCustomerHook,
-    generateNextCustomerCode
+    generateNextCustomerCode,
+    payments,
+    isLoadingPayments,
+    refreshPayments,
+    addPaymentHook,
+    updatePaymentHook,
+    deletePaymentHook,
+    confirmPaymentHook,
+    calculatePaymentTotal,
+    createAutomaticPaymentRecord,
+    paymentTables,
+    isLoadingPaymentTables,
+    addPaymentTableHook,
+    updatePaymentTableHook,
+    deletePaymentTableHook
   };
 };

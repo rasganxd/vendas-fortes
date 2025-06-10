@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { Payment } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { Order } from '@/types/order';
@@ -19,6 +20,80 @@ export const loadPayments = async (): Promise<Payment[]> => {
 export const usePayments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Refresh payments function with debounce
+  const refreshPayments = useCallback(async (silent = true) => {
+    try {
+      if (!silent) {
+        setIsLoading(true);
+      }
+      const loadedPayments = await loadPayments();
+      setPayments(loadedPayments);
+      
+      if (!silent) {
+        console.log('💳 Payments refreshed manually');
+      } else {
+        console.log('💳 Payments refreshed silently after order change');
+      }
+    } catch (error) {
+      console.error("Error refreshing payments:", error);
+      if (!silent) {
+        toast({
+          title: "Erro ao atualizar pagamentos",
+          description: "Houve um problema ao carregar os pagamentos.",
+          variant: "destructive"
+        });
+      }
+    } finally {
+      if (!silent) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  // Event handlers for order updates
+  useEffect(() => {
+    const handleOrderUpdated = (event: CustomEvent) => {
+      console.log('💳 Order updated event received, refreshing payments:', event.detail);
+      // Use setTimeout to debounce rapid updates
+      setTimeout(() => {
+        refreshPayments(true);
+      }, 500);
+    };
+
+    const handleOrderDeleted = (event: CustomEvent) => {
+      console.log('💳 Order deleted event received, refreshing payments:', event.detail);
+      const { orderId } = event.detail;
+      
+      // Remove payments for deleted order immediately for better UX
+      setPayments(prevPayments => 
+        prevPayments.filter(payment => payment.orderId !== orderId)
+      );
+      
+      // Then refresh to ensure data consistency
+      setTimeout(() => {
+        refreshPayments(true);
+      }, 500);
+    };
+
+    const handleOrderCreated = (event: CustomEvent) => {
+      console.log('💳 Order created event received, refreshing payments:', event.detail);
+      // Slight delay to allow order processing to complete
+      setTimeout(() => {
+        refreshPayments(true);
+      }, 1000);
+    };
+
+    window.addEventListener('orderUpdated', handleOrderUpdated as EventListener);
+    window.addEventListener('orderDeleted', handleOrderDeleted as EventListener);
+    window.addEventListener('orderCreated', handleOrderCreated as EventListener);
+
+    return () => {
+      window.removeEventListener('orderUpdated', handleOrderUpdated as EventListener);
+      window.removeEventListener('orderDeleted', handleOrderDeleted as EventListener);
+      window.removeEventListener('orderCreated', handleOrderCreated as EventListener);
+    };
+  }, [refreshPayments]);
 
   // Load payments on initial render
   useEffect(() => {
@@ -281,6 +356,7 @@ export const usePayments = () => {
     payments,
     isLoading,
     setPayments,
+    refreshPayments,
     calculateTotal,
     confirmPayment,
     addPayment,
