@@ -1,19 +1,19 @@
 
 import React from 'react';
-import { Order, MobileOrderGroup } from '@/types';
-import { formatCurrency } from '@/lib/format-utils';
-import { formatDateToBR } from '@/lib/date-utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Users, Package, TrendingUp } from "lucide-react";
+import { MobileOrderGroup } from '@/types';
 import { OrderTypeBadge } from '@/components/orders/OrderTypeBadge';
 import { RejectionReasonBadge } from '@/components/orders/RejectionReasonBadge';
-import { ShoppingCart, MessageSquareX, User, Calendar, FileText } from 'lucide-react';
+import { formatDateToBR } from '@/lib/date-utils';
 
 interface MobileOrderImportTableProps {
   groupedOrders: MobileOrderGroup[];
   selectedOrders: Set<string>;
   selectedSalesReps: Set<string>;
+  isLoading: boolean;
   onToggleOrder: (orderId: string) => void;
   onToggleSalesRep: (salesRepId: string) => void;
 }
@@ -22,154 +22,122 @@ export const MobileOrderImportTable: React.FC<MobileOrderImportTableProps> = ({
   groupedOrders,
   selectedOrders,
   selectedSalesReps,
+  isLoading,
   onToggleOrder,
   onToggleSalesRep
 }) => {
-  const getTotalSalesValue = (orders: Order[]) => {
-    return orders.filter(order => order.total > 0).reduce((sum, order) => sum + order.total, 0);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
 
-  const getVisitsCount = (orders: Order[]) => {
-    return orders.filter(order => order.total === 0 && order.rejectionReason).length;
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Carregando pedidos pendentes...</div>
+      </div>
+    );
+  }
 
-  const getSalesCount = (orders: Order[]) => {
-    return orders.filter(order => order.total > 0).length;
-  };
+  if (groupedOrders.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Nenhum pedido pendente
+          </h3>
+          <p className="text-gray-500">
+            Não há pedidos mobile aguardando importação no momento.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
       {groupedOrders.map((group) => {
-        const isGroupSelected = selectedSalesReps.has(group.salesRepId);
-        const salesValue = getTotalSalesValue(group.orders);
-        const visitsCount = getVisitsCount(group.orders);
-        const salesCount = getSalesCount(group.orders);
-
+        const isSalesRepSelected = selectedSalesReps.has(group.salesRepId);
+        const regularOrders = group.orders.filter(order => order.total > 0);
+        const negativeOrders = group.orders.filter(order => order.total === 0 && order.rejectionReason);
+        
         return (
           <Card key={group.salesRepId} className="overflow-hidden">
-            <div className="bg-gray-50 p-4 border-b">
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Checkbox
-                    checked={isGroupSelected}
+                    checked={isSalesRepSelected}
                     onCheckedChange={() => onToggleSalesRep(group.salesRepId)}
                   />
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-blue-600" />
-                      <h3 className="font-semibold text-lg">{group.salesRepName}</h3>
-                    </div>
-                    <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
-                      <span className="flex items-center">
-                        <ShoppingCart className="w-3 h-3 mr-1" />
-                        {salesCount} vendas
-                      </span>
-                      <span className="flex items-center">
-                        <MessageSquareX className="w-3 h-3 mr-1" />
-                        {visitsCount} visitas
-                      </span>
-                      <span className="font-semibold text-green-600">
-                        {formatCurrency(salesValue)}
-                      </span>
-                    </div>
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-4 w-4 text-blue-500" />
+                    <CardTitle className="text-base">{group.salesRepName}</CardTitle>
                   </div>
                 </div>
-                <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                  {group.orders.length} pedidos
-                </Badge>
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <Package className="h-4 w-4" />
+                    <span>{group.count} pedidos</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                    <span className="font-medium text-green-600">
+                      {formatCurrency(group.totalValue)}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
+            </CardHeader>
 
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
-                        Selecionar
-                      </th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
-                        Tipo
-                      </th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
-                        Código
-                      </th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
-                        Cliente
-                      </th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
-                        Data
-                      </th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
-                        Valor
-                      </th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
-                        Status/Motivo
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {group.orders.map((order, index) => {
-                      const isSelected = selectedOrders.has(order.id);
-                      const isNegativeOrder = order.total === 0 && order.rejectionReason;
-
-                      return (
-                        <tr 
-                          key={order.id} 
-                          className={`border-b hover:bg-gray-50 ${isNegativeOrder ? 'bg-orange-25' : ''} ${index % 2 === 0 ? 'bg-gray-25' : 'bg-white'}`}
-                        >
-                          <td className="p-3">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => onToggleOrder(order.id)}
-                            />
-                          </td>
-                          <td className="p-3">
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {group.orders.map((order) => {
+                  const isOrderSelected = selectedOrders.has(order.id);
+                  const isNegativeOrder = order.total === 0 && order.rejectionReason;
+                  
+                  return (
+                    <div
+                      key={order.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        isOrderSelected ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                      } ${isNegativeOrder ? 'bg-orange-25 border-orange-200' : ''}`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={isOrderSelected}
+                          onCheckedChange={() => onToggleOrder(order.id)}
+                        />
+                        <div>
+                          <div className="flex items-center space-x-2">
                             <OrderTypeBadge order={order} showText={false} />
-                          </td>
-                          <td className="p-3">
-                            <span className="font-mono text-sm">
-                              {order.code || order.id.slice(0, 8)}
-                            </span>
-                          </td>
-                          <td className="p-3">
-                            <div className="max-w-48 truncate" title={order.customerName}>
-                              {order.customerName}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Calendar className="w-3 h-3 mr-1" />
+                            <span className="font-medium">#{order.code}</span>
+                            <span className="text-sm text-gray-600">{order.customerName}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className="text-xs text-gray-500">
                               {formatDateToBR(order.date)}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <span className={`font-semibold ${isNegativeOrder ? 'text-gray-500' : 'text-green-600'}`}>
-                              {isNegativeOrder ? '-' : formatCurrency(order.total)}
                             </span>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex flex-col space-y-1">
-                              {isNegativeOrder ? (
-                                <RejectionReasonBadge reason={order.rejectionReason} />
-                              ) : (
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 w-fit">
-                                  {order.status}
-                                </Badge>
-                              )}
-                              {order.visitNotes && (
-                                <div className="flex items-center text-xs text-gray-500" title={order.visitNotes}>
-                                  <FileText className="w-3 h-3 mr-1" />
-                                  <span className="truncate max-w-24">{order.visitNotes}</span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            {isNegativeOrder && (
+                              <RejectionReasonBadge reason={order.rejectionReason} />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-medium ${isNegativeOrder ? 'text-gray-500' : 'text-green-600'}`}>
+                          {isNegativeOrder ? 'Visita' : formatCurrency(order.total)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {order.items?.length || 0} itens
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

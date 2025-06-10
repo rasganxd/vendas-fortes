@@ -69,7 +69,8 @@ export default function MobileOrderImport() {
 
             <MobileOrderImportTable
               groupedOrders={groupedOrders}
-              selection={selection}
+              selectedOrders={selection.selectedOrders}
+              selectedSalesReps={selection.selectedSalesReps}
               isLoading={isLoading}
               onToggleOrder={toggleOrderSelection}
               onToggleSalesRep={toggleSalesRepSelection}

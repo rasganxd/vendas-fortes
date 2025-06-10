@@ -4,8 +4,6 @@ import { Order } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { OrderTypeBadge } from './OrderTypeBadge';
-import { RejectionReasonBadge } from './RejectionReasonBadge';
 import { formatDateToBR } from '@/lib/date-utils';
 import { MoreVertical, Eye, Edit, Trash2, Copy } from 'lucide-react';
 import {
@@ -65,9 +63,6 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               />
             </th>
             <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Tipo
-            </th>
-            <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
               Código
             </th>
             <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -95,15 +90,12 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
             const isNegativeOrder = order.total === 0 && order.rejectionReason;
             
             return (
-              <tr key={order.id} className={`hover:bg-gray-50 ${isNegativeOrder ? 'bg-orange-25' : ''}`}>
+              <tr key={order.id} className="hover:bg-gray-50">
                 <td className="p-3">
                   <Checkbox
                     checked={selectedOrderIds.includes(order.id)}
                     onCheckedChange={() => handleToggleOrderSelection(order.id)}
                   />
-                </td>
-                <td className="p-3">
-                  <OrderTypeBadge order={order} showText={false} />
                 </td>
                 <td className="p-3">
                   <div className="flex items-center space-x-2">
@@ -137,19 +129,13 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                 </td>
                 <td className="p-3">
                   <div className={`text-sm font-medium ${isNegativeOrder ? 'text-gray-500' : 'text-green-600'}`}>
-                    {isNegativeOrder ? '-' : formatCurrency(order.total)}
+                    {isNegativeOrder ? 'Visita' : formatCurrency(order.total)}
                   </div>
                 </td>
                 <td className="p-3">
-                  <div className="flex flex-col space-y-1">
-                    {isNegativeOrder ? (
-                      <RejectionReasonBadge reason={order.rejectionReason} />
-                    ) : (
-                      <Badge variant={getStatusBadgeVariant(order.status)}>
-                        {order.status}
-                      </Badge>
-                    )}
-                  </div>
+                  <Badge variant={getStatusBadgeVariant(order.status)}>
+                    {order.status}
+                  </Badge>
                 </td>
                 <td className="p-3">
                   <DropdownMenu>
