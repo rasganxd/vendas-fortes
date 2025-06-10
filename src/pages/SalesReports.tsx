@@ -1,13 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { FileText, Download, Printer } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { ReportsFilterSidebar } from '@/components/reports/ReportsFilterSidebar';
 import { ReportViewer } from '@/components/reports/ReportViewer';
+import { PrintReportDialog } from '@/components/reports/PrintReportDialog';
 import { useSalesReports } from '@/hooks/useSalesReports';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { ReportType } from '@/types/reports';
+import '../styles/print-reports.css';
 
 const SalesReports = () => {
   const {
@@ -23,6 +26,46 @@ const SalesReports = () => {
     customers
   } = useSalesReports();
 
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
+
+  const getAppliedFilters = () => {
+    const appliedFilters: string[] = [];
+    
+    if (filters.period) {
+      const periodLabels = {
+        'today': 'Hoje',
+        'week': 'Esta Semana',
+        'month': 'Este Mês',
+        'quarter': 'Este Trimestre',
+        'year': 'Este Ano',
+        'custom': 'Período Personalizado'
+      };
+      appliedFilters.push(`Período: ${periodLabels[filters.period] || filters.period}`);
+    }
+    
+    if (filters.salesRepName) {
+      appliedFilters.push(`Vendedor: ${filters.salesRepName}`);
+    }
+    
+    if (filters.customerName) {
+      appliedFilters.push(`Cliente: ${filters.customerName}`);
+    }
+    
+    if (filters.orderStatus) {
+      appliedFilters.push(`Status: ${filters.orderStatus}`);
+    }
+    
+    if (filters.minValue !== undefined) {
+      appliedFilters.push(`Valor Mín: R$ ${filters.minValue.toFixed(2)}`);
+    }
+    
+    if (filters.maxValue !== undefined) {
+      appliedFilters.push(`Valor Máx: R$ ${filters.maxValue.toFixed(2)}`);
+    }
+
+    return appliedFilters;
+  };
+
   const handleExportPDF = () => {
     toast.info('Funcionalidade de exportação PDF será implementada em breve');
   };
@@ -31,8 +74,14 @@ const SalesReports = () => {
     toast.info('Funcionalidade de exportação Excel será implementada em breve');
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrintReport = () => {
+    setShowPrintDialog(true);
+  };
+
+  const handleGeneratePrint = (reportType: ReportType['id']) => {
+    // A lógica de impressão será manipulada pelo ReportViewer
+    console.log(`Gerando relatório ${reportType} para impressão`);
+    toast.success('Relatório gerado! Use Ctrl+P para imprimir.');
   };
 
   if (isLoading) {
@@ -60,6 +109,8 @@ const SalesReports = () => {
       </PageLayout>
     );
   }
+
+  const appliedFilters = getAppliedFilters();
 
   return (
     <PageLayout
@@ -112,11 +163,11 @@ const SalesReports = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={handlePrint}
+                onClick={handlePrintReport}
                 className="flex items-center gap-1.5 h-9 px-3"
               >
                 <Printer size={14} />
-                Imprimir
+                Gerar Relatório
               </Button>
             </div>
           </div>
@@ -128,10 +179,20 @@ const SalesReports = () => {
               metrics={metrics}
               salesRepPerformance={salesRepPerformance}
               topProducts={topProducts}
+              appliedFilters={appliedFilters}
+              onPrintReport={() => toast.success('Relatório preparado para impressão!')}
             />
           </div>
         </div>
       </div>
+
+      {/* Dialog de seleção de relatório para impressão */}
+      <PrintReportDialog
+        open={showPrintDialog}
+        onOpenChange={setShowPrintDialog}
+        onPrint={handleGeneratePrint}
+        appliedFilters={appliedFilters}
+      />
     </PageLayout>
   );
 };

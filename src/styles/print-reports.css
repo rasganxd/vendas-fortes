@@ -1,0 +1,83 @@
+
+/* Estilos específicos para impressão de relatórios */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .print-container,
+  .print-container * {
+    visibility: visible;
+  }
+  
+  .print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white !important;
+    color: black !important;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  
+  .print-header {
+    page-break-inside: avoid;
+  }
+  
+  table {
+    page-break-inside: auto;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  thead {
+    display: table-header-group;
+  }
+  
+  /* Esconder elementos desnecessários na impressão */
+  .print-hide,
+  button,
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Garantir que cores sejam impressas */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Configurações de página */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+  
+  /* Quebras de página apropriadas */
+  .page-break {
+    page-break-before: always;
+  }
+  
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+}
+
+/* Estilos para visualização */
+.print-container {
+  font-family: Arial, sans-serif;
+  max-width: 210mm;
+  margin: 0 auto;
+  background: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.print-preview {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
