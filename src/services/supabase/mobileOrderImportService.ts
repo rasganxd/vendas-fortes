@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Order, MobileOrderGroup } from '@/types';
 import { OrderTransformations } from './orderService/orderTransformations';
@@ -37,7 +36,14 @@ class MobileOrderImportService {
         return OrderTransformations.transformFromDB(orderWithItems);
       });
       
-      console.log(`✅ Found ${orders.length} pending mobile orders`);
+      // Log negative orders
+      const negativeOrders = orders.filter(order => order.total === 0 && order.rejectionReason);
+      const regularOrders = orders.filter(order => order.total > 0);
+      
+      console.log(`✅ Found ${orders.length} pending mobile orders:`);
+      console.log(`  - ${regularOrders.length} sales orders`);
+      console.log(`  - ${negativeOrders.length} negative orders (visits)`);
+      
       return orders;
     } catch (error) {
       console.error('❌ Error in getPendingMobileOrders:', error);
@@ -62,7 +68,10 @@ class MobileOrderImportService {
       
       const group = groups.get(key)!;
       group.orders.push(order);
-      group.totalValue += order.total;
+      // Only count positive orders for total value
+      if (order.total > 0) {
+        group.totalValue += order.total;
+      }
       group.count++;
     });
     
@@ -147,6 +156,40 @@ class MobileOrderImportService {
       console.error('❌ Error in getImportHistory:', error);
       throw error;
     }
+  }
+
+  private validateOrderForImport(order: Order): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    // Basic validations for all orders
+    if (!order.customerId || !order.customerName) {
+      errors.push('Customer information is required');
+    }
+    
+    if (!order.salesRepId || !order.salesRepName) {
+      errors.push('Sales rep information is required');
+    }
+    
+    // Specific validations based on order type
+    if (order.total > 0) {
+      // Regular sales order validation
+      if (!order.items || order.items.length === 0) {
+        errors.push('Sales orders must have at least one item');
+      }
+    } else if (order.total === 0) {
+      // Negative order (visit) validation
+      if (!order.rejectionReason) {
+        errors.push('Negative orders must have a rejection reason');
+      }
+      // Negative orders can have empty items array, that's OK
+    } else {
+      errors.push('Order total cannot be negative');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
   }
 }
 

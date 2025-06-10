@@ -1,551 +1,199 @@
 
-import React, { useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
-import { Order, Customer } from '@/types';
-import { formatDateToBR } from '@/lib/date-utils';
-import { useAppContext } from '@/hooks/useAppContext';
+import React from 'react';
+import { Order } from '@/types';
+import { Customer } from '@/types';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Archive, Printer, X } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { OrderTypeBadge } from './OrderTypeBadge';
+import { RejectionReasonBadge } from './RejectionReasonBadge';
+import { formatDateToBR } from '@/lib/date-utils';
+import { Calendar, User, CreditCard, Package, MessageSquare, FileText } from 'lucide-react';
 
 interface OrderDetailDialogProps {
+  selectedOrder: Order;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedOrder: Order | null;
   selectedCustomer: Customer | null;
-  formatCurrency: (value: number | undefined) => string;
+  formatCurrency: (value: number) => string;
 }
 
 const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
+  selectedOrder,
   isOpen,
   onOpenChange,
-  selectedOrder,
   selectedCustomer,
-  formatCurrency,
+  formatCurrency
 }) => {
-  const printRef = useRef<HTMLDivElement>(null);
-  const { settings } = useAppContext();
-  const companyData = settings?.company;
-  
-  // Debug company data
-  console.log('🖨️ OrderDetailDialog - Company data for printing:', {
-    settingsExists: !!settings,
-    companyExists: !!companyData,
-    companyName: companyData?.name,
-    fullCompanyData: companyData
-  });
-  
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: `Pedido-${selectedOrder?.customerName}`,
-    removeAfterPrint: true,
-  });
-
-  if (!selectedOrder) return null;
-
-  // Show loading state if settings are still loading
-  if (!settings || settings.id === 'loading') {
-    return (
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Carregando...</DialogTitle>
-          </DialogHeader>
-          <div className="p-4 text-center">
-            <p>Carregando configurações da empresa...</p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const isNegativeOrder = selectedOrder.total === 0 && selectedOrder.rejectionReason;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle className="flex items-center">
-              <span>Detalhes do Pedido</span>
-              {selectedOrder?.archived && (
-                <Badge variant="outline" className="ml-2">
-                  <Archive size={12} className="mr-1" /> Arquivado
-                </Badge>
-              )}
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center space-x-2">
+              <span>Detalhes do Pedido #{selectedOrder.code}</span>
+              <OrderTypeBadge order={selectedOrder} />
             </DialogTitle>
-            <Button 
-              variant="outline" 
-              onClick={() => handlePrint()} 
-              className="flex items-center gap-2 mr-8"
-            >
-              <Printer size={16} /> Imprimir
-            </Button>
           </div>
         </DialogHeader>
-        
-        {/* Layout simples para visualização na tela */}
-        <div className="p-4 space-y-6">
+
+        <div className="space-y-6">
+          {/* Informações Básicas */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-semibold mb-2">Dados do Cliente</h3>
-              <p><strong>Nome:</strong> {selectedCustomer?.name}</p>
-              <p><strong>Telefone:</strong> {selectedCustomer?.phone}</p>
-              {selectedCustomer?.document && (
-                <p><strong>CPF/CNPJ:</strong> {selectedCustomer.document}</p>
-              )}
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-2">Informações do Pedido</h3>
-              <p><strong>Código:</strong> {selectedOrder.code || 'N/A'}</p>
-              <p><strong>Data:</strong> {formatDateToBR(selectedOrder.createdAt)}</p>
-              {selectedOrder.paymentMethod && (
-                <p><strong>Pagamento:</strong> {selectedOrder.paymentMethod}</p>
-              )}
-            </div>
-          </div>
-
-          {selectedCustomer?.address && (
-            <div>
-              <h3 className="font-semibold mb-2">Endereço de Entrega</h3>
-              <p>{selectedCustomer.address}</p>
-              <p>{selectedCustomer.city} - {selectedCustomer.state}, {selectedCustomer.zipCode}</p>
-            </div>
-          )}
-
-          <div>
-            <h3 className="font-semibold mb-2">Itens do Pedido</h3>
-            <div className="border rounded-lg">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="text-left p-3">Produto</th>
-                    <th className="text-center p-3">Qtd</th>
-                    <th className="text-center p-3">Unidade</th>
-                    <th className="text-right p-3">Preço Unit.</th>
-                    <th className="text-right p-3">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedOrder?.items && selectedOrder.items.length > 0 ? (
-                    selectedOrder.items.map((item, index) => (
-                      <tr key={item.id || index} className="border-b">
-                        <td className="p-3">{item.productName}</td>
-                        <td className="text-center p-3">{item.quantity}</td>
-                        <td className="text-center p-3">{item.unit || 'UN'}</td>
-                        <td className="text-right p-3">{formatCurrency(item.unitPrice)}</td>
-                        <td className="text-right p-3 font-semibold">{formatCurrency(item.total)}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="text-center p-4 text-gray-500">
-                        Nenhum item encontrado
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center border-t pt-4">
-            <div>
-              {selectedOrder.paymentStatus !== 'pending' && (
-                <p><strong>Status:</strong> {selectedOrder?.paymentStatus}</p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-bold text-green-600">
-                Total: {formatCurrency(selectedOrder?.total)}
-              </p>
-            </div>
-          </div>
-
-          {selectedOrder?.notes && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Observações</h3>
-              <p>{selectedOrder.notes}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Layout profissional APENAS para impressão */}
-        <div ref={printRef} className="hidden print:block">
-          <style>
-            {`
-              @media print {
-                @page {
-                  margin: 0.8cm;
-                  size: A4 portrait;
-                }
-                
-                body {
-                  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                  margin: 0;
-                  padding: 0;
-                  -webkit-print-color-adjust: exact;
-                  print-color-adjust: exact;
-                  font-size: 10pt;
-                  line-height: 1.4;
-                  color: #333;
-                }
-                
-                /* Enhanced company header */
-                .individual-print-container .company-header {
-                  text-align: center;
-                  margin-bottom: 0.6cm;
-                  padding: 0.5cm;
-                  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-                  color: white;
-                  border-radius: 8px;
-                  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-                }
-                
-                .individual-print-container .company-header h2 {
-                  font-weight: 700;
-                  font-size: 16pt;
-                  margin: 0 0 0.3cm 0;
-                  letter-spacing: 0.8px;
-                  text-transform: uppercase;
-                }
-                
-                .individual-print-container .company-header p {
-                  font-size: 9pt;
-                  margin: 2px 0;
-                  opacity: 0.95;
-                  font-weight: 300;
-                }
-                
-                /* Order date and info */
-                .individual-print-container .order-date {
-                  text-align: center;
-                  margin-bottom: 0.5cm;
-                  padding: 0.3cm;
-                  background: #f8f9fa;
-                  border-radius: 6px;
-                  border: 1px solid #e9ecef;
-                }
-                
-                .individual-print-container .order-date p {
-                  font-size: 11pt;
-                  margin: 0;
-                  font-weight: 600;
-                  color: #495057;
-                }
-                
-                /* Information containers */
-                .individual-print-container .info-container {
-                  display: flex;
-                  margin-bottom: 0.6cm;
-                  gap: 0.4cm;
-                }
-                
-                .individual-print-container .info-box {
-                  border: 1px solid #dee2e6;
-                  border-radius: 8px;
-                  padding: 0.4cm;
-                  flex: 1;
-                  background: white;
-                  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-                }
-                
-                .individual-print-container .info-box h3 {
-                  font-weight: 700;
-                  margin-top: 0;
-                  margin-bottom: 0.3cm;
-                  font-size: 11pt;
-                  color: #495057;
-                  border-bottom: 2px solid #e9ecef;
-                  padding-bottom: 0.2cm;
-                  text-transform: uppercase;
-                  letter-spacing: 0.4px;
-                }
-                
-                .individual-print-container .info-box p {
-                  font-size: 9pt;
-                  margin: 3px 0;
-                  line-height: 1.5;
-                  color: #6c757d;
-                }
-                
-                .individual-print-container .info-box p span {
-                  color: #495057;
-                  font-weight: 600;
-                }
-                
-                /* Order items section */
-                .individual-print-container .order-items {
-                  margin-bottom: 0.6cm;
-                }
-                
-                .individual-print-container .order-items h3 {
-                  font-size: 12pt;
-                  margin-bottom: 0.4cm;
-                  color: #495057;
-                  font-weight: 700;
-                  text-transform: uppercase;
-                  letter-spacing: 0.4px;
-                  border-bottom: 3px solid #4a90e2;
-                  padding-bottom: 0.2cm;
-                }
-                
-                /* Enhanced table styles with unit column */
-                .individual-print-container .order-table {
-                  width: 100%;
-                  border-collapse: collapse;
-                  font-size: 9pt;
-                  background: white;
-                  border-radius: 8px;
-                  overflow: hidden;
-                  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-                }
-                
-                .individual-print-container .order-table th {
-                  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-                  color: white;
-                  padding: 0.3cm;
-                  text-align: left;
-                  font-size: 10pt;
-                  font-weight: 700;
-                  text-transform: uppercase;
-                  letter-spacing: 0.4px;
-                }
-                
-                .individual-print-container .order-table td {
-                  padding: 0.25cm;
-                  border-bottom: 1px solid #f1f3f4;
-                  font-size: 9pt;
-                  line-height: 1.4;
-                }
-                
-                .individual-print-container .order-table tbody tr:nth-child(even) {
-                  background-color: #f8f9fa;
-                }
-                
-                .individual-print-container .order-table tbody tr:hover {
-                  background-color: #e3f2fd;
-                }
-                
-                .individual-print-container .order-table .text-right {
-                  text-align: right;
-                  font-weight: 600;
-                  color: #495057;
-                }
-                
-                .individual-print-container .order-table .text-center {
-                  text-align: center;
-                  font-weight: 600;
-                }
-                
-                /* Enhanced totals section */
-                .individual-print-container .order-totals {
-                  display: flex;
-                  justify-content: space-between;
-                  margin-bottom: 0.5cm;
-                  padding: 0.4cm;
-                  background: #f8f9fa;
-                  border-radius: 8px;
-                  border: 1px solid #e9ecef;
-                  font-size: 10pt;
-                }
-                
-                .individual-print-container .payment-info {
-                  text-align: left;
-                  flex: 1;
-                }
-                
-                .individual-print-container .payment-info p {
-                  margin: 3px 0;
-                  color: #6c757d;
-                  font-weight: 500;
-                }
-                
-                .individual-print-container .total-info {
-                  text-align: right;
-                  flex: 1;
-                }
-                
-                .individual-print-container .total-info p {
-                  margin: 3px 0;
-                  color: #495057;
-                }
-                
-                .individual-print-container .total-value {
-                  font-weight: 700;
-                  font-size: 14pt;
-                  color: #28a745;
-                  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-                }
-                
-                /* Enhanced notes section */
-                .individual-print-container .order-notes {
-                  margin-top: 0.5cm;
-                  padding: 0.4cm;
-                  background: #fff3cd;
-                  border: 1px solid #ffeaa7;
-                  border-radius: 8px;
-                  border-left: 5px solid #f39c12;
-                }
-                
-                .individual-print-container .order-notes h3 {
-                  font-weight: 700;
-                  margin-bottom: 0.3cm;
-                  font-size: 11pt;
-                  color: #856404;
-                  text-transform: uppercase;
-                  letter-spacing: 0.4px;
-                }
-                
-                .individual-print-container .order-notes p {
-                  font-size: 9pt;
-                  line-height: 1.5;
-                  color: #856404;
-                  font-style: italic;
-                }
-                
-                /* Enhanced footer */
-                .individual-print-container .footer {
-                  margin-top: 0.5cm;
-                  text-align: center;
-                  font-size: 8pt;
-                  color: #6c757d;
-                  padding: 0.3cm;
-                  background: #f8f9fa;
-                  border-radius: 6px;
-                  border-top: 3px solid #4a90e2;
-                }
-                
-                .individual-print-container .footer p {
-                  margin: 2px 0;
-                  font-weight: 500;
-                }
-                
-                /* Hide non-printable elements */
-                .no-print {
-                  display: none !important;
-                }
-              }
-            `}
-          </style>
-          
-          <div className="individual-print-container">
-            {companyData?.name && companyData.name !== 'Carregando...' && (
-              <div className="company-header">
-                <h2>{companyData.name}</h2>
-                {companyData.document && (
-                  <p>CNPJ: {companyData.document}</p>
-                )}
-                {companyData.address && (
-                  <p>{companyData.address}</p>
-                )}
-                {companyData.phone && (
-                  <p>Tel: {companyData.phone}</p>
-                )}
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2 text-sm">
+                <User className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Cliente:</span>
+                <span>{selectedOrder.customerName}</span>
               </div>
-            )}
-            
-            <div className="order-date">
-              <p>
-                Pedido #{selectedOrder.code || 'N/A'} - {selectedOrder ? formatDateToBR(selectedOrder.createdAt) : ''}
-              </p>
-            </div>
-            
-            <div className="info-container">
-              <div className="info-box">
-                <h3>Dados do Cliente</h3>
-                <p><span>Nome:</span> {selectedCustomer?.name}</p>
-                <p><span>Telefone:</span> {selectedCustomer?.phone}</p>
-                {selectedCustomer?.document && (
-                  <p><span>CPF/CNPJ:</span> {selectedCustomer.document}</p>
-                )}
+              <div className="flex items-center space-x-2 text-sm">
+                <User className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Vendedor:</span>
+                <span>{selectedOrder.salesRepName}</span>
               </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2 text-sm">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">Data:</span>
+                <span>{formatDateToBR(selectedOrder.date)}</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm">
+                <span className="font-medium">Status:</span>
+                <Badge variant={selectedOrder.status === 'completed' ? 'default' : 'secondary'}>
+                  {selectedOrder.status}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Informações específicas do tipo de pedido */}
+          {isNegativeOrder ? (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg flex items-center">
+                <MessageSquare className="w-5 h-5 mr-2" />
+                Informações da Visita
+              </h3>
               
-              {selectedCustomer?.address && (
-                <div className="info-box">
-                  <h3>Endereço de Entrega</h3>
-                  <p>{selectedCustomer.address}</p>
-                  <p>{selectedCustomer.city} - {selectedCustomer.state}, {selectedCustomer.zipCode}</p>
+              <div className="bg-orange-50 p-4 rounded-lg space-y-3">
+                <div>
+                  <span className="font-medium text-sm text-orange-800">Motivo da Recusa:</span>
+                  <div className="mt-1">
+                    <RejectionReasonBadge reason={selectedOrder.rejectionReason} />
+                  </div>
                 </div>
-              )}
-            </div>
-            
-            <div className="order-items">
-              <h3>Itens do Pedido</h3>
-              <table className="order-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '40%' }}>Produto</th>
-                    <th className="text-center" style={{ width: '12%' }}>Qtd</th>
-                    <th className="text-center" style={{ width: '10%' }}>Unidade</th>
-                    <th className="text-right" style={{ width: '19%' }}>Preço Unit.</th>
-                    <th className="text-right" style={{ width: '19%' }}>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedOrder?.items && selectedOrder.items.length > 0 ? (
-                    selectedOrder.items.map((item, index) => (
-                      <tr key={item.id || index}>
-                        <td style={{ fontWeight: '500', color: '#495057' }}>{item.productName}</td>
-                        <td className="text-center">{item.quantity}</td>
-                        <td className="text-center">{item.unit || 'UN'}</td>
-                        <td className="text-right">
-                          {formatCurrency(item.unitPrice)}
-                        </td>
-                        <td className="text-right" style={{ fontWeight: '700', color: '#28a745' }}>
-                          {formatCurrency(item.total)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', color: '#6c757d', fontStyle: 'italic', padding: '0.5cm' }}>
-                        Nenhum item encontrado
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            
-            <div className="order-totals">
-              <div className="payment-info">
-                {selectedOrder.paymentStatus !== 'pending' && (
-                  <p><strong>Status:</strong> {selectedOrder?.paymentStatus}</p>
+                
+                {selectedOrder.visitNotes && (
+                  <div>
+                    <span className="font-medium text-sm text-orange-800">Observações da Visita:</span>
+                    <div className="mt-1 p-3 bg-white rounded border border-orange-200 text-sm">
+                      {selectedOrder.visitNotes}
+                    </div>
+                  </div>
                 )}
-                {selectedOrder.paymentMethod && (
-                  <p><strong>Forma de Pagamento:</strong> {selectedOrder.paymentMethod}</p>
+                
+                <div className="text-sm text-orange-700">
+                  <span className="font-medium">Projeto:</span> {selectedOrder.sourceProject || 'N/A'}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Informações de Pagamento */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  Informações de Pagamento
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Método:</span> {selectedOrder.paymentMethod || 'N/A'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Status:</span> 
+                    <Badge variant="outline" className="ml-2">
+                      {selectedOrder.paymentStatus || 'N/A'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Itens do Pedido */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center">
+                  <Package className="w-5 h-5 mr-2" />
+                  Itens do Pedido
+                </h3>
+                
+                {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left p-2">Produto</th>
+                          <th className="text-center p-2">Qtd</th>
+                          <th className="text-right p-2">Preço Unit.</th>
+                          <th className="text-right p-2">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedOrder.items.map((item, index) => (
+                          <tr key={index} className="border-b">
+                            <td className="p-2">{item.productName}</td>
+                            <td className="text-center p-2">{item.quantity}</td>
+                            <td className="text-right p-2">{formatCurrency(item.unitPrice || item.price)}</td>
+                            <td className="text-right p-2">{formatCurrency(item.total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">Nenhum item encontrado</p>
                 )}
               </div>
-              <div className="total-info">
-                <p className="total-value">Total: {formatCurrency(selectedOrder?.total)}</p>
+
+              <Separator />
+
+              {/* Resumo Financeiro */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-lg">Total do Pedido:</span>
+                  <span className="font-bold text-xl text-green-600">
+                    {formatCurrency(selectedOrder.total)}
+                  </span>
+                </div>
               </div>
-            </div>
-            
-            {selectedOrder?.notes && (
-              <div className="order-notes">
-                <h3>Observações Importantes</h3>
-                <p>{selectedOrder.notes}</p>
+            </>
+          )}
+
+          {/* Observações Gerais */}
+          {selectedOrder.notes && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Observações
+                </h3>
+                <div className="p-3 bg-gray-50 rounded-lg text-sm">
+                  {selectedOrder.notes}
+                </div>
               </div>
-            )}
-            
-            <div className="footer">
-              {companyData?.footer ? (
-                <p>{companyData.footer}</p>
-              ) : (
-                <>
-                  <p>{companyData?.name && companyData.name !== 'Carregando...' ? companyData.name : 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
-                  <p>Suporte: {companyData?.phone || '(11) 9999-8888'}</p>
-                </>
-              )}
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

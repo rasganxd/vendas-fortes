@@ -39,6 +39,12 @@ export async function handleSyncOrders(supabase: any, salesRepCode: number, last
   }
 
   console.log(`✅ [mobile-data-sync] Found ${orders?.length || 0} orders for sales rep ${repForOrders.name}`);
+  
+  // Log negative orders specifically
+  const negativeOrders = orders?.filter(order => order.total === 0 && order.rejection_reason) || [];
+  if (negativeOrders.length > 0) {
+    console.log(`📝 [mobile-data-sync] Found ${negativeOrders.length} negative orders (visits)`);
+  }
 
   return createCorsResponse({ 
     success: true, 

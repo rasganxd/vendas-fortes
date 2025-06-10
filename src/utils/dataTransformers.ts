@@ -1,3 +1,4 @@
+
 import { SalesRep } from '@/types';
 import { Customer } from '@/types';
 
@@ -130,7 +131,10 @@ export const transformOrderData = (raw: any): any | null => {
       paymentMethod: raw.payment_method || '',
       notes: raw.notes || '',
       createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
-      updatedAt: raw.updated_at ? new Date(raw.updated_at) : new Date()
+      updatedAt: raw.updated_at ? new Date(raw.updated_at) : new Date(),
+      // Novos campos para pedidos negativados
+      rejectionReason: raw.rejection_reason || undefined,
+      visitNotes: raw.visit_notes || undefined
     };
   } catch (error) {
     console.error('Error transforming order data:', error, 'Raw data:', raw);
@@ -186,6 +190,13 @@ export const prepareForSupabase = (entity: any): any => {
           break;
         case 'deliveryRouteId':
           prepared.delivery_route_id = value;
+          break;
+        // Novos campos para pedidos negativados
+        case 'rejectionReason':
+          prepared.rejection_reason = value;
+          break;
+        case 'visitNotes':
+          prepared.visit_notes = value;
           break;
         default:
           prepared[key] = value;

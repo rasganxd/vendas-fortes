@@ -1,196 +1,182 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { 
-  ChevronDown, 
-  ChevronRight, 
-  User, 
-  Calendar,
-  DollarSign,
-  Package
-} from "lucide-react";
-import { MobileOrderGroup, ImportSelectionState } from '@/types';
-import { useState } from 'react';
+import { Order, MobileOrderGroup } from '@/types';
+import { formatCurrency } from '@/lib/format-utils';
+import { formatDateToBR } from '@/lib/date-utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { OrderTypeBadge } from '@/components/orders/OrderTypeBadge';
+import { RejectionReasonBadge } from '@/components/orders/RejectionReasonBadge';
+import { ShoppingCart, MessageSquareX, User, Calendar, FileText } from 'lucide-react';
 
 interface MobileOrderImportTableProps {
   groupedOrders: MobileOrderGroup[];
-  selection: ImportSelectionState;
-  isLoading: boolean;
+  selectedOrders: Set<string>;
+  selectedSalesReps: Set<string>;
   onToggleOrder: (orderId: string) => void;
   onToggleSalesRep: (salesRepId: string) => void;
 }
 
-export function MobileOrderImportTable({
+export const MobileOrderImportTable: React.FC<MobileOrderImportTableProps> = ({
   groupedOrders,
-  selection,
-  isLoading,
+  selectedOrders,
+  selectedSalesReps,
   onToggleOrder,
   onToggleSalesRep
-}: MobileOrderImportTableProps) {
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
-  const toggleGroup = (salesRepId: string) => {
-    setExpandedGroups(prev => {
-      const newExpanded = new Set(prev);
-      if (newExpanded.has(salesRepId)) {
-        newExpanded.delete(salesRepId);
-      } else {
-        newExpanded.add(salesRepId);
-      }
-      return newExpanded;
-    });
+}) => {
+  const getTotalSalesValue = (orders: Order[]) => {
+    return orders.filter(order => order.total > 0).reduce((sum, order) => sum + order.total, 0);
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="text-gray-500">Carregando pedidos pendentes...</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getVisitsCount = (orders: Order[]) => {
+    return orders.filter(order => order.total === 0 && order.rejectionReason).length;
+  };
 
-  if (groupedOrders.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-gray-500">
-            <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium mb-2">Nenhum pedido pendente</h3>
-            <p>Não há pedidos mobile aguardando importação.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const getSalesCount = (orders: Order[]) => {
+    return orders.filter(order => order.total > 0).length;
+  };
 
   return (
     <div className="space-y-4">
       {groupedOrders.map((group) => {
-        const isGroupExpanded = expandedGroups.has(group.salesRepId);
-        const isGroupSelected = selection.selectedSalesReps.has(group.salesRepId);
-        const selectedOrdersInGroup = group.orders.filter(order => 
-          selection.selectedOrders.has(order.id)
-        ).length;
+        const isGroupSelected = selectedSalesReps.has(group.salesRepId);
+        const salesValue = getTotalSalesValue(group.orders);
+        const visitsCount = getVisitsCount(group.orders);
+        const salesCount = getSalesCount(group.orders);
 
         return (
-          <Card key={group.salesRepId}>
-            <Collapsible>
-              <CollapsibleTrigger asChild>
-                <CardHeader 
-                  className="cursor-pointer hover:bg-gray-50 transition-colors p-4"
-                  onClick={() => toggleGroup(group.salesRepId)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={isGroupSelected}
-                        onCheckedChange={() => onToggleSalesRep(group.salesRepId)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      
-                      {isGroupExpanded ? (
-                        <ChevronDown className="h-4 w-4 text-gray-500" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-gray-500" />
-                      )}
-                      
-                      <div className="flex items-center gap-2">
-                        <User className="h-5 w-5 text-blue-500" />
-                        <CardTitle className="text-base">{group.salesRepName}</CardTitle>
-                      </div>
+          <Card key={group.salesRepId} className="overflow-hidden">
+            <div className="bg-gray-50 p-4 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    checked={isGroupSelected}
+                    onCheckedChange={() => onToggleSalesRep(group.salesRepId)}
+                  />
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <User className="w-4 h-4 text-blue-600" />
+                      <h3 className="font-semibold text-lg">{group.salesRepName}</h3>
                     </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-gray-500" />
-                        <Badge variant="outline">
-                          {selectedOrdersInGroup > 0 ? `${selectedOrdersInGroup}/` : ''}{group.count} pedidos
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-green-500" />
-                        <span className="font-medium">
-                          R$ {group.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
+                    <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                      <span className="flex items-center">
+                        <ShoppingCart className="w-3 h-3 mr-1" />
+                        {salesCount} vendas
+                      </span>
+                      <span className="flex items-center">
+                        <MessageSquareX className="w-3 h-3 mr-1" />
+                        {visitsCount} visitas
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        {formatCurrency(salesValue)}
+                      </span>
                     </div>
                   </div>
-                </CardHeader>
-              </CollapsibleTrigger>
+                </div>
+                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  {group.orders.length} pedidos
+                </Badge>
+              </div>
+            </div>
 
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12"></TableHead>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Itens</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {group.orders.map((order) => {
-                        const isSelected = selection.selectedOrders.has(order.id);
-                        
-                        return (
-                          <TableRow key={order.id} className={isSelected ? 'bg-blue-50' : ''}>
-                            <TableCell>
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => onToggleOrder(order.id)}
-                              />
-                            </TableCell>
-                            <TableCell className="font-medium">#{order.code}</TableCell>
-                            <TableCell>{order.customerName}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3 text-gray-400" />
-                                {order.date.toLocaleDateString('pt-BR')}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">
-                                {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
+                        Selecionar
+                      </th>
+                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
+                        Tipo
+                      </th>
+                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
+                        Código
+                      </th>
+                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
+                        Cliente
+                      </th>
+                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
+                        Data
+                      </th>
+                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
+                        Valor
+                      </th>
+                      <th className="text-left p-3 text-xs font-medium text-gray-500 uppercase">
+                        Status/Motivo
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.orders.map((order, index) => {
+                      const isSelected = selectedOrders.has(order.id);
+                      const isNegativeOrder = order.total === 0 && order.rejectionReason;
+
+                      return (
+                        <tr 
+                          key={order.id} 
+                          className={`border-b hover:bg-gray-50 ${isNegativeOrder ? 'bg-orange-25' : ''} ${index % 2 === 0 ? 'bg-gray-25' : 'bg-white'}`}
+                        >
+                          <td className="p-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => onToggleOrder(order.id)}
+                            />
+                          </td>
+                          <td className="p-3">
+                            <OrderTypeBadge order={order} showText={false} />
+                          </td>
+                          <td className="p-3">
+                            <span className="font-mono text-sm">
+                              {order.code || order.id.slice(0, 8)}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <div className="max-w-48 truncate" title={order.customerName}>
+                              {order.customerName}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {formatDateToBR(order.date)}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <span className={`font-semibold ${isNegativeOrder ? 'text-gray-500' : 'text-green-600'}`}>
+                              {isNegativeOrder ? '-' : formatCurrency(order.total)}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-col space-y-1">
+                              {isNegativeOrder ? (
+                                <RejectionReasonBadge reason={order.rejectionReason} />
+                              ) : (
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 w-fit">
+                                  {order.status}
+                                </Badge>
+                              )}
+                              {order.visitNotes && (
+                                <div className="flex items-center text-xs text-gray-500" title={order.visitNotes}>
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  <span className="truncate max-w-24">{order.visitNotes}</span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
           </Card>
         );
       })}
     </div>
   );
-}
+};
+
+export default MobileOrderImportTable;

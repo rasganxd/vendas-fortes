@@ -1,7 +1,15 @@
-
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'canceled';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'partial';
 export type ImportStatus = 'pending' | 'imported' | 'rejected';
+
+// Enum para motivos de recusa padronizados
+export type RejectionReason = 
+  | 'sem_interesse' 
+  | 'fechado' 
+  | 'sem_dinheiro' 
+  | 'produto_indisponivel' 
+  | 'cliente_ausente' 
+  | 'outro';
 
 /**
  * Order
@@ -39,6 +47,9 @@ export interface Order {
   importedBy?: string;
   sourceProject: string;
   mobileOrderId?: string;
+  // Novos campos para pedidos negativados
+  rejectionReason?: RejectionReason;
+  visitNotes?: string;
 }
 
 /**
