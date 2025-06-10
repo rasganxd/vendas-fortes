@@ -9,7 +9,6 @@ import PageLayout from '@/components/layout/PageLayout';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import { PaymentTableForm } from '@/components/payments/PaymentTableForm';
 import { PaymentTablesList } from '@/components/payments/PaymentTablesList';
-import { PaymentTableTermsManager } from '@/components/payments/PaymentTableTermsManager';
 
 export default function PaymentTables() {
   const {
@@ -67,9 +66,8 @@ export default function PaymentTables() {
   };
 
   const handleFormSuccess = () => {
-    if (!editTableId) {
-      setOpenNewTableDialog(false);
-    }
+    setOpenNewTableDialog(false);
+    setEditTableId(null);
   };
 
   return (
@@ -97,7 +95,7 @@ export default function PaymentTables() {
           />
 
           <Dialog open={openNewTableDialog} onOpenChange={setOpenNewTableDialog}>
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editTableId ? "Editar Tabela" : "Adicionar Tabela"}</DialogTitle>
                 <DialogDescription>
@@ -116,14 +114,6 @@ export default function PaymentTables() {
           </Dialog>
         </CardContent>
       </Card>
-      
-      {editTableId && (
-        <PaymentTableTermsManager
-          tableId={editTableId}
-          paymentTables={paymentTables}
-          updatePaymentTable={updatePaymentTable}
-        />
-      )}
     </PageLayout>
   );
 }

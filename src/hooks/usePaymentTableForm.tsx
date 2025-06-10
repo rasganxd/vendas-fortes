@@ -21,14 +21,15 @@ const paymentTableFormSchema = z.object({
   payable_to: z.string().optional(),
   payment_location: z.string().optional(),
   active: z.boolean().default(true),
-  terms: z.array(paymentTermSchema).optional().refine((terms) => {
+  terms: z.array(paymentTermSchema).optional().refine((terms, ctx) => {
     // Se o tipo for promissória e houver termos, validar que a soma seja 100%
-    if (terms && terms.length > 0) {
+    const formData = ctx.parent as any;
+    if (formData.type === "promissoria" && terms && terms.length > 0) {
       const totalPercentage = terms.reduce((sum, term) => sum + term.percentage, 0);
       return Math.abs(totalPercentage - 100) < 0.01; // Tolerância para erros de ponto flutuante
     }
     return true;
-  }, "A soma dos percentuais deve ser 100%")
+  }, "Para notas promissórias, a soma dos percentuais deve ser 100%")
 });
 
 type PaymentTableFormValues = z.infer<typeof paymentTableFormSchema>;
@@ -57,6 +58,13 @@ export const usePaymentTableForm = (
 
   const watchedType = form.watch("type");
 
+  // Limpar termos quando mudar o tipo para não promissória
+  useEffect(() => {
+    if (watchedType !== "promissoria") {
+      form.setValue("terms", []);
+    }
+  }, [watchedType, form]);
+
   const addTerm = () => {
     const currentTerms = form.getValues("terms") || [];
     const newTerm = {
@@ -83,6 +91,28 @@ export const usePaymentTableForm = (
   const onSubmit = async (values: PaymentTableFormValues) => {
     try {
       setIsSubmitting(true);
+
+      // Validação adicional para notas promissórias
+      if (values.type === "promissoria") {
+        if (!values.terms || values.terms.length === 0) {
+          toast({
+            variant: "destructive",
+            title: "Erro de validação",
+            description: "Tabelas do tipo 'Nota Promissória' devem ter pelo menos uma condição de pagamento."
+          });
+          return;
+        }
+
+        const totalPercentage = values.terms.reduce((sum, term) => sum + term.percentage, 0);
+        if (Math.abs(totalPercentage - 100) > 0.01) {
+          toast({
+            variant: "destructive",
+            title: "Erro de validação",
+            description: "A soma dos percentuais deve ser exatamente 100%."
+          });
+          return;
+        }
+      }
 
       // Converter os termos para o formato esperado
       const terms: PaymentTableTerm[] = (values.terms || []).map((term, index) => ({
