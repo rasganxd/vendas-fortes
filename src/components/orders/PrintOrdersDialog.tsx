@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Order, Customer } from '@/types';
 import {
@@ -418,9 +417,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
               <h3>Endereço de Entrega</h3>
               <p>${order.deliveryAddress || orderCustomer?.address || ''}
               ${orderCustomer?.neighborhood ? `, ${orderCustomer.neighborhood}` : ''}
-              ${(order.deliveryCity || orderCustomer?.city) ? `, ${order.deliveryCity || orderCustomer?.city}` : ''}
-              ${(order.deliveryState || orderCustomer?.state) ? ` - ${order.deliveryState || orderCustomer?.state}` : ''}
-              ${(orderCustomer?.zipCode) ? `, ${orderCustomer.zipCode}` : ''}</p>
+              ${(order.deliveryCity || orderCustomer?.city) ? `, ${order.deliveryCity || orderCustomer?.city}` : ''}</p>
             </div>
             ` : ''}
           </div>
