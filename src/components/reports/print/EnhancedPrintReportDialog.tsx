@@ -76,7 +76,7 @@ export const EnhancedPrintReportDialog: React.FC<EnhancedPrintReportDialogProps>
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">Configuração Avançada de Relatório</DialogTitle>
         </DialogHeader>
@@ -94,7 +94,7 @@ export const EnhancedPrintReportDialog: React.FC<EnhancedPrintReportDialogProps>
           <Card>
             <CardContent className="p-6">
               <Label className="text-lg font-medium mb-4 block">Tipo de Relatório:</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {reportTypes.map((report) => {
                   const Icon = getIcon(report.id);
                   return (

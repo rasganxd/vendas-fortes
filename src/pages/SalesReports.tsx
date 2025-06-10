@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { FileText, Download, Printer } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
@@ -121,8 +122,8 @@ const SalesReports = () => {
       fullWidth={true}
     >
       <div className="h-[calc(100vh-160px)] flex gap-4 overflow-hidden">
-        {/* Sidebar de filtros */}
-        <div className="w-64 flex-shrink-0">
+        {/* Sidebar de filtros - responsiva */}
+        <div className="w-64 flex-shrink-0 hidden lg:block">
           <ReportsFilterSidebar
             filters={filters}
             onFiltersChange={updateFilters}
@@ -172,7 +173,7 @@ const SalesReports = () => {
             </div>
           </div>
 
-          {/* Visualizador de relatórios com scroll */}
+          {/* Visualizador de relatórios simplificado */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <ReportViewer
               salesReportData={salesReportData}
