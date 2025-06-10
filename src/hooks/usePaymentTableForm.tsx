@@ -21,15 +21,7 @@ const paymentTableFormSchema = z.object({
   payable_to: z.string().optional(),
   payment_location: z.string().optional(),
   active: z.boolean().default(true),
-  terms: z.array(paymentTermSchema).optional().refine((terms, ctx) => {
-    // Se o tipo for promissória e houver termos, validar que a soma seja 100%
-    const formData = ctx.parent as any;
-    if (formData.type === "promissoria" && terms && terms.length > 0) {
-      const totalPercentage = terms.reduce((sum, term) => sum + term.percentage, 0);
-      return Math.abs(totalPercentage - 100) < 0.01; // Tolerância para erros de ponto flutuante
-    }
-    return true;
-  }, "Para notas promissórias, a soma dos percentuais deve ser 100%")
+  terms: z.array(paymentTermSchema).optional()
 });
 
 type PaymentTableFormValues = z.infer<typeof paymentTableFormSchema>;
@@ -90,11 +82,13 @@ export const usePaymentTableForm = (
 
   const onSubmit = async (values: PaymentTableFormValues) => {
     try {
+      console.log('📋 [PaymentTableForm] Iniciando submit:', values);
       setIsSubmitting(true);
 
-      // Validação adicional para notas promissórias
+      // Validações manuais para notas promissórias
       if (values.type === "promissoria") {
         if (!values.terms || values.terms.length === 0) {
+          console.log('❌ [PaymentTableForm] Erro: Promissória sem termos');
           toast({
             variant: "destructive",
             title: "Erro de validação",
@@ -104,11 +98,14 @@ export const usePaymentTableForm = (
         }
 
         const totalPercentage = values.terms.reduce((sum, term) => sum + term.percentage, 0);
+        console.log('📊 [PaymentTableForm] Total percentual:', totalPercentage);
+        
         if (Math.abs(totalPercentage - 100) > 0.01) {
+          console.log('❌ [PaymentTableForm] Erro: Percentual não é 100%');
           toast({
             variant: "destructive",
             title: "Erro de validação",
-            description: "A soma dos percentuais deve ser exatamente 100%."
+            description: `A soma dos percentuais deve ser exatamente 100%. Atual: ${totalPercentage.toFixed(2)}%`
           });
           return;
         }
@@ -137,14 +134,19 @@ export const usePaymentTableForm = (
         updatedAt: new Date()
       };
       
+      console.log('💾 [PaymentTableForm] Dados para salvar:', paymentTable);
+      
       if (editTableId) {
+        console.log('🔄 [PaymentTableForm] Atualizando tabela:', editTableId);
         await updatePaymentTable(editTableId, paymentTable);
         toast({
           title: "Tabela atualizada",
           description: "A tabela foi atualizada com sucesso."
         });
       } else {
-        await addPaymentTable(paymentTable);
+        console.log('➕ [PaymentTableForm] Criando nova tabela');
+        const newId = await addPaymentTable(paymentTable);
+        console.log('✅ [PaymentTableForm] Tabela criada com ID:', newId);
         toast({
           title: "Tabela criada",
           description: "A tabela foi criada com sucesso."
@@ -152,9 +154,10 @@ export const usePaymentTableForm = (
         form.reset();
       }
 
+      console.log('🎉 [PaymentTableForm] Operação concluída com sucesso');
       onSuccess?.();
     } catch (error) {
-      console.error("Erro ao salvar tabela:", error);
+      console.error("❌ [PaymentTableForm] Erro ao salvar tabela:", error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -169,6 +172,8 @@ export const usePaymentTableForm = (
     if (editTableId) {
       const tableToEdit = paymentTables.find(table => table.id === editTableId);
       if (tableToEdit) {
+        console.log('📝 [PaymentTableForm] Carregando tabela para edição:', tableToEdit);
+        
         // Converter os termos existentes para o formato do formulário
         const formTerms = (tableToEdit.terms || []).map(term => ({
           days: term.days,
@@ -187,6 +192,7 @@ export const usePaymentTableForm = (
         });
       }
     } else {
+      console.log('🆕 [PaymentTableForm] Resetando formulário para criação');
       form.reset({
         name: "",
         description: "",
