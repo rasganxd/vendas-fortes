@@ -91,10 +91,11 @@ export const useMobileOrderImport = () => {
       toast({
         title: "Pedidos importados",
         description: `${orderIds.length} pedidos foram importados com sucesso.`,
-        action: {
-          label: "Ver Relatório",
-          onClick: () => setShowReportModal(true)
-        }
+        action: (
+          <button onClick={() => setShowReportModal(true)} className="text-sm bg-blue-600 text-white px-3 py-1 rounded">
+            Ver Relatório
+          </button>
+        )
       });
       
       // Reset selection and reload data
@@ -148,10 +149,11 @@ export const useMobileOrderImport = () => {
       toast({
         title: "Pedidos rejeitados",
         description: `${orderIds.length} pedidos foram rejeitados.`,
-        action: {
-          label: "Ver Relatório",
-          onClick: () => setShowReportModal(true)
-        }
+        action: (
+          <button onClick={() => setShowReportModal(true)} className="text-sm bg-blue-600 text-white px-3 py-1 rounded">
+            Ver Relatório
+          </button>
+        )
       });
       
       // Reset selection and reload data
