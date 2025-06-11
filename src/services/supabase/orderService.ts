@@ -1,3 +1,4 @@
+
 import { SupabaseService } from './supabaseService';
 import { Order, OrderItem } from '@/types';
 import { OrderTransformations } from './orderService/orderTransformations';
@@ -227,7 +228,7 @@ class OrderSupabaseService extends SupabaseService<Order> {
       });
       
       const items = order.items;
-      const transformedOrderData = this.transformToDB(order as Order);
+      const transformedOrderData = this.transformToDB(order);
       
       const dataWithTimestamp = {
         ...transformedOrderData,

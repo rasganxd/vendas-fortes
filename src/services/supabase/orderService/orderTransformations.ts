@@ -82,40 +82,44 @@ export class OrderTransformations {
     };
   }
 
-  static transformToDB(order: Order): any {
-    return {
-      id: order.id,
-      code: order.code,
-      customer_id: order.customerId,
-      customer_name: order.customerName,
-      sales_rep_id: order.salesRepId,
-      sales_rep_name: order.salesRepName,
-      date: order.date.toISOString(),
-      due_date: order.dueDate.toISOString(),
-      delivery_date: order.deliveryDate?.toISOString(),
-      total: order.total,
-      discount: order.discount,
-      status: order.status,
-      payment_status: order.paymentStatus,
-      payment_method: order.paymentMethod,
-      payment_method_id: order.paymentMethodId,
-      payment_table_id: order.paymentTableId,
-      payment_table: order.paymentTable,
-      payments: order.payments,
-      notes: order.notes,
-      archived: order.archived,
-      delivery_address: order.deliveryAddress,
-      delivery_city: order.deliveryCity,
-      delivery_state: order.deliveryState,
-      delivery_zip: order.deliveryZip,
-      import_status: order.importStatus,
-      imported_at: order.importedAt?.toISOString(),
-      imported_by: order.importedBy,
-      source_project: order.sourceProject,
-      mobile_order_id: order.mobileOrderId,
-      rejection_reason: order.rejectionReason,
-      visit_notes: order.visitNotes,
+  static transformToDB(order: Partial<Order>): any {
+    const result: any = {
       updated_at: new Date().toISOString()
     };
+
+    // Only include fields that are present in the partial order
+    if (order.id !== undefined) result.id = order.id;
+    if (order.code !== undefined) result.code = order.code;
+    if (order.customerId !== undefined) result.customer_id = order.customerId;
+    if (order.customerName !== undefined) result.customer_name = order.customerName;
+    if (order.salesRepId !== undefined) result.sales_rep_id = order.salesRepId;
+    if (order.salesRepName !== undefined) result.sales_rep_name = order.salesRepName;
+    if (order.date !== undefined) result.date = order.date.toISOString();
+    if (order.dueDate !== undefined) result.due_date = order.dueDate.toISOString();
+    if (order.deliveryDate !== undefined) result.delivery_date = order.deliveryDate?.toISOString();
+    if (order.total !== undefined) result.total = order.total;
+    if (order.discount !== undefined) result.discount = order.discount;
+    if (order.status !== undefined) result.status = order.status;
+    if (order.paymentStatus !== undefined) result.payment_status = order.paymentStatus;
+    if (order.paymentMethod !== undefined) result.payment_method = order.paymentMethod;
+    if (order.paymentMethodId !== undefined) result.payment_method_id = order.paymentMethodId;
+    if (order.paymentTableId !== undefined) result.payment_table_id = order.paymentTableId;
+    if (order.paymentTable !== undefined) result.payment_table = order.paymentTable;
+    if (order.payments !== undefined) result.payments = order.payments;
+    if (order.notes !== undefined) result.notes = order.notes;
+    if (order.archived !== undefined) result.archived = order.archived;
+    if (order.deliveryAddress !== undefined) result.delivery_address = order.deliveryAddress;
+    if (order.deliveryCity !== undefined) result.delivery_city = order.deliveryCity;
+    if (order.deliveryState !== undefined) result.delivery_state = order.deliveryState;
+    if (order.deliveryZip !== undefined) result.delivery_zip = order.deliveryZip;
+    if (order.importStatus !== undefined) result.import_status = order.importStatus;
+    if (order.importedAt !== undefined) result.imported_at = order.importedAt?.toISOString();
+    if (order.importedBy !== undefined) result.imported_by = order.importedBy;
+    if (order.sourceProject !== undefined) result.source_project = order.sourceProject;
+    if (order.mobileOrderId !== undefined) result.mobile_order_id = order.mobileOrderId;
+    if (order.rejectionReason !== undefined) result.rejection_reason = order.rejectionReason;
+    if (order.visitNotes !== undefined) result.visit_notes = order.visitNotes;
+
+    return result;
   }
 }
