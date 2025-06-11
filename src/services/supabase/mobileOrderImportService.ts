@@ -1,18 +1,17 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Order, MobileOrderGroup } from '@/types';
 import { OrderTransformations } from './orderService/orderTransformations';
-import { OrderItemsHandler } from './orderService/orderItemsHandler';
 
 class MobileOrderImportService {
   async getPendingMobileOrders(): Promise<Order[]> {
     try {
       console.log('🔍 Getting pending mobile orders...');
       
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
+      const { data: mobileOrdersData, error: ordersError } = await supabase
+        .from('mobile_orders')
         .select('*')
-        .eq('source_project', 'mobile')
-        .eq('import_status', 'pending')
+        .eq('imported_to_orders', false)
         .order('created_at', { ascending: false });
       
       if (ordersError) {
@@ -20,20 +19,49 @@ class MobileOrderImportService {
         throw ordersError;
       }
       
-      if (!ordersData || ordersData.length === 0) {
+      if (!mobileOrdersData || mobileOrdersData.length === 0) {
         console.log('📝 No pending mobile orders found');
         return [];
       }
       
-      // Get order items for all orders
-      const itemsByOrderId = await OrderItemsHandler.getAllOrderItems();
+      // Get order items for all mobile orders
+      const orderIds = mobileOrdersData.map(order => order.id);
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('mobile_order_items')
+        .select('*')
+        .in('mobile_order_id', orderIds);
       
-      const orders = ordersData.map(orderData => {
-        const orderWithItems = {
+      if (itemsError) {
+        console.error('❌ Error getting mobile order items:', itemsError);
+        throw itemsError;
+      }
+      
+      // Group items by order id
+      const itemsByOrderId: Record<string, any[]> = {};
+      (itemsData || []).forEach(item => {
+        if (!itemsByOrderId[item.mobile_order_id]) {
+          itemsByOrderId[item.mobile_order_id] = [];
+        }
+        itemsByOrderId[item.mobile_order_id].push({
+          id: item.id,
+          orderId: item.mobile_order_id,
+          productId: item.product_id,
+          productName: item.product_name,
+          productCode: item.product_code,
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          price: item.price,
+          discount: item.discount || 0,
+          total: item.total,
+          unit: item.unit || 'UN'
+        });
+      });
+      
+      const orders = mobileOrdersData.map(orderData => {
+        return OrderTransformations.transformFromMobileOrder({
           ...orderData,
           items: itemsByOrderId[orderData.id] || []
-        };
-        return OrderTransformations.transformFromDB(orderWithItems);
+        });
       });
       
       // Log negative orders
@@ -80,20 +108,117 @@ class MobileOrderImportService {
 
   async importOrders(orderIds: string[], importedBy: string = 'admin'): Promise<void> {
     try {
-      console.log(`📦 Importing ${orderIds.length} mobile orders...`);
+      console.log(`📦 Importing ${orderIds.length} mobile orders to orders table...`);
       
-      const { error } = await supabase
-        .from('orders')
-        .update({
-          import_status: 'imported',
-          imported_at: new Date().toISOString(),
-          imported_by: importedBy
-        })
+      // Get mobile orders with their items
+      const { data: mobileOrders, error: mobileOrdersError } = await supabase
+        .from('mobile_orders')
+        .select('*')
         .in('id', orderIds);
       
-      if (error) {
-        console.error('❌ Error importing orders:', error);
-        throw error;
+      if (mobileOrdersError) {
+        console.error('❌ Error getting mobile orders for import:', mobileOrdersError);
+        throw mobileOrdersError;
+      }
+      
+      if (!mobileOrders || mobileOrders.length === 0) {
+        throw new Error('No mobile orders found for import');
+      }
+      
+      // Get items for these orders
+      const { data: mobileOrderItems, error: itemsError } = await supabase
+        .from('mobile_order_items')
+        .select('*')
+        .in('mobile_order_id', orderIds);
+      
+      if (itemsError) {
+        console.error('❌ Error getting mobile order items:', itemsError);
+        throw itemsError;
+      }
+      
+      // Import each order
+      for (const mobileOrder of mobileOrders) {
+        // Insert into orders table
+        const { data: insertedOrder, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            customer_id: mobileOrder.customer_id,
+            customer_name: mobileOrder.customer_name,
+            sales_rep_id: mobileOrder.sales_rep_id,
+            sales_rep_name: mobileOrder.sales_rep_name,
+            date: mobileOrder.date,
+            due_date: mobileOrder.due_date,
+            delivery_date: mobileOrder.delivery_date,
+            total: mobileOrder.total,
+            discount: mobileOrder.discount,
+            status: mobileOrder.status,
+            payment_status: mobileOrder.payment_status,
+            payment_method: mobileOrder.payment_method,
+            payment_method_id: mobileOrder.payment_method_id,
+            payment_table_id: mobileOrder.payment_table_id,
+            payment_table: mobileOrder.payment_table,
+            payments: mobileOrder.payments,
+            notes: mobileOrder.notes,
+            delivery_address: mobileOrder.delivery_address,
+            delivery_city: mobileOrder.delivery_city,
+            delivery_state: mobileOrder.delivery_state,
+            delivery_zip: mobileOrder.delivery_zip,
+            rejection_reason: mobileOrder.rejection_reason,
+            visit_notes: mobileOrder.visit_notes,
+            mobile_order_id: mobileOrder.mobile_order_id || mobileOrder.id,
+            source_project: 'mobile',
+            import_status: 'imported',
+            imported_at: new Date().toISOString(),
+            imported_by: importedBy
+          })
+          .select()
+          .single();
+        
+        if (orderError) {
+          console.error('❌ Error importing order:', orderError);
+          throw orderError;
+        }
+        
+        // Insert order items if they exist
+        const orderItems = (mobileOrderItems || []).filter(item => item.mobile_order_id === mobileOrder.id);
+        if (orderItems.length > 0) {
+          const itemsToInsert = orderItems.map(item => ({
+            order_id: insertedOrder.id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            product_code: item.product_code,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            price: item.price,
+            discount: item.discount,
+            total: item.total,
+            unit: item.unit
+          }));
+          
+          const { error: itemsInsertError } = await supabase
+            .from('order_items')
+            .insert(itemsToInsert);
+          
+          if (itemsInsertError) {
+            console.error('❌ Error importing order items:', itemsInsertError);
+            throw itemsInsertError;
+          }
+        }
+        
+        // Mark mobile order as imported
+        const { error: updateError } = await supabase
+          .from('mobile_orders')
+          .update({
+            imported_to_orders: true,
+            imported_at: new Date().toISOString(),
+            imported_by: importedBy
+          })
+          .eq('id', mobileOrder.id);
+        
+        if (updateError) {
+          console.error('❌ Error marking mobile order as imported:', updateError);
+          throw updateError;
+        }
       }
       
       console.log('✅ Orders imported successfully');
@@ -108,20 +233,21 @@ class MobileOrderImportService {
       console.log(`🚫 Rejecting ${orderIds.length} mobile orders...`);
       
       const { error } = await supabase
-        .from('orders')
+        .from('mobile_orders')
         .update({
-          import_status: 'rejected',
+          imported_to_orders: true, // Mark as processed
           imported_at: new Date().toISOString(),
-          imported_by: rejectedBy
+          imported_by: rejectedBy,
+          sync_status: 'rejected'
         })
         .in('id', orderIds);
       
       if (error) {
-        console.error('❌ Error rejecting orders:', error);
+        console.error('❌ Error rejecting mobile orders:', error);
         throw error;
       }
       
-      console.log('✅ Orders rejected successfully');
+      console.log('✅ Mobile orders rejected successfully');
     } catch (error) {
       console.error('❌ Error in rejectOrders:', error);
       throw error;
@@ -132,11 +258,10 @@ class MobileOrderImportService {
     try {
       console.log('📊 Getting import history...');
       
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
+      const { data: mobileOrdersData, error: ordersError } = await supabase
+        .from('mobile_orders')
         .select('*')
-        .eq('source_project', 'mobile')
-        .in('import_status', ['imported', 'rejected'])
+        .eq('imported_to_orders', true)
         .order('imported_at', { ascending: false })
         .limit(100);
       
@@ -145,11 +270,11 @@ class MobileOrderImportService {
         throw ordersError;
       }
       
-      if (!ordersData || ordersData.length === 0) {
+      if (!mobileOrdersData || mobileOrdersData.length === 0) {
         return [];
       }
       
-      const orders = ordersData.map(orderData => OrderTransformations.transformFromDB(orderData));
+      const orders = mobileOrdersData.map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
       console.log(`✅ Found ${orders.length} import history records`);
       return orders;
     } catch (error) {

@@ -21,6 +21,7 @@ export { paymentMethodService } from './supabase/paymentMethodService';
 export { paymentTableService } from './supabase/paymentTableService';
 export { vehicleService } from './supabase/vehicleService';
 export { LoadService } from './supabase/loadService';
+export { mobileOrderImportService } from './supabase/mobileOrderImportService';
 
 // Sales rep authentication service
 export { salesRepAuthService } from './local/salesRepAuthService';
