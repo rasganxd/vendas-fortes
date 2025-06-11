@@ -1,0 +1,41 @@
+
+{
+  "electronVersion": "latest",
+  "appId": "app.lovable.c8013aadfbd9489ab9a1377a842607bd",
+  "appName": "Vendas Fortes",
+  "bundleId": "app.lovable.c8013aadfbd9489ab9a1377a842607bd",
+  "version": "1.0.0",
+  "author": "Vendas Fortes Team",
+  "description": "Sistema de Gestão de Vendas",
+  "homepage": "https://c8013aad-fbd9-489a-b9a1-377a842607bd.lovableproject.com",
+  "main": "public/electron.js",
+  "buildResources": "resources",
+  "files": [
+    "dist/**/*",
+    "public/electron.js",
+    "public/preload.js"
+  ],
+  "directories": {
+    "output": "electron-dist"
+  },
+  "win": {
+    "target": "nsis",
+    "icon": "resources/icon.ico",
+    "requestedExecutionLevel": "asInvoker"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  },
+  "mac": {
+    "category": "public.app-category.business",
+    "icon": "resources/icon.icns"
+  },
+  "linux": {
+    "target": "AppImage",
+    "icon": "resources/icon.png",
+    "category": "Office"
+  }
+}
