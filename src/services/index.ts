@@ -29,3 +29,6 @@ export { salesRepAuthService } from './local/salesRepAuthService';
 // Customer parsers
 export { parseCustomerSpreadsheet, validateCustomerData } from '../utils/customerSpreadsheetParser';
 export { parseCustomerReportText } from '../utils/customerParser';
+
+// Mobile import report service
+export { mobileImportReportService } from './mobileImportReportService';

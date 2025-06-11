@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Order, MobileOrderGroup, ImportSelectionState } from '@/types';
 import { mobileOrderImportService } from '@/services/supabase/mobileOrderImportService';
+import { mobileImportReportService, ImportReportData } from '@/services/mobileImportReportService';
 import { toast } from '@/hooks/use-toast';
 
 export const useMobileOrderImport = () => {
@@ -14,6 +14,10 @@ export const useMobileOrderImport = () => {
     selectedOrders: new Set(),
     selectedSalesReps: new Set()
   });
+
+  // New state for reports
+  const [lastImportReport, setLastImportReport] = useState<ImportReportData | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const loadPendingOrders = useCallback(async () => {
     try {
@@ -68,11 +72,29 @@ export const useMobileOrderImport = () => {
       console.log(`📦 Importing ${selection.selectedOrders.size} selected orders...`);
       
       const orderIds = Array.from(selection.selectedOrders);
+      
+      // Get the selected orders for the report
+      const selectedOrdersData = pendingOrders.filter(order => orderIds.includes(order.id));
+      
+      // Import orders
       await mobileOrderImportService.importOrders(orderIds);
+      
+      // Generate import report
+      const report = mobileImportReportService.generateImportReport(
+        selectedOrdersData,
+        'import',
+        'admin'
+      );
+      
+      setLastImportReport(report);
       
       toast({
         title: "Pedidos importados",
-        description: `${orderIds.length} pedidos foram importados com sucesso.`
+        description: `${orderIds.length} pedidos foram importados com sucesso.`,
+        action: {
+          label: "Ver Relatório",
+          onClick: () => setShowReportModal(true)
+        }
       });
       
       // Reset selection and reload data
@@ -90,7 +112,7 @@ export const useMobileOrderImport = () => {
     } finally {
       setIsImporting(false);
     }
-  }, [selection.selectedOrders, loadPendingOrders, loadImportHistory]);
+  }, [selection.selectedOrders, pendingOrders, loadPendingOrders, loadImportHistory]);
 
   const rejectSelectedOrders = useCallback(async () => {
     if (selection.selectedOrders.size === 0) {
@@ -107,11 +129,29 @@ export const useMobileOrderImport = () => {
       console.log(`🚫 Rejecting ${selection.selectedOrders.size} selected orders...`);
       
       const orderIds = Array.from(selection.selectedOrders);
+      
+      // Get the selected orders for the report
+      const selectedOrdersData = pendingOrders.filter(order => orderIds.includes(order.id));
+      
+      // Reject orders
       await mobileOrderImportService.rejectOrders(orderIds);
+      
+      // Generate rejection report
+      const report = mobileImportReportService.generateImportReport(
+        selectedOrdersData,
+        'reject',
+        'admin'
+      );
+      
+      setLastImportReport(report);
       
       toast({
         title: "Pedidos rejeitados",
-        description: `${orderIds.length} pedidos foram rejeitados.`
+        description: `${orderIds.length} pedidos foram rejeitados.`,
+        action: {
+          label: "Ver Relatório",
+          onClick: () => setShowReportModal(true)
+        }
       });
       
       // Reset selection and reload data
@@ -129,7 +169,7 @@ export const useMobileOrderImport = () => {
     } finally {
       setIsImporting(false);
     }
-  }, [selection.selectedOrders, loadPendingOrders, loadImportHistory]);
+  }, [selection.selectedOrders, pendingOrders, loadPendingOrders, loadImportHistory]);
 
   const toggleOrderSelection = useCallback((orderId: string) => {
     setSelection(prev => {
@@ -198,6 +238,10 @@ export const useMobileOrderImport = () => {
     refreshData: () => {
       loadPendingOrders();
       loadImportHistory();
-    }
+    },
+    // New report-related returns
+    lastImportReport,
+    showReportModal,
+    setShowReportModal
   };
 };
