@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,10 +91,10 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
-  // Filter states
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
-  const [selectedGroup, setSelectedGroup] = useState<string | undefined>();
-  const [selectedBrand, setSelectedBrand] = useState<string | undefined>();
+  // Filter states - fixed variable declarations
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | undefined>();
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string | undefined>();
+  const [selectedBrandFilter, setSelectedBrandFilter] = useState<string | undefined>();
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -106,19 +107,19 @@ export default function Products() {
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
-  // Classification dialog states
+  // Classification dialog states - fixed variable types
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
+  const [selectedCategoryEdit, setSelectedCategoryEdit] = useState<ProductCategory | null>(null);
   const [deleteCategoryDialogOpen, setDeleteCategoryDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null);
 
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<ProductGroup | null>(null);
+  const [selectedGroupEdit, setSelectedGroupEdit] = useState<ProductGroup | null>(null);
   const [deleteGroupDialogOpen, setDeleteGroupDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<ProductGroup | null>(null);
 
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
-  const [selectedBrand, setSelectedBrand] = useState<ProductBrand | null>(null);
+  const [selectedBrandEdit, setSelectedBrandEdit] = useState<ProductBrand | null>(null);
   const [deleteBrandDialogOpen, setDeleteBrandDialogOpen] = useState(false);
   const [brandToDelete, setBrandToDelete] = useState<ProductBrand | null>(null);
 
@@ -136,22 +137,22 @@ export default function Products() {
     }
     
     // Apply classification filters
-    if (selectedCategory) {
-      filtered = filtered.filter(product => product.categoryId === selectedCategory);
+    if (selectedCategoryFilter) {
+      filtered = filtered.filter(product => product.categoryId === selectedCategoryFilter);
     }
     
-    if (selectedGroup) {
-      filtered = filtered.filter(product => product.groupId === selectedGroup);
+    if (selectedGroupFilter) {
+      filtered = filtered.filter(product => product.groupId === selectedGroupFilter);
     }
     
-    if (selectedBrand) {
-      filtered = filtered.filter(product => product.brandId === selectedBrand);
+    if (selectedBrandFilter) {
+      filtered = filtered.filter(product => product.brandId === selectedBrandFilter);
     }
     
     setFilteredProducts(filtered);
     // Reset to first page when filtering
     setCurrentPage(1);
-  }, [products, searchTerm, selectedCategory, selectedGroup, selectedBrand]);
+  }, [products, searchTerm, selectedCategoryFilter, selectedGroupFilter, selectedBrandFilter]);
 
   // Listen for product updates to refresh the list
   useEffect(() => {
@@ -276,12 +277,12 @@ export default function Products() {
 
   // Category handlers
   const openAddCategoryDialog = () => {
-    setSelectedCategory(null);
+    setSelectedCategoryEdit(null);
     setCategoryDialogOpen(true);
   };
 
   const openEditCategoryDialog = (category: ProductCategory) => {
-    setSelectedCategory(category);
+    setSelectedCategoryEdit(category);
     setCategoryDialogOpen(true);
   };
 
@@ -291,8 +292,8 @@ export default function Products() {
   };
 
   const handleSaveCategory = async (category: Omit<ProductCategory, 'id'>) => {
-    if (selectedCategory) {
-      await handleUpdateCategory(selectedCategory.id, category);
+    if (selectedCategoryEdit) {
+      await handleUpdateCategory(selectedCategoryEdit.id, category);
     } else {
       await handleAddCategory(category);
     }
@@ -301,12 +302,12 @@ export default function Products() {
 
   // Group handlers
   const openAddGroupDialog = () => {
-    setSelectedGroup(null);
+    setSelectedGroupEdit(null);
     setGroupDialogOpen(true);
   };
 
   const openEditGroupDialog = (group: ProductGroup) => {
-    setSelectedGroup(group);
+    setSelectedGroupEdit(group);
     setGroupDialogOpen(true);
   };
 
@@ -316,8 +317,8 @@ export default function Products() {
   };
 
   const handleSaveGroup = async (group: Omit<ProductGroup, 'id'>) => {
-    if (selectedGroup) {
-      await handleUpdateGroup(selectedGroup.id, group);
+    if (selectedGroupEdit) {
+      await handleUpdateGroup(selectedGroupEdit.id, group);
     } else {
       await handleAddGroup(group);
     }
@@ -326,12 +327,12 @@ export default function Products() {
 
   // Brand handlers
   const openAddBrandDialog = () => {
-    setSelectedBrand(null);
+    setSelectedBrandEdit(null);
     setBrandDialogOpen(true);
   };
 
   const openEditBrandDialog = (brand: ProductBrand) => {
-    setSelectedBrand(brand);
+    setSelectedBrandEdit(brand);
     setBrandDialogOpen(true);
   };
 
@@ -341,8 +342,8 @@ export default function Products() {
   };
 
   const handleSaveBrand = async (brand: Omit<ProductBrand, 'id'>) => {
-    if (selectedBrand) {
-      await handleUpdateBrand(selectedBrand.id, brand);
+    if (selectedBrandEdit) {
+      await handleUpdateBrand(selectedBrandEdit.id, brand);
     } else {
       await handleAddBrand(brand);
     }
@@ -439,9 +440,9 @@ export default function Products() {
   };
 
   const handleClearFilters = () => {
-    setSelectedCategory(undefined);
-    setSelectedGroup(undefined);
-    setSelectedBrand(undefined);
+    setSelectedCategoryFilter(undefined);
+    setSelectedGroupFilter(undefined);
+    setSelectedBrandFilter(undefined);
   };
 
   return (
@@ -460,7 +461,7 @@ export default function Products() {
               <div>
                 <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
                 <p className="text-sm text-gray-600">
-                  {totalItems} produtos {searchTerm || selectedCategory || selectedGroup || selectedBrand ? 'encontrados' : 'cadastrados'}
+                  {totalItems} produtos {searchTerm || selectedCategoryFilter || selectedGroupFilter || selectedBrandFilter ? 'encontrados' : 'cadastrados'}
                   {totalItems > 0 && ` • Mostrando ${startIndex + 1}-${Math.min(endIndex, totalItems)} de ${totalItems}`}
                 </p>
               </div>
@@ -508,12 +509,12 @@ export default function Products() {
                   categories={productCategories || []}
                   groups={productGroups || []}
                   brands={productBrands || []}
-                  selectedCategory={selectedCategory}
-                  selectedGroup={selectedGroup}
-                  selectedBrand={selectedBrand}
-                  onCategoryChange={setSelectedCategory}
-                  onGroupChange={setSelectedGroup}
-                  onBrandChange={setSelectedBrand}
+                  selectedCategory={selectedCategoryFilter}
+                  selectedGroup={selectedGroupFilter}
+                  selectedBrand={selectedBrandFilter}
+                  onCategoryChange={setSelectedCategoryFilter}
+                  onGroupChange={setSelectedGroupFilter}
+                  onBrandChange={setSelectedBrandFilter}
                   onClearFilters={handleClearFilters}
                 />
               </CardHeader>
@@ -664,21 +665,21 @@ export default function Products() {
       <CategoryDialog
         open={categoryDialogOpen}
         onOpenChange={setCategoryDialogOpen}
-        category={selectedCategory}
+        category={selectedCategoryEdit}
         onSave={handleSaveCategory}
       />
 
       <GroupDialog
         open={groupDialogOpen}
         onOpenChange={setGroupDialogOpen}
-        group={selectedGroup}
+        group={selectedGroupEdit}
         onSave={handleSaveGroup}
       />
 
       <BrandDialog
         open={brandDialogOpen}
         onOpenChange={setBrandDialogOpen}
-        brand={selectedBrand}
+        brand={selectedBrandEdit}
         onSave={handleSaveBrand}
       />
       

@@ -1,8 +1,8 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { createCorsResponse } from '../utils/cors.ts';
 
 export async function syncOrders(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   salesRepId: string
 ) {
   try {
@@ -38,7 +38,7 @@ export async function syncOrders(
 }
 
 export async function receiveOrders(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   orders: any[],
   salesRepId: string
 ) {
@@ -145,4 +145,8 @@ export async function receiveOrders(
     console.error('❌ Error in receiveOrders:', error);
     throw error;
   }
+}
+
+export async function handleSyncOrders(supabase: any, salesRepCode: string, lastSync?: string) {
+  return await syncOrders(supabase, salesRepCode);
 }
