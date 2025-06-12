@@ -15,9 +15,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Loader2, Trash } from 'lucide-react';
 import { Product } from '@/types';
 import { formatCurrency } from "@/lib/utils";
+import { useAppData } from '@/context/providers/AppDataProvider';
 
 interface ProductsTableProps {
   products: Product[];
@@ -32,33 +34,32 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
   onEdit,
   onDelete
 }) => {
+  const { productCategories, productGroups, productBrands } = useAppData();
+
   console.log("🔍 [ProductsTable] Rendering with data:", { 
     productsCount: products?.length || 0, 
     isLoading,
     productsArray: products
   });
 
-  // Log first few products for debugging
-  if (products && products.length > 0) {
-    console.log("📦 [ProductsTable] First product details:", {
-      id: products[0].id,
-      code: products[0].code,
-      name: products[0].name,
-      price: products[0].price,
-      cost: products[0].cost,
-      stock: products[0].stock
-    });
-    
-    if (products.length > 1) {
-      console.log("📦 [ProductsTable] Second product details:", {
-        id: products[1].id,
-        code: products[1].code,
-        name: products[1].name,
-        price: products[1].price,
-        cost: products[1].cost
-      });
-    }
-  }
+  // Helper functions to get classification names
+  const getCategoryName = (categoryId?: string) => {
+    if (!categoryId) return null;
+    const category = productCategories?.find(c => c.id === categoryId);
+    return category?.name;
+  };
+
+  const getGroupName = (groupId?: string) => {
+    if (!groupId) return null;
+    const group = productGroups?.find(g => g.id === groupId);
+    return group?.name;
+  };
+
+  const getBrandName = (brandId?: string) => {
+    if (!brandId) return null;
+    const brand = productBrands?.find(b => b.id === brandId);
+    return brand?.name;
+  };
 
   if (isLoading) {
     console.log("⏳ [ProductsTable] Showing loading state");
@@ -86,6 +87,9 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
         <TableRow>
           <TableHead>Código</TableHead>
           <TableHead>Nome</TableHead>
+          <TableHead>Categoria</TableHead>
+          <TableHead>Grupo</TableHead>
+          <TableHead>Marca</TableHead>
           <TableHead>Custo</TableHead>
           <TableHead>Preço</TableHead>
           <TableHead>Estoque</TableHead>
@@ -98,15 +102,46 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
             id: product.id,
             code: product.code,
             name: product.name,
-            price: product.price,
-            cost: product.cost,
-            stock: product.stock
+            categoryId: product.categoryId,
+            groupId: product.groupId,
+            brandId: product.brandId
           });
+          
+          const categoryName = getCategoryName(product.categoryId);
+          const groupName = getGroupName(product.groupId);
+          const brandName = getBrandName(product.brandId);
           
           return (
             <TableRow key={product.id}>
               <TableCell>{product.code}</TableCell>
               <TableCell>{product.name}</TableCell>
+              <TableCell>
+                {categoryName ? (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {categoryName}
+                  </Badge>
+                ) : (
+                  <span className="text-gray-400 text-sm">Sem categoria</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {groupName ? (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    {groupName}
+                  </Badge>
+                ) : (
+                  <span className="text-gray-400 text-sm">Sem grupo</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {brandName ? (
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                    {brandName}
+                  </Badge>
+                ) : (
+                  <span className="text-gray-400 text-sm">Sem marca</span>
+                )}
+              </TableCell>
               <TableCell>{formatCurrency(product.cost || 0)}</TableCell>
               <TableCell>{formatCurrency(product.price || 0)}</TableCell>
               <TableCell>{product.stock || 0}</TableCell>

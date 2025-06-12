@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import ProductsTable from '@/components/products/ProductsTable';
 import ProductForm from '@/components/products/ProductForm';
 import BulkProductUpload from '@/components/products/BulkProductUpload';
+import ProductFilters from '@/components/products/ProductFilters';
 import { useConnection } from '@/context/providers/ConnectionProvider';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Tags, Ruler } from 'lucide-react';
@@ -90,6 +90,11 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
+  // Filter states
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
+  const [selectedGroup, setSelectedGroup] = useState<string | undefined>();
+  const [selectedBrand, setSelectedBrand] = useState<string | undefined>();
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -117,21 +122,36 @@ export default function Products() {
   const [deleteBrandDialogOpen, setDeleteBrandDialogOpen] = useState(false);
   const [brandToDelete, setBrandToDelete] = useState<ProductBrand | null>(null);
 
-  // Filter products based on search term
+  // Filter products based on search term and classification filters
   useEffect(() => {
+    let filtered = products;
+    
+    // Apply text search
     if (searchTerm) {
-      const filtered = products.filter(product => 
+      filtered = filtered.filter(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.code.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.unit && product.unit.toLowerCase().includes(searchTerm.toLowerCase()))
       );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
     }
+    
+    // Apply classification filters
+    if (selectedCategory) {
+      filtered = filtered.filter(product => product.categoryId === selectedCategory);
+    }
+    
+    if (selectedGroup) {
+      filtered = filtered.filter(product => product.groupId === selectedGroup);
+    }
+    
+    if (selectedBrand) {
+      filtered = filtered.filter(product => product.brandId === selectedBrand);
+    }
+    
+    setFilteredProducts(filtered);
     // Reset to first page when filtering
     setCurrentPage(1);
-  }, [products, searchTerm]);
+  }, [products, searchTerm, selectedCategory, selectedGroup, selectedBrand]);
 
   // Listen for product updates to refresh the list
   useEffect(() => {
@@ -418,6 +438,12 @@ export default function Products() {
     setSearchTerm(e.target.value);
   };
 
+  const handleClearFilters = () => {
+    setSelectedCategory(undefined);
+    setSelectedGroup(undefined);
+    setSelectedBrand(undefined);
+  };
+
   return (
     <PageLayout title="Produtos">
       <div className="space-y-4">
@@ -434,7 +460,7 @@ export default function Products() {
               <div>
                 <h2 className="text-lg font-medium">Gerencie os produtos da sua empresa</h2>
                 <p className="text-sm text-gray-600">
-                  {totalItems} produtos {searchTerm ? 'encontrados' : 'cadastrados'}
+                  {totalItems} produtos {searchTerm || selectedCategory || selectedGroup || selectedBrand ? 'encontrados' : 'cadastrados'}
                   {totalItems > 0 && ` • Mostrando ${startIndex + 1}-${Math.min(endIndex, totalItems)} de ${totalItems}`}
                 </p>
               </div>
@@ -452,19 +478,19 @@ export default function Products() {
             
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Buscar produtos..."
                       value={searchTerm}
-                      onChange={handleSearchChange}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-8"
                     />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Itens por página:</span>
-                    <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                    <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(parseInt(value))}>
                       <SelectTrigger className="w-20">
                         <SelectValue />
                       </SelectTrigger>
@@ -477,6 +503,19 @@ export default function Products() {
                     </Select>
                   </div>
                 </div>
+                
+                <ProductFilters
+                  categories={productCategories || []}
+                  groups={productGroups || []}
+                  brands={productBrands || []}
+                  selectedCategory={selectedCategory}
+                  selectedGroup={selectedGroup}
+                  selectedBrand={selectedBrand}
+                  onCategoryChange={setSelectedCategory}
+                  onGroupChange={setSelectedGroup}
+                  onBrandChange={setSelectedBrand}
+                  onClearFilters={handleClearFilters}
+                />
               </CardHeader>
               <CardContent>
                 <ProductsTable 
