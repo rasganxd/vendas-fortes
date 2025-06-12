@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Diálogos do sistema
   showSaveDialog: () => ipcRenderer.invoke('show-save-dialog'),
   
+  // Sistema de impressão nativo
+  printContent: (htmlContent, options) => ipcRenderer.invoke('print-content', htmlContent, options),
+  
   // Verificar se está rodando no Electron
   isElectron: true,
   

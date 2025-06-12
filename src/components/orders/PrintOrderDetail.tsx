@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Order } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -18,16 +19,67 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
   // Find customer data for address information
   const customer = customers.find(c => c.id === order.customerId);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     // Don't print if settings are still loading
     if (!settings || settings.id === 'loading') {
       console.warn('⚠️ Settings still loading, skipping print');
       return;
     }
 
+    // Verificar se está no Electron
+    if (window.electronAPI && window.electronAPI.printContent) {
+      // Usar sistema de impressão nativo do Electron
+      await handleElectronPrint();
+    } else {
+      // Fallback para web (manter funcionalidade existente)
+      handleWebPrint();
+    }
+  };
+
+  const handleElectronPrint = async () => {
+    try {
+      const htmlContent = generatePrintHTML();
+      const result = await window.electronAPI.printContent(htmlContent, {
+        printBackground: true,
+        color: true,
+        margins: {
+          marginType: 'custom',
+          top: 0.8,
+          bottom: 0.8,
+          left: 0.8,
+          right: 0.8
+        }
+      });
+      
+      if (!result.success) {
+        console.error('Erro na impressão:', result.error);
+      }
+    } catch (error) {
+      console.error('Erro ao imprimir com Electron:', error);
+      // Fallback para impressão web
+      handleWebPrint();
+    }
+  };
+
+  const handleWebPrint = () => {
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) return;
 
+    const htmlContent = generatePrintHTML();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    printWindow.onload = function() {
+      setTimeout(() => {
+        printWindow.print();
+        setTimeout(() => {
+          printWindow.close();
+        }, 2000);
+      }, 500);
+    };
+  };
+
+  const generatePrintHTML = () => {
     // Enhanced CSS styles matching PrintOrdersDialog
     const printStyles = `
       @media print {
@@ -442,8 +494,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       `;
     };
 
-    // Write HTML content to the new window
-    printWindow.document.write(`
+    return `
       <!DOCTYPE html>
       <html>
         <head>
@@ -455,24 +506,9 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           <div id="print-content">
             ${generateOrderHTML()}
           </div>
-          <script>
-            // Trigger printing when content is loaded
-            window.onload = function() {
-              // Add a small delay to ensure content is rendered
-              setTimeout(() => {
-                window.print();
-                // Close the window when printing is canceled or finished
-                setTimeout(() => {
-                  window.close();
-                }, 2000);
-              }, 500);
-            };
-          </script>
         </body>
       </html>
-    `);
-
-    printWindow.document.close();
+    `;
   };
 
   return (

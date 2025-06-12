@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Select, 
@@ -94,18 +95,68 @@ export default function PromissoryNotesTab({
     );
   };
 
-  // Print multiple promissory notes
-  const handlePrintSelectedNotes = () => {
+  // Print multiple promissory notes using Electron or web fallback
+  const handlePrintSelectedNotes = async () => {
     if (selectedOrderIds.length === 0) return;
 
     const ordersToPrint = promissoryOrders.filter(order => 
       selectedOrderIds.includes(order.id)
     );
 
-    // Create print window
+    // Verificar se está no Electron
+    if (window.electronAPI && window.electronAPI.printContent) {
+      // Usar sistema de impressão nativo do Electron
+      await handleElectronPrint(ordersToPrint);
+    } else {
+      // Fallback para web (manter funcionalidade existente)
+      handleWebPrint(ordersToPrint);
+    }
+  };
+
+  const handleElectronPrint = async (ordersToPrint: any[]) => {
+    try {
+      const htmlContent = generateCompactPromissoryNotesHTML(ordersToPrint);
+      const result = await window.electronAPI.printContent(htmlContent, {
+        printBackground: true,
+        color: true,
+        margins: {
+          marginType: 'custom',
+          top: 0.5,
+          bottom: 0.5,
+          left: 0.5,
+          right: 0.5
+        }
+      });
+      
+      if (!result.success) {
+        console.error('Erro na impressão:', result.error);
+      }
+    } catch (error) {
+      console.error('Erro ao imprimir com Electron:', error);
+      // Fallback para impressão web
+      handleWebPrint(ordersToPrint);
+    }
+  };
+
+  const handleWebPrint = (ordersToPrint: any[]) => {
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) return;
 
+    const htmlContent = generateCompactPromissoryNotesHTML(ordersToPrint);
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    printWindow.onload = function() {
+      setTimeout(() => {
+        printWindow.print();
+        setTimeout(() => {
+          printWindow.close();
+        }, 2000);
+      }, 500);
+    };
+  };
+
+  const generateCompactPromissoryNotesHTML = (ordersToPrint: any[]) => {
     // CSS styles for compact promissory notes printing
     const printStyles = `
       @media print {
@@ -250,8 +301,7 @@ export default function PromissoryNotesTab({
       `;
     };
 
-    // Write HTML content to print window
-    printWindow.document.write(`
+    return `
       <!DOCTYPE html>
       <html>
         <head>
@@ -260,21 +310,9 @@ export default function PromissoryNotesTab({
         </head>
         <body>
           ${ordersToPrint.map(order => generateCompactPromissoryNoteHTML(order)).join('')}
-          <script>
-            window.onload = function() {
-              setTimeout(() => {
-                window.print();
-                setTimeout(() => {
-                  window.close();
-                }, 2000);
-              }, 500);
-            };
-          </script>
         </body>
       </html>
-    `);
-
-    printWindow.document.close();
+    `;
   };
   
   // If no orders found

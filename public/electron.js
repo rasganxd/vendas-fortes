@@ -1,4 +1,3 @@
-
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
@@ -174,4 +173,56 @@ ipcMain.handle('show-save-dialog', async () => {
     ]
   });
   return result;
+});
+
+// Handler de impressão nativo do Electron
+ipcMain.handle('print-content', async (event, htmlContent, options = {}) => {
+  try {
+    // Criar janela oculta para impressão
+    const printWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true
+      }
+    });
+
+    // Carregar o conteúdo HTML
+    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+
+    // Aguardar o carregamento completo
+    await new Promise(resolve => {
+      printWindow.webContents.once('did-finish-load', resolve);
+    });
+
+    // Configurações de impressão
+    const printOptions = {
+      silent: false,
+      printBackground: true,
+      color: true,
+      margins: {
+        marginType: 'custom',
+        top: 0.5,
+        bottom: 0.5,
+        left: 0.5,
+        right: 0.5
+      },
+      landscape: false,
+      scaleFactor: 100,
+      ...options
+    };
+
+    // Executar impressão
+    const success = await printWindow.webContents.print(printOptions);
+    
+    // Fechar janela de impressão
+    printWindow.close();
+    
+    return { success };
+  } catch (error) {
+    console.error('Erro na impressão:', error);
+    return { success: false, error: error.message };
+  }
 });
