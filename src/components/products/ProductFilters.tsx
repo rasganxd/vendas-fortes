@@ -45,12 +45,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         <span className="text-sm font-medium text-gray-700">Filtrar por:</span>
       </div>
       
-      <Select value={selectedCategory || ""} onValueChange={(value) => onCategoryChange(value || undefined)}>
+      <Select value={selectedCategory || "all"} onValueChange={(value) => onCategoryChange(value === "all" ? undefined : value)}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="Categoria" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Todas as categorias</SelectItem>
+          <SelectItem value="all">Todas as categorias</SelectItem>
           {categories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
               {category.name}
@@ -59,12 +59,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         </SelectContent>
       </Select>
 
-      <Select value={selectedGroup || ""} onValueChange={(value) => onGroupChange(value || undefined)}>
+      <Select value={selectedGroup || "all"} onValueChange={(value) => onGroupChange(value === "all" ? undefined : value)}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="Grupo" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Todos os grupos</SelectItem>
+          <SelectItem value="all">Todos os grupos</SelectItem>
           {groups.map((group) => (
             <SelectItem key={group.id} value={group.id}>
               {group.name}
@@ -73,12 +73,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         </SelectContent>
       </Select>
 
-      <Select value={selectedBrand || ""} onValueChange={(value) => onBrandChange(value || undefined)}>
+      <Select value={selectedBrand || "all"} onValueChange={(value) => onBrandChange(value === "all" ? undefined : value)}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="Marca" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Todas as marcas</SelectItem>
+          <SelectItem value="all">Todas as marcas</SelectItem>
           {brands.map((brand) => (
             <SelectItem key={brand.id} value={brand.id}>
               {brand.name}
