@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, User, Download, RefreshCw } from 'lucide-react';
+import { Calendar, User, Download, RefreshCw, Settings } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { mobileOrderImportService } from '@/services/supabase/mobileOrderImportService';
 
 interface SalesRepWithOrders {
   id: string;
@@ -30,6 +31,7 @@ export default function SalesRepImportSelector({
 }: SalesRepImportSelectorProps) {
   const [salesRepsWithOrders, setSalesRepsWithOrders] = useState<SalesRepWithOrders[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFixing, setIsFixing] = useState(false);
 
   const loadSalesRepsWithPendingOrders = async () => {
     try {
@@ -38,21 +40,20 @@ export default function SalesRepImportSelector({
 
       const { supabase } = await import('@/integrations/supabase/client');
       
-      // Buscar pedidos pendentes agrupados por vendedor
+      // Buscar pedidos mobile pendentes agrupados por vendedor
       const { data: pendingOrders, error } = await supabase
-        .from('orders')
+        .from('mobile_orders')
         .select(`
           sales_rep_id,
           sales_rep_name,
           total,
           created_at
         `)
-        .eq('source_project', 'mobile')
-        .eq('imported', false)
+        .eq('imported_to_orders', false)
         .not('sales_rep_id', 'is', null);
 
       if (error) {
-        console.error('❌ Error loading pending orders:', error);
+        console.error('❌ Error loading pending mobile orders:', error);
         throw error;
       }
 
@@ -105,6 +106,30 @@ export default function SalesRepImportSelector({
     }
   };
 
+  const handleFixDataInconsistencies = async () => {
+    try {
+      setIsFixing(true);
+      console.log('🔧 Starting data inconsistency fix...');
+      
+      await mobileOrderImportService.fixExistingDataInconsistencies();
+      
+      toast.success('Inconsistências corrigidas', {
+        description: 'Os dados foram corrigidos com sucesso'
+      });
+      
+      // Recarregar a lista após a correção
+      await loadSalesRepsWithPendingOrders();
+      
+    } catch (error) {
+      console.error('❌ Error fixing data inconsistencies:', error);
+      toast.error('Erro ao corrigir inconsistências', {
+        description: 'Não foi possível corrigir as inconsistências nos dados'
+      });
+    } finally {
+      setIsFixing(false);
+    }
+  };
+
   useEffect(() => {
     loadSalesRepsWithPendingOrders();
   }, []);
@@ -149,6 +174,22 @@ export default function SalesRepImportSelector({
             <User size={48} className="mx-auto mb-4 opacity-50" />
             <p>Nenhum vendedor com pedidos pendentes</p>
             <p className="text-sm">Todos os pedidos mobile foram importados</p>
+            
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleFixDataInconsistencies}
+                disabled={isFixing}
+              >
+                {isFixing ? (
+                  <RefreshCw size={16} className="animate-spin mr-2" />
+                ) : (
+                  <Settings size={16} className="mr-2" />
+                )}
+                Corrigir Inconsistências
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -163,15 +204,30 @@ export default function SalesRepImportSelector({
             <User size={20} />
             Vendedores com Pedidos Pendentes
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadSalesRepsWithPendingOrders}
-            disabled={isLoading}
-          >
-            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-            Atualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleFixDataInconsistencies}
+              disabled={isFixing || isImporting}
+            >
+              {isFixing ? (
+                <RefreshCw size={16} className="animate-spin" />
+              ) : (
+                <Settings size={16} />
+              )}
+              Corrigir
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadSalesRepsWithPendingOrders}
+              disabled={isLoading || isImporting}
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Atualizar
+            </Button>
+          </div>
         </CardTitle>
         
         {/* Resumo geral */}
@@ -187,7 +243,7 @@ export default function SalesRepImportSelector({
         <div className="flex justify-end">
           <Button
             onClick={onImportAll}
-            disabled={isImporting}
+            disabled={isImporting || isFixing}
             className="bg-blue-600 hover:bg-blue-700"
           >
             {isImporting ? (
@@ -237,7 +293,7 @@ export default function SalesRepImportSelector({
                   variant="outline"
                   size="sm"
                   onClick={() => onImportSalesRep(salesRep.id, salesRep.name)}
-                  disabled={isImporting}
+                  disabled={isImporting || isFixing}
                 >
                   {isImporting ? (
                     <RefreshCw size={14} className="animate-spin" />

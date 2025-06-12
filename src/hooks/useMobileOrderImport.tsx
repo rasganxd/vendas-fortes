@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Order, MobileOrderGroup, ImportSelectionState } from '@/types';
 import { mobileOrderImportService } from '@/services/supabase/mobileOrderImportService';
@@ -76,7 +77,7 @@ export const useMobileOrderImport = () => {
       // Get the selected orders for the report
       const selectedOrdersData = pendingOrders.filter(order => orderIds.includes(order.id));
       
-      // Import orders
+      // Import orders with proper duplication check
       await mobileOrderImportService.importOrders(orderIds);
       
       // Generate import report
@@ -219,6 +220,10 @@ export const useMobileOrderImport = () => {
     setSelection({ selectedOrders: new Set(), selectedSalesReps: new Set() });
   }, []);
 
+  const refreshData = useCallback(async () => {
+    await Promise.all([loadPendingOrders(), loadImportHistory()]);
+  }, [loadPendingOrders, loadImportHistory]);
+
   useEffect(() => {
     loadPendingOrders();
     loadImportHistory();
@@ -237,10 +242,7 @@ export const useMobileOrderImport = () => {
     toggleSalesRepSelection,
     selectAllOrders,
     clearSelection,
-    refreshData: () => {
-      loadPendingOrders();
-      loadImportHistory();
-    },
+    refreshData,
     // New report-related returns
     lastImportReport,
     showReportModal,

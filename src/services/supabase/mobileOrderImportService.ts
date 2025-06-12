@@ -110,11 +110,46 @@ class MobileOrderImportService {
     try {
       console.log(`📦 Importing ${orderIds.length} mobile orders to orders table...`);
       
+      // First, check if any of these orders were already imported
+      const { data: existingOrders, error: checkError } = await supabase
+        .from('orders')
+        .select('mobile_order_id')
+        .in('mobile_order_id', orderIds)
+        .eq('source_project', 'mobile');
+      
+      if (checkError) {
+        console.error('❌ Error checking for existing orders:', checkError);
+        throw checkError;
+      }
+      
+      const alreadyImportedIds = new Set(existingOrders?.map(o => o.mobile_order_id) || []);
+      const ordersToImport = orderIds.filter(id => !alreadyImportedIds.has(id));
+      
+      if (alreadyImportedIds.size > 0) {
+        console.log(`⚠️ ${alreadyImportedIds.size} orders were already imported, skipping them`);
+        console.log(`📦 Proceeding with ${ordersToImport.length} new orders`);
+        
+        // Mark the already imported mobile orders as imported if they weren't marked
+        await supabase
+          .from('mobile_orders')
+          .update({
+            imported_to_orders: true,
+            imported_at: new Date().toISOString(),
+            imported_by: importedBy
+          })
+          .in('id', Array.from(alreadyImportedIds));
+      }
+      
+      if (ordersToImport.length === 0) {
+        console.log('✅ All orders were already imported');
+        return;
+      }
+      
       // Get mobile orders with their items
       const { data: mobileOrders, error: mobileOrdersError } = await supabase
         .from('mobile_orders')
         .select('*')
-        .in('id', orderIds);
+        .in('id', ordersToImport);
       
       if (mobileOrdersError) {
         console.error('❌ Error getting mobile orders for import:', mobileOrdersError);
@@ -129,7 +164,7 @@ class MobileOrderImportService {
       const { data: mobileOrderItems, error: itemsError } = await supabase
         .from('mobile_order_items')
         .select('*')
-        .in('mobile_order_id', orderIds);
+        .in('mobile_order_id', ordersToImport);
       
       if (itemsError) {
         console.error('❌ Error getting mobile order items:', itemsError);
@@ -138,7 +173,9 @@ class MobileOrderImportService {
       
       // Import each order
       for (const mobileOrder of mobileOrders) {
-        // Insert into orders table
+        console.log(`📋 Importing mobile order ${mobileOrder.id} (code: ${mobileOrder.code})`);
+        
+        // Insert into orders table with proper mobile_order_id mapping
         const { data: insertedOrder, error: orderError } = await supabase
           .from('orders')
           .insert({
@@ -165,7 +202,7 @@ class MobileOrderImportService {
             delivery_zip: mobileOrder.delivery_zip,
             rejection_reason: mobileOrder.rejection_reason,
             visit_notes: mobileOrder.visit_notes,
-            mobile_order_id: mobileOrder.mobile_order_id || mobileOrder.id,
+            mobile_order_id: mobileOrder.id, // Use the mobile order's ID directly
             source_project: 'mobile',
             import_status: 'imported',
             imported_at: new Date().toISOString(),
@@ -178,6 +215,8 @@ class MobileOrderImportService {
           console.error('❌ Error importing order:', orderError);
           throw orderError;
         }
+        
+        console.log(`✅ Order imported as ${insertedOrder.id} with mobile_order_id: ${mobileOrder.id}`);
         
         // Insert order items if they exist
         const orderItems = (mobileOrderItems || []).filter(item => item.mobile_order_id === mobileOrder.id);
@@ -203,6 +242,8 @@ class MobileOrderImportService {
             console.error('❌ Error importing order items:', itemsInsertError);
             throw itemsInsertError;
           }
+          
+          console.log(`📦 Imported ${orderItems.length} items for order ${insertedOrder.id}`);
         }
         
         // Mark mobile order as imported
@@ -219,6 +260,8 @@ class MobileOrderImportService {
           console.error('❌ Error marking mobile order as imported:', updateError);
           throw updateError;
         }
+        
+        console.log(`🔄 Mobile order ${mobileOrder.id} marked as imported`);
       }
       
       console.log('✅ Orders imported successfully');
@@ -279,6 +322,76 @@ class MobileOrderImportService {
       return orders;
     } catch (error) {
       console.error('❌ Error in getImportHistory:', error);
+      throw error;
+    }
+  }
+
+  // New method to fix existing data inconsistencies
+  async fixExistingDataInconsistencies(): Promise<void> {
+    try {
+      console.log('🔧 Fixing existing data inconsistencies...');
+      
+      // Find orders in the orders table that came from mobile but their corresponding mobile_orders are not marked as imported
+      const { data: importedOrders, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, mobile_order_id')
+        .eq('source_project', 'mobile')
+        .not('mobile_order_id', 'is', null);
+      
+      if (ordersError) {
+        console.error('❌ Error getting imported orders:', ordersError);
+        throw ordersError;
+      }
+      
+      if (!importedOrders || importedOrders.length === 0) {
+        console.log('📝 No imported mobile orders found in orders table');
+        return;
+      }
+      
+      const mobileOrderIds = importedOrders.map(o => o.mobile_order_id).filter(Boolean);
+      
+      if (mobileOrderIds.length === 0) {
+        console.log('📝 No mobile order IDs found');
+        return;
+      }
+      
+      // Find mobile orders that should be marked as imported but aren't
+      const { data: unmarkedMobileOrders, error: unmarkedError } = await supabase
+        .from('mobile_orders')
+        .select('id')
+        .in('id', mobileOrderIds)
+        .eq('imported_to_orders', false);
+      
+      if (unmarkedError) {
+        console.error('❌ Error getting unmarked mobile orders:', unmarkedError);
+        throw unmarkedError;
+      }
+      
+      if (!unmarkedMobileOrders || unmarkedMobileOrders.length === 0) {
+        console.log('✅ All mobile orders are correctly marked as imported');
+        return;
+      }
+      
+      console.log(`🔄 Found ${unmarkedMobileOrders.length} mobile orders that need to be marked as imported`);
+      
+      // Mark them as imported
+      const { error: updateError } = await supabase
+        .from('mobile_orders')
+        .update({
+          imported_to_orders: true,
+          imported_at: new Date().toISOString(),
+          imported_by: 'system_fix'
+        })
+        .in('id', unmarkedMobileOrders.map(o => o.id));
+      
+      if (updateError) {
+        console.error('❌ Error fixing mobile orders status:', updateError);
+        throw updateError;
+      }
+      
+      console.log(`✅ Fixed ${unmarkedMobileOrders.length} mobile orders status`);
+    } catch (error) {
+      console.error('❌ Error in fixExistingDataInconsistencies:', error);
       throw error;
     }
   }
