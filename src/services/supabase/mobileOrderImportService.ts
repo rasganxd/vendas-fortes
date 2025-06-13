@@ -145,10 +145,13 @@ class MobileOrderImportService {
         return;
       }
       
-      // Get mobile orders with their items
+      // Get mobile orders with their items and payment table names
       const { data: mobileOrders, error: mobileOrdersError } = await supabase
         .from('mobile_orders')
-        .select('*')
+        .select(`
+          *,
+          payment_tables!payment_table_id(name)
+        `)
         .in('id', ordersToImport);
       
       if (mobileOrdersError) {
@@ -171,9 +174,14 @@ class MobileOrderImportService {
         throw itemsError;
       }
       
+      console.log(`📦 Found ${mobileOrderItems?.length || 0} items to import for ${mobileOrders.length} orders`);
+      
       // Import each order
       for (const mobileOrder of mobileOrders) {
         console.log(`📋 Importing mobile order ${mobileOrder.id} (code: ${mobileOrder.code})`);
+        
+        // Get payment table name
+        const paymentTableName = mobileOrder.payment_tables?.name || mobileOrder.payment_table;
         
         // Insert into orders table with proper mobile_order_id mapping
         const { data: insertedOrder, error: orderError } = await supabase
@@ -193,7 +201,7 @@ class MobileOrderImportService {
             payment_method: mobileOrder.payment_method,
             payment_method_id: mobileOrder.payment_method_id,
             payment_table_id: mobileOrder.payment_table_id,
-            payment_table: mobileOrder.payment_table,
+            payment_table: paymentTableName,
             payments: mobileOrder.payments,
             notes: mobileOrder.notes,
             delivery_address: mobileOrder.delivery_address,
@@ -202,7 +210,7 @@ class MobileOrderImportService {
             delivery_zip: mobileOrder.delivery_zip,
             rejection_reason: mobileOrder.rejection_reason,
             visit_notes: mobileOrder.visit_notes,
-            mobile_order_id: mobileOrder.id, // Use the mobile order's ID directly
+            mobile_order_id: mobileOrder.id,
             source_project: 'mobile',
             import_status: 'imported',
             imported_at: new Date().toISOString(),
@@ -217,10 +225,14 @@ class MobileOrderImportService {
         }
         
         console.log(`✅ Order imported as ${insertedOrder.id} with mobile_order_id: ${mobileOrder.id}`);
+        console.log(`💳 Payment table: ${paymentTableName || 'none'}`);
         
         // Insert order items if they exist
         const orderItems = (mobileOrderItems || []).filter(item => item.mobile_order_id === mobileOrder.id);
+        
         if (orderItems.length > 0) {
+          console.log(`📦 Importing ${orderItems.length} items for order ${insertedOrder.id}`);
+          
           const itemsToInsert = orderItems.map(item => ({
             order_id: insertedOrder.id,
             product_id: item.product_id,
@@ -243,7 +255,9 @@ class MobileOrderImportService {
             throw itemsInsertError;
           }
           
-          console.log(`📦 Imported ${orderItems.length} items for order ${insertedOrder.id}`);
+          console.log(`✅ Imported ${orderItems.length} items for order ${insertedOrder.id}`);
+        } else {
+          console.log(`⚠️ No items found for mobile order ${mobileOrder.id}`);
         }
         
         // Mark mobile order as imported

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, User, Download, RefreshCw, Settings } from 'lucide-react';
+import { Calendar, User, Download, RefreshCw, Settings, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -16,6 +16,7 @@ interface SalesRepWithOrders {
   pendingOrdersCount: number;
   lastSync: Date | null;
   totalValue: number;
+  ordersWithIssues: number;
 }
 
 interface SalesRepImportSelectorProps {
@@ -47,7 +48,9 @@ export default function SalesRepImportSelector({
           sales_rep_id,
           sales_rep_name,
           total,
-          created_at
+          created_at,
+          payment_table_id,
+          payment_table
         `)
         .eq('imported_to_orders', false)
         .not('sales_rep_id', 'is', null);
@@ -75,13 +78,19 @@ export default function SalesRepImportSelector({
             name: salesRepName,
             pendingOrdersCount: 0,
             lastSync: null,
-            totalValue: 0
+            totalValue: 0,
+            ordersWithIssues: 0
           });
         }
 
         const salesRep = salesRepMap.get(salesRepId)!;
         salesRep.pendingOrdersCount++;
         salesRep.totalValue += Number(order.total || 0);
+        
+        // Verificar se tem problemas (sem tabela de pagamento quando deveria ter)
+        if (order.total > 0 && !order.payment_table_id && !order.payment_table) {
+          salesRep.ordersWithIssues++;
+        }
         
         // Atualizar data do último sync (mais recente)
         const orderDate = new Date(order.created_at);
@@ -152,6 +161,7 @@ export default function SalesRepImportSelector({
 
   const totalPendingOrders = salesRepsWithOrders.reduce((sum, rep) => sum + rep.pendingOrdersCount, 0);
   const totalPendingValue = salesRepsWithOrders.reduce((sum, rep) => sum + rep.totalValue, 0);
+  const totalOrdersWithIssues = salesRepsWithOrders.reduce((sum, rep) => sum + rep.ordersWithIssues, 0);
 
   if (isLoading) {
     return (
@@ -235,6 +245,12 @@ export default function SalesRepImportSelector({
           <span>{salesRepsWithOrders.length} vendedores</span>
           <span>{totalPendingOrders} pedidos pendentes</span>
           <span>{formatCurrency(totalPendingValue)} em valor total</span>
+          {totalOrdersWithIssues > 0 && (
+            <span className="text-orange-600 flex items-center gap-1">
+              <AlertTriangle size={14} />
+              {totalOrdersWithIssues} com problemas
+            </span>
+          )}
         </div>
       </CardHeader>
 
@@ -288,6 +304,13 @@ export default function SalesRepImportSelector({
                 <Badge variant="secondary">
                   {salesRep.pendingOrdersCount} pedidos
                 </Badge>
+                
+                {salesRep.ordersWithIssues > 0 && (
+                  <Badge variant="destructive" className="flex items-center gap-1">
+                    <AlertTriangle size={12} />
+                    {salesRep.ordersWithIssues} problemas
+                  </Badge>
+                )}
                 
                 <Button
                   variant="outline"
