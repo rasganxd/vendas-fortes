@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Order, MobileOrderGroup } from '@/types';
 import { OrderTransformations } from './orderService/orderTransformations';
@@ -145,13 +144,10 @@ class MobileOrderImportService {
         return;
       }
       
-      // Get mobile orders with their items and payment table names
+      // Get mobile orders data
       const { data: mobileOrders, error: mobileOrdersError } = await supabase
         .from('mobile_orders')
-        .select(`
-          *,
-          payment_tables!payment_table_id(name)
-        `)
+        .select('*')
         .in('id', ordersToImport);
       
       if (mobileOrdersError) {
@@ -161,6 +157,29 @@ class MobileOrderImportService {
       
       if (!mobileOrders || mobileOrders.length === 0) {
         throw new Error('No mobile orders found for import');
+      }
+      
+      // Get payment table names for orders that have payment_table_id
+      const orderIdsWithPaymentTable = mobileOrders
+        .filter(order => order.payment_table_id)
+        .map(order => order.payment_table_id);
+      
+      let paymentTableNames: Record<string, string> = {};
+      
+      if (orderIdsWithPaymentTable.length > 0) {
+        const { data: paymentTables, error: paymentTablesError } = await supabase
+          .from('payment_tables')
+          .select('id, name')
+          .in('id', orderIdsWithPaymentTable);
+        
+        if (paymentTablesError) {
+          console.error('❌ Error getting payment tables:', paymentTablesError);
+        } else if (paymentTables) {
+          paymentTableNames = paymentTables.reduce((acc, table) => {
+            acc[table.id] = table.name;
+            return acc;
+          }, {} as Record<string, string>);
+        }
       }
       
       // Get items for these orders
@@ -181,7 +200,9 @@ class MobileOrderImportService {
         console.log(`📋 Importing mobile order ${mobileOrder.id} (code: ${mobileOrder.code})`);
         
         // Get payment table name
-        const paymentTableName = mobileOrder.payment_tables?.name || mobileOrder.payment_table;
+        const paymentTableName = mobileOrder.payment_table_id 
+          ? paymentTableNames[mobileOrder.payment_table_id] 
+          : mobileOrder.payment_table;
         
         // Insert into orders table with proper mobile_order_id mapping
         const { data: insertedOrder, error: orderError } = await supabase
@@ -340,7 +361,6 @@ class MobileOrderImportService {
     }
   }
 
-  // New method to fix existing data inconsistencies
   async fixExistingDataInconsistencies(): Promise<void> {
     try {
       console.log('🔧 Fixing existing data inconsistencies...');
