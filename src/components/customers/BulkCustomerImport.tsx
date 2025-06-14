@@ -121,7 +121,15 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   };
 
   const handleImportCustomers = async () => {
+    console.log('🚀 [BulkImport] Import button clicked');
+    console.log('📊 [BulkImport] Current state:', {
+      validCustomersCount: validationResults.valid.length,
+      invalidCustomersCount: validationResults.invalid.length,
+      isImporting
+    });
+
     if (validationResults.valid.length === 0) {
+      console.warn('⚠️ [BulkImport] No valid customers to import');
       toast({
         title: "Nenhum cliente válido para importar",
         description: "Corrija os problemas encontrados antes de importar.",
@@ -131,24 +139,40 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
     }
 
     if (validationResults.invalid.length > 0) {
+      console.log(`⚠️ [BulkImport] There are ${validationResults.invalid.length} invalid customers`);
       const proceed = confirm(
         `Existem ${validationResults.invalid.length} clientes com problemas que não serão importados. Deseja continuar importando apenas os ${validationResults.valid.length} clientes válidos?`
       );
-      if (!proceed) return;
+      if (!proceed) {
+        console.log('🚫 [BulkImport] User cancelled import due to invalid customers');
+        return;
+      }
     }
 
     try {
+      console.log('🔄 [BulkImport] Starting import process...');
+      console.log('📝 [BulkImport] Valid customers to import:', validationResults.valid);
+      
       const results = await onImportCustomers(validationResults.valid);
+      console.log('✅ [BulkImport] Import completed with results:', results);
+      
       toast({
         title: "Importação concluída",
         description: `${results.length} clientes importados com sucesso.`
       });
+      
       // Clear the form after successful import
+      console.log('🧹 [BulkImport] Clearing form after successful import');
       setRawText('');
       setParsedCustomers([]);
       setValidationResults({ valid: [], invalid: [] });
     } catch (error) {
       console.error("[BulkImport] Error importing customers:", error);
+      console.error("[BulkImport] Error details:", {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
       toast({
         title: "Erro na importação",
         description: "Ocorreu um erro ao importar os clientes. Verifique o console para mais detalhes.",
@@ -275,6 +299,7 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
               onClick={handleImportCustomers}
               type="button"
               disabled={validationResults.valid.length === 0 || isImporting}
+              className={isImporting ? "opacity-75" : ""}
             >
               <Upload className="w-4 h-4 mr-2" />
               {isImporting ? "Importando..." : `Importar ${validationResults.valid.length} Clientes`}
