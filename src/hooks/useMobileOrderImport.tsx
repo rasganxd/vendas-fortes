@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Order, MobileOrderGroup, ImportSelectionState } from '@/types';
 import { mobileOrderImportService } from '@/services/supabase/mobileOrderImportService';
@@ -57,6 +56,33 @@ export const useMobileOrderImport = () => {
       });
     }
   }, []);
+
+  const fixOrderData = useCallback(async (orderCode: number) => {
+    try {
+      setIsImporting(true);
+      console.log(`🔧 Fixing order #${orderCode}...`);
+      
+      await mobileOrderImportService.fixOrderMissingData(orderCode);
+      
+      toast({
+        title: "Pedido corrigido",
+        description: `Pedido #${orderCode} foi corrigido com sucesso.`,
+      });
+      
+      // Reload data to reflect changes
+      await loadImportHistory();
+      
+    } catch (error) {
+      console.error('❌ Error fixing order:', error);
+      toast({
+        title: "Erro ao corrigir pedido",
+        description: `Ocorreu um erro ao corrigir o pedido #${orderCode}.`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  }, [loadImportHistory]);
 
   const importSelectedOrders = useCallback(async () => {
     if (selection.selectedOrders.size === 0) {
@@ -243,7 +269,7 @@ export const useMobileOrderImport = () => {
     selectAllOrders,
     clearSelection,
     refreshData,
-    // New report-related returns
+    fixOrderData,
     lastImportReport,
     showReportModal,
     setShowReportModal

@@ -105,6 +105,124 @@ class MobileOrderImportService {
     return Array.from(groups.values()).sort((a, b) => a.salesRepName.localeCompare(b.salesRepName));
   }
 
+  async fixOrderMissingData(orderCode: number): Promise<void> {
+    try {
+      console.log(`🔧 Fixing missing data for order #${orderCode}...`);
+      
+      // First, find the order in the orders table
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('code', orderCode)
+        .eq('source_project', 'mobile')
+        .single();
+      
+      if (orderError || !order) {
+        console.error('❌ Order not found:', orderError);
+        throw new Error(`Order #${orderCode} not found`);
+      }
+      
+      console.log(`📋 Found order: ${order.id} (mobile_order_id: ${order.mobile_order_id})`);
+      
+      // Find the corresponding mobile order
+      const { data: mobileOrder, error: mobileOrderError } = await supabase
+        .from('mobile_orders')
+        .select('*')
+        .eq('id', order.mobile_order_id)
+        .single();
+      
+      if (mobileOrderError || !mobileOrder) {
+        console.error('❌ Mobile order not found:', mobileOrderError);
+        throw new Error(`Mobile order ${order.mobile_order_id} not found`);
+      }
+      
+      // Get mobile order items
+      const { data: mobileOrderItems, error: itemsError } = await supabase
+        .from('mobile_order_items')
+        .select('*')
+        .eq('mobile_order_id', order.mobile_order_id);
+      
+      if (itemsError) {
+        console.error('❌ Error getting mobile order items:', itemsError);
+        throw itemsError;
+      }
+      
+      console.log(`📦 Found ${mobileOrderItems?.length || 0} items in mobile order`);
+      
+      // Check if order already has items
+      const { data: existingItems, error: existingItemsError } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', order.id);
+      
+      if (existingItemsError) {
+        console.error('❌ Error checking existing items:', existingItemsError);
+        throw existingItemsError;
+      }
+      
+      console.log(`📋 Order currently has ${existingItems?.length || 0} items`);
+      
+      // Add missing items if any
+      if (mobileOrderItems && mobileOrderItems.length > 0 && (!existingItems || existingItems.length === 0)) {
+        console.log('➕ Adding missing items to order...');
+        
+        const itemsToInsert = mobileOrderItems.map(item => ({
+          order_id: order.id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          product_code: item.product_code,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          price: item.price,
+          discount: item.discount,
+          total: item.total,
+          unit: item.unit
+        }));
+        
+        const { error: insertItemsError } = await supabase
+          .from('order_items')
+          .insert(itemsToInsert);
+        
+        if (insertItemsError) {
+          console.error('❌ Error inserting items:', insertItemsError);
+          throw insertItemsError;
+        }
+        
+        console.log(`✅ Added ${itemsToInsert.length} items to order`);
+      }
+      
+      // Fix payment method if it's null or empty
+      const needsPaymentFix = !order.payment_method || order.payment_method === '';
+      
+      if (needsPaymentFix && mobileOrder.payment_method) {
+        console.log('🔄 Fixing payment method...');
+        
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            payment_method: mobileOrder.payment_method,
+            payment_method_id: mobileOrder.payment_method_id,
+            payment_table: mobileOrder.payment_table,
+            payment_table_id: mobileOrder.payment_table_id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', order.id);
+        
+        if (updateError) {
+          console.error('❌ Error updating payment method:', updateError);
+          throw updateError;
+        }
+        
+        console.log('✅ Payment method updated');
+      }
+      
+      console.log(`🎉 Order #${orderCode} data fixed successfully!`);
+    } catch (error) {
+      console.error('❌ Error in fixOrderMissingData:', error);
+      throw error;
+    }
+  }
+
   async importOrders(orderIds: string[], importedBy: string = 'admin'): Promise<void> {
     try {
       console.log(`📦 Importing ${orderIds.length} mobile orders to orders table...`);
@@ -195,7 +313,7 @@ class MobileOrderImportService {
       
       console.log(`📦 Found ${mobileOrderItems?.length || 0} items to import for ${mobileOrders.length} orders`);
       
-      // Import each order
+      // Import each order with enhanced validation
       for (const mobileOrder of mobileOrders) {
         console.log(`📋 Importing mobile order ${mobileOrder.id} (code: ${mobileOrder.code})`);
         
@@ -203,6 +321,12 @@ class MobileOrderImportService {
         const paymentTableName = mobileOrder.payment_table_id 
           ? paymentTableNames[mobileOrder.payment_table_id] 
           : mobileOrder.payment_table;
+        
+        // Validate payment method - use a default if empty
+        const paymentMethod = mobileOrder.payment_method || 'A Definir';
+        const paymentMethodId = mobileOrder.payment_method_id || '';
+        
+        console.log(`💳 Payment info: method="${paymentMethod}", table="${paymentTableName || 'none'}"`);
         
         // Insert into orders table with proper mobile_order_id mapping
         const { data: insertedOrder, error: orderError } = await supabase
@@ -219,8 +343,8 @@ class MobileOrderImportService {
             discount: mobileOrder.discount,
             status: mobileOrder.status,
             payment_status: mobileOrder.payment_status,
-            payment_method: mobileOrder.payment_method,
-            payment_method_id: mobileOrder.payment_method_id,
+            payment_method: paymentMethod,
+            payment_method_id: paymentMethodId,
             payment_table_id: mobileOrder.payment_table_id,
             payment_table: paymentTableName,
             payments: mobileOrder.payments,
@@ -246,9 +370,9 @@ class MobileOrderImportService {
         }
         
         console.log(`✅ Order imported as ${insertedOrder.id} with mobile_order_id: ${mobileOrder.id}`);
-        console.log(`💳 Payment table: ${paymentTableName || 'none'}`);
+        console.log(`💳 Payment: method="${paymentMethod}", table="${paymentTableName || 'none'}"`);
         
-        // Insert order items if they exist
+        // Insert order items if they exist with enhanced validation
         const orderItems = (mobileOrderItems || []).filter(item => item.mobile_order_id === mobileOrder.id);
         
         if (orderItems.length > 0) {
@@ -273,12 +397,38 @@ class MobileOrderImportService {
           
           if (itemsInsertError) {
             console.error('❌ Error importing order items:', itemsInsertError);
+            console.error('❌ Rolling back order due to items error...');
+            
+            // Rollback: delete the order if items failed to import
+            await supabase
+              .from('orders')
+              .delete()
+              .eq('id', insertedOrder.id);
+            
             throw itemsInsertError;
           }
           
-          console.log(`✅ Imported ${orderItems.length} items for order ${insertedOrder.id}`);
+          console.log(`✅ Successfully imported ${orderItems.length} items for order ${insertedOrder.id}`);
+          
+          // Verify items were inserted correctly
+          const { data: verifyItems, error: verifyError } = await supabase
+            .from('order_items')
+            .select('*')
+            .eq('order_id', insertedOrder.id);
+          
+          if (verifyError) {
+            console.error('❌ Error verifying items:', verifyError);
+          } else {
+            console.log(`🔍 Verification: ${verifyItems?.length || 0} items found in database`);
+            if ((verifyItems?.length || 0) !== orderItems.length) {
+              console.error(`⚠️ Items count mismatch! Expected: ${orderItems.length}, Found: ${verifyItems?.length || 0}`);
+            }
+          }
         } else {
           console.log(`⚠️ No items found for mobile order ${mobileOrder.id}`);
+          if (mobileOrder.total > 0) {
+            console.warn(`⚠️ WARNING: Order has value (${mobileOrder.total}) but no items!`);
+          }
         }
         
         // Mark mobile order as imported
@@ -297,9 +447,10 @@ class MobileOrderImportService {
         }
         
         console.log(`🔄 Mobile order ${mobileOrder.id} marked as imported`);
+        console.log('---');
       }
       
-      console.log('✅ Orders imported successfully');
+      console.log('✅ Orders imported successfully with enhanced validation');
     } catch (error) {
       console.error('❌ Error in importOrders:', error);
       throw error;
