@@ -14,8 +14,8 @@ class ImportReportPersistenceService {
           timestamp: report.timestamp.toISOString(),
           operation_type: report.operationType,
           operator: report.operator,
-          summary_data: report.summary,
-          report_data: report,
+          summary_data: report.summary as any,
+          report_data: report as any,
           orders_count: report.summary.totalOrders,
           total_value: report.summary.totalValue,
           sales_reps_count: report.summary.salesRepsCount
@@ -61,7 +61,7 @@ class ImportReportPersistenceService {
         ordersCount: record.orders_count,
         totalValue: record.total_value,
         salesRepsCount: record.sales_reps_count,
-        reportData: record.report_data,
+        reportData: record.report_data as ImportReportData,
         createdAt: new Date(record.created_at)
       }));
 
