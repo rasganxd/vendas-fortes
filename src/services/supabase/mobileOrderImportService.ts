@@ -1,6 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Order, MobileOrderGroup } from '@/types';
 import { OrderTransformations } from './orderService/orderTransformations';
+import { importReportPersistenceService } from './importReportPersistenceService';
+import { mobileImportReportService, ImportReportData } from '../mobileImportReportService';
 
 class MobileOrderImportService {
   async getPendingMobileOrders(): Promise<Order[]> {
@@ -223,7 +225,7 @@ class MobileOrderImportService {
     }
   }
 
-  async importOrders(orderIds: string[], importedBy: string = 'admin'): Promise<void> {
+  async importOrders(orderIds: string[], importedBy: string = 'admin'): Promise<ImportReportData> {
     try {
       console.log(`📦 Importing ${orderIds.length} mobile orders to orders table...`);
       
@@ -259,7 +261,16 @@ class MobileOrderImportService {
       
       if (ordersToImport.length === 0) {
         console.log('✅ All orders were already imported');
-        return;
+        // Still generate a report for tracking
+        const { data: mobileOrders } = await supabase
+          .from('mobile_orders')
+          .select('*')
+          .in('id', orderIds);
+        
+        const ordersData = (mobileOrders || []).map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
+        const report = mobileImportReportService.generateImportReport(ordersData, 'import', importedBy);
+        await importReportPersistenceService.saveImportReport(report);
+        return report;
       }
       
       // Get mobile orders data
@@ -450,16 +461,42 @@ class MobileOrderImportService {
         console.log('---');
       }
       
-      console.log('✅ Orders imported successfully with enhanced validation');
+      // Get the selected orders for the report (including already imported ones)
+      const { data: allMobileOrders } = await supabase
+        .from('mobile_orders')
+        .select('*')
+        .in('id', orderIds);
+      
+      const selectedOrdersData = (allMobileOrders || []).map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
+      
+      // Generate and save import report
+      const report = mobileImportReportService.generateImportReport(
+        selectedOrdersData,
+        'import',
+        importedBy
+      );
+      
+      await importReportPersistenceService.saveImportReport(report);
+      
+      console.log('✅ Orders imported successfully with enhanced validation and report saved');
+      return report;
     } catch (error) {
       console.error('❌ Error in importOrders:', error);
       throw error;
     }
   }
 
-  async rejectOrders(orderIds: string[], rejectedBy: string = 'admin'): Promise<void> {
+  async rejectOrders(orderIds: string[], rejectedBy: string = 'admin'): Promise<ImportReportData> {
     try {
       console.log(`🚫 Rejecting ${orderIds.length} mobile orders...`);
+      
+      // Get the orders for the report before rejecting
+      const { data: mobileOrders } = await supabase
+        .from('mobile_orders')
+        .select('*')
+        .in('id', orderIds);
+      
+      const selectedOrdersData = (mobileOrders || []).map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
       
       const { error } = await supabase
         .from('mobile_orders')
@@ -476,36 +513,31 @@ class MobileOrderImportService {
         throw error;
       }
       
-      console.log('✅ Mobile orders rejected successfully');
+      // Generate and save rejection report
+      const report = mobileImportReportService.generateImportReport(
+        selectedOrdersData,
+        'reject',
+        rejectedBy
+      );
+      
+      await importReportPersistenceService.saveImportReport(report);
+      
+      console.log('✅ Mobile orders rejected successfully and report saved');
+      return report;
     } catch (error) {
       console.error('❌ Error in rejectOrders:', error);
       throw error;
     }
   }
 
-  async getImportHistory(): Promise<Order[]> {
+  async getImportHistory(): Promise<any[]> {
     try {
       console.log('📊 Getting import history...');
       
-      const { data: mobileOrdersData, error: ordersError } = await supabase
-        .from('mobile_orders')
-        .select('*')
-        .eq('imported_to_orders', true)
-        .order('imported_at', { ascending: false })
-        .limit(100);
-      
-      if (ordersError) {
-        console.error('❌ Error getting import history:', ordersError);
-        throw ordersError;
-      }
-      
-      if (!mobileOrdersData || mobileOrdersData.length === 0) {
-        return [];
-      }
-      
-      const orders = mobileOrdersData.map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
-      console.log(`✅ Found ${orders.length} import history records`);
-      return orders;
+      // This method is now deprecated in favor of the new grouped history
+      // Return empty array to maintain compatibility
+      console.log('⚠️ This method is deprecated, use importReportPersistenceService.getImportHistory() instead');
+      return [];
     } catch (error) {
       console.error('❌ Error in getImportHistory:', error);
       throw error;

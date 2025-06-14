@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Order, MobileOrderGroup, ImportSelectionState } from '@/types';
+import { ImportHistoryRecord } from '@/types/importHistory';
 import { mobileOrderImportService } from '@/services/supabase/mobileOrderImportService';
-import { mobileImportReportService, ImportReportData } from '@/services/mobileImportReportService';
+import { importReportPersistenceService } from '@/services/supabase/importReportPersistenceService';
+import { ImportReportData } from '@/services/mobileImportReportService';
 import { toast } from '@/hooks/use-toast';
 
 export const useMobileOrderImport = () => {
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [groupedOrders, setGroupedOrders] = useState<MobileOrderGroup[]>([]);
-  const [importHistory, setImportHistory] = useState<Order[]>([]);
+  const [importHistory, setImportHistory] = useState<ImportHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
   const [selection, setSelection] = useState<ImportSelectionState>({
@@ -45,13 +47,30 @@ export const useMobileOrderImport = () => {
 
   const loadImportHistory = useCallback(async () => {
     try {
-      const history = await mobileOrderImportService.getImportHistory();
+      const history = await importReportPersistenceService.getImportHistory();
       setImportHistory(history);
     } catch (error) {
       console.error('❌ Error loading import history:', error);
       toast({
         title: "Erro ao carregar histórico",
         description: "Não foi possível carregar o histórico de importação.",
+        variant: "destructive"
+      });
+    }
+  }, []);
+
+  const loadSavedReport = useCallback(async (reportId: string) => {
+    try {
+      const report = await importReportPersistenceService.getImportReport(reportId);
+      if (report) {
+        setLastImportReport(report);
+        setShowReportModal(true);
+      }
+    } catch (error) {
+      console.error('❌ Error loading saved report:', error);
+      toast({
+        title: "Erro ao carregar relatório",
+        description: "Não foi possível carregar o relatório solicitado.",
         variant: "destructive"
       });
     }
@@ -100,18 +119,8 @@ export const useMobileOrderImport = () => {
       
       const orderIds = Array.from(selection.selectedOrders);
       
-      // Get the selected orders for the report
-      const selectedOrdersData = pendingOrders.filter(order => orderIds.includes(order.id));
-      
-      // Import orders with proper duplication check
-      await mobileOrderImportService.importOrders(orderIds);
-      
-      // Generate import report
-      const report = mobileImportReportService.generateImportReport(
-        selectedOrdersData,
-        'import',
-        'admin'
-      );
+      // Import orders and get report
+      const report = await mobileOrderImportService.importOrders(orderIds);
       
       setLastImportReport(report);
       
@@ -140,7 +149,7 @@ export const useMobileOrderImport = () => {
     } finally {
       setIsImporting(false);
     }
-  }, [selection.selectedOrders, pendingOrders, loadPendingOrders, loadImportHistory]);
+  }, [selection.selectedOrders, loadPendingOrders, loadImportHistory]);
 
   const rejectSelectedOrders = useCallback(async () => {
     if (selection.selectedOrders.size === 0) {
@@ -158,18 +167,8 @@ export const useMobileOrderImport = () => {
       
       const orderIds = Array.from(selection.selectedOrders);
       
-      // Get the selected orders for the report
-      const selectedOrdersData = pendingOrders.filter(order => orderIds.includes(order.id));
-      
-      // Reject orders
-      await mobileOrderImportService.rejectOrders(orderIds);
-      
-      // Generate rejection report
-      const report = mobileImportReportService.generateImportReport(
-        selectedOrdersData,
-        'reject',
-        'admin'
-      );
+      // Reject orders and get report
+      const report = await mobileOrderImportService.rejectOrders(orderIds);
       
       setLastImportReport(report);
       
@@ -198,7 +197,7 @@ export const useMobileOrderImport = () => {
     } finally {
       setIsImporting(false);
     }
-  }, [selection.selectedOrders, pendingOrders, loadPendingOrders, loadImportHistory]);
+  }, [selection.selectedOrders, loadPendingOrders, loadImportHistory]);
 
   const toggleOrderSelection = useCallback((orderId: string) => {
     setSelection(prev => {
@@ -272,6 +271,7 @@ export const useMobileOrderImport = () => {
     fixOrderData,
     lastImportReport,
     showReportModal,
-    setShowReportModal
+    setShowReportModal,
+    loadSavedReport
   };
 };

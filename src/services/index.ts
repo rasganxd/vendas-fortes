@@ -32,3 +32,6 @@ export { parseCustomerReportText } from '../utils/customerParser';
 
 // Mobile import report service
 export { mobileImportReportService } from './mobileImportReportService';
+
+// Import report persistence service
+export { importReportPersistenceService } from './supabase/importReportPersistenceService';

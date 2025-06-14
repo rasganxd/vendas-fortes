@@ -1,4 +1,3 @@
-
 // Re-export types from individual files for convenience
 export * from './customer';
 export * from './order';
@@ -18,3 +17,6 @@ export type {
   Load, 
   LoadItem 
 } from './delivery';
+
+// Import history types
+export type { ImportHistoryRecord } from './importHistory';

@@ -8,7 +8,7 @@ import { Smartphone, Import, History, FileText, Wrench } from "lucide-react";
 import { useMobileOrderImport } from '@/hooks/useMobileOrderImport';
 import { MobileOrderImportTable } from './MobileOrderImportTable';
 import { ImportControlPanel } from './ImportControlPanel';
-import { ImportHistoryTable } from './ImportHistoryTable';
+import { ImportHistoryGroupedTable } from './ImportHistoryGroupedTable';
 import MobileImportReportModal from '@/components/reports/MobileImportReportModal';
 
 export default function MobileOrderImport() {
@@ -29,7 +29,8 @@ export default function MobileOrderImport() {
     fixOrderData,
     lastImportReport,
     showReportModal,
-    setShowReportModal
+    setShowReportModal,
+    loadSavedReport
   } = useMobileOrderImport();
 
   const totalPendingValue = groupedOrders.reduce((sum, group) => sum + group.totalValue, 0);
@@ -106,7 +107,7 @@ export default function MobileOrderImport() {
               </TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
-                Histórico
+                Histórico de Importações
               </TabsTrigger>
             </TabsList>
 
@@ -134,9 +135,10 @@ export default function MobileOrderImport() {
             </TabsContent>
 
             <TabsContent value="history" className="mt-6">
-              <ImportHistoryTable
+              <ImportHistoryGroupedTable
                 importHistory={importHistory}
                 isLoading={isLoading}
+                onViewReport={loadSavedReport}
               />
             </TabsContent>
           </Tabs>
