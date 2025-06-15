@@ -44,6 +44,7 @@
     "@react-google-maps/api": "^2.19.2",
     "@supabase/supabase-js": "^2.49.8",
     "@tanstack/react-query": "^5.56.2",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/mapbox-gl": "^3.4.1",
     "@types/uuid": "^10.0.0",
     "class-variance-authority": "^0.7.1",

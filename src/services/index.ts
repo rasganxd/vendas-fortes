@@ -1,5 +1,5 @@
 
-// Export all services from a single file for easier imports
+// Re-export types from individual files for convenience
 export * from './local/index';
 
 // Re-export specific services
@@ -22,6 +22,9 @@ export { paymentTableService } from './supabase/paymentTableService';
 export { vehicleService } from './supabase/vehicleService';
 export { LoadService } from './supabase/loadService';
 export { mobileOrderImportService } from './supabase/mobileOrderImportService';
+
+// SQLite services
+export * from './sqlite';
 
 // Sales rep authentication service
 export { salesRepAuthService } from './local/salesRepAuthService';
