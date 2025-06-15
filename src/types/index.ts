@@ -20,3 +20,6 @@ export type {
 
 // Import history types
 export type { ImportHistoryRecord } from './importHistory';
+
+// Date filter types
+export * from './dateFilter';
