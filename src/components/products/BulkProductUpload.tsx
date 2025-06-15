@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { 
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,12 +9,10 @@ import { formatCurrency } from '@/lib/utils';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Product } from '@/types';
 import { useUnits } from '@/hooks/useUnits';
-
 interface BulkProductUploadProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
 interface ParsedProduct {
   code: number;
   name: string;
@@ -25,17 +21,22 @@ interface ParsedProduct {
   hasError: boolean;
   errorMessage?: string;
 }
-
 const SAMPLE_DATA = `CODIGO	NOME DO PRODUTO	UN	PRECO_CUSTO
 51	51 COM CASCO 965ML	DZ12	111.000000
 667	51 ICE BALADA 275ML	CX24	98.000000
 669	51 ICE FRUIT MIX 275ML	CX24	95.760000
 510	AGUA CRISTAL COM GAS 500ML	DZ12	
 48	AGUA FLORESTA SEM GAS 500ML	DZ12	9.000000`;
-
-const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChange }) => {
-  const { addBulkProducts } = useAppData();
-  const { units } = useUnits();
+const BulkProductUpload: React.FC<BulkProductUploadProps> = ({
+  open,
+  onOpenChange
+}) => {
+  const {
+    addBulkProducts
+  } = useAppData();
+  const {
+    units
+  } = useUnits();
   const [csvData, setCsvData] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [preview, setPreview] = useState<ParsedProduct[]>([]);
@@ -48,7 +49,6 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       setShowPreview(false);
     }
   }, [open]);
-
   const parseProductData = (line: string, lineNumber: number): ParsedProduct | null => {
     // Split by tab first, if no tabs use multiple spaces
     let parts = line.split('\t');
@@ -56,12 +56,12 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       // Try splitting by multiple spaces (2 or more)
       parts = line.split(/\s{2,}/);
     }
-    
+
     // If still only one part, try single spaces but be more careful
     if (parts.length === 1) {
       parts = line.trim().split(/\s+/);
     }
-    
+
     // We need at least 3 parts: code, name, unit, cost (cost can be empty)
     if (parts.length < 3) {
       return {
@@ -92,7 +92,6 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
     let name = '';
     let unit = '';
     let costStr = '';
-
     if (parts.length === 3) {
       // Simple case: CODE NAME UNIT (no cost)
       name = parts[1].trim();
@@ -115,7 +114,6 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
     let cost = 0;
     let hasError = false;
     let errorMessage = '';
-
     if (costStr && costStr !== '') {
       cost = parseFloat(costStr.replace(',', '.'));
       if (isNaN(cost)) {
@@ -131,7 +129,6 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       hasError = true;
       errorMessage = errorMessage ? `${errorMessage}; Unidade '${unit}' não encontrada` : `Unidade '${unit}' não encontrada`;
     }
-
     return {
       code,
       name: name || 'Nome não informado',
@@ -141,10 +138,8 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       errorMessage
     };
   };
-
   const processCSV = () => {
     setIsProcessing(true);
-    
     try {
       const lines = csvData.trim().split('\n');
       if (lines.length < 2) {
@@ -156,7 +151,6 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       // Skip header line
       const dataRows = lines.slice(1);
       const products: ParsedProduct[] = [];
-      
       dataRows.forEach((line, index) => {
         if (line.trim()) {
           const product = parseProductData(line, index + 2); // +2 because we skip header and start from line 1
@@ -165,23 +159,19 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
           }
         }
       });
-      
       if (products.length === 0) {
         toast.error("Nenhum produto válido encontrado nos dados.");
         setIsProcessing(false);
         return;
       }
-      
       setPreview(products);
       setShowPreview(true);
-      
       const errorsCount = products.filter(p => p.hasError).length;
       if (errorsCount > 0) {
         toast.warning(`${products.length} produtos processados, ${errorsCount} com problemas. Revise antes de importar.`);
       } else {
         toast.success(`${products.length} produtos processados com sucesso!`);
       }
-      
     } catch (error) {
       console.error("Error processing data:", error);
       toast.error("Erro ao processar dados. Verifique o formato.");
@@ -189,58 +179,50 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       setIsProcessing(false);
     }
   };
-
   const handleUpload = async () => {
     setIsProcessing(true);
-    
     try {
       console.log('🔄 [BulkProductUpload] Starting bulk upload process...');
-      
+
       // Filter out products with errors
       const validProducts = preview.filter(p => !p.hasError);
-      
       if (validProducts.length === 0) {
         toast.error("Nenhum produto válido para importar.");
         setIsProcessing(false);
         return;
       }
-
       console.log(`📊 [BulkProductUpload] Preparing ${validProducts.length} valid products for import`);
 
       // Convert to Product format with all required fields
       const productsToImport = validProducts.map(product => ({
         code: product.code,
         name: product.name,
-        description: '', // Required field, set to empty string
+        description: '',
+        // Required field, set to empty string
         cost: product.cost,
-        price: product.cost, // Set initial price equal to cost
+        price: product.cost,
+        // Set initial price equal to cost
         unit: product.unit,
         stock: 0,
         minStock: 0,
         hasSubunit: false,
         subunitRatio: 1,
-        createdAt: new Date(), // Required field
-        updatedAt: new Date()  // Required field
+        createdAt: new Date(),
+        // Required field
+        updatedAt: new Date() // Required field
       }));
-
       console.log("📝 [BulkProductUpload] Products being prepared for upload:", productsToImport);
-      
       const ids = await addBulkProducts(productsToImport);
       console.log("✅ [BulkProductUpload] Bulk upload completed. Product IDs:", ids);
-      
       const errorsCount = preview.filter(p => p.hasError).length;
-      const successMessage = errorsCount > 0 
-        ? `${validProducts.length} produtos importados com sucesso! ${errorsCount} produtos foram ignorados devido a erros.`
-        : `${validProducts.length} produtos importados com sucesso!`;
-      
+      const successMessage = errorsCount > 0 ? `${validProducts.length} produtos importados com sucesso! ${errorsCount} produtos foram ignorados devido a erros.` : `${validProducts.length} produtos importados com sucesso!`;
       toast.success(successMessage);
-      
+
       // Close dialog and reset state
       onOpenChange(false);
       setPreview([]);
       setShowPreview(false);
       setCsvData('');
-      
       console.log('🎉 [BulkProductUpload] Upload process completed successfully');
     } catch (error) {
       console.error("❌ [BulkProductUpload] Error uploading bulk products:", error);
@@ -249,29 +231,17 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       setIsProcessing(false);
     }
   };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Importação em Massa de Produtos</DialogTitle>
-          <DialogDescription>
-            Cole os dados dos produtos no formato: CÓDIGO, NOME DO PRODUTO, UNIDADE, PREÇO_CUSTO (separados por TAB ou espaços).
-          </DialogDescription>
+          
         </DialogHeader>
         
-        {!showPreview ? (
-          <div className="space-y-4">
+        {!showPreview ? <div className="space-y-4">
             <div className="grid w-full gap-1.5">
               <Label htmlFor="csv-data">Dados dos Produtos</Label>
-              <Textarea
-                id="csv-data"
-                value={csvData}
-                onChange={(e) => setCsvData(e.target.value)}
-                placeholder="Cole os dados aqui..."
-                rows={12}
-                className="font-mono text-sm"
-              />
+              <Textarea id="csv-data" value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="Cole os dados aqui..." rows={12} className="font-mono text-sm" />
               <p className="text-sm text-muted-foreground mt-1">
                 Formato: CÓDIGO [TAB/ESPAÇOS] NOME [TAB/ESPAÇOS] UNIDADE [TAB/ESPAÇOS] PREÇO_CUSTO
                 <br />
@@ -280,16 +250,12 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
             </div>
             
             <Button onClick={processCSV} disabled={isProcessing} className="w-full">
-              {isProcessing ? (
-                <>
+              {isProcessing ? <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processando...
-                </>
-              ) : "Processar e Visualizar"}
+                </> : "Processar e Visualizar"}
             </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
+          </div> : <div className="space-y-4">
             <div className="overflow-x-auto max-h-96">
               <table className="w-full border-collapse text-sm">
                 <thead className="sticky top-0 bg-background">
@@ -302,33 +268,25 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.map((product, index) => (
-                    <tr key={index} className={`border-b ${product.hasError ? 'bg-red-50' : 'bg-green-50'}`}>
+                  {preview.map((product, index) => <tr key={index} className={`border-b ${product.hasError ? 'bg-red-50' : 'bg-green-50'}`}>
                       <td className="py-2 px-2">
-                        {product.hasError ? (
-                          <div className="flex items-center text-red-600">
+                        {product.hasError ? <div className="flex items-center text-red-600">
                             <AlertTriangle className="h-4 w-4 mr-1" />
                             <span className="text-xs">Erro</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center text-green-600">
+                          </div> : <div className="flex items-center text-green-600">
                             <span className="text-xs">✓ OK</span>
-                          </div>
-                        )}
+                          </div>}
                       </td>
                       <td className="py-2 px-2">{product.code}</td>
                       <td className="py-2 px-2">
                         {product.name}
-                        {product.hasError && (
-                          <div className="text-xs text-red-500 mt-1">{product.errorMessage}</div>
-                        )}
+                        {product.hasError && <div className="text-xs text-red-500 mt-1">{product.errorMessage}</div>}
                       </td>
                       <td className="py-2 px-2 text-center">{product.unit}</td>
                       <td className="py-2 px-2 text-right">
                         {product.cost > 0 ? formatCurrency(product.cost) : '-'}
                       </td>
-                    </tr>
-                  ))}
+                    </tr>)}
                 </tbody>
               </table>
             </div>
@@ -345,24 +303,15 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
               <Button variant="outline" onClick={() => setShowPreview(false)} disabled={isProcessing}>
                 Voltar
               </Button>
-              <Button 
-                onClick={handleUpload} 
-                disabled={isProcessing || preview.filter(p => !p.hasError).length === 0} 
-                className="ml-auto"
-              >
-                {isProcessing ? (
-                  <>
+              <Button onClick={handleUpload} disabled={isProcessing || preview.filter(p => !p.hasError).length === 0} className="ml-auto">
+                {isProcessing ? <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Importando...
-                  </>
-                ) : `Importar ${preview.filter(p => !p.hasError).length} Produtos Válidos`}
+                  </> : `Importar ${preview.filter(p => !p.hasError).length} Produtos Válidos`}
               </Button>
             </div>
-          </div>
-        )}
+          </div>}
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default BulkProductUpload;
