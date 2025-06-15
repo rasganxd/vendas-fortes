@@ -1,4 +1,3 @@
-
 import { Customer } from '@/types';
 
 // Helper to convert date strings from IPC back to Date objects
@@ -27,15 +26,10 @@ class CustomerIpcService {
     return customers.map(customerFromIpc);
   }
 
-  async add(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async add(customer: Customer): Promise<void> {
     // The main process will handle ID and timestamps for Supabase, 
-    // but we can assume the IPC function for adding will return what's needed.
-    // Let's align with how `useCustomers` calls it.
-    // The `addCustomer` in `useCustomers` will handle the full object creation.
-    // This method might not be directly called if logic stays in useCustomers.
-    // For now, let's make it a placeholder.
-    console.warn("customerIpcService.add should be used with care. Business logic is in useCustomers.");
-    return "";
+    // we pass the full customer object to be added to SQLite.
+    return this.api.addCustomer(customer);
   }
   
   async update(id: string, updates: Partial<Customer>): Promise<void> {

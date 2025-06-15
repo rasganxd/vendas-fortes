@@ -11,12 +11,14 @@ console.log(`Database path: ${dbPath}`);
 const db = new Database(dbPath, { verbose: console.log });
 
 // Database schema. Starting with customers.
+// "name" is Razão Social (optional)
+// "fantasyName" is Nome Fantasia (required, as it's the display name)
 const schema = `
 CREATE TABLE IF NOT EXISTS customers (
     id TEXT PRIMARY KEY,
     code INTEGER UNIQUE,
-    name TEXT NOT NULL,
-    fantasyName TEXT,
+    name TEXT,
+    fantasyName TEXT NOT NULL,
     cnpj TEXT,
     email TEXT,
     phone TEXT,

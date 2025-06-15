@@ -15,40 +15,43 @@ export const useCustomers = () => {
   const { isOnline } = useConnection();
 
   const loadAndSyncCustomers = useCallback(async () => {
-    if (!isElectron) {
-        console.warn("Not in Electron. Skipping SQLite operations.");
-        setIsLoading(false);
-        return;
-    }
-    console.log("🔄 [useCustomers] Starting to load and sync customers...");
+    console.log("🔄 [useCustomers] Starting to load and sync customers...", { isElectron, isOnline });
     setIsLoading(true);
     try {
-      // 1. Load from SQLite for instant UI
-      const localData = await customerIpcService.getAll();
-      if (localData.length > 0) {
-        console.log(`✅ [useCustomers] Loaded ${localData.length} customers from SQLite.`);
-        setCustomers(localData);
-      }
+      if (isElectron) {
+        console.log("💻 [useCustomers] Running in Electron. Attempting to load from SQLite first.");
+        const localData = await customerIpcService.getAll();
+        if (localData.length > 0) {
+          console.log(`✅ [useCustomers] Loaded ${localData.length} customers from SQLite.`);
+          setCustomers(localData);
+        }
 
-      // 2. If online, sync with Supabase
-      if (isOnline) {
-        console.log("☁️ [useCustomers] Online. Syncing with Supabase...");
-        try {
+        if (isOnline) {
+          console.log("☁️ [useCustomers] Online. Syncing with Supabase...");
           const supabaseData = await customerService.getAll();
           console.log(`✅ [useCustomers] Fetched ${supabaseData.length} customers from Supabase.`);
-          await customerIpcService.setAll(supabaseData); // Overwrite local with remote source of truth
+          
+          await customerIpcService.setAll(supabaseData);
           setCustomers(supabaseData);
-          console.log("💾 [useCustomers] SQLite has been updated with Supabase data.");
-        } catch (e) {
-          console.error("❌ [useCustomers] Failed to sync with Supabase, continuing with local data.", e);
-          toast({
-            title: "Falha na sincronização",
-            description: "Não foi possível buscar os dados mais recentes. Usando dados locais.",
-            variant: "destructive"
-          });
+          console.log("💾 [useCustomers] Local DB synced with Supabase. UI updated.");
+        } else {
+          console.log("🔌 [useCustomers] Offline. Using local data.");
+          if (localData.length === 0) {
+            toast({ title: "Offline e sem dados locais", description: "Conecte-se à internet para baixar os dados dos clientes.", variant: "destructive" });
+          }
         }
-      } else {
-        console.log("🔌 [useCustomers] Offline. Using local data only.");
+      } else { // Not in Electron (web browser)
+        console.log("🌐 [useCustomers] Running in a web browser.");
+        if (isOnline) {
+          console.log("☁️ [useCustomers] Online. Fetching from Supabase...");
+          const supabaseData = await customerService.getAll();
+          setCustomers(supabaseData);
+          console.log(`✅ [useCustomers] Loaded ${supabaseData.length} customers from Supabase.`);
+        } else {
+          console.log("🔌 [useCustomers] Offline. Cannot load data in web mode.");
+          toast({ title: "Offline", description: "É preciso estar online para carregar os clientes.", variant: "destructive" });
+          setCustomers([]);
+        }
       }
     } catch (error) {
        console.error('❌ [useCustomers] Error loading customers:', error);
@@ -77,21 +80,21 @@ export const useCustomers = () => {
       const id = await customerService.add(customer);
       if (!id) throw new Error("Failed to get ID from Supabase");
       
+      // Creating a complete customer object to add to local state and SQLite
       const newCustomer: Customer = { 
         ...customer, 
         id,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        active: customer.active ?? true, // Ensure active has a default
       };
       
       if (isElectron) {
         console.log("💾 [useCustomers] Adding new customer to SQLite...");
-        // We use setAll with the updated list to ensure consistency, though a dedicated `add` in IPC would also work.
-        const updatedList = [...customers, newCustomer];
-        await customerIpcService.setAll(updatedList);
+        await customerIpcService.add(newCustomer);
       }
       
-      setCustomers(prev => [...prev, newCustomer].sort((a, b) => a.name.localeCompare(b.name)));
+      setCustomers(prev => [...prev, newCustomer].sort((a, b) => (a.name || '').localeCompare(b.name || '')));
       
       toast({ title: "✅ Cliente adicionado", description: `${newCustomer.name} foi adicionado.` });
       return id;
