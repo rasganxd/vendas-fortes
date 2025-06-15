@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Order, MobileOrderGroup, ImportSelectionState } from '@/types';
 import { ImportHistoryRecord } from '@/types/importHistory';
@@ -87,14 +86,17 @@ export const useMobileOrderImport = () => {
       return;
     }
 
+    console.log('[Import] Starting import process...');
     try {
       setIsImporting(true);
-      console.log(`📦 Importing ${selection.selectedOrders.size} selected orders...`);
+      console.log(`[Import] 📦 Importing ${selection.selectedOrders.size} selected orders...`);
       
       const orderIds = Array.from(selection.selectedOrders);
+      console.log('[Import] Order IDs to import:', orderIds);
       
       // Import orders and get report
       const report = await mobileOrderImportService.importOrders(orderIds);
+      console.log('[Import] ✅ Import successful, report generated.');
       
       setLastImportReport(report);
       
@@ -108,19 +110,22 @@ export const useMobileOrderImport = () => {
         )
       });
       
+      console.log('[Import] Resetting selection and reloading data...');
       // Reset selection and reload data
       setSelection({ selectedOrders: new Set(), selectedSalesReps: new Set() });
       await loadPendingOrders();
       await loadImportHistory();
+      console.log('[Import] Data reloaded.');
       
     } catch (error) {
-      console.error('❌ Error importing orders:', error);
+      console.error('❌ [Import] Error importing orders:', error);
       toast({
         title: "Erro na importação",
         description: "Ocorreu um erro ao importar os pedidos.",
         variant: "destructive"
       });
     } finally {
+      console.log('[Import] Import process finished.');
       setIsImporting(false);
     }
   }, [selection.selectedOrders, loadPendingOrders, loadImportHistory]);

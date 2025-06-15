@@ -1,55 +1,65 @@
 
-// This file now provides a no-op toast implementation
-// All toast functionality has been removed
+import { toast as sonnerToast } from 'sonner';
+import type { ReactElement } from 'react';
 
 // Type definitions to maintain compatibility with existing code
 export interface ToastProps {
   title?: React.ReactNode;
   description?: React.ReactNode;
-  action?: React.ReactElement;
+  action?: ReactElement;
   variant?: "default" | "destructive" | "warning";
 }
 
-export type ToastActionElement = React.ReactElement;
+export type ToastActionElement = ReactElement;
 
-/**
- * No-op implementation of toast functions
- * This maintains compatibility with existing code but doesn't show notifications
- */
-export function toast(
-  titleOrOptions: string | ToastProps,
+type SonnerToastOptions = Parameters<typeof sonnerToast>[1];
+
+// Overloaded function to handle both object-based and string-based calls
+function toastOverload(props: ToastProps): void;
+function toastOverload(
+  title: string,
   options?: { description?: React.ReactNode; variant?: "default" | "destructive" | "warning" }
-) {
-  // Log to console instead of showing notification
-  if (typeof titleOrOptions === 'object') {
-    console.log('[Toast]', titleOrOptions.title, titleOrOptions.description || '');
+): void;
+function toastOverload(
+  propsOrTitle: ToastProps | string,
+  options?: { description?: React.ReactNode; variant?: "default" | "destructive" | "warning" }
+): void {
+  if (typeof propsOrTitle === 'string') {
+    const title = propsOrTitle;
+    const toastOptions: SonnerToastOptions = { description: options?.description };
+
+    switch (options?.variant) {
+      case 'destructive': sonnerToast.error(title, toastOptions); break;
+      case 'warning': sonnerToast.warning(title, toastOptions); break;
+      default: sonnerToast.message(title, toastOptions); break;
+    }
   } else {
-    console.log('[Toast]', titleOrOptions, options?.description || '');
+    const { title, description, action, variant } = propsOrTitle;
+    const toastOptions: SonnerToastOptions = { description, action };
+
+    switch (variant) {
+      case 'destructive': sonnerToast.error(title, toastOptions); break;
+      case 'warning': sonnerToast.warning(title, toastOptions); break;
+      default: sonnerToast.message(title, toastOptions); break;
+    }
   }
-  
-  // Return an empty string as ID for compatibility
-  return '';
 }
 
-// No-op versions of the shorthand methods
-toast.success = (message: string, options?: { description?: React.ReactNode }) => {
-  console.log('[Toast Success]', message, options?.description || '');
-  return '';
-};
+// Assign shorthand methods to the main toast function
+export const toast = Object.assign(toastOverload, {
+  success: (message: string, options?: { description?: React.ReactNode }) => {
+    sonnerToast.success(message, options);
+  },
+  error: (message: string, options?: { description?: React.ReactNode }) => {
+    sonnerToast.error(message, options);
+  },
+  warning: (message: string, options?: { description?: React.ReactNode }) => {
+    sonnerToast.warning(message, options);
+  },
+});
 
-toast.error = (message: string, options?: { description?: React.ReactNode }) => {
-  console.log('[Toast Error]', message, options?.description || '');
-  return '';
-};
-
-toast.warning = (message: string, options?: { description?: React.ReactNode }) => {
-  console.log('[Toast Warning]', message, options?.description || '');
-  return '';
-};
-
-/**
- * No-op implementation of useToast
- */
 export function useToast() {
-  return { toast };
+  return {
+    toast,
+  };
 }
