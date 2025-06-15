@@ -315,7 +315,8 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
                 <TableRow>
                   <TableHead>Status</TableHead>
                   <TableHead>Código</TableHead>
-                  <TableHead>Nome</TableHead>
+                  <TableHead>Nome Fantasia</TableHead>
+                  <TableHead>Razão Social</TableHead>
                   <TableHead>Cidade</TableHead>
                   <TableHead>UF</TableHead>
                   <TableHead>Vendedor</TableHead>
@@ -339,6 +340,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
                       </TableCell>
                       <TableCell>{customer.code}</TableCell>
                       <TableCell>{customer.name}</TableCell>
+                      <TableCell>{customer.companyName || '-'}</TableCell>
                       <TableCell>{customer.city}</TableCell>
                       <TableCell>{customer.state}</TableCell>
                       <TableCell>{customer.salesRepName || '-'}</TableCell>

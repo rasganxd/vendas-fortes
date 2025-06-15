@@ -1,4 +1,3 @@
-
 import { Customer } from '@/types/customer';
 
 interface SpreadsheetCustomerData {
@@ -96,8 +95,8 @@ function parseCustomerLine(line: string, lineNumber: number): Omit<Customer, 'id
     // Map columns based on expected spreadsheet format
     const [
       codeStr,
-      companyName,
-      name,
+      companyNameValue,
+      nameValue,
       address,
       number,
       neighborhood,
@@ -126,8 +125,8 @@ function parseCustomerLine(line: string, lineNumber: number): Omit<Customer, 'id
     // Create customer object
     const customer: Omit<Customer, 'id'> = {
       code,
-      name: name || companyName || `Cliente ${code}`,
-      companyName: companyName || '',
+      name: nameValue || companyNameValue || `Cliente ${code}`,
+      companyName: companyNameValue || '',
       phone: phone || '',
       address: fullAddress || '',
       neighborhood: neighborhood || '', // Campo bairro incluído
@@ -148,6 +147,7 @@ function parseCustomerLine(line: string, lineNumber: number): Omit<Customer, 'id
     console.log(`[SpreadsheetParser] Parsed customer on line ${lineNumber}:`, {
       code: customer.code,
       name: customer.name,
+      companyName: customer.companyName,
       neighborhood: customer.neighborhood,
       city: customer.city,
       state: customer.state
