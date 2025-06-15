@@ -1,5 +1,6 @@
 
 import { createCorsResponse } from '../utils/cors.ts';
+import { validateMobileOrder, createValidationErrorResponse } from '../utils/orderValidation.ts';
 
 export async function syncOrders(
   supabase: any,
@@ -49,6 +50,29 @@ export async function receiveOrders(
     
     for (const orderData of orders) {
       try {
+        console.log(`🔍 Processing order ${orderData.id} from mobile app`);
+        
+        // VALIDAÇÃO RIGOROSA: Rejeitar pedidos com dados inconsistentes
+        const validation = validateMobileOrder(orderData);
+        
+        if (!validation.isValid) {
+          console.error(`❌ Order ${orderData.id} failed validation:`, validation.errors);
+          
+          processedOrders.push({
+            localId: orderData.id,
+            serverId: null,
+            status: 'validation_error',
+            errorCode: validation.errorCode,
+            validationErrors: validation.errors,
+            error: `Order validation failed: ${validation.errors.join(', ')}`
+          });
+          
+          // Continue para o próximo pedido, não salvar este
+          continue;
+        }
+        
+        console.log(`✅ Order ${orderData.id} passed validation, proceeding with save`);
+        
         // Insert order into mobile_orders table
         const { data: insertedOrder, error: orderError } = await supabase
           .from('mobile_orders')
@@ -86,7 +110,16 @@ export async function receiveOrders(
         
         if (orderError) {
           console.error('❌ Error inserting mobile order:', orderError);
-          throw orderError;
+          
+          processedOrders.push({
+            localId: orderData.id,
+            serverId: null,
+            status: 'database_error',
+            errorCode: 'DB_INSERT_FAILED',
+            error: `Database error: ${orderError.message}`
+          });
+          
+          continue;
         }
         
         // Insert order items if they exist
@@ -110,7 +143,22 @@ export async function receiveOrders(
           
           if (itemsError) {
             console.error('❌ Error inserting mobile order items:', itemsError);
-            throw itemsError;
+            
+            // Rollback: remover o pedido se os itens falharam
+            await supabase
+              .from('mobile_orders')
+              .delete()
+              .eq('id', insertedOrder.id);
+            
+            processedOrders.push({
+              localId: orderData.id,
+              serverId: null,
+              status: 'items_error',
+              errorCode: 'ITEMS_INSERT_FAILED',
+              error: `Items insertion failed: ${itemsError.message}`
+            });
+            
+            continue;
           }
         }
         
@@ -129,6 +177,7 @@ export async function receiveOrders(
           localId: orderData.id,
           serverId: null,
           status: 'error',
+          errorCode: 'PROCESSING_ERROR',
           error: orderError.message
         });
       }
@@ -136,9 +185,22 @@ export async function receiveOrders(
     
     console.log(`✅ Processed ${processedOrders.length} orders for sales rep ${salesRepId}`);
     
+    // Contar resultados para log
+    const successCount = processedOrders.filter(o => o.status === 'synced').length;
+    const validationErrorCount = processedOrders.filter(o => o.status === 'validation_error').length;
+    const errorCount = processedOrders.length - successCount;
+    
+    console.log(`📊 Results: ${successCount} synced, ${validationErrorCount} validation errors, ${errorCount - validationErrorCount} other errors`);
+    
     return {
       processedOrders,
-      syncedAt: new Date().toISOString()
+      syncedAt: new Date().toISOString(),
+      summary: {
+        total: processedOrders.length,
+        synced: successCount,
+        validationErrors: validationErrorCount,
+        otherErrors: errorCount - validationErrorCount
+      }
     };
     
   } catch (error) {
@@ -147,6 +209,14 @@ export async function receiveOrders(
   }
 }
 
-export async function handleSyncOrders(supabase: any, salesRepCode: string, lastSync?: string) {
-  return await syncOrders(supabase, salesRepCode);
+export async function handleSyncOrders(supabase: any, salesRepCode: string, lastSync?: string, ordersToSync?: any[]) {
+  // Se há pedidos para sincronizar (enviados do mobile), processa eles
+  if (ordersToSync && ordersToSync.length > 0) {
+    console.log(`📱 Processing ${ordersToSync.length} orders from mobile`);
+    return createCorsResponse(await receiveOrders(supabase, ordersToSync, salesRepCode));
+  }
+  
+  // Caso contrário, retorna pedidos pendentes para o mobile
+  const result = await syncOrders(supabase, salesRepCode);
+  return createCorsResponse(result);
 }

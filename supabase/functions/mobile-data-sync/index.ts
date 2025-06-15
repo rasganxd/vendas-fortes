@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { salesRepCode, action, lastSync }: SyncRequest = await req.json();
+    const { salesRepCode, action, lastSync, orders }: SyncRequest & { orders?: any[] } = await req.json();
     console.log(`📱 [mobile-data-sync] Action: ${action}, Sales Rep Code: ${salesRepCode}`);
 
     // Validate sales rep code for all actions except get_sales_rep
@@ -30,7 +30,8 @@ Deno.serve(async (req) => {
     if (validationError) {
       return createCorsResponse({ 
         success: false, 
-        error: validationError 
+        error: validationError,
+        errorCode: 'INVALID_SALES_REP'
       }, 400);
     }
 
@@ -45,12 +46,14 @@ Deno.serve(async (req) => {
         return await handleGetProducts(supabase);
 
       case 'sync_orders':
-        return await handleSyncOrders(supabase, salesRepCode!, lastSync);
+        // Passa os pedidos se estiverem presentes no payload
+        return await handleSyncOrders(supabase, salesRepCode!, lastSync, orders);
 
       default:
         return createCorsResponse({ 
           success: false, 
-          error: 'Invalid action' 
+          error: 'Invalid action',
+          errorCode: 'INVALID_ACTION'
         }, 400);
     }
 
@@ -59,6 +62,7 @@ Deno.serve(async (req) => {
     return createCorsResponse({ 
       success: false, 
       error: 'Internal server error',
+      errorCode: 'INTERNAL_ERROR',
       details: error.message 
     }, 500);
   }
