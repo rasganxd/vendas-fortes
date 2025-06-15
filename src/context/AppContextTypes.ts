@@ -1,4 +1,3 @@
-
 import { Customer, Product, Order, Payment, Vehicle, SalesRep, PaymentMethod, PaymentTable, ProductGroup, ProductCategory, ProductBrand, DeliveryRoute, Backup, AppSettings } from '@/types';
 import { Load } from '@/types';
 import { createContext } from 'react';
@@ -74,6 +73,10 @@ export interface SystemContextType {
   validateProductDiscount: (productId: string, discountedPrice: number) => string | boolean;
   getMinimumPrice: (productId: string) => number;
   addBulkProducts: (products: Omit<Product, 'id'>[]) => Promise<string[]>;
+  batchUpdateProducts: (
+    updates: Array<{ id: string; data: Partial<Product> }>,
+    onProgress?: (progress: number, currentProduct?: string) => void
+  ) => Promise<{ success: number; failed: string[] }>;
   
   // Operações de pedido - changed to Promise<string>
   getOrderById: (id: string) => Promise<Order | null>;

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { Customer, Product, ProductBrand, ProductCategory, ProductGroup, SalesRep, Vehicle, DeliveryRoute, Load, Order, Payment, PaymentMethod, PaymentTable } from '@/types';
 import { useAppOperations } from '@/context/operations/useAppOperations';
@@ -117,6 +116,12 @@ interface AppDataContextType {
 
   // Data refresh function
   refreshData: () => Promise<boolean>;
+
+  // Add the missing batch update method
+  batchUpdateProducts: (
+    updates: Array<{ id: string; data: Partial<Product> }>,
+    onProgress?: (progress: number, currentProduct?: string) => void
+  ) => Promise<{ success: number; failed: string[] }>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -337,7 +342,8 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     settings: {
       primaryColor: '#3b82f6'
     },
-    refreshData
+    refreshData,
+    batchUpdateProducts: productOperations.batchUpdateProducts
   };
 
   console.log('✅ [AppDataProvider] Provider value assembled:', {

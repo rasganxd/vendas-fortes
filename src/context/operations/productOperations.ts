@@ -1,4 +1,3 @@
-
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -93,9 +92,12 @@ export const updateProduct = async (
       throw new Error(`Produto com ID ${id} não encontrado no estado local`);
     }
     
+    // Extract the bulk update flag and prepare clean update data
+    const { _isBulkUpdate, ...cleanProductData } = productData as Partial<Product> & { _isBulkUpdate?: boolean };
+    
     // Prepare update data with proper validation
     const updateData = { 
-      ...productData, 
+      ...cleanProductData, 
       updatedAt: new Date() 
     };
     
@@ -138,7 +140,7 @@ export const updateProduct = async (
     
     // Don't show toast for individual updates during bulk operations
     // The bulk operation will handle its own error reporting
-    if (!productData._isBulkUpdate) {
+    if (!_isBulkUpdate) {
       toast({
         title: "Erro ao atualizar produto",
         description: `Erro: ${errorMessage}`,
