@@ -341,7 +341,7 @@ class MobileOrderImportService {
         console.log(`✅ Order imported as ${insertedOrder.id} with mobile_order_id: ${mobileOrder.id}`);
         console.log(`💳 Payment: method="${paymentMethod}", table="${paymentTableName || 'none'}"`);
         
-        // Insert order items if they exist with enhanced validation
+        // Insert order items if they exist with corrected schema
         const orderItems = (mobileOrderItems || []).filter(item => item.mobile_order_id === mobileOrder.id);
         
         if (orderItems.length > 0) {
@@ -349,7 +349,6 @@ class MobileOrderImportService {
           
           const itemsToInsert = orderItems.map(item => ({
             order_id: insertedOrder.id,
-            product_id: this.sanitizeUUID(item.product_id), // Also sanitize product_id
             product_name: item.product_name,
             product_code: item.product_code,
             quantity: item.quantity,
