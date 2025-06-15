@@ -24,20 +24,32 @@ export const useMobileOrderImport = () => {
   const loadPendingOrders = useCallback(async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Loading pending mobile orders...');
+      console.log('🔄 [useMobileOrderImport] Loading pending mobile orders...');
       
       const orders = await mobileOrderImportService.getPendingMobileOrders();
+      console.log(`📊 [useMobileOrderImport] Received ${orders.length} pending orders`);
+      
       setPendingOrders(orders);
       
-      const grouped = await mobileOrderImportService.groupOrdersBySalesRep(orders);
-      setGroupedOrders(grouped);
+      if (orders.length > 0) {
+        const grouped = await mobileOrderImportService.groupOrdersBySalesRep(orders);
+        console.log(`📊 [useMobileOrderImport] Created ${grouped.length} sales rep groups`);
+        setGroupedOrders(grouped);
+      } else {
+        setGroupedOrders([]);
+      }
       
-      console.log('✅ Pending orders loaded successfully');
+      console.log('✅ [useMobileOrderImport] Pending orders loaded successfully');
     } catch (error) {
-      console.error('❌ Error loading pending orders:', error);
+      console.error('❌ [useMobileOrderImport] Error loading pending orders:', error);
+      
+      // Set empty states on error
+      setPendingOrders([]);
+      setGroupedOrders([]);
+      
       toast({
         title: "Erro ao carregar pedidos",
-        description: "Não foi possível carregar os pedidos pendentes.",
+        description: `Não foi possível carregar os pedidos pendentes: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -47,10 +59,12 @@ export const useMobileOrderImport = () => {
 
   const loadImportHistory = useCallback(async () => {
     try {
+      console.log('📊 [useMobileOrderImport] Loading import history...');
       const history = await importReportPersistenceService.getImportHistory();
+      console.log(`📊 [useMobileOrderImport] Loaded ${history.length} import history records`);
       setImportHistory(history);
     } catch (error) {
-      console.error('❌ Error loading import history:', error);
+      console.error('❌ [useMobileOrderImport] Error loading import history:', error);
       toast({
         title: "Erro ao carregar histórico",
         description: "Não foi possível carregar o histórico de importação.",
@@ -61,13 +75,14 @@ export const useMobileOrderImport = () => {
 
   const loadSavedReport = useCallback(async (reportId: string) => {
     try {
+      console.log(`📊 [useMobileOrderImport] Loading saved report: ${reportId}`);
       const report = await importReportPersistenceService.getImportReport(reportId);
       if (report) {
         setLastImportReport(report);
         setShowReportModal(true);
       }
     } catch (error) {
-      console.error('❌ Error loading saved report:', error);
+      console.error('❌ [useMobileOrderImport] Error loading saved report:', error);
       toast({
         title: "Erro ao carregar relatório",
         description: "Não foi possível carregar o relatório solicitado.",
@@ -86,17 +101,17 @@ export const useMobileOrderImport = () => {
       return;
     }
 
-    console.log('[Import] Starting import process...');
+    console.log('[useMobileOrderImport] Starting import process...');
     try {
       setIsImporting(true);
-      console.log(`[Import] 📦 Importing ${selection.selectedOrders.size} selected orders...`);
+      console.log(`[useMobileOrderImport] 📦 Importing ${selection.selectedOrders.size} selected orders...`);
       
       const orderIds = Array.from(selection.selectedOrders);
-      console.log('[Import] Order IDs to import:', orderIds);
+      console.log('[useMobileOrderImport] Order IDs to import:', orderIds);
       
       // Import orders and get report
       const report = await mobileOrderImportService.importOrders(orderIds);
-      console.log('[Import] ✅ Import successful, report generated.');
+      console.log('[useMobileOrderImport] ✅ Import successful, report generated.');
       
       setLastImportReport(report);
       
@@ -110,22 +125,22 @@ export const useMobileOrderImport = () => {
         )
       });
       
-      console.log('[Import] Resetting selection and reloading data...');
+      console.log('[useMobileOrderImport] Resetting selection and reloading data...');
       // Reset selection and reload data
       setSelection({ selectedOrders: new Set(), selectedSalesReps: new Set() });
       await loadPendingOrders();
       await loadImportHistory();
-      console.log('[Import] Data reloaded.');
+      console.log('[useMobileOrderImport] Data reloaded.');
       
     } catch (error) {
-      console.error('❌ [Import] Error importing orders:', error);
+      console.error('❌ [useMobileOrderImport] Error importing orders:', error);
       toast({
         title: "Erro na importação",
-        description: "Ocorreu um erro ao importar os pedidos.",
+        description: `Ocorreu um erro ao importar os pedidos: ${error.message}`,
         variant: "destructive"
       });
     } finally {
-      console.log('[Import] Import process finished.');
+      console.log('[useMobileOrderImport] Import process finished.');
       setIsImporting(false);
     }
   }, [selection.selectedOrders, loadPendingOrders, loadImportHistory]);
@@ -142,7 +157,7 @@ export const useMobileOrderImport = () => {
 
     try {
       setIsImporting(true);
-      console.log(`🚫 Rejecting ${selection.selectedOrders.size} selected orders...`);
+      console.log(`🚫 [useMobileOrderImport] Rejecting ${selection.selectedOrders.size} selected orders...`);
       
       const orderIds = Array.from(selection.selectedOrders);
       
@@ -167,10 +182,10 @@ export const useMobileOrderImport = () => {
       await loadImportHistory();
       
     } catch (error) {
-      console.error('❌ Error rejecting orders:', error);
+      console.error('❌ [useMobileOrderImport] Error rejecting orders:', error);
       toast({
         title: "Erro na rejeição",
-        description: "Ocorreu um erro ao rejeitar os pedidos.",
+        description: `Ocorreu um erro ao rejeitar os pedidos: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -225,13 +240,27 @@ export const useMobileOrderImport = () => {
   }, []);
 
   const refreshData = useCallback(async () => {
+    console.log('🔄 [useMobileOrderImport] Refreshing all data...');
     await Promise.all([loadPendingOrders(), loadImportHistory()]);
+    console.log('✅ [useMobileOrderImport] All data refreshed');
   }, [loadPendingOrders, loadImportHistory]);
 
   useEffect(() => {
+    console.log('🚀 [useMobileOrderImport] Component mounted, loading initial data...');
     loadPendingOrders();
     loadImportHistory();
   }, [loadPendingOrders, loadImportHistory]);
+
+  // Debug log when states change
+  useEffect(() => {
+    console.log('📊 [useMobileOrderImport] State update:', {
+      pendingOrdersCount: pendingOrders.length,
+      groupedOrdersCount: groupedOrders.length,
+      isLoading,
+      selectedOrdersCount: selection.selectedOrders.size,
+      selectedSalesRepsCount: selection.selectedSalesReps.size
+    });
+  }, [pendingOrders, groupedOrders, isLoading, selection]);
 
   return {
     pendingOrders,

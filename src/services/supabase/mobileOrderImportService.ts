@@ -7,7 +7,7 @@ import { mobileImportReportService, ImportReportData } from '../mobileImportRepo
 class MobileOrderImportService {
   async getPendingMobileOrders(): Promise<Order[]> {
     try {
-      console.log('🔍 Getting pending mobile orders...');
+      console.log('🔍 [MobileOrderImportService] Getting pending mobile orders...');
       
       const { data: mobileOrdersData, error: ordersError } = await supabase
         .from('mobile_orders')
@@ -16,26 +16,44 @@ class MobileOrderImportService {
         .order('created_at', { ascending: false });
       
       if (ordersError) {
-        console.error('❌ Error getting pending mobile orders:', ordersError);
+        console.error('❌ [MobileOrderImportService] Error getting pending mobile orders:', ordersError);
         throw ordersError;
       }
       
+      console.log(`📊 [MobileOrderImportService] Found ${mobileOrdersData?.length || 0} pending mobile orders`);
+      
       if (!mobileOrdersData || mobileOrdersData.length === 0) {
-        console.log('📝 No pending mobile orders found');
+        console.log('📝 [MobileOrderImportService] No pending mobile orders found');
         return [];
       }
       
+      // Log each mobile order for debugging
+      mobileOrdersData.forEach((order, index) => {
+        console.log(`📋 [MobileOrderImportService] Mobile order ${index + 1}:`, {
+          id: order.id,
+          code: order.code,
+          total: order.total,
+          customer_name: order.customer_name,
+          sales_rep_name: order.sales_rep_name,
+          imported_to_orders: order.imported_to_orders
+        });
+      });
+      
       // Get order items for all mobile orders
       const orderIds = mobileOrdersData.map(order => order.id);
+      console.log(`🔍 [MobileOrderImportService] Getting items for ${orderIds.length} orders...`);
+      
       const { data: itemsData, error: itemsError } = await supabase
         .from('mobile_order_items')
         .select('*')
         .in('mobile_order_id', orderIds);
       
       if (itemsError) {
-        console.error('❌ Error getting mobile order items:', itemsError);
+        console.error('❌ [MobileOrderImportService] Error getting mobile order items:', itemsError);
         throw itemsError;
       }
+      
+      console.log(`📦 [MobileOrderImportService] Found ${itemsData?.length || 0} items for pending orders`);
       
       // Group items by order id
       const itemsByOrderId: Record<string, any[]> = {};
@@ -58,37 +76,54 @@ class MobileOrderImportService {
         });
       });
       
-      const orders = mobileOrdersData.map(orderData => {
-        return OrderTransformations.transformFromMobileOrder({
-          ...orderData,
-          items: itemsByOrderId[orderData.id] || []
-        });
-      });
+      // Transform mobile orders to Order objects
+      const orders: Order[] = [];
+      for (const orderData of mobileOrdersData) {
+        try {
+          const transformedOrder = OrderTransformations.transformFromMobileOrder({
+            ...orderData,
+            items: itemsByOrderId[orderData.id] || []
+          });
+          orders.push(transformedOrder);
+        } catch (error) {
+          console.error(`❌ [MobileOrderImportService] Failed to transform order ${orderData.id}:`, error);
+          // Continue with other orders instead of failing completely
+        }
+      }
       
-      // Log negative orders
+      // Log negative orders and regular orders separately
       const negativeOrders = orders.filter(order => order.total === 0 && order.rejectionReason);
       const regularOrders = orders.filter(order => order.total > 0);
       
-      console.log(`✅ Found ${orders.length} pending mobile orders:`);
+      console.log(`✅ [MobileOrderImportService] Successfully transformed ${orders.length} orders:`);
       console.log(`  - ${regularOrders.length} sales orders`);
       console.log(`  - ${negativeOrders.length} negative orders (visits)`);
       
       return orders;
     } catch (error) {
-      console.error('❌ Error in getPendingMobileOrders:', error);
+      console.error('❌ [MobileOrderImportService] Error in getPendingMobileOrders:', error);
       throw error;
     }
   }
 
   async groupOrdersBySalesRep(orders: Order[]): Promise<MobileOrderGroup[]> {
+    console.log(`📊 [MobileOrderImportService] Grouping ${orders.length} orders by sales rep...`);
+    
     const groups = new Map<string, MobileOrderGroup>();
     
-    orders.forEach(order => {
-      const key = order.salesRepId;
+    orders.forEach((order, index) => {
+      console.log(`📋 [MobileOrderImportService] Processing order ${index + 1}:`, {
+        id: order.id,
+        salesRepId: order.salesRepId,
+        salesRepName: order.salesRepName,
+        total: order.total
+      });
+      
+      const key = order.salesRepId || 'unknown';
       if (!groups.has(key)) {
         groups.set(key, {
-          salesRepId: order.salesRepId,
-          salesRepName: order.salesRepName,
+          salesRepId: order.salesRepId || 'unknown',
+          salesRepName: order.salesRepName || 'Vendedor sem nome',
           orders: [],
           totalValue: 0,
           count: 0
@@ -104,7 +139,14 @@ class MobileOrderImportService {
       group.count++;
     });
     
-    return Array.from(groups.values()).sort((a, b) => a.salesRepName.localeCompare(b.salesRepName));
+    const groupsArray = Array.from(groups.values()).sort((a, b) => a.salesRepName.localeCompare(b.salesRepName));
+    
+    console.log(`✅ [MobileOrderImportService] Created ${groupsArray.length} groups:`);
+    groupsArray.forEach((group, index) => {
+      console.log(`  Group ${index + 1}: ${group.salesRepName} - ${group.count} orders, R$ ${group.totalValue}`);
+    });
+    
+    return groupsArray;
   }
 
   async importOrders(orderIds: string[], importedBy: string = 'admin'): Promise<ImportReportData> {

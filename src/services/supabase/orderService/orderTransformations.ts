@@ -1,4 +1,3 @@
-
 import { Order, OrderItem } from '@/types';
 
 export class OrderTransformations {
@@ -43,43 +42,121 @@ export class OrderTransformations {
   }
 
   static transformFromMobileOrder(mobileOrderData: any): Order {
-    return {
+    console.log('🔄 [OrderTransformations] Transforming mobile order:', {
       id: mobileOrderData.id,
       code: mobileOrderData.code,
-      customerId: mobileOrderData.customer_id || '',
-      customerName: mobileOrderData.customer_name || '',
-      customerCode: mobileOrderData.customer_code,
-      salesRepId: mobileOrderData.sales_rep_id || '',
-      salesRepName: mobileOrderData.sales_rep_name || '',
-      date: new Date(mobileOrderData.date),
-      dueDate: new Date(mobileOrderData.due_date || mobileOrderData.date),
-      deliveryDate: mobileOrderData.delivery_date ? new Date(mobileOrderData.delivery_date) : undefined,
-      items: mobileOrderData.items || [],
-      total: Number(mobileOrderData.total || 0),
-      discount: Number(mobileOrderData.discount || 0),
-      status: mobileOrderData.status || 'pending',
-      paymentStatus: mobileOrderData.payment_status || 'pending',
-      paymentMethod: mobileOrderData.payment_method || '',
-      paymentMethodId: mobileOrderData.payment_method_id || '',
-      paymentTableId: mobileOrderData.payment_table_id || '',
-      paymentTable: mobileOrderData.payment_table,
-      payments: mobileOrderData.payments || [],
-      notes: mobileOrderData.notes || '',
-      createdAt: new Date(mobileOrderData.created_at),
-      updatedAt: new Date(mobileOrderData.updated_at),
-      archived: false,
-      deliveryAddress: mobileOrderData.delivery_address || '',
-      deliveryCity: mobileOrderData.delivery_city || '',
-      deliveryState: mobileOrderData.delivery_state || '',
-      deliveryZip: mobileOrderData.delivery_zip || '',
-      importStatus: mobileOrderData.imported_to_orders ? 'imported' : 'pending',
-      importedAt: mobileOrderData.imported_at ? new Date(mobileOrderData.imported_at) : undefined,
-      importedBy: mobileOrderData.imported_by,
-      sourceProject: 'mobile',
-      mobileOrderId: mobileOrderData.mobile_order_id || mobileOrderData.id,
-      rejectionReason: mobileOrderData.rejection_reason,
-      visitNotes: mobileOrderData.visit_notes
-    };
+      total: mobileOrderData.total,
+      customerId: mobileOrderData.customer_id,
+      salesRepId: mobileOrderData.sales_rep_id,
+      status: mobileOrderData.status
+    });
+
+    try {
+      // Validate required fields
+      if (!mobileOrderData.id) {
+        throw new Error('Mobile order ID is required');
+      }
+
+      if (!mobileOrderData.code) {
+        throw new Error('Mobile order code is required');
+      }
+
+      // Ensure we have valid customer and sales rep data
+      const customerId = mobileOrderData.customer_id || '';
+      const customerName = mobileOrderData.customer_name || 'Cliente sem nome';
+      const salesRepId = mobileOrderData.sales_rep_id || '';
+      const salesRepName = mobileOrderData.sales_rep_name || 'Vendedor sem nome';
+
+      if (!customerId && !customerName) {
+        console.warn('⚠️ [OrderTransformations] Mobile order missing customer data:', mobileOrderData.id);
+      }
+
+      if (!salesRepId && !salesRepName) {
+        console.warn('⚠️ [OrderTransformations] Mobile order missing sales rep data:', mobileOrderData.id);
+      }
+
+      // Parse dates safely
+      let orderDate: Date;
+      try {
+        orderDate = new Date(mobileOrderData.date || mobileOrderData.created_at);
+        if (isNaN(orderDate.getTime())) {
+          orderDate = new Date();
+        }
+      } catch (error) {
+        console.warn('⚠️ [OrderTransformations] Invalid date, using current date:', error);
+        orderDate = new Date();
+      }
+
+      let dueDate: Date;
+      try {
+        dueDate = new Date(mobileOrderData.due_date || mobileOrderData.date || mobileOrderData.created_at);
+        if (isNaN(dueDate.getTime())) {
+          dueDate = orderDate;
+        }
+      } catch (error) {
+        console.warn('⚠️ [OrderTransformations] Invalid due date, using order date:', error);
+        dueDate = orderDate;
+      }
+
+      // Parse numeric values safely
+      const total = Number(mobileOrderData.total || 0);
+      const discount = Number(mobileOrderData.discount || 0);
+      const customerCode = mobileOrderData.customer_code ? Number(mobileOrderData.customer_code) : undefined;
+
+      // Determine import status
+      const importStatus = mobileOrderData.imported_to_orders ? 'imported' : 'pending';
+
+      const transformedOrder: Order = {
+        id: mobileOrderData.id,
+        code: Number(mobileOrderData.code),
+        customerId,
+        customerName,
+        customerCode,
+        salesRepId,
+        salesRepName,
+        date: orderDate,
+        dueDate: dueDate,
+        deliveryDate: mobileOrderData.delivery_date ? new Date(mobileOrderData.delivery_date) : undefined,
+        items: mobileOrderData.items || [],
+        total,
+        discount,
+        status: mobileOrderData.status || 'pending',
+        paymentStatus: mobileOrderData.payment_status || 'pending',
+        paymentMethod: mobileOrderData.payment_method || '',
+        paymentMethodId: mobileOrderData.payment_method_id || '',
+        paymentTableId: mobileOrderData.payment_table_id || '',
+        paymentTable: mobileOrderData.payment_table || '',
+        payments: mobileOrderData.payments || [],
+        notes: mobileOrderData.notes || '',
+        createdAt: new Date(mobileOrderData.created_at),
+        updatedAt: new Date(mobileOrderData.updated_at),
+        archived: false,
+        deliveryAddress: mobileOrderData.delivery_address || '',
+        deliveryCity: mobileOrderData.delivery_city || '',
+        deliveryState: mobileOrderData.delivery_state || '',
+        deliveryZip: mobileOrderData.delivery_zip || '',
+        importStatus,
+        importedAt: mobileOrderData.imported_at ? new Date(mobileOrderData.imported_at) : undefined,
+        importedBy: mobileOrderData.imported_by,
+        sourceProject: 'mobile',
+        mobileOrderId: mobileOrderData.mobile_order_id || mobileOrderData.id,
+        rejectionReason: mobileOrderData.rejection_reason,
+        visitNotes: mobileOrderData.visit_notes
+      };
+
+      console.log('✅ [OrderTransformations] Successfully transformed mobile order:', {
+        id: transformedOrder.id,
+        code: transformedOrder.code,
+        total: transformedOrder.total,
+        importStatus: transformedOrder.importStatus
+      });
+
+      return transformedOrder;
+    } catch (error) {
+      console.error('❌ [OrderTransformations] Error transforming mobile order:', error);
+      console.error('❌ [OrderTransformations] Original data:', mobileOrderData);
+      throw new Error(`Failed to transform mobile order ${mobileOrderData.id}: ${error.message}`);
+    }
   }
 
   static transformToDB(order: Partial<Order>): any {
