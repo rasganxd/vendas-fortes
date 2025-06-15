@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -44,6 +43,7 @@ const ProductPricing = () => {
     productCategories,
     productGroups,
     updateProduct,
+    batchUpdateProducts,
     isLoadingProducts
   } = useAppData();
   
@@ -250,7 +250,7 @@ const ProductPricing = () => {
     setShowConfirmation(true);
   };
 
-  // Enhanced save function with progress tracking
+  // Enhanced save function with batch processing
   const saveAllPrices = async (forceOverride = false) => {
     if (!hasChanges) return;
 
@@ -275,79 +275,74 @@ const ProductPricing = () => {
     setProductStatuses({});
 
     try {
-      let successCount = 0;
-      const errors: string[] = [];
-
-      for (let i = 0; i < changes.length; i++) {
-        const change = changes[i];
-        setCurrentSaving(change.product.name);
-        setSaveProgress(i + 1);
-
-        // Update product status to saving
-        setProductStatuses(prev => ({
-          ...prev,
-          [change.product.id]: 'saving'
-        }));
-
-        try {
-          const updateData: any = {};
-          
-          if (change.oldPrice !== change.newPrice) {
-            updateData.price = change.newPrice;
-          }
-          if (change.oldMaxDiscount !== change.newMaxDiscount) {
-            updateData.maxDiscountPercent = change.newMaxDiscount;
-          }
-
-          await updateProduct(change.product.id, updateData);
-          successCount++;
-
-          // Update product status to saved
-          setProductStatuses(prev => ({
-            ...prev,
-            [change.product.id]: 'saved'
-          }));
-
-          // Clear status after delay
-          setTimeout(() => {
-            setProductStatuses(prev => ({
-              ...prev,
-              [change.product.id]: 'none'
-            }));
-          }, 3000);
-
-        } catch (error) {
-          console.error(`Erro ao salvar produto ${change.product.name}:`, error);
-          const errorMsg = `${change.product.name}: Erro ao salvar`;
-          errors.push(errorMsg);
-
-          // Update product status to error
-          setProductStatuses(prev => ({
-            ...prev,
-            [change.product.id]: 'error'
-          }));
+      console.log(`🔄 [ProductPricing] Starting batch update for ${changes.length} products`);
+      
+      // Prepare batch updates
+      const updates = changes.map(change => ({
+        id: change.product.id,
+        data: {
+          ...(change.oldPrice !== change.newPrice && { price: change.newPrice }),
+          ...(change.oldMaxDiscount !== change.newMaxDiscount && { maxDiscountPercent: change.newMaxDiscount })
         }
+      }));
 
-        // Small delay between saves
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      // Progress handler
+      const handleProgress = (progress: number, currentProduct?: string) => {
+        setSaveProgress(Math.ceil((progress / 100) * changes.length));
+        if (currentProduct) {
+          setCurrentSaving(currentProduct);
+        }
+      };
 
-      setSaveErrors(errors);
+      // Set all products to saving status
+      const initialStatuses: Record<string, ProductStatus> = {};
+      changes.forEach(change => {
+        initialStatuses[change.product.id] = 'saving';
+      });
+      setProductStatuses(initialStatuses);
+
+      // Execute batch update
+      const result = await batchUpdateProducts(updates, handleProgress);
+      
+      console.log(`📊 [ProductPricing] Batch update completed:`, result);
+
+      // Update product statuses based on results
+      const finalStatuses: Record<string, ProductStatus> = {};
+      changes.forEach(change => {
+        finalStatuses[change.product.id] = 'saved';
+      });
+      
+      // Mark failed products as error
+      result.failed.forEach(errorMsg => {
+        const productName = errorMsg.split(':')[0];
+        const failedProduct = changes.find(c => c.product.name === productName);
+        if (failedProduct) {
+          finalStatuses[failedProduct.product.id] = 'error';
+        }
+      });
+      
+      setProductStatuses(finalStatuses);
+      setSaveErrors(result.failed);
 
       // Show completion for a moment
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (successCount > 0) {
+      if (result.success > 0) {
         toast("Preços salvos", {
-          description: errors.length > 0 
-            ? `${successCount} produtos salvos com sucesso. ${errors.length} com problemas.`
-            : `${successCount} produtos salvos com sucesso.`
+          description: result.failed.length > 0 
+            ? `${result.success} produtos salvos com sucesso. ${result.failed.length} com problemas.`
+            : `${result.success} produtos salvos com sucesso.`
         });
         setHasChanges(false);
+        
+        // Clear statuses after delay
+        setTimeout(() => {
+          setProductStatuses({});
+        }, 3000);
       }
 
     } catch (error) {
-      console.error("Erro geral ao salvar preços:", error);
+      console.error("❌ [ProductPricing] Error in batch save:", error);
       toast("Erro ao salvar", {
         description: "Ocorreu um erro geral ao salvar os preços.",
         style: {

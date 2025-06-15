@@ -8,7 +8,8 @@ import {
   validateProductDiscount as validateProductDiscountOp,
   getMaximumDiscount as getMaximumDiscountOp,
   getMinimumEffectivePrice as getMinimumEffectivePriceOp,
-  addBulkProducts as addBulkProductsOp
+  addBulkProducts as addBulkProductsOp,
+  batchUpdateProducts as batchUpdateProductsOp
 } from '@/context/operations/productOperations';
 
 export const useProductOperations = (
@@ -83,6 +84,27 @@ export const useProductOperations = (
     }
   };
 
+  const batchUpdateProducts = async (
+    updates: Array<{ id: string; data: Partial<Product> }>,
+    onProgress?: (progress: number, currentProduct?: string) => void
+  ): Promise<{ success: number; failed: string[] }> => {
+    setIsProcessing(true);
+    try {
+      console.log(`🔄 [useProductOperations] Starting batch update of ${updates.length} products...`);
+      
+      const result = await batchUpdateProductsOp(updates, products, setProducts, onProgress);
+      
+      console.log(`✅ [useProductOperations] Batch update completed:`, result);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ [useProductOperations] Batch update failed:', error);
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return {
     addProduct,
     updateProduct,
@@ -91,6 +113,7 @@ export const useProductOperations = (
     getMaximumDiscount,
     getMinimumEffectivePrice,
     addBulkProducts,
+    batchUpdateProducts,
     isProcessing
   };
 };

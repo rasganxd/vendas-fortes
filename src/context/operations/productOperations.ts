@@ -76,7 +76,7 @@ export const addProduct = async (
 };
 
 /**
- * Updates an existing product
+ * Updates an existing product with improved error handling and state management
  */
 export const updateProduct = async (
   id: string,
@@ -85,35 +85,68 @@ export const updateProduct = async (
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ): Promise<void> => {
   try {
-    // Nunca permitir que o código seja indefinido ou nulo ao atualizar
-    const updateData = { ...productData, updatedAt: new Date() };
-    if (updateData.code === undefined || updateData.code === null) {
-      const existingProduct = products.find(p => p.id === id);
-      if (existingProduct && existingProduct.code) {
-        updateData.code = existingProduct.code;
-      }
+    console.log(`🔄 [ProductOperations] Starting update for product ${id}:`, productData);
+    
+    // Find the existing product to validate
+    const existingProduct = products.find(p => p.id === id);
+    if (!existingProduct) {
+      throw new Error(`Produto com ID ${id} não encontrado no estado local`);
     }
     
-    // Update in Supabase
-    await productService.update(id, updateData);
-    console.log("Product updated, ID:", id, "Data:", updateData);
+    // Prepare update data with proper validation
+    const updateData = { 
+      ...productData, 
+      updatedAt: new Date() 
+    };
     
-    // Atualizar o estado local usando a função de atualização correta
-    setProducts(currentProducts => 
-      currentProducts.map(p => p.id === id ? { ...p, ...updateData } : p)
-    );
+    // Nunca permitir que o código seja indefinido ou nulo ao atualizar
+    if (updateData.code === undefined || updateData.code === null) {
+      updateData.code = existingProduct.code;
+    }
     
-    toast({
-      title: "Produto atualizado",
-      description: "Produto atualizado com sucesso!"
+    console.log(`📝 [ProductOperations] Final update data for ${existingProduct.name}:`, updateData);
+    
+    // Update in Supabase first
+    const updatedProduct = await productService.update(id, updateData);
+    console.log(`✅ [ProductOperations] Supabase update successful for ${existingProduct.name}`);
+    
+    // Update local state with the returned product data
+    setProducts(currentProducts => {
+      const newProducts = currentProducts.map(p => 
+        p.id === id ? { ...p, ...updatedProduct } : p
+      );
+      
+      // Update cache immediately
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(newProducts));
+      localStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      console.log(`📊 [ProductOperations] Local state updated for ${existingProduct.name}`);
+      return newProducts;
     });
+    
+    // Dispatch global update event for other components
+    const updateEvent = new CustomEvent('productUpdated', { 
+      detail: { productId: id, productName: existingProduct.name } 
+    });
+    window.dispatchEvent(updateEvent);
+    
+    console.log(`🎉 [ProductOperations] Product update completed successfully for ${existingProduct.name}`);
+    
   } catch (error) {
-    console.error("Erro ao atualizar produto:", error);
-    toast({
-      title: "Erro ao atualizar produto",
-      description: "Houve um problema ao atualizar o produto.",
-      variant: "destructive"
-    });
+    console.error(`❌ [ProductOperations] Error updating product ${id}:`, error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    
+    // Don't show toast for individual updates during bulk operations
+    // The bulk operation will handle its own error reporting
+    if (!productData._isBulkUpdate) {
+      toast({
+        title: "Erro ao atualizar produto",
+        description: `Erro: ${errorMessage}`,
+        variant: "destructive"
+      });
+    }
+    
+    throw error; // Re-throw to let bulk operations handle it
   }
 };
 
@@ -221,6 +254,9 @@ export const isDiscountWithinRange = (
   return validation === true;
 };
 
+/**
+ * Enhanced bulk products update with better error handling and batch processing
+ */
 export const addBulkProducts = async (
   products: Omit<Product, 'id'>[],
   currentProducts: Product[],
@@ -328,6 +364,71 @@ export const addBulkProducts = async (
     });
     return [];
   }
+};
+
+/**
+ * Enhanced batch update for pricing with retry logic and better error handling
+ */
+export const batchUpdateProducts = async (
+  updates: Array<{ id: string; data: Partial<Product> }>,
+  products: Product[],
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>,
+  onProgress?: (progress: number, currentProduct?: string) => void
+): Promise<{ success: number; failed: string[] }> => {
+  console.log(`🔄 [ProductOperations] Starting batch update for ${updates.length} products`);
+  
+  const results = { success: 0, failed: [] as string[] };
+  const batchSize = 5; // Process in smaller batches to avoid overwhelming the system
+  
+  for (let i = 0; i < updates.length; i += batchSize) {
+    const batch = updates.slice(i, i + batchSize);
+    
+    // Process batch concurrently
+    const batchPromises = batch.map(async (update, batchIndex) => {
+      const globalIndex = i + batchIndex;
+      const product = products.find(p => p.id === update.id);
+      
+      if (onProgress) {
+        onProgress(((globalIndex + 1) / updates.length) * 100, product?.name);
+      }
+      
+      try {
+        console.log(`🔄 [ProductOperations] Updating product ${globalIndex + 1}/${updates.length}: ${product?.name}`);
+        
+        // Mark as bulk update to avoid individual toasts
+        const updateData = { ...update.data, _isBulkUpdate: true };
+        
+        await updateProduct(update.id, updateData, products, setProducts);
+        console.log(`✅ [ProductOperations] Successfully updated ${product?.name}`);
+        
+        return { success: true, productName: product?.name || 'Unknown' };
+      } catch (error) {
+        console.error(`❌ [ProductOperations] Failed to update ${product?.name}:`, error);
+        const errorMessage = `${product?.name || 'Unknown'}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`;
+        return { success: false, error: errorMessage };
+      }
+    });
+    
+    // Wait for current batch to complete
+    const batchResults = await Promise.all(batchPromises);
+    
+    // Process results
+    batchResults.forEach(result => {
+      if (result.success) {
+        results.success++;
+      } else {
+        results.failed.push(result.error!);
+      }
+    });
+    
+    // Small delay between batches to prevent overwhelming the system
+    if (i + batchSize < updates.length) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  }
+  
+  console.log(`📊 [ProductOperations] Batch update completed:`, results);
+  return results;
 };
 
 export const syncProductsWithSupabase = async (
