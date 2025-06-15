@@ -55,6 +55,10 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                   <TableCell>{customer.code || '—'}</TableCell>
                 </TableRow>
                 <TableRow>
+                  <TableCell className="font-medium">Razão Social</TableCell>
+                  <TableCell>{customer.companyName || '—'}</TableCell>
+                </TableRow>
+                <TableRow>
                   <TableCell className="font-medium">CNPJ/CPF</TableCell>
                   <TableCell>{customer.document || '—'}</TableCell>
                 </TableRow>
@@ -63,16 +67,8 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                   <TableCell>{customer.phone || '—'}</TableCell>
                 </TableRow>
                 <TableRow>
-                  
-                  
-                </TableRow>
-                <TableRow>
                   <TableCell className="font-medium">Vendedor</TableCell>
                   <TableCell>{customer.salesRepName || '—'}</TableCell>
-                </TableRow>
-                <TableRow>
-                  
-                  
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Atualizado em</TableCell>
@@ -93,6 +89,10 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                 <TableRow>
                   <TableCell className="font-medium">Endereço</TableCell>
                   <TableCell>{customer.address || '—'}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Bairro</TableCell>
+                  <TableCell>{customer.neighborhood || '—'}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Cidade</TableCell>
