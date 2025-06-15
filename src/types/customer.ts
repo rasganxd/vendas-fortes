@@ -26,6 +26,7 @@ export interface Customer {
   paymentTerms?: string; // Added missing field
   region?: string; // Added missing field
   category?: string; // Added missing field
+  active?: boolean;
   email?: string; // Make email optional for backward compatibility
 }
 

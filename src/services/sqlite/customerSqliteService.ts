@@ -3,99 +3,149 @@ import db from './db';
 import { Customer } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
+const rowToCustomer = (row: any): Customer => ({
+  id: row.id,
+  code: row.code,
+  name: row.fantasyName, // Nome Fantasia
+  companyName: row.name, // Razão Social
+  document: row.cnpj,
+  phone: row.phone,
+  address: row.address,
+  city: row.city,
+  state: row.state,
+  zip: row.zip,
+  notes: row.notes || '',
+  createdAt: new Date(row.createdAt),
+  updatedAt: new Date(row.updatedAt),
+  salesRepId: row.salesRepId,
+  salesRepName: row.salesRepName,
+  visitFrequency: row.visitFrequency,
+  active: row.active === 1,
+  email: row.email,
+});
+
 class CustomerSqliteService {
-  /**
-   * Obtém todos os clientes do banco de dados.
-   */
-  getAll(): Customer[] {
-    const stmt = db.prepare('SELECT * FROM customers ORDER BY name');
-    const customers = stmt.all().map(c => ({
-      ...c,
-      active: c.active === 1,
-      createdAt: new Date(c.createdAt),
-      updatedAt: new Date(c.updatedAt),
-    }));
-    return customers as Customer[];
+  getAll(): Promise<Customer[]> {
+    return new Promise((resolve) => {
+      const stmt = db.prepare('SELECT * FROM customers ORDER BY fantasyName');
+      const rows = stmt.all() as any[];
+      resolve(rows.map(rowToCustomer));
+    });
   }
 
-  /**
-   * Obtém um cliente pelo ID.
-   */
-  getById(id: string): Customer | null {
-    const stmt = db.prepare('SELECT * FROM customers WHERE id = ?');
-    const customer = stmt.get(id);
-    if (customer) {
-      return {
-        ...customer,
-        active: customer.active === 1,
-        createdAt: new Date(customer.createdAt),
-        updatedAt: new Date(customer.updatedAt),
-      } as Customer;
-    }
-    return null;
+  getById(id: string): Promise<Customer | null> {
+    return new Promise((resolve) => {
+      const stmt = db.prepare('SELECT * FROM customers WHERE id = ?');
+      const row = stmt.get(id) as any;
+      resolve(row ? rowToCustomer(row) : null);
+    });
   }
 
-  /**
-   * Adiciona um novo cliente.
-   */
-  add(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): string {
-    const id = uuidv4();
-    const { code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency } = customer;
-    
-    const stmt = db.prepare(
-      `INSERT INTO customers (id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    );
-    
-    stmt.run(id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active === false ? 0 : 1);
-    return id;
+  add(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+    return new Promise((resolve) => {
+      const id = uuidv4();
+      const { code, name, companyName, document, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, notes } = customer as Customer;
+      
+      const stmt = db.prepare(
+        `INSERT INTO customers (id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, notes, createdAt, updatedAt) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+      );
+      
+      stmt.run(id, code, companyName, name, document, email, phone, address, city, state, zip, salesRepId, salesRepName, active === false ? 0 : 1, visitFrequency, notes);
+      resolve(id);
+    });
   }
 
-  /**
-   * Atualiza um cliente existente.
-   */
-  update(id: string, updates: Partial<Customer>): void {
-    const fields = Object.keys(updates).filter(k => k !== 'id');
-    const values = fields.map(field => (updates as any)[field]);
+  update(id: string, updates: Partial<Customer>): Promise<void> {
+    return new Promise((resolve) => {
+      const dbUpdates: Record<string, any> = {};
 
-    const setClause = fields.map(field => `${field} = ?`).join(', ');
+      if (updates.name !== undefined) dbUpdates.fantasyName = updates.name;
+      if (updates.companyName !== undefined) dbUpdates.name = updates.companyName;
+      if (updates.document !== undefined) dbUpdates.cnpj = updates.document;
+      if (updates.active !== undefined) dbUpdates.active = updates.active ? 1 : 0;
 
-    const stmt = db.prepare(`UPDATE customers SET ${setClause} WHERE id = ?`);
-    stmt.run(...values, id);
+      const allowedKeys: (keyof Customer)[] = ['email', 'phone', 'address', 'city', 'state', 'zip', 'salesRepId', 'salesRepName', 'visitFrequency', 'notes'];
+      allowedKeys.forEach(key => {
+        if (updates[key] !== undefined) {
+          dbUpdates[key] = updates[key];
+        }
+      });
+      
+      const fields = Object.keys(dbUpdates);
+      if (fields.length === 0) {
+        return resolve();
+      }
+
+      const setClause = fields.map(field => `${field} = ?`).join(', ');
+      const values = fields.map(field => dbUpdates[field]);
+
+      const stmt = db.prepare(`UPDATE customers SET ${setClause} WHERE id = ?`);
+      stmt.run(...values, id);
+      resolve();
+    });
   }
 
-  /**
-   * Deleta um cliente.
-   */
-  delete(id: string): void {
-    const stmt = db.prepare('DELETE FROM customers WHERE id = ?');
-    stmt.run(id);
+  delete(id: string): Promise<void> {
+    return new Promise((resolve) => {
+      const stmt = db.prepare('DELETE FROM customers WHERE id = ?');
+      stmt.run(id);
+      resolve();
+    });
   }
 
-  /**
-   * Obtém um cliente pelo código.
-   */
-  getByCode(code: number): Customer | null {
-    const stmt = db.prepare('SELECT * FROM customers WHERE code = ?');
-    const customer = stmt.get(code);
-     if (customer) {
-      return {
-        ...customer,
-        active: customer.active === 1,
-        createdAt: new Date(customer.createdAt),
-        updatedAt: new Date(customer.updatedAt),
-      } as Customer;
-    }
-    return null;
+  getByCode(code: number): Promise<Customer | null> {
+    return new Promise((resolve) => {
+      const stmt = db.prepare('SELECT * FROM customers WHERE code = ?');
+      const row = stmt.get(code) as any;
+      resolve(row ? rowToCustomer(row) : null);
+    });
   }
 
-  /**
-   * Obtém o maior código de cliente utilizado.
-   */
-  getHighestCode(): number {
-    const stmt = db.prepare('SELECT MAX(code) as maxCode FROM customers');
-    const result = stmt.get();
-    return result.maxCode || 0;
+  getHighestCode(): Promise<number> {
+    return new Promise((resolve) => {
+      const stmt = db.prepare('SELECT MAX(code) as maxCode FROM customers');
+      const result = stmt.get() as { maxCode: number | null };
+      resolve(result?.maxCode || 0);
+    });
+  }
+  
+  setAll(customers: Customer[]): Promise<void> {
+    return new Promise((resolve) => {
+      const insert = db.prepare(
+          `INSERT INTO customers (id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, notes, createdAt, updatedAt) 
+           VALUES (@id, @code, @name, @fantasyName, @cnpj, @email, @phone, @address, @city, @state, @zip, @salesRepId, @salesRepName, @active, @visitFrequency, @notes, @createdAt, @updatedAt)`
+      );
+
+      const insertMany = db.transaction((customersToInsert: Customer[]) => {
+          db.prepare('DELETE FROM customers').run();
+          for (const customer of customersToInsert) {
+              insert.run({
+                  id: customer.id,
+                  code: customer.code,
+                  name: customer.companyName,
+                  fantasyName: customer.name,
+                  cnpj: customer.document,
+                  email: customer.email,
+                  phone: customer.phone,
+                  address: customer.address,
+                  city: customer.city,
+                  state: customer.state,
+                  zip: customer.zip,
+                  salesRepId: customer.salesRepId,
+                  salesRepName: customer.salesRepName,
+                  active: (customer.active ?? true) ? 1 : 0,
+                  visitFrequency: customer.visitFrequency,
+                  notes: customer.notes,
+                  createdAt: (customer.createdAt || new Date()).toISOString(),
+                  updatedAt: (customer.updatedAt || new Date()).toISOString(),
+              });
+          }
+      });
+
+      insertMany(customers);
+      resolve();
+    });
   }
 }
 

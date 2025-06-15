@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabase/customerService';
-import { customerLocalService } from '@/services/local/customerLocalService';
+import { customerSqliteService } from '@/services/sqlite/customerSqliteService';
 import { useCustomerCache } from './useCustomerCache';
 import { useCustomerConnection } from './useCustomerConnection';
 
@@ -54,8 +54,8 @@ export const useCustomerLoader = () => {
               // Update cache with Supabase data
               saveToCache(validSupabaseCustomers);
               
-              // Also update the local storage service
-              await customerLocalService.setAll(validSupabaseCustomers);
+              // Also update the local database service
+              await customerSqliteService.setAll(validSupabaseCustomers);
               
               customers = validSupabaseCustomers;
             }
@@ -68,11 +68,11 @@ export const useCustomerLoader = () => {
       // If we couldn't load from Supabase, try local storage
       if (customers.length === 0) {
         try {
-          console.log('Fetching customers from local storage');
-          const localCustomers = await customerLocalService.getAll();
+          console.log('Fetching customers from local database');
+          const localCustomers = await customerSqliteService.getAll();
           
           if (localCustomers.length > 0) {
-            console.log(`Loaded ${localCustomers.length} customers from local storage`);
+            console.log(`Loaded ${localCustomers.length} customers from local database`);
             
             // Filter out invalid customers
             const validLocalCustomers = filterValidCustomers(localCustomers);
@@ -83,7 +83,7 @@ export const useCustomerLoader = () => {
             customers = validLocalCustomers;
           }
         } catch (localError) {
-          console.error('Error fetching from local storage:', localError);
+          console.error('Error fetching from local database:', localError);
         }
       }
       
@@ -115,7 +115,7 @@ export const useCustomerLoader = () => {
             saveToCache(validSupabaseCustomers);
             
             // Also update the local storage service
-            await customerLocalService.setAll(validSupabaseCustomers);
+            await customerSqliteService.setAll(validSupabaseCustomers);
             
             return validSupabaseCustomers;
           }
@@ -125,7 +125,7 @@ export const useCustomerLoader = () => {
       }
       
       // Fall back to local storage
-      const localCustomers = await customerLocalService.getAll();
+      const localCustomers = await customerSqliteService.getAll();
       const validLocalCustomers = filterValidCustomers(localCustomers);
       return validLocalCustomers;
     } catch (error) {

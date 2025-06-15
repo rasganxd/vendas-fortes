@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS customers (
     salesRepName TEXT,
     active BOOLEAN DEFAULT TRUE,
     visitFrequency TEXT,
+    notes TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
