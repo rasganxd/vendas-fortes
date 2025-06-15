@@ -15,7 +15,6 @@ import { Customer } from '@/types/customer';
 import { toast } from '@/components/ui/use-toast';
 import { Upload, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { parseCustomerSpreadsheet, validateCustomerData } from '@/utils/customerSpreadsheetParser';
-import { parseCustomerReportText } from '@/utils/customerParser';
 import { useSalesReps } from '@/hooks/useSalesReps';
 import {
   Select,
@@ -24,10 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  RadioGroup,
-  RadioGroupItem
-} from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +31,16 @@ interface BulkCustomerImportProps {
   onImportCustomers: (customers: Omit<Customer, 'id'>[]) => Promise<string[]>;
   isImporting?: boolean;
 }
+
+const WEEKDAYS = [
+  { value: 'segunda', label: 'Segunda-feira' },
+  { value: 'terca', label: 'Terça-feira' },
+  { value: 'quarta', label: 'Quarta-feira' },
+  { value: 'quinta', label: 'Quinta-feira' },
+  { value: 'sexta', label: 'Sexta-feira' },
+  { value: 'sabado', label: 'Sábado' },
+  { value: 'domingo', label: 'Domingo' },
+];
 
 const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   onImportCustomers,
@@ -48,7 +53,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
     invalid: { customer: Omit<Customer, 'id'>; errors: string[] }[];
   }>({ valid: [], invalid: [] });
   const [selectedSalesRepId, setSelectedSalesRepId] = useState<string>('');
-  const [formatType, setFormatType] = useState<string>('spreadsheet'); // 'spreadsheet' or 'report'
+  const [selectedWeekday, setSelectedWeekday] = useState<string>('');
   const { salesReps } = useSalesReps();
   
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -69,15 +74,9 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
         return;
       }
 
-      console.log(`[BulkImport] Parsing customers with format: ${formatType}`);
+      console.log(`[BulkImport] Parsing customers with spreadsheet format`);
       
-      let customers: Omit<Customer, 'id'>[];
-      
-      if (formatType === 'spreadsheet') {
-        customers = parseCustomerSpreadsheet(rawText);
-      } else {
-        customers = parseCustomerReportText(rawText);
-      }
+      const customers = parseCustomerSpreadsheet(rawText);
       
       if (customers.length === 0) {
         toast({
@@ -97,6 +96,13 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
             customer.salesRepName = selectedSalesRep.name;
           });
         }
+      }
+
+      // Apply the selected weekday to all customers if one is selected
+      if (selectedWeekday) {
+        customers.forEach(customer => {
+          customer.visitDays = [selectedWeekday];
+        });
       }
       
       // Validate customers
@@ -202,22 +208,20 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
     }
   };
 
-  const handleFormatChange = (value: string) => {
-    setFormatType(value);
-    // Clear any previously parsed customers when changing format
-    setParsedCustomers([]);
-    setValidationResults({ valid: [], invalid: [] });
-  };
-
-  const getFormatPlaceholder = () => {
-    if (formatType === 'spreadsheet') {
-      return `CLIEN	RAZÃO SOCIAL	NOME FANTASIA	ENDEREÇO	NÚMERO	BAIRRO	CEP	CIDADE	FONE	CPF/CNPJ	VEN	SEQ DE VISITA	ESTADO
-1	JOSE MARIA RODRIGUES	CATADOR INDIVIDUAL	RUA ALBINO CAMPOS	318D	SANTO ANTONIO	89800-000	CHAPECO	(49) 99999-9999	123.456.789-00	001	1	SC`;
-    } else {
-      return `CLIEN RAZAO SOCIAL                CANAL                          EMP
-ENDERECO                        BAIRRO              CEP         EXCL ESP
-CIDADE                      UF  COMPRADOR           FONE        ANIVER.
-CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
+  const handleWeekdayChange = (value: string) => {
+    setSelectedWeekday(value);
+    
+    // If we already have parsed customers, update them with the new weekday
+    if (parsedCustomers.length > 0) {
+      const updatedCustomers = parsedCustomers.map(customer => ({
+        ...customer,
+        visitDays: value ? [value] : [],
+      }));
+      setParsedCustomers(updatedCustomers);
+      
+      // Re-validate with updated data
+      const validation = validateCustomerData(updatedCustomers);
+      setValidationResults(validation);
     }
   };
 
@@ -239,47 +243,53 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Formato de importação</AlertTitle>
             <AlertDescription>
-              Selecione o formato dos dados que você deseja importar.
+              Cole os dados da planilha no formato: CÓDIGO, NOME, ENDEREÇO, etc. (separados por TAB ou espaços múltiplos).
             </AlertDescription>
           </Alert>
 
-          <RadioGroup 
-            value={formatType} 
-            onValueChange={handleFormatChange}
-            className="flex space-x-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="spreadsheet" id="spreadsheet" />
-              <Label htmlFor="spreadsheet">Planilha (Excel/CSV com colunas separadas)</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Vendedor (aplicado a todos os clientes importados)</Label>
+              <Select
+                value={selectedSalesRepId}
+                onValueChange={handleSalesRepChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {salesReps.map((salesRep) => (
+                    <SelectItem key={salesRep.id} value={salesRep.id}>
+                      {salesRep.name} {salesRep.code ? `(${salesRep.code})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="report" id="report" />
-              <Label htmlFor="report">Relatório de sistema (formato texto)</Label>
+
+            <div className="space-y-2">
+              <Label>Dia da semana para visitas (aplicado a todos os clientes)</Label>
+              <Select
+                value={selectedWeekday}
+                onValueChange={handleWeekdayChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um dia da semana" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WEEKDAYS.map((weekday) => (
+                    <SelectItem key={weekday.value} value={weekday.value}>
+                      {weekday.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </RadioGroup>
-          
-          <div className="space-y-2">
-            <Label>Vendedor (aplicado a todos os clientes importados)</Label>
-            <Select
-              value={selectedSalesRepId}
-              onValueChange={handleSalesRepChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione um vendedor" />
-              </SelectTrigger>
-              <SelectContent>
-                {salesReps.map((salesRep) => (
-                  <SelectItem key={salesRep.id} value={salesRep.id}>
-                    {salesRep.name} {salesRep.code ? `(${salesRep.code})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           
           <div>
             <Label htmlFor="importText">
-              Cole aqui os dados dos clientes ({formatType === 'spreadsheet' ? 'dados da planilha' : 'relatório do sistema'})
+              Cole aqui os dados dos clientes da planilha
             </Label>
             <Textarea
               id="importText"
@@ -287,7 +297,7 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
               onChange={handleTextChange}
               rows={10}
               className="font-mono text-sm"
-              placeholder={getFormatPlaceholder()}
+              placeholder="Cole os dados da planilha aqui..."
             />
           </div>
           
@@ -343,6 +353,7 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
                   <TableHead>Cidade</TableHead>
                   <TableHead>UF</TableHead>
                   <TableHead>Vendedor</TableHead>
+                  <TableHead>Dia da Semana</TableHead>
                   <TableHead>Seq. Visita</TableHead>
                   <TableHead>Problemas</TableHead>
                 </TableRow>
@@ -370,6 +381,7 @@ CGC                  INSCRICAO EST.      VEN  ROTA  SEQ-VI  SEQ-EN  FREQ.`;
                       <TableCell>{customer.city}</TableCell>
                       <TableCell>{customer.state}</TableCell>
                       <TableCell>{customer.salesRepName || '-'}</TableCell>
+                      <TableCell>{customer.visitDays?.[0] || '-'}</TableCell>
                       <TableCell>{customer.visitSequence}</TableCell>
                       <TableCell>
                         {validation.errors.length > 0 && (
