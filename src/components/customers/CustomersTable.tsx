@@ -45,6 +45,7 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
           <TableRow>
             <TableHead className="w-14">Código</TableHead>
             <TableHead>Nome</TableHead>
+            <TableHead>Vendedor</TableHead>
             <TableHead>Telefone</TableHead>
             <TableHead className="w-20 text-right">Ações</TableHead>
           </TableRow>
@@ -56,6 +57,7 @@ const CustomersTable: React.FC<CustomersTableProps> = ({
                 {customer.code || "—"}
               </TableCell>
               <TableCell>{customer.name}</TableCell>
+              <TableCell>{customer.salesRepName || "—"}</TableCell>
               <TableCell>{customer.phone || "—"}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end space-x-1">

@@ -1,12 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useAppData } from '@/context/providers/AppDataProvider';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Upload } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Upload } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import CustomersTable from '@/components/customers/CustomersTable';
 import NewCustomerDialog from '@/components/customers/NewCustomerDialog';
 import EditCustomerDialog from '@/components/customers/EditCustomerDialog';
@@ -30,6 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSalesReps } from '@/hooks/useSalesReps';
+import { useCustomerFilters } from '@/hooks/useCustomerFilters';
+import CustomerSearchBar from '@/components/customers/CustomerSearchBar';
 
 export default function Customers() {
   const {
@@ -39,9 +39,19 @@ export default function Customers() {
     deleteCustomer,
     generateNextCustomerCode
   } = useAppData();
+
+  const { salesReps } = useSalesReps();
+
+  const {
+    filteredCustomers,
+    searchTerm,
+    setSearchTerm,
+    sortBy,
+    setSortBy,
+    salesRepFilter,
+    setSalesRepFilter
+  } = useCustomerFilters(customers);
   
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -87,24 +97,8 @@ export default function Customers() {
   }, [customers, generateNextCustomerCode]);
 
   useEffect(() => {
-    console.log('🔄 [Customers Page] Filtering customers with search term:', searchTerm);
-    if (searchTerm) {
-      const filtered = customers.filter(customer => 
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        customer.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        customer.phone.includes(searchTerm) || 
-        customer.city.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        customer.code?.toString().includes(searchTerm)
-      );
-      console.log('📊 [Customers Page] Filtered customers:', filtered.length);
-      setFilteredCustomers(filtered);
-    } else {
-      console.log('📊 [Customers Page] Showing all customers:', customers.length);
-      setFilteredCustomers(customers);
-    }
-    // Reset to first page when filtering
     setCurrentPage(1);
-  }, [customers, searchTerm]);
+  }, [searchTerm, sortBy, salesRepFilter, itemsPerPage]);
 
   // Pagination handlers
   const handlePageChange = (page: number) => {
@@ -279,15 +273,15 @@ export default function Customers() {
 
   return (
     <PageLayout title="Clientes">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-start mb-4">
         <div>
           <h2 className="text-lg font-medium">Gerencie os clientes da sua empresa</h2>
           <p className="text-sm text-muted-foreground">
-            {totalItems} clientes {searchTerm ? 'encontrados' : 'cadastrados'}
+            {totalItems} clientes {searchTerm || salesRepFilter !== 'all' ? 'encontrados' : 'cadastrados'}
             {totalItems > 0 && ` • Mostrando ${startIndex + 1}-${Math.min(endIndex, totalItems)} de ${totalItems}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex-shrink-0">
           <Button 
             onClick={() => setIsBulkImportDialogOpen(true)}
             variant="outline"
@@ -295,41 +289,22 @@ export default function Customers() {
           >
             <Upload size={16} className="mr-2" /> Importação em Massa
           </Button>
-          <Button onClick={handleNewCustomer} className="bg-blue-600 hover:bg-blue-700">
-            <Plus size={16} className="mr-2" /> Novo Cliente
-          </Button>
         </div>
       </div>
+      
+      <CustomerSearchBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        onAddCustomer={handleNewCustomer}
+        salesReps={salesReps}
+        selectedSalesRep={salesRepFilter}
+        onSalesRepChange={setSalesRepFilter}
+      />
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar clientes..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="pl-8"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Itens por página:</span>
-              <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <Card className="mt-4">
+        <CardContent className="pt-6">
           {customers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>Nenhum cliente encontrado. Adicione o primeiro cliente!</p>
@@ -345,8 +320,19 @@ export default function Customers() {
               
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-muted-foreground">
-                    Página {currentPage} de {totalPages}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Itens por página:</span>
+                    <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Pagination>
                     <PaginationContent>

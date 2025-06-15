@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SalesRep } from '@/types';
 
 interface CustomerSearchBarProps {
   searchTerm: string;
@@ -17,6 +18,9 @@ interface CustomerSearchBarProps {
   sortBy: string;
   setSortBy: (value: string) => void;
   onAddCustomer: () => void;
+  salesReps: SalesRep[];
+  selectedSalesRep: string;
+  onSalesRepChange: (value: string) => void;
 }
 
 const CustomerSearchBar: React.FC<CustomerSearchBarProps> = ({
@@ -24,10 +28,13 @@ const CustomerSearchBar: React.FC<CustomerSearchBarProps> = ({
   setSearchTerm,
   sortBy,
   setSortBy,
-  onAddCustomer
+  onAddCustomer,
+  salesReps,
+  selectedSalesRep,
+  onSalesRepChange
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
       <div className="relative w-full sm:w-64 md:w-80">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
         <Input
@@ -39,13 +46,25 @@ const CustomerSearchBar: React.FC<CustomerSearchBarProps> = ({
         />
       </div>
       
-      <div className="flex items-center gap-2 w-full sm:w-auto">
-        <Select onValueChange={setSortBy} defaultValue={sortBy}>
-          <SelectTrigger className="w-[180px]">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+        <Select onValueChange={onSalesRepChange} value={selectedSalesRep}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Filtrar por vendedor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os vendedores</SelectItem>
+            {salesReps?.map(rep => (
+              <SelectItem key={rep.id} value={rep.id}>{rep.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select onValueChange={setSortBy} value={sortBy}>
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Ordenar por" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Nome</SelectItem>
+            <SelectItem value="name">Nome (A-Z)</SelectItem>
             <SelectItem value="code">Código</SelectItem>
             <SelectItem value="salesRep">Vendedor</SelectItem>
             <SelectItem value="visitFrequency">Frequência de Visita</SelectItem>
@@ -53,7 +72,7 @@ const CustomerSearchBar: React.FC<CustomerSearchBarProps> = ({
         </Select>
         
         <Button 
-          className="bg-sales-800 hover:bg-sales-700"
+          className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
           onClick={onAddCustomer}
         >
           <Plus size={16} className="mr-2" />
