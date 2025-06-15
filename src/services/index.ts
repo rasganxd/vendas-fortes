@@ -1,4 +1,3 @@
-
 // Re-export types from individual files for convenience
 export * from './local/index';
 
@@ -23,8 +22,8 @@ export { vehicleService } from './supabase/vehicleService';
 export { LoadService } from './supabase/loadService';
 export { mobileOrderImportService } from './supabase/mobileOrderImportService';
 
-// SQLite services
-export * from './sqlite';
+// SQLite services are now handled via IPC in Electron's main process
+// and accessed through customerIpcService.ts in the renderer.
 
 // Sales rep authentication service
 export { salesRepAuthService } from './local/salesRepAuthService';

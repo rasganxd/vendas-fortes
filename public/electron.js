@@ -1,8 +1,13 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
+const { initializeDatabase } = require('../electron/services/sqlite/db');
+const { customerSqliteService } = require('../electron/services/sqlite/customerSqliteService');
 
 let mainWindow;
+
+// Initialize the database on startup
+initializeDatabase();
 
 function createWindow() {
   // Criar a janela principal do aplicativo
@@ -156,6 +161,40 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+// --- IPC Handlers for Database ---
+
+// Helper to convert date strings from renderer to Date objects
+const parseCustomerDates = (customer) => {
+    const newCustomer = { ...customer };
+    if (newCustomer.createdAt) newCustomer.createdAt = new Date(newCustomer.createdAt);
+    if (newCustomer.updatedAt) newCustomer.updatedAt = new Date(newCustomer.updatedAt);
+    return newCustomer;
+};
+
+ipcMain.handle('db:customers:getAll', () => customerSqliteService.getAll());
+ipcMain.handle('db:customers:getById', (event, id) => customerSqliteService.getById(id));
+ipcMain.handle('db:customers:getByCode', (event, code) => customerSqliteService.getByCode(code));
+ipcMain.handle('db:customers:getHighestCode', () => customerSqliteService.getHighestCode());
+
+ipcMain.handle('db:customers:add', (event, customer) => {
+  return customerSqliteService.add(parseCustomerDates(customer));
+});
+
+ipcMain.handle('db:customers:update', (event, id, updates) => {
+    const parsedUpdates = { ...updates };
+    if (parsedUpdates.updatedAt) {
+        parsedUpdates.updatedAt = new Date(parsedUpdates.updatedAt);
+    }
+    return customerSqliteService.update(id, parsedUpdates);
+});
+
+ipcMain.handle('db:customers:delete', (event, id) => customerSqliteService.delete(id));
+
+ipcMain.handle('db:customers:setAll', (event, customers) => {
+  const customersWithDates = customers.map(parseCustomerDates);
+  return customerSqliteService.setAll(customersWithDates);
 });
 
 // Comunicação com o renderer process

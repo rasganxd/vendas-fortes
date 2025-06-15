@@ -23,6 +23,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     if ('Notification' in window) {
       new Notification(title, { body });
     }
+  },
+
+  // Database API
+  db: {
+    getAllCustomers: () => ipcRenderer.invoke('db:customers:getAll'),
+    getCustomerById: (id) => ipcRenderer.invoke('db:customers:getById', id),
+    addCustomer: (customer) => ipcRenderer.invoke('db:customers:add', customer),
+    updateCustomer: (id, updates) => ipcRenderer.invoke('db:customers:update', id, updates),
+    deleteCustomer: (id) => ipcRenderer.invoke('db:customers:delete', id),
+    getHighestCustomerCode: () => ipcRenderer.invoke('db:customers:getHighestCode'),
+    setAllCustomers: (customers) => ipcRenderer.invoke('db:customers:setAll', customers),
   }
 });
 

@@ -2,9 +2,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/supabase/customerService';
-import { customerSqliteService } from '@/services/sqlite/customerSqliteService';
+import { customerIpcService } from '@/services/customerIpcService';
 import { toast } from '@/components/ui/use-toast';
 import { useConnection } from '@/context/providers/ConnectionProvider';
+
+// This determines if the app is running in Electron
+const isElectron = !!(window as any).electronAPI?.isElectron;
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -12,11 +15,16 @@ export const useCustomers = () => {
   const { isOnline } = useConnection();
 
   const loadAndSyncCustomers = useCallback(async () => {
+    if (!isElectron) {
+        console.warn("Not in Electron. Skipping SQLite operations.");
+        setIsLoading(false);
+        return;
+    }
     console.log("🔄 [useCustomers] Starting to load and sync customers...");
     setIsLoading(true);
     try {
       // 1. Load from SQLite for instant UI
-      const localData = await customerSqliteService.getAll();
+      const localData = await customerIpcService.getAll();
       if (localData.length > 0) {
         console.log(`✅ [useCustomers] Loaded ${localData.length} customers from SQLite.`);
         setCustomers(localData);
@@ -28,7 +36,7 @@ export const useCustomers = () => {
         try {
           const supabaseData = await customerService.getAll();
           console.log(`✅ [useCustomers] Fetched ${supabaseData.length} customers from Supabase.`);
-          await customerSqliteService.setAll(supabaseData); // Overwrite local with remote source of truth
+          await customerIpcService.setAll(supabaseData); // Overwrite local with remote source of truth
           setCustomers(supabaseData);
           console.log("💾 [useCustomers] SQLite has been updated with Supabase data.");
         } catch (e) {
@@ -76,8 +84,12 @@ export const useCustomers = () => {
         updatedAt: new Date()
       };
       
-      console.log("💾 [useCustomers] Adding new customer to SQLite...");
-      await customerSqliteService.add(newCustomer);
+      if (isElectron) {
+        console.log("💾 [useCustomers] Adding new customer to SQLite...");
+        // We use setAll with the updated list to ensure consistency, though a dedicated `add` in IPC would also work.
+        const updatedList = [...customers, newCustomer];
+        await customerIpcService.setAll(updatedList);
+      }
       
       setCustomers(prev => [...prev, newCustomer].sort((a, b) => a.name.localeCompare(b.name)));
       
@@ -101,8 +113,10 @@ export const useCustomers = () => {
       console.log("🔄 [useCustomers] Updating customer via Supabase...");
       await customerService.update(id, customerWithTimestamp);
       
-      console.log("💾 [useCustomers] Updating customer in SQLite...");
-      await customerSqliteService.update(id, customerWithTimestamp);
+      if (isElectron) {
+        console.log("💾 [useCustomers] Updating customer in SQLite...");
+        await customerIpcService.update(id, customerWithTimestamp);
+      }
 
       setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...customerWithTimestamp } : c));
       
@@ -122,8 +136,10 @@ export const useCustomers = () => {
       console.log("🗑️ [useCustomers] Deleting customer from Supabase...");
       await customerService.delete(id);
 
-      console.log("🗑️ [useCustomers] Deleting customer from SQLite...");
-      await customerSqliteService.delete(id);
+      if (isElectron) {
+        console.log("🗑️ [useCustomers] Deleting customer from SQLite...");
+        await customerIpcService.delete(id);
+      }
 
       setCustomers(prev => prev.filter(c => c.id !== id));
       
@@ -142,7 +158,10 @@ export const useCustomers = () => {
         console.error('[useCustomers] Error generating customer code from Supabase, using fallback:', error);
       }
     }
-    return customerSqliteService.getHighestCode().then(code => code + 1);
+    if(isElectron) {
+        return customerIpcService.getHighestCode().then(code => code + 1);
+    }
+    return Math.floor(Math.random() * 10000); // Fallback for web
   };
 
   return {
@@ -157,8 +176,9 @@ export const useCustomers = () => {
 };
 
 export const loadCustomers = async (): Promise<Customer[]> => {
+  if (!isElectron) return [];
   try {
-    return await customerSqliteService.getAll();
+    return await customerIpcService.getAll();
   } catch (error) {
     console.error('❌ [loadCustomers] Error loading customers from SQLite:', error);
     return [];

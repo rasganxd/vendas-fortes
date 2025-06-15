@@ -13,7 +13,8 @@
   "files": [
     "dist/**/*",
     "public/electron.js",
-    "public/preload.js"
+    "public/preload.js",
+    "electron/**/*"
   ],
   "directories": {
     "output": "electron-dist"

@@ -1,29 +1,7 @@
 
-import db from './db';
-import { Customer } from '@/types';
+const { db } = require('./db');
 
-type CustomerRow = {
-  id: string;
-  code: number;
-  name: string;
-  fantasyName: string;
-  cnpj: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-  salesRepId: string;
-  salesRepName: string;
-  visitFrequency: string;
-  active: number;
-  email: string;
-};
-
-const rowToCustomer = (row: CustomerRow): Customer => ({
+const rowToCustomer = (row) => ({
   id: row.id,
   code: row.code,
   name: row.fantasyName, // Nome Fantasia
@@ -45,11 +23,11 @@ const rowToCustomer = (row: CustomerRow): Customer => ({
 });
 
 class CustomerSqliteService {
-  getAll(): Promise<Customer[]> {
+  getAll() {
     return new Promise((resolve, reject) => {
       try {
         const stmt = db.prepare('SELECT * FROM customers ORDER BY fantasyName');
-        const rows = stmt.all() as CustomerRow[];
+        const rows = stmt.all();
         resolve(rows.map(rowToCustomer));
       } catch (error) {
         console.error("Error in getAll customers from SQLite:", error);
@@ -58,11 +36,11 @@ class CustomerSqliteService {
     });
   }
 
-  getById(id: string): Promise<Customer | null> {
+  getById(id) {
     return new Promise((resolve, reject) => {
       try {
         const stmt = db.prepare('SELECT * FROM customers WHERE id = ?');
-        const row = stmt.get(id) as CustomerRow | undefined;
+        const row = stmt.get(id);
         resolve(row ? rowToCustomer(row) : null);
       } catch (error) {
         console.error("Error in getById customer from SQLite:", error);
@@ -71,8 +49,7 @@ class CustomerSqliteService {
     });
   }
 
-  // Modified to accept a full customer object, making it usable for syncing from Supabase.
-  add(customer: Customer): Promise<void> {
+  add(customer) {
     return new Promise((resolve, reject) => {
       try {
         const { id, code, name, companyName, document, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, notes, createdAt, updatedAt } = customer;
@@ -91,10 +68,10 @@ class CustomerSqliteService {
     });
   }
 
-  update(id: string, updates: Partial<Customer>): Promise<void> {
+  update(id, updates) {
     return new Promise((resolve, reject) => {
       try {
-        const dbUpdates: Record<string, any> = {};
+        const dbUpdates = {};
 
         if (updates.name !== undefined) dbUpdates.fantasyName = updates.name;
         if (updates.companyName !== undefined) dbUpdates.name = updates.companyName;
@@ -102,8 +79,7 @@ class CustomerSqliteService {
         if (updates.active !== undefined) dbUpdates.active = updates.active ? 1 : 0;
         if (updates.updatedAt !== undefined) dbUpdates.updatedAt = updates.updatedAt.toISOString();
 
-
-        const allowedKeys: (keyof Customer)[] = ['email', 'phone', 'address', 'city', 'state', 'zip', 'salesRepId', 'salesRepName', 'visitFrequency', 'notes'];
+        const allowedKeys = ['email', 'phone', 'address', 'city', 'state', 'zip', 'salesRepId', 'salesRepName', 'visitFrequency', 'notes'];
         allowedKeys.forEach(key => {
           if (updates[key] !== undefined) {
             dbUpdates[key] = updates[key];
@@ -118,7 +94,7 @@ class CustomerSqliteService {
         const setClause = fields.map(field => `${field} = ?`).join(', ');
         const values = fields.map(field => dbUpdates[field]);
 
-        const stmt = db.prepare(`UPDATE customers SET ${setClause} WHERE id = ?`);
+        const stmt = db.prepare(`UPDATE customers SET ${setClause}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`);
         stmt.run(...values, id);
         resolve();
       } catch(error) {
@@ -128,7 +104,7 @@ class CustomerSqliteService {
     });
   }
 
-  delete(id: string): Promise<void> {
+  delete(id) {
     return new Promise((resolve, reject) => {
       try {
         const stmt = db.prepare('DELETE FROM customers WHERE id = ?');
@@ -141,11 +117,11 @@ class CustomerSqliteService {
     });
   }
 
-  getByCode(code: number): Promise<Customer | null> {
+  getByCode(code) {
     return new Promise((resolve, reject) => {
       try {
         const stmt = db.prepare('SELECT * FROM customers WHERE code = ?');
-        const row = stmt.get(code) as CustomerRow | undefined;
+        const row = stmt.get(code);
         resolve(row ? rowToCustomer(row) : null);
       } catch (error) {
         console.error("Error in getByCode customer from SQLite:", error);
@@ -154,11 +130,11 @@ class CustomerSqliteService {
     });
   }
 
-  getHighestCode(): Promise<number> {
+  getHighestCode() {
     return new Promise((resolve, reject) => {
       try {
         const stmt = db.prepare('SELECT MAX(code) as maxCode FROM customers');
-        const result = stmt.get() as { maxCode: number | null };
+        const result = stmt.get();
         resolve(result?.maxCode || 0);
       } catch (error) {
         console.error("Error in getHighestCode from SQLite:", error);
@@ -167,7 +143,7 @@ class CustomerSqliteService {
     });
   }
   
-  setAll(customers: Customer[]): Promise<void> {
+  setAll(customers) {
     return new Promise((resolve, reject) => {
       const insert = db.prepare(
           `INSERT OR REPLACE INTO customers (id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, notes, createdAt, updatedAt) 
@@ -175,7 +151,7 @@ class CustomerSqliteService {
       );
 
       try {
-        const insertMany = db.transaction((customersToInsert: Customer[]) => {
+        db.transaction((customersToInsert) => {
             for (const customer of customersToInsert) {
                 insert.run({
                     id: customer.id,
@@ -198,9 +174,7 @@ class CustomerSqliteService {
                     updatedAt: (customer.updatedAt || new Date()).toISOString(),
                 });
             }
-        });
-
-        insertMany(customers);
+        })(customers);
         resolve();
       } catch (error) {
         console.error("Error in setAll customers in SQLite:", error);
@@ -210,4 +184,6 @@ class CustomerSqliteService {
   }
 }
 
-export const customerSqliteService = new CustomerSqliteService();
+const customerSqliteService = new CustomerSqliteService();
+
+module.exports = { customerSqliteService };
