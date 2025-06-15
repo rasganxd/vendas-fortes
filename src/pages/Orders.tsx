@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
-import { Order } from '@/types';
+import { Order, PaymentMethod, OrderAdvancedFilters } from '@/types';
 import { DatePeriod } from '@/types/dateFilter';
 import { Card, CardContent } from '@/components/ui/card';
 import OrdersTable from '@/components/orders/OrdersTable';
@@ -16,6 +17,8 @@ import { useOrdersDateFilter } from '@/hooks/useOrdersDateFilter';
 import OrdersActionButtons from '@/components/orders/OrdersActionButtons';
 import OrdersSearchBar from '@/components/orders/OrdersSearchBar';
 import EmptyOrdersState from '@/components/orders/EmptyOrdersState';
+import { useSalesReps } from '@/hooks/useSalesReps';
+import { paymentMethodService } from '@/services/supabase/paymentMethodService';
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -23,6 +26,7 @@ const Orders = () => {
   const { customers } = useCustomers();
   const { connectionStatus } = useConnection();
   const { periodCounts, filterOrdersByPeriod } = useOrdersDateFilter(orders || []);
+  const { salesReps } = useSalesReps();
   
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedPeriod, setSelectedPeriod] = useState<DatePeriod>('all');
@@ -33,12 +37,18 @@ const Orders = () => {
   const [sortField, setSortField] = useState<string>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [advancedFilters, setAdvancedFilters] = useState<OrderAdvancedFilters>({});
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   
   console.log("Orders Page: Initial render with", 
     orders?.length, "orders, loading:", isLoading, 
     "connection:", connectionStatus,
     "selected period:", selectedPeriod
   );
+
+  useEffect(() => {
+    paymentMethodService.getAll().then(setPaymentMethods);
+  }, []);
 
   // Log when selected order changes
   useEffect(() => {
@@ -154,7 +164,28 @@ const Orders = () => {
           field.toLowerCase().includes(searchTerm.toLowerCase())
         );
         
-        return matchesSearch;
+        if (!matchesSearch) return false;
+
+        // Advanced filters
+        if (advancedFilters.salesRepId && order.salesRepId !== advancedFilters.salesRepId) {
+          return false;
+        }
+        if (advancedFilters.status && order.status !== advancedFilters.status) {
+          return false;
+        }
+        if (advancedFilters.paymentMethodId && order.paymentMethodId !== advancedFilters.paymentMethodId) {
+          return false;
+        }
+        const minTotal = parseFloat(advancedFilters.minTotal || '');
+        if (!isNaN(minTotal) && (order.total || 0) < minTotal) {
+          return false;
+        }
+        const maxTotal = parseFloat(advancedFilters.maxTotal || '');
+        if (!isNaN(maxTotal) && (order.total || 0) > maxTotal) {
+          return false;
+        }
+
+        return true;
       })
     : [];
 
@@ -218,6 +249,10 @@ const Orders = () => {
         selectedPeriod={selectedPeriod}
         onPeriodChange={setSelectedPeriod}
         periodCounts={periodCounts}
+        advancedFilters={advancedFilters}
+        onAdvancedFilterChange={setAdvancedFilters}
+        salesReps={salesReps || []}
+        paymentMethods={paymentMethods || []}
       />
 
       <Card className="my-2 overflow-hidden">

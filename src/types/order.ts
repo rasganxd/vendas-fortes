@@ -1,4 +1,7 @@
 
+import { SalesRep } from './personnel';
+import { PaymentMethod } from './payment';
+
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'draft' | 'confirmed' | 'canceled';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded' | 'partial';
 export type ImportStatus = 'pending' | 'imported' | 'rejected';
@@ -11,6 +14,14 @@ export type RejectionReason =
   | 'produto_indisponivel' 
   | 'cliente_ausente' 
   | 'outro';
+
+export interface OrderAdvancedFilters {
+  salesRepId?: string;
+  status?: OrderStatus;
+  minTotal?: string;
+  maxTotal?: string;
+  paymentMethodId?: string;
+}
 
 /**
  * Order
