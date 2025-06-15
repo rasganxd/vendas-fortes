@@ -149,6 +149,22 @@ class MobileOrderImportService {
     return groupsArray;
   }
 
+  // Helper function to validate and sanitize UUID fields
+  private sanitizeUUID(value: any): string | null {
+    if (!value || value === '' || value === 'null' || value === 'undefined') {
+      return null;
+    }
+    
+    // Check if it's a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (typeof value === 'string' && uuidRegex.test(value)) {
+      return value;
+    }
+    
+    console.warn(`⚠️ Invalid UUID format: "${value}", converting to null`);
+    return null;
+  }
+
   async importOrders(orderIds: string[], importedBy: string = 'admin'): Promise<ImportReportData> {
     try {
       console.log(`📦 Importing ${orderIds.length} mobile orders to orders table...`);
@@ -257,19 +273,31 @@ class MobileOrderImportService {
           ? paymentTableNames[mobileOrder.payment_table_id] 
           : mobileOrder.payment_table;
         
+        // Validate and sanitize UUID fields - THIS IS THE KEY FIX
+        const sanitizedCustomerId = this.sanitizeUUID(mobileOrder.customer_id);
+        const sanitizedSalesRepId = this.sanitizeUUID(mobileOrder.sales_rep_id);
+        const sanitizedPaymentMethodId = this.sanitizeUUID(mobileOrder.payment_method_id);
+        const sanitizedPaymentTableId = this.sanitizeUUID(mobileOrder.payment_table_id);
+        
+        console.log(`🔍 UUID sanitization for order ${mobileOrder.id}:`, {
+          customer_id: `"${mobileOrder.customer_id}" -> ${sanitizedCustomerId}`,
+          sales_rep_id: `"${mobileOrder.sales_rep_id}" -> ${sanitizedSalesRepId}`,
+          payment_method_id: `"${mobileOrder.payment_method_id}" -> ${sanitizedPaymentMethodId}`,
+          payment_table_id: `"${mobileOrder.payment_table_id}" -> ${sanitizedPaymentTableId}`
+        });
+        
         // Validate payment method - use a default if empty
         const paymentMethod = mobileOrder.payment_method || 'A Definir';
-        const paymentMethodId = mobileOrder.payment_method_id || '';
         
         console.log(`💳 Payment info: method="${paymentMethod}", table="${paymentTableName || 'none'}"`);
         
-        // Insert into orders table with proper mobile_order_id mapping
+        // Insert into orders table with proper UUID handling
         const { data: insertedOrder, error: orderError } = await supabase
           .from('orders')
           .insert({
-            customer_id: mobileOrder.customer_id,
+            customer_id: sanitizedCustomerId,
             customer_name: mobileOrder.customer_name,
-            sales_rep_id: mobileOrder.sales_rep_id,
+            sales_rep_id: sanitizedSalesRepId,
             sales_rep_name: mobileOrder.sales_rep_name,
             date: mobileOrder.date,
             due_date: mobileOrder.due_date,
@@ -279,8 +307,8 @@ class MobileOrderImportService {
             status: mobileOrder.status,
             payment_status: mobileOrder.payment_status,
             payment_method: paymentMethod,
-            payment_method_id: paymentMethodId,
-            payment_table_id: mobileOrder.payment_table_id,
+            payment_method_id: sanitizedPaymentMethodId,
+            payment_table_id: sanitizedPaymentTableId,
             payment_table: paymentTableName,
             payments: mobileOrder.payments,
             notes: mobileOrder.notes,
@@ -301,6 +329,12 @@ class MobileOrderImportService {
         
         if (orderError) {
           console.error('❌ Error importing order:', orderError);
+          console.error('❌ Order data that failed:', {
+            customer_id: sanitizedCustomerId,
+            sales_rep_id: sanitizedSalesRepId,
+            payment_method_id: sanitizedPaymentMethodId,
+            payment_table_id: sanitizedPaymentTableId
+          });
           throw orderError;
         }
         
@@ -315,7 +349,7 @@ class MobileOrderImportService {
           
           const itemsToInsert = orderItems.map(item => ({
             order_id: insertedOrder.id,
-            product_id: item.product_id,
+            product_id: this.sanitizeUUID(item.product_id), // Also sanitize product_id
             product_name: item.product_name,
             product_code: item.product_code,
             quantity: item.quantity,
@@ -402,7 +436,7 @@ class MobileOrderImportService {
       
       await importReportPersistenceService.saveImportReport(report);
       
-      console.log('✅ Orders imported successfully with enhanced validation and report saved');
+      console.log('✅ Orders imported successfully with enhanced UUID validation and report saved');
       return report;
     } catch (error) {
       console.error('❌ Error in importOrders:', error);
