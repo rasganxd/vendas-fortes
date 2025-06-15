@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppContext } from '../AppContext';
 import { useAppContextHooks } from '@/hooks/useAppContextHooks';
@@ -93,7 +94,8 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
       lastConnectAttempt: null,
       reconnectToSupabase: async () => {},
       testConnection: async () => false,
-      settings: undefined
+      settings: undefined,
+      batchUpdateProducts: async () => ({ success: 0, failed: [] })
     };
   }
 
@@ -262,6 +264,7 @@ export const AppContextInnerProvider = ({ children }: { children: React.ReactNod
     validateProductDiscount: () => true,
     getMinimumPrice: () => 0,
     addBulkProducts: async () => [],
+    batchUpdateProducts: appData.batchUpdateProducts,
     
     generateRouteUpdate: async () => 0,
     getRouteWithCustomers: async () => null,

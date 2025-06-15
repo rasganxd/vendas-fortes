@@ -1,3 +1,4 @@
+
 import { Product, ProductBrand, ProductCategory, ProductGroup } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { productService } from '@/services/supabase/productService';
@@ -83,17 +84,17 @@ export const updateProduct = async (
   products: Product[],
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>
 ): Promise<void> => {
+  // Extract the bulk update flag and prepare clean update data
+  const { _isBulkUpdate, ...cleanProductData } = productData as Partial<Product> & { _isBulkUpdate?: boolean };
+  
   try {
-    console.log(`🔄 [ProductOperations] Starting update for product ${id}:`, productData);
+    console.log(`🔄 [ProductOperations] Starting update for product ${id}:`, cleanProductData);
     
     // Find the existing product to validate
     const existingProduct = products.find(p => p.id === id);
     if (!existingProduct) {
       throw new Error(`Produto com ID ${id} não encontrado no estado local`);
     }
-    
-    // Extract the bulk update flag and prepare clean update data
-    const { _isBulkUpdate, ...cleanProductData } = productData as Partial<Product> & { _isBulkUpdate?: boolean };
     
     // Prepare update data with proper validation
     const updateData = { 

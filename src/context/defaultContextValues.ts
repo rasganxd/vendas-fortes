@@ -1,3 +1,4 @@
+
 import { AppContextType } from './AppContextTypes';
 
 const defaultContextValues: AppContextType = {
@@ -62,6 +63,7 @@ const defaultContextValues: AppContextType = {
   validateProductDiscount: () => true,
   getMinimumPrice: () => 0,
   addBulkProducts: async () => [],
+  batchUpdateProducts: async () => ({ success: 0, failed: [] }),
   
   getOrderById: async () => null,
   addOrder: async () => '',
