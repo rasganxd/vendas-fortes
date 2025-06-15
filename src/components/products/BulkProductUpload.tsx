@@ -36,7 +36,7 @@ const SAMPLE_DATA = `CODIGO	NOME DO PRODUTO	UN	PRECO_CUSTO
 const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChange }) => {
   const { addBulkProducts } = useAppData();
   const { units } = useUnits();
-  const [csvData, setCsvData] = useState(SAMPLE_DATA);
+  const [csvData, setCsvData] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [preview, setPreview] = useState<ParsedProduct[]>([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -239,7 +239,7 @@ const BulkProductUpload: React.FC<BulkProductUploadProps> = ({ open, onOpenChang
       onOpenChange(false);
       setPreview([]);
       setShowPreview(false);
-      setCsvData(SAMPLE_DATA);
+      setCsvData('');
       
       console.log('🎉 [BulkProductUpload] Upload process completed successfully');
     } catch (error) {
