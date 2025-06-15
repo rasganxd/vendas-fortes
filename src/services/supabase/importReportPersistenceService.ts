@@ -61,7 +61,7 @@ class ImportReportPersistenceService {
         ordersCount: record.orders_count,
         totalValue: record.total_value,
         salesRepsCount: record.sales_reps_count,
-        reportData: record.report_data as ImportReportData,
+        reportData: record.report_data as unknown as ImportReportData,
         createdAt: new Date(record.created_at)
       }));
 
@@ -94,7 +94,7 @@ class ImportReportPersistenceService {
       }
 
       console.log('✅ Import report loaded successfully');
-      return data.report_data as ImportReportData;
+      return data.report_data as unknown as ImportReportData;
     } catch (error) {
       console.error('❌ Error in getImportReport:', error);
       throw error;
