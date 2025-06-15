@@ -3,8 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Smartphone, Import, History, FileText, Wrench } from "lucide-react";
+import { Smartphone, Import, History, FileText } from "lucide-react";
 import { useMobileOrderImport } from '@/hooks/useMobileOrderImport';
 import { MobileOrderImportTable } from './MobileOrderImportTable';
 import { ImportControlPanel } from './ImportControlPanel';
@@ -26,7 +25,6 @@ export default function MobileOrderImport() {
     selectAllOrders,
     clearSelection,
     refreshData,
-    fixOrderData,
     lastImportReport,
     showReportModal,
     setShowReportModal,
@@ -35,18 +33,6 @@ export default function MobileOrderImport() {
 
   const totalPendingValue = groupedOrders.reduce((sum, group) => sum + group.totalValue, 0);
   const totalPendingCount = pendingOrders.length;
-
-  const [fixOrderCode, setFixOrderCode] = React.useState('');
-
-  const handleFixOrder = async () => {
-    const orderCode = parseInt(fixOrderCode);
-    if (!orderCode || orderCode <= 0) {
-      return;
-    }
-    
-    await fixOrderData(orderCode);
-    setFixOrderCode('');
-  };
 
   return (
     <>
@@ -64,27 +50,6 @@ export default function MobileOrderImport() {
             </div>
             
             <div className="flex items-center gap-4">
-              {/* Fix Order Tool */}
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  placeholder="Número do pedido"
-                  value={fixOrderCode}
-                  onChange={(e) => setFixOrderCode(e.target.value)}
-                  className="w-32"
-                />
-                <Button 
-                  onClick={handleFixOrder}
-                  disabled={isImporting || !fixOrderCode}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <Wrench className="h-4 w-4" />
-                  Corrigir
-                </Button>
-              </div>
-              
               {lastImportReport && (
                 <Button 
                   variant="outline"
