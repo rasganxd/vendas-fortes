@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Customer, PaymentTable } from '@/types';
 import PromissoryNoteView from './PromissoryNoteView';
+import PromissoryNoteTemplate from './PromissoryNoteTemplate';
 import { Printer, CheckSquare, Square } from 'lucide-react';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface PromissoryNotesTabProps {
   pendingPaymentOrders: any[];
@@ -32,6 +34,7 @@ export default function PromissoryNotesTab({
 }: PromissoryNotesTabProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const { settings } = useAppContext();
   
   // Get only orders that use promissory note payment tables
   const promissoryOrders = orders.filter(order => {
@@ -95,7 +98,233 @@ export default function PromissoryNotesTab({
     );
   };
 
-  // Print multiple promissory notes using Electron or web fallback
+  // Generate unified HTML for multiple promissory notes
+  const generateUnifiedPromissoryNotesHTML = (ordersToPrint: any[]) => {
+    const companyData = settings?.company;
+    
+    // Generate each promissory note using the unified template
+    const promissoryNotesHTML = ordersToPrint.map(order => {
+      const customer = customers.find(c => c.id === order.customerId);
+      const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
+      const orderPayments = payments.filter(p => p.orderId === order.id);
+      
+      // Create a temporary container to render the React component as HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.className = 'promissory-note-compact';
+      
+      // Use the same template structure but as static HTML
+      const totalPaid = orderPayments.reduce((sum, payment) => sum + payment.amount, 0);
+      const remainingAmount = order.total - totalPaid;
+      
+      // Calculate due date
+      const calculateDueDate = () => {
+        if (!paymentTable || !paymentTable.terms || paymentTable.terms.length === 0) {
+          const orderDate = new Date(order.date);
+          const dueDate = new Date(orderDate);
+          dueDate.setDate(orderDate.getDate() + 30);
+          return dueDate;
+        }
+        
+        const firstTerm = paymentTable.terms[0];
+        const orderDate = new Date(order.date);
+        const dueDate = new Date(orderDate);
+        dueDate.setDate(orderDate.getDate() + (firstTerm.days || 30));
+        return dueDate;
+      };
+      
+      const payment = orderPayments.length > 0 ? orderPayments[0] : {
+        amount: remainingAmount,
+        dueDate: calculateDueDate(),
+        date: order.date,
+        customerName: customer?.name || order.customerName,
+        customerDocument: customer?.document,
+        customerAddress: customer?.address
+      };
+
+      if (orderPayments.length === 0) {
+        payment.dueDate = calculateDueDate();
+      }
+
+      const formatCurrency = (value: number) => 
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+      const formatDate = (date: Date | string) => 
+        new Date(date).toLocaleDateString('pt-BR');
+
+      const formatCurrencyInWords = (value: number) => {
+        // Simple implementation - you might want to use a proper library
+        return `${formatCurrency(value)} por extenso`;
+      };
+
+      return `
+        <div class="promissory-note-compact">
+          ${companyData?.name && companyData.name !== 'Carregando...' ? `
+            <div class="text-center mb-3">
+              <h2 class="font-bold text-sm">${companyData.name}</h2>
+              ${companyData.document ? `<p class="text-gray-600 text-xs">CNPJ: ${companyData.document}</p>` : ''}
+              ${companyData.address ? `<p class="text-gray-600 text-xs">${companyData.address}</p>` : ''}
+            </div>
+          ` : ''}
+
+          <div class="text-center mb-3">
+            <h1 class="font-bold uppercase border-b border-t border-gray-800 py-2 text-lg">NOTA PROMISSÓRIA</h1>
+            <p class="mt-2 text-right text-sm">
+              <span class="font-semibold">Valor:</span> ${formatCurrency(remainingAmount || payment.amount || 0)}
+            </p>
+          </div>
+
+          <div class="text-justify leading-relaxed mb-3 text-sm leading-tight">
+            <p class="mb-2">
+              Aos <span class="font-semibold">${formatDate(payment.dueDate || new Date())}</span>,
+              pagarei por esta única via de NOTA PROMISSÓRIA a ${companyData?.name || "___________________"},
+              ou à sua ordem, a quantia de ${formatCurrency(remainingAmount || payment.amount || 0)} (${payment.amountInWords || formatCurrencyInWords(remainingAmount || payment.amount)}),
+              em moeda corrente deste país.
+            </p>
+            <p class="text-sm">
+              Pagável em ${paymentTable?.paymentLocation || payment.paymentLocation || "___________________"}
+            </p>
+          </div>
+
+          <div class="mb-3 text-xs">
+            <p><span class="font-semibold">Nome:</span> ${customer?.name || payment.customerName || "___________________"}</p>
+            ${(customer?.document || payment.customerDocument) ? `<p><span class="font-semibold">CPF/CNPJ:</span> ${customer?.document || payment.customerDocument}</p>` : ''}
+            ${(customer?.address || payment.customerAddress) ? `<p><span class="font-semibold">Endereço:</span> ${customer?.address || payment.customerAddress}</p>` : ''}
+          </div>
+
+          <div class="mb-3 text-xs">
+            <p><span class="font-semibold">Referente ao pedido:</span> #${order.code || order.id}</p>
+            <p><span class="font-semibold">Data do pedido:</span> ${formatDate(order.date)}</p>
+            ${paymentTable ? `<p><span class="font-semibold">Forma de pagamento:</span> ${paymentTable.name}</p>` : ''}
+            ${order.notes ? `<p><span class="font-semibold">Observações:</span> ${order.notes}</p>` : ''}
+          </div>
+
+          <div class="mt-6">
+            <p class="text-right mb-1 text-xs">
+              ${paymentTable?.paymentLocation || payment.emissionLocation || "___________________"}, ${formatDate(payment.date || order.date || new Date())}
+            </p>
+            <div class="border-t border-gray-400 pt-2 text-center mt-8">
+              <p class="text-xs">Assinatura do Devedor</p>
+            </div>
+          </div>
+
+          <div class="text-center text-gray-500 mt-6 text-xs">
+            ${companyData?.footer ? `<p>${companyData.footer}</p>` : '<p>Este documento não tem valor fiscal - Apenas para controle interno</p>'}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // CSS styles for print
+    const printStyles = `
+      <style>
+        @media print {
+          @page {
+            margin: 0.5cm;
+            size: A4 portrait;
+          }
+          
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-size: 10pt;
+            line-height: 1.2;
+          }
+          
+          .promissory-note-compact {
+            page-break-inside: avoid;
+            height: calc(33.33vh - 1cm);
+            max-height: 25cm;
+            border: 2px solid #000;
+            margin-bottom: 0.5cm;
+            padding: 0.5cm;
+            font-size: 9pt;
+            line-height: 1.2;
+            background: white;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          
+          .promissory-note-compact:nth-child(3n) {
+            page-break-after: always;
+          }
+          
+          .promissory-note-compact:last-child {
+            page-break-after: avoid;
+          }
+          
+          .promissory-note-compact h1 {
+            font-size: 14pt;
+            font-weight: 700;
+            margin: 0.2cm 0;
+            padding: 0.1cm;
+          }
+          
+          .promissory-note-compact h2 {
+            font-size: 11pt;
+            font-weight: 600;
+            margin: 0.1cm 0;
+          }
+          
+          .promissory-note-compact p {
+            margin: 0.1cm 0;
+            font-size: 9pt;
+          }
+          
+          .promissory-note-compact .text-xs {
+            font-size: 8pt;
+          }
+          
+          .promissory-note-compact .text-sm {
+            font-size: 9pt;
+          }
+          
+          .promissory-note-compact .border-t {
+            margin-top: 1cm;
+            padding-top: 0.2cm;
+          }
+          
+          .promissory-note-compact .mb-3 {
+            margin-bottom: 0.2cm;
+          }
+          
+          .promissory-note-compact .mb-6 {
+            margin-bottom: 0.3cm;
+          }
+          
+          .promissory-note-compact .mt-6 {
+            margin-top: 0.3cm;
+          }
+          
+          .promissory-note-compact .mt-8 {
+            margin-top: 0.5cm;
+          }
+          
+          .promissory-note-compact * {
+            max-width: 100%;
+            word-wrap: break-word;
+          }
+        }
+      </style>
+    `;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Impressão de Notas Promissórias</title>
+          ${printStyles}
+        </head>
+        <body>
+          ${promissoryNotesHTML}
+        </body>
+      </html>
+    `;
+  };
+
+  // Print multiple promissory notes using unified template
   const handlePrintSelectedNotes = async () => {
     if (selectedOrderIds.length === 0) return;
 
@@ -103,19 +332,28 @@ export default function PromissoryNotesTab({
       selectedOrderIds.includes(order.id)
     );
 
-    // Verificar se está no Electron
+    // Check if company data is loaded
+    const companyData = settings?.company;
+    const isCompanyDataLoaded = companyData && companyData.name && companyData.name !== 'Carregando...';
+    
+    if (!isCompanyDataLoaded) {
+      console.warn("Aguardando carregamento dos dados da empresa...");
+      return;
+    }
+
+    // Check if running in Electron
     if (window.electronAPI && window.electronAPI.printContent) {
-      // Usar sistema de impressão nativo do Electron
+      // Use native Electron printing
       await handleElectronPrint(ordersToPrint);
     } else {
-      // Fallback para web (manter funcionalidade existente)
+      // Fallback for web
       handleWebPrint(ordersToPrint);
     }
   };
 
   const handleElectronPrint = async (ordersToPrint: any[]) => {
     try {
-      const htmlContent = generateCompactPromissoryNotesHTML(ordersToPrint);
+      const htmlContent = generateUnifiedPromissoryNotesHTML(ordersToPrint);
       const result = await window.electronAPI.printContent(htmlContent, {
         printBackground: true,
         color: true,
@@ -142,7 +380,7 @@ export default function PromissoryNotesTab({
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) return;
 
-    const htmlContent = generateCompactPromissoryNotesHTML(ordersToPrint);
+    const htmlContent = generateUnifiedPromissoryNotesHTML(ordersToPrint);
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     
@@ -154,165 +392,6 @@ export default function PromissoryNotesTab({
         }, 2000);
       }, 500);
     };
-  };
-
-  const generateCompactPromissoryNotesHTML = (ordersToPrint: any[]) => {
-    // CSS styles for compact promissory notes printing
-    const printStyles = `
-      @media print {
-        @page {
-          margin: 0.5cm;
-          size: A4 portrait;
-        }
-        
-        body {
-          font-family: Arial, sans-serif;
-          margin: 0;
-          padding: 0;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          font-size: 10pt;
-          line-height: 1.2;
-        }
-        
-        .promissory-note-compact {
-          page-break-inside: avoid;
-          height: calc(33.33vh - 1cm);
-          max-height: 25cm;
-          border: 2px solid #000;
-          margin-bottom: 0.5cm;
-          padding: 0.5cm;
-          font-size: 9pt;
-          line-height: 1.2;
-          background: white;
-          width: 100%;
-          box-sizing: border-box;
-        }
-        
-        .promissory-note-compact:nth-child(3n) {
-          page-break-after: always;
-        }
-        
-        .promissory-note-compact:last-child {
-          page-break-after: avoid;
-        }
-        
-        .note-header {
-          text-align: center;
-          margin-bottom: 0.5cm;
-        }
-        
-        .note-title {
-          font-size: 14pt;
-          font-weight: bold;
-          margin-bottom: 0.2cm;
-          border-top: 2px solid #000;
-          border-bottom: 2px solid #000;
-          padding: 0.1cm;
-        }
-        
-        .note-content {
-          line-height: 1.3;
-          font-size: 9pt;
-          text-align: justify;
-        }
-        
-        .note-value {
-          font-size: 11pt;
-          font-weight: bold;
-        }
-        
-        .signature-section {
-          margin-top: 1cm;
-          text-align: center;
-        }
-        
-        .signature-line {
-          border-top: 1px solid #000;
-          width: 200px;
-          margin: 0.5cm auto 0.2cm auto;
-        }
-        
-        .customer-info {
-          font-size: 8pt;
-          margin: 0.2cm 0;
-        }
-        
-        .footer-info {
-          font-size: 7pt;
-          text-align: center;
-          margin-top: 0.3cm;
-          color: #666;
-        }
-        
-        .no-print {
-          display: none !important;
-        }
-      }`;
-
-    // Generate compact promissory note HTML
-    const generateCompactPromissoryNoteHTML = (order: any) => {
-      const customer = customers.find(c => c.id === order.customerId);
-      const paymentTable = paymentTables.find(pt => pt.id === order.paymentTableId);
-      const orderPayments = payments.filter(p => p.orderId === order.id);
-      
-      const formatCurrency = (value: number) => 
-        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
-      const formatDate = (date: Date) => 
-        new Date(date).toLocaleDateString('pt-BR');
-
-      const dueDate = orderPayments.length > 0 && orderPayments[0].dueDate 
-        ? new Date(orderPayments[0].dueDate)
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-
-      return `
-        <div class="promissory-note-compact">
-          <div class="note-header">
-            <div class="note-title">NOTA PROMISSÓRIA</div>
-            <p style="margin: 0.1cm 0; font-size: 8pt;">Nº ${order.code || 'N/A'} - <span class="note-value">${formatCurrency(order.total)}</span></p>
-          </div>
-          
-          <div class="note-content">
-            <p style="margin: 0.1cm 0;">Aos <strong>${formatDate(dueDate)}</strong>, pagarei por esta única via de NOTA PROMISSÓRIA a <strong>${paymentTable?.payableTo || 'BENEFICIÁRIO'}</strong>, ou à sua ordem, a quantia de <span class="note-value">${formatCurrency(order.total)}</span>, em moeda corrente deste país.</p>
-            
-            <p style="margin: 0.1cm 0;">Referente ao pedido nº <strong>${order.code}</strong> realizado em <strong>${formatDate(order.createdAt)}</strong>.</p>
-            
-            ${paymentTable?.paymentLocation ? `<p style="margin: 0.1cm 0;">Pagável em: <strong>${paymentTable.paymentLocation}</strong></p>` : ''}
-            
-            <div class="customer-info">
-              <p style="margin: 0.05cm 0;"><strong>Nome:</strong> ${customer?.name || order.customerName}</p>
-              ${customer?.document ? `<p style="margin: 0.05cm 0;"><strong>CPF/CNPJ:</strong> ${customer.document}</p>` : ''}
-              ${customer?.address ? `<p style="margin: 0.05cm 0;"><strong>Endereço:</strong> ${customer.address}, ${customer.city || ''} - ${customer.state || ''}</p>` : ''}
-            </div>
-          </div>
-          
-          <div class="signature-section">
-            <p style="margin: 0; font-size: 8pt;">${paymentTable?.paymentLocation || '___________________'}, ${formatDate(new Date())}</p>
-            <div class="signature-line"></div>
-            <p style="margin: 0.1cm 0; font-size: 8pt;"><strong>${customer?.name || order.customerName}</strong></p>
-            <p style="margin: 0; font-size: 7pt;">Assinatura do Devedor</p>
-          </div>
-          
-          <div class="footer-info">
-            <p style="margin: 0;">Este documento não tem valor fiscal - Apenas para controle interno</p>
-          </div>
-        </div>
-      `;
-    };
-
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Impressão de Notas Promissórias Compactas</title>
-          <style>${printStyles}</style>
-        </head>
-        <body>
-          ${ordersToPrint.map(order => generateCompactPromissoryNoteHTML(order)).join('')}
-        </body>
-      </html>
-    `;
   };
   
   // If no orders found
