@@ -1,3 +1,4 @@
+
 // Re-export types from individual files for convenience
 export * from './local/index';
 
@@ -37,3 +38,6 @@ export { mobileImportReportService } from './mobileImportReportService';
 
 // Import report persistence service
 export { importReportPersistenceService } from './supabase/importReportPersistenceService';
+
+// Promissory note template component
+export { default as PromissoryNoteTemplate } from '../components/payments/PromissoryNoteTemplate';

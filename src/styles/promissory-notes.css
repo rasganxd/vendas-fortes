@@ -18,12 +18,42 @@
   }
 }
 
-/* Compact promissory note styling */
+/* Compact promissory note styling - unified for both view and print */
 .promissory-note-compact {
   border: 1px solid #e5e7eb;
   background: white;
   font-size: 12px;
   line-height: 1.3;
+  padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Ensure consistent typography */
+.promissory-note-compact h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  letter-spacing: 0.05em;
+}
+
+.promissory-note-compact h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.promissory-note-compact p {
+  margin: 0.25rem 0;
+  line-height: 1.4;
+}
+
+.promissory-note-compact .text-xs {
+  font-size: 0.75rem;
+}
+
+.promissory-note-compact .text-sm {
+  font-size: 0.875rem;
 }
 
 @media print {
