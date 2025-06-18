@@ -47,15 +47,13 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
       
       if (!isCompanyDataLoaded) {
         console.warn("⚠️ Company data not fully loaded yet");
-        return false;
+        return;
       }
       
       if (!printRef.current) {
         console.error("❌ Print reference not available");
-        return false;
+        return;
       }
-      
-      return true;
     },
     onAfterPrint: () => {
       console.log("✅ Impressão individual concluída");
