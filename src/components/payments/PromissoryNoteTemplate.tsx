@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Customer, Order, PaymentTable } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
 import { formatCurrency, formatCurrencyInWords } from '@/lib/format-utils';
-
 interface PromissoryNoteTemplateProps {
   order: any;
   customer: Customer | null;
@@ -13,7 +11,6 @@ interface PromissoryNoteTemplateProps {
   isCompact?: boolean;
   className?: string;
 }
-
 const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
   order,
   customer,
@@ -26,7 +23,7 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
   // Calculate total payments
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const remainingAmount = order.total - totalPaid;
-  
+
   // Calculate correct due date based on payment table terms
   const calculateDueDate = () => {
     if (!paymentTable || !paymentTable.terms || paymentTable.terms.length === 0) {
@@ -44,16 +41,15 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
       dueDate.setDate(orderDate.getDate() + 30);
       return dueDate;
     }
-    
+
     // Use the first term to calculate due date
     const firstTerm = paymentTable.terms[0];
     const orderDate = new Date(order.date);
     const dueDate = new Date(orderDate);
     dueDate.setDate(orderDate.getDate() + (firstTerm.days || 30));
-    
     return dueDate;
   };
-  
+
   // Use the first payment for the promissory note details, or create defaults if no payments
   const payment = payments.length > 0 ? payments[0] : {
     amount: remainingAmount,
@@ -68,31 +64,10 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
   if (payments.length === 0) {
     payment.dueDate = calculateDueDate();
   }
-
-  const containerClass = isCompact 
-    ? `promissory-note-compact ${className}` 
-    : `p-6 max-w-2xl mx-auto bg-white ${className}`;
-
-  return (
-    <div className={containerClass}>
+  const containerClass = isCompact ? `promissory-note-compact ${className}` : `p-6 max-w-2xl mx-auto bg-white ${className}`;
+  return <div className={containerClass}>
       {/* Company Header */}
-      {companyData?.name && companyData.name !== 'Carregando...' && (
-        <div className={`text-center ${isCompact ? 'mb-3' : 'mb-6'}`}>
-          <h2 className={`font-bold ${isCompact ? 'text-sm' : 'text-lg'}`}>
-            {companyData.name}
-          </h2>
-          {companyData.document && (
-            <p className={`text-gray-600 ${isCompact ? 'text-xs' : 'text-sm'}`}>
-              CNPJ: {companyData.document}
-            </p>
-          )}
-          {companyData.address && (
-            <p className={`text-gray-600 ${isCompact ? 'text-xs' : 'text-sm'}`}>
-              {companyData.address}
-            </p>
-          )}
-        </div>
-      )}
+      {companyData?.name && companyData.name !== 'Carregando...'}
 
       {/* Title */}
       <div className={`text-center ${isCompact ? 'mb-3' : 'mb-6'}`}>
@@ -120,24 +95,16 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
       {/* Customer Info */}
       <div className={`${isCompact ? 'mb-3 text-xs' : 'mb-6 text-sm'}`}>
         <p><span className="font-semibold">Nome:</span> {customer?.name || payment.customerName || "___________________"}</p>
-        {(customer?.document || payment.customerDocument) && (
-          <p><span className="font-semibold">CPF/CNPJ:</span> {customer?.document || payment.customerDocument}</p>
-        )}
-        {(customer?.address || payment.customerAddress) && (
-          <p><span className="font-semibold">Endereço:</span> {customer?.address || payment.customerAddress}</p>
-        )}
+        {(customer?.document || payment.customerDocument) && <p><span className="font-semibold">CPF/CNPJ:</span> {customer?.document || payment.customerDocument}</p>}
+        {(customer?.address || payment.customerAddress) && <p><span className="font-semibold">Endereço:</span> {customer?.address || payment.customerAddress}</p>}
       </div>
 
       {/* Payment Details */}
       <div className={`${isCompact ? 'mb-3 text-xs' : 'mb-6 text-sm'}`}>
         <p><span className="font-semibold">Referente ao pedido:</span> #{order.code || order.id}</p>
         <p><span className="font-semibold">Data do pedido:</span> {formatDateToBR(order.date)}</p>
-        {paymentTable && (
-          <p><span className="font-semibold">Forma de pagamento:</span> {paymentTable.name}</p>
-        )}
-        {order.notes && (
-          <p><span className="font-semibold">Observações:</span> {order.notes}</p>
-        )}
+        {paymentTable}
+        {order.notes && <p><span className="font-semibold">Observações:</span> {order.notes}</p>}
       </div>
 
       {/* Signatures */}
@@ -152,12 +119,8 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
 
       {/* Footer */}
       <div className={`text-center text-gray-500 ${isCompact ? 'mt-6 text-xs' : 'mt-8 text-sm'}`}>
-        {companyData?.footer && (
-          <p>{companyData.footer}</p>
-        )}
+        {companyData?.footer && <p>{companyData.footer}</p>}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default PromissoryNoteTemplate;
