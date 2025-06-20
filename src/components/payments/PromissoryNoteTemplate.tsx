@@ -155,7 +155,7 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
         {companyData?.footer ? (
           <p>{companyData.footer}</p>
         ) : (
-          <p>Este documento não tem valor fiscal - Apenas para controle interno</p>
+          //<p>Este documento não tem valor fiscal - Apenas para controle interno</p>
         )}
       </div>
     </div>
