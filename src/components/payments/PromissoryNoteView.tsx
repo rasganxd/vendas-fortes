@@ -27,71 +27,35 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
   const companyData = settings?.company;
   const printRef = useRef<HTMLDivElement>(null);
 
-  // Check if company data is loaded to prevent white screen
-  const isCompanyDataLoaded = companyData && 
-    companyData.name && 
-    companyData.name !== 'Carregando...' && 
-    companyData.name.trim() !== '';
+  // Simplify company data check - just check if we have basic data
+  const isCompanyDataLoaded = companyData && companyData.name;
 
-  // Handle print functionality with better error handling and data validation
+  // Handle print functionality with simplified validation
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     documentTitle: `Nota_Promissoria_${order.code || order.id}`,
     onBeforePrint: () => {
-      console.log("🖨️ Preparando para imprimir nota promissória...", {
+      console.log("🖨️ Preparando para imprimir nota promissória individual...", {
         orderId: order.id,
         orderCode: order.code,
-        companyDataLoaded: isCompanyDataLoaded,
         companyName: companyData?.name
       });
-      
-      if (!isCompanyDataLoaded) {
-        console.warn("⚠️ Company data not fully loaded yet");
-        return;
-      }
-      
-      if (!printRef.current) {
-        console.error("❌ Print reference not available");
-        return;
-      }
     },
     onAfterPrint: () => {
       console.log("✅ Impressão individual concluída");
     },
     onPrintError: (error) => {
       console.error("❌ Erro na impressão individual:", error);
-    },
-    // Add print options for better compatibility
-    pageStyle: `
-      @page {
-        margin: 0.5cm;
-        size: A4 portrait;
-      }
-      @media print {
-        body { 
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          font-family: Arial, sans-serif;
-        }
-      }
-    `
+    }
   });
 
-  // Handle print with validation and fallback
+  // Handle print with simplified validation
   const handlePrintClick = async () => {
-    if (!isCompanyDataLoaded) {
-      console.warn("⏳ Aguardando carregamento dos dados da empresa...");
-      
-      // Try to wait a bit for data to load
-      setTimeout(() => {
-        if (isCompanyDataLoaded) {
-          handlePrint();
-        } else {
-          console.error("❌ Dados da empresa não carregaram após timeout");
-        }
-      }, 1000);
-      return;
-    }
+    console.log("🖨️ Iniciando impressão individual...", {
+      hasCompanyData: !!companyData,
+      companyName: companyData?.name,
+      hasPrintRef: !!printRef.current
+    });
 
     if (!printRef.current) {
       console.error("❌ Referência de impressão não disponível");
@@ -105,10 +69,29 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
         const printContent = printRef.current.outerHTML;
         const printStyles = `
           <style>
-            ${document.querySelector('style[data-styled]')?.textContent || ''}
             @page { margin: 0.5cm; size: A4 portrait; }
-            body { font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; }
-            .promissory-note-compact { border: 2px solid #000; padding: 0.5cm; }
+            body { 
+              font-family: Arial, sans-serif; 
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .promissory-note-compact { 
+              border: 2px solid #000; 
+              padding: 0.5cm; 
+              font-size: 9pt;
+              line-height: 1.2;
+            }
+            .font-bold { font-weight: 700; }
+            .font-semibold { font-weight: 600; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .text-justify { text-align: justify; }
+            .uppercase { text-transform: uppercase; }
+            .border-b { border-bottom: 1px solid #000; }
+            .border-t { border-top: 1px solid #000; }
+            .border-gray-800 { border-color: #000; }
+            .border-gray-400 { border-color: #666; }
+            .text-gray-500 { color: #777; }
           </style>
         `;
         
@@ -117,6 +100,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
           <html>
             <head>
               <title>Nota Promissória - ${order.code}</title>
+              <meta charset="utf-8">
               ${printStyles}
             </head>
             <body>${printContent}</body>
@@ -146,7 +130,6 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
           variant="outline" 
           size="sm" 
           onClick={handlePrintClick}
-          disabled={!isCompanyDataLoaded}
           className="flex items-center gap-1 text-xs px-2 py-1"
         >
           <Printer className="h-3 w-3" />
