@@ -152,10 +152,8 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
 
       {/* Footer */}
       <div className={`text-center text-gray-500 ${isCompact ? 'mt-6 text-xs' : 'mt-8 text-sm'}`}>
-        {companyData?.footer ? (
+        {companyData?.footer && (
           <p>{companyData.footer}</p>
-        ) : (
-          //<p>Este documento não tem valor fiscal - Apenas para controle interno</p>
         )}
       </div>
     </div>
