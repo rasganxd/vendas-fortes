@@ -106,13 +106,10 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
         )}
       </div>
 
-      {/* Payment Details */}
+      {/* Payment Details - Removida a linha "Forma de pagamento" */}
       <div className={`${isCompact ? 'mb-3 text-xs' : 'mb-6 text-sm'}`}>
         <p><span className="font-semibold">Referente ao pedido:</span> #{order.code || order.id}</p>
         <p><span className="font-semibold">Data do pedido:</span> {formatDateToBR(order.date)}</p>
-        {paymentTable && (
-          <p><span className="font-semibold">Forma de pagamento:</span> {paymentTable.name}</p>
-        )}
         {order.notes && (
           <p><span className="font-semibold">Observações:</span> {order.notes}</p>
         )}

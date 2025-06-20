@@ -54,7 +54,7 @@ export const generateMultiplePromissoryNotesHTML = (
     });
   }).join('');
 
-  // Print styles consistent with the CSS file
+  // Estilos unificados - importando diretamente do CSS principal para garantir consistência
   const printStyles = `
     <style>
       @page {
@@ -72,9 +72,11 @@ export const generateMultiplePromissoryNotesHTML = (
         line-height: 1.2;
       }
       
+      /* Estilos unificados para notas promissórias - idênticos ao CSS principal */
       .promissory-note-compact {
         page-break-inside: avoid;
-        height: calc(33.33vh - 1cm);
+        height: auto;
+        min-height: calc(33.33vh - 1cm);
         max-height: 25cm;
         border: 2px solid #000;
         margin-bottom: 0.5cm;
@@ -83,7 +85,9 @@ export const generateMultiplePromissoryNotesHTML = (
         line-height: 1.2;
         background: white;
         width: 100%;
+        max-width: none;
         box-sizing: border-box;
+        font-family: Arial, sans-serif;
       }
       
       .promissory-note-compact:nth-child(3n) {
@@ -94,11 +98,14 @@ export const generateMultiplePromissoryNotesHTML = (
         page-break-after: avoid;
       }
       
+      /* Tipografia ajustada para evitar linhas cortando nomes */
       .promissory-note-compact h1 {
         font-size: 14pt;
         font-weight: 700;
         margin: 0.2cm 0;
         padding: 0.1cm;
+        text-align: center;
+        line-height: 1.1;
       }
       
       .promissory-note-compact h2 {
@@ -108,12 +115,21 @@ export const generateMultiplePromissoryNotesHTML = (
       }
       
       .promissory-note-compact p {
-        margin: 0.1cm 0;
+        margin: 0.15cm 0;
         font-size: 9pt;
+        line-height: 1.4;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
       
-      .text-xs { font-size: 8pt; }
-      .text-sm { font-size: 9pt; }
+      /* Estilos para informações do cliente - melhor espaçamento */
+      .promissory-note-compact .mb-3 p {
+        margin: 0.1cm 0;
+        padding: 0.05cm 0;
+      }
+      
+      .text-xs { font-size: 8pt; line-height: 1.3; }
+      .text-sm { font-size: 9pt; line-height: 1.3; }
       .text-center { text-align: center; }
       .text-right { text-align: right; }
       .text-justify { text-align: justify; }
@@ -126,14 +142,32 @@ export const generateMultiplePromissoryNotesHTML = (
       .border-gray-400 { border-color: #666; }
       .text-gray-600 { color: #666; }
       .text-gray-500 { color: #777; }
+      
+      /* Espaçamentos otimizados */
       .py-2 { padding-top: 0.1cm; padding-bottom: 0.1cm; }
       .pt-2 { padding-top: 0.1cm; }
+      .mb-2 { margin-bottom: 0.15cm; }
       .mb-3 { margin-bottom: 0.2cm; }
+      .mb-4 { margin-bottom: 0.25cm; }
       .mb-6 { margin-bottom: 0.3cm; }
+      .mt-2 { margin-top: 0.15cm; }
       .mt-6 { margin-top: 0.3cm; }
       .mt-8 { margin-top: 0.5cm; }
-      .leading-relaxed { line-height: 1.3; }
+      .leading-relaxed { line-height: 1.4; }
       .leading-tight { line-height: 1.2; }
+      
+      /* Prevenção de quebras inadequadas */
+      .promissory-note-compact * {
+        max-width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+      }
+      
+      /* Prevenção específica para nomes longos */
+      .promissory-note-compact .font-semibold + * {
+        display: inline;
+        word-break: break-word;
+      }
     </style>
   `;
 
