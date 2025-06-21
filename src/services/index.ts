@@ -39,5 +39,9 @@ export { mobileImportReportService } from './mobileImportReportService';
 // Import report persistence service
 export { importReportPersistenceService } from './supabase/importReportPersistenceService';
 
+// System maintenance services
+export { systemBackupService, maintenanceLogService, maintenanceSettingsService } from './supabase/systemBackupService';
+export { systemMaintenanceService } from './systemMaintenanceService';
+
 // Promissory note template component
 export { default as PromissoryNoteTemplate } from '../components/payments/PromissoryNoteTemplate';
