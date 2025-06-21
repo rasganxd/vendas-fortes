@@ -39,13 +39,10 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [ordersToPrint, setOrdersToPrint] = useState<Order[]>([]);
   const { settings } = useAppContext();
-  const companyData = settings?.company;
   
   // Debug company data for bulk printing
   console.log('🖨️ PrintOrdersDialog - Company data for bulk printing:', {
     settingsExists: !!settings,
-    companyExists: !!companyData,
-    companyName: companyData?.name,
     isLoadingState: settings?.id === 'loading'
   });
   
@@ -187,32 +184,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         
         .page-pair:last-child {
           page-break-after: auto;
-        }
-        
-        /* Enhanced company header */
-        .company-header {
-          text-align: center;
-          margin-bottom: 0.5cm;
-          padding: 0.3cm;
-          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-          color: white;
-          border-radius: 6px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .company-header h2 {
-          font-weight: 700;
-          font-size: 14pt;
-          margin: 0 0 0.2cm 0;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-        }
-        
-        .company-header p {
-          font-size: 8pt;
-          margin: 1px 0;
-          opacity: 0.95;
-          font-weight: 300;
         }
         
         /* Order date and info */
@@ -402,23 +373,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           font-style: italic;
         }
         
-        /* Enhanced footer */
-        .footer {
-          margin-top: 0.3cm;
-          text-align: center;
-          font-size: 7pt;
-          color: #6c757d;
-          padding: 0.2cm;
-          background: #f8f9fa;
-          border-radius: 4px;
-          border-top: 2px solid #4a90e2;
-        }
-        
-        .footer p {
-          margin: 1px 0;
-          font-weight: 500;
-        }
-        
         /* Hide non-printable elements */
         .no-print {
           display: none !important;
@@ -437,15 +391,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
       const orderCustomer = validCustomers.find(c => c.id === order.customerId);
       return `
         <div class="print-page">
-          ${companyData?.name && companyData.name !== 'Carregando...' ? `
-          <div class="company-header">
-            <h2>${companyData.name}</h2>
-            ${companyData.document ? `<p>CNPJ: ${companyData.document}</p>` : ''}
-            ${companyData.address ? `<p>${companyData.address}</p>` : ''}
-            ${companyData.phone ? `<p>Tel: ${companyData.phone}</p>` : ''}
-          </div>
-          ` : ''}
-          
           <div class="order-date">
             <p>Pedido #${order.code || 'N/A'} - ${new Date(order.createdAt).toLocaleDateString('pt-BR', { 
               weekday: 'long', 
@@ -521,15 +466,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             <p>${order.notes}</p>
           </div>
           ` : ''}
-          
-          <div class="footer">
-            ${companyData?.footer ? `
-              <p>${companyData.footer}</p>
-            ` : `
-              <p>${companyData?.name && companyData.name !== 'Carregando...' ? companyData.name : 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
-              <p>Suporte: ${companyData?.phone || '(11) 9999-8888'}</p>
-            `}
-          </div>
         </div>
       `;
     };
@@ -538,7 +474,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Impressão de Pedidos - ${companyData?.name || 'ForcaVendas'}</title>
+          <title>Impressão de Pedidos</title>
           <meta charset="UTF-8">
           <style>${printStyles}</style>
         </head>

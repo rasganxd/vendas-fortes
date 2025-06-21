@@ -13,7 +13,6 @@ interface PrintOrderDetailProps {
 export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => {
   const { settings } = useAppContext();
   const { customers } = useCustomers();
-  const companyData = settings?.company;
   const isNegativeOrder = order.total === 0 && order.rejectionReason;
   
   // Find customer data for address information
@@ -104,32 +103,6 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           background: #fafafa;
           border-radius: 6px;
           position: relative;
-        }
-        
-        /* Enhanced company header */
-        .company-header {
-          text-align: center;
-          margin-bottom: 0.5cm;
-          padding: 0.3cm;
-          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-          color: white;
-          border-radius: 6px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .company-header h2 {
-          font-weight: 700;
-          font-size: 14pt;
-          margin: 0 0 0.2cm 0;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-        }
-        
-        .company-header p {
-          font-size: 8pt;
-          margin: 1px 0;
-          opacity: 0.95;
-          font-weight: 300;
         }
         
         /* Order date and info */
@@ -340,23 +313,6 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           font-style: italic;
         }
         
-        /* Enhanced footer */
-        .footer {
-          margin-top: 0.3cm;
-          text-align: center;
-          font-size: 7pt;
-          color: #6c757d;
-          padding: 0.2cm;
-          background: #f8f9fa;
-          border-radius: 4px;
-          border-top: 2px solid #4a90e2;
-        }
-        
-        .footer p {
-          margin: 1px 0;
-          font-weight: 500;
-        }
-        
         /* Hide non-printable elements */
         .no-print {
           display: none !important;
@@ -398,15 +354,6 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
     const generateOrderHTML = () => {
       return `
         <div class="print-page">
-          ${companyData?.name && companyData.name !== 'Carregando...' ? `
-          <div class="company-header">
-            <h2>${companyData.name}</h2>
-            ${companyData.document ? `<p>CNPJ: ${companyData.document}</p>` : ''}
-            ${companyData.address ? `<p>${companyData.address}</p>` : ''}
-            ${companyData.phone ? `<p>Tel: ${companyData.phone}</p>` : ''}
-          </div>
-          ` : ''}
-          
           <div class="order-date">
             <p>Pedido #${order.code || 'N/A'} - ${formatDateToBR(order.date)}</p>
           </div>
@@ -481,15 +428,6 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
             <p>${order.notes}</p>
           </div>
           ` : ''}
-          
-          <div class="footer">
-            ${companyData?.footer ? `
-              <p>${companyData.footer}</p>
-            ` : `
-              <p>${companyData?.name && companyData.name !== 'Carregando...' ? companyData.name : 'ForcaVendas'} - Sistema de Gestão de Vendas</p>
-              <p>Suporte: ${companyData?.phone || '(11) 9999-8888'}</p>
-            `}
-          </div>
         </div>
       `;
     };
@@ -498,7 +436,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Pedido #${order.code} - ${companyData?.name || 'ForcaVendas'}</title>
+          <title>Pedido #${order.code} - Impressão</title>
           <meta charset="UTF-8">
           <style>${printStyles}</style>
         </head>
