@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Calendar, Save, Clock, Settings, History, Database, Trash2 } from 'lucide-react';
+import { ArrowRight, Calendar, Save, History, Database } from 'lucide-react';
 import { systemMaintenanceService } from '@/services/systemMaintenanceService';
 import { formatDateToBR } from '@/lib/date-utils';
 
@@ -15,7 +15,6 @@ export default function SystemMaintenance() {
   const [isLoading, setIsLoading] = useState(false);
   const [maintenanceHistory, setMaintenanceHistory] = useState<any[]>([]);
   const [backupHistory, setBackupHistory] = useState<any[]>([]);
-  const [settings, setSettings] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadData();
@@ -23,15 +22,13 @@ export default function SystemMaintenance() {
 
   const loadData = async () => {
     try {
-      const [history, backups, maintenanceSettings] = await Promise.all([
+      const [history, backups] = await Promise.all([
         systemMaintenanceService.getMaintenanceHistory(),
-        systemMaintenanceService.getBackupHistory(),
-        systemMaintenanceService.getMaintenanceSettings()
+        systemMaintenanceService.getBackupHistory()
       ]);
       
       setMaintenanceHistory(history);
       setBackupHistory(backups);
-      setSettings(maintenanceSettings);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -60,8 +57,7 @@ export default function SystemMaintenance() {
       'start_new_day': 'Início do Dia',
       'start_new_month': 'Fechamento Mensal',
       'daily_backup': 'Backup Diário',
-      'monthly_backup': 'Backup Mensal',
-      'cache_clear': 'Limpeza de Cache'
+      'monthly_backup': 'Backup Mensal'
     };
     return types[type] || type;
   };
@@ -79,11 +75,10 @@ export default function SystemMaintenance() {
   return (
     <PageLayout title="Manutenção do Sistema">
       <Tabs defaultValue="operations" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="operations">Operações</TabsTrigger>
           <TabsTrigger value="history">Histórico</TabsTrigger>
           <TabsTrigger value="backups">Backups</TabsTrigger>
-          <TabsTrigger value="settings">Configurações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="operations" className="space-y-6">
@@ -99,7 +94,7 @@ export default function SystemMaintenance() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm mb-4">
-                  Cria backup automático, limpa cache diário e prepara contadores para o novo dia.
+                  Cria backup automático do dia anterior e realiza operações de preparação para o novo dia.
                 </p>
                 <Button 
                   onClick={() => handleOperation(systemMaintenanceService.startNewDay, 'atualização diária')}
@@ -114,7 +109,7 @@ export default function SystemMaintenance() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Save className="w-5 h-5 mr-2" /> Cópia Manual
+                  <Save className="w-5 h-5 mr-2" /> Backup Manual
                 </CardTitle>
                 <CardDescription>
                   Criar um backup manual dos dados
@@ -145,7 +140,7 @@ export default function SystemMaintenance() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm mb-4">
-                  Arquiva dados do mês, gera relatórios finais e cria backup mensal completo.
+                  Arquiva dados do mês, gera backup mensal completo e prepara o sistema para o novo mês.
                 </p>
                 <Button 
                   onClick={() => handleOperation(systemMaintenanceService.startNewMonth, 'fechamento mensal')}
@@ -153,30 +148,6 @@ export default function SystemMaintenance() {
                   disabled={isLoading}
                 >
                   Iniciar Fechamento <Calendar className="ml-2 w-4 h-4" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Trash2 className="w-5 h-5 mr-2" /> Limpeza de Cache
-                </CardTitle>
-                <CardDescription>
-                  Limpar todos os caches do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm mb-4">
-                  Remove todos os dados temporários e cache do navegador para melhor performance.
-                </p>
-                <Button 
-                  onClick={() => handleOperation(systemMaintenanceService.clearSystemCache, 'limpeza de cache')}
-                  variant="outline"
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  Limpar Cache <Trash2 className="ml-2 w-4 h-4" />
                 </Button>
               </CardContent>
             </Card>
@@ -261,36 +232,6 @@ export default function SystemMaintenance() {
                     </div>
                   ))
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Settings className="w-5 h-5 mr-2" />
-                Configurações de Manutenção
-              </CardTitle>
-              <CardDescription>
-                Configure os horários e parâmetros das operações automáticas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  <p><strong>Backup Automático Diário:</strong> {settings.daily_backup_time?.hour || 23}:{String(settings.daily_backup_time?.minute || 0).padStart(2, '0')}</p>
-                  <p><strong>Backup Automático Mensal:</strong> Dia {settings.monthly_backup_time?.day || 1} às {settings.monthly_backup_time?.hour || 2}:{String(settings.monthly_backup_time?.minute || 0).padStart(2, '0')}</p>
-                  <p><strong>Retenção de Backups:</strong> {settings.backup_retention?.daily || 7} diários, {settings.backup_retention?.monthly || 12} mensais</p>
-                </div>
-                
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    As configurações avançadas de agendamento serão implementadas em uma próxima versão.
-                    Por enquanto, execute as operações manualmente conforme necessário.
-                  </p>
-                </div>
               </div>
             </CardContent>
           </Card>
