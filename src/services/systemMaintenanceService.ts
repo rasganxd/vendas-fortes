@@ -14,26 +14,30 @@ export const systemMaintenanceService = {
     const logId = await maintenanceLogService.startOperation('start_new_day');
     
     try {
-      // 1. Create automatic daily backup
+      // 1. Collect system data first
+      const systemData = await systemBackupService.collectSystemData();
+      
+      // 2. Create automatic daily backup
       await systemBackupService.createBackup({
         name: `Backup Diário - ${new Date().toLocaleDateString('pt-BR')}`,
         description: 'Backup automático antes do início do novo dia',
         backup_type: 'daily',
-        created_by: 'auto-daily'
+        created_by: 'auto-daily',
+        data_snapshot: systemData
       });
 
-      // 2. Clear daily caches
+      // 3. Clear daily caches
       localStorage.removeItem('daily_cache');
       localStorage.removeItem('temp_orders');
       localStorage.removeItem('session_data');
 
-      // 3. Clean old daily backups
+      // 4. Clean old daily backups
       const retentionSettings = await maintenanceSettingsService.getSetting('backup_retention');
       if (retentionSettings?.daily) {
         await systemBackupService.deleteOldBackups('daily', retentionSettings.daily);
       }
 
-      // 4. Reset daily counters (example - would be actual business logic)
+      // 5. Reset daily counters (example - would be actual business logic)
       console.log('🔄 Resetting daily counters and preparing for new day');
 
       await maintenanceLogService.completeOperation(logId, true, undefined, {
@@ -65,27 +69,31 @@ export const systemMaintenanceService = {
     const logId = await maintenanceLogService.startOperation('start_new_month');
     
     try {
-      // 1. Create monthly backup
+      // 1. Collect system data first
+      const systemData = await systemBackupService.collectSystemData();
+      
+      // 2. Create monthly backup
       await systemBackupService.createBackup({
         name: `Backup Mensal - ${new Date().toLocaleDateString('pt-BR')}`,
         description: 'Backup automático de fechamento mensal',
         backup_type: 'monthly',
-        created_by: 'auto-monthly'
+        created_by: 'auto-monthly',
+        data_snapshot: systemData
       });
 
-      // 2. Archive previous month data (example logic)
+      // 3. Archive previous month data (example logic)
       console.log('📦 Archiving previous month data...');
       
-      // 3. Generate monthly reports (example)
+      // 4. Generate monthly reports (example)
       console.log('📊 Generating monthly reports...');
 
-      // 4. Clean old monthly backups
+      // 5. Clean old monthly backups
       const retentionSettings = await maintenanceSettingsService.getSetting('backup_retention');
       if (retentionSettings?.monthly) {
         await systemBackupService.deleteOldBackups('monthly', retentionSettings.monthly);
       }
 
-      // 5. Reset monthly counters
+      // 6. Reset monthly counters
       console.log('🔄 Resetting monthly counters');
 
       await maintenanceLogService.completeOperation(logId, true, undefined, {
@@ -120,11 +128,15 @@ export const systemMaintenanceService = {
       const backupName = name || `Backup Manual - ${new Date().toLocaleString('pt-BR')}`;
       const backupDescription = description || 'Backup criado manualmente pelo usuário';
 
+      // Collect system data first
+      const systemData = await systemBackupService.collectSystemData();
+
       await systemBackupService.createBackup({
         name: backupName,
         description: backupDescription,
         backup_type: 'manual',
-        created_by: 'user'
+        created_by: 'user',
+        data_snapshot: systemData
       });
 
       await maintenanceLogService.completeOperation(logId, true, undefined, {

@@ -26,7 +26,7 @@ serve(async (req) => {
 
     switch (operation) {
       case 'daily_backup':
-        result = await performDailyBackup(su pabaseClient)
+        result = await performDailyBackup(supabaseClient)
         break
       case 'monthly_backup':
         result = await performMonthlyBackup(supabaseClient)

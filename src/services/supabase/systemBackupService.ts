@@ -39,8 +39,8 @@ export const systemBackupService = {
   async createBackup(backup: Omit<SystemBackup, 'id' | 'created_at' | 'status' | 'file_size'>): Promise<string> {
     console.log('📦 Creating system backup:', backup.name);
     
-    // Collect system data for backup
-    const systemData = await this.collectSystemData();
+    // Collect system data for backup if not provided
+    const systemData = backup.data_snapshot || await this.collectSystemData();
     const dataSize = JSON.stringify(systemData).length;
     
     const { data, error } = await supabase
@@ -75,20 +75,26 @@ export const systemBackupService = {
       tables: {} as any
     };
 
-    // Collect data from main tables
-    const tables = ['customers', 'products', 'orders', 'sales_reps', 'payment_tables'];
+    // Collect data from main tables using specific table names
+    const tableQueries = [
+      { name: 'customers', query: supabase.from('customers').select('*') },
+      { name: 'products', query: supabase.from('products').select('*') },
+      { name: 'orders', query: supabase.from('orders').select('*') },
+      { name: 'sales_reps', query: supabase.from('sales_reps').select('*') },
+      { name: 'payment_tables', query: supabase.from('payment_tables').select('*') }
+    ];
     
-    for (const table of tables) {
+    for (const tableQuery of tableQueries) {
       try {
-        const { data, error } = await supabase.from(table).select('*');
+        const { data, error } = await tableQuery.query;
         if (!error && data) {
-          systemData.tables[table] = {
+          systemData.tables[tableQuery.name] = {
             count: data.length,
             sample: data.slice(0, 5) // Store sample data for verification
           };
         }
       } catch (error) {
-        console.warn(`⚠️ Could not backup table ${table}:`, error);
+        console.warn(`⚠️ Could not backup table ${tableQuery.name}:`, error);
       }
     }
 
@@ -103,7 +109,18 @@ export const systemBackupService = {
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      backup_type: item.backup_type as 'daily' | 'monthly' | 'manual',
+      created_at: item.created_at,
+      file_size: item.file_size,
+      status: item.status as 'completed' | 'in_progress' | 'failed',
+      data_snapshot: item.data_snapshot,
+      created_by: item.created_by,
+      notes: item.notes
+    }));
   },
 
   async deleteOldBackups(backupType: 'daily' | 'monthly', keepCount: number): Promise<void> {
@@ -183,7 +200,17 @@ export const maintenanceLogService = {
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      id: item.id,
+      operation_type: item.operation_type as MaintenanceLog['operation_type'],
+      status: item.status as 'started' | 'completed' | 'failed',
+      started_at: item.started_at,
+      completed_at: item.completed_at,
+      details: item.details,
+      error_message: item.error_message,
+      duration_seconds: item.duration_seconds,
+      created_by: item.created_by
+    }));
   }
 };
 
