@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,7 +98,7 @@ export default function SalesRepImportSelector({
           salesRep.totalValue += Number(order.total || 0);
           
           // Verificar se tem problemas (sem tabela de pagamento quando deveria ter)
-          // Pedidos cancelados não precisam de tabela de pagamento
+          // Pedidos cancelados NÃO precisam de tabela de pagamento
           if (!isCancelledOrder && order.total > 0 && !order.payment_table_id && !order.payment_table) {
             salesRep.ordersWithIssues++;
           }
@@ -133,7 +132,7 @@ export default function SalesRepImportSelector({
       setIsFixing(true);
       console.log('🔧 Starting data inconsistency fix...');
       
-      await mobileOrderImportService.fixEx istingDataInconsistencies();
+      await mobileOrderImportService.fixExistingDataInconsistencies();
       
       toast.success('Inconsistências corrigidas', {
         description: 'Os dados foram corrigidos com sucesso'
