@@ -33,6 +33,7 @@ class MobileOrderImportService {
           id: order.id,
           code: order.code,
           total: order.total,
+          status: order.status,
           customer_name: order.customer_name,
           sales_rep_name: order.sales_rep_name,
           imported_to_orders: order.imported_to_orders
@@ -91,13 +92,23 @@ class MobileOrderImportService {
         }
       }
       
-      // Log negative orders and regular orders separately
-      const negativeOrders = orders.filter(order => order.total === 0 && order.rejectionReason);
-      const regularOrders = orders.filter(order => order.total > 0);
+      // Separate cancelled orders, negative orders and regular orders
+      const cancelledOrders = orders.filter(order => 
+        order.status === 'cancelled' || order.status === 'canceled'
+      );
+      const negativeOrders = orders.filter(order => 
+        order.total === 0 && order.rejectionReason && 
+        order.status !== 'cancelled' && order.status !== 'canceled'
+      );
+      const regularOrders = orders.filter(order => 
+        order.total > 0 && 
+        order.status !== 'cancelled' && order.status !== 'canceled'
+      );
       
       console.log(`✅ [MobileOrderImportService] Successfully transformed ${orders.length} orders:`);
       console.log(`  - ${regularOrders.length} sales orders`);
       console.log(`  - ${negativeOrders.length} negative orders (visits)`);
+      console.log(`  - ${cancelledOrders.length} cancelled orders (visits)`);
       
       return orders;
     } catch (error) {
@@ -116,7 +127,8 @@ class MobileOrderImportService {
         id: order.id,
         salesRepId: order.salesRepId,
         salesRepName: order.salesRepName,
-        total: order.total
+        total: order.total,
+        status: order.status
       });
       
       const key = order.salesRepId || 'unknown';
@@ -132,8 +144,9 @@ class MobileOrderImportService {
       
       const group = groups.get(key)!;
       group.orders.push(order);
-      // Only count positive orders for total value
-      if (order.total > 0) {
+      
+      // Only count positive orders for total value (not cancelled or negative orders)
+      if (order.total > 0 && order.status !== 'cancelled' && order.status !== 'canceled') {
         group.totalValue += order.total;
       }
       group.count++;
@@ -143,7 +156,14 @@ class MobileOrderImportService {
     
     console.log(`✅ [MobileOrderImportService] Created ${groupsArray.length} groups:`);
     groupsArray.forEach((group, index) => {
-      console.log(`  Group ${index + 1}: ${group.salesRepName} - ${group.count} orders, R$ ${group.totalValue}`);
+      const regularOrdersCount = group.orders.filter(o => 
+        o.total > 0 && o.status !== 'cancelled' && o.status !== 'canceled'
+      ).length;
+      const visitsCount = group.orders.filter(o => 
+        o.total === 0 || o.status === 'cancelled' || o.status === 'canceled'
+      ).length;
+      
+      console.log(`  Group ${index + 1}: ${group.salesRepName} - ${regularOrdersCount} pedidos, ${visitsCount} visitas, R$ ${group.totalValue}`);
     });
     
     return groupsArray;
@@ -169,55 +189,11 @@ class MobileOrderImportService {
     try {
       console.log(`📦 Importing ${orderIds.length} mobile orders to orders table...`);
       
-      // First, check if any of these orders were already imported
-      const { data: existingOrders, error: checkError } = await supabase
-        .from('orders')
-        .select('mobile_order_id')
-        .in('mobile_order_id', orderIds)
-        .eq('source_project', 'mobile');
-      
-      if (checkError) {
-        console.error('❌ Error checking for existing orders:', checkError);
-        throw checkError;
-      }
-      
-      const alreadyImportedIds = new Set(existingOrders?.map(o => o.mobile_order_id) || []);
-      const ordersToImport = orderIds.filter(id => !alreadyImportedIds.has(id));
-      
-      if (alreadyImportedIds.size > 0) {
-        console.log(`⚠️ ${alreadyImportedIds.size} orders were already imported, skipping them`);
-        console.log(`📦 Proceeding with ${ordersToImport.length} new orders`);
-        
-        // Mark the already imported mobile orders as imported if they weren't marked
-        await supabase
-          .from('mobile_orders')
-          .update({
-            imported_to_orders: true,
-            imported_at: new Date().toISOString(),
-            imported_by: importedBy
-          })
-          .in('id', Array.from(alreadyImportedIds));
-      }
-      
-      if (ordersToImport.length === 0) {
-        console.log('✅ All orders were already imported');
-        // Still generate a report for tracking
-        const { data: mobileOrders } = await supabase
-          .from('mobile_orders')
-          .select('*')
-          .in('id', orderIds);
-        
-        const ordersData = (mobileOrders || []).map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
-        const report = mobileImportReportService.generateImportReport(ordersData, 'import', importedBy);
-        await importReportPersistenceService.saveImportReport(report);
-        return report;
-      }
-      
-      // Get mobile orders data
+      // Get mobile orders data first to separate cancelled orders
       const { data: mobileOrders, error: mobileOrdersError } = await supabase
         .from('mobile_orders')
         .select('*')
-        .in('id', ordersToImport);
+        .in('id', orderIds);
       
       if (mobileOrdersError) {
         console.error('❌ Error getting mobile orders for import:', mobileOrdersError);
@@ -228,214 +204,236 @@ class MobileOrderImportService {
         throw new Error('No mobile orders found for import');
       }
       
-      // Get payment table names for orders that have payment_table_id
-      const orderIdsWithPaymentTable = mobileOrders
-        .filter(order => order.payment_table_id)
-        .map(order => order.payment_table_id);
+      // Separate cancelled orders from regular orders
+      const cancelledOrders = mobileOrders.filter(order => 
+        order.status === 'cancelled' || order.status === 'canceled'
+      );
+      const regularOrders = mobileOrders.filter(order => 
+        order.status !== 'cancelled' && order.status !== 'canceled'
+      );
       
-      let paymentTableNames: Record<string, string> = {};
+      console.log(`📊 Order separation: ${regularOrders.length} regular orders, ${cancelledOrders.length} cancelled orders (visits)`);
       
-      if (orderIdsWithPaymentTable.length > 0) {
-        const { data: paymentTables, error: paymentTablesError } = await supabase
-          .from('payment_tables')
-          .select('id, name')
-          .in('id', orderIdsWithPaymentTable);
+      // Mark cancelled orders as processed (visits registered) but don't import them to orders table
+      if (cancelledOrders.length > 0) {
+        console.log(`📝 Marking ${cancelledOrders.length} cancelled orders as processed (visits)...`);
         
-        if (paymentTablesError) {
-          console.error('❌ Error getting payment tables:', paymentTablesError);
-        } else if (paymentTables) {
-          paymentTableNames = paymentTables.reduce((acc, table) => {
-            acc[table.id] = table.name;
-            return acc;
-          }, {} as Record<string, string>);
-        }
-      }
-      
-      // Get items for these orders
-      const { data: mobileOrderItems, error: itemsError } = await supabase
-        .from('mobile_order_items')
-        .select('*')
-        .in('mobile_order_id', ordersToImport);
-      
-      if (itemsError) {
-        console.error('❌ Error getting mobile order items:', itemsError);
-        throw itemsError;
-      }
-      
-      console.log(`📦 Found ${mobileOrderItems?.length || 0} items to import for ${mobileOrders.length} orders`);
-      
-      // Import each order with enhanced validation
-      for (const mobileOrder of mobileOrders) {
-        console.log(`📋 Importing mobile order ${mobileOrder.id} (code: ${mobileOrder.code})`);
-        
-        // Get payment table name
-        const paymentTableName = mobileOrder.payment_table_id 
-          ? paymentTableNames[mobileOrder.payment_table_id] 
-          : mobileOrder.payment_table;
-        
-        // Validate and sanitize UUID fields - THIS IS THE KEY FIX
-        const sanitizedCustomerId = this.sanitizeUUID(mobileOrder.customer_id);
-        const sanitizedSalesRepId = this.sanitizeUUID(mobileOrder.sales_rep_id);
-        const sanitizedPaymentMethodId = this.sanitizeUUID(mobileOrder.payment_method_id);
-        const sanitizedPaymentTableId = this.sanitizeUUID(mobileOrder.payment_table_id);
-        
-        console.log(`🔍 UUID sanitization for order ${mobileOrder.id}:`, {
-          customer_id: `"${mobileOrder.customer_id}" -> ${sanitizedCustomerId}`,
-          sales_rep_id: `"${mobileOrder.sales_rep_id}" -> ${sanitizedSalesRepId}`,
-          payment_method_id: `"${mobileOrder.payment_method_id}" -> ${sanitizedPaymentMethodId}`,
-          payment_table_id: `"${mobileOrder.payment_table_id}" -> ${sanitizedPaymentTableId}`
-        });
-        
-        // Validate payment method - use a default if empty
-        const paymentMethod = mobileOrder.payment_method || 'A Definir';
-        
-        console.log(`💳 Payment info: method="${paymentMethod}", table="${paymentTableName || 'none'}"`);
-        
-        // Insert into orders table with proper UUID handling
-        const { data: insertedOrder, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            customer_id: sanitizedCustomerId,
-            customer_name: mobileOrder.customer_name,
-            sales_rep_id: sanitizedSalesRepId,
-            sales_rep_name: mobileOrder.sales_rep_name,
-            date: mobileOrder.date,
-            due_date: mobileOrder.due_date,
-            delivery_date: mobileOrder.delivery_date,
-            total: mobileOrder.total,
-            discount: mobileOrder.discount,
-            status: mobileOrder.status,
-            payment_status: mobileOrder.payment_status,
-            payment_method: paymentMethod,
-            payment_method_id: sanitizedPaymentMethodId,
-            payment_table_id: sanitizedPaymentTableId,
-            payment_table: paymentTableName,
-            payments: mobileOrder.payments,
-            notes: mobileOrder.notes,
-            delivery_address: mobileOrder.delivery_address,
-            delivery_city: mobileOrder.delivery_city,
-            delivery_state: mobileOrder.delivery_state,
-            delivery_zip: mobileOrder.delivery_zip,
-            rejection_reason: mobileOrder.rejection_reason,
-            visit_notes: mobileOrder.visit_notes,
-            mobile_order_id: mobileOrder.id,
-            source_project: 'mobile',
-            import_status: 'imported',
-            imported_at: new Date().toISOString(),
-            imported_by: importedBy
-          })
-          .select()
-          .single();
-        
-        if (orderError) {
-          console.error('❌ Error importing order:', orderError);
-          console.error('❌ Order data that failed:', {
-            customer_id: sanitizedCustomerId,
-            sales_rep_id: sanitizedSalesRepId,
-            payment_method_id: sanitizedPaymentMethodId,
-            payment_table_id: sanitizedPaymentTableId
-          });
-          throw orderError;
-        }
-        
-        console.log(`✅ Order imported as ${insertedOrder.id} with mobile_order_id: ${mobileOrder.id}`);
-        console.log(`💳 Payment: method="${paymentMethod}", table="${paymentTableName || 'none'}"`);
-        
-        // Insert order items if they exist with corrected schema
-        const orderItems = (mobileOrderItems || []).filter(item => item.mobile_order_id === mobileOrder.id);
-        
-        if (orderItems.length > 0) {
-          console.log(`📦 Importing ${orderItems.length} items for order ${insertedOrder.id}`);
-          
-          const itemsToInsert = orderItems.map(item => ({
-            order_id: insertedOrder.id,
-            product_name: item.product_name,
-            product_code: item.product_code,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            price: item.price,
-            discount: item.discount,
-            total: item.total,
-            unit: item.unit
-          }));
-          
-          const { error: itemsInsertError } = await supabase
-            .from('order_items')
-            .insert(itemsToInsert);
-          
-          if (itemsInsertError) {
-            console.error('❌ Error importing order items:', itemsInsertError);
-            console.error('❌ Rolling back order due to items error...');
-            
-            // Rollback: delete the order if items failed to import
-            await supabase
-              .from('orders')
-              .delete()
-              .eq('id', insertedOrder.id);
-            
-            throw itemsInsertError;
-          }
-          
-          console.log(`✅ Successfully imported ${orderItems.length} items for order ${insertedOrder.id}`);
-          
-          // Verify items were inserted correctly
-          const { data: verifyItems, error: verifyError } = await supabase
-            .from('order_items')
-            .select('*')
-            .eq('order_id', insertedOrder.id);
-          
-          if (verifyError) {
-            console.error('❌ Error verifying items:', verifyError);
-          } else {
-            console.log(`🔍 Verification: ${verifyItems?.length || 0} items found in database`);
-            if ((verifyItems?.length || 0) !== orderItems.length) {
-              console.error(`⚠️ Items count mismatch! Expected: ${orderItems.length}, Found: ${verifyItems?.length || 0}`);
-            }
-          }
-        } else {
-          console.log(`⚠️ No items found for mobile order ${mobileOrder.id}`);
-          if (mobileOrder.total > 0) {
-            console.warn(`⚠️ WARNING: Order has value (${mobileOrder.total}) but no items!`);
-          }
-        }
-        
-        // Mark mobile order as imported
-        const { error: updateError } = await supabase
+        const { error: cancelledUpdateError } = await supabase
           .from('mobile_orders')
           .update({
             imported_to_orders: true,
             imported_at: new Date().toISOString(),
-            imported_by: importedBy
+            imported_by: importedBy,
+            sync_status: 'visit_registered'
           })
-          .eq('id', mobileOrder.id);
+          .in('id', cancelledOrders.map(o => o.id));
         
-        if (updateError) {
-          console.error('❌ Error marking mobile order as imported:', updateError);
-          throw updateError;
+        if (cancelledUpdateError) {
+          console.error('❌ Error marking cancelled orders as processed:', cancelledUpdateError);
+          throw cancelledUpdateError;
         }
         
-        console.log(`🔄 Mobile order ${mobileOrder.id} marked as imported`);
-        console.log('---');
+        console.log(`✅ ${cancelledOrders.length} cancelled orders marked as visits`);
       }
       
-      // Get the selected orders for the report (including already imported ones)
-      const { data: allMobileOrders } = await supabase
-        .from('mobile_orders')
-        .select('*')
-        .in('id', orderIds);
+      // Check if any regular orders were already imported
+      const regularOrderIds = regularOrders.map(o => o.id);
+      let alreadyImportedIds = new Set<string>();
       
-      const selectedOrdersData = (allMobileOrders || []).map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
+      if (regularOrderIds.length > 0) {
+        const { data: existingOrders, error: checkError } = await supabase
+          .from('orders')
+          .select('mobile_order_id')
+          .in('mobile_order_id', regularOrderIds)
+          .eq('source_project', 'mobile');
+        
+        if (checkError) {
+          console.error('❌ Error checking for existing orders:', checkError);
+          throw checkError;
+        }
+        
+        alreadyImportedIds = new Set(existingOrders?.map(o => o.mobile_order_id) || []);
+        
+        if (alreadyImportedIds.size > 0) {
+          console.log(`⚠️ ${alreadyImportedIds.size} regular orders were already imported, skipping them`);
+          
+          // Mark the already imported mobile orders as imported if they weren't marked
+          await supabase
+            .from('mobile_orders')
+            .update({
+              imported_to_orders: true,
+              imported_at: new Date().toISOString(),
+              imported_by: importedBy
+            })
+            .in('id', Array.from(alreadyImportedIds));
+        }
+      }
       
-      // Generate and save import report
+      const ordersToImport = regularOrders.filter(order => !alreadyImportedIds.has(order.id));
+      
+      console.log(`📦 Proceeding with ${ordersToImport.length} new regular orders to import`);
+      
+      // Import regular orders to orders table
+      if (ordersToImport.length > 0) {
+        // Get payment table names for orders that have payment_table_id
+        const orderIdsWithPaymentTable = ordersToImport
+          .filter(order => order.payment_table_id)
+          .map(order => order.payment_table_id);
+        
+        let paymentTableNames: Record<string, string> = {};
+        
+        if (orderIdsWithPaymentTable.length > 0) {
+          const { data: paymentTables, error: paymentTablesError } = await supabase
+            .from('payment_tables')
+            .select('id, name')
+            .in('id', orderIdsWithPaymentTable);
+          
+          if (paymentTablesError) {
+            console.error('❌ Error getting payment tables:', paymentTablesError);
+          } else if (paymentTables) {
+            paymentTableNames = paymentTables.reduce((acc, table) => {
+              acc[table.id] = table.name;
+              return acc;
+            }, {} as Record<string, string>);
+          }
+        }
+        
+        // Get items for these orders
+        const { data: mobileOrderItems, error: itemsError } = await supabase
+          .from('mobile_order_items')
+          .select('*')
+          .in('mobile_order_id', ordersToImport.map(o => o.id));
+        
+        if (itemsError) {
+          console.error('❌ Error getting mobile order items:', itemsError);
+          throw itemsError;
+        }
+        
+        console.log(`📦 Found ${mobileOrderItems?.length || 0} items to import for ${ordersToImport.length} orders`);
+        
+        // Import each regular order
+        for (const mobileOrder of ordersToImport) {
+          console.log(`📋 Importing mobile order ${mobileOrder.id} (code: ${mobileOrder.code})`);
+          
+          // Get payment table name
+          const paymentTableName = mobileOrder.payment_table_id 
+            ? paymentTableNames[mobileOrder.payment_table_id] 
+            : mobileOrder.payment_table;
+          
+          // Validate and sanitize UUID fields
+          const sanitizedCustomerId = this.sanitizeUUID(mobileOrder.customer_id);
+          const sanitizedSalesRepId = this.sanitizeUUID(mobileOrder.sales_rep_id);
+          const sanitizedPaymentMethodId = this.sanitizeUUID(mobileOrder.payment_method_id);
+          const sanitizedPaymentTableId = this.sanitizeUUID(mobileOrder.payment_table_id);
+          
+          // Validate payment method - use a default if empty
+          const paymentMethod = mobileOrder.payment_method || 'A Definir';
+          
+          // Insert into orders table
+          const { data: insertedOrder, error: orderError } = await supabase
+            .from('orders')
+            .insert({
+              customer_id: sanitizedCustomerId,
+              customer_name: mobileOrder.customer_name,
+              sales_rep_id: sanitizedSalesRepId,
+              sales_rep_name: mobileOrder.sales_rep_name,
+              date: mobileOrder.date,
+              due_date: mobileOrder.due_date,
+              delivery_date: mobileOrder.delivery_date,
+              total: mobileOrder.total,
+              discount: mobileOrder.discount,
+              status: mobileOrder.status,
+              payment_status: mobileOrder.payment_status,
+              payment_method: paymentMethod,
+              payment_method_id: sanitizedPaymentMethodId,
+              payment_table_id: sanitizedPaymentTableId,
+              payment_table: paymentTableName,
+              payments: mobileOrder.payments,
+              notes: mobileOrder.notes,
+              delivery_address: mobileOrder.delivery_address,
+              delivery_city: mobileOrder.delivery_city,
+              delivery_state: mobileOrder.delivery_state,
+              delivery_zip: mobileOrder.delivery_zip,
+              rejection_reason: mobileOrder.rejection_reason,
+              visit_notes: mobileOrder.visit_notes,
+              mobile_order_id: mobileOrder.id,
+              source_project: 'mobile',
+              import_status: 'imported',
+              imported_at: new Date().toISOString(),
+              imported_by: importedBy
+            })
+            .select()
+            .single();
+          
+          if (orderError) {
+            console.error('❌ Error importing order:', orderError);
+            throw orderError;
+          }
+          
+          console.log(`✅ Order imported as ${insertedOrder.id}`);
+          
+          // Insert order items if they exist
+          const orderItems = (mobileOrderItems || []).filter(item => item.mobile_order_id === mobileOrder.id);
+          
+          if (orderItems.length > 0) {
+            const itemsToInsert = orderItems.map(item => ({
+              order_id: insertedOrder.id,
+              product_name: item.product_name,
+              product_code: item.product_code,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              price: item.price,
+              discount: item.discount,
+              total: item.total,
+              unit: item.unit
+            }));
+            
+            const { error: itemsInsertError } = await supabase
+              .from('order_items')
+              .insert(itemsToInsert);
+            
+            if (itemsInsertError) {
+              console.error('❌ Error importing order items:', itemsInsertError);
+              // Rollback: delete the order if items failed to import
+              await supabase
+                .from('orders')
+                .delete()
+                .eq('id', insertedOrder.id);
+              throw itemsInsertError;
+            }
+            
+            console.log(`✅ Successfully imported ${orderItems.length} items`);
+          }
+          
+          // Mark mobile order as imported
+          const { error: updateError } = await supabase
+            .from('mobile_orders')
+            .update({
+              imported_to_orders: true,
+              imported_at: new Date().toISOString(),
+              imported_by: importedBy
+            })
+            .eq('id', mobileOrder.id);
+          
+          if (updateError) {
+            console.error('❌ Error marking mobile order as imported:', updateError);
+            throw updateError;
+          }
+        }
+      }
+      
+      // Generate report for all processed orders (including cancelled ones as visits)
+      const allOrdersData = mobileOrders.map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
+      
       const report = mobileImportReportService.generateImportReport(
-        selectedOrdersData,
+        allOrdersData,
         'import',
         importedBy
       );
       
       await importReportPersistenceService.saveImportReport(report);
       
-      console.log('✅ Orders imported successfully with enhanced UUID validation and report saved');
+      console.log(`✅ Process completed: ${ordersToImport.length} orders imported, ${cancelledOrders.length} visits registered`);
       return report;
     } catch (error) {
       console.error('❌ Error in importOrders:', error);
@@ -458,7 +456,7 @@ class MobileOrderImportService {
       const { error } = await supabase
         .from('mobile_orders')
         .update({
-          imported_to_orders: true, // Mark as processed
+          imported_to_orders: true,
           imported_at: new Date().toISOString(),
           imported_by: rejectedBy,
           sync_status: 'rejected'
@@ -490,9 +488,6 @@ class MobileOrderImportService {
   async getImportHistory(): Promise<any[]> {
     try {
       console.log('📊 Getting import history...');
-      
-      // This method is now deprecated in favor of the new grouped history
-      // Return empty array to maintain compatibility
       console.log('⚠️ This method is deprecated, use importReportPersistenceService.getImportHistory() instead');
       return [];
     } catch (error) {
@@ -505,7 +500,6 @@ class MobileOrderImportService {
     try {
       console.log('🔧 Fixing existing data inconsistencies...');
       
-      // Find orders in the orders table that came from mobile but their corresponding mobile_orders are not marked as imported
       const { data: importedOrders, error: ordersError } = await supabase
         .from('orders')
         .select('id, mobile_order_id')
@@ -529,7 +523,6 @@ class MobileOrderImportService {
         return;
       }
       
-      // Find mobile orders that should be marked as imported but aren't
       const { data: unmarkedMobileOrders, error: unmarkedError } = await supabase
         .from('mobile_orders')
         .select('id')
@@ -548,7 +541,6 @@ class MobileOrderImportService {
       
       console.log(`🔄 Found ${unmarkedMobileOrders.length} mobile orders that need to be marked as imported`);
       
-      // Mark them as imported
       const { error: updateError } = await supabase
         .from('mobile_orders')
         .update({
@@ -582,7 +574,13 @@ class MobileOrderImportService {
       errors.push('Sales rep information is required');
     }
     
-    // Specific validations based on order type
+    // Skip validation for cancelled orders - they are treated as visits
+    if (order.status === 'cancelled' || order.status === 'canceled') {
+      console.log(`ℹ️ Skipping validation for cancelled order ${order.id} - treated as visit`);
+      return { isValid: true, errors: [] };
+    }
+    
+    // Specific validations based on order type for non-cancelled orders
     if (order.total > 0) {
       // Regular sales order validation
       if (!order.items || order.items.length === 0) {
@@ -593,7 +591,6 @@ class MobileOrderImportService {
       if (!order.rejectionReason) {
         errors.push('Negative orders must have a rejection reason');
       }
-      // Negative orders can have empty items array, that's OK
     } else {
       errors.push('Order total cannot be negative');
     }

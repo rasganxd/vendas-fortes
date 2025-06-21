@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, User, Download, RefreshCw, Settings, AlertTriangle } from 'lucide-react';
+import { Calendar, User, Download, RefreshCw, Settings, AlertTriangle, MapPin } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ interface SalesRepWithOrders {
   id: string;
   name: string;
   pendingOrdersCount: number;
+  visitsCount: number;
   lastSync: Date | null;
   totalValue: number;
   ordersWithIssues: number;
@@ -48,6 +49,7 @@ export default function SalesRepImportSelector({
           sales_rep_id,
           sales_rep_name,
           total,
+          status,
           created_at,
           payment_table_id,
           payment_table
@@ -77,6 +79,7 @@ export default function SalesRepImportSelector({
             id: salesRepId,
             name: salesRepName,
             pendingOrdersCount: 0,
+            visitsCount: 0,
             lastSync: null,
             totalValue: 0,
             ordersWithIssues: 0
@@ -84,12 +87,22 @@ export default function SalesRepImportSelector({
         }
 
         const salesRep = salesRepMap.get(salesRepId)!;
-        salesRep.pendingOrdersCount++;
-        salesRep.totalValue += Number(order.total || 0);
         
-        // Verificar se tem problemas (sem tabela de pagamento quando deveria ter)
-        if (order.total > 0 && !order.payment_table_id && !order.payment_table) {
-          salesRep.ordersWithIssues++;
+        // Verificar se é pedido cancelado (visita) ou pedido normal
+        const isCancelledOrder = order.status === 'cancelled' || order.status === 'canceled';
+        const isVisit = isCancelledOrder || (order.total === 0);
+        
+        if (isVisit) {
+          salesRep.visitsCount++;
+        } else {
+          salesRep.pendingOrdersCount++;
+          salesRep.totalValue += Number(order.total || 0);
+          
+          // Verificar se tem problemas (sem tabela de pagamento quando deveria ter)
+          // Pedidos cancelados não precisam de tabela de pagamento
+          if (!isCancelledOrder && order.total > 0 && !order.payment_table_id && !order.payment_table) {
+            salesRep.ordersWithIssues++;
+          }
         }
         
         // Atualizar data do último sync (mais recente)
@@ -103,7 +116,7 @@ export default function SalesRepImportSelector({
         .sort((a, b) => (b.lastSync?.getTime() || 0) - (a.lastSync?.getTime() || 0));
 
       setSalesRepsWithOrders(salesRepsArray);
-      console.log(`✅ Found ${salesRepsArray.length} sales reps with pending orders`);
+      console.log(`✅ Found ${salesRepsArray.length} sales reps with pending orders/visits`);
 
     } catch (error) {
       console.error('❌ Error loading sales reps with pending orders:', error);
@@ -120,7 +133,7 @@ export default function SalesRepImportSelector({
       setIsFixing(true);
       console.log('🔧 Starting data inconsistency fix...');
       
-      await mobileOrderImportService.fixExistingDataInconsistencies();
+      await mobileOrderImportService.fixEx istingDataInconsistencies();
       
       toast.success('Inconsistências corrigidas', {
         description: 'Os dados foram corrigidos com sucesso'
@@ -160,6 +173,7 @@ export default function SalesRepImportSelector({
   };
 
   const totalPendingOrders = salesRepsWithOrders.reduce((sum, rep) => sum + rep.pendingOrdersCount, 0);
+  const totalVisits = salesRepsWithOrders.reduce((sum, rep) => sum + rep.visitsCount, 0);
   const totalPendingValue = salesRepsWithOrders.reduce((sum, rep) => sum + rep.totalValue, 0);
   const totalOrdersWithIssues = salesRepsWithOrders.reduce((sum, rep) => sum + rep.ordersWithIssues, 0);
 
@@ -183,7 +197,7 @@ export default function SalesRepImportSelector({
           <div className="text-center text-gray-500">
             <User size={48} className="mx-auto mb-4 opacity-50" />
             <p>Nenhum vendedor com pedidos pendentes</p>
-            <p className="text-sm">Todos os pedidos mobile foram importados</p>
+            <p className="text-sm">Todos os pedidos mobile foram processados</p>
             
             <div className="mt-4">
               <Button
@@ -212,7 +226,7 @@ export default function SalesRepImportSelector({
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <User size={20} />
-            Vendedores com Pedidos Pendentes
+            Vendedores com Dados Pendentes
           </div>
           <div className="flex gap-2">
             <Button
@@ -240,10 +254,17 @@ export default function SalesRepImportSelector({
           </div>
         </CardTitle>
         
-        {/* Resumo geral */}
-        <div className="flex gap-4 text-sm text-gray-600">
+        {/* Resumo geral com separação entre pedidos e visitas */}
+        <div className="flex gap-4 text-sm text-gray-600 flex-wrap">
           <span>{salesRepsWithOrders.length} vendedores</span>
-          <span>{totalPendingOrders} pedidos pendentes</span>
+          <span className="flex items-center gap-1">
+            <Download size={14} />
+            {totalPendingOrders} pedidos
+          </span>
+          <span className="flex items-center gap-1">
+            <MapPin size={14} />
+            {totalVisits} visitas
+          </span>
           <span>{formatCurrency(totalPendingValue)} em valor total</span>
           {totalOrdersWithIssues > 0 && (
             <span className="text-orange-600 flex items-center gap-1">
@@ -267,7 +288,7 @@ export default function SalesRepImportSelector({
             ) : (
               <Download size={16} className="mr-2" />
             )}
-            Importar Todos ({totalPendingOrders} pedidos)
+            Processar Todos ({totalPendingOrders + totalVisits} itens)
           </Button>
         </div>
 
@@ -301,9 +322,19 @@ export default function SalesRepImportSelector({
               </div>
 
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">
-                  {salesRep.pendingOrdersCount} pedidos
-                </Badge>
+                {salesRep.pendingOrdersCount > 0 && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Download size={12} />
+                    {salesRep.pendingOrdersCount} pedidos
+                  </Badge>
+                )}
+                
+                {salesRep.visitsCount > 0 && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <MapPin size={12} />
+                    {salesRep.visitsCount} visitas
+                  </Badge>
+                )}
                 
                 {salesRep.ordersWithIssues > 0 && (
                   <Badge variant="destructive" className="flex items-center gap-1">
@@ -323,7 +354,7 @@ export default function SalesRepImportSelector({
                   ) : (
                     <Download size={14} />
                   )}
-                  Importar
+                  Processar
                 </Button>
               </div>
             </div>

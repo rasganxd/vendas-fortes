@@ -28,6 +28,7 @@ export function validateMobileOrder(orderData: any, rules: OrderValidationRules 
   console.log('🔍 [OrderValidation] Validating mobile order:', {
     id: orderData.id,
     total: orderData.total,
+    status: orderData.status,
     paymentMethod: orderData.paymentMethod,
     paymentMethodId: orderData.paymentMethodId,
     customerId: orderData.customerId,
@@ -67,10 +68,24 @@ export function validateMobileOrder(orderData: any, rules: OrderValidationRules 
     }
   }
 
-  // Determinar se é um pedido normal ou de visita/rejeição
+  // Determinar se é um pedido cancelado, de visita, ou normal
+  const isCancelledOrder = orderData.status === 'cancelled' || orderData.status === 'canceled';
   const isNegativeOrder = orderData.total === 0 && orderData.rejectionReason;
   const isRegularOrder = orderData.total > 0;
 
+  // Pedidos cancelados são tratados como visitas - validação mínima
+  if (isCancelledOrder) {
+    console.log('ℹ️ [OrderValidation] Cancelled order detected - minimal validation applied');
+    // Para pedidos cancelados, só validamos dados básicos (cliente e vendedor)
+    // Não exigimos payment_method_id, itens, etc.
+    return {
+      isValid: errors.length === 0,
+      errors,
+      errorCode: errors.length > 0 ? errorCode : 'SUCCESS'
+    };
+  }
+
+  // Validação para pedidos não cancelados
   if (!isNegativeOrder && !isRegularOrder) {
     errors.push('Order must have positive total or be a negative order with rejection reason');
     errorCode = 'INVALID_ORDER_TYPE';
@@ -116,8 +131,8 @@ export function validateMobileOrder(orderData: any, rules: OrderValidationRules 
     }
   }
 
-  // Validação específica para pedidos negativos/visitas
-  if (isNegativeOrder) {
+  // Validação específica para pedidos negativos/visitas (não cancelados)
+  if (isNegativeOrder && !isCancelledOrder) {
     if (!orderData.rejectionReason || orderData.rejectionReason.trim() === '') {
       errors.push('Rejection reason is required for negative orders');
       errorCode = 'MISSING_REJECTION_REASON';
@@ -136,17 +151,21 @@ export function validateMobileOrder(orderData: any, rules: OrderValidationRules 
   const result: OrderValidationResult = {
     isValid: errors.length === 0,
     errors,
-    errorCode
+    errorCode: errors.length > 0 ? errorCode : 'SUCCESS'
   };
 
   if (!result.isValid) {
     console.log('❌ [OrderValidation] Order validation failed:', {
       orderTotal: orderData.total,
+      orderStatus: orderData.status,
+      isCancelled: isCancelledOrder,
       errorCode: result.errorCode,
       errors: result.errors
     });
   } else {
-    console.log('✅ [OrderValidation] Order validation passed');
+    console.log('✅ [OrderValidation] Order validation passed', {
+      orderType: isCancelledOrder ? 'cancelled' : isRegularOrder ? 'regular' : 'negative'
+    });
   }
 
   return result;

@@ -9,6 +9,7 @@ export interface ImportReportData {
   operator: string;
   summary: {
     totalOrders: number;
+    totalVisits: number;
     totalValue: number;
     salesRepsCount: number;
     totalItems: number;
@@ -17,6 +18,7 @@ export interface ImportReportData {
     salesRepId: string;
     salesRepName: string;
     ordersCount: number;
+    visitsCount: number;
     totalValue: number;
     orders: Array<{
       id: string;
@@ -25,6 +27,8 @@ export interface ImportReportData {
       total: number;
       itemsCount: number;
       rejectionReason?: string;
+      status: string;
+      isVisit: boolean;
     }>;
   }>;
   topProducts: Array<{
@@ -44,16 +48,31 @@ class MobileImportReportService {
   ): ImportReportData {
     console.log(`📊 Generating ${operationType} report for ${orders.length} orders`);
 
+    // Separate orders and visits
+    const regularOrders = orders.filter(order => 
+      order.total > 0 && 
+      order.status !== 'cancelled' && 
+      order.status !== 'canceled'
+    );
+    
+    const visits = orders.filter(order => 
+      order.total === 0 || 
+      order.status === 'cancelled' || 
+      order.status === 'canceled'
+    );
+
     // Calculate summary
-    const totalValue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const totalValue = regularOrders.reduce((sum, order) => sum + (order.total || 0), 0);
     const salesRepsSet = new Set(orders.map(order => order.salesRepId));
-    const totalItems = orders.reduce((sum, order) => sum + (order.items?.length || 0), 0);
+    const totalItems = regularOrders.reduce((sum, order) => sum + (order.items?.length || 0), 0);
 
     // Group by sales rep
     const salesRepGroups = new Map<string, {
       salesRepId: string;
       salesRepName: string;
       orders: Order[];
+      regularOrders: Order[];
+      visits: Order[];
       totalValue: number;
     }>();
 
@@ -64,15 +83,26 @@ class MobileImportReportService {
           salesRepId: order.salesRepId,
           salesRepName: order.salesRepName,
           orders: [],
+          regularOrders: [],
+          visits: [],
           totalValue: 0
         });
       }
+      
       const group = salesRepGroups.get(key)!;
       group.orders.push(order);
-      group.totalValue += order.total || 0;
+      
+      const isVisit = order.total === 0 || order.status === 'cancelled' || order.status === 'canceled';
+      
+      if (isVisit) {
+        group.visits.push(order);
+      } else {
+        group.regularOrders.push(order);
+        group.totalValue += order.total || 0;
+      }
     });
 
-    // Calculate top products
+    // Calculate top products (only from regular orders, not visits)
     const productMap = new Map<string, {
       productName: string;
       productCode: number;
@@ -80,7 +110,7 @@ class MobileImportReportService {
       occurrences: number;
     }>();
 
-    orders.forEach(order => {
+    regularOrders.forEach(order => {
       order.items?.forEach(item => {
         const key = `${item.productCode}-${item.productName}`;
         if (!productMap.has(key)) {
@@ -105,7 +135,8 @@ class MobileImportReportService {
     const salesRepBreakdown = Array.from(salesRepGroups.values()).map(group => ({
       salesRepId: group.salesRepId,
       salesRepName: group.salesRepName,
-      ordersCount: group.orders.length,
+      ordersCount: group.regularOrders.length,
+      visitsCount: group.visits.length,
       totalValue: group.totalValue,
       orders: group.orders.map(order => ({
         id: order.id,
@@ -113,7 +144,9 @@ class MobileImportReportService {
         customerName: order.customerName,
         total: order.total || 0,
         itemsCount: order.items?.length || 0,
-        rejectionReason: order.rejectionReason
+        rejectionReason: order.rejectionReason,
+        status: order.status,
+        isVisit: order.total === 0 || order.status === 'cancelled' || order.status === 'canceled'
       }))
     })).sort((a, b) => b.totalValue - a.totalValue);
 
@@ -123,7 +156,8 @@ class MobileImportReportService {
       operationType,
       operator,
       summary: {
-        totalOrders: orders.length,
+        totalOrders: regularOrders.length,
+        totalVisits: visits.length,
         totalValue,
         salesRepsCount: salesRepsSet.size,
         totalItems
@@ -134,6 +168,7 @@ class MobileImportReportService {
     };
 
     console.log('✅ Import report generated successfully');
+    console.log(`📊 Report summary: ${regularOrders.length} orders, ${visits.length} visits, ${formatCurrency(totalValue)}`);
     return report;
   }
 
@@ -144,17 +179,20 @@ class MobileImportReportService {
       `Operador: ${report.operator}`,
       '',
       '=== RESUMO EXECUTIVO ===',
-      `Total de Pedidos: ${report.summary.totalOrders}`,
+      `Pedidos Importados: ${report.summary.totalOrders}`,
+      `Visitas Registradas: ${report.summary.totalVisits}`,
       `Valor Total: ${formatCurrency(report.summary.totalValue)}`,
       `Vendedores Envolvidos: ${report.summary.salesRepsCount}`,
       `Total de Itens: ${report.summary.totalItems}`,
       '',
       '=== DETALHAMENTO POR VENDEDOR ===',
       ...report.salesRepBreakdown.map(rep => [
-        `${rep.salesRepName} (${rep.ordersCount} pedidos - ${formatCurrency(rep.totalValue)})`,
-        ...rep.orders.map(order => 
-          `  • Pedido #${order.code || 'S/N'} - ${order.customerName} - ${formatCurrency(order.total)} (${order.itemsCount} itens)${order.rejectionReason ? ` [Rejeitado: ${order.rejectionReason}]` : ''}`
-        ),
+        `${rep.salesRepName} (${rep.ordersCount} pedidos, ${rep.visitsCount} visitas - ${formatCurrency(rep.totalValue)})`,
+        ...rep.orders.map(order => {
+          const type = order.isVisit ? 'VISITA' : 'PEDIDO';
+          const reason = order.rejectionReason ? ` [Motivo: ${order.rejectionReason}]` : '';
+          return `  • ${type} #${order.code || 'S/N'} - ${order.customerName} - ${formatCurrency(order.total)} (${order.itemsCount} itens)${reason}`;
+        }),
         ''
       ]).flat(),
       '=== PRODUTOS MAIS VENDIDOS ===',
