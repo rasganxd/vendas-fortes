@@ -33,15 +33,12 @@ export const formatDateBR = (date: Date | string): string => {
 };
 
 export const formatCurrencyInWords = (value: number): string => {
-  // Simplified implementation for currency in words
-  // This is a basic version - for production you might want a more complete implementation
+  if (value === 0) return 'zero reais';
   
   const unidades = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
   const dezenas = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
   const especiais = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
   const centenas = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
-  
-  if (value === 0) return 'zero reais';
   
   const integerPart = Math.floor(value);
   const decimalPart = Math.round((value - integerPart) * 100);
@@ -62,7 +59,45 @@ export const formatCurrencyInWords = (value: number): string => {
       return centenas[cen] + (resto > 0 ? ` e ${convertNumber(resto)}` : '');
     }
     
-    // For larger numbers, simplified approach
+    // Para milhares
+    if (num < 1000000) {
+      const mil = Math.floor(num / 1000);
+      const resto = num % 1000;
+      
+      let milText = '';
+      if (mil === 1) {
+        milText = 'mil';
+      } else {
+        milText = `${convertNumber(mil)} mil`;
+      }
+      
+      if (resto > 0) {
+        return `${milText} e ${convertNumber(resto)}`;
+      } else {
+        return milText;
+      }
+    }
+    
+    // Para milhões (caso necessário no futuro)
+    if (num < 1000000000) {
+      const milhao = Math.floor(num / 1000000);
+      const resto = num % 1000000;
+      
+      let milhaoText = '';
+      if (milhao === 1) {
+        milhaoText = 'um milhão';
+      } else {
+        milhaoText = `${convertNumber(milhao)} milhões`;
+      }
+      
+      if (resto > 0) {
+        return `${milhaoText} e ${convertNumber(resto)}`;
+      } else {
+        return milhaoText;
+      }
+    }
+    
+    // Fallback para valores muito grandes
     return num.toString();
   };
   

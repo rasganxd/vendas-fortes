@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Customer, Order, PaymentTable } from '@/types';
 import { formatDateToBR } from '@/lib/date-utils';
@@ -68,6 +67,21 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
     payment.dueDate = calculateDueDate();
   }
 
+  // Ensure we always have a proper amount in words
+  const getAmountInWords = (): string => {
+    const amount = remainingAmount || payment.amount || 0;
+    
+    // First try to use the payment's amountInWords if it exists and is valid
+    if (payment.amountInWords && 
+        payment.amountInWords.trim() !== '' && 
+        !payment.amountInWords.match(/^\d+([.,]\d+)?$/)) { // Check if it's not just numbers
+      return payment.amountInWords;
+    }
+    
+    // Otherwise, generate it using our improved function
+    return formatCurrencyInWords(amount);
+  };
+
   const containerClass = isCompact ? `promissory-note-compact ${className}` : `p-6 max-w-2xl mx-auto bg-white ${className}`;
 
   return (
@@ -87,7 +101,7 @@ const PromissoryNoteTemplate: React.FC<PromissoryNoteTemplateProps> = ({
         <p className={isCompact ? 'mb-2' : 'mb-4'}>
           Aos <span className="font-semibold">{formatDateToBR(payment.dueDate || new Date())}</span>,
           pagarei por esta única via de NOTA PROMISSÓRIA a {companyData?.name || "___________________"},
-          ou à sua ordem, a quantia de {formatCurrency(remainingAmount || payment.amount || 0)} ({payment.amountInWords || formatCurrencyInWords(remainingAmount || payment.amount)}),
+          ou à sua ordem, a quantia de {formatCurrency(remainingAmount || payment.amount || 0)} ({getAmountInWords()}),
           em moeda corrente deste país.
         </p>
         <p className={isCompact ? 'text-sm' : 'text-base'}>
