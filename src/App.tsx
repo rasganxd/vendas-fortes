@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes as RouterRoutes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Toaster } from '@/components/ui/sonner';
@@ -22,6 +23,7 @@ import PaymentTables from '@/pages/PaymentTables';
 import PaymentMethods from '@/pages/PaymentMethods';
 import Payments from '@/pages/Payments';
 import PaymentsList from '@/pages/PaymentsList';
+import Listings from '@/pages/Listings';
 import SalesReports from '@/pages/SalesReports';
 import Settings from '@/pages/Settings';
 import SystemMaintenance from '@/pages/SystemMaintenance';
@@ -73,6 +75,7 @@ function App() {
                   <Route path="/metodos-pagamento" element={<PaymentMethods />} />
                   <Route path="/pagamentos" element={<Payments />} />
                   <Route path="/lista-pagamentos" element={<PaymentsList />} />
+                  <Route path="/listagens" element={<Listings />} />
                   <Route path="/relatorios-vendas" element={<SalesReports />} />
                   <Route path="/configuracoes" element={<Settings />} />
                   <Route path="/manutencao" element={<SystemMaintenance />} />

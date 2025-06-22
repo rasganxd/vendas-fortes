@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -14,7 +15,8 @@ import {
   LucideIcon,
   ChevronRight,
   PlusCircle,
-  BarChart3
+  BarChart3,
+  FileSpreadsheet
 } from "lucide-react";
 
 import { 
@@ -33,7 +35,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useAppContext } from "@/hooks/useAppContext";
 import { useEffect } from "react";
 
-// Define navigation items - adicionado item "Relatórios de Vendas"
+// Define navigation items - adicionado item "Listagens"
 const navigation: NavItem[] = [
   {
     title: "Dashboard",
@@ -72,10 +74,16 @@ const navigation: NavItem[] = [
     group: "vendas"
   },
   {
+    title: "Listagens",
+    href: "/listagens",
+    icon: FileSpreadsheet,
+    group: "relatorios"
+  },
+  {
     title: "Relatórios de Vendas",
     href: "/relatorios-vendas",
     icon: BarChart3,
-    group: "vendas"
+    group: "relatorios"
   },
   {
     title: "Pagamentos",
@@ -147,11 +155,12 @@ export default function SideNav() {
     return groups;
   }, {} as Record<string, NavItem[]>);
 
-  // Labels for groups
+  // Labels for groups - adicionado grupo "RELATÓRIOS"
   const groupLabels: Record<string, string> = {
     geral: "GERAL",
     cadastro: "CADASTRO",
     vendas: "VENDAS",
+    relatorios: "RELATÓRIOS",
     financeiro: "FINANCEIRO",
     logistics: "LOGÍSTICA",
     sistema: "SISTEMA"
