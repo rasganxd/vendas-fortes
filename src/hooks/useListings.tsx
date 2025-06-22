@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '@/hooks/useAppContext';
 import { ListingType } from '@/components/listings/ListingFilters';
 import PrintableListing from '@/components/listings/PrintableListing';
 import { renderToString } from 'react-dom/server';
+import { getDayLabel } from '@/components/customers/constants';
 
 export function useListings() {
   const [selectedType, setSelectedType] = useState<ListingType>('customers');
@@ -99,7 +99,8 @@ export function useListings() {
     if (selectedType === 'customers') {
       data = data.map(customer => ({
         ...customer,
-        salesRepName: salesReps.find(rep => rep.id === customer.salesRepId)?.name
+        salesRepName: salesReps.find(rep => rep.id === customer.salesRepId)?.name,
+        visitDaysInPortuguese: customer.visitDays?.map((day: string) => getDayLabel(day)) || []
       }));
     }
 

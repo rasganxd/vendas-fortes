@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { formatCurrency } from '@/lib/format-utils';
 import { formatDateToBR } from '@/lib/date-utils';
@@ -111,7 +110,7 @@ export default function PrintableListing({
                   <td className="border border-gray-300 p-2">{customer.salesRepName || '-'}</td>
                   <td className="border border-gray-300 p-2 text-center">{customer.visitSequence || '-'}</td>
                   <td className="border border-gray-300 p-2">
-                    {customer.visitDays?.length > 0 ? customer.visitDays.join(', ') : '-'}
+                    {customer.visitDaysInPortuguese?.length > 0 ? customer.visitDaysInPortuguese.join(', ') : '-'}
                   </td>
                 </tr>
               ))}

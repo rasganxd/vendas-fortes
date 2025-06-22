@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -82,8 +81,8 @@ export default function ListingResults({
             <TableCell>{customer.salesRepName || '-'}</TableCell>
             <TableCell>{customer.visitSequence || '-'}</TableCell>
             <TableCell>
-              {customer.visitDays?.length > 0 
-                ? customer.visitDays.join(', ') 
+              {customer.visitDaysInPortuguese?.length > 0 
+                ? customer.visitDaysInPortuguese.join(', ') 
                 : '-'
               }
             </TableCell>
