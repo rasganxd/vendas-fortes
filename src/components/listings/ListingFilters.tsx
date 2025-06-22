@@ -45,12 +45,12 @@ export default function ListingFilters({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <Label>Vendedor</Label>
-        <Select value={filters.salesRepId || ''} onValueChange={(value) => updateFilter('salesRepId', value)}>
+        <Select value={filters.salesRepId || ''} onValueChange={(value) => updateFilter('salesRepId', value === 'all' ? '' : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todos os vendedores" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os vendedores</SelectItem>
+            <SelectItem value="all">Todos os vendedores</SelectItem>
             {salesReps.map(rep => (
               <SelectItem key={rep.id} value={rep.id}>{rep.name}</SelectItem>
             ))}
@@ -60,12 +60,12 @@ export default function ListingFilters({
 
       <div>
         <Label>Dia da Semana</Label>
-        <Select value={filters.visitDay || ''} onValueChange={(value) => updateFilter('visitDay', value)}>
+        <Select value={filters.visitDay || ''} onValueChange={(value) => updateFilter('visitDay', value === 'all' ? '' : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todos os dias" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os dias</SelectItem>
+            <SelectItem value="all">Todos os dias</SelectItem>
             <SelectItem value="monday">Segunda-feira</SelectItem>
             <SelectItem value="tuesday">Terça-feira</SelectItem>
             <SelectItem value="wednesday">Quarta-feira</SelectItem>
@@ -101,12 +101,12 @@ export default function ListingFilters({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <Label>Categoria</Label>
-        <Select value={filters.categoryId || ''} onValueChange={(value) => updateFilter('categoryId', value)}>
+        <Select value={filters.categoryId || ''} onValueChange={(value) => updateFilter('categoryId', value === 'all' ? '' : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todas as categorias" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas as categorias</SelectItem>
+            <SelectItem value="all">Todas as categorias</SelectItem>
             {productCategories.map(cat => (
               <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
             ))}
@@ -116,12 +116,12 @@ export default function ListingFilters({
 
       <div>
         <Label>Grupo</Label>
-        <Select value={filters.groupId || ''} onValueChange={(value) => updateFilter('groupId', value)}>
+        <Select value={filters.groupId || ''} onValueChange={(value) => updateFilter('groupId', value === 'all' ? '' : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todos os grupos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os grupos</SelectItem>
+            <SelectItem value="all">Todos os grupos</SelectItem>
             {productGroups.map(group => (
               <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
             ))}
@@ -131,12 +131,12 @@ export default function ListingFilters({
 
       <div>
         <Label>Marca</Label>
-        <Select value={filters.brandId || ''} onValueChange={(value) => updateFilter('brandId', value)}>
+        <Select value={filters.brandId || ''} onValueChange={(value) => updateFilter('brandId', value === 'all' ? '' : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todas as marcas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas as marcas</SelectItem>
+            <SelectItem value="all">Todas as marcas</SelectItem>
             {productBrands.map(brand => (
               <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
             ))}
@@ -168,12 +168,12 @@ export default function ListingFilters({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <Label>Status</Label>
-        <Select value={filters.status || ''} onValueChange={(value) => updateFilter('status', value)}>
+        <Select value={filters.status || ''} onValueChange={(value) => updateFilter('status', value === 'all' ? '' : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todos os status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os status</SelectItem>
+            <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="pending">Pendente</SelectItem>
             <SelectItem value="confirmed">Confirmado</SelectItem>
             <SelectItem value="processing">Em Processamento</SelectItem>
@@ -185,12 +185,12 @@ export default function ListingFilters({
 
       <div>
         <Label>Vendedor</Label>
-        <Select value={filters.salesRepId || ''} onValueChange={(value) => updateFilter('salesRepId', value)}>
+        <Select value={filters.salesRepId || ''} onValueChange={(value) => updateFilter('salesRepId', value === 'all' ? '' : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todos os vendedores" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os vendedores</SelectItem>
+            <SelectItem value="all">Todos os vendedores</SelectItem>
             {salesReps.map(rep => (
               <SelectItem key={rep.id} value={rep.id}>{rep.name}</SelectItem>
             ))}
