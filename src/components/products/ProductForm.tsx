@@ -11,7 +11,8 @@ import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { useProductUnits } from './hooks/useProductUnits';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Package, Ruler, DollarSign, Tags } from 'lucide-react';
+import { Package, Ruler, DollarSign, Tags, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ProductFormProps {
   open: boolean;
@@ -61,12 +62,19 @@ const ProductForm: React.FC<ProductFormProps> = ({
   } = useForm<FormData>();
 
   const hasSubunit = watch('hasSubunit');
+  const currentCost = watch('cost');
 
   // Generate next product code
   const generateNextCode = () => {
     if (products.length === 0) return 1;
     const maxCode = Math.max(...products.map(p => p.code || 0));
     return maxCode + 1;
+  };
+
+  // Check if selling price is lower than cost price
+  const isPriceLowerThanCost = () => {
+    if (!isEditing || !selectedProduct || !currentCost) return false;
+    return selectedProduct.price < currentCost;
   };
 
   useEffect(() => {
@@ -114,20 +122,22 @@ const ProductForm: React.FC<ProductFormProps> = ({
     const costValue = Number(data.cost);
     console.log("💰 [ProductForm] Converted cost value:", costValue, "Type:", typeof costValue);
     
-    // Clean data for submission - price will be set to cost initially
+    // Clean data for submission
     const cleanData = {
       ...data,
-      cost: costValue, // Ensure it's a number
-      price: costValue, // Set initial price equal to cost
+      cost: costValue,
+      // CORREÇÃO: Só definir price = cost para produtos NOVOS
+      // Para produtos existentes, preservar o preço de venda atual
+      price: isEditing && selectedProduct ? selectedProduct.price : costValue,
       categoryId: data.categoryId === 'none' ? undefined : data.categoryId,
       groupId: data.groupId === 'none' ? undefined : data.groupId,
       brandId: data.brandId === 'none' ? undefined : data.brandId,
       subunit: data.hasSubunit ? data.subunit : undefined,
-      // subunitRatio will be calculated automatically from units table
     };
     
     console.log("✅ [ProductForm] Clean data for submission:", cleanData);
     console.log("💰 [ProductForm] Final cost value being sent:", cleanData.cost);
+    console.log("💲 [ProductForm] Final price value being sent:", cleanData.price);
     onSubmit(cleanData);
   };
 
@@ -143,6 +153,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
           <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
             
+            {/* Alerta se preço for menor que custo */}
+            {isPriceLowerThanCost() && (
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  <strong>Atenção:</strong> O preço de venda atual (R$ {selectedProduct?.price.toFixed(2)}) 
+                  é menor que o novo custo (R$ {currentCost?.toFixed(2)}). 
+                  O preço de venda será mantido. Você pode ajustá-lo na aba de Precificação se necessário.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Seção Identificação */}
             <Card>
               <CardHeader className="pb-3">
@@ -261,9 +283,17 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       className={errors.cost ? 'border-red-500' : ''}
                     />
                     {errors.cost && <p className="text-red-500 text-sm mt-1">{errors.cost.message}</p>}
-                    <p className="text-sm text-gray-500 mt-1">
-                      O preço de venda será definido na aba de Precificação
-                    </p>
+                    {isEditing && selectedProduct && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Preço de venda atual: R$ {selectedProduct.price.toFixed(2)}
+                        {selectedProduct.price < currentCost && ' (menor que o custo!)'}
+                      </p>
+                    )}
+                    {!isEditing && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        O preço de venda será definido igual ao custo inicialmente
+                      </p>
+                    )}
                   </div>
                   
                   <div>
