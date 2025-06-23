@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { Order, OrderItem, SalesRep, Customer } from '@/types';
 import { ReportFilters, SalesReportData, SalesMetrics, TopProduct, SalesRepPerformance, ChartData } from '@/types/reports';
@@ -16,6 +15,51 @@ export const useSalesReports = () => {
   });
 
   const isLoading = ordersLoading || salesRepsLoading || customersLoading;
+
+  // Função para calcular datas do período
+  const getPeriodDates = (period: ReportFilters['period']) => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+    switch (period) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'yesterday':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59);
+        break;
+      case 'week':
+        const startOfWeek = now.getDate() - now.getDay();
+        startDate = new Date(now.getFullYear(), now.getMonth(), startOfWeek);
+        break;
+      case 'last_week':
+        const lastWeekStart = now.getDate() - now.getDay() - 7;
+        const lastWeekEnd = now.getDate() - now.getDay() - 1;
+        startDate = new Date(now.getFullYear(), now.getMonth(), lastWeekStart);
+        endDate = new Date(now.getFullYear(), now.getMonth(), lastWeekEnd, 23, 59, 59);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'last_month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        break;
+      case 'quarter':
+        const quarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), quarter * 3, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    return { startDate, endDate };
+  };
 
   // Aplicar filtros nos pedidos
   const filteredOrders = useMemo(() => {
@@ -48,23 +92,16 @@ export const useSalesReports = () => {
 
     // Filtro por período
     if (filters.period || filters.startDate || filters.endDate) {
-      const now = new Date();
       let startDate: Date;
-      let endDate: Date = filters.endDate || now;
+      let endDate: Date;
 
-      if (filters.period === 'today') {
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      } else if (filters.period === 'week') {
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else if (filters.period === 'month') {
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      } else if (filters.period === 'quarter') {
-        const quarter = Math.floor(now.getMonth() / 3);
-        startDate = new Date(now.getFullYear(), quarter * 3, 1);
-      } else if (filters.period === 'year') {
-        startDate = new Date(now.getFullYear(), 0, 1);
+      if (filters.period && filters.period !== 'custom') {
+        const dates = getPeriodDates(filters.period);
+        startDate = dates.startDate;
+        endDate = dates.endDate;
       } else {
-        startDate = filters.startDate || new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate = filters.startDate || new Date(0);
+        endDate = filters.endDate || new Date();
       }
 
       filtered = filtered.filter(order => {
