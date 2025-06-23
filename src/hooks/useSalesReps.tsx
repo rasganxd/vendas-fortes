@@ -109,7 +109,7 @@ export const useSalesReps = () => {
           name: salesRep.name,
           code: salesRep.code,
           phone: salesRep.phone || '',
-          email: salesRep.email || '',
+          email: salesRep.email || '', // Email opcional
           password: hashedPassword,
           active: salesRep.active,
           created_at: new Date().toISOString(),
@@ -158,7 +158,7 @@ export const useSalesReps = () => {
         name: salesRep.name,
         code: salesRep.code,
         phone: salesRep.phone,
-        email: salesRep.email,
+        email: salesRep.email || '', // Email opcional
         active: salesRep.active,
         updated_at: new Date().toISOString()
       };

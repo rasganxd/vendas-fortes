@@ -91,7 +91,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.email) return;
+    if (!formData.name) return;
     
     if (!validatePassword()) return;
     
@@ -101,7 +101,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           code: formData.code || 0,
           name: formData.name,
           phone: formData.phone || '',
-          email: formData.email,
+          email: formData.email || '', // Email opcional
           active: formData.active ?? true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -158,15 +158,14 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               name="email"
               type="email"
               value={formData.email || ''}
               onChange={handleChange}
-              placeholder="vendedor@empresa.com"
-              required
+              placeholder="vendedor@empresa.com (opcional)"
             />
           </div>
 
@@ -263,7 +262,7 @@ export const EditSalesRepDialog: React.FC<EditSalesRepDialogProps> = ({
           </Button>
           <Button 
             onClick={handleSave} 
-            disabled={!formData.name || !formData.email || (isNewSalesRep && !formData.password)}
+            disabled={!formData.name || (isNewSalesRep && !formData.password)}
           >
             Salvar
           </Button>
