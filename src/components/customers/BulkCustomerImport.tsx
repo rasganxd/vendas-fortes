@@ -18,28 +18,30 @@ interface BulkCustomerImportProps {
   isImporting?: boolean;
 }
 
-const WEEKDAYS = [{
-  value: 'segunda',
-  label: 'Segunda-feira'
-}, {
-  value: 'terca',
-  label: 'Terça-feira'
-}, {
-  value: 'quarta',
-  label: 'Quarta-feira'
-}, {
-  value: 'quinta',
-  label: 'Quinta-feira'
-}, {
-  value: 'sexta',
-  label: 'Sexta-feira'
-}, {
-  value: 'sabado',
-  label: 'Sábado'
-}, {
-  value: 'domingo',
-  label: 'Domingo'
-}];
+const WEEKDAYS = [
+  {
+    value: 'segunda',
+    label: 'Segunda-feira'
+  }, {
+    value: 'terca',
+    label: 'Terça-feira'
+  }, {
+    value: 'quarta',
+    label: 'Quarta-feira'
+  }, {
+    value: 'quinta',
+    label: 'Quinta-feira'
+  }, {
+    value: 'sexta',
+    label: 'Sexta-feira'
+  }, {
+    value: 'sabado',
+    label: 'Sábado'
+  }, {
+    value: 'domingo',
+    label: 'Domingo'
+  }
+];
 
 const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   onImportCustomers,
@@ -239,8 +241,9 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
     };
   };
 
-  return <div className="space-y-6 h-full flex flex-col">
-      <Card className="p-4 flex-shrink-0">
+  return (
+    <div className="space-y-6">
+      <Card className="p-4">
         <h3 className="text-lg font-semibold mb-4">Importação de Clientes</h3>
         
         <div className="space-y-4">
@@ -258,9 +261,11 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
                   <SelectValue placeholder="Selecione um vendedor" />
                 </SelectTrigger>
                 <SelectContent>
-                  {salesReps.map(salesRep => <SelectItem key={salesRep.id} value={salesRep.id}>
+                  {salesReps.map(salesRep => (
+                    <SelectItem key={salesRep.id} value={salesRep.id}>
                       {salesRep.name} {salesRep.code ? `(${salesRep.code})` : ''}
-                    </SelectItem>)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -272,9 +277,11 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
                   <SelectValue placeholder="Selecione um dia da semana" />
                 </SelectTrigger>
                 <SelectContent>
-                  {WEEKDAYS.map(weekday => <SelectItem key={weekday.value} value={weekday.value}>
+                  {WEEKDAYS.map(weekday => (
+                    <SelectItem key={weekday.value} value={weekday.value}>
                       {weekday.label}
-                    </SelectItem>)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -284,90 +291,117 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
             <Label htmlFor="importText">
               Cole aqui os dados dos clientes da planilha
             </Label>
-            <Textarea id="importText" value={rawText} onChange={handleTextChange} rows={10} className="font-mono text-sm" placeholder="Cole os dados da planilha aqui..." />
+            <Textarea 
+              id="importText" 
+              value={rawText} 
+              onChange={handleTextChange} 
+              rows={10} 
+              className="font-mono text-sm" 
+              placeholder="Cole os dados da planilha aqui..." 
+            />
           </div>
           
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleParseCustomers} type="button" variant="outline">
               Analisar Dados
             </Button>
-            <Button onClick={handleImportCustomers} type="button" disabled={validationResults.valid.length === 0 || isImporting} className={isImporting ? "opacity-75" : ""}>
+            <Button 
+              onClick={handleImportCustomers} 
+              type="button" 
+              disabled={validationResults.valid.length === 0 || isImporting} 
+              className={isImporting ? "opacity-75" : ""}
+            >
               <Upload className="w-4 h-4 mr-2" />
               {isImporting ? "Importando..." : `Importar ${validationResults.valid.length} Clientes`}
             </Button>
           </div>
           
-          {validationResults.invalid.length > 0 && <Alert variant="destructive">
+          {validationResults.invalid.length > 0 && (
+            <Alert variant="destructive">
               <XCircle className="h-4 w-4" />
               <AlertTitle>Problemas encontrados</AlertTitle>
               <AlertDescription>
                 {validationResults.invalid.length} clientes têm problemas e não serão importados. Verifique a tabela abaixo.
               </AlertDescription>
-            </Alert>}
+            </Alert>
+          )}
           
-          {validationResults.valid.length > 0 && <Alert>
+          {validationResults.valid.length > 0 && (
+            <Alert>
               <CheckCircle className="h-4 w-4" />
               <AlertTitle>Clientes válidos</AlertTitle>
               <AlertDescription>
                 {validationResults.valid.length} clientes estão prontos para importação.
               </AlertDescription>
-            </Alert>}
+            </Alert>
+          )}
         </div>
       </Card>
 
-      {parsedCustomers.length > 0 && <Card className="p-4 flex-1 min-h-0 flex flex-col">
-          <h3 className="text-lg font-semibold mb-4 flex-shrink-0">
+      {parsedCustomers.length > 0 && (
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold mb-4">
             Clientes encontrados ({parsedCustomers.length})
           </h3>
-          <div className="flex-1 min-h-0 overflow-y-auto border rounded-md">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background z-10">
-                <TableRow>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nome Fantasia</TableHead>
-                  <TableHead>Razão Social</TableHead>
-                  <TableHead>Cidade</TableHead>
-                  <TableHead>UF</TableHead>
-                  <TableHead>Vendedor</TableHead>
-                  <TableHead>Dia da Semana</TableHead>
-                  <TableHead>Seq. Visita</TableHead>
-                  <TableHead>Problemas</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <div className="max-h-96 overflow-y-auto border rounded-md">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-background border-b">
+                <tr>
+                  <th className="p-2 text-left font-medium">Status</th>
+                  <th className="p-2 text-left font-medium">Código</th>
+                  <th className="p-2 text-left font-medium">Nome Fantasia</th>
+                  <th className="p-2 text-left font-medium">Razão Social</th>
+                  <th className="p-2 text-left font-medium">Cidade</th>
+                  <th className="p-2 text-left font-medium">UF</th>
+                  <th className="p-2 text-left font-medium">Vendedor</th>
+                  <th className="p-2 text-left font-medium">Dia da Semana</th>
+                  <th className="p-2 text-left font-medium">Seq. Visita</th>
+                  <th className="p-2 text-left font-medium">Problemas</th>
+                </tr>
+              </thead>
+              <tbody>
                 {parsedCustomers.map((customer, index) => {
-              const validation = getCustomerValidationStatus(customer);
-              return <TableRow key={index}>
-                      <TableCell>
-                        {validation.status === 'valid' ? <Badge variant="default" className="bg-green-100 text-green-800">
+                  const validation = getCustomerValidationStatus(customer);
+                  return (
+                    <tr key={index} className="border-b hover:bg-muted/50">
+                      <td className="p-2">
+                        {validation.status === 'valid' ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Válido
-                          </Badge> : <Badge variant="destructive">
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">
                             <XCircle className="w-3 h-3 mr-1" />
                             Erro
-                          </Badge>}
-                      </TableCell>
-                      <TableCell>{customer.code}</TableCell>
-                      <TableCell>{customer.name}</TableCell>
-                      <TableCell>{customer.companyName || '-'}</TableCell>
-                      <TableCell>{customer.city}</TableCell>
-                      <TableCell>{customer.state}</TableCell>
-                      <TableCell>{customer.salesRepName || '-'}</TableCell>
-                      <TableCell>{customer.visitDays?.[0] || '-'}</TableCell>
-                      <TableCell>{customer.visitSequence}</TableCell>
-                      <TableCell>
-                        {validation.errors.length > 0 && <div className="text-sm text-red-600">
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="p-2">{customer.code}</td>
+                      <td className="p-2">{customer.name}</td>
+                      <td className="p-2">{customer.companyName || '-'}</td>
+                      <td className="p-2">{customer.city}</td>
+                      <td className="p-2">{customer.state}</td>
+                      <td className="p-2">{customer.salesRepName || '-'}</td>
+                      <td className="p-2">{customer.visitDays?.[0] || '-'}</td>
+                      <td className="p-2">{customer.visitSequence}</td>
+                      <td className="p-2">
+                        {validation.errors.length > 0 && (
+                          <div className="text-sm text-red-600">
                             {validation.errors.join(', ')}
-                          </div>}
-                      </TableCell>
-                    </TableRow>;
-            })}
-              </TableBody>
-            </Table>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </Card>}
-    </div>;
+        </Card>
+      )}
+    </div>
+  );
 };
 
 export default BulkCustomerImport;

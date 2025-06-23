@@ -104,11 +104,11 @@ const BulkCustomerImportDialog: React.FC<BulkCustomerImportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[95vw] h-[95vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl w-[95vw] h-[90vh] flex flex-col overflow-auto">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Importação em Massa de Clientes</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto">
           <BulkCustomerImport
             onImportCustomers={handleImportCustomers}
             isImporting={isImporting}
