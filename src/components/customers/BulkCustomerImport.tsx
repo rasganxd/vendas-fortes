@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,36 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { VISIT_DAYS_OPTIONS } from './constants';
 
 interface BulkCustomerImportProps {
   onImportCustomers: (customers: Omit<Customer, 'id'>[]) => Promise<string[]>;
   isImporting?: boolean;
 }
-
-const WEEKDAYS = [
-  {
-    value: 'segunda',
-    label: 'Segunda-feira'
-  }, {
-    value: 'terca',
-    label: 'Terça-feira'
-  }, {
-    value: 'quarta',
-    label: 'Quarta-feira'
-  }, {
-    value: 'quinta',
-    label: 'Quinta-feira'
-  }, {
-    value: 'sexta',
-    label: 'Sexta-feira'
-  }, {
-    value: 'sabado',
-    label: 'Sábado'
-  }, {
-    value: 'domingo',
-    label: 'Domingo'
-  }
-];
 
 const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   onImportCustomers,
@@ -241,6 +218,11 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
     };
   };
 
+  const getDayLabel = (dayId: string): string => {
+    const day = VISIT_DAYS_OPTIONS.find(d => d.id === dayId);
+    return day ? day.label : dayId;
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-4">
@@ -277,8 +259,8 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
                   <SelectValue placeholder="Selecione um dia da semana" />
                 </SelectTrigger>
                 <SelectContent>
-                  {WEEKDAYS.map(weekday => (
-                    <SelectItem key={weekday.value} value={weekday.value}>
+                  {VISIT_DAYS_OPTIONS.map(weekday => (
+                    <SelectItem key={weekday.id} value={weekday.id}>
                       {weekday.label}
                     </SelectItem>
                   ))}
@@ -383,7 +365,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
                       <td className="p-2">{customer.city}</td>
                       <td className="p-2">{customer.state}</td>
                       <td className="p-2">{customer.salesRepName || '-'}</td>
-                      <td className="p-2">{customer.visitDays?.[0] || '-'}</td>
+                      <td className="p-2">{customer.visitDays?.[0] ? getDayLabel(customer.visitDays[0]) : '-'}</td>
                       <td className="p-2">{customer.visitSequence}</td>
                       <td className="p-2">
                         {validation.errors.length > 0 && (

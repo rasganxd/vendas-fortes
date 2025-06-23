@@ -1,6 +1,7 @@
 
 import { SupabaseService } from './supabaseService';
 import { Customer } from '@/types';
+import { validateVisitDays } from '@/utils/visitDaysValidator';
 
 class CustomerSupabaseService extends SupabaseService<Customer> {
   constructor() {
@@ -72,7 +73,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       ...baseTransformed,
       companyName: dbRecord.company_name || '',
       neighborhood: dbRecord.neighborhood || '', // Novo campo bairro
-      visitDays: dbRecord.visit_days || [],
+      visitDays: validateVisitDays(dbRecord.visit_days || []), // Validate visit days
       visitFrequency: dbRecord.visit_frequency || '',
       visitSequence: dbRecord.visit_sequence || 0,
       salesRepId: salesRepId || undefined,
@@ -100,12 +101,15 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     
     const baseTransformed = super.transformToDB(record);
     
+    // Validate and normalize visit days before saving
+    const validatedVisitDays = record.visitDays ? validateVisitDays(record.visitDays) : [];
+    
     // Map TypeScript camelCase fields to database snake_case
     const dbRecord = {
       ...baseTransformed,
       company_name: record.companyName || '',
       neighborhood: record.neighborhood || '', // Novo campo bairro
-      visit_days: record.visitDays || [],
+      visit_days: validatedVisitDays, // Use validated visit days
       visit_frequency: record.visitFrequency || '',
       visit_sequence: record.visitSequence || 0,
       sales_rep_id: record.salesRepId || null,
@@ -117,7 +121,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       category: record.category || ''
     };
 
-    console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}`);
+    console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}, visit_days: ${JSON.stringify(dbRecord.visit_days)}`);
 
     // Remove the camelCase fields that don't exist in the database
     delete dbRecord.companyName;
