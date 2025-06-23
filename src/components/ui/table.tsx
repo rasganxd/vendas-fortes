@@ -1,6 +1,6 @@
 
 import * as React from "react"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 
 const Table = React.forwardRef<
@@ -8,7 +8,7 @@ const Table = React.forwardRef<
   React.HTMLAttributes<HTMLTableElement> & { maxHeight?: string }
 >(({ className, maxHeight = "400px", ...props }, ref) => (
   <div className="w-full overflow-hidden">
-    <ScrollArea className={cn("rounded-md border", `max-h-[${maxHeight}]`)}>
+    <ScrollArea className="rounded-md border" style={{ maxHeight }}>
       <div className="overflow-x-auto">
         <table
           ref={ref}
@@ -16,6 +16,8 @@ const Table = React.forwardRef<
           {...props}
         />
       </div>
+      <ScrollBar orientation="vertical" />
+      <ScrollBar orientation="horizontal" />
     </ScrollArea>
   </div>
 ))

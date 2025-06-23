@@ -310,7 +310,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
             Clientes encontrados ({parsedCustomers.length})
           </h3>
           <div className="overflow-x-auto">
-            <Table maxHeight="400px">
+            <Table maxHeight="500px">
               <TableHeader>
                 <TableRow>
                   <TableHead>Status</TableHead>
