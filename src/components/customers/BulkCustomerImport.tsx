@@ -12,10 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+
 interface BulkCustomerImportProps {
   onImportCustomers: (customers: Omit<Customer, 'id'>[]) => Promise<string[]>;
   isImporting?: boolean;
 }
+
 const WEEKDAYS = [{
   value: 'segunda',
   label: 'Segunda-feira'
@@ -38,6 +40,7 @@ const WEEKDAYS = [{
   value: 'domingo',
   label: 'Domingo'
 }];
+
 const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   onImportCustomers,
   isImporting = false
@@ -59,6 +62,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
   const {
     salesReps
   } = useSalesReps();
+
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setRawText(e.target.value);
     // Clear previous results when text changes
@@ -68,6 +72,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       invalid: []
     });
   };
+
   const handleParseCustomers = () => {
     try {
       if (!rawText.trim()) {
@@ -125,6 +130,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       });
     }
   };
+
   const handleImportCustomers = async () => {
     console.log('🚀 [BulkImport] Import button clicked');
     console.log('📊 [BulkImport] Current state:', {
@@ -180,6 +186,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       });
     }
   };
+
   const handleSalesRepChange = (value: string) => {
     setSelectedSalesRepId(value);
 
@@ -200,6 +207,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       }
     }
   };
+
   const handleWeekdayChange = (value: string) => {
     setSelectedWeekday(value);
 
@@ -216,6 +224,7 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       setValidationResults(validation);
     }
   };
+
   const getCustomerValidationStatus = (customer: Omit<Customer, 'id'>) => {
     const invalidItem = validationResults.invalid.find(item => item.customer.code === customer.code);
     if (invalidItem) {
@@ -229,8 +238,9 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
       errors: []
     };
   };
-  return <div className="space-y-6">
-      <Card className="p-4">
+
+  return <div className="space-y-6 h-full flex flex-col">
+      <Card className="p-4 flex-shrink-0">
         <h3 className="text-lg font-semibold mb-4">Importação de Clientes</h3>
         
         <div className="space-y-4">
@@ -305,13 +315,13 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
         </div>
       </Card>
 
-      {parsedCustomers.length > 0 && <Card className="p-4">
-          <h3 className="text-lg font-semibold mb-4">
+      {parsedCustomers.length > 0 && <Card className="p-4 flex-1 min-h-0 flex flex-col">
+          <h3 className="text-lg font-semibold mb-4 flex-shrink-0">
             Clientes encontrados ({parsedCustomers.length})
           </h3>
-          <div className="overflow-x-auto">
-            <Table maxHeight="400px">
-              <TableHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto border rounded-md">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
                   <TableHead>Status</TableHead>
                   <TableHead>Código</TableHead>
@@ -359,4 +369,5 @@ const BulkCustomerImport: React.FC<BulkCustomerImportProps> = ({
         </Card>}
     </div>;
 };
+
 export default BulkCustomerImport;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -105,11 +104,11 @@ const BulkCustomerImportDialog: React.FC<BulkCustomerImportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-6xl w-[95vw] h-[95vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Importação em Massa de Clientes</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 overflow-hidden">
           <BulkCustomerImport
             onImportCustomers={handleImportCustomers}
             isImporting={isImporting}
