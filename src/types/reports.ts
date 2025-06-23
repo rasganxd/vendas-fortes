@@ -1,4 +1,3 @@
-
 export interface ReportFilters {
   salesRepId?: string;
   salesRepName?: string;
@@ -9,7 +8,7 @@ export interface ReportFilters {
   minValue?: number;
   maxValue?: number;
   orderStatus?: string;
-  period?: 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+  period?: 'today' | 'yesterday' | 'week' | 'last_week' | 'month' | 'last_month' | 'quarter' | 'year' | 'custom';
 }
 
 export interface SalesReportData {
