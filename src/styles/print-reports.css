@@ -1,5 +1,5 @@
 
-/* Estilos específicos para impressão de relatórios */
+/* Estilos específicos para impressão de relatórios - Otimizado para P&B */
 @media print {
   body * {
     visibility: hidden;
@@ -25,26 +25,34 @@
   .print-header {
     page-break-inside: avoid;
     margin-bottom: 20px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
   }
   
   .print-header h1 {
     font-size: 20px;
     margin-bottom: 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
   
   .print-header h2 {
     font-size: 16px;
     margin-bottom: 4px;
+    font-weight: 700;
   }
   
   .print-header h3 {
     font-size: 14px;
     margin-bottom: 8px;
+    font-weight: 600;
   }
   
   .print-header h4 {
     font-size: 12px;
     margin-bottom: 4px;
+    font-weight: 600;
   }
   
   table {
@@ -52,18 +60,35 @@
     border-collapse: collapse;
     width: 100%;
     font-size: 10px;
+    border: 2px solid #000;
   }
   
   table th,
   table td {
-    border: 1px solid #333 !important;
-    padding: 4px 6px;
+    border: 1px solid #000 !important;
+    padding: 6px 8px;
     text-align: left;
   }
   
   table th {
-    background-color: #f0f0f0 !important;
-    font-weight: bold;
+    background-color: white !important;
+    border: 2px solid #000 !important;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Padrão zebra para linhas usando bordas */
+  table tbody tr:nth-child(even) {
+    background-color: white !important;
+    border-top: 2px solid #000 !important;
+    border-bottom: 2px solid #000 !important;
+  }
+  
+  table tbody tr:nth-child(odd) {
+    background-color: white !important;
+    border-top: 1px solid #666 !important;
+    border-bottom: 1px solid #666 !important;
   }
   
   tr {
@@ -75,6 +100,36 @@
     display: table-header-group;
   }
   
+  /* Elementos importantes com bordas duplas */
+  .print-important {
+    border: 3px double #000 !important;
+    padding: 8px !important;
+    margin: 10px 0 !important;
+  }
+  
+  /* Totais e valores importantes */
+  .print-total {
+    border: 2px solid #000 !important;
+    background: white !important;
+    padding: 8px !important;
+    font-weight: 900 !important;
+    font-size: 12px !important;
+  }
+  
+  /* Seções com bordas */
+  .print-section {
+    border: 1px solid #000 !important;
+    margin: 10px 0 !important;
+    padding: 8px !important;
+  }
+  
+  .print-section h3 {
+    border-bottom: 2px solid #000 !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 8px !important;
+    font-weight: 900 !important;
+  }
+  
   /* Esconder elementos desnecessários na impressão */
   .print-hide,
   button,
@@ -84,10 +139,12 @@
     display: none !important;
   }
   
-  /* Garantir que cores sejam impressas */
+  /* Garantir que cores sejam impressas em P&B */
   * {
     -webkit-print-color-adjust: exact !important;
     color-adjust: exact !important;
+    background: white !important;
+    color: black !important;
   }
   
   /* Configurações de página */
@@ -108,6 +165,9 @@
   /* Melhorar espaçamento dos filtros */
   .print-header .grid {
     display: block !important;
+    border: 1px solid #000 !important;
+    padding: 8px !important;
+    margin: 10px 0 !important;
   }
   
   .print-header .grid > div {
@@ -116,19 +176,37 @@
     margin-right: 2%;
     margin-bottom: 8px;
     vertical-align: top;
+    border-right: 1px solid #666;
+    padding-right: 8px;
   }
   
-  /* Checkbox styling para impressão */
-  .print-header .w-3 {
-    width: 10px !important;
-    height: 10px !important;
-    display: inline-block;
-    border: 1px solid #333 !important;
-    margin-right: 4px;
+  .print-header .grid > div:last-child {
+    border-right: none;
   }
+  
+  /* Checkbox styling para impressão P&B */
+  .print-header .w-3 {
+    width: 12px !important;
+    height: 12px !important;
+    display: inline-block;
+    border: 2px solid #000 !important;
+    margin-right: 4px;
+    background: white !important;
+  }
+  
+  /* Status indicators usando símbolos */
+  .status-pending::before { content: "⏳ "; }
+  .status-confirmed::before { content: "✓ "; }
+  .status-completed::before { content: "✅ "; }
+  .status-cancelled::before { content: "❌ "; }
+  
+  /* Símbolos para tipos de pagamento */
+  .payment-cash::before { content: "💰 "; }
+  .payment-card::before { content: "💳 "; }
+  .payment-pending::before { content: "📋 "; }
 }
 
-/* Estilos para visualização */
+/* Estilos para visualização - também otimizados */
 .print-container {
   font-family: Arial, sans-serif;
   max-width: 210mm;
@@ -139,7 +217,7 @@
 }
 
 .print-preview {
-  border: 1px solid #ddd;
+  border: 2px solid #000;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -148,6 +226,9 @@
 .print-header .grid {
   display: grid;
   gap: 1rem;
+  border: 1px solid #ddd;
+  padding: 1rem;
+  margin: 1rem 0;
 }
 
 @media (min-width: 768px) {
@@ -166,4 +247,23 @@
   height: 12px;
   display: inline-block;
   border-radius: 2px;
+  border: 1px solid #666;
+}
+
+/* Classes específicas para P&B */
+.print-bw {
+  background: white !important;
+  color: black !important;
+}
+
+.print-bw .highlight {
+  border: 2px solid #000 !important;
+  background: white !important;
+  font-weight: bold !important;
+}
+
+.print-bw .secondary {
+  border: 1px solid #666 !important;
+  background: white !important;
+  color: #333 !important;
 }

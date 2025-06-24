@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { SalesReportData, ReportFilters } from '@/types/reports';
 import { toast } from 'sonner';
@@ -21,16 +20,12 @@ export const useSalesReportsPrint = () => {
   ) => {
     try {
       setIsPrinting(true);
-      console.log('🖨️ [SalesReportsPrint] Starting print process');
+      console.log('🖨️ [SalesReportsPrint] Starting print process (B&W optimized)');
       console.log('🖨️ [SalesReportsPrint] Report type:', reportType);
       console.log('🖨️ [SalesReportsPrint] Data count:', data.length);
-      console.log('🖨️ [SalesReportsPrint] Filters:', filters);
-      console.log('🖨️ [SalesReportsPrint] Options:', options);
 
-      // Create printable content
       const printContent = createPrintableContent(data, reportType, filters, options);
       
-      // Apply print styles
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
         throw new Error('Não foi possível abrir a janela de impressão');
@@ -39,7 +34,6 @@ export const useSalesReportsPrint = () => {
       printWindow.document.write(printContent);
       printWindow.document.close();
 
-      // Wait for content to load then print
       printWindow.onload = () => {
         setTimeout(() => {
           printWindow.focus();
@@ -48,7 +42,7 @@ export const useSalesReportsPrint = () => {
         }, 250);
       };
 
-      toast.success('Relatório preparado para impressão!');
+      toast.success('Relatório preparado para impressão P&B!');
       
     } catch (error) {
       console.error('❌ [SalesReportsPrint] Error:', error);
@@ -93,40 +87,51 @@ export const useSalesReportsPrint = () => {
               margin: 0; 
               padding: 0; 
               box-sizing: border-box; 
+              background: white !important;
+              color: black !important;
             }
             body { 
               font-family: Arial, sans-serif; 
               font-size: 12px; 
               line-height: 1.4; 
-              color: #333;
+              color: black !important;
+              background: white !important;
             }
             .header { 
               text-align: center; 
               margin-bottom: 20px; 
-              border-bottom: 2px solid #333; 
-              padding-bottom: 10px; 
+              border: 3px double black; 
+              padding: 15px; 
             }
             .header h1 { 
-              font-size: 18px; 
-              margin-bottom: 5px; 
+              font-size: 20px; 
+              margin-bottom: 8px; 
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 1px;
             }
             .header p { 
-              font-size: 10px; 
-              color: #666; 
+              font-size: 11px; 
+              color: black; 
+              font-weight: 600;
             }
             .filters { 
-              background: #f5f5f5; 
-              padding: 10px; 
+              background: white !important; 
+              padding: 12px; 
               margin-bottom: 15px; 
-              border-radius: 4px; 
+              border: 2px solid black;
             }
             .filters h3 { 
               font-size: 12px; 
               margin-bottom: 5px; 
+              font-weight: 900;
+              border-bottom: 1px solid black;
+              padding-bottom: 2px;
             }
             .filters p { 
               font-size: 10px; 
               line-height: 1.3; 
+              color: black;
             }
             .summary { 
               display: grid; 
@@ -135,41 +140,56 @@ export const useSalesReportsPrint = () => {
               margin-bottom: 20px; 
             }
             .summary-card { 
-              border: 1px solid #ddd; 
-              padding: 10px; 
+              border: 2px solid black; 
+              padding: 12px; 
               text-align: center; 
-              border-radius: 4px; 
+              background: white !important;
             }
             .summary-card h4 { 
               font-size: 11px; 
-              color: #666; 
-              margin-bottom: 5px; 
+              color: black; 
+              margin-bottom: 6px; 
+              font-weight: 700;
+              text-transform: uppercase;
             }
             .summary-card .value { 
-              font-size: 14px; 
-              font-weight: bold; 
+              font-size: 16px; 
+              font-weight: 900; 
+              color: black;
             }
             table { 
               width: 100%; 
               border-collapse: collapse; 
               margin-bottom: 15px; 
+              border: 2px solid black;
             }
             th, td { 
-              border: 1px solid #ddd; 
-              padding: 6px; 
+              border: 1px solid black; 
+              padding: 8px; 
               text-align: left; 
               font-size: 10px; 
+              background: white !important;
+              color: black !important;
             }
             th { 
-              background: #f8f9fa; 
-              font-weight: bold; 
+              background: white !important; 
+              font-weight: 900; 
               text-align: center; 
+              border: 2px solid black;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            tbody tr:nth-child(even) {
+              border-top: 2px solid black !important;
+              border-bottom: 2px solid black !important;
             }
             .number { 
               text-align: right; 
+              font-weight: 700;
             }
             .center { 
               text-align: center; 
+              font-weight: 600;
             }
             .footer { 
               position: fixed; 
@@ -178,19 +198,37 @@ export const useSalesReportsPrint = () => {
               right: 0; 
               text-align: center; 
               font-size: 8px; 
-              color: #666; 
+              color: black; 
               padding: 10px; 
+              border-top: 1px solid black;
+              background: white !important;
             }
+            .status-label::before {
+              font-weight: 900;
+              margin-right: 4px;
+            }
+            .status-pending::before { content: "⏳"; }
+            .status-confirmed::before { content: "✓"; }
+            .status-completed::before { content: "✅"; }
+            .status-cancelled::before { content: "❌"; }
             @media print {
               .no-print { display: none; }
-              body { print-color-adjust: exact; }
+              body { 
+                print-color-adjust: exact; 
+                background: white !important;
+                color: black !important;
+              }
+              * {
+                background: white !important;
+                color: black !important;
+              }
             }
           </style>
         </head>
         <body>
           <div class="header">
             <h1>${getReportTitle(reportType)}</h1>
-            <p>Gerado em ${formatDate(new Date())} • Sistema de Vendas</p>
+            <p>Gerado em ${formatDate(new Date())} • Sistema de Vendas • Impressão P&B</p>
           </div>
 
           ${appliedFilters ? `
@@ -236,7 +274,7 @@ export const useSalesReportsPrint = () => {
                     <td class="center">${formatDate(sale.date)}</td>
                     <td>${sale.customerName}</td>
                     <td>${sale.salesRepName}</td>
-                    <td class="center">${getStatusLabel(sale.status)}</td>
+                    <td class="center status-label status-${sale.status}">${getStatusLabel(sale.status)}</td>
                     <td class="number">${formatCurrency(sale.total)}</td>
                     <td class="number">${percentage.toFixed(1)}%</td>
                   </tr>
@@ -246,7 +284,7 @@ export const useSalesReportsPrint = () => {
           </table>
 
           <div class="footer">
-            Página 1 de 1 • ${data.length} registros • Sistema de Vendas
+            Página 1 de 1 • ${data.length} registros • Sistema de Vendas - P&B
           </div>
         </body>
       </html>

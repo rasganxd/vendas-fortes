@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { formatDateBR } from '@/lib/format-utils';
 
 interface PrintHeaderProps {
   title: string;
@@ -8,25 +7,34 @@ interface PrintHeaderProps {
 }
 
 export const PrintHeader: React.FC<PrintHeaderProps> = ({ title, appliedFilters }) => {
-  const currentDate = new Date();
+  const formatDate = (date: Date) => 
+    new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
 
   return (
-    <div className="print-header mb-8">
-      <div className="text-center border-b-2 border-gray-300 pb-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Sistema de Vendas</h1>
-        <h2 className="text-xl font-semibold text-gray-700">{title}</h2>
-        <div className="text-sm text-gray-600 mt-2">
-          Gerado em: {formatDateBR(currentDate)} às {currentDate.toLocaleTimeString('pt-BR')}
-        </div>
+    <div className="bw-header print-header">
+      <h1 className="text-2xl font-black uppercase tracking-wide mb-2 border-b-2 border-black pb-2">
+        {title}
+      </h1>
+      <div className="text-sm font-semibold mb-4">
+        Gerado em {formatDate(new Date())} • Sistema de Vendas • Otimizado P&B
       </div>
       
       {appliedFilters.length > 0 && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Filtros Aplicados:</h3>
-          <div className="flex flex-wrap gap-2">
+        <div className="bw-section border-2 border-black p-3 mt-4">
+          <h3 className="font-bold text-sm mb-2 border-b border-black pb-1">
+            FILTROS APLICADOS:
+          </h3>
+          <div className="text-xs">
             {appliedFilters.map((filter, index) => (
-              <span key={index} className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
-                {filter}
+              <span key={index} className="inline-block mr-3 mb-1">
+                • {filter}
               </span>
             ))}
           </div>

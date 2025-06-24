@@ -4,6 +4,7 @@ import { ListingType } from '@/components/listings/ListingFilters';
 import PrintableListing from '@/components/listings/PrintableListing';
 import { renderToString } from 'react-dom/server';
 import { getDayLabel } from '@/components/customers/constants';
+import { generateBWOptimizedHTML, addBWClasses, BW_PRINT_STYLES } from '@/utils/printBWOptimizer';
 
 export function useListings() {
   const [selectedType, setSelectedType] = useState<ListingType>('customers');
@@ -145,7 +146,7 @@ export function useListings() {
   ]);
 
   const handlePrint = () => {
-    console.log('🖨️ Iniciando impressão da listagem...');
+    console.log('🖨️ Iniciando impressão da listagem (otimizada para P&B)...');
     
     // Check if company data is loaded
     const companyData = settings?.company;
@@ -169,13 +170,13 @@ export function useListings() {
 
   const handleElectronPrint = async () => {
     try {
-      console.log("🖨️ Usando impressão nativa do Electron...");
+      console.log("🖨️ Usando impressão nativa do Electron (P&B otimizada)...");
       
       const htmlContent = generatePrintHTML();
       
       const result = await window.electronAPI.printContent(htmlContent, {
-        printBackground: true,
-        color: true,
+        printBackground: false, // Disable background for B&W
+        color: false, // Force grayscale
         margins: {
           marginType: 'custom',
           top: 0.5,
@@ -189,7 +190,7 @@ export function useListings() {
         console.error('❌ Erro na impressão Electron:', result.error);
         handleWebPrint();
       } else {
-        console.log('✅ Impressão Electron concluída com sucesso');
+        console.log('✅ Impressão Electron P&B concluída com sucesso');
       }
     } catch (error) {
       console.error('❌ Erro ao imprimir com Electron:', error);
@@ -198,7 +199,7 @@ export function useListings() {
   };
 
   const handleWebPrint = () => {
-    console.log("🖨️ Usando impressão web...");
+    console.log("🖨️ Usando impressão web (P&B otimizada)...");
     
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) {
@@ -216,7 +217,7 @@ export function useListings() {
         printWindow.print();
         setTimeout(() => {
           printWindow.close();
-          console.log('✅ Impressão web concluída');
+          console.log('✅ Impressão web P&B concluída');
         }, 2000);
       }, 500);
     };
@@ -235,51 +236,12 @@ export function useListings() {
     );
 
     const componentHTML = renderToString(printableComponent);
+    const optimizedHTML = addBWClasses(componentHTML);
 
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Relatório de ${selectedType}</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 0; 
-              padding: 0;
-              background: white;
-            }
-            .print-container { 
-              padding: 20px; 
-              max-width: none; 
-            }
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin: 20px 0;
-            }
-            th, td { 
-              border: 1px solid #ddd; 
-              padding: 8px; 
-              text-align: left; 
-            }
-            th { 
-              background-color: #f5f5f5; 
-              font-weight: bold; 
-            }
-            .text-right { text-align: right; }
-            .text-center { text-align: center; }
-            @media print {
-              body { margin: 0; }
-              .print-container { padding: 10px; }
-            }
-          </style>
-        </head>
-        <body>
-          ${componentHTML}
-        </body>
-      </html>
-    `;
+    return generateBWOptimizedHTML(
+      optimizedHTML,
+      `Relatório de ${selectedType} - P&B`
+    );
   };
 
   const handleExport = () => {
