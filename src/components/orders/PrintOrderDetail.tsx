@@ -5,6 +5,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { useCustomers } from '@/hooks/useCustomers';
 import { formatDateToBR } from '@/lib/date-utils';
 import { formatCurrency } from '@/lib/format-utils';
+import { generateBWOptimizedHTML, addBWClasses, getStatusIcon, getPaymentIcon } from '@/utils/printBWOptimizer';
 
 interface PrintOrderDetailProps {
   order: Order;
@@ -39,8 +40,8 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
     try {
       const htmlContent = generatePrintHTML();
       const result = await window.electronAPI.printContent(htmlContent, {
-        printBackground: true,
-        color: true,
+        printBackground: false, // Disable background for B&W
+        color: false, // Force grayscale
         margins: {
           marginType: 'custom',
           top: 0.8,
@@ -52,6 +53,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       
       if (!result.success) {
         console.error('Erro na impressão:', result.error);
+        handleWebPrint();
       }
     } catch (error) {
       console.error('Erro ao imprimir com Electron:', error);
@@ -79,7 +81,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
   };
 
   const generatePrintHTML = () => {
-    // Enhanced CSS styles matching PrintOrdersDialog
+    // Enhanced CSS styles for B&W printing
     const printStyles = `
       @media print {
         @page {
@@ -87,42 +89,51 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           size: A4 portrait;
         }
         
+        * {
+          background: white !important;
+          color: black !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
         body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: Arial, sans-serif;
           margin: 0;
           padding: 0;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
           font-size: 9pt;
           line-height: 1.3;
-          color: #333;
+          color: black;
+          background: white;
         }
         
         .print-page {
           padding: 0.4cm;
-          background: #fafafa;
+          background: white !important;
+          border: 2px solid black;
           border-radius: 6px;
           position: relative;
         }
         
-        /* Order date and info */
+        /* B&W optimized headers */
         .order-date {
           text-align: center;
           margin-bottom: 0.4cm;
           padding: 0.2cm;
-          background: #f8f9fa;
+          background: white !important;
+          border: 2px double black !important;
           border-radius: 4px;
-          border: 1px solid #e9ecef;
         }
         
         .order-date p {
           font-size: 9pt;
           margin: 0;
-          font-weight: 600;
-          color: #495057;
+          font-weight: 900;
+          color: black;
+          text-transform: uppercase;
+          letter-spacing: 1px;
         }
         
-        /* Information containers */
+        /* Information containers with B&W borders */
         .info-container {
           display: flex;
           margin-bottom: 0.4cm;
@@ -130,21 +141,20 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         }
         
         .info-box {
-          border: 1px solid #dee2e6;
+          border: 2px solid black !important;
           border-radius: 6px;
           padding: 0.3cm;
           flex: 1;
-          background: white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          background: white !important;
         }
         
         .info-box h3 {
-          font-weight: 700;
+          font-weight: 900;
           margin-top: 0;
           margin-bottom: 0.2cm;
           font-size: 10pt;
-          color: #495057;
-          border-bottom: 1px solid #e9ecef;
+          color: black;
+          border-bottom: 2px solid black !important;
           padding-bottom: 0.1cm;
           text-transform: uppercase;
           letter-spacing: 0.3px;
@@ -154,37 +164,39 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           font-size: 8pt;
           margin: 2px 0;
           line-height: 1.4;
-          color: #6c757d;
+          color: black;
         }
         
         .info-box p span {
-          color: #495057;
-          font-weight: 600;
+          color: black;
+          font-weight: 700;
         }
         
         /* Visit info section for negative orders */
         .visit-info {
-          background-color: #fff3cd;
-          border: 1px solid #ffeaa7;
+          background-color: white !important;
+          border: 3px double black !important;
           padding: 0.3cm;
           border-radius: 6px;
           margin-bottom: 0.4cm;
-          border-left: 4px solid #f39c12;
         }
         
         .visit-info h3 {
-          font-weight: 700;
+          font-weight: 900;
           margin-bottom: 0.2cm;
           font-size: 10pt;
-          color: #856404;
+          color: black;
           text-transform: uppercase;
           letter-spacing: 0.3px;
+          border-bottom: 1px solid black;
+          padding-bottom: 0.1cm;
         }
         
         .visit-info p {
           font-size: 8pt;
           margin: 2px 0;
-          color: #856404;
+          color: black;
+          font-weight: 600;
         }
         
         /* Order items section */
@@ -195,67 +207,71 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .order-items h3 {
           font-size: 10pt;
           margin-bottom: 0.3cm;
-          color: #495057;
-          font-weight: 700;
+          color: black;
+          font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.3px;
-          border-bottom: 2px solid #4a90e2;
+          border-bottom: 3px double black !important;
           padding-bottom: 0.1cm;
         }
         
-        /* Enhanced table styles with unit column */
+        /* B&W optimized table styles */
         .order-table {
           width: 100%;
           border-collapse: collapse;
           font-size: 7.5pt;
-          background: white;
+          background: white !important;
+          border: 2px solid black !important;
           border-radius: 6px;
           overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
         .order-table th {
-          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-          color: white;
+          background: black !important;
+          color: white !important;
           padding: 0.2cm;
           text-align: left;
           font-size: 8pt;
-          font-weight: 700;
+          font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.3px;
+          border: 1px solid white !important;
         }
         
         .order-table td {
           padding: 0.15cm;
-          border-bottom: 1px solid #f1f3f4;
+          border: 1px solid black !important;
           font-size: 7.5pt;
           line-height: 1.3;
+          background: white !important;
+          color: black !important;
         }
         
         .order-table tbody tr:nth-child(even) {
-          background-color: #f8f9fa;
+          border-top: 2px solid black !important;
+          border-bottom: 2px solid black !important;
         }
         
         .order-table .text-right {
           text-align: right;
-          font-weight: 600;
-          color: #495057;
+          font-weight: 700;
+          color: black;
         }
         
         .order-table .text-center {
           text-align: center;
-          font-weight: 600;
+          font-weight: 700;
         }
         
-        /* Enhanced totals section */
+        /* B&W optimized totals section */
         .order-totals {
           display: flex;
           justify-content: space-between;
           margin-bottom: 0.3cm;
           padding: 0.3cm;
-          background: #f8f9fa;
+          background: white !important;
+          border: 2px solid black !important;
           border-radius: 6px;
-          border: 1px solid #e9ecef;
           font-size: 8pt;
         }
         
@@ -266,8 +282,8 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         
         .payment-info p {
           margin: 2px 0;
-          color: #6c757d;
-          font-weight: 500;
+          color: black;
+          font-weight: 600;
         }
         
         .total-info {
@@ -277,40 +293,43 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         
         .total-info p {
           margin: 2px 0;
-          color: #495057;
+          color: black;
         }
         
         .total-value {
-          font-weight: 700;
+          font-weight: 900;
           font-size: 11pt;
-          color: #28a745;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+          color: black;
+          border: 1px solid black;
+          padding: 4px;
+          background: white !important;
         }
         
-        /* Enhanced notes section */
+        /* B&W optimized notes section */
         .order-notes {
           margin-top: 0.3cm;
           padding: 0.3cm;
-          background: #fff3cd;
-          border: 1px solid #ffeaa7;
+          background: white !important;
+          border: 3px double black !important;
           border-radius: 6px;
-          border-left: 4px solid #f39c12;
         }
         
         .order-notes h3 {
-          font-weight: 700;
+          font-weight: 900;
           margin-bottom: 0.2cm;
           font-size: 9pt;
-          color: #856404;
+          color: black;
           text-transform: uppercase;
           letter-spacing: 0.3px;
+          border-bottom: 1px solid black;
+          padding-bottom: 0.1cm;
         }
         
         .order-notes p {
           font-size: 8pt;
           line-height: 1.4;
-          color: #856404;
-          font-style: italic;
+          color: black;
+          font-weight: 600;
         }
         
         /* Hide non-printable elements */
@@ -350,30 +369,33 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       return addressParts.join(', ');
     };
 
-    // Generate order HTML using the same structure as PrintOrdersDialog
+    // Generate order HTML using B&W optimization
     const generateOrderHTML = () => {
+      const statusIcon = getStatusIcon(order.status || 'pending');
+      const paymentIcon = getPaymentIcon(order.paymentMethod || '');
+      
       return `
-        <div class="print-page">
-          <div class="order-date">
+        <div class="print-page bw-section">
+          <div class="order-date bw-header">
             <p>Pedido #${order.code || 'N/A'} - ${formatDateToBR(order.date)}</p>
           </div>
           
           <div class="info-container">
-            <div class="info-box">
+            <div class="info-box bw-section">
               <h3>Dados do Cliente</h3>
               <p><span>Nome:</span> ${order.customerName || 'N/A'}</p>
               <p><span>Telefone:</span> ${customer?.phone || 'N/A'}</p>
               ${customer?.document ? `<p><span>CPF/CNPJ:</span> ${customer.document}</p>` : ''}
             </div>
             
-            <div class="info-box">
+            <div class="info-box bw-section">
               <h3>Endereço de Entrega</h3>
               <p>${formatCustomerAddress()}</p>
             </div>
           </div>
           
           ${isNegativeOrder ? `
-          <div class="visit-info">
+          <div class="visit-info bw-important">
             <h3>Informações da Visita</h3>
             <p><span>Motivo da Recusa:</span> ${getRejectionReasonText(order.rejectionReason)}</p>
             ${order.visitNotes ? `<p><span>Observações:</span> ${order.visitNotes}</p>` : ''}
@@ -382,7 +404,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           ` : `
           <div class="order-items">
             <h3>Itens do Pedido</h3>
-            <table class="order-table">
+            <table class="order-table bw-table">
               <thead>
                 <tr>
                   <th style="width: 40%;">Produto</th>
@@ -395,15 +417,15 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
               <tbody>
                 ${order.items && Array.isArray(order.items) && order.items.length > 0 ? order.items.map((item, index) => `
                   <tr>
-                    <td style="font-weight: 500; color: #495057;">${item.productName}</td>
+                    <td style="font-weight: 600; color: black;">${item.productName}</td>
                     <td class="text-center">${item.quantity}</td>
                     <td class="text-center">${item.unit || 'UN'}</td>
                     <td class="text-right">${formatCurrency(item.unitPrice || item.price)}</td>
-                    <td class="text-right" style="font-weight: 700; color: #28a745;">${formatCurrency(item.total)}</td>
+                    <td class="text-right" style="font-weight: 900; color: black;">${formatCurrency(item.total)}</td>
                   </tr>
                 `).join('') : `
                   <tr>
-                    <td colspan="5" style="text-align: center; color: #6c757d; font-style: italic; padding: 0.4cm;">
+                    <td colspan="5" style="text-align: center; color: black; font-style: italic; padding: 0.4cm;">
                       Nenhum item encontrado
                     </td>
                   </tr>
@@ -412,18 +434,18 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
             </table>
           </div>
           
-          <div class="order-totals">
+          <div class="order-totals bw-section">
             <div class="payment-info">
-              ${order.paymentMethod ? `<p><strong>Forma de Pagamento:</strong> ${order.paymentMethod}</p>` : ''}
+              ${order.paymentMethod ? `<p><strong>${paymentIcon} Forma de Pagamento:</strong> ${order.paymentMethod}</p>` : ''}
             </div>
             <div class="total-info">
-              <p class="total-value">Total: ${formatCurrency(order.total)}</p>
+              <p class="total-value bw-total">Total: ${formatCurrency(order.total)}</p>
             </div>
           </div>
           `}
           
           ${order.notes ? `
-          <div class="order-notes">
+          <div class="order-notes bw-important">
             <h3>Observações Importantes</h3>
             <p>${order.notes}</p>
           </div>
@@ -432,21 +454,14 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       `;
     };
 
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Pedido #${order.code} - Impressão</title>
-          <meta charset="UTF-8">
-          <style>${printStyles}</style>
-        </head>
-        <body>
-          <div id="print-content">
-            ${generateOrderHTML()}
-          </div>
-        </body>
-      </html>
-    `;
+    // Use the B&W optimizer to generate the final HTML
+    const orderHTML = generateOrderHTML();
+    const optimizedHTML = addBWClasses(orderHTML);
+
+    return generateBWOptimizedHTML(
+      optimizedHTML,
+      `Pedido #${order.code} - P&B`
+    );
   };
 
   return (

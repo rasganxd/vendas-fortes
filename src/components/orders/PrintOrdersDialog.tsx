@@ -12,6 +12,8 @@ import { Printer } from "lucide-react";
 import CustomerSelect from './print/CustomerSelect';
 import PrintDialogActions from './print/PrintDialogActions';
 import { useAppContext } from '@/hooks/useAppContext';
+import { generateBWOptimizedHTML, addBWClasses, getStatusIcon, getPaymentIcon } from '@/utils/printBWOptimizer';
+import { formatCurrency } from '@/lib/format-utils';
 
 interface PrintOrdersDialogProps {
   isOpen: boolean;
@@ -33,7 +35,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
   selectedOrderIds = [],
   setSelectedOrderIds = () => {},
   filteredOrders = [],
-  formatCurrency = (value) => `R$ ${value?.toFixed(2) || '0.00'}`,
+  formatCurrency: formatCurrencyProp = (value) => `R$ ${value?.toFixed(2) || '0.00'}`,
   clearSelection = () => {}
 }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
@@ -94,8 +96,8 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     try {
       const htmlContent = generatePrintHTML();
       const result = await window.electronAPI.printContent(htmlContent, {
-        printBackground: true,
-        color: true,
+        printBackground: false, // Disable background for B&W
+        color: false, // Force grayscale
         margins: {
           marginType: 'custom',
           top: 0.8,
@@ -107,6 +109,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
       
       if (!result.success) {
         console.error('Erro na impressão:', result.error);
+        handleWebPrint();
       }
     } catch (error) {
       console.error('Erro ao imprimir com Electron:', error);
@@ -137,7 +140,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     // Group orders in pairs
     const orderPairs = groupOrdersInPairs(ordersToPrint);
 
-    // Enhanced CSS styles for professional 2 orders per page printing
+    // B&W optimized CSS styles for professional 2 orders per page printing
     const printStyles = `
       @media print {
         @page {
@@ -145,15 +148,21 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           size: A4 portrait;
         }
         
+        * {
+          background: white !important;
+          color: black !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
         body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: Arial, sans-serif;
           margin: 0;
           padding: 0;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
           font-size: 9pt;
           line-height: 1.3;
-          color: #333;
+          color: black;
+          background: white;
         }
         
         /* Page container for 2 orders */
@@ -161,15 +170,14 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           height: 48vh;
           padding: 0.4cm;
           margin-bottom: 0.3cm;
-          border-bottom: 2px dashed #e0e0e0;
+          border: 2px solid black !important;
           overflow: hidden;
-          background: #fafafa;
+          background: white !important;
           border-radius: 6px;
           position: relative;
         }
         
         .print-page:last-child {
-          border-bottom: none;
           margin-bottom: 0;
         }
         
@@ -186,24 +194,26 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           page-break-after: auto;
         }
         
-        /* Order date and info */
+        /* B&W optimized order date and info */
         .order-date {
           text-align: center;
           margin-bottom: 0.4cm;
           padding: 0.2cm;
-          background: #f8f9fa;
+          background: white !important;
+          border: 2px double black !important;
           border-radius: 4px;
-          border: 1px solid #e9ecef;
         }
         
         .order-date p {
           font-size: 9pt;
           margin: 0;
-          font-weight: 600;
-          color: #495057;
+          font-weight: 900;
+          color: black;
+          text-transform: uppercase;
+          letter-spacing: 1px;
         }
         
-        /* Information containers */
+        /* Information containers with B&W borders */
         .info-container {
           display: flex;
           margin-bottom: 0.4cm;
@@ -211,21 +221,20 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         }
         
         .info-box {
-          border: 1px solid #dee2e6;
+          border: 2px solid black !important;
           border-radius: 6px;
           padding: 0.3cm;
           flex: 1;
-          background: white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          background: white !important;
         }
         
         .info-box h3 {
-          font-weight: 700;
+          font-weight: 900;
           margin-top: 0;
           margin-bottom: 0.2cm;
           font-size: 10pt;
-          color: #495057;
-          border-bottom: 1px solid #e9ecef;
+          color: black;
+          border-bottom: 2px solid black !important;
           padding-bottom: 0.1cm;
           text-transform: uppercase;
           letter-spacing: 0.3px;
@@ -235,12 +244,12 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           font-size: 8pt;
           margin: 2px 0;
           line-height: 1.4;
-          color: #6c757d;
+          color: black;
         }
         
         .info-box p span {
-          color: #495057;
-          font-weight: 600;
+          color: black;
+          font-weight: 700;
         }
         
         /* Order items section */
@@ -251,71 +260,71 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .order-items h3 {
           font-size: 10pt;
           margin-bottom: 0.3cm;
-          color: #495057;
-          font-weight: 700;
+          color: black;
+          font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.3px;
-          border-bottom: 2px solid #4a90e2;
+          border-bottom: 3px double black !important;
           padding-bottom: 0.1cm;
         }
         
-        /* Enhanced table styles with unit column */
+        /* B&W optimized table styles with unit column */
         .order-table {
           width: 100%;
           border-collapse: collapse;
           font-size: 7.5pt;
-          background: white;
+          background: white !important;
+          border: 2px solid black !important;
           border-radius: 6px;
           overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
         .order-table th {
-          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-          color: white;
+          background: black !important;
+          color: white !important;
           padding: 0.2cm;
           text-align: left;
           font-size: 8pt;
-          font-weight: 700;
+          font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.3px;
+          border: 1px solid white !important;
         }
         
         .order-table td {
           padding: 0.15cm;
-          border-bottom: 1px solid #f1f3f4;
+          border: 1px solid black !important;
           font-size: 7.5pt;
           line-height: 1.3;
+          background: white !important;
+          color: black !important;
         }
         
         .order-table tbody tr:nth-child(even) {
-          background-color: #f8f9fa;
-        }
-        
-        .order-table tbody tr:hover {
-          background-color: #e3f2fd;
+          border-top: 2px solid black !important;
+          border-bottom: 2px solid black !important;
         }
         
         .order-table .text-right {
           text-align: right;
-          font-weight: 600;
-          color: #495057;
+          font-weight: 700;
+          color: black;
         }
         
         .order-table .text-center {
           text-align: center;
-          font-weight: 600;
+          font-weight: 700;
         }
         
-        /* Enhanced totals section */
+        /* B&W optimized totals section */
         .order-totals {
           display: flex;
           justify-content: space-between;
           margin-bottom: 0.3cm;
           padding: 0.3cm;
-          background: #f8f9fa;
+          background: white !important;
+          border: 2px solid black !important;
           border-radius: 6px;
-          border: 1px solid #e9ecef;
           font-size: 8pt;
         }
         
@@ -326,8 +335,8 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         
         .payment-info p {
           margin: 2px 0;
-          color: #6c757d;
-          font-weight: 500;
+          color: black;
+          font-weight: 600;
         }
         
         .total-info {
@@ -337,40 +346,43 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         
         .total-info p {
           margin: 2px 0;
-          color: #495057;
+          color: black;
         }
         
         .total-value {
-          font-weight: 700;
+          font-weight: 900;
           font-size: 11pt;
-          color: #28a745;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+          color: black;
+          border: 1px solid black;
+          padding: 4px;
+          background: white !important;
         }
         
-        /* Enhanced notes section */
+        /* B&W optimized notes section */
         .order-notes {
           margin-top: 0.3cm;
           padding: 0.3cm;
-          background: #fff3cd;
-          border: 1px solid #ffeaa7;
+          background: white !important;
+          border: 3px double black !important;
           border-radius: 6px;
-          border-left: 4px solid #f39c12;
         }
         
         .order-notes h3 {
-          font-weight: 700;
+          font-weight: 900;
           margin-bottom: 0.2cm;
           font-size: 9pt;
-          color: #856404;
+          color: black;
           text-transform: uppercase;
           letter-spacing: 0.3px;
+          border-bottom: 1px solid black;
+          padding-bottom: 0.1cm;
         }
         
         .order-notes p {
           font-size: 8pt;
           line-height: 1.4;
-          color: #856404;
-          font-style: italic;
+          color: black;
+          font-weight: 600;
         }
         
         /* Hide non-printable elements */
@@ -382,16 +394,18 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .single-order .print-page {
           height: auto;
           min-height: 70vh;
-          border-bottom: none;
         }
       }`;
 
-    // Generate enhanced order HTML function
+    // Generate B&W optimized order HTML function
     const generateOrderHTML = (order: Order) => {
       const orderCustomer = validCustomers.find(c => c.id === order.customerId);
+      const statusIcon = getStatusIcon(order.status || 'pending');
+      const paymentIcon = getPaymentIcon(order.paymentMethod || '');
+      
       return `
-        <div class="print-page">
-          <div class="order-date">
+        <div class="print-page bw-section">
+          <div class="order-date bw-header">
             <p>Pedido #${order.code || 'N/A'} - ${new Date(order.createdAt).toLocaleDateString('pt-BR', { 
               weekday: 'long', 
               year: 'numeric', 
@@ -401,7 +415,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           </div>
           
           <div class="info-container">
-            <div class="info-box">
+            <div class="info-box bw-section">
               <h3>Dados do Cliente</h3>
               <p><span>Nome:</span> ${orderCustomer?.name || 'N/A'}</p>
               <p><span>Telefone:</span> ${orderCustomer?.phone || 'N/A'}</p>
@@ -409,7 +423,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             </div>
             
             ${(orderCustomer?.address || order.deliveryAddress) ? `
-            <div class="info-box">
+            <div class="info-box bw-section">
               <h3>Endereço de Entrega</h3>
               <p>${order.deliveryAddress || orderCustomer?.address || ''}
               ${orderCustomer?.neighborhood ? `, ${orderCustomer.neighborhood}` : ''}
@@ -420,7 +434,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           
           <div class="order-items">
             <h3>Itens do Pedido</h3>
-            <table class="order-table">
+            <table class="order-table bw-table">
               <thead>
                 <tr>
                   <th style="width: 40%;">Produto</th>
@@ -433,15 +447,15 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
               <tbody>
                 ${order.items && Array.isArray(order.items) && order.items.length > 0 ? order.items.map((item, index) => `
                   <tr>
-                    <td style="font-weight: 500; color: #495057;">${item.productName}</td>
+                    <td style="font-weight: 600; color: black;">${item.productName}</td>
                     <td class="text-center">${item.quantity}</td>
                     <td class="text-center">${item.unit || 'UN'}</td>
                     <td class="text-right">${formatCurrency(item.unitPrice)}</td>
-                    <td class="text-right" style="font-weight: 700; color: #28a745;">${formatCurrency(item.total)}</td>
+                    <td class="text-right" style="font-weight: 900; color: black;">${formatCurrency(item.total)}</td>
                   </tr>
                 `).join('') : `
                   <tr>
-                    <td colspan="5" style="text-align: center; color: #6c757d; font-style: italic; padding: 0.4cm;">
+                    <td colspan="5" style="text-align: center; color: black; font-style: italic; padding: 0.4cm;">
                       Nenhum item encontrado
                     </td>
                   </tr>
@@ -450,18 +464,18 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
             </table>
           </div>
           
-          <div class="order-totals">
+          <div class="order-totals bw-section">
             <div class="payment-info">
-              ${order.paymentStatus !== 'pending' ? `<p><strong>Status:</strong> ${order.paymentStatus}</p>` : ''}
-              ${order.paymentMethod ? `<p><strong>Forma de Pagamento:</strong> ${order.paymentMethod}</p>` : ''}
+              ${order.paymentStatus !== 'pending' ? `<p><strong>${statusIcon} Status:</strong> ${order.paymentStatus}</p>` : ''}
+              ${order.paymentMethod ? `<p><strong>${paymentIcon} Forma de Pagamento:</strong> ${order.paymentMethod}</p>` : ''}
             </div>
             <div class="total-info">
-              <p class="total-value">Total: ${formatCurrency(order.total)}</p>
+              <p class="total-value bw-total">Total: ${formatCurrency(order.total)}</p>
             </div>
           </div>
           
           ${order.notes ? `
-          <div class="order-notes">
+          <div class="order-notes bw-important">
             <h3>Observações Importantes</h3>
             <p>${order.notes}</p>
           </div>
@@ -470,25 +484,19 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
       `;
     };
 
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Impressão de Pedidos</title>
-          <meta charset="UTF-8">
-          <style>${printStyles}</style>
-        </head>
-        <body class="${orderPairs.length === 1 && orderPairs[0].length === 1 ? 'single-order' : ''}">
-          <div id="print-content">
-            ${orderPairs.map((pair, pairIndex) => `
-              <div class="page-pair">
-                ${pair.map(order => generateOrderHTML(order)).join('')}
-              </div>
-            `).join('')}
-          </div>
-        </body>
-      </html>
-    `;
+    // Generate the final HTML using B&W optimization
+    const pairsHTML = orderPairs.map((pair, pairIndex) => `
+      <div class="page-pair">
+        ${pair.map(order => generateOrderHTML(order)).join('')}
+      </div>
+    `).join('');
+
+    const optimizedHTML = addBWClasses(pairsHTML);
+
+    return generateBWOptimizedHTML(
+      `<div class="${orderPairs.length === 1 && orderPairs[0].length === 1 ? 'single-order' : ''}">${optimizedHTML}</div>`,
+      'Impressão de Pedidos - P&B'
+    );
   };
   
   return (
