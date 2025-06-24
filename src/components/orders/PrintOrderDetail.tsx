@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Order } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -79,7 +78,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
   };
 
   const generatePrintHTML = () => {
-    // Enhanced CSS styles matching PrintOrdersDialog
+    // Enhanced CSS styles matching PrintOrdersDialog - OPTIMIZED FOR B&W
     const printStyles = `
       @media print {
         @page {
@@ -164,19 +163,19 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         
         /* Visit info section for negative orders */
         .visit-info {
-          background-color: #fff3cd;
-          border: 1px solid #ffeaa7;
+          background-color: #f8f9fa;
+          border: 1px solid #dee2e6;
           padding: 0.3cm;
           border-radius: 6px;
           margin-bottom: 0.4cm;
-          border-left: 4px solid #f39c12;
+          border-left: 4px solid #666;
         }
         
         .visit-info h3 {
           font-weight: 700;
           margin-bottom: 0.2cm;
           font-size: 10pt;
-          color: #856404;
+          color: #495057;
           text-transform: uppercase;
           letter-spacing: 0.3px;
         }
@@ -184,7 +183,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .visit-info p {
           font-size: 8pt;
           margin: 2px 0;
-          color: #856404;
+          color: #495057;
         }
         
         /* Order items section */
@@ -199,11 +198,11 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.3px;
-          border-bottom: 2px solid #4a90e2;
+          border-bottom: 2px solid #000;
           padding-bottom: 0.1cm;
         }
         
-        /* Enhanced table styles with unit column */
+        /* Enhanced table styles with unit column - B&W OPTIMIZED */
         .order-table {
           width: 100%;
           border-collapse: collapse;
@@ -215,8 +214,8 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         }
         
         .order-table th {
-          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-          color: white;
+          background: #000 !important;
+          color: white !important;
           padding: 0.2cm;
           text-align: left;
           font-size: 8pt;
@@ -247,7 +246,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           font-weight: 600;
         }
         
-        /* Enhanced totals section */
+        /* Enhanced totals section - B&W OPTIMIZED */
         .order-totals {
           display: flex;
           justify-content: space-between;
@@ -283,25 +282,25 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .total-value {
           font-weight: 700;
           font-size: 11pt;
-          color: #28a745;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+          color: #000 !important;
+          text-shadow: none;
         }
         
-        /* Enhanced notes section */
+        /* Enhanced notes section - B&W OPTIMIZED */
         .order-notes {
           margin-top: 0.3cm;
           padding: 0.3cm;
-          background: #fff3cd;
-          border: 1px solid #ffeaa7;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
           border-radius: 6px;
-          border-left: 4px solid #f39c12;
+          border-left: 4px solid #666;
         }
         
         .order-notes h3 {
           font-weight: 700;
           margin-bottom: 0.2cm;
           font-size: 9pt;
-          color: #856404;
+          color: #495057;
           text-transform: uppercase;
           letter-spacing: 0.3px;
         }
@@ -309,7 +308,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .order-notes p {
           font-size: 8pt;
           line-height: 1.4;
-          color: #856404;
+          color: #495057;
           font-style: italic;
         }
         
@@ -399,7 +398,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
                     <td class="text-center">${item.quantity}</td>
                     <td class="text-center">${item.unit || 'UN'}</td>
                     <td class="text-right">${formatCurrency(item.unitPrice || item.price)}</td>
-                    <td class="text-right" style="font-weight: 700; color: #28a745;">${formatCurrency(item.total)}</td>
+                    <td class="text-right" style="font-weight: 700; color: #000;">${formatCurrency(item.total)}</td>
                   </tr>
                 `).join('') : `
                   <tr>
