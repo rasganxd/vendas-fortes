@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Order, Customer } from '@/types';
 import {
@@ -136,7 +137,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
     // Group orders in pairs
     const orderPairs = groupOrdersInPairs(ordersToPrint);
 
-    // Enhanced CSS styles for professional 2 orders per page printing - B&W OPTIMIZED
+    // Enhanced CSS styles for professional 2 orders per page printing - INK SAVING OPTIMIZATION
     const printStyles = `
       @media print {
         @page {
@@ -258,7 +259,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           padding-bottom: 0.1cm;
         }
         
-        /* Enhanced table styles with unit column - B&W OPTIMIZED */
+        /* Enhanced table styles with unit column - INK SAVING OPTIMIZATION */
         .order-table {
           width: 100%;
           border-collapse: collapse;
@@ -270,8 +271,9 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         }
         
         .order-table th {
-          background: #000 !important;
-          color: white !important;
+          background: white !important;
+          color: black !important;
+          border: 2px solid black !important;
           padding: 0.2cm;
           text-align: left;
           font-size: 8pt;

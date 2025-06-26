@@ -78,7 +78,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
   };
 
   const generatePrintHTML = () => {
-    // Enhanced CSS styles matching PrintOrdersDialog - OPTIMIZED FOR B&W
+    // Enhanced CSS styles matching PrintOrdersDialog - OPTIMIZED FOR B&W INK SAVING
     const printStyles = `
       @media print {
         @page {
@@ -202,7 +202,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           padding-bottom: 0.1cm;
         }
         
-        /* Enhanced table styles with unit column - B&W OPTIMIZED */
+        /* Enhanced table styles with unit column - INK SAVING OPTIMIZATION */
         .order-table {
           width: 100%;
           border-collapse: collapse;
@@ -214,8 +214,9 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         }
         
         .order-table th {
-          background: #000 !important;
-          color: white !important;
+          background: white !important;
+          color: black !important;
+          border: 2px solid black !important;
           padding: 0.2cm;
           text-align: left;
           font-size: 8pt;
