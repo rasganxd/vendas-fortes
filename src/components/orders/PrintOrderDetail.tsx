@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Order } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -168,7 +169,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .products-table th {
           background: white;
           color: #000;
-          border-bottom: 2px solid #000;
+          border-bottom: 1px solid #000;
           padding: 0.2cm 0.1cm;
           text-align: left;
           text-transform: uppercase;
@@ -218,7 +219,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         }
         
         .grand-total {
-          border-top: 2px solid #000;
+          border-top: 1px solid #000;
           padding-top: 0.2cm;
           margin-top: 0.2cm;
           font-size: 12pt;
@@ -382,7 +383,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Pedido #${order.code} - Impressão</title>
+          <title>Pedido #${order.code}</title>
           <meta charset="UTF-8">
           <style>${printStyles}</style>
         </head>

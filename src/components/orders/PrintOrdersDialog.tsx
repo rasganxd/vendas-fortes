@@ -231,7 +231,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .products-table th {
           background: white;
           color: #000;
-          border-bottom: 2px solid #000;
+          border-bottom: 1px solid #000;
           padding: 0.15cm 0.05cm;
           text-align: left;
           text-transform: uppercase;
@@ -281,7 +281,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         }
         
         .grand-total {
-          border-top: 2px solid #000;
+          border-top: 1px solid #000;
           padding-top: 0.1cm;
           margin-top: 0.1cm;
           font-size: 10pt;
