@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Order } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -78,220 +79,173 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
   };
 
   const generatePrintHTML = () => {
-    // Ink-saving CSS styles - minimal ink usage with clear structure
+    // Traditional invoice-style CSS with Courier New font
     const printStyles = `
       @media print {
         @page {
-          margin: 0.8cm;
+          margin: 1cm;
           size: A4 portrait;
         }
         
         body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: 'Courier New', monospace;
           margin: 0;
           padding: 0;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          font-size: 9pt;
-          line-height: 1.3;
+          font-size: 10pt;
+          line-height: 1.2;
           color: #000;
           background: white;
         }
         
-        .print-page {
-          padding: 0.4cm;
+        .invoice-container {
+          padding: 0.5cm;
           background: white;
-          border: 1px solid black;
-          position: relative;
         }
         
-        /* Order date and info */
-        .order-date {
+        /* Header section */
+        .invoice-header {
+          margin-bottom: 0.5cm;
+          border-bottom: 1px solid #000;
+          padding-bottom: 0.3cm;
+        }
+        
+        .invoice-title {
           text-align: center;
-          margin-bottom: 0.4cm;
-          padding: 0.2cm;
-          background: white;
-          border: 1px solid black;
-        }
-        
-        .order-date p {
-          font-size: 9pt;
-          margin: 0;
-          color: black;
-        }
-        
-        /* Information containers */
-        .info-container {
-          display: flex;
-          margin-bottom: 0.4cm;
-          gap: 0.3cm;
-        }
-        
-        .info-box {
-          border: 1px solid black;
-          padding: 0.3cm;
-          flex: 1;
-          background: white;
-        }
-        
-        .info-box h3 {
-          margin-top: 0;
-          margin-bottom: 0.2cm;
-          font-size: 10pt;
-          color: black;
-          border-bottom: 1px solid black;
-          padding-bottom: 0.1cm;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-        }
-        
-        .info-box p {
-          font-size: 8pt;
-          margin: 2px 0;
-          line-height: 1.4;
-          color: black;
-        }
-        
-        .info-box p span {
-          color: black;
-        }
-        
-        /* Visit info section for negative orders */
-        .visit-info {
-          background-color: white;
-          border: 1px solid black;
-          padding: 0.3cm;
-          margin-bottom: 0.4cm;
-          border-left: 3px solid black;
-        }
-        
-        .visit-info h3 {
-          margin-bottom: 0.2cm;
-          font-size: 10pt;
-          color: black;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-        }
-        
-        .visit-info p {
-          font-size: 8pt;
-          margin: 2px 0;
-          color: black;
-        }
-        
-        /* Order items section */
-        .order-items {
-          margin-bottom: 0.4cm;
-        }
-        
-        .order-items h3 {
-          font-size: 10pt;
+          font-size: 12pt;
+          font-weight: bold;
           margin-bottom: 0.3cm;
-          color: black;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
-          border-bottom: 2px solid black;
-          padding-bottom: 0.1cm;
         }
         
-        /* Table styles - ink saving optimization */
-        .order-table {
+        /* Customer info in traditional format */
+        .customer-info {
+          margin-bottom: 0.4cm;
+          font-size: 9pt;
+        }
+        
+        .customer-line {
+          margin: 2px 0;
+          display: flex;
+          gap: 2cm;
+        }
+        
+        .customer-line .label {
+          font-weight: bold;
+          min-width: 3cm;
+        }
+        
+        .customer-line .value {
+          flex: 1;
+        }
+        
+        /* Visit info for negative orders */
+        .visit-section {
+          margin-bottom: 0.4cm;
+          padding: 0.3cm;
+          border: 1px solid #000;
+          background: #f9f9f9;
+        }
+        
+        .visit-section h3 {
+          margin: 0 0 0.2cm 0;
+          font-size: 10pt;
+          text-transform: uppercase;
+        }
+        
+        .visit-section p {
+          margin: 2px 0;
+          font-size: 9pt;
+        }
+        
+        /* Products table */
+        .products-section {
+          margin-bottom: 0.4cm;
+        }
+        
+        .products-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 7.5pt;
-          background: white;
-        }
-        
-        .order-table th {
-          background: white !important;
-          color: black !important;
-          border: 2px solid black !important;
-          padding: 0.2cm;
-          text-align: left;
           font-size: 8pt;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
         }
         
-        .order-table td {
-          padding: 0.15cm;
-          border-bottom: 1px solid black;
-          font-size: 7.5pt;
-          line-height: 1.3;
+        .products-table th {
           background: white;
+          color: #000;
+          border-bottom: 2px solid #000;
+          padding: 0.2cm 0.1cm;
+          text-align: left;
+          font-weight: bold;
+          text-transform: uppercase;
         }
         
-        .order-table tbody tr:nth-child(even) {
-          border-top: 1px solid black;
-          border-bottom: 1px solid black;
-        }
-        
-        .order-table .text-right {
+        .products-table th.text-right,
+        .products-table td.text-right {
           text-align: right;
-          color: black;
         }
         
-        .order-table .text-center {
+        .products-table th.text-center,
+        .products-table td.text-center {
           text-align: center;
         }
         
-        /* Totals section - ink saving */
-        .order-totals {
+        .products-table td {
+          border-bottom: 1px solid #ccc;
+          padding: 0.1cm;
+          vertical-align: top;
+        }
+        
+        .products-table tbody tr:last-child td {
+          border-bottom: 1px solid #000;
+        }
+        
+        /* Totals section */
+        .totals-section {
+          margin-top: 0.4cm;
+          text-align: right;
+          font-size: 9pt;
+        }
+        
+        .total-line {
+          margin: 2px 0;
           display: flex;
           justify-content: space-between;
-          margin-bottom: 0.3cm;
-          padding: 0.3cm;
-          background: white;
-          border: 1px solid black;
-          font-size: 8pt;
+          align-items: center;
         }
         
-        .payment-info {
-          text-align: left;
-          flex: 1;
-        }
-        
-        .payment-info p {
-          margin: 2px 0;
-          color: black;
-        }
-        
-        .total-info {
-          text-align: right;
-          flex: 1;
-        }
-        
-        .total-info p {
-          margin: 2px 0;
-          color: black;
-        }
-        
-        .total-value {
-          font-size: 11pt;
-          color: black;
-        }
-        
-        /* Notes section - ink saving */
-        .order-notes {
-          margin-top: 0.3cm;
-          padding: 0.3cm;
-          background: white;
-          border: 1px solid black;
-          border-left: 3px solid black;
-        }
-        
-        .order-notes h3 {
-          margin-bottom: 0.2cm;
-          font-size: 9pt;
-          color: black;
+        .total-line .label {
+          font-weight: bold;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
         }
         
-        .order-notes p {
+        .total-line .value {
+          font-weight: bold;
+          min-width: 3cm;
+          text-align: right;
+        }
+        
+        .grand-total {
+          border-top: 2px solid #000;
+          padding-top: 0.2cm;
+          margin-top: 0.2cm;
+          font-size: 11pt;
+        }
+        
+        /* Notes section */
+        .notes-section {
+          margin-top: 0.5cm;
+          padding-top: 0.3cm;
+          border-top: 1px solid #000;
+        }
+        
+        .notes-section h3 {
+          margin: 0 0 0.2cm 0;
+          font-size: 9pt;
+          text-transform: uppercase;
+        }
+        
+        .notes-section p {
           font-size: 8pt;
-          line-height: 1.4;
-          color: black;
+          line-height: 1.3;
           font-style: italic;
         }
         
@@ -313,9 +267,8 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       return reasons[reason as keyof typeof reasons] || reason || 'Não informado';
     };
 
-    // Format customer address without state and CEP
+    // Format customer address
     const formatCustomerAddress = () => {
-      // Priority: order delivery address > customer address
       const address = order.deliveryAddress || customer?.address || '';
       const neighborhood = customer?.neighborhood || '';
       const city = order.deliveryCity || customer?.city || '';
@@ -332,60 +285,71 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
       return addressParts.join(', ');
     };
 
-    // Generate order HTML using the same structure as PrintOrdersDialog
+    // Generate order HTML in traditional format
     const generateOrderHTML = () => {
       return `
-        <div class="print-page">
-          <div class="order-date">
-            <p>Pedido #${order.code || 'N/A'} - ${formatDateToBR(order.date)}</p>
+        <div class="invoice-container">
+          <div class="invoice-header">
+            <div class="invoice-title">
+              ${isNegativeOrder ? 'Relatório de Visita' : 'Pedido de Venda'}
+            </div>
           </div>
           
-          <div class="info-container">
-            <div class="info-box">
-              <h3>Dados do Cliente</h3>
-              <p><span>Nome:</span> ${order.customerName || 'N/A'}</p>
-              <p><span>Telefone:</span> ${customer?.phone || 'N/A'}</p>
-              ${customer?.document ? `<p><span>CPF/CNPJ:</span> ${customer.document}</p>` : ''}
+          <div class="customer-info">
+            <div class="customer-line">
+              <span class="label">Pedido.:</span>
+              <span class="value">#${order.code || 'N/A'}</span>
+              <span class="label">Data:</span>
+              <span class="value">${formatDateToBR(order.date)}</span>
             </div>
-            
-            <div class="info-box">
-              <h3>Endereço de Entrega</h3>
-              <p>${formatCustomerAddress()}</p>
+            <div class="customer-line">
+              <span class="label">Cliente.:</span>
+              <span class="value">${order.customerName || 'N/A'}</span>
+              <span class="label">Vendedor:</span>
+              <span class="value">${order.salesRepName || 'N/A'}</span>
+            </div>
+            <div class="customer-line">
+              <span class="label">Telefone:</span>
+              <span class="value">${customer?.phone || 'N/A'}</span>
+              ${customer?.document ? `<span class="label">CPF/CNPJ:</span><span class="value">${customer.document}</span>` : ''}
+            </div>
+            <div class="customer-line">
+              <span class="label">Endereço:</span>
+              <span class="value">${formatCustomerAddress()}</span>
             </div>
           </div>
           
           ${isNegativeOrder ? `
-          <div class="visit-info">
+          <div class="visit-section">
             <h3>Informações da Visita</h3>
-            <p><span>Motivo da Recusa:</span> ${getRejectionReasonText(order.rejectionReason)}</p>
-            ${order.visitNotes ? `<p><span>Observações:</span> ${order.visitNotes}</p>` : ''}
-            <p><span>Projeto:</span> ${order.sourceProject || 'N/A'}</p>
+            <p><strong>Motivo da Recusa:</strong> ${getRejectionReasonText(order.rejectionReason)}</p>
+            ${order.visitNotes ? `<p><strong>Observações:</strong> ${order.visitNotes}</p>` : ''}
+            <p><strong>Projeto:</strong> ${order.sourceProject || 'N/A'}</p>
           </div>
           ` : `
-          <div class="order-items">
-            <h3>Itens do Pedido</h3>
-            <table class="order-table">
+          <div class="products-section">
+            <table class="products-table">
               <thead>
                 <tr>
-                  <th style="width: 40%;">Produto</th>
-                  <th class="text-center" style="width: 12%;">Qtd</th>
-                  <th class="text-center" style="width: 10%;">Unidade</th>
-                  <th class="text-right" style="width: 19%;">Preço Unit.</th>
-                  <th class="text-right" style="width: 19%;">Total</th>
+                  <th style="width: 8%;">Qtd</th>
+                  <th style="width: 8%;">Un</th>
+                  <th style="width: 44%;">Descrição</th>
+                  <th class="text-right" style="width: 20%;">R$ Unitário</th>
+                  <th class="text-right" style="width: 20%;">R$ Total</th>
                 </tr>
               </thead>
               <tbody>
                 ${order.items && Array.isArray(order.items) && order.items.length > 0 ? order.items.map((item, index) => `
                   <tr>
-                    <td>${item.productName}</td>
                     <td class="text-center">${item.quantity}</td>
                     <td class="text-center">${item.unit || 'UN'}</td>
+                    <td>${item.productName}</td>
                     <td class="text-right">${formatCurrency(item.unitPrice || item.price)}</td>
                     <td class="text-right">${formatCurrency(item.total)}</td>
                   </tr>
                 `).join('') : `
                   <tr>
-                    <td colspan="5" style="text-align: center; color: black; font-style: italic; padding: 0.4cm;">
+                    <td colspan="5" style="text-align: center; font-style: italic; padding: 0.4cm;">
                       Nenhum item encontrado
                     </td>
                   </tr>
@@ -394,19 +358,23 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
             </table>
           </div>
           
-          <div class="order-totals">
-            <div class="payment-info">
-              ${order.paymentMethod ? `<p><strong>Forma de Pagamento:</strong> ${order.paymentMethod}</p>` : ''}
+          <div class="totals-section">
+            ${order.paymentMethod ? `
+            <div class="total-line">
+              <span class="label">Forma de Pagamento:</span>
+              <span class="value">${order.paymentMethod}</span>
             </div>
-            <div class="total-info">
-              <p class="total-value">Total: ${formatCurrency(order.total)}</p>
+            ` : ''}
+            <div class="total-line grand-total">
+              <span class="label">Total Geral:</span>
+              <span class="value">${formatCurrency(order.total)}</span>
             </div>
           </div>
           `}
           
           ${order.notes ? `
-          <div class="order-notes">
-            <h3>Observações Importantes</h3>
+          <div class="notes-section">
+            <h3>Observações</h3>
             <p>${order.notes}</p>
           </div>
           ` : ''}
