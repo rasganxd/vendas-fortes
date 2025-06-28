@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Order, Customer } from '@/types';
 import {
@@ -148,7 +149,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           font-family: 'Courier New', monospace;
           margin: 0;
           padding: 0;
-          font-size: 9pt;
+          font-size: 10pt;
           line-height: 1.2;
           color: #000;
           background: white;
@@ -192,7 +193,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .invoice-title {
           text-align: center;
           font-size: 10pt;
-          font-weight: bold;
           margin-bottom: 0.2cm;
           text-transform: uppercase;
         }
@@ -200,7 +200,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         /* Customer info in traditional format */
         .customer-info {
           margin-bottom: 0.3cm;
-          font-size: 8pt;
+          font-size: 9pt;
         }
         
         .customer-line {
@@ -210,7 +210,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         }
         
         .customer-line .label {
-          font-weight: bold;
           min-width: 2.5cm;
         }
         
@@ -226,7 +225,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .products-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 7pt;
+          font-size: 8pt;
         }
         
         .products-table th {
@@ -235,7 +234,6 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           border-bottom: 2px solid #000;
           padding: 0.15cm 0.05cm;
           text-align: left;
-          font-weight: bold;
           text-transform: uppercase;
         }
         
@@ -263,7 +261,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .totals-section {
           margin-top: 0.3cm;
           text-align: right;
-          font-size: 8pt;
+          font-size: 9pt;
         }
         
         .total-line {
@@ -274,12 +272,10 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         }
         
         .total-line .label {
-          font-weight: bold;
           text-transform: uppercase;
         }
         
         .total-line .value {
-          font-weight: bold;
           min-width: 2.5cm;
           text-align: right;
         }
@@ -289,6 +285,8 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           padding-top: 0.1cm;
           margin-top: 0.1cm;
           font-size: 9pt;
+          border-bottom: 1px dotted #000;
+          padding-bottom: 0.1cm;
         }
         
         /* Notes section */

@@ -91,7 +91,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           font-family: 'Courier New', monospace;
           margin: 0;
           padding: 0;
-          font-size: 10pt;
+          font-size: 11pt;
           line-height: 1.2;
           color: #000;
           background: white;
@@ -112,7 +112,6 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .invoice-title {
           text-align: center;
           font-size: 12pt;
-          font-weight: bold;
           margin-bottom: 0.3cm;
           text-transform: uppercase;
         }
@@ -120,7 +119,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         /* Customer info in traditional format */
         .customer-info {
           margin-bottom: 0.4cm;
-          font-size: 9pt;
+          font-size: 10pt;
         }
         
         .customer-line {
@@ -130,7 +129,6 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         }
         
         .customer-line .label {
-          font-weight: bold;
           min-width: 3cm;
         }
         
@@ -165,7 +163,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .products-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 8pt;
+          font-size: 9pt;
         }
         
         .products-table th {
@@ -174,7 +172,6 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           border-bottom: 2px solid #000;
           padding: 0.2cm 0.1cm;
           text-align: left;
-          font-weight: bold;
           text-transform: uppercase;
         }
         
@@ -202,7 +199,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .totals-section {
           margin-top: 0.4cm;
           text-align: right;
-          font-size: 9pt;
+          font-size: 10pt;
         }
         
         .total-line {
@@ -213,12 +210,10 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         }
         
         .total-line .label {
-          font-weight: bold;
           text-transform: uppercase;
         }
         
         .total-line .value {
-          font-weight: bold;
           min-width: 3cm;
           text-align: right;
         }
@@ -228,6 +223,8 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           padding-top: 0.2cm;
           margin-top: 0.2cm;
           font-size: 11pt;
+          border-bottom: 1px dotted #000;
+          padding-bottom: 0.2cm;
         }
         
         /* Notes section */
@@ -322,9 +319,9 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           ${isNegativeOrder ? `
           <div class="visit-section">
             <h3>Informações da Visita</h3>
-            <p><strong>Motivo da Recusa:</strong> ${getRejectionReasonText(order.rejectionReason)}</p>
-            ${order.visitNotes ? `<p><strong>Observações:</strong> ${order.visitNotes}</p>` : ''}
-            <p><strong>Projeto:</strong> ${order.sourceProject || 'N/A'}</p>
+            <p>Motivo da Recusa: ${getRejectionReasonText(order.rejectionReason)}</p>
+            ${order.visitNotes ? `<p>Observações: ${order.visitNotes}</p>` : ''}
+            <p>Projeto: ${order.sourceProject || 'N/A'}</p>
           </div>
           ` : `
           <div class="products-section">
