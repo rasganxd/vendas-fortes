@@ -149,7 +149,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           font-family: 'Courier New', monospace;
           margin: 0;
           padding: 0;
-          font-size: 10pt;
+          font-size: 11pt;
           line-height: 1.2;
           color: #000;
           background: white;
@@ -192,7 +192,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         
         .invoice-title {
           text-align: center;
-          font-size: 10pt;
+          font-size: 11pt;
           margin-bottom: 0.2cm;
           text-transform: uppercase;
         }
@@ -200,7 +200,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         /* Customer info in traditional format */
         .customer-info {
           margin-bottom: 0.3cm;
-          font-size: 9pt;
+          font-size: 10pt;
         }
         
         .customer-line {
@@ -225,7 +225,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .products-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 8pt;
+          font-size: 9pt;
         }
         
         .products-table th {
@@ -261,7 +261,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         .totals-section {
           margin-top: 0.3cm;
           text-align: right;
-          font-size: 9pt;
+          font-size: 10pt;
         }
         
         .total-line {
@@ -284,7 +284,7 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
           border-top: 2px solid #000;
           padding-top: 0.1cm;
           margin-top: 0.1cm;
-          font-size: 9pt;
+          font-size: 10pt;
           border-bottom: 1px dotted #000;
           padding-bottom: 0.1cm;
         }
@@ -298,12 +298,12 @@ const PrintOrdersDialog: React.FC<PrintOrdersDialogProps> = ({
         
         .notes-section h3 {
           margin: 0 0 0.1cm 0;
-          font-size: 8pt;
+          font-size: 9pt;
           text-transform: uppercase;
         }
         
         .notes-section p {
-          font-size: 7pt;
+          font-size: 8pt;
           line-height: 1.3;
           font-style: italic;
         }

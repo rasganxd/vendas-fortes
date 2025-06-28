@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Order } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -91,7 +90,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           font-family: 'Courier New', monospace;
           margin: 0;
           padding: 0;
-          font-size: 11pt;
+          font-size: 12pt;
           line-height: 1.2;
           color: #000;
           background: white;
@@ -111,7 +110,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         
         .invoice-title {
           text-align: center;
-          font-size: 12pt;
+          font-size: 13pt;
           margin-bottom: 0.3cm;
           text-transform: uppercase;
         }
@@ -119,7 +118,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         /* Customer info in traditional format */
         .customer-info {
           margin-bottom: 0.4cm;
-          font-size: 10pt;
+          font-size: 11pt;
         }
         
         .customer-line {
@@ -146,13 +145,13 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         
         .visit-section h3 {
           margin: 0 0 0.2cm 0;
-          font-size: 10pt;
+          font-size: 11pt;
           text-transform: uppercase;
         }
         
         .visit-section p {
           margin: 2px 0;
-          font-size: 9pt;
+          font-size: 10pt;
         }
         
         /* Products table */
@@ -163,7 +162,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .products-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 9pt;
+          font-size: 10pt;
         }
         
         .products-table th {
@@ -199,7 +198,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         .totals-section {
           margin-top: 0.4cm;
           text-align: right;
-          font-size: 10pt;
+          font-size: 11pt;
         }
         
         .total-line {
@@ -222,7 +221,7 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
           border-top: 2px solid #000;
           padding-top: 0.2cm;
           margin-top: 0.2cm;
-          font-size: 11pt;
+          font-size: 12pt;
           border-bottom: 1px dotted #000;
           padding-bottom: 0.2cm;
         }
@@ -236,12 +235,12 @@ export const PrintOrderDetail: React.FC<PrintOrderDetailProps> = ({ order }) => 
         
         .notes-section h3 {
           margin: 0 0 0.2cm 0;
-          font-size: 9pt;
+          font-size: 10pt;
           text-transform: uppercase;
         }
         
         .notes-section p {
-          font-size: 8pt;
+          font-size: 9pt;
           line-height: 1.3;
           font-style: italic;
         }
