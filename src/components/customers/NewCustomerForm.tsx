@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       companyName: '',
       document: '',
       phone: '',
+      email: '',
       address: '',
       neighborhood: '', // Novo campo bairro
       city: '',
@@ -57,7 +59,11 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
         <div className="max-h-[75vh] overflow-y-auto pr-4 pb-2">
-          <CustomerFormFields form={form} />
+          <CustomerFormFields 
+            form={form}
+            isSubmitting={form.formState.isSubmitting}
+            nextCustomerCode={initialCode}
+          />
         </div>
         
         <DialogFooter className="mt-4 bg-background pt-4 pb-1 border-t">

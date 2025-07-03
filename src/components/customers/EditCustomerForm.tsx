@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Customer, CustomerFormValues } from '@/types/customer';
@@ -41,6 +42,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       companyName: standardizedCustomer.companyName,
       document: standardizedCustomer.document || '',
       phone: standardizedCustomer.phone,
+      email: standardizedCustomer.email || '',
       address: standardizedCustomer.address || '',
       neighborhood: standardizedCustomer.neighborhood,
       city: standardizedCustomer.city || '',
@@ -51,6 +53,7 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
       visitDays: standardizedCustomer.visitDays || [],
       visitFrequency: standardizedCustomer.visitFrequency || 'weekly',
       visitSequence: standardizedCustomer.visitSequence || 1,
+      visitSequences: standardizedCustomer.visitSequences,
       salesRepId: standardizedCustomer.salesRepId,
       createdAt: standardizedCustomer.createdAt,
       updatedAt: standardizedCustomer.updatedAt || new Date()
@@ -84,7 +87,11 @@ const EditCustomerForm: React.FC<EditCustomerFormProps> = ({ customer, onSubmit,
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <div className="max-h-[70vh] overflow-y-auto pr-4 pb-4">
-          <CustomerFormFields form={form} />
+          <CustomerFormFields 
+            form={form} 
+            isSubmitting={form.formState.isSubmitting}
+            nextCustomerCode={standardizedCustomer.code || 0}
+          />
         </div>
         
         <DialogFooter className="mt-6 bg-background pt-4 pb-1 border-t">
