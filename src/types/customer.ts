@@ -18,6 +18,7 @@ export interface Customer {
   visitDays?: string[];
   visitFrequency?: string;
   visitSequence?: number;
+  visitSequences?: Record<string, number>; // New field for day-specific sequences
   salesRepId?: string; // Changed from sales_rep_id to camelCase
   deliveryRouteId?: string;
   salesRepName?: string;
@@ -48,6 +49,7 @@ export type CustomerFormValues = {
   createdAt: Date;
   updatedAt: Date;
   visitSequence: number;
+  visitSequences?: Record<string, number>; // New field for day-specific sequences
   salesRepId: string; // Changed to camelCase
   creditLimit?: number; // Added missing field
   paymentTerms?: string; // Added missing field

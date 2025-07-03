@@ -1,4 +1,3 @@
-
 const { db } = require('./db');
 
 const rowToCustomer = (row) => ({
@@ -18,6 +17,8 @@ const rowToCustomer = (row) => ({
   salesRepId: row.salesRepId,
   salesRepName: row.salesRepName,
   visitFrequency: row.visitFrequency,
+  visitSequence: row.visitSequence,
+  visitSequences: row.visitSequences ? JSON.parse(row.visitSequences) : undefined, // New field
   active: row.active === 1,
   email: row.email,
 });
@@ -52,14 +53,22 @@ class CustomerSqliteService {
   add(customer) {
     return new Promise((resolve, reject) => {
       try {
-        const { id, code, name, companyName, document, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, notes, createdAt, updatedAt } = customer;
+        const { 
+          id, code, name, companyName, document, email, phone, address, city, state, zip, 
+          salesRepId, salesRepName, active, visitFrequency, visitSequence, visitSequences, notes, createdAt, updatedAt 
+        } = customer;
         
         const stmt = db.prepare(
-          `INSERT INTO customers (id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, notes, createdAt, updatedAt) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO customers (id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, visitSequence, visitSequences, notes, createdAt, updatedAt) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         );
         
-        stmt.run(id, code, companyName, name, document, email, phone, address, city, state, zip, salesRepId, salesRepName, active === false ? 0 : 1, visitFrequency, notes, createdAt.toISOString(), updatedAt.toISOString());
+        stmt.run(
+          id, code, companyName, name, document, email, phone, address, city, state, zip, 
+          salesRepId, salesRepName, active === false ? 0 : 1, visitFrequency, visitSequence || 0,
+          visitSequences ? JSON.stringify(visitSequences) : null, // New field
+          notes, createdAt.toISOString(), updatedAt.toISOString()
+        );
         resolve();
       } catch (error) {
         console.error("Error in add customer to SQLite:", error);
@@ -78,6 +87,10 @@ class CustomerSqliteService {
         if (updates.document !== undefined) dbUpdates.cnpj = updates.document;
         if (updates.active !== undefined) dbUpdates.active = updates.active ? 1 : 0;
         if (updates.updatedAt !== undefined) dbUpdates.updatedAt = updates.updatedAt.toISOString();
+        if (updates.visitSequence !== undefined) dbUpdates.visitSequence = updates.visitSequence;
+        if (updates.visitSequences !== undefined) {
+          dbUpdates.visitSequences = updates.visitSequences ? JSON.stringify(updates.visitSequences) : null;
+        }
 
         const allowedKeys = ['email', 'phone', 'address', 'city', 'state', 'zip', 'salesRepId', 'salesRepName', 'visitFrequency', 'notes'];
         allowedKeys.forEach(key => {
@@ -146,8 +159,8 @@ class CustomerSqliteService {
   setAll(customers) {
     return new Promise((resolve, reject) => {
       const insert = db.prepare(
-          `INSERT OR REPLACE INTO customers (id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, notes, createdAt, updatedAt) 
-           VALUES (@id, @code, @name, @fantasyName, @cnpj, @email, @phone, @address, @city, @state, @zip, @salesRepId, @salesRepName, @active, @visitFrequency, @notes, @createdAt, @updatedAt)`
+          `INSERT OR REPLACE INTO customers (id, code, name, fantasyName, cnpj, email, phone, address, city, state, zip, salesRepId, salesRepName, active, visitFrequency, visitSequence, visitSequences, notes, createdAt, updatedAt) 
+           VALUES (@id, @code, @name, @fantasyName, @cnpj, @email, @phone, @address, @city, @state, @zip, @salesRepId, @salesRepName, @active, @visitFrequency, @visitSequence, @visitSequences, @notes, @createdAt, @updatedAt)`
       );
 
       try {
@@ -169,6 +182,8 @@ class CustomerSqliteService {
                     salesRepName: customer.salesRepName,
                     active: (customer.active ?? true) ? 1 : 0,
                     visitFrequency: customer.visitFrequency,
+                    visitSequence: customer.visitSequence || 0,
+                    visitSequences: customer.visitSequences ? JSON.stringify(customer.visitSequences) : null, // New field
                     notes: customer.notes,
                     createdAt: (customer.createdAt || new Date()).toISOString(),
                     updatedAt: (customer.updatedAt || new Date()).toISOString(),

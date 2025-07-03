@@ -76,6 +76,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       visitDays: validateVisitDays(dbRecord.visit_days || []), // Validate visit days
       visitFrequency: dbRecord.visit_frequency || '',
       visitSequence: dbRecord.visit_sequence || 0,
+      visitSequences: dbRecord.visit_sequences ? JSON.parse(JSON.stringify(dbRecord.visit_sequences)) : undefined, // New field
       salesRepId: salesRepId || undefined,
       salesRepName: salesRepName,
       deliveryRouteId: dbRecord.delivery_route_id || undefined,
@@ -112,6 +113,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       visit_days: validatedVisitDays, // Use validated visit days
       visit_frequency: record.visitFrequency || '',
       visit_sequence: record.visitSequence || 0,
+      visit_sequences: record.visitSequences || null, // New field - store as JSONB
       sales_rep_id: record.salesRepId || null,
       delivery_route_id: record.deliveryRouteId || null,
       zip_code: record.zip || record.zipCode || '',
@@ -121,13 +123,14 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       category: record.category || ''
     };
 
-    console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}, visit_days: ${JSON.stringify(dbRecord.visit_days)}`);
+    console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}, visit_days: ${JSON.stringify(dbRecord.visit_days)}, visit_sequences: ${JSON.stringify(dbRecord.visit_sequences)}`);
 
     // Remove the camelCase fields that don't exist in the database
     delete dbRecord.companyName;
     delete dbRecord.visitDays;
     delete dbRecord.visitFrequency;
     delete dbRecord.visitSequence;
+    delete dbRecord.visitSequences; // This is now mapped to visit_sequences
     delete dbRecord.salesRepId;
     delete dbRecord.salesRepName; // This field doesn't exist in DB, so remove it
     delete dbRecord.deliveryRouteId;

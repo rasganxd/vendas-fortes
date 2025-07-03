@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS customers (
     salesRepName TEXT,
     active BOOLEAN DEFAULT TRUE,
     visitFrequency TEXT,
+    visitSequence INTEGER DEFAULT 0,
+    visitSequences TEXT,
     notes TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -50,6 +52,16 @@ const initializeDatabase = () => {
   try {
     console.log('Initializing database schema...');
     db.exec(schema);
+    
+    // Add visitSequences column if it doesn't exist (migration)
+    try {
+      db.exec(`ALTER TABLE customers ADD COLUMN visitSequences TEXT;`);
+      console.log('Added visitSequences column to customers table');
+    } catch (error) {
+      // Column already exists, ignore error
+      console.log('visitSequences column already exists');
+    }
+    
     console.log('Database initialized successfully.');
   } catch (error) {
     console.error('Error initializing database:', error);
