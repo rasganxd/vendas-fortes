@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Customer, CustomerFormValues } from '@/types/customer';
-import CustomerFormFields from './CustomerFormFields';
+import { CustomerFormFields } from './CustomerFormFields';
 
 interface NewCustomerFormProps {
   initialCode: number;

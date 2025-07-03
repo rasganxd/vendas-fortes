@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Customer, CustomerFormValues } from '@/types/customer';
@@ -7,7 +6,7 @@ import {
   Form,
 } from '@/components/ui/form';
 import { DialogFooter } from '@/components/ui/dialog';
-import CustomerFormFields from './CustomerFormFields';
+import { CustomerFormFields } from './CustomerFormFields';
 
 interface EditCustomerFormProps {
   customer: Customer;

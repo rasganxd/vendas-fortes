@@ -37,6 +37,7 @@ export type CustomerFormValues = {
   companyName: string; // This will be "Razão Social"
   document: string;
   phone: string;
+  email?: string; // Add email field
   address: string;
   neighborhood?: string; // Novo campo para bairro
   city: string;
