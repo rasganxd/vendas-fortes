@@ -21,7 +21,8 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: false, // Temporary for development - should be true in production
     },
     titleBarStyle: 'default',
     show: false
@@ -32,11 +33,41 @@ function createWindow() {
     ? 'http://localhost:8080' 
     : `file://${path.join(__dirname, '../dist/index.html')}`;
   
-  mainWindow.loadURL(startUrl);
+  console.log('Loading URL:', startUrl);
+  
+  mainWindow.loadURL(startUrl).catch(err => {
+    console.error('Failed to load URL:', err);
+    // Fallback: try loading without file:// protocol
+    if (!isDev) {
+      const fallbackPath = path.join(__dirname, '../dist/index.html');
+      console.log('Trying fallback path:', fallbackPath);
+      mainWindow.loadFile(fallbackPath);
+    }
+  });
+
+  // Debug: Log when page fails to load
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error('Page failed to load:', {
+      errorCode,
+      errorDescription,
+      validatedURL
+    });
+  });
+
+  // Debug: Log when page finishes loading
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('Page loaded successfully');
+  });
 
   // Mostrar janela quando estiver pronta
   mainWindow.once('ready-to-show', () => {
+    console.log('Window ready to show');
     mainWindow.show();
+    
+    // Open DevTools in development for debugging
+    if (isDev) {
+      mainWindow.webContents.openDevTools();
+    }
   });
 
   // Abrir links externos no navegador padrão
@@ -44,11 +75,6 @@ function createWindow() {
     shell.openExternal(url);
     return { action: 'deny' };
   });
-
-  // DevTools apenas em desenvolvimento
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
 
   mainWindow.on('closed', () => {
     mainWindow = null;

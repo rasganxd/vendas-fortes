@@ -1,4 +1,5 @@
 
+
 # Configurações para adicionar ao package.json
 
 ## 1. Adicionar no topo do package.json (junto com name, version, etc):
@@ -13,9 +14,9 @@
 ```json
 "electron": "electron public/electron.js",
 "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:8080 && electron public/electron.js\"",
-"electron:pack": "npm run build && electron-builder",
-"electron:dist": "npm run build && electron-builder --publish=never",
-"build:electron": "vite build --mode electron"
+"electron:pack": "npm run build:electron && electron-builder",
+"electron:dist": "npm run build:electron && electron-builder --publish=never",
+"build:electron": "cross-env ELECTRON=true vite build --mode electron"
 ```
 
 ## 3. Adicionar configuração do Electron Builder (na raiz do objeto JSON, não dentro de scripts):
@@ -56,8 +57,16 @@
 }
 ```
 
+## Dependências Adicionais Necessárias:
+
+```bash
+npm install --save-dev electron electron-builder concurrently wait-on cross-env
+```
+
 ## Como aplicar essas configurações:
 
 1. Abra o arquivo `package.json` na raiz do projeto
 2. Adicione as configurações acima nas seções correspondentes
 3. Salve o arquivo
+4. Execute: `npm install --save-dev cross-env` (dependência adicional necessária)
+

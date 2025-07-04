@@ -1,10 +1,11 @@
 
+
 # 🚀 Setup Completo para App Windows
 
 ## ⚠️ IMPORTANTE - Instalar Dependências Primeiro:
 
 ```bash
-npm install --save-dev electron electron-builder concurrently wait-on
+npm install --save-dev electron electron-builder concurrently wait-on cross-env
 ```
 
 ## Passos para Completar a Configuração:
@@ -12,7 +13,7 @@ npm install --save-dev electron electron-builder concurrently wait-on
 ### 1. Instalar Dependências do Electron
 ```bash
 # Certifique-se de estar na pasta raiz do projeto
-npm install --save-dev electron electron-builder concurrently wait-on
+npm install --save-dev electron electron-builder concurrently wait-on cross-env
 
 # Verificar se foi instalado corretamente
 npx electron --version
@@ -37,13 +38,27 @@ npm run build:electron
 npm run electron:dist
 ```
 
+## 🔧 Correções Implementadas para Tela Branca:
+
+✅ **Script Problemático Removido**: Removido `gptengineer.js` que causava conflitos  
+✅ **Vite Configurado**: Base path corrigido para `./` no modo Electron  
+✅ **CSP Ajustado**: Content Security Policy configurado para Electron  
+✅ **Build Scripts**: Scripts específicos para Electron com variáveis de ambiente  
+✅ **Debugging**: Logs adicionados para identificar problemas de carregamento  
+✅ **Fallback**: Sistema de fallback em caso de erro de carregamento  
+
 ## 🛠️ Resolução de Problemas:
+
+### Se continuar com tela branca:
+1. Abra DevTools (F12) e verifique o console
+2. Execute: `npm run electron:dev` para ver logs detalhados
+3. Certifique-se que o build foi feito: `npm run build:electron`
 
 ### Se der erro na instalação do Electron:
 1. Limpe o cache: `npm cache clean --force`
 2. Delete `node_modules` e `package-lock.json`
 3. Execute: `npm install`
-4. Tente novamente: `npm install --save-dev electron electron-builder concurrently wait-on`
+4. Tente novamente: `npm install --save-dev electron electron-builder concurrently wait-on cross-env`
 
 ### Se o Windows Defender bloquear:
 - Adicione exceção para a pasta do projeto
@@ -58,6 +73,7 @@ npm run electron:dist
 - ✅ Janela redimensionável
 - ✅ Configuração de impressão nativa
 - ✅ Sistema de banco de dados offline
+- ✅ **Correções para tela branca implementadas**
 
 ## 🎯 O que o App Terá:
 
@@ -67,6 +83,7 @@ npm run electron:dist
 - **Instalador Windows**: Arquivo .exe com instalador NSIS
 - **Ícone Desktop**: Atalho automático no desktop
 - **Performance**: Melhor que versão web
+- **Sem Tela Branca**: Problemas de carregamento corrigidos
 
 ## 📁 Arquivos de Saída:
 
@@ -82,4 +99,5 @@ Após `npm run electron:dist`, você terá:
 - `npm run electron:dist` - Gerar instalador completo
 - `npm run build:electron` - Build otimizado para Electron
 
-Sua aplicação está pronta para Windows! 🎉
+Sua aplicação está pronta para Windows com correções para tela branca! 🎉
+
