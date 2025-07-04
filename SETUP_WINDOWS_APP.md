@@ -1,12 +1,21 @@
 
 # 🚀 Setup Completo para App Windows
 
+## ⚠️ IMPORTANTE - Instalar Dependências Primeiro:
+
+```bash
+npm install --save-dev electron electron-builder concurrently wait-on
+```
+
 ## Passos para Completar a Configuração:
 
-### 1. Instalar Dependências
+### 1. Instalar Dependências do Electron
 ```bash
-npm install
+# Certifique-se de estar na pasta raiz do projeto
 npm install --save-dev electron electron-builder concurrently wait-on
+
+# Verificar se foi instalado corretamente
+npx electron --version
 ```
 
 ### 2. Configurar package.json
@@ -27,6 +36,18 @@ npm run electron:dev
 npm run build:electron
 npm run electron:dist
 ```
+
+## 🛠️ Resolução de Problemas:
+
+### Se der erro na instalação do Electron:
+1. Limpe o cache: `npm cache clean --force`
+2. Delete `node_modules` e `package-lock.json`
+3. Execute: `npm install`
+4. Tente novamente: `npm install --save-dev electron electron-builder concurrently wait-on`
+
+### Se o Windows Defender bloquear:
+- Adicione exceção para a pasta do projeto
+- Temporariamente desative proteção em tempo real durante desenvolvimento
 
 ## ✅ Recursos Já Configurados:
 
@@ -61,4 +82,4 @@ Após `npm run electron:dist`, você terá:
 - `npm run electron:dist` - Gerar instalador completo
 - `npm run build:electron` - Build otimizado para Electron
 
-Sua aplicação está 95% pronta para Windows! 🎉
+Sua aplicação está pronta para Windows! 🎉

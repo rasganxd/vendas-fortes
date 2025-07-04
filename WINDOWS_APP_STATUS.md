@@ -1,7 +1,7 @@
 
 # 📊 Status da Configuração Windows
 
-## ✅ CONCLUÍDO (95%):
+## ✅ CONCLUÍDO (90%):
 
 ### Arquivos Principais:
 - ✅ `public/electron.js` - Processo principal do Electron
@@ -9,7 +9,7 @@
 - ✅ `vite.config.ts` - Configurado para Electron
 - ✅ `src/types/electron.d.ts` - Tipos TypeScript
 - ✅ `electron/services/sqlite/` - Banco de dados local
-- ✅ `capacitor.config.ts` - Configuração base
+- ✅ `PACKAGE_JSON_CONFIG.md` - Configurações prontas
 
 ### Funcionalidades Implementadas:
 - ✅ Sistema de janela nativa
@@ -19,17 +19,27 @@
 - ✅ Diálogos do sistema
 - ✅ Notificações nativas
 
-## ⏳ PENDENTE (5%):
+## ⏳ PENDENTE (10%):
 
 ### Para Finalizar:
-1. **Aplicar configurações do package.json** (arquivo `PACKAGE_JSON_CONFIG.md`)
-2. **Adicionar ícone** (pasta `resources/icon.png`)
-3. **Testar build local**
+1. **Instalar dependências do Electron localmente**
+2. **Aplicar configurações do package.json** (arquivo `PACKAGE_JSON_CONFIG.md`)
+3. **Adicionar ícone** (pasta `resources/icon.png`)
+4. **Testar build local**
 
 ### Próximos Passos:
-1. Seguir instruções em `SETUP_WINDOWS_APP.md`
-2. Executar `npm run electron:dev` para testar
-3. Executar `npm run electron:dist` para gerar instalador
+1. Instalar dependências: `npm install --save-dev electron electron-builder concurrently wait-on`
+2. Seguir instruções em `SETUP_WINDOWS_APP.md`
+3. Executar `npm run electron:dev` para testar
+4. Executar `npm run electron:dist` para gerar instalador
+
+## 🚨 NOTA IMPORTANTE:
+
+As dependências do Electron foram removidas do projeto devido a problemas de compatibilidade com o ambiente atual. Você precisa instalá-las localmente usando:
+
+```bash
+npm install --save-dev electron electron-builder concurrently wait-on
+```
 
 ## 🎯 Resultado Final:
 
@@ -40,4 +50,4 @@ Você terá um aplicativo Windows completo com:
 - Interface nativa
 - Performance otimizada
 
-**Tempo estimado para conclusão: 10-15 minutos** ⏰
+**Tempo estimado para conclusão: 15-20 minutos** ⏰
