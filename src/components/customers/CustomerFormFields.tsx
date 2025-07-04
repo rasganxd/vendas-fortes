@@ -233,45 +233,6 @@ export const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({
         />
 
         <div>
-          <Label htmlFor="creditLimit">Limite de Crédito</Label>
-          <Input
-            id="creditLimit"
-            {...register('creditLimit', { valueAsNumber: true })}
-            type="number"
-            step="0.01"
-            min="0"
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="paymentTerms">Condições de Pagamento</Label>
-          <Input
-            id="paymentTerms"
-            {...register('paymentTerms')}
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="region">Região</Label>
-          <Input
-            id="region"
-            {...register('region')}
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="category">Categoria</Label>
-          <Input
-            id="category"
-            {...register('category')}
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div>
           <Label htmlFor="notes">Observações</Label>
           <Textarea
             id="notes"

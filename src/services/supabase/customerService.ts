@@ -83,11 +83,6 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       zipCode: dbRecord.zip_code || '',
       // Ensure zip is set from zip_code for consistency
       zip: dbRecord.zip_code || dbRecord.zip || '',
-      // Map additional fields with proper defaults
-      creditLimit: dbRecord.credit_limit || 0,
-      paymentTerms: dbRecord.payment_terms || '',
-      region: dbRecord.region || '',
-      category: dbRecord.category || '',
       document: dbRecord.document || '',
       notes: dbRecord.notes || ''
     };
@@ -116,11 +111,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       visit_sequences: record.visitSequences || null, // New field - store as JSONB
       sales_rep_id: record.salesRepId || null,
       delivery_route_id: record.deliveryRouteId || null,
-      zip_code: record.zip || record.zipCode || '',
-      credit_limit: record.creditLimit || 0,
-      payment_terms: record.paymentTerms || '',
-      region: record.region || '',
-      category: record.category || ''
+      zip_code: record.zip || record.zipCode || ''
     };
 
     console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}, visit_days: ${JSON.stringify(dbRecord.visit_days)}, visit_sequences: ${JSON.stringify(dbRecord.visit_sequences)}`);
@@ -137,8 +128,6 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     delete dbRecord.zipCode;
     delete dbRecord.zip;
     delete dbRecord.syncPending;
-    delete dbRecord.creditLimit;
-    delete dbRecord.paymentTerms;
     
     console.log("📝 [CustomerService] Transform to DB result:", dbRecord);
     return dbRecord;
