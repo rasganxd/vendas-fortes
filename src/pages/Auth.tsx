@@ -43,7 +43,11 @@ export default function Auth() {
       } else if (mode === 'signup') {
         setError(null);
         // Show success message for signup
-        setError('Verifique seu email para confirmar a conta e fazer login.');
+        alert('Conta criada com sucesso! Redirecionando...');
+        // Force redirect after successful signup
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
       }
     } catch (err: any) {
       setError(err.message || 'Erro inesperado');
