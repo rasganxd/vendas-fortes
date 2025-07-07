@@ -30,7 +30,28 @@ export default function Auth() {
     setIsLoading(true);
     setError(null);
 
+    // Validações básicas
+    if (!email || !password) {
+      setError('Por favor, preencha todos os campos obrigatórios');
+      setIsLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres');
+      setIsLoading(false);
+      return;
+    }
+
+    if (mode === 'signup' && !name) {
+      setError('Por favor, informe seu nome');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      console.log(`Iniciando ${mode === 'signin' ? 'login' : 'cadastro'} para:`, email);
+      
       let result;
       if (mode === 'signin') {
         result = await signIn(email, password);
@@ -39,18 +60,33 @@ export default function Auth() {
       }
 
       if (result.error) {
-        setError(result.error.message);
-      } else if (mode === 'signup') {
-        setError(null);
-        // Show success message for signup
-        alert('Conta criada com sucesso! Redirecionando...');
-        // Force redirect after successful signup
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
+        console.error('Erro na autenticação:', result.error);
+        
+        // Tratar diferentes tipos de erro
+        let errorMessage = 'Erro inesperado. Tente novamente.';
+        
+        if (result.error.message?.includes('Invalid login credentials')) {
+          errorMessage = 'Email ou senha incorretos';
+        } else if (result.error.message?.includes('User already registered')) {
+          errorMessage = 'Este email já está cadastrado. Tente fazer login.';
+        } else if (result.error.message?.includes('Email not confirmed')) {
+          errorMessage = 'Verifique seu email para confirmar a conta';
+        } else if (result.error.message?.includes('Password should be at least')) {
+          errorMessage = 'A senha deve ter pelo menos 6 caracteres';
+        } else if (result.error.message?.includes('Unable to validate email address')) {
+          errorMessage = 'Email inválido';
+        } else if (result.error.message) {
+          errorMessage = result.error.message;
+        }
+        
+        setError(errorMessage);
+      } else {
+        console.log(`${mode === 'signin' ? 'Login' : 'Cadastro'} realizado com sucesso!`);
+        // O redirecionamento é feito automaticamente no AuthContext
       }
     } catch (err: any) {
-      setError(err.message || 'Erro inesperado');
+      console.error('Erro inesperado:', err);
+      setError(err.message || 'Erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);
     }

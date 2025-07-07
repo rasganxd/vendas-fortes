@@ -2,6 +2,25 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+// Função para limpar estado de autenticação
+const cleanupAuthState = () => {
+  // Remove todos os tokens Supabase do localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  // Remove do sessionStorage se existir
+  if (typeof sessionStorage !== 'undefined') {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  }
+};
+
 interface AdminProfile {
   id: string;
   user_id: string;
@@ -89,34 +108,116 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      // Limpar estado anterior
+      cleanupAuthState();
+      
+      // Tentar logout global primeiro
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Ignorar erros de logout
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Erro no login:', error);
+        return { error };
+      }
+
+      if (data.user) {
+        console.log('Login bem-sucedido:', data.user.email);
+        // Forçar recarga da página para garantir estado limpo
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
+      }
+
+      return { error: null };
+    } catch (err: any) {
+      console.error('Erro inesperado no login:', err);
+      return { error: err };
+    }
   };
 
   const signUp = async (email: string, password: string, name?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          name: name || 'Admin'
+    try {
+      // Limpar estado anterior
+      cleanupAuthState();
+      
+      // Tentar logout global primeiro
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Ignorar erros de logout
+      }
+
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            name: name || 'Admin'
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Erro no cadastro:', error);
+        return { error };
+      }
+
+      if (data.user) {
+        console.log('Cadastro bem-sucedido:', data.user.email);
+        // Se não precisa de confirmação de email, fazer login automático
+        if (data.user.email_confirmed_at || !data.user.email_confirmed_at) {
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 100);
         }
       }
-    });
-    return { error };
+
+      return { error: null };
+    } catch (err: any) {
+      console.error('Erro inesperado no cadastro:', err);
+      return { error: err };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
+    try {
+      // Limpar estado antes do logout
+      cleanupAuthState();
+      
+      // Tentar logout global
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.error('Erro no logout:', err);
+      }
+      
+      // Limpar estado local
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      // Forçar recarga para garantir limpeza completa
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      // Mesmo em caso de erro, limpar estado local e redirecionar
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      window.location.href = '/auth';
+    }
   };
 
   const value = {
