@@ -6,6 +6,8 @@ import { ThemeProvider } from '@/components/theme-provider';
 import SideNav from '@/components/layout/SideNav';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppProvider } from '@/context/AppContextProvider';
+import { AuthProvider } from '@/context/AuthContext';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
@@ -28,6 +30,7 @@ import SalesReports from '@/pages/SalesReports';
 import Settings from '@/pages/Settings';
 import SystemMaintenance from '@/pages/SystemMaintenance';
 import NotFound from '@/pages/NotFound';
+import Auth from '@/pages/Auth';
 import './App.css';
 
 function App() {
@@ -50,43 +53,52 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-      <AppProvider>
-        <Router>
-          <SidebarProvider defaultOpen>
-            <div className="flex min-h-screen w-full">
-              <SideNav />
-              <div className="flex-1 relative">
-                <RouterRoutes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/clientes" element={<Customers />} />
-                  <Route path="/produtos" element={<Products />} />
-                  <Route path="/produtos/precificacao" element={<ProductPricingPage />} />
-                  <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
-                  <Route path="/pedidos" element={<Orders />} />
-                  <Route path="/pedidos/novo" element={<NewOrder />} />
-                  <Route path="/carregamentos" element={<Loads />} />
-                  <Route path="/carregamentos/montar" element={<BuildLoad />} />
-                  <Route path="/carregamentos/:id" element={<BuildLoad />} />
-                  <Route path="/rotas" element={<RoutesPage />} />
-                  <Route path="/vendedores" element={<SalesReps />} />
-                  <Route path="/veiculos" element={<Vehicles />} />
-                  <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
-                  <Route path="/metodos-pagamento" element={<PaymentMethods />} />
-                  <Route path="/pagamentos" element={<Payments />} />
-                  <Route path="/lista-pagamentos" element={<PaymentsList />} />
-                  <Route path="/listagens" element={<Listings />} />
-                  <Route path="/relatorios-vendas" element={<SalesReports />} />
-                  <Route path="/configuracoes" element={<Settings />} />
-                  <Route path="/manutencao" element={<SystemMaintenance />} />
-                  <Route path="*" element={<NotFound />} />
-                </RouterRoutes>
-              </div>
-            </div>
-            <Toaster />
-          </SidebarProvider>
-        </Router>
-      </AppProvider>
+      <AuthProvider>
+        <AppProvider>
+          <Router>
+            <RouterRoutes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/*" element={
+                <ProtectedRoute>
+                  <SidebarProvider defaultOpen>
+                    <div className="flex min-h-screen w-full">
+                      <SideNav />
+                      <div className="flex-1 relative">
+                        <RouterRoutes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/clientes" element={<Customers />} />
+                          <Route path="/produtos" element={<Products />} />
+                          <Route path="/produtos/precificacao" element={<ProductPricingPage />} />
+                          <Route path="/produtos/classificacoes" element={<ProductClassifications />} />
+                          <Route path="/pedidos" element={<Orders />} />
+                          <Route path="/pedidos/novo" element={<NewOrder />} />
+                          <Route path="/carregamentos" element={<Loads />} />
+                          <Route path="/carregamentos/montar" element={<BuildLoad />} />
+                          <Route path="/carregamentos/:id" element={<BuildLoad />} />
+                          <Route path="/rotas" element={<RoutesPage />} />
+                          <Route path="/vendedores" element={<SalesReps />} />
+                          <Route path="/veiculos" element={<Vehicles />} />
+                          <Route path="/pagamentos/tabelas" element={<PaymentTables />} />
+                          <Route path="/metodos-pagamento" element={<PaymentMethods />} />
+                          <Route path="/pagamentos" element={<Payments />} />
+                          <Route path="/lista-pagamentos" element={<PaymentsList />} />
+                          <Route path="/listagens" element={<Listings />} />
+                          <Route path="/relatorios-vendas" element={<SalesReports />} />
+                          <Route path="/configuracoes" element={<Settings />} />
+                          <Route path="/manutencao" element={<SystemMaintenance />} />
+                          <Route path="*" element={<NotFound />} />
+                        </RouterRoutes>
+                      </div>
+                    </div>
+                    <Toaster />
+                  </SidebarProvider>
+                </ProtectedRoute>
+              } />
+            </RouterRoutes>
+          </Router>
+        </AppProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

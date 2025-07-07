@@ -33,7 +33,9 @@ import { CustomScrollArea } from "@/components/ui/custom-scroll-area";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
 import { useAppContext } from "@/hooks/useAppContext";
+import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 // Define navigation items - adicionado item "Listagens"
 const navigation: NavItem[] = [
@@ -133,6 +135,7 @@ export default function SideNav() {
   const location = useLocation();
   const { theme } = useTheme();
   const { settings } = useAppContext();
+  const { signOut, profile } = useAuth();
   
   // Listen for theme changes with simplified effect
   useEffect(() => {
@@ -218,6 +221,21 @@ export default function SideNav() {
           </SidebarMenu>
         </SidebarContent>
       </CustomScrollArea>
+      
+      {/* Admin Profile & Logout */}
+      <div className="border-t p-3 bg-blue-50">
+        <div className="text-xs text-blue-800/70 mb-2">
+          Admin: {profile?.name || 'Carregando...'}
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={signOut}
+          className="w-full text-blue-800 border-blue-200 hover:bg-blue-100"
+        >
+          Sair
+        </Button>
+      </div>
     </Sidebar>
   );
 }
