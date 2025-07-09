@@ -21,6 +21,7 @@ export interface Product {
   subunitRatio?: number; // Calculated automatically from units table
   main_unit_id?: string; // ID of main unit
   sub_unit_id?: string; // ID of sub unit
+  active?: boolean; // Product status - active or inactive
   createdAt: Date;
   updatedAt: Date;
   syncStatus?: 'synced' | 'pending' | 'error';

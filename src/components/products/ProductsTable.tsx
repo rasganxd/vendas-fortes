@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Trash } from 'lucide-react';
+import { Loader2, Trash, Power, PowerOff } from 'lucide-react';
 import { Product } from '@/types';
 import { formatCurrency } from "@/lib/utils";
 import { useAppData } from '@/context/providers/AppDataProvider';
@@ -26,13 +26,15 @@ interface ProductsTableProps {
   isLoading: boolean;
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
+  onToggleActive: (id: string, active: boolean) => void;
 }
 
 const ProductsTable: React.FC<ProductsTableProps> = ({
   products,
   isLoading,
   onEdit,
-  onDelete
+  onDelete,
+  onToggleActive
 }) => {
   const { productCategories, productGroups, productBrands } = useAppData();
 
@@ -87,6 +89,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
         <TableRow>
           <TableHead>Código</TableHead>
           <TableHead>Nome</TableHead>
+          <TableHead>Status</TableHead>
           <TableHead>Categoria</TableHead>
           <TableHead>Grupo</TableHead>
           <TableHead>Marca</TableHead>
@@ -111,10 +114,20 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
           const groupName = getGroupName(product.groupId);
           const brandName = getBrandName(product.brandId);
           
+          const isActive = product.active !== false; // Default to true if undefined
+          
           return (
-            <TableRow key={product.id}>
+            <TableRow key={product.id} className={!isActive ? 'opacity-60' : ''}>
               <TableCell>{product.code}</TableCell>
-              <TableCell>{product.name}</TableCell>
+              <TableCell className={!isActive ? 'text-gray-500 line-through' : ''}>{product.name}</TableCell>
+              <TableCell>
+                <Badge 
+                  variant={isActive ? "default" : "secondary"} 
+                  className={isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                >
+                  {isActive ? 'Ativo' : 'Inativo'}
+                </Badge>
+              </TableCell>
               <TableCell>
                 {categoryName ? (
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">
@@ -169,6 +182,23 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Editar</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => onToggleActive(product.id, !isActive)}
+                        className={isActive ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                      >
+                        {isActive ? <PowerOff size={16} /> : <Power size={16} />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{isActive ? 'Desativar' : 'Ativar'}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { Product, ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import { useProductUnits } from './hooks/useProductUnits';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Package, Ruler, DollarSign, Tags, AlertTriangle } from 'lucide-react';
+import { Package, Ruler, DollarSign, Tags, AlertTriangle, Power } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ProductFormProps {
@@ -37,6 +38,7 @@ interface FormData {
   groupId?: string;
   brandId?: string;
   stock: number;
+  active: boolean;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({
@@ -93,7 +95,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
           categoryId: selectedProduct.categoryId || undefined,
           groupId: selectedProduct.groupId || undefined,
           brandId: selectedProduct.brandId || undefined,
-          stock: selectedProduct.stock || 0
+          stock: selectedProduct.stock || 0,
+          active: selectedProduct.active !== false // Default to true if undefined
         });
       } else {
         const nextCode = generateNextCode();
@@ -108,7 +111,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
           categoryId: undefined,
           groupId: undefined,
           brandId: undefined,
-          stock: 0
+          stock: 0,
+          active: true // Default new products to active
         });
       }
     }
@@ -254,6 +258,31 @@ const ProductForm: React.FC<ProductFormProps> = ({
                     </p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Seção Status */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Power className="h-5 w-5 text-red-600" />
+                  Status do Produto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="active">Produto Ativo</Label>
+                    <p className="text-sm text-gray-500">
+                      Produtos inativos não aparecerão na criação de pedidos
+                    </p>
+                  </div>
+                  <Switch
+                    id="active"
+                    checked={watch('active')}
+                    onCheckedChange={(checked) => setValue('active', checked)}
+                  />
+                </div>
               </CardContent>
             </Card>
 

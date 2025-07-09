@@ -67,6 +67,7 @@ export const productService = {
           categoryId: item.category_id,
           groupId: item.group_id,
           brandId: item.brand_id,
+          active: item.active !== false, // Default to true if undefined
           createdAt: new Date(item.created_at),
           updatedAt: new Date(item.updated_at),
           syncStatus: 'synced' as 'synced' | 'pending' | 'error'
@@ -137,6 +138,7 @@ export const productService = {
         categoryId: data.category_id,
         groupId: data.group_id,
         brandId: data.brand_id,
+        active: data.active !== false, // Default to true if undefined
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
         syncStatus: 'synced' as 'synced' | 'pending' | 'error'
@@ -195,7 +197,7 @@ export const productService = {
       brand_id: product.brandId || null,
       main_unit_id: mainUnitId,
       sub_unit_id: subUnitId,
-      active: true
+      active: product.active !== false // Default to true if undefined
     };
 
     console.log('📝 [ProductService] Supabase product data:', productData);
@@ -244,6 +246,7 @@ export const productService = {
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,
+      active: data.active !== false, // Default to true if undefined
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
       syncStatus: 'synced' as 'synced' | 'pending' | 'error'
@@ -286,6 +289,7 @@ export const productService = {
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
     if (product.groupId !== undefined) updateData.group_id = product.groupId;
     if (product.brandId !== undefined) updateData.brand_id = product.brandId;
+    if (product.active !== undefined) updateData.active = product.active;
     if (mainUnitId !== undefined) updateData.main_unit_id = mainUnitId;
     if (subUnitId !== undefined) updateData.sub_unit_id = subUnitId;
 
@@ -332,6 +336,7 @@ export const productService = {
       categoryId: data.category_id,
       groupId: data.group_id,
       brandId: data.brand_id,
+      active: data.active !== false, // Default to true if undefined
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
       syncStatus: 'synced' as 'synced' | 'pending' | 'error'

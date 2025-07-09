@@ -95,6 +95,7 @@ export default function Products() {
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | undefined>();
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<string | undefined>();
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string | undefined>();
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -136,6 +137,13 @@ export default function Products() {
       );
     }
     
+    // Apply status filter
+    if (statusFilter === 'active') {
+      filtered = filtered.filter(product => product.active !== false);
+    } else if (statusFilter === 'inactive') {
+      filtered = filtered.filter(product => product.active === false);
+    }
+    
     // Apply classification filters
     if (selectedCategoryFilter) {
       filtered = filtered.filter(product => product.categoryId === selectedCategoryFilter);
@@ -152,7 +160,7 @@ export default function Products() {
     setFilteredProducts(filtered);
     // Reset to first page when filtering
     setCurrentPage(1);
-  }, [products, searchTerm, selectedCategoryFilter, selectedGroupFilter, selectedBrandFilter]);
+  }, [products, searchTerm, selectedCategoryFilter, selectedGroupFilter, selectedBrandFilter, statusFilter]);
 
   // Listen for product updates to refresh the list
   useEffect(() => {
@@ -398,7 +406,8 @@ export default function Products() {
         groupId: data.groupId && data.groupId !== "" ? data.groupId : null,
         brandId: data.brandId && data.brandId !== "" ? data.brandId : null,
         stock: data.stock || 0,
-        minStock: 0
+        minStock: 0,
+        active: data.active
       };
 
       console.log("📝 [Products] Final product data to save:", productData);
@@ -443,6 +452,25 @@ export default function Products() {
     setSelectedCategoryFilter(undefined);
     setSelectedGroupFilter(undefined);
     setSelectedBrandFilter(undefined);
+    setStatusFilter('all');
+  };
+
+  const handleToggleActive = async (id: string, active: boolean) => {
+    try {
+      await updateProduct(id, { active });
+      toast(active ? "Produto ativado" : "Produto desativado", {
+        description: `O produto foi ${active ? 'ativado' : 'desativado'} com sucesso`
+      });
+    } catch (error) {
+      console.error("Erro ao alterar status do produto:", error);
+      toast("Erro", {
+        description: "Ocorreu um erro ao alterar o status do produto",
+        style: {
+          backgroundColor: 'rgb(239, 68, 68)',
+          color: 'white'
+        }
+      });
+    }
   };
 
   return (
@@ -505,6 +533,22 @@ export default function Products() {
                   </div>
                 </div>
                 
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Status:</span>
+                    <Select value={statusFilter} onValueChange={(value: 'all' | 'active' | 'inactive') => setStatusFilter(value)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="active">Ativos</SelectItem>
+                        <SelectItem value="inactive">Inativos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
                 <ProductFilters
                   categories={productCategories || []}
                   groups={productGroups || []}
@@ -524,6 +568,7 @@ export default function Products() {
                   isLoading={isLoadingProducts} 
                   onEdit={handleEdit} 
                   onDelete={handleDelete} 
+                  onToggleActive={handleToggleActive}
                 />
                 
                 {totalPages > 1 && (
