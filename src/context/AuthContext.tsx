@@ -109,56 +109,114 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('🔐 Iniciando processo de login para:', email);
+      
+      // Testar conectividade com Supabase primeiro
+      try {
+        console.log('🔗 Testando conectividade com Supabase...');
+        const { data: testData, error: testError } = await supabase.from('admin_profiles').select('count', { count: 'exact', head: true });
+        console.log('✅ Teste de conectividade:', { testData, testError });
+      } catch (testErr) {
+        console.error('❌ Falha na conectividade com Supabase:', testErr);
+        return { error: { message: 'Erro de conectividade com o servidor. Verifique sua conexão.' } };
+      }
+      
       // Limpar estado anterior
+      console.log('🧹 Limpando estado de autenticação anterior...');
       cleanupAuthState();
       
       // Tentar logout global primeiro
       try {
         await supabase.auth.signOut({ scope: 'global' });
+        console.log('🚪 Sessão anterior encerrada');
       } catch (err) {
-        // Ignorar erros de logout
+        console.log('ℹ️ Nenhuma sessão anterior para encerrar:', err);
       }
 
+      console.log('📝 Tentando fazer login...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('Erro no login:', error);
-        return { error };
+        console.error('❌ Erro no login:', error);
+        // Mensagens de erro mais específicas
+        if (error.message.includes('Invalid login credentials')) {
+          return { error: { message: 'Email ou senha incorretos.' } };
+        }
+        if (error.message.includes('Email not confirmed')) {
+          return { error: { message: 'Confirme seu email antes de fazer login.' } };
+        }
+        if (error.message.includes('Too many requests')) {
+          return { error: { message: 'Muitas tentativas. Aguarde alguns minutos.' } };
+        }
+        return { error: { message: error.message || 'Erro no login. Tente novamente.' } };
       }
 
+      console.log('✅ Login bem-sucedido:', { user: data.user?.id, session: !!data.session });
+
       if (data.user) {
-        console.log('Login bem-sucedido:', data.user.email);
+        // Buscar perfil do usuário
+        try {
+          const { data: profile } = await supabase
+            .from('admin_profiles')
+            .select('*')
+            .eq('user_id', data.user.id)
+            .single();
+          console.log('👤 Perfil do usuário carregado:', profile);
+        } catch (profileErr) {
+          console.warn('⚠️ Não foi possível carregar o perfil do usuário:', profileErr);
+        }
+        
+        console.log('🚀 Redirecionando para dashboard...');
         // Forçar recarga da página para garantir estado limpo
         setTimeout(() => {
           window.location.href = '/';
-        }, 100);
+        }, 500);
       }
 
       return { error: null };
     } catch (err: any) {
-      console.error('Erro inesperado no login:', err);
-      return { error: err };
+      console.error('💥 Erro inesperado no login:', err);
+      return { 
+        error: { 
+          message: err.message || 'Erro interno. Tente novamente em alguns momentos.' 
+        } 
+      };
     }
   };
 
   const signUp = async (email: string, password: string, name?: string) => {
     try {
+      console.log('🚀 Iniciando processo de cadastro para:', email);
+      
+      // Testar conectividade com Supabase primeiro
+      try {
+        console.log('🔗 Testando conectividade com Supabase...');
+        const { data: testData, error: testError } = await supabase.from('admin_profiles').select('count', { count: 'exact', head: true });
+        console.log('✅ Teste de conectividade:', { testData, testError });
+      } catch (testErr) {
+        console.error('❌ Falha na conectividade com Supabase:', testErr);
+        return { error: { message: 'Erro de conectividade com o servidor. Verifique sua conexão.' } };
+      }
+      
       // Limpar estado anterior
+      console.log('🧹 Limpando estado de autenticação anterior...');
       cleanupAuthState();
       
       // Tentar logout global primeiro
       try {
         await supabase.auth.signOut({ scope: 'global' });
+        console.log('🚪 Sessão anterior encerrada');
       } catch (err) {
-        // Ignorar erros de logout
+        console.log('ℹ️ Nenhuma sessão anterior para encerrar:', err);
       }
 
       const redirectUrl = `${window.location.origin}/`;
+      console.log('🔗 URL de redirecionamento:', redirectUrl);
       
-      const { data, error } = await supabase.auth.signUp({
+      const signUpData = {
         email,
         password,
         options: {
@@ -167,27 +225,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             name: name || 'Admin'
           }
         }
-      });
+      };
+      
+      console.log('📝 Dados de cadastro preparados:', { email, hasPassword: !!password, hasName: !!name });
+      
+      const { data, error } = await supabase.auth.signUp(signUpData);
 
       if (error) {
-        console.error('Erro no cadastro:', error);
-        return { error };
+        console.error('❌ Erro no cadastro:', error);
+        // Mensagens de erro mais específicas
+        if (error.message.includes('User already registered')) {
+          return { error: { message: 'Este email já está cadastrado. Tente fazer login.' } };
+        }
+        if (error.message.includes('Password should be at least')) {
+          return { error: { message: 'Senha deve ter pelo menos 6 caracteres.' } };
+        }
+        if (error.message.includes('Unable to validate email address')) {
+          return { error: { message: 'Email inválido.' } };
+        }
+        if (error.message.includes('Signup is disabled')) {
+          return { error: { message: 'Cadastro temporariamente desabilitado.' } };
+        }
+        return { error: { message: error.message || 'Erro no cadastro. Tente novamente.' } };
       }
 
+      console.log('✅ Cadastro bem-sucedido:', { user: data.user?.id, session: !!data.session });
+
       if (data.user) {
-        console.log('Cadastro bem-sucedido:', data.user.email);
-        // Se não precisa de confirmação de email, fazer login automático
-        if (data.user.email_confirmed_at || !data.user.email_confirmed_at) {
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 100);
-        }
+        console.log('👤 Usuário criado com sucesso:', data.user.id);
+        console.log('📧 Status de confirmação de email:', data.user.email_confirmed_at ? 'Confirmado' : 'Pendente');
+        
+        // Aguardar um momento para o trigger criar o perfil
+        console.log('⏳ Aguardando criação do perfil...');
+        setTimeout(async () => {
+          try {
+            const { data: profile } = await supabase
+              .from('admin_profiles')
+              .select('*')
+              .eq('user_id', data.user!.id)
+              .single();
+            console.log('📋 Perfil criado pelo trigger:', profile);
+          } catch (profileErr) {
+            console.warn('⚠️ Perfil não encontrado após cadastro:', profileErr);
+          }
+        }, 1000);
+        
+        console.log('🚀 Redirecionando para dashboard...');
+        // Redirecionar independentemente da confirmação de email
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 500);
       }
 
       return { error: null };
     } catch (err: any) {
-      console.error('Erro inesperado no cadastro:', err);
-      return { error: err };
+      console.error('💥 Erro inesperado no cadastro:', err);
+      return { 
+        error: { 
+          message: err.message || 'Erro interno. Tente novamente em alguns momentos.' 
+        } 
+      };
     }
   };
 
