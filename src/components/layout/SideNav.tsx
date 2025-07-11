@@ -129,6 +129,12 @@ const navigation: NavItem[] = [
     icon: Database,
     group: "sistema"
   },
+  {
+    title: "Backups",
+    href: "/backup-management",
+    icon: Database,
+    group: "sistema"
+  },
 ];
 
 export default function SideNav() {

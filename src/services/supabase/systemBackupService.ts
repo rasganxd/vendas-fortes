@@ -16,7 +16,7 @@ export interface SystemBackup {
 
 export interface MaintenanceLog {
   id: string;
-  operation_type: 'start_new_day' | 'start_new_month' | 'daily_backup' | 'monthly_backup' | 'cache_clear';
+  operation_type: 'start_new_day' | 'start_new_month' | 'daily_backup' | 'monthly_backup' | 'cache_clear' | 'backup_restore';
   status: 'started' | 'completed' | 'failed';
   started_at: string;
   completed_at?: string;
@@ -90,6 +90,7 @@ export const systemBackupService = {
         if (!error && data) {
           systemData.tables[tableQuery.name] = {
             count: data.length,
+            data: data, // Store full data for restoration
             sample: data.slice(0, 5) // Store sample data for verification
           };
         }
@@ -144,6 +145,128 @@ export const systemBackupService = {
         console.log(`✅ Deleted ${backupsToDelete.length} old ${backupType} backups`);
       }
     }
+  },
+
+  async restoreBackup(backupId: string): Promise<boolean> {
+    console.log('🔄 Starting backup restoration:', backupId);
+    
+    try {
+      // Get backup data
+      const { data: backup, error: fetchError } = await supabase
+        .from('system_backups')
+        .select('*')
+        .eq('id', backupId)
+        .single();
+
+      if (fetchError || !backup) {
+        console.error('❌ Backup not found:', fetchError);
+        throw new Error('Backup não encontrado');
+      }
+
+      if (backup.status !== 'completed') {
+        throw new Error('Backup não está completo');
+      }
+
+      // Create a pre-restore backup first
+      const preRestoreBackupId = await this.createBackup({
+        name: `Pre-restore backup - ${new Date().toISOString()}`,
+        description: `Backup automático criado antes de restaurar: ${backup.name}`,
+        backup_type: 'manual',
+        data_snapshot: await this.collectSystemData(),
+        created_by: 'system',
+        notes: `Backup de segurança antes da restauração`
+      });
+
+      console.log('✅ Pre-restore backup created:', preRestoreBackupId);
+
+      // Start restoration process
+      const logId = await maintenanceLogService.startOperation('backup_restore' as any, {
+        backup_id: backupId,
+        backup_name: backup.name,
+        pre_restore_backup_id: preRestoreBackupId
+      });
+
+      // Restore data from backup
+      const dataSnapshot = backup.data_snapshot as any;
+      
+      if (dataSnapshot && typeof dataSnapshot === 'object' && dataSnapshot.tables) {
+        // Clear existing data and restore from backup
+        const tablesToRestore = ['customers', 'products', 'orders', 'sales_reps', 'payment_tables'] as const;
+        
+        for (const tableName of tablesToRestore) {
+          if (dataSnapshot.tables[tableName] && dataSnapshot.tables[tableName].data) {
+            console.log(`🔄 Restoring table: ${tableName}`);
+            
+            // Delete existing data
+            await supabase.from(tableName).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            
+            // Insert backup data
+            const backupData = dataSnapshot.tables[tableName].data;
+            if (backupData && backupData.length > 0) {
+              const { error: insertError } = await supabase
+                .from(tableName)
+                .insert(backupData);
+              
+              if (insertError) {
+                console.error(`❌ Error restoring ${tableName}:`, insertError);
+                throw new Error(`Erro ao restaurar tabela ${tableName}: ${insertError.message}`);
+              }
+            }
+          }
+        }
+      }
+
+      await maintenanceLogService.completeOperation(logId, true, undefined, {
+        tables_restored: Object.keys((dataSnapshot as any)?.tables || {}),
+        restoration_completed: true
+      });
+
+      console.log('✅ Backup restoration completed successfully');
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error during backup restoration:', error);
+      throw error;
+    }
+  },
+
+  async deleteBackup(backupId: string): Promise<void> {
+    console.log('🗑️ Deleting backup:', backupId);
+    
+    const { error } = await supabase
+      .from('system_backups')
+      .delete()
+      .eq('id', backupId);
+
+    if (error) {
+      console.error('❌ Error deleting backup:', error);
+      throw error;
+    }
+
+    console.log('✅ Backup deleted successfully');
+  },
+
+  async getBackupInfo(backupId: string): Promise<SystemBackup | null> {
+    const { data, error } = await supabase
+      .from('system_backups')
+      .select('*')
+      .eq('id', backupId)
+      .single();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      backup_type: data.backup_type as 'daily' | 'monthly' | 'manual',
+      created_at: data.created_at,
+      file_size: data.file_size,
+      status: data.status as 'completed' | 'in_progress' | 'failed',
+      data_snapshot: data.data_snapshot,
+      created_by: data.created_by,
+      notes: data.notes
+    };
   }
 };
 

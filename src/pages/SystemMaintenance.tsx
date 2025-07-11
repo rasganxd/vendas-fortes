@@ -233,6 +233,16 @@ export default function SystemMaintenance() {
                   ))
                 )}
               </div>
+              <div className="mt-4 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => window.location.href = '/backup-management'}
+                >
+                  <Database className="w-4 h-4 mr-2" />
+                  Gerenciar Backups Completo
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -29,6 +29,7 @@ import Listings from '@/pages/Listings';
 import SalesReports from '@/pages/SalesReports';
 import Settings from '@/pages/Settings';
 import SystemMaintenance from '@/pages/SystemMaintenance';
+import BackupManagement from '@/pages/BackupManagement';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 import './App.css';
@@ -87,6 +88,7 @@ function App() {
                           <Route path="/relatorios-vendas" element={<SalesReports />} />
                           <Route path="/configuracoes" element={<Settings />} />
                           <Route path="/manutencao" element={<SystemMaintenance />} />
+                          <Route path="/backup-management" element={<BackupManagement />} />
                           <Route path="*" element={<NotFound />} />
                         </RouterRoutes>
                       </div>
