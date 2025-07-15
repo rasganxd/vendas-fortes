@@ -15,6 +15,7 @@ interface OrderSummaryPanelProps {
   isEditMode: boolean;
   // Action button props
   isSubmitting: boolean;
+  isSaving: boolean;
   connectionStatus: ConnectionStatus;
   handleViewRecentPurchases: () => void;
   handleCreateOrder: () => Promise<void>;
@@ -27,6 +28,7 @@ export default function OrderSummaryPanel({
   calculateTotal,
   isEditMode,
   isSubmitting,
+  isSaving,
   connectionStatus,
   handleViewRecentPurchases,
   handleCreateOrder
@@ -90,8 +92,8 @@ export default function OrderSummaryPanel({
                 Modo Offline
               </div>}
 
-            <Button onClick={handleCreateOrder} disabled={!canCreateOrder || isSubmitting} className="w-full transition-all duration-200 hover:scale-105 bg-green-600 hover:bg-green-700" size="lg">
-              {isSubmitting ? <div className="flex items-center space-x-2">
+            <Button onClick={handleCreateOrder} disabled={!canCreateOrder || isSubmitting || isSaving} className="w-full transition-all duration-200 hover:scale-105 bg-green-600 hover:bg-green-700" size="lg">
+              {(isSubmitting || isSaving) ? <div className="flex items-center space-x-2">
                   <Loader className="h-4 w-4 animate-spin" />
                   <span>{isEditMode ? 'Salvando...' : 'Criando...'}</span>
                 </div> : <div className="flex items-center space-x-2">

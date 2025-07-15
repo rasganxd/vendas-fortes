@@ -62,7 +62,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     setOriginalOrder
   });
 
-  const { isSubmitting, handleCreateOrder } = useOrderOperations({
+  const { isSubmitting, isSaving, handleCreateOrder } = useOrderOperations({
     selectedCustomer,
     selectedSalesRep,
     orderItems,
@@ -114,6 +114,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
     selectedPaymentTable,
     setSelectedPaymentTable,
     isSubmitting,
+    isSaving,
     handleCreateOrder,
     isEditMode,
     handleViewRecentPurchases,
@@ -125,7 +126,7 @@ export default function OrderFormContainer({ preloadedOrder, orderId }: OrderFor
   }), [
     customers, salesReps, paymentTables, products,
     selectedCustomer, selectedSalesRep, orderItems, selectedPaymentTable,
-    isSubmitting, isEditMode, customerInputValue, salesRepInputValue,
+    isSubmitting, isSaving, isEditMode, customerInputValue, salesRepInputValue,
     connectionStatus, handleCreateOrder, handleViewRecentPurchases,
     handleAddItem, handleRemoveItem
   ]);

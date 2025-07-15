@@ -25,6 +25,7 @@ export default function OrderFormTwoColumnLayout({
   salesRepInputValue,
   isEditMode,
   isSubmitting,
+  isSaving,
   connectionStatus,
   // Handlers
   handleCreateOrder,
@@ -148,6 +149,7 @@ export default function OrderFormTwoColumnLayout({
                 calculateTotal={calculateTotal}
                 isEditMode={isEditMode}
                 isSubmitting={isSubmitting}
+                isSaving={isSaving}
                 connectionStatus={connectionStatus}
                 handleViewRecentPurchases={handleViewRecentPurchases}
                 handleCreateOrder={handleCreateOrder}

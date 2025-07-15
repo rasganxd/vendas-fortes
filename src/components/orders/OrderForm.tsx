@@ -19,6 +19,7 @@ interface OrderFormProps {
   selectedPaymentTable: string;
   setSelectedPaymentTable: (id: string) => void;
   isSubmitting: boolean;
+  isSaving: boolean;
   handleCreateOrder: () => Promise<void>;
   isEditMode: boolean;
   handleViewRecentPurchases: () => void;

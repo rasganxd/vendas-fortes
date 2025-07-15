@@ -20,6 +20,7 @@ export interface OrderFormLayoutProps {
   salesRepInputValue: string;
   isEditMode: boolean;
   isSubmitting: boolean;
+  isSaving: boolean;
   connectionStatus: ConnectionStatus;
 
   // Handlers

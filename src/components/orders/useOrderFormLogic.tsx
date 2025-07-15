@@ -17,6 +17,7 @@ interface UseOrderFormLogicProps {
   selectedPaymentTable: string;
   setSelectedPaymentTable: (id: string) => void;
   isSubmitting: boolean;
+  isSaving: boolean;
   handleCreateOrder: () => Promise<void>;
   isEditMode: boolean;
   handleViewRecentPurchases: () => void;
@@ -41,6 +42,7 @@ export function useOrderFormLogic({
   selectedPaymentTable,
   setSelectedPaymentTable,
   isSubmitting,
+  isSaving,
   handleCreateOrder,
   isEditMode,
   handleViewRecentPurchases,
@@ -109,6 +111,7 @@ export function useOrderFormLogic({
       salesRepInputValue,
       isEditMode,
       isSubmitting,
+      isSaving,
       connectionStatus,
       handleCreateOrder,
       handleViewRecentPurchases,
