@@ -41,24 +41,27 @@ export function useOrderOperations({
   const validateOrderForm = useCallback(() => {
     console.log('🔍 Validating order form:', {
       hasCustomer: !!selectedCustomer,
+      customerId: selectedCustomer?.id,
       hasSalesRep: !!selectedSalesRep,
+      salesRepId: selectedSalesRep?.id,
       itemsCount: orderItems.length,
-      connectionStatus
+      connectionStatus,
+      selectedPaymentTable
     });
 
-    if (!selectedCustomer) {
+    if (!selectedCustomer || !selectedCustomer.id || selectedCustomer.id.trim() === '') {
       toast({
         title: "Cliente obrigatório",
-        description: "Por favor, selecione um cliente para o pedido.",
+        description: "Por favor, selecione um cliente válido para o pedido.",
         variant: "destructive"
       });
       return false;
     }
 
-    if (!selectedSalesRep) {
+    if (!selectedSalesRep || !selectedSalesRep.id || selectedSalesRep.id.trim() === '') {
       toast({
         title: "Vendedor obrigatório", 
-        description: "Por favor, selecione um vendedor para o pedido.",
+        description: "Por favor, selecione um vendedor válido para o pedido.",
         variant: "destructive"
       });
       return false;
@@ -68,6 +71,15 @@ export function useOrderOperations({
       toast({
         title: "Itens obrigatórios",
         description: "Adicione pelo menos um item ao pedido.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!selectedPaymentTable || selectedPaymentTable.trim() === '') {
+      toast({
+        title: "Forma de pagamento obrigatória",
+        description: "Por favor, selecione uma forma de pagamento.",
         variant: "destructive"
       });
       return false;
@@ -84,7 +96,7 @@ export function useOrderOperations({
 
     console.log('✅ Order form validation passed');
     return true;
-  }, [selectedCustomer, selectedSalesRep, orderItems, connectionStatus]);
+  }, [selectedCustomer, selectedSalesRep, orderItems, connectionStatus, selectedPaymentTable]);
 
   const createPromissoryNotePayment = useCallback(async (order: Order, paymentTable: PaymentTable) => {
     try {

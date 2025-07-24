@@ -160,42 +160,80 @@ export class OrderTransformations {
   }
 
   static transformToDB(order: Partial<Order>): any {
+    console.log('🔄 [OrderTransformations] Converting order to DB format:', {
+      customerId: order.customerId,
+      salesRepId: order.salesRepId,
+      paymentMethodId: order.paymentMethodId,
+      paymentTableId: order.paymentTableId
+    });
+
     const result: any = {
       updated_at: new Date().toISOString()
+    };
+
+    // Helper function to handle UUID fields - convert empty strings to null
+    const processUUID = (value: string | undefined): string | null => {
+      if (value === undefined) return undefined;
+      if (value === '' || value === null) return null;
+      return value;
+    };
+
+    // Helper function to handle non-UUID strings - allow empty strings
+    const processString = (value: string | undefined): string | undefined => {
+      return value;
     };
 
     // Only include fields that are present in the partial order
     if (order.id !== undefined) result.id = order.id;
     if (order.code !== undefined) result.code = order.code;
-    if (order.customerId !== undefined) result.customer_id = order.customerId;
-    if (order.customerName !== undefined) result.customer_name = order.customerName;
-    if (order.salesRepId !== undefined) result.sales_rep_id = order.salesRepId;
-    if (order.salesRepName !== undefined) result.sales_rep_name = order.salesRepName;
+    
+    // UUID fields - convert empty strings to null
+    if (order.customerId !== undefined) result.customer_id = processUUID(order.customerId);
+    if (order.salesRepId !== undefined) result.sales_rep_id = processUUID(order.salesRepId);
+    if (order.paymentMethodId !== undefined) result.payment_method_id = processUUID(order.paymentMethodId);
+    if (order.paymentTableId !== undefined) result.payment_table_id = processUUID(order.paymentTableId);
+    
+    // String fields - allow empty strings
+    if (order.customerName !== undefined) result.customer_name = processString(order.customerName);
+    if (order.salesRepName !== undefined) result.sales_rep_name = processString(order.salesRepName);
+    if (order.paymentMethod !== undefined) result.payment_method = processString(order.paymentMethod);
+    if (order.paymentTable !== undefined) result.payment_table = processString(order.paymentTable);
+    if (order.notes !== undefined) result.notes = processString(order.notes);
+    if (order.deliveryAddress !== undefined) result.delivery_address = processString(order.deliveryAddress);
+    if (order.deliveryCity !== undefined) result.delivery_city = processString(order.deliveryCity);
+    if (order.deliveryState !== undefined) result.delivery_state = processString(order.deliveryState);
+    if (order.deliveryZip !== undefined) result.delivery_zip = processString(order.deliveryZip);
+    if (order.importedBy !== undefined) result.imported_by = processString(order.importedBy);
+    if (order.sourceProject !== undefined) result.source_project = processString(order.sourceProject);
+    if (order.mobileOrderId !== undefined) result.mobile_order_id = processString(order.mobileOrderId);
+    if (order.rejectionReason !== undefined) result.rejection_reason = processString(order.rejectionReason);
+    if (order.visitNotes !== undefined) result.visit_notes = processString(order.visitNotes);
+    if (order.importStatus !== undefined) result.import_status = processString(order.importStatus);
+    
+    // Date fields
     if (order.date !== undefined) result.date = order.date.toISOString();
     if (order.dueDate !== undefined) result.due_date = order.dueDate.toISOString();
     if (order.deliveryDate !== undefined) result.delivery_date = order.deliveryDate?.toISOString();
+    if (order.importedAt !== undefined) result.imported_at = order.importedAt?.toISOString();
+    
+    // Numeric and boolean fields
     if (order.total !== undefined) result.total = order.total;
     if (order.discount !== undefined) result.discount = order.discount;
+    if (order.archived !== undefined) result.archived = order.archived;
+    
+    // Status fields
     if (order.status !== undefined) result.status = order.status;
     if (order.paymentStatus !== undefined) result.payment_status = order.paymentStatus;
-    if (order.paymentMethod !== undefined) result.payment_method = order.paymentMethod;
-    if (order.paymentMethodId !== undefined) result.payment_method_id = order.paymentMethodId;
-    if (order.paymentTableId !== undefined) result.payment_table_id = order.paymentTableId;
-    if (order.paymentTable !== undefined) result.payment_table = order.paymentTable;
+    
+    // JSONB fields
     if (order.payments !== undefined) result.payments = order.payments;
-    if (order.notes !== undefined) result.notes = order.notes;
-    if (order.archived !== undefined) result.archived = order.archived;
-    if (order.deliveryAddress !== undefined) result.delivery_address = order.deliveryAddress;
-    if (order.deliveryCity !== undefined) result.delivery_city = order.deliveryCity;
-    if (order.deliveryState !== undefined) result.delivery_state = order.deliveryState;
-    if (order.deliveryZip !== undefined) result.delivery_zip = order.deliveryZip;
-    if (order.importStatus !== undefined) result.import_status = order.importStatus;
-    if (order.importedAt !== undefined) result.imported_at = order.importedAt?.toISOString();
-    if (order.importedBy !== undefined) result.imported_by = order.importedBy;
-    if (order.sourceProject !== undefined) result.source_project = order.sourceProject;
-    if (order.mobileOrderId !== undefined) result.mobile_order_id = order.mobileOrderId;
-    if (order.rejectionReason !== undefined) result.rejection_reason = order.rejectionReason;
-    if (order.visitNotes !== undefined) result.visit_notes = order.visitNotes;
+
+    console.log('✅ [OrderTransformations] DB format conversion completed:', {
+      customer_id: result.customer_id,
+      sales_rep_id: result.sales_rep_id,
+      payment_method_id: result.payment_method_id,
+      payment_table_id: result.payment_table_id
+    });
 
     return result;
   }
