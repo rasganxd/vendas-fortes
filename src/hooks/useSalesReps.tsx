@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
 import { toast } from '@/components/ui/use-toast';
 import { transformSalesRepData } from '@/utils/dataTransformers';
 

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 

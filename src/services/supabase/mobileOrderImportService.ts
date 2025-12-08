@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
 import { Order, MobileOrderGroup } from '@/types';
 import { OrderTransformations } from './orderService/orderTransformations';
 import { importReportPersistenceService } from './importReportPersistenceService';

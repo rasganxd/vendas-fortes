@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
 import { ImportReportData } from '@/services/mobileImportReportService';
 import { ImportHistoryRecord } from '@/types/importHistory';
 
