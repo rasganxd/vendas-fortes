@@ -6,7 +6,7 @@ const EXTERNAL_SUPABASE_URL = "https://fvqdehrbgcafyyqmilox.supabase.co";
 
 // IMPORTANTE: Esta é a anon key do projeto externo
 // Substitua pela sua chave real se necessário
-const EXTERNAL_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2cWRlaHJiZ2NhZnl5cW1pbG94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MzQ1NzIsImV4cCI6MjA2MzQxMDU3Mn0.rL_UAaLky3SaSAigQPrWAZjhkM8FBmeO0w-pEiB5aro";
+const EXTERNAL_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2cWRlaHJiZ2NhZnl5cW1pbG94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMTA3MjUsImV4cCI6MjA4MDc4NjcyNX0.fBAzyaA6RVUOCm8fLoZg6QOoKJkNyA2mguNDHvdXVKs";
 
 // Criamos o cliente sem tipagem específica para evitar erros de TypeScript
 // já que o banco externo tem seu próprio schema
