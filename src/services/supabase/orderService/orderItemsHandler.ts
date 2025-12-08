@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
 import { OrderItem } from '@/types';
 
 export class OrderItemsHandler {

@@ -39,7 +39,7 @@ export default function SalesRepImportSelector({
       setIsLoading(true);
       console.log('🔍 Loading sales reps with pending orders...');
 
-      const { supabase } = await import('@/integrations/supabase/client');
+      const { externalSupabase: supabase } = await import('@/integrations/supabase/externalClient');
       
       // Buscar pedidos mobile pendentes agrupados por vendedor
       const { data: pendingOrders, error } = await supabase
