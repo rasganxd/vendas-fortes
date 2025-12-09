@@ -10,6 +10,7 @@ import {
   FileText,
   Coins,
   Database,
+  DatabaseBackup,
   CreditCard,
   UserRound,
   LucideIcon,
@@ -133,6 +134,12 @@ const navigation: NavItem[] = [
     title: "Backups",
     href: "/backup-management",
     icon: Database,
+    group: "sistema"
+  },
+  {
+    title: "Migração",
+    href: "/migracao-dados",
+    icon: DatabaseBackup,
     group: "sistema"
   },
 ];
