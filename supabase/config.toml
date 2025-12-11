@@ -1,1 +1,13 @@
 project_id = "dgacnvgfgaxrazaznwci"
+
+[functions.migrate-data]
+verify_jwt = false
+
+[functions.mobile-data-sync]
+verify_jwt = false
+
+[functions.sales-rep-login]
+verify_jwt = false
+
+[functions.system-maintenance]
+verify_jwt = false
