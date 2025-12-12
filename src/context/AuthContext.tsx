@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
+import { supabase } from '@/integrations/supabase/client';
 
 // Função para limpar estado de autenticação
 const cleanupAuthState = () => {
@@ -24,9 +24,8 @@ const cleanupAuthState = () => {
 interface AdminProfile {
   id: string;
   user_id: string;
-  name: string;
-  email: string;
-  role: string;
+  name: string | null;
+  email: string | null;
   created_at: string;
   updated_at: string;
 }
