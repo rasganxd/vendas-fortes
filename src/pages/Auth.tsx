@@ -19,6 +19,9 @@ export default function Auth() {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
+  console.log('DEBUG_SUPABASE_URL', import.meta.env.VITE_SUPABASE_URL);
+  console.log('DEBUG_SUPABASE_KEY_DEFINED', !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+
   useEffect(() => {
     if (user) {
       navigate('/', { replace: true });
