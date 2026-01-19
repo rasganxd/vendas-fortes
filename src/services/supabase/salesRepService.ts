@@ -11,7 +11,7 @@ class SalesRepSupabaseService extends SupabaseService<SalesRep> {
   async generateNextCode(): Promise<number> {
     try {
       console.log("🔢 Generating next sales rep code...");
-      const { data, error } = await this.supabase.rpc('get_next_sales_rep_code');
+      const { data, error } = await (this.supabase as any).rpc('get_next_sales_rep_code');
       
       if (error) {
         console.error('❌ Error calling get_next_sales_rep_code RPC:', error);

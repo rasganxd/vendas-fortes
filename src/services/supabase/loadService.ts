@@ -1,5 +1,5 @@
 
-import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Load } from '@/types';
 
 export class LoadService {
@@ -46,8 +46,8 @@ export class LoadService {
   static async createLoad(loadData: Omit<Load, 'id' | 'code'>): Promise<string> {
     console.log('📦 Creating new load:', loadData);
     
-    // Get next load code
-    const { data: codeData, error: codeError } = await supabase
+    // Get next load code - function may not exist in Cloud yet
+    const { data: codeData, error: codeError } = await (supabase as any)
       .rpc('get_next_load_code');
     
     if (codeError) {

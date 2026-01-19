@@ -142,7 +142,7 @@ class OrderSupabaseService extends SupabaseService<Order> {
   async generateNextCode(): Promise<number> {
     try {
       console.log('🔢 Generating next order code...');
-      const { data, error } = await this.supabase.rpc('get_next_order_code');
+      const { data, error } = await (this.supabase as any).rpc('get_next_order_code');
       
       if (error) {
         console.error('❌ Error generating order code via RPC:', error);

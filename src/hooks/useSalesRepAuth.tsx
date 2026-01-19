@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { SalesRep } from '@/types';
-import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
+import { supabase } from '@/integrations/supabase/client';
 import { salesRepAuthService } from '@/services/local/salesRepAuthService';
 
 interface LoginResponse {

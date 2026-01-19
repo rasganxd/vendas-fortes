@@ -76,7 +76,7 @@ class DeliveryRouteSupabaseService extends SupabaseService<DeliveryRoute> {
     try {
       console.log(`🔍 Getting route with customers: ${routeId}`);
       
-      const { data, error } = await this.supabase.rpc('get_route_with_customers', {
+      const { data, error } = await (this.supabase as any).rpc('get_route_with_customers', {
         p_route_id: routeId
       });
       
@@ -148,7 +148,7 @@ class DeliveryRouteSupabaseService extends SupabaseService<DeliveryRoute> {
     try {
       console.log(`🔄 Syncing customers to route: ${routeId}, sales rep: ${salesRepId}`);
       
-      const { data, error } = await this.supabase.rpc('sync_customers_to_route', {
+      const { data, error } = await (this.supabase as any).rpc('sync_customers_to_route', {
         p_route_id: routeId,
         p_sales_rep_id: salesRepId
       });
