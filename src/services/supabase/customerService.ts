@@ -136,7 +136,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
   async generateNextCode(): Promise<number> {
     try {
       console.log("🔢 [CustomerService] Generating next customer code...");
-      const { data, error } = await this.supabase.rpc('get_next_customer_code');
+      const { data, error } = await (this.supabase as any).rpc('get_next_customer_code');
       
       if (error) {
         console.error('❌ [CustomerService] Error calling get_next_customer_code RPC:', error);

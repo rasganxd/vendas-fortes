@@ -1,4 +1,4 @@
-import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Order, MobileOrderGroup } from '@/types';
 import { OrderTransformations } from './orderService/orderTransformations';
 import { importReportPersistenceService } from './importReportPersistenceService';
@@ -9,7 +9,8 @@ class MobileOrderImportService {
     try {
       console.log('🔍 [MobileOrderImportService] Getting pending mobile orders...');
       
-      const { data: mobileOrdersData, error: ordersError } = await supabase
+      // Note: mobile_orders table doesn't exist in Cloud - this feature requires migration
+      const { data: mobileOrdersData, error: ordersError } = await (supabase as any)
         .from('mobile_orders')
         .select('*')
         .eq('imported_to_orders', false)
@@ -44,7 +45,7 @@ class MobileOrderImportService {
       const orderIds = mobileOrdersData.map(order => order.id);
       console.log(`🔍 [MobileOrderImportService] Getting items for ${orderIds.length} orders...`);
       
-      const { data: itemsData, error: itemsError } = await supabase
+      const { data: itemsData, error: itemsError } = await (supabase as any)
         .from('mobile_order_items')
         .select('*')
         .in('mobile_order_id', orderIds);
@@ -190,10 +191,11 @@ class MobileOrderImportService {
       console.log(`📦 Importing ${orderIds.length} mobile orders to orders table...`);
       
       // Get mobile orders data first to separate cancelled orders
-      const { data: mobileOrders, error: mobileOrdersError } = await supabase
+      // Note: mobile_orders table doesn't exist in Cloud - this feature requires migration
+      const { data: mobileOrders, error: mobileOrdersError } = await (supabase as any)
         .from('mobile_orders')
         .select('*')
-        .in('id', orderIds);
+        .in('id', orderIds) as { data: any[] | null; error: any };
       
       if (mobileOrdersError) {
         console.error('❌ Error getting mobile orders for import:', mobileOrdersError);
@@ -218,7 +220,7 @@ class MobileOrderImportService {
       if (cancelledOrders.length > 0) {
         console.log(`📝 Marking ${cancelledOrders.length} cancelled orders as processed (visits)...`);
         
-        const { error: cancelledUpdateError } = await supabase
+        const { error: cancelledUpdateError } = await (supabase as any)
           .from('mobile_orders')
           .update({
             imported_to_orders: true,
@@ -226,7 +228,7 @@ class MobileOrderImportService {
             imported_by: importedBy,
             sync_status: 'visit_registered'
           })
-          .in('id', cancelledOrders.map(o => o.id));
+          .in('id', cancelledOrders.map((o: any) => o.id));
         
         if (cancelledUpdateError) {
           console.error('❌ Error marking cancelled orders as processed:', cancelledUpdateError);
@@ -258,7 +260,7 @@ class MobileOrderImportService {
           console.log(`⚠️ ${alreadyImportedIds.size} regular orders were already imported, skipping them`);
           
           // Mark the already imported mobile orders as imported if they weren't marked
-          await supabase
+          await (supabase as any)
             .from('mobile_orders')
             .update({
               imported_to_orders: true,
@@ -299,10 +301,10 @@ class MobileOrderImportService {
         }
         
         // Get items for these orders
-        const { data: mobileOrderItems, error: itemsError } = await supabase
+        const { data: mobileOrderItems, error: itemsError } = await (supabase as any)
           .from('mobile_order_items')
           .select('*')
-          .in('mobile_order_id', ordersToImport.map(o => o.id));
+          .in('mobile_order_id', ordersToImport.map((o: any) => o.id)) as { data: any[] | null; error: any };
         
         if (itemsError) {
           console.error('❌ Error getting mobile order items:', itemsError);
@@ -329,39 +331,40 @@ class MobileOrderImportService {
           // Validate payment method - use a default if empty
           const paymentMethod = mobileOrder.payment_method || 'A Definir';
           
-          // Insert into orders table
+          // Insert into orders table - use type assertion for fields that may vary
+          const orderInsertData: any = {
+            customer_id: sanitizedCustomerId,
+            customer_name: mobileOrder.customer_name,
+            sales_rep_id: sanitizedSalesRepId,
+            sales_rep_name: mobileOrder.sales_rep_name,
+            date: mobileOrder.date,
+            due_date: mobileOrder.due_date,
+            delivery_date: mobileOrder.delivery_date,
+            total: mobileOrder.total,
+            discount: mobileOrder.discount,
+            status: mobileOrder.status,
+            payment_status: mobileOrder.payment_status,
+            payment_method: paymentMethod,
+            payment_method_id: sanitizedPaymentMethodId,
+            payment_table_id: sanitizedPaymentTableId,
+            payment_table: paymentTableName,
+            notes: mobileOrder.notes,
+            delivery_address: mobileOrder.delivery_address,
+            delivery_city: mobileOrder.delivery_city,
+            delivery_state: mobileOrder.delivery_state,
+            delivery_zip: mobileOrder.delivery_zip,
+            rejection_reason: mobileOrder.rejection_reason,
+            visit_notes: mobileOrder.visit_notes,
+            mobile_order_id: mobileOrder.id,
+            source_project: 'mobile',
+            import_status: 'imported',
+            imported_at: new Date().toISOString(),
+            imported_by: importedBy
+          };
+          
           const { data: insertedOrder, error: orderError } = await supabase
             .from('orders')
-            .insert({
-              customer_id: sanitizedCustomerId,
-              customer_name: mobileOrder.customer_name,
-              sales_rep_id: sanitizedSalesRepId,
-              sales_rep_name: mobileOrder.sales_rep_name,
-              date: mobileOrder.date,
-              due_date: mobileOrder.due_date,
-              delivery_date: mobileOrder.delivery_date,
-              total: mobileOrder.total,
-              discount: mobileOrder.discount,
-              status: mobileOrder.status,
-              payment_status: mobileOrder.payment_status,
-              payment_method: paymentMethod,
-              payment_method_id: sanitizedPaymentMethodId,
-              payment_table_id: sanitizedPaymentTableId,
-              payment_table: paymentTableName,
-              payments: mobileOrder.payments,
-              notes: mobileOrder.notes,
-              delivery_address: mobileOrder.delivery_address,
-              delivery_city: mobileOrder.delivery_city,
-              delivery_state: mobileOrder.delivery_state,
-              delivery_zip: mobileOrder.delivery_zip,
-              rejection_reason: mobileOrder.rejection_reason,
-              visit_notes: mobileOrder.visit_notes,
-              mobile_order_id: mobileOrder.id,
-              source_project: 'mobile',
-              import_status: 'imported',
-              imported_at: new Date().toISOString(),
-              imported_by: importedBy
-            })
+            .insert(orderInsertData)
             .select()
             .single();
           
@@ -406,7 +409,7 @@ class MobileOrderImportService {
           }
           
           // Mark mobile order as imported
-          const { error: updateError } = await supabase
+          const { error: updateError } = await (supabase as any)
             .from('mobile_orders')
             .update({
               imported_to_orders: true,
@@ -446,14 +449,14 @@ class MobileOrderImportService {
       console.log(`🚫 Rejecting ${orderIds.length} mobile orders...`);
       
       // Get the orders for the report before rejecting
-      const { data: mobileOrders } = await supabase
+      const { data: mobileOrders } = await (supabase as any)
         .from('mobile_orders')
         .select('*')
-        .in('id', orderIds);
+        .in('id', orderIds) as { data: any[] | null };
       
-      const selectedOrdersData = (mobileOrders || []).map(orderData => OrderTransformations.transformFromMobileOrder(orderData));
+      const selectedOrdersData = (mobileOrders || []).map((orderData: any) => OrderTransformations.transformFromMobileOrder(orderData));
       
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('mobile_orders')
         .update({
           imported_to_orders: true,
@@ -523,11 +526,11 @@ class MobileOrderImportService {
         return;
       }
       
-      const { data: unmarkedMobileOrders, error: unmarkedError } = await supabase
+      const { data: unmarkedMobileOrders, error: unmarkedError } = await (supabase as any)
         .from('mobile_orders')
         .select('id')
         .in('id', mobileOrderIds)
-        .eq('imported_to_orders', false);
+        .eq('imported_to_orders', false) as { data: any[] | null; error: any };
       
       if (unmarkedError) {
         console.error('❌ Error getting unmarked mobile orders:', unmarkedError);
@@ -541,14 +544,14 @@ class MobileOrderImportService {
       
       console.log(`🔄 Found ${unmarkedMobileOrders.length} mobile orders that need to be marked as imported`);
       
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('mobile_orders')
         .update({
           imported_to_orders: true,
           imported_at: new Date().toISOString(),
           imported_by: 'system_fix'
         })
-        .in('id', unmarkedMobileOrders.map(o => o.id));
+        .in('id', unmarkedMobileOrders.map((o: any) => o.id));
       
       if (updateError) {
         console.error('❌ Error fixing mobile orders status:', updateError);

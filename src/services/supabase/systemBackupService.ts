@@ -1,5 +1,5 @@
 
-import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface SystemBackup {
   id: string;
@@ -103,22 +103,22 @@ export const systemBackupService = {
   },
 
   async getBackups(limit = 20): Promise<SystemBackup[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('system_backups')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
-    return (data || []).map(item => ({
+    return (data || []).map((item: any) => ({
       id: item.id,
       name: item.name,
       description: item.description,
-      backup_type: item.backup_type as 'daily' | 'monthly' | 'manual',
+      backup_type: (item.backup_type || item.type) as 'daily' | 'monthly' | 'manual',
       created_at: item.created_at,
-      file_size: item.file_size,
+      file_size: item.file_size || item.size || 0,
       status: item.status as 'completed' | 'in_progress' | 'failed',
-      data_snapshot: item.data_snapshot,
+      data_snapshot: item.data_snapshot || item.backup_data,
       created_by: item.created_by,
       notes: item.notes
     }));
@@ -127,16 +127,16 @@ export const systemBackupService = {
   async deleteOldBackups(backupType: 'daily' | 'monthly', keepCount: number): Promise<void> {
     console.log(`🗑️ Cleaning old ${backupType} backups, keeping ${keepCount} most recent`);
     
-    const { data: backupsToDelete } = await supabase
+    const { data: backupsToDelete } = await (supabase as any)
       .from('system_backups')
       .select('id')
-      .eq('backup_type', backupType)
+      .eq('type', backupType)
       .order('created_at', { ascending: false })
       .range(keepCount, 1000);
 
     if (backupsToDelete && backupsToDelete.length > 0) {
-      const idsToDelete = backupsToDelete.map(b => b.id);
-      const { error } = await supabase
+      const idsToDelete = backupsToDelete.map((b: any) => b.id);
+      const { error } = await (supabase as any)
         .from('system_backups')
         .delete()
         .in('id', idsToDelete);
@@ -152,7 +152,7 @@ export const systemBackupService = {
     
     try {
       // Get backup data
-      const { data: backup, error: fetchError } = await supabase
+      const { data: backup, error: fetchError } = await (supabase as any)
         .from('system_backups')
         .select('*')
         .eq('id', backupId)
@@ -187,7 +187,7 @@ export const systemBackupService = {
       });
 
       // Restore data from backup
-      const dataSnapshot = backup.data_snapshot as any;
+      const dataSnapshot = (backup.data_snapshot || backup.backup_data) as any;
       
       if (dataSnapshot && typeof dataSnapshot === 'object' && dataSnapshot.tables) {
         // Clear existing data and restore from backup
@@ -247,7 +247,7 @@ export const systemBackupService = {
   },
 
   async getBackupInfo(backupId: string): Promise<SystemBackup | null> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('system_backups')
       .select('*')
       .eq('id', backupId)
@@ -259,11 +259,11 @@ export const systemBackupService = {
       id: data.id,
       name: data.name,
       description: data.description,
-      backup_type: data.backup_type as 'daily' | 'monthly' | 'manual',
+      backup_type: (data.backup_type || data.type) as 'daily' | 'monthly' | 'manual',
       created_at: data.created_at,
-      file_size: data.file_size,
+      file_size: data.file_size || data.size || 0,
       status: data.status as 'completed' | 'in_progress' | 'failed',
-      data_snapshot: data.data_snapshot,
+      data_snapshot: data.data_snapshot || data.backup_data,
       created_by: data.created_by,
       notes: data.notes
     };
@@ -272,13 +272,12 @@ export const systemBackupService = {
 
 export const maintenanceLogService = {
   async startOperation(operationType: MaintenanceLog['operation_type'], details?: any): Promise<string> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('maintenance_logs')
       .insert({
-        operation_type: operationType,
+        operation: operationType,
         status: 'started',
-        details: details || {},
-        created_by: 'system'
+        details: details || {}
       })
       .select('id')
       .single();
@@ -288,16 +287,10 @@ export const maintenanceLogService = {
   },
 
   async completeOperation(logId: string, success: boolean, errorMessage?: string, details?: any): Promise<void> {
-    const startTime = await this.getOperationStartTime(logId);
-    const duration = startTime ? Math.floor((Date.now() - new Date(startTime).getTime()) / 1000) : 0;
-
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('maintenance_logs')
       .update({
         status: success ? 'completed' : 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: errorMessage,
-        duration_seconds: duration,
         details: details
       })
       .eq('id', logId);
@@ -306,28 +299,28 @@ export const maintenanceLogService = {
   },
 
   async getOperationStartTime(logId: string): Promise<string | null> {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('maintenance_logs')
-      .select('started_at')
+      .select('created_at')
       .eq('id', logId)
       .single();
     
-    return data?.started_at || null;
+    return data?.created_at || null;
   },
 
   async getRecentLogs(limit = 50): Promise<MaintenanceLog[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('maintenance_logs')
       .select('*')
-      .order('started_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
-    return (data || []).map(item => ({
+    return (data || []).map((item: any) => ({
       id: item.id,
-      operation_type: item.operation_type as MaintenanceLog['operation_type'],
+      operation_type: (item.operation_type || item.operation) as MaintenanceLog['operation_type'],
       status: item.status as 'started' | 'completed' | 'failed',
-      started_at: item.started_at,
+      started_at: item.started_at || item.created_at,
       completed_at: item.completed_at,
       details: item.details,
       error_message: item.error_message,
@@ -339,39 +332,39 @@ export const maintenanceLogService = {
 
 export const maintenanceSettingsService = {
   async getSetting(key: string): Promise<any> {
-    const { data, error } = await supabase
-      .from('maintenance_settings')
-      .select('setting_value')
-      .eq('setting_key', key)
+    // maintenance_settings table doesn't exist in Cloud - use app_settings instead
+    const { data, error } = await (supabase as any)
+      .from('app_settings')
+      .select('value')
+      .eq('key', key)
       .single();
 
     if (error) return null;
-    return data?.setting_value;
+    return data?.value;
   },
 
   async updateSetting(key: string, value: any): Promise<void> {
-    const { error } = await supabase
-      .from('maintenance_settings')
+    const { error } = await (supabase as any)
+      .from('app_settings')
       .upsert({
-        setting_key: key,
-        setting_value: value,
-        updated_at: new Date().toISOString(),
-        updated_by: 'user'
+        key: key,
+        value: value,
+        updated_at: new Date().toISOString()
       });
 
     if (error) throw error;
   },
 
   async getAllSettings(): Promise<Record<string, any>> {
-    const { data, error } = await supabase
-      .from('maintenance_settings')
-      .select('setting_key, setting_value');
+    const { data, error } = await (supabase as any)
+      .from('app_settings')
+      .select('key, value');
 
     if (error) throw error;
     
     const settings: Record<string, any> = {};
-    data?.forEach(item => {
-      settings[item.setting_key] = item.setting_value;
+    (data || []).forEach((item: any) => {
+      settings[item.key] = item.value;
     });
     
     return settings;

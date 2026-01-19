@@ -1,5 +1,5 @@
 
-import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
+import { supabase } from '@/integrations/supabase/client';
 import { SupabaseSettingsRow } from './settingsTypes';
 
 /**
@@ -20,7 +20,19 @@ export const fetchLatestSettingsRow = async (): Promise<SupabaseSettingsRow | nu
     return null;
   }
   
-  return data;
+  // Transform the Cloud schema to legacy format
+  if (data) {
+    return {
+      id: data.id,
+      company_name: (data.value as any)?.company_name || '',
+      company: (data.value as any)?.company || {},
+      primary_color: (data.value as any)?.primary_color || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  }
+  
+  return null;
 };
 
 /**
@@ -31,7 +43,10 @@ export const insertSettingsRow = async (settingsData: any): Promise<SupabaseSett
   
   const { data, error } = await supabase
     .from('app_settings')
-    .insert(settingsData)
+    .insert({
+      key: 'app_settings',
+      value: settingsData
+    })
     .select()
     .single();
   
@@ -40,7 +55,18 @@ export const insertSettingsRow = async (settingsData: any): Promise<SupabaseSett
     return null;
   }
   
-  return data;
+  if (data) {
+    return {
+      id: data.id,
+      company_name: settingsData.company_name || '',
+      company: settingsData.company || {},
+      primary_color: settingsData.primary_color || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  }
+  
+  return null;
 };
 
 /**
@@ -51,7 +77,10 @@ export const updateSettingsRow = async (settingsId: string, updateData: any): Pr
   
   const { data, error } = await supabase
     .from('app_settings')
-    .update(updateData)
+    .update({
+      value: updateData,
+      updated_at: new Date().toISOString()
+    })
     .eq('id', settingsId)
     .select()
     .single();
@@ -61,7 +90,18 @@ export const updateSettingsRow = async (settingsId: string, updateData: any): Pr
     return null;
   }
   
-  return data;
+  if (data) {
+    return {
+      id: data.id,
+      company_name: updateData.company_name || '',
+      company: updateData.company || {},
+      primary_color: updateData.primary_color || '',
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  }
+  
+  return null;
 };
 
 /**

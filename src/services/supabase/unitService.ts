@@ -1,5 +1,5 @@
 
-import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Unit {
   id: string;

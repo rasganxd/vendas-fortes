@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SalesRep } from '@/types';
-import { externalSupabase as supabase } from '@/integrations/supabase/externalClient';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { transformSalesRepData } from '@/utils/dataTransformers';
 
@@ -94,8 +94,8 @@ export const useSalesReps = () => {
         return "";
       }
 
-      // Hash da senha usando a função do banco
-      const { data: hashedPassword, error: hashError } = await supabase
+      // Hash da senha usando a função do banco - may not exist in Cloud
+      const { data: hashedPassword, error: hashError } = await (supabase as any)
         .rpc('hash_password', { password: salesRep.password });
 
       if (hashError) {
@@ -165,7 +165,7 @@ export const useSalesReps = () => {
 
       // Se senha foi fornecida, fazer hash
       if (salesRep.password) {
-        const { data: hashedPassword, error: hashError } = await supabase
+        const { data: hashedPassword, error: hashError } = await (supabase as any)
           .rpc('hash_password', { password: salesRep.password });
 
         if (hashError) {
@@ -242,7 +242,7 @@ export const useSalesReps = () => {
 
   const generateNextSalesRepCode = async (): Promise<number> => {
     try {
-      const { data, error } = await supabase.rpc('get_next_sales_rep_code');
+      const { data, error } = await (supabase as any).rpc('get_next_sales_rep_code');
       
       if (error) {
         console.error('Error calling get_next_sales_rep_code RPC:', error);
