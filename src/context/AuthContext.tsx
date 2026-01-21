@@ -291,11 +291,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       // Limpar estado antes do logout
       cleanupAuthState();
-      try {
-        localStorage.removeItem('offline_admin_login');
-      } catch (storageError) {
-        console.error('Erro ao limpar acesso offline:', storageError);
-      }
       
       // Tentar logout global
       try {
