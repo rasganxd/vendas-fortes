@@ -22,27 +22,6 @@ export default function Auth() {
   console.log('DEBUG_SUPABASE_URL', import.meta.env.VITE_SUPABASE_URL);
   console.log('DEBUG_SUPABASE_KEY_DEFINED', !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
 
-  const handleOfflineLogin = () => {
-    // Credenciais de acesso temporário: admin@offline / admin123
-    if (email !== 'admin@offline' || password !== 'admin123') {
-      setError('Para acesso temporário, use email "admin@offline" e senha "admin123".');
-      return;
-    }
-
-    try {
-      localStorage.setItem(
-        'offline_admin_login',
-        JSON.stringify({
-          email,
-          createdAt: new Date().toISOString(),
-        }),
-      );
-    } catch (storageError) {
-      console.error('Erro ao salvar acesso offline:', storageError);
-    }
-
-    navigate('/', { replace: true });
-  };
 
   useEffect(() => {
     if (user) {
@@ -168,14 +147,6 @@ export default function Auth() {
               )}
             </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full mt-2"
-              onClick={handleOfflineLogin}
-            >
-              Acesso temporário (offline)
-            </Button>
           </form>
  
           <div className="mt-4 text-center">

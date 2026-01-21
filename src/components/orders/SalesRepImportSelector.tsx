@@ -7,6 +7,7 @@ import { Calendar, User, Download, RefreshCw, Settings, AlertTriangle, MapPin } 
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { mobileOrderImportService } from '@/services/supabase/mobileOrderImportService';
 
 interface SalesRepWithOrders {
@@ -38,23 +39,12 @@ export default function SalesRepImportSelector({
     try {
       setIsLoading(true);
       console.log('🔍 Loading sales reps with pending orders...');
-
-      const { supabase } = await import('@/integrations/supabase/client');
       
-      // Buscar pedidos mobile pendentes agrupados por vendedor
-      // Note: mobile_orders table doesn't exist in Cloud - this feature requires migration
-      const { data: pendingOrders, error } = await (supabase as any)
-        .from('mobile_orders')
-        .select(`
-          sales_rep_id,
-          sales_rep_name,
-          total,
-          status,
-          created_at,
-          payment_table_id,
-          payment_table
-        `)
-        .eq('imported_to_orders', false)
+      // Use mobile_order_import table (Cloud compatible)
+      const { data: pendingOrders, error } = await supabase
+        .from('mobile_order_import')
+        .select('*')
+        .eq('status', 'pending')
         .not('sales_rep_id', 'is', null);
 
       if (error) {
@@ -67,12 +57,13 @@ export default function SalesRepImportSelector({
         return;
       }
 
-      // Agrupar por vendedor
+      // Group by sales rep
       const salesRepMap = new Map<string, SalesRepWithOrders>();
 
-      pendingOrders.forEach(order => {
-        const salesRepId = order.sales_rep_id;
-        const salesRepName = order.sales_rep_name || 'Vendedor sem nome';
+      pendingOrders.forEach(record => {
+        const salesRepId = record.sales_rep_id || '';
+        const salesRepName = record.sales_rep_name || 'Vendedor sem nome';
+        const orderData = record.order_data as any;
 
         if (!salesRepMap.has(salesRepId)) {
           salesRepMap.set(salesRepId, {
@@ -87,26 +78,20 @@ export default function SalesRepImportSelector({
         }
 
         const salesRep = salesRepMap.get(salesRepId)!;
+        const total = Number(orderData?.total || 0);
+        const status = orderData?.status || 'pending';
         
-        // Verificar se é pedido cancelado (visita) ou pedido normal
-        const isCancelledOrder = order.status === 'cancelled' || order.status === 'canceled';
-        const isVisit = isCancelledOrder || (order.total === 0);
+        const isCancelledOrder = status === 'cancelled' || status === 'canceled';
+        const isVisit = isCancelledOrder || total === 0;
         
         if (isVisit) {
           salesRep.visitsCount++;
         } else {
           salesRep.pendingOrdersCount++;
-          salesRep.totalValue += Number(order.total || 0);
-          
-          // Verificar se tem problemas (sem tabela de pagamento quando deveria ter)
-          // Pedidos cancelados NÃO precisam de tabela de pagamento
-          if (!isCancelledOrder && order.total > 0 && !order.payment_table_id && !order.payment_table) {
-            salesRep.ordersWithIssues++;
-          }
+          salesRep.totalValue += total;
         }
         
-        // Atualizar data do último sync (mais recente)
-        const orderDate = new Date(order.created_at);
+        const orderDate = new Date(record.created_at);
         if (!salesRep.lastSync || orderDate > salesRep.lastSync) {
           salesRep.lastSync = orderDate;
         }
@@ -139,7 +124,6 @@ export default function SalesRepImportSelector({
         description: 'Os dados foram corrigidos com sucesso'
       });
       
-      // Recarregar a lista após a correção
       await loadSalesRepsWithPendingOrders();
       
     } catch (error) {
@@ -194,7 +178,7 @@ export default function SalesRepImportSelector({
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center text-gray-500">
+          <div className="text-center text-muted-foreground">
             <User size={48} className="mx-auto mb-4 opacity-50" />
             <p>Nenhum vendedor com pedidos pendentes</p>
             <p className="text-sm">Todos os pedidos mobile foram processados</p>
@@ -254,8 +238,7 @@ export default function SalesRepImportSelector({
           </div>
         </CardTitle>
         
-        {/* Resumo geral com separação entre pedidos e visitas */}
-        <div className="flex gap-4 text-sm text-gray-600 flex-wrap">
+        <div className="flex gap-4 text-sm text-muted-foreground flex-wrap">
           <span>{salesRepsWithOrders.length} vendedores</span>
           <span className="flex items-center gap-1">
             <Download size={14} />
@@ -276,12 +259,11 @@ export default function SalesRepImportSelector({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Botão para importar todos */}
         <div className="flex justify-end">
           <Button
             onClick={onImportAll}
             disabled={isImporting || isFixing}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
           >
             {isImporting ? (
               <RefreshCw size={16} className="animate-spin mr-2" />
@@ -292,23 +274,22 @@ export default function SalesRepImportSelector({
           </Button>
         </div>
 
-        {/* Lista de vendedores */}
         <div className="space-y-3">
           {salesRepsWithOrders.map((salesRep) => (
             <div
               key={salesRep.id}
-              className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-gray-50"
+              className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-muted/50"
             >
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarFallback className="bg-blue-100 text-blue-600">
+                  <AvatarFallback className="bg-primary/10 text-primary">
                     {getInitials(salesRep.name)}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div>
                   <div className="font-medium">{salesRep.name}</div>
-                  <div className="text-sm text-gray-500 flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground flex items-center gap-4">
                     <span className="flex items-center gap-1">
                       <Calendar size={14} />
                       {salesRep.lastSync 
