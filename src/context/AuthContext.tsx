@@ -254,23 +254,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('👤 Usuário criado com sucesso:', data.user.id);
         console.log('📧 Status de confirmação de email:', data.user.email_confirmed_at ? 'Confirmado' : 'Pendente');
         
-        // Aguardar um momento para o trigger criar o perfil
-        console.log('⏳ Aguardando criação do perfil...');
-        setTimeout(async () => {
-          try {
-            const { data: profile } = await supabase
-              .from('admin_profiles')
-              .select('*')
-              .eq('user_id', data.user!.id)
-              .single();
-            console.log('📋 Perfil criado pelo trigger:', profile);
-          } catch (profileErr) {
-            console.warn('⚠️ Perfil não encontrado após cadastro:', profileErr);
+        // Criar perfil manualmente como backup (trigger pode criar automaticamente)
+        console.log('⏳ Criando perfil do usuário...');
+        try {
+          const { error: profileError } = await supabase
+            .from('admin_profiles')
+            .upsert({
+              user_id: data.user.id,
+              email: data.user.email,
+              name: name || 'Admin'
+            }, { onConflict: 'user_id' });
+          
+          if (profileError) {
+            console.warn('⚠️ Erro ao criar perfil:', profileError);
+          } else {
+            console.log('✅ Perfil criado com sucesso');
           }
-        }, 1000);
+        } catch (profileErr) {
+          console.warn('⚠️ Exceção ao criar perfil:', profileErr);
+        }
         
         console.log('🚀 Redirecionando para dashboard...');
-        // Redirecionar independentemente da confirmação de email
+        // Redirecionar após criar perfil
         setTimeout(() => {
           window.location.href = '/';
         }, 500);
