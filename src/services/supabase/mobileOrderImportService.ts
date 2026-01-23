@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Order, MobileOrderGroup } from '@/types';
-import { OrderTransformations } from './orderService/orderTransformations';
+import { Order, MobileOrderGroup, OrderStatus, PaymentStatus } from '@/types';
 import { importReportPersistenceService } from './importReportPersistenceService';
 import { mobileImportReportService, ImportReportData } from '../mobileImportReportService';
 
@@ -52,23 +51,25 @@ class MobileOrderImportService {
             salesRepId: record.sales_rep_id || '',
             salesRepName: record.sales_rep_name || '',
             date: orderData.date ? new Date(orderData.date) : new Date(record.created_at),
-            dueDate: orderData.due_date ? new Date(orderData.due_date) : undefined,
+            dueDate: orderData.due_date ? new Date(orderData.due_date) : new Date(),
             deliveryDate: orderData.delivery_date ? new Date(orderData.delivery_date) : undefined,
             total: Number(orderData.total || 0),
             discount: Number(orderData.discount || 0),
-            status: orderData.status || 'pending',
-            paymentStatus: orderData.payment_status || 'pending',
+            status: (orderData.status || 'pending') as OrderStatus,
+            paymentStatus: (orderData.payment_status || 'pending') as PaymentStatus,
             paymentMethod: orderData.payment_method || '',
             paymentMethodId: orderData.payment_method_id || '',
             paymentTableId: orderData.payment_table_id || '',
             paymentTable: orderData.payment_table || '',
             notes: orderData.notes || '',
             items: orderData.items || [],
+            payments: [],
+            archived: false,
             deliveryAddress: orderData.delivery_address || '',
             deliveryCity: orderData.delivery_city || '',
             deliveryState: orderData.delivery_state || '',
             deliveryZip: orderData.delivery_zip || '',
-            rejectionReason: orderData.rejection_reason || '',
+            rejectionReason: orderData.rejection_reason || undefined,
             sourceProject: 'mobile',
             importStatus: 'pending',
             createdAt: new Date(record.created_at),
@@ -159,8 +160,9 @@ class MobileOrderImportService {
         const orderData = record.order_data as any;
         if (!orderData) continue;
         
-        // Insert into orders table
-        const orderInsertData = {
+        // Insert into orders table - use correct format
+        const orderInsertData: any = {
+          code: orderData.code || Math.floor(Math.random() * 100000),
           customer_id: this.sanitizeUUID(orderData.customer_id),
           customer_name: orderData.customer_name || '',
           sales_rep_id: this.sanitizeUUID(record.sales_rep_id),
@@ -241,13 +243,25 @@ class MobileOrderImportService {
           customerName: insertedOrder.customer_name || '',
           salesRepId: insertedOrder.sales_rep_id || '',
           salesRepName: insertedOrder.sales_rep_name || '',
-          date: new Date(insertedOrder.date),
+          date: new Date(insertedOrder.date || new Date()),
+          dueDate: new Date(insertedOrder.due_date || new Date()),
           total: insertedOrder.total || 0,
           discount: insertedOrder.discount || 0,
-          status: insertedOrder.status || 'pending',
-          paymentStatus: insertedOrder.payment_status || 'pending',
+          status: (insertedOrder.status || 'pending') as OrderStatus,
+          paymentStatus: (insertedOrder.payment_status || 'pending') as PaymentStatus,
           paymentMethod: insertedOrder.payment_method || '',
+          paymentMethodId: insertedOrder.payment_method_id || '',
+          paymentTableId: insertedOrder.payment_table_id || '',
           items: [],
+          payments: [],
+          notes: insertedOrder.notes || '',
+          archived: false,
+          deliveryAddress: insertedOrder.delivery_address || '',
+          deliveryCity: insertedOrder.delivery_city || '',
+          deliveryState: insertedOrder.delivery_state || '',
+          deliveryZip: insertedOrder.delivery_zip || '',
+          importStatus: 'imported',
+          sourceProject: 'mobile',
           createdAt: new Date(insertedOrder.created_at),
           updatedAt: new Date(insertedOrder.updated_at)
         });
@@ -259,7 +273,7 @@ class MobileOrderImportService {
         importedBy
       );
       
-      await importReportPersistenceService.saveReport(report);
+      await importReportPersistenceService.saveImportReport(report);
       
       return report;
     } catch (error) {
@@ -287,11 +301,11 @@ class MobileOrderImportService {
       
       const report = mobileImportReportService.generateImportReport(
         [],
-        'rejection',
+        'reject',
         rejectedBy
       );
       
-      await importReportPersistenceService.saveReport(report);
+      await importReportPersistenceService.saveImportReport(report);
       
       return report;
     } catch (error) {
