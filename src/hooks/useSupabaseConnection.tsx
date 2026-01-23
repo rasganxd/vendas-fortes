@@ -39,22 +39,28 @@ export const useSupabaseConnection = () => {
   const reconnectToSupabase = async () => {
     try {
       setConnectionStatus('connecting');
-      console.log('Attempting to reconnect to Supabase...');
+      console.log('🔄 [useSupabaseConnection] Attempting to reconnect to Supabase...');
       
-      // Test connection by making a simple query
-      const { error } = await supabase.from('products').select('count').limit(1);
+      // Test connection by making a simple query - use units table as it has data
+      const { data, error } = await supabase.from('units').select('id').limit(1);
       
       if (error) {
-        console.error('Supabase connection failed:', error);
-        setConnectionStatus('error');
+        // Check if it's an RLS error (which means connection works, just auth issue)
+        if (error.code === 'PGRST301' || error.message.includes('permission')) {
+          console.log('⚠️ [useSupabaseConnection] RLS permission issue, but connection works');
+          setConnectionStatus('connected');
+        } else {
+          console.error('❌ [useSupabaseConnection] Supabase connection failed:', error);
+          setConnectionStatus('error');
+        }
       } else {
         setConnectionStatus('connected');
-        console.log('Successfully reconnected to Supabase');
+        console.log('✅ [useSupabaseConnection] Successfully reconnected to Supabase', { data });
       }
       
       setLastConnectAttempt(new Date());
     } catch (error) {
-      console.error('Error reconnecting to Supabase:', error);
+      console.error('❌ [useSupabaseConnection] Error reconnecting to Supabase:', error);
       setConnectionStatus('error');
       setLastConnectAttempt(new Date());
     }
@@ -63,22 +69,28 @@ export const useSupabaseConnection = () => {
   // Function to test Supabase connection
   const testConnection = async () => {
     try {
-      console.log('Testing Supabase connection...');
+      console.log('🔄 [useSupabaseConnection] Testing Supabase connection...');
       setConnectionStatus('connecting');
       
-      const { error } = await supabase.from('products').select('count').limit(1);
+      const { data, error } = await supabase.from('units').select('id').limit(1);
       
       if (error) {
-        console.error('Supabase connection test failed:', error);
+        // Check if it's an RLS error (which means connection works)
+        if (error.code === 'PGRST301' || error.message.includes('permission')) {
+          console.log('⚠️ [useSupabaseConnection] RLS issue, but connection works');
+          setConnectionStatus('connected');
+          return true;
+        }
+        console.error('❌ [useSupabaseConnection] Supabase connection test failed:', error);
         setConnectionStatus('error');
         return false;
       } else {
         setConnectionStatus('connected');
-        console.log('Supabase connection test successful');
+        console.log('✅ [useSupabaseConnection] Supabase connection test successful', { data });
         return true;
       }
     } catch (error) {
-      console.error('Error testing Supabase connection:', error);
+      console.error('❌ [useSupabaseConnection] Error testing Supabase connection:', error);
       setConnectionStatus('error');
       return false;
     }

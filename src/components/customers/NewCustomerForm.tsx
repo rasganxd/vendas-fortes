@@ -39,6 +39,8 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
   });
 
   const handleSubmit = (data: CustomerFormValues) => {
+    console.log('📝 [NewCustomerForm] Form submitted with data:', data);
+    
     // Ensure zip and zipCode are consistent
     data.zipCode = data.zip;
     
@@ -54,6 +56,13 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
     
     onSubmit(data);
   };
+
+  // Log validation errors for debugging
+  React.useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.log('⚠️ [NewCustomerForm] Validation errors:', form.formState.errors);
+    }
+  }, [form.formState.errors]);
 
   return (
     <Form {...form}>
