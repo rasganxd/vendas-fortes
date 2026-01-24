@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Customer, CustomerFormValues } from '@/types/customer';
 import { CustomerFormFields } from './CustomerFormFields';
+import { Loader2 } from 'lucide-react';
 
 interface NewCustomerFormProps {
   initialCode: number;
@@ -14,6 +15,8 @@ interface NewCustomerFormProps {
 }
 
 const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit, onCancel }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<CustomerFormValues>({
     defaultValues: {
       code: initialCode,
@@ -23,7 +26,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
       phone: '',
       email: '',
       address: '',
-      neighborhood: '', // Novo campo bairro
+      neighborhood: '',
       city: '',
       state: '',
       zip: '',
@@ -38,23 +41,38 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
     }
   });
 
-  const handleSubmit = (data: CustomerFormValues) => {
+  const handleSubmit = async (data: CustomerFormValues) => {
     console.log('📝 [NewCustomerForm] Form submitted with data:', data);
     
-    // Ensure zip and zipCode are consistent
-    data.zipCode = data.zip;
-    
-    // Ensure code is a number
-    if (typeof data.code === 'string') {
-      data.code = parseInt(data.code, 10);
+    if (isSubmitting) {
+      console.log('⚠️ [NewCustomerForm] Already submitting, ignoring...');
+      return;
     }
     
-    // Ensure visitDays is an array
-    if (!Array.isArray(data.visitDays)) {
-      data.visitDays = data.visitDays ? [data.visitDays as unknown as string] : [];
-    }
+    setIsSubmitting(true);
     
-    onSubmit(data);
+    try {
+      // Ensure zip and zipCode are consistent
+      data.zipCode = data.zip;
+      
+      // Ensure code is a number
+      if (typeof data.code === 'string') {
+        data.code = parseInt(data.code, 10);
+      }
+      
+      // Ensure visitDays is an array
+      if (!Array.isArray(data.visitDays)) {
+        data.visitDays = data.visitDays ? [data.visitDays as unknown as string] : [];
+      }
+      
+      console.log('🔄 [NewCustomerForm] Calling onSubmit...');
+      await onSubmit(data);
+      console.log('✅ [NewCustomerForm] onSubmit completed');
+    } catch (error) {
+      console.error('❌ [NewCustomerForm] Error in handleSubmit:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Log validation errors for debugging
@@ -70,16 +88,25 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
         <div className="max-h-[75vh] overflow-y-auto pr-4 pb-2">
           <CustomerFormFields 
             form={form}
-            isSubmitting={form.formState.isSubmitting}
+            isSubmitting={isSubmitting}
             nextCustomerCode={initialCode}
           />
         </div>
         
         <DialogFooter className="mt-4 bg-background pt-4 pb-1 border-t">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit">Adicionar Cliente</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Adicionar Cliente'
+            )}
+          </Button>
         </DialogFooter>
       </form>
     </Form>

@@ -136,12 +136,6 @@ const navigation: NavItem[] = [
     icon: Database,
     group: "sistema"
   },
-  {
-    title: "Migração",
-    href: "/migracao-dados",
-    icon: DatabaseBackup,
-    group: "sistema"
-  },
 ];
 
 export default function SideNav() {
