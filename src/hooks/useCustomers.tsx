@@ -71,14 +71,25 @@ export const useCustomers = () => {
   }, [loadAndSyncCustomers]);
 
   const addCustomer = async (customer: Omit<Customer, 'id'>) => {
-    if (!isOnline) {
+    console.log("🔄 [useCustomers] addCustomer called with:", customer);
+    console.log("🔄 [useCustomers] isOnline:", isOnline, "navigator.onLine:", navigator.onLine);
+    
+    // Check browser online status directly as fallback
+    if (!navigator.onLine) {
+      console.warn("⚠️ [useCustomers] Browser reports offline");
       toast({ title: "Offline", description: "É preciso estar online para adicionar clientes.", variant: "destructive" });
       return "";
     }
+    
     try {
       console.log("🔄 [useCustomers] Adding customer via Supabase...");
       const id = await customerService.add(customer);
-      if (!id) throw new Error("Failed to get ID from Supabase");
+      console.log("🔄 [useCustomers] customerService.add returned:", id);
+      
+      if (!id) {
+        console.error("❌ [useCustomers] No ID returned from customerService.add");
+        throw new Error("Failed to get ID from Supabase");
+      }
       
       // Creating a complete customer object to add to local state and SQLite
       const newCustomer: Customer = { 
@@ -86,7 +97,7 @@ export const useCustomers = () => {
         id,
         createdAt: new Date(),
         updatedAt: new Date(),
-        active: customer.active ?? true, // Ensure active has a default
+        active: customer.active ?? true,
       };
       
       if (isElectron) {
@@ -96,11 +107,11 @@ export const useCustomers = () => {
       
       setCustomers(prev => [...prev, newCustomer].sort((a, b) => (a.name || '').localeCompare(b.name || '')));
       
-      toast({ title: "✅ Cliente adicionado", description: `${newCustomer.name} foi adicionado.` });
+      console.log("✅ [useCustomers] Customer added successfully:", newCustomer.name);
       return id;
     } catch (error) {
       console.error("❌ [useCustomers] Error adding customer:", error);
-      toast({ title: "❌ Erro ao adicionar cliente", variant: "destructive" });
+      toast({ title: "❌ Erro ao adicionar cliente", description: error instanceof Error ? error.message : "Erro desconhecido", variant: "destructive" });
       return "";
     }
   };

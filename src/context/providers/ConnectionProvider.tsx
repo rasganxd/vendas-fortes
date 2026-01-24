@@ -24,10 +24,20 @@ export const useConnection = () => {
 export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const connection = useSupabaseConnection();
 
+  // isOnline should be true if browser is online AND connection is not in error/disconnected state
+  // This allows operations during 'connecting' state to proceed
+  const isOnline = navigator.onLine && connection.connectionStatus !== 'disconnected' && connection.connectionStatus !== 'error';
+
+  console.log('🌐 [ConnectionProvider] Connection state:', {
+    navigatorOnline: navigator.onLine,
+    connectionStatus: connection.connectionStatus,
+    isOnline
+  });
+
   const connectionValue: ConnectionContextType = {
     ...connection,
     reconnect: connection.reconnectToSupabase,
-    isOnline: navigator.onLine && connection.connectionStatus === 'connected'
+    isOnline
   };
 
   return (
