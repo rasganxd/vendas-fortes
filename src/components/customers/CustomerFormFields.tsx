@@ -115,10 +115,9 @@ export const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({
           <Label htmlFor="phone">Telefone</Label>
           <Input
             id="phone"
-            {...register('phone', { required: 'Telefone é obrigatório' })}
+            {...register('phone')}
             disabled={isSubmitting}
           />
-          {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
         </div>
 
         <div>
@@ -138,10 +137,9 @@ export const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({
           <Label htmlFor="address">Endereço</Label>
           <Input
             id="address"
-            {...register('address', { required: 'Endereço é obrigatório' })}
+            {...register('address')}
             disabled={isSubmitting}
           />
-          {errors.address && <p className="text-sm text-red-500">{errors.address.message}</p>}
         </div>
 
         <div>
@@ -157,20 +155,18 @@ export const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({
           <Label htmlFor="city">Cidade</Label>
           <Input
             id="city"
-            {...register('city', { required: 'Cidade é obrigatória' })}
+            {...register('city')}
             disabled={isSubmitting}
           />
-          {errors.city && <p className="text-sm text-red-500">{errors.city.message}</p>}
         </div>
 
         <div>
           <Label htmlFor="state">Estado</Label>
           <Input
             id="state"
-            {...register('state', { required: 'Estado é obrigatório' })}
+            {...register('state')}
             disabled={isSubmitting}
           />
-          {errors.state && <p className="text-sm text-red-500">{errors.state.message}</p>}
         </div>
 
         <div>
