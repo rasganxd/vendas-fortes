@@ -70,16 +70,8 @@ export const useCustomers = () => {
     loadAndSyncCustomers();
   }, [loadAndSyncCustomers]);
 
-  const addCustomer = async (customer: Omit<Customer, 'id'>) => {
+  const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<string> => {
     console.log("🔄 [useCustomers] addCustomer called with:", customer);
-    console.log("🔄 [useCustomers] isOnline:", isOnline, "navigator.onLine:", navigator.onLine);
-    
-    // Check browser online status directly as fallback
-    if (!navigator.onLine) {
-      console.warn("⚠️ [useCustomers] Browser reports offline");
-      toast({ title: "Offline", description: "É preciso estar online para adicionar clientes.", variant: "destructive" });
-      return "";
-    }
     
     try {
       console.log("🔄 [useCustomers] Adding customer via Supabase...");
@@ -88,10 +80,10 @@ export const useCustomers = () => {
       
       if (!id) {
         console.error("❌ [useCustomers] No ID returned from customerService.add");
-        throw new Error("Failed to get ID from Supabase");
+        throw new Error("Failed to get ID from database");
       }
       
-      // Creating a complete customer object to add to local state and SQLite
+      // Creating a complete customer object to add to local state
       const newCustomer: Customer = { 
         ...customer, 
         id,
@@ -108,11 +100,12 @@ export const useCustomers = () => {
       setCustomers(prev => [...prev, newCustomer].sort((a, b) => (a.name || '').localeCompare(b.name || '')));
       
       console.log("✅ [useCustomers] Customer added successfully:", newCustomer.name);
+      toast({ title: "✅ Cliente adicionado", description: `${newCustomer.name} foi adicionado com sucesso!` });
       return id;
     } catch (error) {
       console.error("❌ [useCustomers] Error adding customer:", error);
       toast({ title: "❌ Erro ao adicionar cliente", description: error instanceof Error ? error.message : "Erro desconhecido", variant: "destructive" });
-      return "";
+      throw error;
     }
   };
 
