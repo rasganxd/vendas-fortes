@@ -8,11 +8,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CustomerFormValues } from '@/types';
 import { VisitSequenceManager } from './VisitSequenceManager';
+import { SalesRep } from '@/types';
 
 interface CustomerFormFieldsProps {
   form: UseFormReturn<CustomerFormValues>;
   isSubmitting: boolean;
   nextCustomerCode: number;
+  salesReps?: SalesRep[];
 }
 
 const visitDayOptions = [
@@ -35,7 +37,8 @@ const visitFrequencyOptions = [
 export const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({
   form,
   isSubmitting,
-  nextCustomerCode
+  nextCustomerCode,
+  salesReps = []
 }) => {
   const { register, formState: { errors }, watch, setValue } = form;
   
@@ -121,13 +124,23 @@ export const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="email">E-mail</Label>
-          <Input
-            id="email"
-            type="email"
-            {...register('email')}
+          <Label htmlFor="salesRepId">Vendedor</Label>
+          <Select
+            value={watch('salesRepId') || ''}
+            onValueChange={(value) => setValue('salesRepId', value)}
             disabled={isSubmitting}
-          />
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o vendedor" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              {salesReps.filter(rep => rep.active).map(rep => (
+                <SelectItem key={rep.id} value={rep.id}>
+                  {rep.code} - {rep.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -169,14 +182,6 @@ export const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({
           />
         </div>
 
-        <div>
-          <Label htmlFor="zip">CEP</Label>
-          <Input
-            id="zip"
-            {...register('zip')}
-            disabled={isSubmitting}
-          />
-        </div>
       </div>
 
       {/* Visit Configuration */}
