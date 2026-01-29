@@ -100,35 +100,35 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
     // Validate and normalize visit days before saving
     const validatedVisitDays = record.visitDays ? validateVisitDays(record.visitDays) : [];
     
+    // Get sales_rep_id - check multiple possible sources
+    const salesRepId = record.salesRepId || (record as any).sales_rep_id || null;
+    
+    console.log(`🔍 [CustomerService] salesRepId from record: ${record.salesRepId}, final: ${salesRepId}`);
+    
     // Map TypeScript camelCase fields to database snake_case
-    const dbRecord = {
-      ...baseTransformed,
+    const dbRecord: Record<string, any> = {
+      code: record.code,
+      name: record.name,
       company_name: record.companyName || '',
-      neighborhood: record.neighborhood || '', // Novo campo bairro
-      visit_days: validatedVisitDays, // Use validated visit days
+      document: record.document || '',
+      phone: record.phone || '',
+      email: record.email || '',
+      address: record.address || '',
+      neighborhood: record.neighborhood || '',
+      city: record.city || '',
+      state: record.state || '',
+      zip: record.zip || record.zipCode || '',
+      notes: record.notes || '',
+      visit_days: validatedVisitDays,
       visit_frequency: record.visitFrequency || '',
       visit_sequence: record.visitSequence || 0,
-      visit_sequences: record.visitSequences || null, // New field - store as JSONB
-      sales_rep_id: record.salesRepId || null,
+      visit_sequences: record.visitSequences || null,
+      sales_rep_id: salesRepId,
       delivery_route_id: record.deliveryRouteId || null,
-      zip: record.zip || record.zipCode || ''
+      active: record.active !== undefined ? record.active : true
     };
 
     console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}, visit_days: ${JSON.stringify(dbRecord.visit_days)}, visit_sequences: ${JSON.stringify(dbRecord.visit_sequences)}`);
-
-    // Remove the camelCase fields that don't exist in the database
-    delete dbRecord.companyName;
-    delete dbRecord.visitDays;
-    delete dbRecord.visitFrequency;
-    delete dbRecord.visitSequence;
-    delete dbRecord.visitSequences; // This is now mapped to visit_sequences
-    delete dbRecord.salesRepId;
-    delete dbRecord.salesRepName; // This field doesn't exist in DB, so remove it
-    delete dbRecord.deliveryRouteId;
-    delete dbRecord.zipCode;
-    delete dbRecord.zip;
-    delete dbRecord.syncPending;
-    
     console.log("📝 [CustomerService] Transform to DB result:", dbRecord);
     return dbRecord;
   }
