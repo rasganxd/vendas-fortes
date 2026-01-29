@@ -111,7 +111,7 @@ class CustomerSupabaseService extends SupabaseService<Customer> {
       visit_sequences: record.visitSequences || null, // New field - store as JSONB
       sales_rep_id: record.salesRepId || null,
       delivery_route_id: record.deliveryRouteId || null,
-      zip_code: record.zip || record.zipCode || ''
+      zip: record.zip || record.zipCode || ''
     };
 
     console.log(`📝 [CustomerService] Transform to DB - Customer: ${record.name}, sales_rep_id: ${dbRecord.sales_rep_id}, visit_days: ${JSON.stringify(dbRecord.visit_days)}, visit_sequences: ${JSON.stringify(dbRecord.visit_sequences)}`);
