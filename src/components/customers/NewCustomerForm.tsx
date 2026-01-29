@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -7,6 +7,8 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { Customer, CustomerFormValues } from '@/types/customer';
 import { CustomerFormFields } from './CustomerFormFields';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { SalesRep } from '@/types';
 
 interface NewCustomerFormProps {
   initialCode: number;
@@ -16,6 +18,31 @@ interface NewCustomerFormProps {
 
 const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [salesReps, setSalesReps] = useState<SalesRep[]>([]);
+  
+  useEffect(() => {
+    const loadSalesReps = async () => {
+      const { data, error } = await supabase
+        .from('sales_reps')
+        .select('id, code, name, phone, email, active, created_at, updated_at')
+        .eq('active', true)
+        .order('name');
+      
+      if (!error && data) {
+        setSalesReps(data.map(rep => ({
+          id: rep.id,
+          code: rep.code,
+          name: rep.name,
+          phone: rep.phone || '',
+          email: rep.email || '',
+          active: rep.active ?? true,
+          createdAt: new Date(rep.created_at),
+          updatedAt: new Date(rep.updated_at)
+        })));
+      }
+    };
+    loadSalesReps();
+  }, []);
   
   const form = useForm<CustomerFormValues>({
     defaultValues: {
@@ -90,6 +117,7 @@ const NewCustomerForm: React.FC<NewCustomerFormProps> = ({ initialCode, onSubmit
             form={form}
             isSubmitting={isSubmitting}
             nextCustomerCode={initialCode}
+            salesReps={salesReps}
           />
         </div>
         
