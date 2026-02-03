@@ -225,8 +225,8 @@ export class OrderTransformations {
     if (order.status !== undefined) result.status = order.status;
     if (order.paymentStatus !== undefined) result.payment_status = order.paymentStatus;
     
-    // JSONB fields
-    if (order.payments !== undefined) result.payments = order.payments;
+    // Note: 'payments' is stored in a separate 'payments' table, not as a column in 'orders'
+    // Do NOT include order.payments in DB transformation
 
     console.log('✅ [OrderTransformations] DB format conversion completed:', {
       customer_id: result.customer_id,
