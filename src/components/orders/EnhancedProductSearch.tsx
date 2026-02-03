@@ -54,18 +54,28 @@ export default function EnhancedProductSearch({
 
   const handleProductSelect = useCallback((product: Product) => {
     console.log('📦 Product selected in EnhancedProductSearch:', product);
+    console.log('📦 Product units:', { unit: product.unit, subunit: product.subunit, hasSubunit: product.hasSubunit });
+    
     setSelectedProduct(product);
     setFoundProduct(null);
     setIsProductSearchOpen(false);
     setProductSearch('');
 
-    // Reset form
-    setSelectedUnit('');
-    setPrice(0);
-    setPriceDisplayValue('');
+    // Set default unit to product's main unit
+    const defaultUnit = product.unit || '';
+    setSelectedUnit(defaultUnit);
+    
+    // Calculate initial price based on the default unit
+    const basePrice = product.sale_price || product.price || 0;
+    setPrice(basePrice);
+    setPriceDisplayValue(basePrice > 0 ? formatBrazilianPrice(basePrice) : '');
     setQuantity(1);
+    
+    console.log('📦 Default unit set to:', defaultUnit, 'with price:', basePrice);
+    
     setTimeout(() => {
-      unitSelectorRef.current?.focus();
+      // Focus on price input since unit is already selected
+      priceInputRef.current?.focus();
     }, 100);
   }, []);
 

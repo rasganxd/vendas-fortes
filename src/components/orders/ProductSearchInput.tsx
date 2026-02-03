@@ -72,8 +72,10 @@ export default function ProductSearchInput({
   // Update selected unit when product changes
   const handleProductSelect = (product: Product) => {
     originalHandleProductSelect(product);
-    // Set default unit to product's main unit
-    setSelectedUnit(product.unit || 'UN');
+    // Set default unit to product's main unit (use product.unit, never fallback to generic 'UN')
+    const productUnit = product.unit || '';
+    console.log('📦 ProductSearchInput - Setting unit to:', productUnit);
+    setSelectedUnit(productUnit);
   };
 
   // Calculate price when unit changes
