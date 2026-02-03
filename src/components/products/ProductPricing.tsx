@@ -81,16 +81,27 @@ const ProductPricing = () => {
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
   // Initialize product prices and max discounts from products
+  // Only sync from products when there are no local changes
   useEffect(() => {
-    const initialPrices: Record<string, number> = {};
-    const initialMaxDiscounts: Record<string, number> = {};
-    products.forEach(product => {
-      initialPrices[product.id] = product.price || 0;
-      initialMaxDiscounts[product.id] = product.maxDiscountPercent || 0;
-    });
-    setProductPrices(initialPrices);
-    setProductMaxDiscounts(initialMaxDiscounts);
-  }, [products]);
+    if (!hasChanges) {
+      const initialPrices: Record<string, number> = {};
+      const initialMaxDiscounts: Record<string, number> = {};
+      products.forEach(product => {
+        initialPrices[product.id] = product.price || 0;
+        initialMaxDiscounts[product.id] = product.maxDiscountPercent || 0;
+      });
+      setProductPrices(initialPrices);
+      setProductMaxDiscounts(initialMaxDiscounts);
+      console.log('🔄 [ProductPricing] Synced prices from products:', { 
+        productsCount: products.length, 
+        sampleProduct: products[0] ? { 
+          name: products[0].name, 
+          price: products[0].price, 
+          maxDiscountPercent: products[0].maxDiscountPercent 
+        } : null 
+      });
+    }
+  }, [products, hasChanges]);
 
   // Filter products based on search and filters
   useEffect(() => {
@@ -276,15 +287,35 @@ const ProductPricing = () => {
 
     try {
       console.log(`🔄 [ProductPricing] Starting batch update for ${changes.length} products`);
+      console.log(`📋 [ProductPricing] Changes to save:`, changes.map(c => ({
+        id: c.product.id,
+        name: c.product.name,
+        oldPrice: c.oldPrice,
+        newPrice: c.newPrice,
+        oldMaxDiscount: c.oldMaxDiscount,
+        newMaxDiscount: c.newMaxDiscount
+      })));
       
-      // Prepare batch updates
-      const updates = changes.map(change => ({
-        id: change.product.id,
-        data: {
-          ...(change.oldPrice !== change.newPrice && { price: change.newPrice }),
-          ...(change.oldMaxDiscount !== change.newMaxDiscount && { maxDiscountPercent: change.newMaxDiscount })
+      // Prepare batch updates - always include both fields if changed
+      const updates = changes.map(change => {
+        const updateData: Partial<{ price: number; maxDiscountPercent: number }> = {};
+        
+        if (change.oldPrice !== change.newPrice) {
+          updateData.price = change.newPrice;
         }
-      }));
+        if (change.oldMaxDiscount !== change.newMaxDiscount) {
+          updateData.maxDiscountPercent = change.newMaxDiscount;
+        }
+        
+        console.log(`📝 [ProductPricing] Update for ${change.product.name}:`, updateData);
+        
+        return {
+          id: change.product.id,
+          data: updateData
+        };
+      });
+      
+      console.log(`📦 [ProductPricing] Final updates payload:`, updates);
 
       // Progress handler
       const handleProgress = (progress: number, currentProduct?: string) => {
