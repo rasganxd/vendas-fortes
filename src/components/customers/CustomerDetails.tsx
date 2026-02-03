@@ -102,10 +102,6 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
                   <TableCell className="font-medium">Estado</TableCell>
                   <TableCell>{customer.state || '—'}</TableCell>
                 </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">CEP</TableCell>
-                  <TableCell>{customer.zip || customer.zipCode || '—'}</TableCell>
-                </TableRow>
               </TableBody>
             </Table>
           </CardContent>
