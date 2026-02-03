@@ -285,9 +285,15 @@ export const productService = {
     if (product.code !== undefined) updateData.code = product.code;
     if (product.name !== undefined) updateData.name = product.name;
     if (product.cost !== undefined) updateData.cost = Number(product.cost);
-    if (product.price !== undefined) updateData.price = Number(product.price);
+    if (product.price !== undefined) {
+      updateData.price = Number(product.price);
+      console.log(`💰 [ProductService] Setting price to: ${updateData.price}`);
+    }
     if (product.stock !== undefined) updateData.stock = Number(product.stock);
-    if (product.maxDiscountPercent !== undefined) updateData.max_discount_percent = Number(product.maxDiscountPercent);
+    if (product.maxDiscountPercent !== undefined) {
+      updateData.max_discount_percent = Number(product.maxDiscountPercent);
+      console.log(`💯 [ProductService] Setting max_discount_percent to: ${updateData.max_discount_percent}`);
+    }
     if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
     if (product.groupId !== undefined) updateData.group_id = product.groupId;
     if (product.brandId !== undefined) updateData.brand_id = product.brandId;
