@@ -1,11 +1,11 @@
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Customer, Payment, PaymentTable } from '@/types';
 import { useAppContext } from '@/hooks/useAppContext';
-import { useReactToPrint } from 'react-to-print';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import PromissoryNoteTemplate from './PromissoryNoteTemplate';
+import { generateMultiplePromissoryNotesHTML } from '@/utils/promissoryNoteRenderer';
 import '@/styles/promissory-notes.css';
 
 interface PromissoryNoteViewProps {
@@ -25,101 +25,64 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
 }) => {
   const { settings } = useAppContext();
   const companyData = settings?.company;
-  const printRef = useRef<HTMLDivElement>(null);
 
-  // Simplify company data check - just check if we have basic data
-  const isCompanyDataLoaded = companyData && companyData.name;
-
-  // Handle print functionality with simplified validation
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: `Nota_Promissoria_${order.code || order.id}`,
-    onBeforePrint: () => {
-      console.log("🖨️ Preparando para imprimir nota promissória individual...", {
-        orderId: order.id,
-        orderCode: order.code,
-        companyName: companyData?.name
-      });
-    },
-    onAfterPrint: () => {
-      console.log("✅ Impressão individual concluída");
-    },
-    onPrintError: (error) => {
-      console.error("❌ Erro na impressão individual:", error);
-    }
-  });
-
-  // Handle print with simplified validation
+  // Handle print using the same approach as bulk printing (new window with full HTML)
   const handlePrintClick = async () => {
     console.log("🖨️ Iniciando impressão individual...", {
-      hasCompanyData: !!companyData,
-      companyName: companyData?.name,
-      hasPrintRef: !!printRef.current
+      orderId: order.id,
+      orderCode: order.code,
+      companyName: companyData?.name
     });
 
-    if (!printRef.current) {
-      console.error("❌ Referência de impressão não disponível");
-      return;
-    }
+    const customers = customer ? [customer] : [];
+    const paymentTables = paymentTable ? [paymentTable] : [];
 
     // Check if running in Electron for native printing
     if (window.electronAPI && window.electronAPI.printContent) {
       try {
         console.log("🖨️ Usando impressão nativa do Electron...");
-        const printContent = printRef.current.outerHTML;
-        const printStyles = `
-          <style>
-            @page { margin: 0.5cm; size: A4 portrait; }
-            body { 
-              font-family: Arial, sans-serif; 
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            .promissory-note-compact { 
-              border: 2px solid #000; 
-              padding: 0.5cm; 
-              font-size: 9pt;
-              line-height: 1.2;
-            }
-            .font-bold { font-weight: 700; }
-            .font-semibold { font-weight: 600; }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .text-justify { text-align: justify; }
-            .uppercase { text-transform: uppercase; }
-            .border-b { border-bottom: 1px solid #000; }
-            .border-t { border-top: 1px solid #000; }
-            .border-gray-800 { border-color: #000; }
-            .border-gray-400 { border-color: #666; }
-            .text-gray-500 { color: #777; }
-          </style>
-        `;
-        
-        const fullHTML = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Nota Promissória - ${order.code}</title>
-              <meta charset="utf-8">
-              ${printStyles}
-            </head>
-            <body>${printContent}</body>
-          </html>
-        `;
-
-        await window.electronAPI.printContent(fullHTML, {
+        const htmlContent = generateMultiplePromissoryNotesHTML(
+          [order], customers, paymentTables, payments, companyData
+        );
+        const result = await window.electronAPI.printContent(htmlContent, {
           printBackground: true,
           color: true,
           margins: { marginType: 'custom', top: 0.5, bottom: 0.5, left: 0.5, right: 0.5 }
         });
+        if (!result.success) {
+          console.error('❌ Erro na impressão Electron:', result.error);
+          handleWebPrint(customers, paymentTables);
+        }
       } catch (error) {
         console.error("❌ Erro na impressão Electron, usando fallback:", error);
-        handlePrint();
+        handleWebPrint(customers, paymentTables);
       }
     } else {
       console.log("🖨️ Usando impressão web padrão...");
-      handlePrint();
+      handleWebPrint(customers, paymentTables);
     }
+  };
+
+  const handleWebPrint = (customersList: any[], paymentTablesList: any[]) => {
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+      console.error("❌ Não foi possível abrir janela de impressão");
+      return;
+    }
+    const htmlContent = generateMultiplePromissoryNotesHTML(
+      [order], customersList, paymentTablesList, payments, companyData
+    );
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.onload = function () {
+      setTimeout(() => {
+        printWindow.print();
+        setTimeout(() => {
+          printWindow.close();
+          console.log('✅ Impressão individual concluída');
+        }, 2000);
+      }, 500);
+    };
   };
 
   return (
@@ -138,7 +101,7 @@ const PromissoryNoteView: React.FC<PromissoryNoteViewProps> = ({
       </div>
 
       {/* Promissory Note Content using Template */}
-      <div ref={printRef}>
+      <div>
         <PromissoryNoteTemplate
           order={order}
           customer={customer}
