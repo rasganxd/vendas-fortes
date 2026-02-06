@@ -389,8 +389,7 @@ export default function Products() {
       const productData: Partial<Product> = {
         code: data.code,
         name: data.name,
-        cost: Number(data.cost), // Ensure it's a number
-        price: Number(data.cost) || 0, // Set price equal to cost initially
+        cost: Number(data.cost),
         unit: data.unit,
         hasSubunit: data.hasSubunit || false,
         subunit: data.hasSubunit ? data.subunit : null,
@@ -402,6 +401,12 @@ export default function Products() {
         minStock: 0,
         active: data.active
       };
+
+      // Only set price for NEW products (equal to cost initially)
+      // When editing, price/precificação is NEVER changed from the product form
+      if (!isEditing) {
+        productData.price = Number(data.cost) || 0;
+      }
 
       console.log("📝 [Products] Final product data to save:", productData);
       console.log("💰 [Products] Final cost value:", productData.cost, "Type:", typeof productData.cost);

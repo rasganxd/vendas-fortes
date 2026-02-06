@@ -130,9 +130,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
     const cleanData = {
       ...data,
       cost: costValue,
-      // CORREÇÃO: Só definir price = cost para produtos NOVOS
-      // Para produtos existentes, preservar o preço de venda atual
-      price: isEditing && selectedProduct ? selectedProduct.price : costValue,
       categoryId: data.categoryId === 'none' ? undefined : data.categoryId,
       groupId: data.groupId === 'none' ? undefined : data.groupId,
       brandId: data.brandId === 'none' ? undefined : data.brandId,
@@ -141,7 +138,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
     
     console.log("✅ [ProductForm] Clean data for submission:", cleanData);
     console.log("💰 [ProductForm] Final cost value being sent:", cleanData.cost);
-    console.log("💲 [ProductForm] Final price value being sent:", cleanData.price);
     onSubmit(cleanData);
   };
 
