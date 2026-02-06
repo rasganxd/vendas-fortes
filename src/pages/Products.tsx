@@ -24,7 +24,6 @@ import { CategoryDialog } from '@/components/products/CategoryDialog';
 import { GroupDialog } from '@/components/products/GroupDialog';
 import { BrandDialog } from '@/components/products/BrandDialog';
 import { DeleteConfirmationDialog } from '@/components/products/DeleteConfirmationDialog';
-import { useProductClassification } from '@/hooks/useProductClassification';
 import { ProductCategory, ProductGroup, ProductBrand } from '@/types';
 import ProductPricing from '@/components/products/ProductPricing';
 import {
@@ -65,24 +64,18 @@ export default function Products() {
   
   const { connectionStatus } = useConnection();
   
-  // Use product classification hook for classifications tab
+  // Use AppData operations directly for classifications (single source of truth)
   const {
-    productCategories: classificationCategories,
-    productGroups: classificationGroups,
-    productBrands: classificationBrands,
-    isLoadingCategories,
-    isLoadingGroups,
-    isLoadingBrands,
-    handleAddCategory,
-    handleUpdateCategory,
-    handleDeleteCategory,
-    handleAddGroup,
-    handleUpdateGroup,
-    handleDeleteGroup,
-    handleAddBrand,
-    handleUpdateBrand,
-    handleDeleteBrand
-  } = useProductClassification();
+    addProductCategory: appAddCategory,
+    updateProductCategory: appUpdateCategory,
+    deleteProductCategory: appDeleteCategory,
+    addProductGroup: appAddGroup,
+    updateProductGroup: appUpdateGroup,
+    deleteProductGroup: appDeleteGroup,
+    addProductBrand: appAddBrand,
+    updateProductBrand: appUpdateBrand,
+    deleteProductBrand: appDeleteBrand,
+  } = useAppData();
   
   const [open, setOpen] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
@@ -301,9 +294,9 @@ export default function Products() {
 
   const handleSaveCategory = async (category: Omit<ProductCategory, 'id'>) => {
     if (selectedCategoryEdit) {
-      await handleUpdateCategory(selectedCategoryEdit.id, category);
+      await appUpdateCategory(selectedCategoryEdit.id, category);
     } else {
-      await handleAddCategory(category);
+      await appAddCategory(category);
     }
     setCategoryDialogOpen(false);
   };
@@ -326,9 +319,9 @@ export default function Products() {
 
   const handleSaveGroup = async (group: Omit<ProductGroup, 'id'>) => {
     if (selectedGroupEdit) {
-      await handleUpdateGroup(selectedGroupEdit.id, group);
+      await appUpdateGroup(selectedGroupEdit.id, group);
     } else {
-      await handleAddGroup(group);
+      await appAddGroup(group);
     }
     setGroupDialogOpen(false);
   };
@@ -351,9 +344,9 @@ export default function Products() {
 
   const handleSaveBrand = async (brand: Omit<ProductBrand, 'id'>) => {
     if (selectedBrandEdit) {
-      await handleUpdateBrand(selectedBrandEdit.id, brand);
+      await appUpdateBrand(selectedBrandEdit.id, brand);
     } else {
-      await handleAddBrand(brand);
+      await appAddBrand(brand);
     }
     setBrandDialogOpen(false);
   };
@@ -632,11 +625,11 @@ export default function Products() {
                         Nova Categoria
                       </Button>
                     </div>
-                    {isLoadingCategories ? (
+                    {isLoadingProductCategories ? (
                       <p>Carregando categorias...</p>
                     ) : (
                       <CategoryTable 
-                        categories={classificationCategories}
+                        categories={productCategories || []}
                         onEdit={openEditCategoryDialog}
                         onDelete={openDeleteCategoryDialog}
                       />
@@ -652,11 +645,11 @@ export default function Products() {
                         Novo Grupo
                       </Button>
                     </div>
-                    {isLoadingGroups ? (
+                    {isLoadingProductGroups ? (
                       <p>Carregando grupos...</p>
                     ) : (
                       <GroupTable 
-                        groups={classificationGroups}
+                        groups={productGroups || []}
                         onEdit={openEditGroupDialog}
                         onDelete={openDeleteGroupDialog}
                       />
@@ -672,11 +665,11 @@ export default function Products() {
                         Nova Marca
                       </Button>
                     </div>
-                    {isLoadingBrands ? (
+                    {isLoadingProductBrands ? (
                       <p>Carregando marcas...</p>
                     ) : (
                       <BrandTable 
-                        brands={classificationBrands}
+                        brands={productBrands || []}
                         onEdit={openEditBrandDialog}
                         onDelete={openDeleteBrandDialog}
                       />
@@ -732,7 +725,7 @@ export default function Products() {
       <DeleteConfirmationDialog
         open={deleteCategoryDialogOpen}
         onOpenChange={setDeleteCategoryDialogOpen}
-        onConfirm={() => categoryToDelete && handleDeleteCategory(categoryToDelete.id)}
+        onConfirm={() => categoryToDelete && appDeleteCategory(categoryToDelete.id)}
         title="Excluir Categoria"
         description={`Tem certeza que deseja excluir a categoria "${categoryToDelete?.name}"?`}
       />
@@ -740,7 +733,7 @@ export default function Products() {
       <DeleteConfirmationDialog
         open={deleteGroupDialogOpen}
         onOpenChange={setDeleteGroupDialogOpen}
-        onConfirm={() => groupToDelete && handleDeleteGroup(groupToDelete.id)}
+        onConfirm={() => groupToDelete && appDeleteGroup(groupToDelete.id)}
         title="Excluir Grupo"
         description={`Tem certeza que deseja excluir o grupo "${groupToDelete?.name}"?`}
       />
@@ -748,7 +741,7 @@ export default function Products() {
       <DeleteConfirmationDialog
         open={deleteBrandDialogOpen}
         onOpenChange={setDeleteBrandDialogOpen}
-        onConfirm={() => brandToDelete && handleDeleteBrand(brandToDelete.id)}
+        onConfirm={() => brandToDelete && appDeleteBrand(brandToDelete.id)}
         title="Excluir Marca"
         description={`Tem certeza que deseja excluir a marca "${brandToDelete?.name}"?`}
       />
